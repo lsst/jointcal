@@ -33,7 +33,7 @@ from lsst.pipe.tasks.selectImages import WcsSelectImagesTask, SelectStruct
 from lsst.coadd.utils import CoaddDataIdContainer
 from lsst.pipe.tasks.getRepositoryData import DataRefListRunner
 
-__all__ = ["SimAstromTask"]
+__all__ = ["SimAstromConfig", "SimAstromTask"]
 
 class SimAstromConfig(pexConfig.Config):
     """Config for SimAstromTask
@@ -55,6 +55,14 @@ class SimAstromTask(pipeBase.CmdLineTask):
     def __init__(self, *args, **kwargs):
         pipeBase.Task.__init__(self, *args, **kwargs)
 #        self.makeSubtask("select")
+
+# We don't need to persist config and metadata at this stage. In this way, we don't need to put a specific entry in the
+# camera mapper policy file
+    def _getConfigName(self):
+        return None
+        
+    def _getMetadataName(self):
+        return None
         
     @classmethod
     def _makeArgumentParser(cls):
