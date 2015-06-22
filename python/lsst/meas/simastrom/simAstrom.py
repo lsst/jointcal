@@ -33,6 +33,8 @@ from lsst.pipe.tasks.selectImages import WcsSelectImagesTask, SelectStruct
 from lsst.coadd.utils import CoaddDataIdContainer
 from lsst.pipe.tasks.getRepositoryData import DataRefListRunner
 
+from .simastromLib import test
+
 __all__ = ["SimAstromConfig", "SimAstromTask"]
 
 class SimAstromConfig(pexConfig.Config):
@@ -76,5 +78,8 @@ class SimAstromTask(pipeBase.CmdLineTask):
     @pipeBase.timeMethod
     def run(self, ref):
         
-        for r in ref :
-            print r.dataId
+        for dataRef in ref :
+            print dataRef.dataId
+            src = dataRef.get("src", immediate=True)
+            print len(src)
+            result = test(src)

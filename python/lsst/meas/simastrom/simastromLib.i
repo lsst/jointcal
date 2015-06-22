@@ -18,35 +18,14 @@ Python interface to lsst::meas::simastrom classes
 #include "lsst/pex/logging.h"
 #include "lsst/afw/cameraGeom.h"
 #include "lsst/afw/math.h"
-
 #include "lsst/afw/image.h"
-%}
-
-%inline %{
-namespace lsst { namespace afw {
-        namespace detection { }
-        namespace image { }
-} }
-using namespace lsst;
-using namespace lsst::afw::image;
-using namespace lsst::afw::detection;
+#include "lsst/meas/simastrom/test.h"
 %}
 
 %include "lsst/p_lsstSwig.i"
-%initializeNumPy(meas_deblender)
+%initializeNumPy(meas_simastrom)
 
-%include "lsst/base.h"                  // PTR(); should be in p_lsstSwig.i
+%import "lsst/afw/table/tableLib.i"
 
-%lsst_exceptions();
+%include "lsst/meas/simastrom/test.h"
 
-%import "lsst/afw/table/io/ioLib.i"
-%import "lsst/afw/image/imageLib.i"
-%import "lsst/afw/detection/detectionLib.i"
-
-%apply bool *OUTPUT { bool *patchedEdges };
-
-
-/******************************************************************************/
-// Local Variables: ***
-// eval: (setq indent-tabs-mode nil) ***
-// End: ***
