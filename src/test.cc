@@ -26,8 +26,20 @@ namespace meas {
 namespace simastrom {
     
     void test(
-        lsst::afw::table::SourceCatalog const &sourceCat
+        lsst::afw::table::SourceCatalog const &sourceCat,
+        lsst::daf::base::PropertySet const &metaData
     ) {
         std::cout << "Source catalog size : " << sourceCat.size() << std::endl;
+        double lat = metaData.get<double>("LATITUDE");
+        std::cout << "Observatory Latitude : " << lat << std::endl;
+        int count = 0;
+        for (afwTable::SourceCatalog::const_iterator sourcePtr = sourceCat.begin();
+            sourcePtr != sourceCat.end(); ++sourcePtr) {
+                if (count < 2) {
+                    double x = sourcePtr->getX();
+                    std::cout << "Gaussian centroid X : " << x  << std::endl;
+                }
+                count++;
+        }
     }
 }}}

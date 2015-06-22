@@ -19,6 +19,7 @@ Python interface to lsst::meas::simastrom classes
 #include "lsst/afw/cameraGeom.h"
 #include "lsst/afw/math.h"
 #include "lsst/afw/image.h"
+#include "lsst/daf/base/PropertySet.h"
 #include "lsst/meas/simastrom/test.h"
 %}
 

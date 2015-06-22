@@ -81,5 +81,11 @@ class SimAstromTask(pipeBase.CmdLineTask):
         for dataRef in ref :
             print dataRef.dataId
             src = dataRef.get("src", immediate=True)
+            calexp = dataRef.get("calexp", immediate=True)
+            wcs = calexp.getWcs()
+            md = dataRef.get("calexp_md", immediate=True)
+            print dir(md)
+            print md.get("LATITUDE")
+            print md
             print len(src)
-            result = test(src)
+            result = test(src, md)
