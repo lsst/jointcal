@@ -24,16 +24,17 @@ from __future__ import division, absolute_import
 import numpy
 
 import lsst.pex.config as pexConfig
-import lsst.afw.image as afwImage
 import lsst.coadd.utils as coaddUtils
 import lsst.pipe.base as pipeBase
+import lsst.afw.image as afwImage
+import lsst.afw.table as afwTable
 
 from lsst.afw.fits import FitsError
 from lsst.pipe.tasks.selectImages import WcsSelectImagesTask, SelectStruct
 from lsst.coadd.utils import CoaddDataIdContainer
 from lsst.pipe.tasks.getRepositoryData import DataRefListRunner
 
-from .simastromLib import test
+from .simastromLib import test, test2, simAstrom
 
 __all__ = ["SimAstromConfig", "SimAstromTask"]
 
@@ -78,14 +79,83 @@ class SimAstromTask(pipeBase.CmdLineTask):
     @pipeBase.timeMethod
     def run(self, ref):
         
+#        sourceCat = test2()
+        
+        srcList = []
+        metaList = []
+        wcsList = []
+        
         for dataRef in ref :
-            print dataRef.dataId
-            src = dataRef.get("src", immediate=True)
+            src = dataRef.get("src", immediate=False)
             calexp = dataRef.get("calexp", immediate=True)
             wcs = calexp.getWcs()
-            md = dataRef.get("calexp_md", immediate=True)
-            print dir(md)
-            print md.get("LATITUDE")
-            print md
-            print len(src)
-            result = test(src, md)
+            md = dataRef.get("calexp_md", immediate=False)
+            calib = afwImage.Calib(md)
+            
+            config = StarSelectorConfig()
+            ss = StarSelector(config)
+            newSrc = ss.select(src, calib)
+            print len(newSrc)
+            
+        # Should call a source selector here in order to send a list
+        # of reasonable star to the fitter.
+            srcList.append(newSrc)
+            
+            metaList.append(md)
+            wcsList.append(wcs)
+            
+        simA = simAstrom(srcList, metaList, wcsList)
+
+class StarSelectorConfig(pexConfig.Config):
+    
+    badFlags = pexConfig.ListField(
+        doc = "List of flags which cause a source to be rejected as bad",
+        dtype = str,
+        default = [ "base_PixelFlags_flag_saturated", 
+                    "base_PixelFlags_flag_cr",
+                    "base_PixelFlags_flag_interpolated",
+                    "base_PsfFlux_flag_edge", 
+                    "base_SdssCentroid_flag"],
+    )
+
+class StarSelector(object) :
+    
+    ConfigClass = StarSelectorConfig
+
+    def __init__(self, config):
+        """Construct a star selector
+        
+        @param[in] config: An instance of StarSelectorConfig
+        """
+        self.config = config
+    
+    def select(self, srcCat, calib):
+# Return a catalog containing only reasonnable stars
+
+        schema = srcCat.getSchema()
+        newCat = afwTable.SourceCatalog(schema)
+        for src in srcCat :
+            # Reject galaxies
+            if src.get("base_ClassificationExtendedness_value") > 0.5 :
+                continue
+            # Do not consider sources with bad flags
+            for f in self.config.badFlags :
+                rej = 0
+                if src.get(f) :
+                    rej = 1
+                    break
+            if rej == 1 :
+                continue
+            # Reject negative flux
+            flux = src.get('base_PsfFlux_flux')
+            if flux < 0 :
+                continue
+            # Reject object with magnitude > 19
+            if calib.getMagnitude(flux) > 19 :
+                continue
+                
+            newCat.append(src)
+            
+        print len(srcCat), len(newCat)
+        
+        return newCat

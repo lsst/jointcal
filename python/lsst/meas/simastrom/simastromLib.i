@@ -21,6 +21,8 @@ Python interface to lsst::meas::simastrom classes
 #include "lsst/afw/image.h"
 #include "lsst/daf/base/PropertySet.h"
 #include "lsst/meas/simastrom/test.h"
+#include "lsst/meas/simastrom/test2.h"
+#include "lsst/meas/simastrom/simAstrom.h"
 %}
 
 %include "lsst/p_lsstSwig.i"
@@ -28,5 +30,13 @@ Python interface to lsst::meas::simastrom classes
 
 %import "lsst/afw/table/tableLib.i"
 
+%shared_ptr(lsst::daf::base::PropertySet);
+
+%template(SourceList) std::vector<lsst::afw::table::SortedCatalogT< lsst::afw::table::SourceRecord> >;
+%template(WcsList) std::vector<boost::shared_ptr<lsst::afw::image::Wcs> >;
+%template(PropertySetList) std::vector<boost::shared_ptr<lsst::daf::base::PropertySet> >;
+
 %include "lsst/meas/simastrom/test.h"
+%include "lsst/meas/simastrom/test2.h"
+%include "lsst/meas/simastrom/simAstrom.h"
 
