@@ -1,0 +1,8 @@
+
+Add an accessor to -sipA and -sipB in TanWcs.h (in afw)
+
+Do A constructor for Frame from a Fits Header which returns the image size,
+  or cookup the Frame from NAXIS1 and NAXIS2
+
+Check that GtransfoPoly::fit still works with Eigen routines
+
