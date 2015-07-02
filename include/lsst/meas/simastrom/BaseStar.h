@@ -46,14 +46,14 @@ double flux;
 
   //! access stuff.
   double X() const { return x;}
-  //! .
+  //! 
   double Y() const { return y;}
 
-#ifdef WE_DO_NOT_NEED_IT
+#ifdef DO_WE_NEED_IT
   static BaseStar* read(fastifstream & rd, const char *format);
 
   void  read_it(fastifstream & rd, const char *format);
-#endif
+#endif /* DO_WE_NEED_IT */
 
   virtual void write(std::ostream &s = std::cout)const ;
   virtual void writen(std::ostream &s = std::cout)const ;
