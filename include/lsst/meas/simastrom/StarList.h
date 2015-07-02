@@ -10,7 +10,7 @@
 //#include "countedref.h"
 #include "lsst/meas/simastrom/Point.h"
 #include "lsst/meas/simastrom/CountedRef.h"
-//#include "globalval.h"
+#include "lsst/meas/simastrom/globalval.h"
 
 namespace lsst {
 namespace meas {
@@ -38,14 +38,14 @@ obtained using 'new'.  */
 
 
   template<class Star> class StarList : public std::list <CountedRef<Star> > {
-#ifdef DO_WE_NEED_IT
+//#ifdef DO_WE_NEED_IT
   GlobalVal glob;
-#endif
+//#endif
 
 public:
   typedef std::shared_ptr<Star> Element;
-  //  typedef typename std::list<Element>::const_iterator StarCIterator;
-  //  typedef typename std::list<Element>::iterator StarIterator;
+  typedef typename std::list<Element>::const_iterator StarCIterator;
+  typedef typename std::list<Element>::iterator StarIterator;
 
 
 /* constructors */
@@ -71,13 +71,13 @@ public:
   //! obvious meaning
   int read(const std::string &FileName);
 
-#ifdef DO_WE_NEED_IT
+//#ifdef DO_WE_NEED_IT
   //! enables to access global values (lines starting with '@' in ascii files)
   GlobalVal &GlobVal() { return glob;}
 
   //! enables to access global values (lines starting with '@' in ascii files)
   const GlobalVal &GlobVal() const { return glob;}
-#endif
+//#endif
 
   /* the previous one hides the following one ?! */
   //  void push_back(const Element& e) {std::list<Element>::push_back(e);}
@@ -179,7 +179,5 @@ template <class Star>  std::ostream & operator <<(std::ostream &stream, const St
 #endif 
 
 
-
-#endif /* STARLIST__H */
-
 }}}
+#endif /* STARLIST__H */

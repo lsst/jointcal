@@ -3,7 +3,7 @@
 #include <string.h> // strstr
 
 #include "lsst/meas/simastrom/BaseStar.h"
-//#include "lsst/meas/simastrom/StarList.h"
+#include "lsst/meas/simastrom/StarList.h"
 #include "lsst/pex/exceptions.h"
 
 namespace pexExcept = lsst::pex::exceptions;
@@ -125,6 +125,8 @@ const char *p= strstr(FormatLine, StarName);
 return atoi( p + strlen(StarName));
 }
 
+using namespace std;
+#include "lsst/meas/simastrom/StarList.cc"
 
   //Instanciate all routines from the template
 template class StarList<BaseStar>; /* to force instanciation */

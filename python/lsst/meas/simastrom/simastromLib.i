@@ -23,6 +23,12 @@ Python interface to lsst::meas::simastrom classes
 #include "lsst/meas/simastrom/test.h"
 #include "lsst/meas/simastrom/test2.h"
 #include "lsst/meas/simastrom/simAstrom.h"
+#include "lsst/meas/simastrom/BaseStar.h"
+#include "lsst/meas/simastrom/CountedRef.h"
+#include "lsst/meas/simastrom/FatPoint.h"
+#include "lsst/meas/simastrom/Gtransfo.h"
+#include "lsst/meas/simastrom/Point.h"
+#include "lsst/meas/simastrom/StarMatch.h"
 %}
 
 %include "lsst/p_lsstSwig.i"
