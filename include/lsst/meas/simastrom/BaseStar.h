@@ -12,6 +12,7 @@
 
 #include "lsst/meas/simastrom/FatPoint.h"
 #include "lsst/meas/simastrom/CountedRef.h"
+#include "lsst/meas/simastrom/StarList.h"
 
 namespace lsst {
 namespace meas {
@@ -49,11 +50,9 @@ double flux;
   //! 
   double Y() const { return y;}
 
-#ifdef DO_WE_NEED_IT
-  static BaseStar* read(fastifstream & rd, const char *format);
+  static BaseStar* read(std::istream & rd, const char *format);
 
-  void  read_it(fastifstream & rd, const char *format);
-#endif /* DO_WE_NEED_IT */
+  void  read_it(std::istream & rd, const char *format);
 
   virtual void write(std::ostream &s = std::cout)const ;
   virtual void writen(std::ostream &s = std::cout)const ;
@@ -93,27 +92,18 @@ bool DecreasingFlux(const BaseStar *S1, const BaseStar *S2);
 
 
 
-#ifdef TO_BE_FIXED
 int DecodeFormat(const char *FormatLine, const char *StarName);
 
 
 /* what concerns the BaseStarList's : */
-#include "starlist.h"
+
 
 typedef StarList<BaseStar> BaseStarList;
 
-
-
 typedef BaseStarList::const_iterator BaseStarCIterator;
-typedef BaseStarList::iterator BaseStarIterator;
-typedef CountedRef<BaseStar> BaseStarRef;
+ typedef BaseStarList::iterator BaseStarIterator;
+ typedef CountedRef<BaseStar> BaseStarRef;
 
-#ifdef __GCCXML__
-template class CountedRef<BaseStar>;
-template class std::list<BaseStar*>;
-// template class std::list<CountedRef<BaseStar> >;
-#endif
-#endif /* TO_BE_FIXED */
 
 }}}
 

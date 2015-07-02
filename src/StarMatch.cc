@@ -94,7 +94,6 @@ static double *get_dist2_array(const StarMatchList &L, const Gtransfo &T)
 }
 #endif
 
-
 int StarMatchList::Dof(const Gtransfo* T) const
 {
   if (!T) T=transfo;
@@ -226,20 +225,20 @@ for (si = begin(); si != end() && count < NKeep; ++count, ++si);
 erase(si, end());
 }
 
-#ifdef DO_WE_NEED_THAT
+
 void StarMatchList::write_wnoheader(std::ostream & pr, 
     const Gtransfo* Transfo) const
 {
 
   if ( empty() )
     {
-      cerr << " Can't write empty StarMatchList " << endl ;
+      std::cerr << " Can't write an empty StarMatchList " << std::endl ;
       return ;
     }
 
-  ios::fmtflags  old_flags =  pr.flags(); 
-  pr  << resetiosflags(ios::scientific) ;
-  pr  << setiosflags(ios::fixed) ;
+  std::ios::fmtflags  old_flags =  pr.flags(); 
+  pr  << resetiosflags(std::ios::scientific) ;
+  pr  << setiosflags(std::ios::fixed) ;
   int oldprec = pr.precision();
   pr<< std::setprecision(10);
   for (auto it= begin(); it!= end(); it++ )
@@ -269,18 +268,18 @@ void StarMatchList::write_wnoheader(std::ostream & pr,
 	pr << it->Chi2(*Transfo) << ' ';
       else 
 	pr << it->Chi2(GtransfoIdentity()) << ' ';
-      pr << endl ;
+      pr << std::endl ;
     }
   pr.flags(old_flags);
   pr << std::setprecision(oldprec);
 }
 
 
-void StarMatchList::write(ostream &pr, const Gtransfo *tf) const
+void StarMatchList::write(std::ostream &pr, const Gtransfo *tf) const
 {
   if ( empty() )
     {
-      cerr << " Can't write empty StarMatchList " << endl ;
+      std::cerr << " Can't write empty StarMatchList " << std::endl ;
       return ;
     }
 
@@ -288,31 +287,31 @@ void StarMatchList::write(ostream &pr, const Gtransfo *tf) const
   (starm.s1)->WriteHeader_(pr, "1");
   if (tf)
     {
-      pr << "# x1tf: transformed x1 coordinate "  << endl ; 
-      pr << "# y1tf: transformed y1 coordinate "  << endl ; 
-      pr << "# sx1tf: transformed sx1 "  << endl ; 
-      pr << "# sy1tf: transformed sy1 "  << endl ; 
-      pr << "# rxy1tf: transformed rhoxy1 "  << endl ; 
+      pr << "# x1tf: transformed x1 coordinate "  << std::endl ; 
+      pr << "# y1tf: transformed y1 coordinate "  << std::endl ; 
+      pr << "# sx1tf: transformed sx1 "  << std::endl ; 
+      pr << "# sy1tf: transformed sy1 "  << std::endl ; 
+      pr << "# rxy1tf: transformed rhoxy1 "  << std::endl ; 
     }
   (starm.s2)->WriteHeader_(pr, "2");
   pr << "# dx : diff in x" << std::endl;
   pr << "# dy : diff in y" << std::endl;
-  pr << "# dass : association distance"  << endl ; 
-  pr << "# chi2ass : assoc chi2"  << endl ; 
-  pr << "# end " << endl ;
+  pr << "# dass : association distance"  << std::endl ; 
+  pr << "# chi2ass : assoc chi2"  << std::endl ; 
+  pr << "# end " << std::endl ;
 
   write_wnoheader(pr, tf);
 }
 
 void
-StarMatchList::write(const string &filename, const Gtransfo *tf) const
+StarMatchList::write(const std::string &filename, const Gtransfo *tf) const
 {
-  ofstream pr(filename.c_str()) ;
+  std::ofstream pr(filename.c_str()) ;
   write(pr, tf);
   pr.close();
 }
 
-#endif /* DO_WE_NEED_THAT */
+
 
 void StarMatchList::Swap()
 {
