@@ -3,7 +3,7 @@
 #include <string.h> // strstr
 
 #include "lsst/meas/simastrom/BaseStar.h"
-//#include "lsst/meas/simastrom/StarList.h"
+#include "lsst/meas/simastrom/StarList.cc"
 #include "lsst/pex/exceptions.h"
 
 namespace pexExcept = lsst::pex::exceptions;

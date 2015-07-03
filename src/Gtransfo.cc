@@ -1303,6 +1303,16 @@ GtransfoLin::GtransfoLin(const double Dx, const double Dy ,
   a22() = A22;
 }
 
+GtransfoLin::GtransfoLin(const GtransfoPoly &P) : GtransfoPoly(1)
+{
+  if (P.Degree() !=  1) 
+    {
+      cout << " Trying to build a GtransfoLin from a higher order transfo. aborting " << endl;
+      abort(); // should throw
+    }
+  (GtransfoPoly &) (*this) = P;
+}
+
 
 GtransfoLin GtransfoLin::operator*(const  GtransfoLin &Right) const
 {

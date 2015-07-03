@@ -10,7 +10,7 @@
 //#include "countedref.h"
 #include "lsst/meas/simastrom/Point.h"
 #include "lsst/meas/simastrom/CountedRef.h"
-//#include "globalval.h"
+#include "lsst/meas/simastrom/GlobalVal.h"
 
 namespace lsst {
 namespace meas {
@@ -38,14 +38,12 @@ obtained using 'new'.  */
 
 
   template<class Star> class StarList : public std::list <CountedRef<Star> > {
-#ifdef DO_WE_NEED_IT
   GlobalVal glob;
-#endif
 
 public:
   typedef std::shared_ptr<Star> Element;
-  //  typedef typename std::list<Element>::const_iterator StarCIterator;
-  //  typedef typename std::list<Element>::iterator StarIterator;
+  typedef typename std::list<Element>::const_iterator StarCIterator;
+  typedef typename std::list<Element>::iterator StarIterator;
 
 
 /* constructors */
@@ -71,13 +69,11 @@ public:
   //! obvious meaning
   int read(const std::string &FileName);
 
-#ifdef DO_WE_NEED_IT
   //! enables to access global values (lines starting with '@' in ascii files)
   GlobalVal &GlobVal() { return glob;}
 
   //! enables to access global values (lines starting with '@' in ascii files)
   const GlobalVal &GlobVal() const { return glob;}
-#endif
 
   /* the previous one hides the following one ?! */
   //  void push_back(const Element& e) {std::list<Element>::push_back(e);}
@@ -121,40 +117,6 @@ public:
   template<class Operator> void ApplyTransfo(const Operator &Op) 
   {for (auto p = this->begin(); p != this->end(); ++p) Op.TransformStar(*(*p));}
 
-  //! returns the closest Star from a given location. 
-  Star* FindClosest(double X, double Y) const;
-
-  //! same as above. Can be used with any of our star-like stuff.
-  Star* FindClosest(const Point &P) const { return FindClosest(P.x, P.y);};
-
-  //! returns the closest Star from a given location. 
-  //! and removes it from the given std::list.
-  Star* FindAndRemoveClosest(double X, double Y);
-
-#ifndef __CINT__
-  //! true if location has a nearby star in a ring between mindist and maxdist
-  //! if minflux>0, then the condition flux > minflux is required.
-  bool HasCloseNeighbor(double X, double Y, double maxdist, double mindist=0.1,double minflux=-1) const;
-
-  //! same as above. Can be used with any of our star-like stuff.
-  bool HasCloseNeighbor(const Point &P, double maxdist, double mindist=0.1) const
-   {return HasCloseNeighbor(P.x, P.y, maxdist, mindist);}
-
-  //! nearby star to a star but not itself
-  Star* ClosestNeighbor(double X, double Y, double mindist=0.1) const;
-
-  //! same as above. Can be used with any of our star-like stuff.
-  Star* ClosestNeighbor(const Point &P, double mindist=0.1) const
-   {return ClosestNeighbor(P.x, P.y, mindist);}
-
-  int NumberOfNeighbors(const double &X, const double &Y, const double &distmax) const;
-  int AllNeighbors(StarList &NeighborList, const double &X, const double &Y, const double &distmax) const;
-  int AllNeighbors(StarList &NeighborList, const Point &Pt, const double &distmax) const
-  {return AllNeighbors(NeighborList, Pt.x, Pt.y, distmax);}
-  int NumberOfNeighbors(const Point &Pt, const double &distmax) const
-  {return NumberOfNeighbors(Pt.x, Pt.y, distmax);}
-#endif
-
 
 protected :
   int ascii_read(const std::string &FileName);
@@ -178,8 +140,8 @@ template <class Star>  std::ostream & operator <<(std::ostream &stream, const St
     {List.dump(stream); return stream; }
 #endif 
 
-
+}}}
 
 #endif /* STARLIST__H */
 
-}}}
+
