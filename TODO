@@ -6,3 +6,14 @@ Do A constructor for Frame from a Fits Header which returns the image size,
 
 Check that GtransfoPoly::fit still works with Eigen routines
 
+
+Write a real constructor for CcdImage that takes the stack inputs.
+CatalogLoader should be replaced by a real Catalog.
+Since MeasuredStars have a pointer on their CcdImage, this requires to assign
+those in the CcdImage constructor.
+The CcdImage constructor will look like:
+CcdImage(const Fitsmetadata, const TanWcs*, MeasuredStarList&, 
+	 const Point &CommonTangentPoint);
+
+Replace Preferences by the stack mechanism to transfer
+constants from python to C++.
