@@ -266,6 +266,9 @@ public :
   //! Composition (internal stuff in quadruple precision)
   GtransfoPoly operator*(const GtransfoPoly &Right) const;
 
+  //! Addition 
+  GtransfoPoly operator+(const GtransfoPoly &Right) const;
+
   Gtransfo *ReduceCompo(const Gtransfo *Right) const;
 
   Gtransfo *Clone() const {return new GtransfoPoly(*this);}

@@ -1172,6 +1172,7 @@ static PolyXY Product(const PolyXY &P1, const PolyXY &P2)
 	  result.Coeff(i1+i2,j1+j2) += P1.Coeff(i1,j1)*P2.Coeff(i2,j2);
   return result;
 }
+
 	
 /* Powers[k](x,y) = P(x,y)**k, 0 <= k <= MaxP */ 
 static void ComputePowers(const PolyXY &P, const unsigned MaxP, vector<PolyXY> &Powers)
@@ -1222,6 +1223,23 @@ GtransfoPoly  GtransfoPoly::operator*(const GtransfoPoly &Right) const
 	result.Coeff(px,py,1) = ry.Coeff(px,py);
       }
   return result;
+}
+
+
+GtransfoPoly GtransfoPoly::operator+(const GtransfoPoly &Right) const
+{
+  if (deg >= Right.deg)
+    {
+      GtransfoPoly res(*this);
+      for (unsigned i=0; i<=Right.deg; ++i)
+	for (unsigned j = 0; j<=Right.deg-i; ++j)
+	  {
+	    res.Coeff(i,j,0) += Right.Coeff(i,j,0);
+	    res.Coeff(i,j,1) += Right.Coeff(i,j,1);
+	  }
+      return res;
+    }
+  else return (Right+(*this));
 }
 
 
