@@ -17,8 +17,11 @@
 #include "lsst/utils/ieee.h"
 #include "lsst/pex/exceptions.h"
 #include "lsst/afw/image/Wcs.h"
+#include "lsst/afw/image/TanWcs.h"
 #include "lsst/afw/geom/Angle.h"
 #include "lsst/meas/simastrom/simAstrom.h"
+
+#include "Eigen/Core"
 
 namespace pexExcept = lsst::pex::exceptions;
 namespace afwTable = lsst::afw::table;
@@ -41,6 +44,15 @@ namespace simastrom {
     std::cout << _metaList[0]->get<double>("LATITUDE") << std::endl;
     std::cout << _sourceList[1][10].getRa() << std::endl;
     std::cout << _wcsList[1]->getPixelOrigin() << std::endl;
+    
+    // Check how to get SIP coefficients from WCS
+    lsst::daf::base::PropertyList::Ptr wcsMeta = _wcsList[1]->getFitsMetadata();
+//    std::cout << wcsMeta->getOrderedNames() << std::endl;
+    std::cout << wcsMeta->get<int>("A_ORDER") << std::endl;
+    
+    Eigen::MatrixXd sipA;
+    lsst:afw::image::TanWcs::decodeSipHeader(*wcsMeta, "A", sipA);
+    std::cout << sipA << std::endl;
 }    
     
 }}}

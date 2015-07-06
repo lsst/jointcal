@@ -544,6 +544,8 @@ public:
 //! Implements the (forward) SIP distorsion scheme
 class TanSipPix2RaDec : public BaseTanWcs
 {
+public:
+
     //! Pix2Tan describes the transfo from pix to tangent plane (in degrees). TangentPoint in degrees. Corrections are applied before Lin.
   TanSipPix2RaDec(const GtransfoLin &Pix2Tan, const Point &TangentPoint, 
 		  const GtransfoPoly* Corrections = NULL);
