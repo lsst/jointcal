@@ -1,10 +1,17 @@
 #include <algorithm>
 
+
 #include "Eigen/Core"
 #include "lsst/meas/simastrom/Gtransfo.h"
 #include "lsst/afw/image/ImageUtils.h"
 #include "lsst/afw/geom/Point.h"
 #include "lsst/afw/image/TanWcs.h"
+
+/* This code cannot be compiled yet at least because:
+  it refers to TanWcs::getSipA() and getSipB() which do not exist yet.
+  Needless to say that it was not tested at all.
+*/
+
 
 namespace simAstrom = lsst::meas::simastrom; 
 
@@ -24,7 +31,7 @@ static const int fitsToLsstPixels = -1;
 
 simAstrom::TanSipPix2RaDec ConvertTanWcs(const lsst::afw::image::TanWcs* wcs)
 {
-  std::unique_ptr<simAstrom::GtransfoPoly> sipCorr(0);
+  std::unique_ptr<simAstrom::GtransfoPoly> sipCorr;
 
   /* TanWcs::pixelToSkyImpl adds  - PixelZeroPos + lsstToFitsPixels
      to the input coordinates. */
@@ -38,8 +45,8 @@ simAstrom::TanSipPix2RaDec ConvertTanWcs(const lsst::afw::image::TanWcs* wcs)
 
   if (wcs->hasDistortion())
     {
-      const Eigen::MatrixXd& sipA = wcs->GetSipA();
-      const Eigen::MatrixXd& sipB = wcs->GetSipB();
+      const Eigen::MatrixXd& sipA = wcs->getSipA();
+      const Eigen::MatrixXd& sipB = wcs->getSipB();
   
       int sipOrder = std::max(max_order(sipA), max_order(sipB));
       simAstrom::GtransfoPoly sipPoly(sipOrder);
@@ -95,7 +102,7 @@ simAstrom::TanSipPix2RaDec ConvertTanWcs(const lsst::afw::image::TanWcs* wcs)
 
   simAstrom::Point tangentPoint(tp[0], tp[1]);
 
-  return simAstrom::TanSipPix2RaDec(linPart, tangentPoint, sipCorr->get());
+  return simAstrom::TanSipPix2RaDec(linPart, tangentPoint, sipCorr.get());
 }
 
   
