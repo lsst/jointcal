@@ -5,6 +5,7 @@
 #include <istream>
 #include <string>
 #include <cstdio>
+#include <string.h> // for strstr
 
 
 #include "lsst/meas/simastrom/StarList.h"
