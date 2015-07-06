@@ -77,10 +77,7 @@ double flux;
   virtual std::string WriteHeader_(std::ostream & stream = std::cout, const char*i = NULL) const ;
 
   virtual void WriteHeader(std::ostream & stream = std::cout) const;
-#ifdef USE_ROOT
 
-#endif
-  //  ClassDef(BaseStar,1) // no ";" ....
 };
 
 //! Number of values read for this format
