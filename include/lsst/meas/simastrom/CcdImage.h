@@ -5,6 +5,7 @@
 #include <list>
 #include <vector>
 
+#include "lsst/afw/table/Source.h"
 #include "lsst/meas/simastrom/MeasuredStar.h"
 #include "lsst/meas/simastrom/Frame.h"
 
@@ -82,6 +83,7 @@ class CcdImage : public RefCount
 
  public:
 
+  CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &Ri, const Point &CommonTangentPoint);
 #ifdef TO_BE_FIXED 
   //!
   CcdImage(const ReducedImage &Ri, const Point &CommonTangentPoint, const CatalogLoader * LoadIt);

@@ -20,6 +20,8 @@
 #include "lsst/afw/image/TanWcs.h"
 #include "lsst/afw/geom/Angle.h"
 #include "lsst/meas/simastrom/simAstrom.h"
+#include "lsst/meas/simastrom/CcdImage.h"
+#include "lsst/meas/simastrom/Point.h"
 
 #include "Eigen/Core"
 
@@ -53,6 +55,9 @@ namespace simastrom {
     Eigen::MatrixXd sipA;
     lsst:afw::image::TanWcs::decodeSipHeader(*wcsMeta, "A", sipA);
     std::cout << sipA << std::endl;
+    
+    Point where(100.,200.);
+    CcdImage(_sourceList[1], where);
 }    
     
 }}}
