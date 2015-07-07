@@ -1,34 +1,43 @@
+#define BOOST_TEST_DYN_LINK
+#define BOOST_TEST_MODULE testlsf1d
+ 
+//The boost unit test header
+#include "boost/test/unit_test.hpp"
+
 #include "lsst/meas/simastrom/Gtransfo.h"
 #include "lsst/afw/image/TanWcs.h"
 #include "lsst/afw/image/Utils.h"
 #include "lsst/afw/fits.h"
 #include "lsst/daf/base.h" 
+
 namespace simAstrom = lsst::meas::simastrom; 
 namespace afwImg = lsst::afw::image;
 
+/* Test TanSipPix2RaDec against pixelToSky */
+
 simAstrom::TanSipPix2RaDec ConvertTanWcs(const lsst::afw::image::TanWcs* wcs);
 
-int main(int nargs, char **args)
+BOOST_AUTO_TEST_CASE(test_wcs)
 {
-  if (nargs<2)
-    {
-      std::cout << "need a file name " << std::endl;
-      exit(1);
-    }
-
-  std::string fileName = args[1];
+    
+  std::string fileName = "tests/header_only.fits";
 
   lsst::afw::fits::Fits file(fileName, "r",0);
   PTR(lsst::daf::base::PropertySet) propSet = afwImg::readMetadata(fileName);
   PTR(afwImg::Wcs) wcs = afwImg::makeWcs(propSet);
   const afwImg::TanWcs* tanWcs = dynamic_cast<const afwImg::TanWcs*>(wcs.get());
+  
   simAstrom::TanSipPix2RaDec gtransfoWcs = ConvertTanWcs(tanWcs);
   simAstrom::Point where(100.,200.);
-  std::cout << std::setprecision(12) << "Poloka: " << gtransfoWcs.apply(where)<< std::endl;
+  simAstrom::Point outPol = gtransfoWcs.apply(where);
+  std::cout << std::setprecision(12) << "Poloka : " << outPol.x << ' ' << outPol.y << std::endl;
+  
   lsst::afw::geom::Point2D whereSame(100.,200.);
   PTR(lsst::afw::coord::Coord) coord = wcs->pixelToSky(whereSame);
   lsst::afw::geom::Point2D outDeg = coord->getPosition(lsst::afw::geom::degrees);
   std::cout << "Stack : " << outDeg[0] << ' ' << outDeg[1] << std::endl;
-  return 0;
+  
+  BOOST_CHECK_CLOSE(outPol.x, outDeg[0], .000001);
+  BOOST_CHECK_CLOSE(outPol.y, outDeg[1], .000001);
 
 }
