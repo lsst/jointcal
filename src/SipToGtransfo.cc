@@ -46,9 +46,9 @@ simAstrom::TanSipPix2RaDec ConvertTanWcs(const lsst::afw::image::TanWcs* wcs)
         {
 	  for (int j=0; j<=sipOrder; ++j)
 	    {
-	      if (i<sipA.cols() && j<sipA.rows()) 
+	      if (i<sipA.cols() && j<sipA.rows()&& (i+j)<= sipOrder) 
 	        sipPoly.Coeff(i,j,0) = sipA(i,j);
-	      if (i<sipB.cols() && j<sipB.rows()) 
+	      if (i<sipB.cols() && j<sipB.rows() && (i+j)<= sipOrder) 
 	        sipPoly.Coeff(i,j,1) = sipB(i,j);
 	    }
 	}
@@ -82,8 +82,8 @@ simAstrom::TanSipPix2RaDec ConvertTanWcs(const lsst::afw::image::TanWcs* wcs)
   cdTrans.Coeff(0,1,0) = cdMat(0,1); // CD1_2 
   cdTrans.Coeff(1,0,1) = cdMat(1,0); // CD2_1
   cdTrans.Coeff(0,1,1) = cdMat(1,1); // CD2_1
-  simAstrom::GtransfoLinShift crpixShift(offset_crpix[0] -  fitsToLsstPixels,
-					 offset_crpix[1] -  fitsToLsstPixels); 
+  simAstrom::GtransfoLinShift crpixShift(-offset_crpix[0] +  fitsToLsstPixels,
+					 -offset_crpix[1] +  fitsToLsstPixels); 
 
   // CD's apply to CRPIX-shifted coordinate
   simAstrom::GtransfoLin linPart = cdTrans * crpixShift;
@@ -92,10 +92,15 @@ simAstrom::TanSipPix2RaDec ConvertTanWcs(const lsst::afw::image::TanWcs* wcs)
     linPart = linPart* firstShift;
 
   // tangent point : no idea if this works....
-  lsst::afw::coord::Coord tp = wcs->getSkyOrigin()->getPosition(lsst::afw::geom::degrees);
+  //  lsst::afw::coord::Coord tp = wcs->getSkyOrigin()->getPosition(lsst::afw::geom::degrees);
+  // the above line returns radians ?!
+  double ra = wcsMeta->get<double>("CRVAL1");
+  double dec = wcsMeta->get<double>("CRVAL2");
+  
 
 //  lsst::afw::geom::Point tangentPoint(tp[0], tp[1]);
-  lsst::meas::simastrom::Point tangentPoint(tp[0], tp[1]);
+    //lsst::meas::simastrom::Point tangentPoint(tp[0], tp[1]);
+  lsst::meas::simastrom::Point tangentPoint(ra,dec);
 
   // return simAstrom::TanSipPix2RaDec(linPart, tangentPoint, sipCorr->get());
   return simAstrom::TanSipPix2RaDec(linPart, tangentPoint, (const simAstrom::GtransfoPoly*) sipCorr.get());
