@@ -1752,7 +1752,7 @@ void TanSipPix2RaDec::Pix2TP(const double &Xin, const double &Yin,
 			  double &Xtp, double & Ytp) const
 {
   if (corr) corr->apply(Xin, Yin,Xtp,Ytp); // still in degrees.
-  linPix2Tan.apply(Xtp,Xtp,Xtp,Ytp); // Xtp, Ytp in degrees
+  linPix2Tan.apply(Xtp,Ytp,Xtp,Ytp); // Xtp, Ytp in degrees
 }
 
 
