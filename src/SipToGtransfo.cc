@@ -1,14 +1,16 @@
 #include <algorithm>
 
 #include "Eigen/Core"
-#include "lsst/meas/simastrom/Gtransfo.h"
+#include "lsst/meas/simastrom/SipToGtransfo.h"
 #include "lsst/afw/image/ImageUtils.h"
-//#include "lsst/afw/geom/Point.h"
 #include "lsst/meas/simastrom/Point.h"
-#include "lsst/afw/image/TanWcs.h"
 #include "lsst/daf/base/PropertySet.h"
 
 namespace simAstrom = lsst::meas::simastrom; 
+
+namespace lsst {
+namespace meas {
+namespace simastrom {
 
 static const int lsstToFitsPixels = +1;
 static const int fitsToLsstPixels = -1;
@@ -18,7 +20,6 @@ typedef boost::shared_ptr<simAstrom::GtransfoPoly> GtPoly_Ptr;
 
 simAstrom::TanSipPix2RaDec ConvertTanWcs(const lsst::afw::image::TanWcs* wcs)
 {
-  //std::unique_ptr<simAstrom::GtransfoPoly> sipCorr(0);
   GtPoly_Ptr sipCorr(new simAstrom::GtransfoPoly(0));
 
   /* TanWcs::pixelToSkyImpl adds  - PixelZeroPos + lsstToFitsPixels
@@ -105,6 +106,8 @@ simAstrom::TanSipPix2RaDec ConvertTanWcs(const lsst::afw::image::TanWcs* wcs)
   // return simAstrom::TanSipPix2RaDec(linPart, tangentPoint, sipCorr->get());
   return simAstrom::TanSipPix2RaDec(linPart, tangentPoint, (const simAstrom::GtransfoPoly*) sipCorr.get());
 }
+
+}}} 
 
   
    

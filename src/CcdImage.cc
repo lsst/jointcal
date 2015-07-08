@@ -2,40 +2,48 @@
 #include <string>
 
 #include "lsst/meas/simastrom/CcdImage.h"
-
+#include "lsst/meas/simastrom/SipToGtransfo.h"
+#include "lsst/afw/image/Image.h"
 #include "lsst/meas/simastrom/Gtransfo.h"
 #include "lsst/meas/simastrom/Point.h"
 #include "lsst/pex/exceptions.h"
 
+namespace simAstrom = lsst::meas::simastrom;
+namespace afwImg = lsst::afw::image;
 
 namespace lsst {
 namespace meas {
 namespace simastrom {
 
 CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &Ri,
-            const Point &CommonTangentPoint)
-{
-    std::cout << Ri[10].getRa() << std::endl;
-}
+            const Point &CommonTangentPoint,
+            const PTR(lsst::afw::image::Wcs) wcs,
+            const PTR(lsst::daf::base::PropertySet) meta,
+            const lsst::afw::geom::Box2I &bbox ) :
             
-
-#ifdef TO_BE_FIXED 
-  riName(Ri.Name()), riDir(Ri.Dir()), index(-1), expindex(-1),
-  commonTangentPoint(CommonTangentPoint)
+    index(-1), expindex(-1),
+    commonTangentPoint(CommonTangentPoint)
+  
+  
 {
+      // Just checking that we get something sensible
+    std::cout << Ri[10].getRa() << std::endl;
+    std::cout << wcs->getPixelOrigin() << std::endl;
+    std::cout << meta->get<double>("LATITUDE") << std::endl;
+    std::cout << bbox << std::endl;
+    
   // needed transfos
-  FitsHeader head(Ri.FitsName());
+  // FitsHeader head(Ri.FitsName());
+
+    Point lowerLeft(bbox.getMinX(), bbox.getMinY());
+    Point upperRight(bbox.getMaxX(), bbox.getMaxY());
+    imageFrame = Frame(lowerLeft, upperRight);
+    
+    readWcs = simAstrom::ConvertTanWcs(wcs);
   
-  if( Preferences().requireAccurateWCS && 
-      ! CheckWCSIsAccurate(head) ) 
-    {
-      cout << "[CcdImage::CcdImage] no accurate WCS (as required in the datacards)" << endl;
-      cout << "           --> filename=" << head.FileName() << endl;
-      throw GastroException("ERROR: [CcdImage::CcdImage] no accurate WCS (as required in the datacards) for file "+head.FileName() );
-      //      assert(false);
-    }
+}
   
-  imageFrame = Frame(head);
+#ifdef TO_BE_FIXED   
   readWcs = NULL;
   if (!WCSFromHeader(head,readWcs))
     {

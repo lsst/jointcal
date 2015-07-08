@@ -35,17 +35,20 @@ namespace simastrom {
     simAstrom::simAstrom(
         std::vector<lsst::afw::table::SortedCatalogT< lsst::afw::table::SourceRecord> > const sourceList,
         std::vector<PTR(lsst::daf::base::PropertySet)> const metaList,
-        std::vector<PTR(lsst::afw::image::Wcs)> const wcsList
+        std::vector<PTR(lsst::afw::image::Wcs)> const wcsList,
+        std::vector<lsst::afw::geom::Box2I> const bboxList
     ):
         _sourceList(sourceList),
         _metaList(metaList),
-        _wcsList(wcsList)
+        _wcsList(wcsList),
+        _bboxList(bboxList)
 {
     std::cout << "simAstrom constructor invoked " << std::endl;
     std::cout << "Vectors contain : " << _sourceList.size() << " elements" << std::endl;
     std::cout << _metaList[0]->get<double>("LATITUDE") << std::endl;
     std::cout << _sourceList[1][10].getRa() << std::endl;
     std::cout << _wcsList[1]->getPixelOrigin() << std::endl;
+    std::cout << _bboxList[1] << std::endl;
     
     // Check how to get SIP coefficients from WCS
     lsst::daf::base::PropertyList::Ptr wcsMeta = _wcsList[1]->getFitsMetadata();
@@ -57,7 +60,7 @@ namespace simastrom {
     std::cout << sipA << std::endl;
     
     Point where(100.,200.);
-    CcdImage(_sourceList[1], where);
+    CcdImage(_sourceList[1], where, _wcsList[1], _metaList[1], _bboxList[1]);
 }    
     
 }}}

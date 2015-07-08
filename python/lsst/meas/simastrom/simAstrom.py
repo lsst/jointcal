@@ -84,11 +84,13 @@ class SimAstromTask(pipeBase.CmdLineTask):
         srcList = []
         metaList = []
         wcsList = []
+        bboxList = []
         
         for dataRef in ref :
             src = dataRef.get("src", immediate=False)
             calexp = dataRef.get("calexp", immediate=True)
             wcs = calexp.getWcs()
+            bbox = calexp.getBBox()
             md = dataRef.get("calexp_md", immediate=False)
             calib = afwImage.Calib(md)
             
@@ -103,8 +105,9 @@ class SimAstromTask(pipeBase.CmdLineTask):
             
             metaList.append(md)
             wcsList.append(wcs)
+            bboxList.append(bbox)
             
-        simA = simAstrom(srcList, metaList, wcsList)
+        simA = simAstrom(srcList, metaList, wcsList, bboxList)
 
 class StarSelectorConfig(pexConfig.Config):
     

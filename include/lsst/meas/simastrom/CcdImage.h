@@ -6,6 +6,9 @@
 #include <vector>
 
 #include "lsst/afw/table/Source.h"
+#include "lsst/afw/image/Wcs.h"
+#include "lsst/daf/base/PropertySet.h"
+#include "lsst/afw/geom/Box.h"
 #include "lsst/meas/simastrom/MeasuredStar.h"
 #include "lsst/meas/simastrom/Frame.h"
 
@@ -83,7 +86,10 @@ class CcdImage : public RefCount
 
  public:
 
-  CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &Ri, const Point &CommonTangentPoint);
+  CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &Ri, 
+    const Point &CommonTangentPoint, const PTR(lsst::afw::image::Wcs) wcs, const PTR(lsst::daf::base::PropertySet) meta,
+    const lsst::afw::geom::Box2I &bbox );
+    
 #ifdef TO_BE_FIXED 
   //!
   CcdImage(const ReducedImage &Ri, const Point &CommonTangentPoint, const CatalogLoader * LoadIt);
