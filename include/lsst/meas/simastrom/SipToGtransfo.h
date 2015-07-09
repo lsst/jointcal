@@ -11,7 +11,7 @@ namespace meas {
 namespace simastrom {
 
 
-TanSipPix2RaDec ConvertTanWcs(const lsst::afw::image::TanWcs* wcs);
+TanSipPix2RaDec ConvertTanWcs(const boost::shared_ptr<lsst::afw::image::TanWcs>  wcs);
     
 }}} // end of namespaces
 

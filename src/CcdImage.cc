@@ -7,6 +7,7 @@
 #include "lsst/meas/simastrom/Gtransfo.h"
 #include "lsst/meas/simastrom/Point.h"
 #include "lsst/pex/exceptions.h"
+#include "lsst/afw/geom/Angle.h"
 
 namespace simAstrom = lsst::meas::simastrom;
 namespace afwImg = lsst::afw::image;
@@ -14,12 +15,38 @@ namespace afwImg = lsst::afw::image;
 namespace lsst {
 namespace meas {
 namespace simastrom {
+    
+double RaStringToDeg(const string RaString)
+{
+int hours, minutes; double seconds;
+if (sscanf(RaString.c_str(),"%d:%d:%lf", &hours, &minutes, &seconds) == 3)
+  {
+    return 15.*( double(hours) + double(minutes)/60. + seconds/3600.);
+  }
+}
+    
+static int getBandIndex(std::string const& band)
+{
+  if(band == "u") return 0;
+  if(band == "g") return 1;
+  if(band == "r") return 2;
+  if(band == "i") return 3;
+  if(band == "z") return 4;
+
+  if(band == "U") return 5;
+  if(band == "B") return 6;
+  if(band == "V") return 7;
+  if(band == "R") return 8;
+  if(band == "I") return 9;
+  return -1;
+}
 
 CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &Ri,
             const Point &CommonTangentPoint,
-            const PTR(lsst::afw::image::Wcs) wcs,
+            const PTR(lsst::afw::image::TanWcs) wcs,
             const PTR(lsst::daf::base::PropertySet) meta,
-            const lsst::afw::geom::Box2I &bbox ) :
+            const lsst::afw::geom::Box2I &bbox,
+            const std::string &filter ) :
             
     index(-1), expindex(-1),
     commonTangentPoint(CommonTangentPoint)
@@ -31,6 +58,7 @@ CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceReco
     std::cout << wcs->getPixelOrigin() << std::endl;
     std::cout << meta->get<double>("LATITUDE") << std::endl;
     std::cout << bbox << std::endl;
+    std::cout << filter << std::endl;
     
   // needed transfos
   // FitsHeader head(Ri.FitsName());
@@ -39,31 +67,28 @@ CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceReco
     Point upperRight(bbox.getMaxX(), bbox.getMaxY());
     imageFrame = Frame(lowerLeft, upperRight);
     
-    readWcs = simAstrom::ConvertTanWcs(wcs);
+    simAstrom::TanSipPix2RaDec tt = simAstrom::ConvertTanWcs(wcs);
+    readWcs = &tt;
   
+    inverseReadWcs = readWcs->InverseTransfo(0.01, imageFrame);
+    
+    band = filter;
+    bandIndex = getBandIndex(band);
+    
+    // In the following we read informations directly from the fits header. This will have to be modified in order to be
+    // instrument independent
+    
+    airMass = meta->get<double>("AIRMASS");
+    jd = meta->get<double>("MJD-OBS");  // Julian date
+    expTime = meta->get<double>("EXPTIME");
+    double latitude = lsst::afw::geom::degToRad(meta->get<double>("LATITUDE"));
+    double ra = lsst::afw::geom::degToRad(meta->get<double>("RA_DEG"));
+    double dec = lsst::afw::geom::degToRad(meta->get<double>("DEC_DEG"));
+//    double lst_obs = RaStringToDeg(meta->get
 }
   
 #ifdef TO_BE_FIXED   
-  readWcs = NULL;
-  if (!WCSFromHeader(head,readWcs))
-    {
-      cerr << " no WCS in " << Ri.Name() << ", consider running matchusno ... " << endl;
-      return;
-    }
-  
-  inverseReadWcs = readWcs->InverseTransfo(0.01, imageFrame);
 
-  TanPix2RaDec *tanWcs = dynamic_cast<TanPix2RaDec*>(readWcs);
-  if (!tanWcs)
-    {
-      cerr << " WCS in " << Ri.Name() << " is not a tangent plane WCS " 
-	   << endl
-	   << " there are ways to handle other kinds, but not implemented yet"
-	   << endl
-	   << " consider (re) running a recent matchusno" << endl;
-      return;
-    }
-  
   chip = head.KeyVal("TOADCHIP");
   band = string(head.KeyVal("TOADBAND"));
   instrument = string(head.KeyVal("TOADINST"));

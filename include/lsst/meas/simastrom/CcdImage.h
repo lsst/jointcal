@@ -6,7 +6,7 @@
 #include <vector>
 
 #include "lsst/afw/table/Source.h"
-#include "lsst/afw/image/Wcs.h"
+#include "lsst/afw/image/TanWcs.h"
 #include "lsst/daf/base/PropertySet.h"
 #include "lsst/afw/geom/Box.h"
 #include "lsst/meas/simastrom/MeasuredStar.h"
@@ -87,8 +87,8 @@ class CcdImage : public RefCount
  public:
 
   CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &Ri, 
-    const Point &CommonTangentPoint, const PTR(lsst::afw::image::Wcs) wcs, const PTR(lsst::daf::base::PropertySet) meta,
-    const lsst::afw::geom::Box2I &bbox );
+    const Point &CommonTangentPoint, const PTR(lsst::afw::image::TanWcs) wcs, const PTR(lsst::daf::base::PropertySet) meta,
+    const lsst::afw::geom::Box2I &bbox, const std::string &filter );
     
 #ifdef TO_BE_FIXED 
   //!

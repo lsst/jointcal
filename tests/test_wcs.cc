@@ -24,7 +24,8 @@ BOOST_AUTO_TEST_CASE(test_wcs)
   lsst::afw::fits::Fits file(fileName, "r",0);
   PTR(lsst::daf::base::PropertySet) propSet = afwImg::readMetadata(fileName);
   PTR(afwImg::Wcs) wcs = afwImg::makeWcs(propSet);
-  const afwImg::TanWcs* tanWcs = dynamic_cast<const afwImg::TanWcs*>(wcs.get());
+  
+  const PTR(afwImg::TanWcs) tanWcs = boost::dynamic_pointer_cast<afwImg::TanWcs>(wcs);
   
   simAstrom::TanSipPix2RaDec gtransfoWcs = simAstrom::ConvertTanWcs(tanWcs);
   simAstrom::Point where(100.,200.);

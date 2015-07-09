@@ -85,14 +85,16 @@ class SimAstromTask(pipeBase.CmdLineTask):
         metaList = []
         wcsList = []
         bboxList = []
+        filterList = []
         
         for dataRef in ref :
             src = dataRef.get("src", immediate=False)
             calexp = dataRef.get("calexp", immediate=True)
-            wcs = calexp.getWcs()
+            tanwcs = afwImage.TanWcs.cast(calexp.getWcs())
             bbox = calexp.getBBox()
             md = dataRef.get("calexp_md", immediate=False)
             calib = afwImage.Calib(md)
+            filt = calexp.getFilter().getName()
             
             config = StarSelectorConfig()
             ss = StarSelector(config)
@@ -104,10 +106,11 @@ class SimAstromTask(pipeBase.CmdLineTask):
             srcList.append(newSrc)
             
             metaList.append(md)
-            wcsList.append(wcs)
+            wcsList.append(tanwcs)
             bboxList.append(bbox)
+            filterList.append(filt)
             
-        simA = simAstrom(srcList, metaList, wcsList, bboxList)
+        simA = simAstrom(srcList, metaList, wcsList, bboxList, filterList)
 
 class StarSelectorConfig(pexConfig.Config):
     

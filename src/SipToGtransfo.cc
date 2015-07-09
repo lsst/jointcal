@@ -18,7 +18,7 @@ static const int fitsToLsstPixels = -1;
 typedef boost::shared_ptr<simAstrom::GtransfoPoly> GtPoly_Ptr;
 	
 
-simAstrom::TanSipPix2RaDec ConvertTanWcs(const lsst::afw::image::TanWcs* wcs)
+simAstrom::TanSipPix2RaDec ConvertTanWcs(const boost::shared_ptr<lsst::afw::image::TanWcs> wcs)
 {
   GtPoly_Ptr sipCorr(new simAstrom::GtransfoPoly(0));
 
