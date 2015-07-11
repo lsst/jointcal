@@ -86,6 +86,7 @@ class SimAstromTask(pipeBase.CmdLineTask):
         wcsList = []
         bboxList = []
         filterList = []
+        calibList = []
         
         for dataRef in ref :
             src = dataRef.get("src", immediate=False)
@@ -109,8 +110,9 @@ class SimAstromTask(pipeBase.CmdLineTask):
             wcsList.append(tanwcs)
             bboxList.append(bbox)
             filterList.append(filt)
+            calibList.append(calib)
             
-        simA = simAstrom(srcList, metaList, wcsList, bboxList, filterList)
+        simA = simAstrom(srcList, metaList, wcsList, bboxList, filterList, calibList)
 
 class StarSelectorConfig(pexConfig.Config):
     

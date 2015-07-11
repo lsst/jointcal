@@ -22,6 +22,7 @@
 #include "lsst/meas/simastrom/simAstrom.h"
 #include "lsst/meas/simastrom/CcdImage.h"
 #include "lsst/meas/simastrom/Point.h"
+#include "lsst/meas/simastrom/Associations.h"
 
 #include "Eigen/Core"
 
@@ -37,13 +38,15 @@ namespace simastrom {
         std::vector<PTR(lsst::daf::base::PropertySet)> const metaList,
         std::vector<PTR(lsst::afw::image::TanWcs)> const wcsList,
         std::vector<lsst::afw::geom::Box2I> const bboxList,
-        std::vector<std::string> const filterList
+        std::vector<std::string> const filterList,
+        std::vector<PTR(lsst::afw::image::Calib)> const calibList
     ):
         _sourceList(sourceList),
         _metaList(metaList),
         _wcsList(wcsList),
         _bboxList(bboxList),
-        _filterList(filterList)
+        _filterList(filterList),
+        _calibList(calibList)
 {
     std::cout << "simAstrom constructor invoked " << std::endl;
     std::cout << "Vectors contain : " << _sourceList.size() << " elements" << std::endl;
@@ -62,8 +65,11 @@ namespace simastrom {
     lsst:afw::image::TanWcs::decodeSipHeader(*wcsMeta, "A", sipA);
     std::cout << sipA << std::endl;
     
-    Point where(100.,200.);
-    CcdImage(_sourceList[1], where, _wcsList[1], _metaList[1], _bboxList[1], _filterList[1]);
+    // Create and load an Associations object
+    Associations *assoc = new Associations();    
+    for (int i=0; i<_sourceList.size(); i++) {
+        assoc->AddImage(_sourceList[i], _wcsList[i], _metaList[i], _bboxList[i], _filterList[i], _calibList[i]);
+    }
 }    
     
 }}}

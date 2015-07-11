@@ -10,6 +10,7 @@
 #include "lsst/pex/config.h"
 #include "lsst/afw/table/Source.h"
 #include "lsst/afw/image/Wcs.h"
+#include "lsst/afw/image/Calib.h"
 #include "lsst/afw/geom/Box.h"
 #include "lsst/daf/base/PropertySet.h"
 
@@ -25,7 +26,8 @@ public:
         std::vector<PTR(lsst::daf::base::PropertySet)> const metaList,
         std::vector<PTR(lsst::afw::image::TanWcs)> const wcsList,
         std::vector<lsst::afw::geom::Box2I> const bboxList,
-        std::vector<std::string> const filterList
+        std::vector<std::string> const filterList,
+        std::vector<PTR(lsst::afw::image::Calib)> const calibList
     );
     
 private:
@@ -35,6 +37,7 @@ private:
     std::vector<PTR(lsst::afw::image::TanWcs)> _wcsList;
     std::vector<lsst::afw::geom::Box2I> _bboxList;
     std::vector<std::string> _filterList;
+    std::vector<PTR(lsst::afw::image::Calib)> _calibList;
 };
     
 }}}

@@ -36,6 +36,7 @@ Python interface to lsst::meas::simastrom classes
 %template(SourceList) std::vector<lsst::afw::table::SortedCatalogT< lsst::afw::table::SourceRecord> >;
 %template(WcsList) std::vector<boost::shared_ptr<lsst::afw::image::TanWcs> >;
 %template(PropertySetList) std::vector<boost::shared_ptr<lsst::daf::base::PropertySet> >;
+%template(CalibList) std::vector<boost::shared_ptr< lsst::afw::image::Calib > >;
 %template(BboxList) std::vector<lsst::afw::geom::Box2I>;
 %template(BboxList) std::vector<std::string>;
 

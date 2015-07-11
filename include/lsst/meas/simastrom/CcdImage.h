@@ -7,6 +7,7 @@
 
 #include "lsst/afw/table/Source.h"
 #include "lsst/afw/image/TanWcs.h"
+#include "lsst/afw/image/Calib.h"
 #include "lsst/daf/base/PropertySet.h"
 #include "lsst/afw/geom/Box.h"
 #include "lsst/meas/simastrom/MeasuredStar.h"
@@ -31,8 +32,11 @@ class CcdImage : public RefCount
  private:
 
   Frame imageFrame; // in pixels
-  MeasuredStarList wholeCatalog; // the catalog of measured objets
-  MeasuredStarList catalogForFit;
+  // wholeCatalog is just store the catalog of selected sources 
+  lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> wholeCatalog;
+  
+//  MeasuredStarList wholeCatalog; // the catalog of measured objets
+//  MeasuredStarList catalogForFit;
 
   // these 2 transfos are NOT updated when fitting
   Gtransfo *readWcs; // i.e. from pix to sky
@@ -88,7 +92,7 @@ class CcdImage : public RefCount
 
   CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &Ri, 
     const Point &CommonTangentPoint, const PTR(lsst::afw::image::TanWcs) wcs, const PTR(lsst::daf::base::PropertySet) meta,
-    const lsst::afw::geom::Box2I &bbox, const std::string &filter );
+    const lsst::afw::geom::Box2I &bbox, const std::string &filter, const PTR(lsst::afw::image::Calib) calib );
     
 #ifdef TO_BE_FIXED 
   //!
@@ -102,13 +106,13 @@ class CcdImage : public RefCount
   std::string Dir() const { return riDir; }
 
   //!
-  const MeasuredStarList & WholeCatalog() const { return wholeCatalog;}
+  const lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &WholeCatalog() const { return wholeCatalog;}
 
   //!
-  const MeasuredStarList & CatalogForFit() const { return catalogForFit;}
+//  const MeasuredStarList & CatalogForFit() const { return catalogForFit;}
 
   //!
-  MeasuredStarList & CatalogForFit()  { return catalogForFit;}
+//  MeasuredStarList & CatalogForFit()  { return catalogForFit;}
 
   //! 
   const Gtransfo* Pix2CommonTangentPlane() const 
@@ -261,11 +265,6 @@ class CcdImage : public RefCount
 class CcdImageList : public std::list<CountedRef<CcdImage> >
 {
   public:
-  //! as many as CcdImage's in the std::list
-  std::vector<ShootIdType> Shoots() const;
-
-  //! if they all share the same flat, Flats().size()==1 .
-  std::list<std::string> FlatNames() const;
   
   //! 
   std::list<std::string> DateObs() const;
