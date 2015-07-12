@@ -70,6 +70,14 @@ namespace simastrom {
     for (int i=0; i<_sourceList.size(); i++) {
         assoc->AddImage(_sourceList[i], _wcsList[i], _metaList[i], _bboxList[i], _filterList[i], _calibList[i]);
     }
+    
+//    std::cout << _sourceList[1].getSchema() << std::endl;
+    auto centroidKey = _sourceList[1].getSchema().find<double>("base_SdssCentroid_x").key;
+    for (afwTable::SourceCatalog::const_iterator sourcePtr = _sourceList[1].begin();
+            sourcePtr != _sourceList[1].end(); ++sourcePtr) {
+                std::cout << sourcePtr->getCentroid() << std::endl;
+                std::cout << sourcePtr->get(centroidKey) << std::endl;
+            } 
 }    
     
 }}}
