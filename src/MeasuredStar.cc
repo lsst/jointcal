@@ -15,6 +15,30 @@ namespace lsst {
 namespace meas {
 namespace simastrom {
 
+  /* Interesting fields of the stack catalogs :
+ 'base_SdssCentroid_x'
+ 'base_SdssCentroid_y'
+ 'base_SdssCentroid_xSigma'
+ 'base_SdssCentroid_ySigma'
+
+  We miss the xy uncertainty term.
+  We can cook it up from the sdss shape:
+  'base_SdssShape_xx'
+  'base_SdssShape_yy'
+  'base_SdssShape_xy' 
+
+  for fluxes, we might use : 
+  'base_CircularApertureFlux_2_flux'
+  'base_CircularApertureFlux_2_fluxSigma'
+
+   where the '2' should be read from the environment.
+  */
+
+
+
+
+
+
 //#define WRITE_STARS
 
 #ifdef TO_BE_FIXED

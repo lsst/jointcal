@@ -15,7 +15,57 @@ namespace afwImg = lsst::afw::image;
 namespace lsst {
 namespace meas {
 namespace simastrom {
-    
+
+  /* Interesting fields of the stack catalogs :
+ 'base_SdssCentroid_x'
+ 'base_SdssCentroid_y'
+ 'base_SdssCentroid_xSigma'
+ 'base_SdssCentroid_ySigma'
+
+  We miss the xy uncertainty term.
+  We can cook it up from the sdss shape:
+  'base_SdssShape_xx'
+  'base_SdssShape_yy'
+  'base_SdssShape_xy'
+
+  for fluxes, we might use : 
+  'base_CircularApertureFlux_2_flux'
+  'base_CircularApertureFlux_2_fluxSigma'
+
+   where the '2' should be read from the environment.
+  */
+
+static double sq(const double &x) { return x*x;}
+
+void CcdImage::LoadCatalog(const lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &Cat)
+{
+  auto xKey = Cat.getSchema().find<double>("base_SdssCentroid_x").key;
+  auto yKey = Cat.getSchema().find<double>("base_SdssCentroid_y").key;
+  auto xsKey = Cat.getSchema().find<double>("base_SdssCentroid_xSigma").key;
+  auto ysKey = Cat.getSchema().find<double>("base_SdssCentroid_ySigma").key;
+  auto mxxKey = Cat.getSchema().find<double>("base_SdssShape_xx").key;
+  auto myyKey = Cat.getSchema().find<double>("base_SdssShape_yy").key;
+  auto mxyKey = Cat.getSchema().find<double>("base_SdssShape_xy").key;
+  wholeCatalog.clear();
+  for (auto i = Cat.begin(); i !=Cat.end(); ++i)
+    {
+      MeasuredStar *ms = new MeasuredStar();
+      ms->x = i->get(xKey);
+      ms->y = i->get(yKey);
+      ms->vx = sq(i->get(xsKey));
+      ms->vy = sq(i->get(ysKey));
+      /* the xy covariance is not provided in the input catalog: we
+	 cook it up from the x and y position variance and the shape
+	 measurements: */
+      double mxx= i->get(mxxKey);
+      double myy= i->get(myyKey);
+      double mxy= i->get(mxyKey);
+      ms->vxy = mxy*(ms->vx+ms->vy)/(mxx+myy);
+      wholeCatalog.push_back(ms);
+    }
+}
+
+
 double RaStringToDeg(const std::string RaString)
 {
 int hours, minutes; double seconds;
@@ -41,6 +91,7 @@ static int getBandIndex(std::string const& band)
   return -1;
 }
 
+
 CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &Ri,
             const Point &CommonTangentPoint,
             const PTR(lsst::afw::image::TanWcs) wcs,
@@ -50,10 +101,10 @@ CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceReco
             const PTR(lsst::afw::image::Calib) calib  ) :
             
     index(-1), expindex(-1),
-    commonTangentPoint(CommonTangentPoint),
-    wholeCatalog(Ri)
+    commonTangentPoint(CommonTangentPoint)
 
 {
+  LoadCatalog(Ri);
       // Just checking that we get something sensible
     std::cout << Ri[10].getRa() << std::endl;
     std::cout << wcs->getPixelOrigin() << std::endl;

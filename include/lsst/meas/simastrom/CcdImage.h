@@ -33,9 +33,9 @@ class CcdImage : public RefCount
 
   Frame imageFrame; // in pixels
   // wholeCatalog is just store the catalog of selected sources 
-  lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> wholeCatalog;
+  //  lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> wholeCatalog;
   
-//  MeasuredStarList wholeCatalog; // the catalog of measured objets
+  MeasuredStarList wholeCatalog; // the catalog of measured objets
 //  MeasuredStarList catalogForFit;
 
   // these 2 transfos are NOT updated when fitting
@@ -88,11 +88,15 @@ class CcdImage : public RefCount
   
   Point  commonTangentPoint;
 
+  void LoadCatalog(const lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &Cat);
+
  public:
 
   CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &Ri, 
     const Point &CommonTangentPoint, const PTR(lsst::afw::image::TanWcs) wcs, const PTR(lsst::daf::base::PropertySet) meta,
     const lsst::afw::geom::Box2I &bbox, const std::string &filter, const PTR(lsst::afw::image::Calib) calib );
+
+
     
 #ifdef TO_BE_FIXED 
   //!
@@ -106,7 +110,7 @@ class CcdImage : public RefCount
   std::string Dir() const { return riDir; }
 
   //!
-  const lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &WholeCatalog() const { return wholeCatalog;}
+  const MeasuredStarList &WholeCatalog() const { return wholeCatalog;}
 
   //!
 //  const MeasuredStarList & CatalogForFit() const { return catalogForFit;}
