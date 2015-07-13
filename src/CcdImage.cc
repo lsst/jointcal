@@ -41,8 +41,8 @@ void CcdImage::LoadCatalog(const lsst::afw::table::SortedCatalogT<lsst::afw::tab
 {
   auto xKey = Cat.getSchema().find<double>("base_SdssCentroid_x").key;
   auto yKey = Cat.getSchema().find<double>("base_SdssCentroid_y").key;
-  auto xsKey = Cat.getSchema().find<double>("base_SdssCentroid_xSigma").key;
-  auto ysKey = Cat.getSchema().find<double>("base_SdssCentroid_ySigma").key;
+  auto xsKey = Cat.getSchema().find<float>("base_SdssCentroid_xSigma").key;
+  auto ysKey = Cat.getSchema().find<float>("base_SdssCentroid_ySigma").key;
   auto mxxKey = Cat.getSchema().find<double>("base_SdssShape_xx").key;
   auto myyKey = Cat.getSchema().find<double>("base_SdssShape_yy").key;
   auto mxyKey = Cat.getSchema().find<double>("base_SdssShape_xy").key;
