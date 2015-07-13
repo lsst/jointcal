@@ -28,7 +28,7 @@ simAstrom::TanSipPix2RaDec ConvertTanWcs(const boost::shared_ptr<lsst::afw::imag
   simAstrom::GtransfoLinShift firstShift(-lsst::afw::image::PixelZeroPos + lsstToFitsPixels,
 					 -lsst::afw::image::PixelZeroPos + lsstToFitsPixels);
 
-  /* beware : Wccs::getPixelOrigin return crpix+ fitsToLsstPixels */
+  /* beware : Wcs::getPixelOrigin return crpix + fitsToLsstPixels */
   lsst::afw::geom::Point2D offset_crpix = wcs->getPixelOrigin();
 
   lsst::daf::base::PropertyList::Ptr wcsMeta = wcs->getFitsMetadata();
@@ -55,11 +55,16 @@ simAstrom::TanSipPix2RaDec ConvertTanWcs(const boost::shared_ptr<lsst::afw::imag
 	}
 
       /*
-      TanWcs::undistorPixel adds (- wcs_info->crpix) (line 330)  to the coordinates
-	 before computing the polynomials so the total shift reads:
+         TanWcs::undistorPixel adds (- wcs_info->crpix) (line 330) to
+	 the coordinates before computing the polynomials so the total
+	 shift reads:
 
 	 -PixelZeroPos + lsstToFitsPixels -(offset_crpix-fitsToLsstPixels)
 	 = -PixelZeroPos -offset_crpix
+
+	 remember that offset_crpix = crpix + fitsToLsstPixels,
+	 so crpix = offset_crpix - fitsToLsstPixels,
+	 which is the  second coordinate shift:
       */
 
       simAstrom::GtransfoLinShift secondShift(-offset_crpix[0]+fitsToLsstPixels,
@@ -69,9 +74,8 @@ simAstrom::TanSipPix2RaDec ConvertTanWcs(const boost::shared_ptr<lsst::afw::imag
 	 returns pix + sipPoly*secondShift(pix) where pix =
 	 firstShift(input) */
 
-      /* requires operator + for GtransfoPoly : */
-	
-      simAstrom::GtransfoPoly actualSip = firstShift+sipPoly*secondShift*firstShift;
+      simAstrom::GtransfoPoly actualSip = firstShift+
+	sipPoly*secondShift*firstShift;
       	
       sipCorr.reset(new simAstrom::GtransfoPoly(actualSip));
     }
@@ -83,25 +87,25 @@ simAstrom::TanSipPix2RaDec ConvertTanWcs(const boost::shared_ptr<lsst::afw::imag
   cdTrans.Coeff(0,1,0) = cdMat(0,1); // CD1_2 
   cdTrans.Coeff(1,0,1) = cdMat(1,0); // CD2_1
   cdTrans.Coeff(0,1,1) = cdMat(1,1); // CD2_1
+  // this is equal to secondShift but it is just chance. Do not rely on it.
   simAstrom::GtransfoLinShift crpixShift(-offset_crpix[0] +  fitsToLsstPixels,
 					 -offset_crpix[1] +  fitsToLsstPixels); 
 
   // CD's apply to CRPIX-shifted coordinate
   simAstrom::GtransfoLin linPart = cdTrans * crpixShift;
 
-  if (!wcs->hasDistortion()) // have to apply firstShift
+  /* It there are no distorsions, we have to apply firstShift in order
+     to emulateTanWcs::pixelToSkyImpl. If there are distorsions, this step
+     is already included in the sip corrections. */
+  if (!wcs->hasDistortion()) 
     linPart = linPart* firstShift;
 
-  // tangent point : no idea if this works....
   //  lsst::afw::coord::Coord tp = wcs->getSkyOrigin()->getPosition(lsst::afw::geom::degrees);
   // the above line returns radians ?!
-  double ra = wcsMeta->get<double>("CRVAL1");
+  double ra  = wcsMeta->get<double>("CRVAL1");
   double dec = wcsMeta->get<double>("CRVAL2");
   
-
-//  lsst::afw::geom::Point tangentPoint(tp[0], tp[1]);
-    //lsst::meas::simastrom::Point tangentPoint(tp[0], tp[1]);
-  lsst::meas::simastrom::Point tangentPoint(ra,dec);
+  simAstrom::Point tangentPoint(ra,dec);
 
   // return simAstrom::TanSipPix2RaDec(linPart, tangentPoint, sipCorr->get());
   return simAstrom::TanSipPix2RaDec(linPart, tangentPoint, (const simAstrom::GtransfoPoly*) sipCorr.get());
