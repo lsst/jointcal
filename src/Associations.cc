@@ -6,6 +6,9 @@
 #include "lsst/meas/simastrom/Associations.h"
 #include "lsst/meas/simastrom/CcdImage.h"
 #include "lsst/meas/simastrom/SipToGtransfo.h"
+#include "lsst/meas/simastrom/StarMatch.h"
+#include "lsst/meas/simastrom/ListMatch.h"
+#include "lsst/meas/simastrom/Frame.h"
 #include "lsst/afw/image/Image.h"
 #include "lsst/daf/base/PropertySet.h"
 
@@ -27,6 +30,25 @@ namespace simAstrom = lsst::meas::simastrom;
 namespace lsst {
 namespace meas {
 namespace simastrom {
+    
+Frame ApplyTransfo(const Frame& inputframe,const Gtransfo &T, const WhichTransformed W) 
+{
+  // 2 opposite corners
+  double xtmin1, xtmax1, ytmin1, ytmax1;
+  T.apply(inputframe.xMin,inputframe.yMin,xtmin1,ytmin1);
+  T.apply(inputframe.xMax,inputframe.yMax,xtmax1,ytmax1);
+  Frame fr1(std::min(xtmin1,xtmax1), std::min(ytmin1,ytmax1), 
+	    std::max(xtmin1,xtmax1), std::max(ytmin1,ytmax1));
+  // 2 other corners
+  double xtmin2, xtmax2, ytmin2, ytmax2;
+  T.apply(inputframe.xMin, inputframe.yMax, xtmin2, ytmax2);
+  T.apply(inputframe.xMax, inputframe.yMin, xtmax2, ytmin2);
+  Frame fr2(std::min(xtmin2,xtmax2), std::min(ytmin2,ytmax2), 
+	    std::max(xtmin2,xtmax2), std::max(ytmin2,ytmax2));
+
+  if (W == SmallFrame) return fr1*fr2;
+  return fr1+fr2;
+}
 
 // Source selection is performed in the python, so Associations' constructor is just initializing couple of variables
 Associations::Associations()
@@ -69,8 +91,6 @@ bool Associations::AddImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::S
   return true;
 }
 
-#ifdef TODO
-
 void Associations::AssociateCatalogs(const double MatchCutInArcSec, 
 				     const bool UseFittedList,
 				     const bool EnlargeFittedList)
@@ -85,7 +105,6 @@ void Associations::AssociateCatalogs(const double MatchCutInArcSec,
       (*i)->CatalogForFit().clear();
     }
 
-
   if (!UseFittedList) fittedStarList.clear();
   else // clear measurement counts and associations to refstars.
     {
@@ -99,6 +118,8 @@ void Associations::AssociateCatalogs(const double MatchCutInArcSec,
   for (CcdImageIterator i=ccdImageList.begin(); i != ccdImageList.end(); ++i)
     {
       CcdImage &ccdImage = **i;
+      
+         std::cout << "In loop over CcdImages " << std::endl;
 
       const Gtransfo *toCommonTangentPlane = 
 	ccdImage.Pix2CommonTangentPlane(); 
@@ -123,6 +144,7 @@ void Associations::AssociateCatalogs(const double MatchCutInArcSec,
 	 actual copy, which we don't want here: we want the pointers in 
 	 the StarMatch to refer to fittedStarList elements. */
       FittedStarList toMatch;
+      
       for (FittedStarCIterator i=fittedStarList.begin(); 
 	   i!= fittedStarList.end(); ++i)
 	{
@@ -138,7 +160,7 @@ void Associations::AssociateCatalogs(const double MatchCutInArcSec,
 					   matchCut/3600.);
 
       /* should check what this RemoveAmbiguities does... */
-      if (Preferences().cleanMatches)
+//      if (Preferences().cleanMatches)
 	smList->RemoveAmbiguities(*toCommonTangentPlane);
 
       /* associate MeasuredStar -> FittedStar using the 
@@ -188,9 +210,13 @@ void Associations::AssociateCatalogs(const double MatchCutInArcSec,
       std::cout << " unmatched objects :" << unMatchedCount << std::endl;
       std::cout << " ************" << std::endl;
     } // end of loop on CcdImage's
+    
+#ifdef TO_BE_FIXED
   AssignMags();
+#endif
 }
 
+#ifdef TODO
 
 #include <usnoutils.h>
 

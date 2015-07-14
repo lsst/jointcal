@@ -151,10 +151,10 @@ inline bool SameS2(const StarMatch &one, const StarMatch &two)
 std::ostream& operator << (std::ostream &stream, const StarMatch &Match);
 #endif
 
-#ifdef TO_BE_FIXED
+//#ifdef TO_BE_FIXED
   typedef ::std::list<StarMatch>::iterator StarMatchIterator;
   typedef ::std::list<StarMatch>::const_iterator StarMatchCIterator;
-#endif
+//#endif
 
 //! A std::list of star matches, 
 /*! To be used as the argument to Gtransfo::fit routines. There is as

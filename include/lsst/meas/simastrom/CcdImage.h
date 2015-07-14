@@ -36,7 +36,7 @@ class CcdImage : public RefCount
   //  lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> wholeCatalog;
   
   MeasuredStarList wholeCatalog; // the catalog of measured objets
-//  MeasuredStarList catalogForFit;
+  MeasuredStarList catalogForFit;
 
   // these 2 transfos are NOT updated when fitting
   Gtransfo *readWcs; // i.e. from pix to sky
@@ -113,10 +113,10 @@ class CcdImage : public RefCount
   const MeasuredStarList &WholeCatalog() const { return wholeCatalog;}
 
   //!
-//  const MeasuredStarList & CatalogForFit() const { return catalogForFit;}
+  const MeasuredStarList & CatalogForFit() const { return catalogForFit;}
 
   //!
-//  MeasuredStarList & CatalogForFit()  { return catalogForFit;}
+  MeasuredStarList & CatalogForFit()  { return catalogForFit;}
 
   //! 
   const Gtransfo* Pix2CommonTangentPlane() const 
