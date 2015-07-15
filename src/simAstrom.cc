@@ -80,7 +80,9 @@ namespace simastrom {
     }
     
     // Associates catalog
-    assoc->AssociateCatalogs();
+    double matchCut = 3.0;   // Should be passed as a parameter  
+    assoc->AssociateCatalogs(matchCut);
+//    assoc->CollectRefStars(/*ProjectOnTP =  */ false);
 }    
     
 }}}

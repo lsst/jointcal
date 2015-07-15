@@ -106,11 +106,11 @@ CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceReco
 {
   LoadCatalog(Ri);
       // Just checking that we get something sensible
-    std::cout << Ri[10].getRa() << std::endl;
-    std::cout << wcs->getPixelOrigin() << std::endl;
-    std::cout << meta->get<double>("LATITUDE") << std::endl;
-    std::cout << bbox << std::endl;
-    std::cout << filter << std::endl;
+//    std::cout << Ri[10].getRa() << std::endl;
+//    std::cout << wcs->getPixelOrigin() << std::endl;
+//    std::cout << meta->get<double>("LATITUDE") << std::endl;
+//    std::cout << bbox << std::endl;
+//    std::cout << filter << std::endl;
 
     Point lowerLeft(bbox.getMinX(), bbox.getMinY());
     Point upperRight(bbox.getMaxX(), bbox.getMaxY());

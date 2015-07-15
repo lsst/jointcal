@@ -148,8 +148,10 @@ void Associations::AssociateCatalogs(const double MatchCutInArcSec,
       for (FittedStarCIterator i=fittedStarList.begin(); 
 	   i!= fittedStarList.end(); ++i)
 	{
-	  if (ccdImageFrameCPT.InFrame(**i))
+	  if (ccdImageFrameCPT.InFrame(**i)) 
+	  {
 	    toMatch.push_back(*i);
+	  }
 	}
 
 
