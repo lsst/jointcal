@@ -117,15 +117,12 @@ CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceReco
     imageFrame = Frame(lowerLeft, upperRight);
     
     readWcs = new simAstrom::TanSipPix2RaDec(simAstrom::ConvertTanWcs(wcs));
-    std::cout << "Ici" << std::endl; 
-    std::cout << readWcs->TangentPoint() << std::endl;
     
-    TanPix2RaDec *tanWcs = dynamic_cast<TanPix2RaDec*>(readWcs);
+    // Don't know if the following is necessary. Why shouldn't we use readWcs everywhere instead of tanWcs ?
+    TanSipPix2RaDec *tanWcs = dynamic_cast<TanSipPix2RaDec*>(readWcs);
   
     inverseReadWcs = readWcs->InverseTransfo(0.01, imageFrame);
-    std::cout << "Avant 0" << std::endl;
-
-    
+ 
     band = filter;
     bandIndex = getBandIndex(band);
 
@@ -134,29 +131,19 @@ CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceReco
      actually goes through TP */
 
     GtransfoLin identity;
-    std::cout << "Avant" << std::endl;
-    std::cout << tanWcs->TangentPoint() << std::endl;
     TanRaDec2Pix raDec2TP(identity, tanWcs->TangentPoint());
-    std::cout << "Après - 0" << std::endl;
     pix2TP = GtransfoCompose(&raDec2TP, tanWcs);
-    std::cout << "Après - 1" << std::endl;
-
     TanPix2RaDec CTP2RaDec(identity, CommonTangentPoint);
     CTP2TP = GtransfoCompose(&raDec2TP, &CTP2RaDec);
-    std::cout << "Après - 2" << std::endl;
 
     // jump from one TP to an other:
     TanRaDec2Pix raDec2CTP(identity, CommonTangentPoint);
     //  TanPix2RaDec TP2RaDec(identity, tanWcs->TangentPoint());
     //  TP2CTP = GtransfoCompose(&raDec2CTP, &TP2RaDec);
-    std::cout << "Après - 3" << std::endl;
     TanPix2RaDec TP2RaDec(identity, tanWcs->TangentPoint());
     TP2CTP = GtransfoCompose(&raDec2CTP, &TP2RaDec);
-    std::cout << "Après - 4" << std::endl;
     sky2TP = new TanRaDec2Pix(identity, tanWcs->TangentPoint());
-    std::cout << "Après - 5" << std::endl;
 
-    
       // this one is needed for matches :
     pix2CommonTangentPlane = GtransfoCompose(&raDec2CTP, tanWcs);
     

@@ -11,6 +11,7 @@
 #include "lsst/daf/base/PropertySet.h"
 #include "lsst/afw/geom/Box.h"
 #include "lsst/meas/simastrom/MeasuredStar.h"
+#include "lsst/meas/simastrom/Gtransfo.h"
 #include "lsst/meas/simastrom/Frame.h"
 
 
@@ -39,7 +40,9 @@ class CcdImage : public RefCount
   MeasuredStarList catalogForFit;
 
   // these 2 transfos are NOT updated when fitting
-  Gtransfo *readWcs; // i.e. from pix to sky
+//  Gtransfo *readWcs; // i.e. from pix to sky
+//  Gtransfo *inverseReadWcs; // i.e. from sky to pix  
+  BaseTanWcs *readWcs; // i.e. from pix to sky
   Gtransfo *inverseReadWcs; // i.e. from sky to pix
 
   // The following ones should probably be mostly removed.
