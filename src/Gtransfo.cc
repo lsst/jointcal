@@ -525,7 +525,7 @@ GtransfoPoly::GtransfoPoly(const unsigned Deg)
 }
 
 
-#ifdef TO_BE_FIXED
+  //#ifdef TO_BE_FIXED
 GtransfoPoly::GtransfoPoly(const Gtransfo* T,
 			   const Frame& F,
 			   unsigned Degree,
@@ -551,7 +551,7 @@ GtransfoPoly::GtransfoPoly(const Gtransfo* T,
   ret.fit(sm);
   *this = ret;
 }
-#endif
+  //#endif
 
 
 

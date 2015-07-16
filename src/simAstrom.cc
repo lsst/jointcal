@@ -23,6 +23,8 @@
 #include "lsst/meas/simastrom/CcdImage.h"
 #include "lsst/meas/simastrom/Point.h"
 #include "lsst/meas/simastrom/Associations.h"
+#include "lsst/meas/simastrom/Projectionhandler.h"
+#include "lsst/meas/simastrom/SimplePolyModel.h"
 
 #include "Eigen/Core"
 
@@ -88,6 +90,9 @@ namespace simastrom {
     TanPix2RaDec ctp2Sky(GtransfoLin(), assoc->CommonTangentPoint());
     
     assoc->fittedStarList.ApplyTransfo(ctp2Sky);
+    OneTPPerShoot sky2TP(assoc->TheCcdImageList());
+    SimplePolyModel spm(assoc->TheCcdImageList(), &sky2TP, true, 0);
+
 
 }    
     
