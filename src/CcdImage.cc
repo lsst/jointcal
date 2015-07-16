@@ -165,6 +165,7 @@ CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceReco
       coseta = sqrt(1-sineta*sineta);
       if (dec > latitude) coseta = -coseta;
     }
+    bandRank = 0; // will be set by Associations if pertinent.
 }
     
 }}} // end of namespaces
