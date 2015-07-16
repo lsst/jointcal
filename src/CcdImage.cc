@@ -3,6 +3,7 @@
 
 #include "lsst/meas/simastrom/CcdImage.h"
 #include "lsst/meas/simastrom/SipToGtransfo.h"
+#include "lsst/meas/simastrom/AstroUtils.h"
 #include "lsst/afw/image/Image.h"
 #include "lsst/meas/simastrom/Gtransfo.h"
 #include "lsst/meas/simastrom/Point.h"
@@ -66,14 +67,6 @@ void CcdImage::LoadCatalog(const lsst::afw::table::SortedCatalogT<lsst::afw::tab
 }
 
 
-double RaStringToDeg(const std::string RaString)
-{
-int hours, minutes; double seconds;
-if (sscanf(RaString.c_str(),"%d:%d:%lf", &hours, &minutes, &seconds) == 3)
-  {
-    return 15.*( double(hours) + double(minutes)/60. + seconds/3600.);
-  }
-}
     
 static int getBandIndex(std::string const& band)
 {
