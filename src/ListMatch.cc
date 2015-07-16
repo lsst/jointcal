@@ -146,7 +146,7 @@ SegmentList::SegmentList(const BaseStarList &L, const int NStars, const Gtransfo
 //#include <pair>
 
 struct SegmentPair : public std::pair<Segment*, Segment*> {
-SegmentPair (Segment *f, Segment *s) : pair<Segment*, Segment*>(f,s) {};
+  SegmentPair (Segment *f, Segment *s) : std::pair<Segment*, Segment*>(f,s) {};
 };
 
 typedef std::list<SegmentPair> SegmentPairList;
