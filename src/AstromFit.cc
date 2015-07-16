@@ -242,7 +242,6 @@ void AstromFit::LSDerivatives(const CcdImage &Ccd,
       hw = h*transW;
       grad = hw*res;
       // now feed in triplets and Rhs
-      cout << "allo? " << npar_tot << endl;
       for (unsigned ipar=0; ipar<npar_tot; ++ipar)
 	{
 	  for (unsigned  ic=0; ic<2; ++ic)
@@ -250,10 +249,10 @@ void AstromFit::LSDerivatives(const CcdImage &Ccd,
 	      double val = halpha(ipar,ic);
 	      if (val ==0) continue;
 #if (TRIPLET_INTERNAL_COORD == COL)
-	      cout << "add tripleta " << kTriplets+ic << " " << indices[ipar] << " " << val << " " << ipar << " " << ic << endl;
+//	      cout << "add tripleta " << kTriplets+ic << " " << indices[ipar] << " " << val << " " << ipar << " " << ic << endl;
 	      TList.AddTriplet(indices[ipar], kTriplets+ic,val);
 #else
-	      cout << "add triplet " << kTriplets+ic << " " << indices[ipar] << " " << val << endl;
+//	      cout << "add triplet " << kTriplets+ic << " " << indices[ipar] << " " << val << endl;
 	      TList.AddTriplet(kTriplets+ic, indices[ipar], val);
 #endif
 	    }
@@ -271,7 +270,7 @@ void AstromFit::LSDerivatives(const CcdImage &Ccd,
       kTriplets += 2; // each measurement contributes 2 columns in the Jacobian
     }
 
-  cout << "icat " << icat << endl;
+//  cout << "icat " << icat << endl;
   TList.SetNextFreeIndex(kTriplets);
 }    
 
@@ -280,7 +279,7 @@ void AstromFit::LSDerivatives(const CcdImage &Ccd,
 void AstromFit::LSDerivatives(const CcdImageList  &L, 
 			      TripletList &TList, Eigen::VectorXd &Rhs)
 { 
-  cout << "LSDerivative two " << endl; 
+//  cout << "LSDerivative two " << endl; 
   
   for (auto im=L.cbegin(); im!=L.end() ; ++im)
     {
@@ -293,7 +292,7 @@ void AstromFit::LSDerivatives(const CcdImageList  &L,
 //! this routine computes the derivatives of all LS terms, including the ones that refer to references stars, if any
 void AstromFit::LSDerivatives(TripletList &TList, Eigen::VectorXd &Rhs)
 {
-  cout << "LSDerivative one " << endl; 
+//  cout << "LSDerivative one " << endl; 
   //the terms involving fittedstars and measurements
   LSDerivatives(_assoc.TheCcdImageList(), TList,Rhs);
   // terms involving fitted stars and reference stars.
@@ -407,7 +406,6 @@ void AstromFit::AccumulateStatImage(ImType &Ccd, Accum &Accu) const
   const Mapping *mapping = _distortionModel->GetMapping(Ccd);
   // proper motion stuff
   double jd = Ccd.JD() - _JDRef;
-  cout << "in accumulateststimage jd " << jd << endl;
   // refraction stuff
   Point refractionVector = Ccd.ParallacticVector();
   double refractionCoefficient = _refracCoefficient.at(Ccd.BandRank());
@@ -446,7 +444,6 @@ void AstromFit::AccumulateStatImage(ImType &Ccd, Accum &Accu) const
       Eigen::Vector2d res(fittedStarInTP.x-outPos.x, fittedStarInTP.y-outPos.y); 
       double chi2Val = res.transpose()*transW*res;
 
-      cout << "in accumulateststimage chi2Val " << chi2Val << endl;
       Accu.AddEntry(chi2Val, 2, &ms);
     }// end of loop on measurements
 }
@@ -529,13 +526,17 @@ void AstromFit::GetMeasuredStarIndices(const MeasuredStar &Ms,
 				       std::vector<unsigned> &Indices) const
 {
   Indices.clear();
+  cout << "in GetMeasuredStarIndices " << _fittingDistortions << " " << _fittingPos << " " << _fittingPM << endl;
   if (_fittingDistortions)
     {
       const Mapping *mapping = _distortionModel->GetMapping(*Ms.ccdImage);
+        cout << "Ici " << _distortionModel << endl;
       mapping->GetMappingIndices(Indices);
+        cout << "et là " << endl;
     }
   const FittedStar *fs= Ms.GetFittedStar();
   unsigned fsIndex = fs->IndexInMatrix();
+  cout << "fsIndex : " << fsIndex << endl;
   if (_fittingPos)
     {
       Indices.push_back(fsIndex);
@@ -589,13 +590,17 @@ unsigned AstromFit::RemoveOutliers(const double &NSigCut)
   Eigen::VectorXi affectedParams(_nParTot);
   affectedParams.setZero();
 
+  cout << "affectedParams vector initialized " << _nParTot << endl;
+
   unsigned removed = 0; // returned to the caller
   // start from the strongest outliers.
   for (auto i = chi2s.rbegin(); i != chi2s.rend(); ++i)
     {
+    cout << "chi2 : " << i->chi2 << " cut : " << cut << endl;
       if (i->chi2 < cut) break; // because the array is sorted. 
       vector<unsigned> indices;
       GetMeasuredStarIndices(*(i->ms), indices);
+      cout << "after GetMeasuredStarIndices" << endl;
       bool drop_it = true;
       /* find out is a stronger outlier contraining on the parameters
 	 this one contrains was already discarded. If yes, we keep this one */
@@ -790,7 +795,7 @@ bool AstromFit::Minimize(const std::string &WhatToFit)
     SpMat jacobian(_nParTot,tList.NextFreeIndex());
     jacobian.setFromTriplets(tList.begin(), tList.end());
     // release memory shrink_to_fit is C++11
-    cout << jacobian << endl;
+//    cout << jacobian << endl;
     tList.clear(); 
     //tList.shrink_to_fit();
     clock_t tstart = clock();

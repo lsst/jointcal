@@ -104,6 +104,33 @@ namespace simastrom {
 	std::cout << astromFit.ComputeChi2() << std::endl;
 	astromFit.Minimize(whatToFit);
       }
+      
+      whatToFit = "Positions";
+    for (unsigned iter=0; iter<2;++iter)
+        {
+        std::cout << " Fitting only positions" << std::endl;
+        std::cout << astromFit.ComputeChi2() << std::endl;
+        astromFit.Minimize(whatToFit);
+        }
+
+    std::cout << astromFit.ComputeChi2() << std::endl;
+    
+      std::cout << " fitting positions and mappings" << std::endl;
+      
+      astromFit.Minimize("Positions Distortions");
+
+      std::cout << astromFit.ComputeChi2() << std::endl;
+
+      astromFit.MakeResTuple("res0.list");
+
+      for (unsigned k=0; k<3; ++k)
+        {
+          astromFit.RemoveOutliers(5.);
+          std::cout << "After outliers removal" << std::endl;
+          astromFit.Minimize("Positions Distortions");
+          std::cout << astromFit.ComputeChi2() << std::endl;
+        }
+      astromFit.MakeResTuple("res.list");
 }    
     
 }}}
