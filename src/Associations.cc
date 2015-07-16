@@ -9,6 +9,7 @@
 #include "lsst/meas/simastrom/StarMatch.h"
 #include "lsst/meas/simastrom/ListMatch.h"
 #include "lsst/meas/simastrom/Frame.h"
+#include "lsst/meas/simastrom/AstroUtils.h"
 #include "lsst/afw/image/Image.h"
 #include "lsst/daf/base/PropertySet.h"
 
@@ -24,6 +25,10 @@
 //#include <dicstar.h>
 //#include <datacards.h>
 //#include "gastroexception.h"
+
+const double usnoMatchCut=3;
+const bool cleanMatches=true;
+const int minMeasurementCount=2;
 
 namespace simAstrom = lsst::meas::simastrom;
 
@@ -217,20 +222,16 @@ void Associations::AssociateCatalogs(const double MatchCutInArcSec,
   AssignMags();
 #endif
 }
-
-#ifdef TODO
-
-#include <usnoutils.h>
-
 void Associations::CollectRefStars(const bool ProjectOnTP)
 {
 
   // compute the frame on the CTP that contains all input images
   Frame tangentPlaneFrame;
+  
   for (CcdImageIterator i=ccdImageList.begin(); i!= ccdImageList.end(); ++i)
     {
       CcdImage &ccdImage = **i;
-      Frame CTPFrame = ApplyTransfo(ccdImage.ImageFrame(),*ccdImage.Pix2CommonTangentPlane());
+      Frame CTPFrame = ApplyTransfo(ccdImage.ImageFrame(),*ccdImage.Pix2CommonTangentPlane(),LargeFrame);
       if (tangentPlaneFrame.Area() == 0) tangentPlaneFrame = CTPFrame;
       else tangentPlaneFrame += CTPFrame;
     }
@@ -243,14 +244,14 @@ void Associations::CollectRefStars(const bool ProjectOnTP)
   // convert tangent plane coordinates to RaDec:
   GtransfoLin identity;
   TanPix2RaDec CTP2RaDec(identity, commonTangentPoint);
-  Frame raDecFrame = ApplyTransfo(tangentPlaneFrame,CTP2RaDec);
+  Frame raDecFrame = ApplyTransfo(tangentPlaneFrame,CTP2RaDec,LargeFrame);
 
   // collect in USNO catalog
   BaseStarList usno;
   UsnoRead(raDecFrame, RColor, usno);
   if (usno.size() == 0)
     {
-      throw(PolokaException(" Nothing read from USNO : stop here "));
+      throw(LSST_EXCEPT(pex::exceptions::InvalidParameterError, " Nothing read from USNO : stop here "));
     }
   for (BaseStarCIterator i= usno.begin(); i != usno.end(); ++i)
     {
@@ -262,18 +263,20 @@ void Associations::CollectRefStars(const bool ProjectOnTP)
     }
   // project on CTP (i.e. RaDec2CTP), in degrees
   TanRaDec2Pix RaDec2CTP(identity, commonTangentPoint);
+  
   if (ProjectOnTP)
     {
       refStarList.ApplyTransfo(RaDec2CTP); // also transforms errors in FatPoint
       GtransfoIdentity id;
-      AssociateRefStars(Preferences().usnoMatchCut, &id);
+      AssociateRefStars(usnoMatchCut, &id);
     }
   else
     {
-      AssociateRefStars(Preferences().usnoMatchCut, &RaDec2CTP);
+      AssociateRefStars(usnoMatchCut, &RaDec2CTP);
     }
-}
 
+
+}
 void Associations::AssociateRefStars(const double &MatchCutInArcSec, 
 				     const Gtransfo* T)
 {
@@ -288,7 +291,7 @@ void Associations::AssociateRefStars(const double &MatchCutInArcSec,
       (*i)->SetFittedStar(*(FittedStar *) NULL );
     }
 
-  cout << " AssociateRefStars : MatchCutInArcSec " << MatchCutInArcSec << endl;
+  std::cout << " AssociateRefStars : MatchCutInArcSec " << MatchCutInArcSec << std::endl;
 
   // associate with FittedStars
   // 3600 because coordinates are in degrees (in CTP).
@@ -297,14 +300,14 @@ void Associations::AssociateRefStars(const double &MatchCutInArcSec,
 					   Fitted2Base(fittedStarList),
 					   T,
 					   MatchCutInArcSec/3600.);
-
-  if (Preferences().cleanMatches)
+  
+  if (cleanMatches)
     {
       std::cout << " number of matches before removing ambiguities " 
-		<< smList->size() << endl;
+		<< smList->size() << std::endl;
       smList->RemoveAmbiguities(*T);
       std::cout << " number of matches after removing ambiguities " 
-		<< smList->size() << endl;
+		<< smList->size() << std::endl;
     }
 
   // actually associate things
@@ -323,7 +326,63 @@ void Associations::AssociateRefStars(const double &MatchCutInArcSec,
 	    << " among a list of " << refStarList.size() << std::endl;
   delete smList;
 }
+void Associations::SelectFittedStars()
+{
+  std::cout << " number of possible fitted star before cutting on # of measurements " << fittedStarList.size() << std::endl;
+  std::cout << " INFO: min # of measurements " <<  minMeasurementCount << std::endl;
+  /* first pass : remove objects that have less than a 
+     certain number of measurements.
+  */
+  for (CcdImageIterator i=ccdImageList.begin(); i!= ccdImageList.end(); ++i)
+    {
+      CcdImage &ccdImage = **i;
+      MeasuredStarList &catalog = ccdImage.CatalogForFit();
+      for (MeasuredStarIterator mi = catalog.begin(); mi != catalog.end(); )
+	{
+	  MeasuredStar &mstar = **mi;
+	  
+	  FittedStar *fstar = mstar.GetFittedStar();
+	  if (!fstar) {++mi;continue;}
+	  int nmes = fstar->MeasurementCount(); // DEBUG
+	  
+	  /*  keep FittedStar's which either have a minimum number of
+	      measurements, or are matched to a RefStar (i.e. USNO)
+	  */
+	  if (!fstar->GetRefStar() 
+	      &&  fstar->MeasurementCount()< minMeasurementCount)
+	    {
+	      mstar.GetFittedStar()->MeasurementCount()--;
+	      mi = catalog.erase(mi);
+	      // DEBUG
+	      if (fstar && fstar->MeasurementCount() != nmes -1)
+		{
+		  std::cout << " ca craint " << std::endl;
+		}
+	    }
+	  else ++mi;
+	}// end loop on objects in catalog
+    } // end loop on catalogs
 
+  /* now FittedStars with less than minMeasurementCount should have 
+     zero MeasurementCount(); */
+
+  for (FittedStarIterator fi = fittedStarList.begin();
+       fi != fittedStarList.end();  )
+    {
+      FittedStar *s = *fi;
+      if (s->MeasurementCount() == 0) fi = fittedStarList.erase(fi);
+      else ++fi;
+    }
+
+  // just for printouts:
+  // fittedStarList.sort(&DecreasingMeasurementCount); 
+    
+  std::cout 
+    << " number of possible fitted star after cutting on # of measurements " 
+    << fittedStarList.size() << std::endl;
+}
+
+#ifdef TODO
 
 #ifdef STORAGE
 void Associations::CollectMCStars(int realization)
@@ -539,64 +598,6 @@ void Associations::AssignMags()
 //{
 //  
 //}
-
-
-void Associations::SelectFittedStars()
-{
-  std::cout << " number of possible fitted star before cutting on # of measurements " << fittedStarList.size() << endl;
-  cout << " INFO: min # of measurements " <<  Preferences().minMeasurementCount << endl;
-  /* first pass : remove objects that have less than a 
-     certain number of measurements.
-  */
-  for (CcdImageIterator i=ccdImageList.begin(); i!= ccdImageList.end(); ++i)
-    {
-      CcdImage &ccdImage = **i;
-      MeasuredStarList &catalog = ccdImage.CatalogForFit();
-      for (MeasuredStarIterator mi = catalog.begin(); mi != catalog.end(); )
-	{
-	  MeasuredStar &mstar = **mi;
-	  
-	  FittedStar *fstar = mstar.GetFittedStar();
-	  if (!fstar) {++mi;continue;}
-	  int nmes = fstar->MeasurementCount(); // DEBUG
-	  
-	  /*  keep FittedStar's which either have a minimum number of
-	      measurements, or are matched to a RefStar (i.e. USNO)
-	  */
-	  if (!fstar->GetRefStar() 
-	      &&  fstar->MeasurementCount()< Preferences().minMeasurementCount)
-	    {
-	      mstar.GetFittedStar()->MeasurementCount()--;
-	      mi = catalog.erase(mi);
-	      // DEBUG
-	      if (fstar && fstar->MeasurementCount() != nmes -1)
-		{
-		  std::cout << " ca craint " << std::endl;
-		}
-	    }
-	  else ++mi;
-	}// end loop on objects in catalog
-    } // end loop on catalogs
-
-  /* now FittedStars with less than minMeasurementCount should have 
-     zero MeasurementCount(); */
-
-  for (FittedStarIterator fi = fittedStarList.begin();
-       fi != fittedStarList.end();  )
-    {
-      FittedStar *s = *fi;
-      if (s->MeasurementCount() == 0) fi = fittedStarList.erase(fi);
-      else ++fi;
-    }
-
-  // just for printouts:
-  // fittedStarList.sort(&DecreasingMeasurementCount); 
-    
-  std::cout 
-    << " number of possible fitted star after cutting on # of measurements " 
-    << fittedStarList.size() << endl;
-}
-
 
 
 void Associations::PrintStats() const

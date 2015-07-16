@@ -82,7 +82,13 @@ namespace simastrom {
     // Associates catalog
     double matchCut = 3.0;   // Should be passed as a parameter  
     assoc->AssociateCatalogs(matchCut);
-//    assoc->CollectRefStars(/*ProjectOnTP =  */ false);
+    assoc->CollectRefStars(/*ProjectOnTP =  */ false);
+    assoc->SelectFittedStars();
+    
+    TanPix2RaDec ctp2Sky(GtransfoLin(), assoc->CommonTangentPoint());
+    
+    assoc->fittedStarList.ApplyTransfo(ctp2Sky);
+
 }    
     
 }}}
