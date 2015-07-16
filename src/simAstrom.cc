@@ -25,6 +25,7 @@
 #include "lsst/meas/simastrom/Associations.h"
 #include "lsst/meas/simastrom/Projectionhandler.h"
 #include "lsst/meas/simastrom/SimplePolyModel.h"
+#include "lsst/meas/simastrom/AstromFit.h"
 
 #include "Eigen/Core"
 
@@ -93,7 +94,16 @@ namespace simastrom {
     OneTPPerShoot sky2TP(assoc->TheCcdImageList());
     SimplePolyModel spm(assoc->TheCcdImageList(), &sky2TP, true, 0);
 
+    AstromFit astromFit(*assoc, &spm); 
 
+    std::string whatToFit = "Distortions";
+
+    for (unsigned iter=0; iter<2;++iter)
+      {
+	std::cout << " Fitting only mappings" << std::endl;
+	std::cout << astromFit.ComputeChi2() << std::endl;
+	astromFit.Minimize(whatToFit);
+      }
 }    
     
 }}}
