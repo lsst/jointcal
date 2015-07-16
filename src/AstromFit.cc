@@ -10,7 +10,7 @@
 #include <time.h> // for clock
 #include "lsst/pex/exceptions.h"
 #include <fstream>
-#include "lsst/meas/simastrom/Matvect.h"
+//#include "lsst/meas/simastrom/Matvect.h"
 #include "lsst/meas/simastrom/Tripletlist.h"
 
 typedef Eigen::SparseMatrix<double> SpMat;
@@ -729,7 +729,7 @@ void AstromFit::OffsetParams(const Eigen::VectorXd& Delta)
 }
 
 // should not be too large !
-
+#ifdef STORAGE
 static void write_sparse_matrix_in_fits(const SpMat &mat, const string &FitsName)
 {
   if (mat.rows()*mat.cols() > 2e8)
@@ -753,7 +753,7 @@ static void write_vect_in_fits(const Eigen::VectorXd &V, const string &FitsName)
   Mat(v).writeFits(FitsName);
 }
 
-
+#endif
 
 
 /*! This is a complete Newton Raphson step. Compute first and 
@@ -859,12 +859,13 @@ void AstromFit::CheckStuff()
       SpMat jacobian(_nParTot,tList.NextFreeIndex());
       jacobian.setFromTriplets(tList.begin(), tList.end());
       SpMat hessian = jacobian*jacobian.transpose();
-      
+#ifdef STORAGE      
       char name[24];
       sprintf(name,"h%d.fits", k);
       write_sparse_matrix_in_fits(hessian, name);
       sprintf(name,"g%d.fits", k);
       write_vect_in_fits(rhs, name);
+#endif
       cout << "npar : " << _nParTot << ' ' << _nParDistortions << ' ' << endl;
 
     }
