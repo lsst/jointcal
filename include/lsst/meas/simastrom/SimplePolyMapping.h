@@ -27,7 +27,7 @@ class SimpleGtransfoMapping : public Mapping
   CountedRef<Gtransfo> transfo; 
   /* to avoid allocation at every call of PosDerivatives. 
      use a pointer for constness */
-  std::auto_ptr<GtransfoLin> lin; 
+  std::unique_ptr<GtransfoLin> lin; 
 
   CountedRef<Gtransfo> errorProp;
 
@@ -47,7 +47,7 @@ class SimpleGtransfoMapping : public Mapping
     lin.reset(new GtransfoLin); // reserve space for derivative computation
   }
 
-  void FreezeErrorScales()
+  virtual void FreezeErrorScales()
   {
     errorProp = transfo->Clone();
   }
@@ -81,10 +81,10 @@ class SimpleGtransfoMapping : public Mapping
   }
 
   //!
-  void  PosDerivative(Point &Where, Eigen::Matrix2d &Der, 
+  void  PosDerivative(const Point &Where, Eigen::Matrix2d &Der, 
 		      const double & Eps) const
   {
-    transfo->Derivative(Where, *lin, Eps);
+    errorProp->Derivative(Where, *lin, Eps);
     Der(0,0) = lin->Coeff(1,0,0);
     // 
     /* This does not work : it was proved by rotating the frame
@@ -125,26 +125,38 @@ class SimpleGtransfoMapping : public Mapping
 //! Mapping implementation for a polynomial transformation. 
 class SimplePolyMapping : public SimpleGtransfoMapping
 {
-  // to better condition the 2nd derivative matrix
+  /* to better condition the 2nd derivative matrix, the 
+  transformed coordinates are mapped (roughly) on [-1,1].
+  We need both the transform and its derivative. */
   GtransfoLin _centerAndScale;
+  Eigen::Matrix2d preDer;
+  
   /* Where we store the combination. We use a pointer for
   constness. Could not get it to work with smart pointers.
   */
   GtransfoPoly* actualResult; 
 
+ public:
 
   ~SimplePolyMapping() { delete actualResult;}
 
- public:
+
 
   // ! contructor. 
   /*! The transformation will be initialized to Transfo, so that the effective transformation
     reads Transfo*CenterAndScale */
- SimplePolyMapping(const GtransfoLin &CenterAndScale , const GtransfoPoly& Transfo):
+ SimplePolyMapping(const GtransfoLin &CenterAndScale , 
+		   const GtransfoPoly& Transfo):
   SimpleGtransfoMapping(Transfo), _centerAndScale(CenterAndScale)
   {
     // We assume that the initialization was done properly, for example that
-    // Transfo = pix2TP*CenterAndScale.invert()
+    // Transfo = pix2TP*CenterAndScale.invert(), so we do not touch transfo.
+    /* store the (spatial) derivative of _centerAndScale. For the extra
+       diagonal terms, just copied the ones in PosDerivatives */
+    preDer(0,0) = _centerAndScale.Coeff(1,0,0);
+    preDer(1,0) = _centerAndScale.Coeff(0,1,0);
+    preDer(0,1) = _centerAndScale.Coeff(1,0,1);
+    preDer(1,1) = _centerAndScale.Coeff(0,1,1);
 
     // reserve space for the result
     actualResult = new GtransfoPoly();
@@ -153,6 +165,29 @@ class SimplePolyMapping : public SimpleGtransfoMapping
     MatrixX2d H(3,2);
     assert((&H(1,0) - &H(0,0)) == 1);
   }
+
+  /* The SimpleGtransfoMapping version does not account for the
+     _centerAndScale transfo */
+
+  void  PosDerivative(const Point &Where, Eigen::Matrix2d &Der, 
+		      const double & Eps) const
+  {
+    Point tmp = _centerAndScale.apply(Where);
+    errorProp->Derivative(tmp, *lin, Eps);
+    Der(0,0) = lin->Coeff(1,0,0);
+    // 
+    /* This does not work : it was proved by rotating the frame
+       see the compilation switch ROTATE_T2 in constrainedpolymodel.cc
+    Der(1,0) = lin->Coeff(1,0,1);
+    Der(0,1) = lin->Coeff(0,1,0);
+    */
+    Der(1,0) = lin->Coeff(0,1,0);
+    Der(0,1) = lin->Coeff(1,0,1);
+    Der(1,1) = lin->Coeff(0,1,1);
+    Der = preDer*Der;
+  }
+
+
 
   //! Calls the transforms and implements the centering and scaling of coordinates
   /* We should put the computation of error propagation and

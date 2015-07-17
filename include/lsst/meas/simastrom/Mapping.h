@@ -40,10 +40,12 @@ class Mapping  : public RefCount
 				       FatPoint &OutPos) const = 0;
 
     //! Remember the error scale and freeze it
-    virtual void FreezeErrorScales() = 0;
+    //  virtual void FreezeErrorScales() = 0;
+
+    virtual void OffsetParams(const double *Delta) = 0;
 
     //! The derivative w.r.t. position
-    virtual void  PosDerivative(Point &Where, Eigen::Matrix2d &Der, const double & Eps) const = 0;
+    virtual void  PosDerivative(const Point &Where, Eigen::Matrix2d &Der, const double & Eps) const = 0;
 
     //!
     virtual ~Mapping() {};
