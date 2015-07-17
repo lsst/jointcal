@@ -47,7 +47,7 @@ AstromFit::AstromFit(Associations &A, DistortionModel *D) :
       _referenceColor /= double(count);
       if (_sigCol>0) _sigCol = sqrt(_sigCol/count - sqr(_referenceColor));
     }
-  cout << "INFO: reference Color : " << _referenceColor << " sig " << _sigCol << " " << count << endl;
+  cout << "INFO: reference Color : " << _referenceColor << " sig " << _sigCol << endl;
 
   _nRefrac = _assoc.NBands();
   _refracCoefficient.resize(_nRefrac,0);
@@ -70,8 +70,8 @@ the derivatives, when computing the Chi2, when filling a tuple.
 Point AstromFit::TransformFittedStar(const FittedStar &F,
 				     const Gtransfo * Sky2TP,
 				     const Point &RefractionVector,
-				     const double RefractionCoeff,
-				     const double Jd) const
+				     const double &RefractionCoeff,
+				     const double &Jd) const
 {
   Point fittedStarInTP =  Sky2TP->apply(F);
   if (F.mightMove)
@@ -91,13 +91,16 @@ Point AstromFit::TransformFittedStar(const FittedStar &F,
 /*! this is the first implementation of an error "model". 
   We'll certainly have to upgrade it. MeasuredStar provided
 in case we need the mag.  */
+
+  static double posErrorIncrement = 0.02; // pixels
+
 static void TweakAstromMeasurementErrors(FatPoint &P, const MeasuredStar &Ms)
 {
   static bool called=false;
   static double increment = 0;
   if (!called)
     {
-      increment = sqr(posErrorIncrement);
+      increment = sqr(posErrorIncrement); // was in Preferences
       called = true;
     }
   P.vx += increment;
@@ -117,8 +120,7 @@ void AstromFit::LSDerivatives(const CcdImage &Ccd,
   /***************************************************************************/
   /**  Changes in this routine should be reflected into AccumulateStatImage  */
   /***************************************************************************/
-  /* Setup */ 
-  cout << "LSDerivative three " << endl; 
+  /* Setup */
   // 1 : get the Mapping's
   const Mapping *mapping = _distortionModel->GetMapping(Ccd);
   unsigned npar_mapping = (_fittingDistortions) ? mapping->Npar() : 0;
@@ -148,18 +150,14 @@ void AstromFit::LSDerivatives(const CcdImage &Ccd,
   Eigen::Matrix2d transW(2,2);
   Eigen::Matrix2d alpha(2,2);
   Eigen::VectorXd grad(npar_tot);
-  cout << "alors npar_tot " << npar_tot << " " << npar_mapping << std::endl;
   // current position in the Jacobian
   unsigned kTriplets = TList.NextFreeIndex();
   const MeasuredStarList &catalog = Ccd.CatalogForFit();
 
-  cout << "Catalog size " << catalog.size() << endl;
-  int icat=0;
   for (auto i = catalog.begin(); i!= catalog.end(); ++i)
     {
       const MeasuredStar& ms = **i;
       if (!ms.IsValid()) continue;
-      icat++;
       // tweak the measurement errors
       FatPoint inPos = ms;
       TweakAstromMeasurementErrors(inPos, ms);
@@ -249,10 +247,8 @@ void AstromFit::LSDerivatives(const CcdImage &Ccd,
 	      double val = halpha(ipar,ic);
 	      if (val ==0) continue;
 #if (TRIPLET_INTERNAL_COORD == COL)
-//	      cout << "add tripleta " << kTriplets+ic << " " << indices[ipar] << " " << val << " " << ipar << " " << ic << endl;
 	      TList.AddTriplet(indices[ipar], kTriplets+ic,val);
 #else
-//	      cout << "add triplet " << kTriplets+ic << " " << indices[ipar] << " " << val << endl;
 	      TList.AddTriplet(kTriplets+ic, indices[ipar], val);
 #endif
 	    }
@@ -269,8 +265,6 @@ void AstromFit::LSDerivatives(const CcdImage &Ccd,
 	}
       kTriplets += 2; // each measurement contributes 2 columns in the Jacobian
     }
-
-//  cout << "icat " << icat << endl;
   TList.SetNextFreeIndex(kTriplets);
 }    
 
@@ -278,9 +272,7 @@ void AstromFit::LSDerivatives(const CcdImage &Ccd,
 // (although it is not extremely useful)
 void AstromFit::LSDerivatives(const CcdImageList  &L, 
 			      TripletList &TList, Eigen::VectorXd &Rhs)
-{ 
-//  cout << "LSDerivative two " << endl; 
-  
+{
   for (auto im=L.cbegin(); im!=L.end() ; ++im)
     {
       LSDerivatives(**im, TList, Rhs);
@@ -292,7 +284,6 @@ void AstromFit::LSDerivatives(const CcdImageList  &L,
 //! this routine computes the derivatives of all LS terms, including the ones that refer to references stars, if any
 void AstromFit::LSDerivatives(TripletList &TList, Eigen::VectorXd &Rhs)
 {
-//  cout << "LSDerivative one " << endl; 
   //the terms involving fittedstars and measurements
   LSDerivatives(_assoc.TheCcdImageList(), TList,Rhs);
   // terms involving fitted stars and reference stars.
@@ -329,7 +320,7 @@ void AstromFit::LSDerivatives(TripletList &TList, Eigen::VectorXd &Rhs)
       // sign checked. TODO check that the off-diagonal terms are OK.
       h(0,0) = -der.A11();
       h(1,0) = -der.A12();
-      h(1,0) = -der.A21();
+      h(0,1) = -der.A21();
       h(1,1) = -der.A22();
       // TO DO : account for proper motions.
       double det = rsProj.vx*rsProj.vy - sqr(rsProj.vxy);
@@ -493,7 +484,6 @@ AstromFit::Chi2 AstromFit::ComputeChi2() const
   // so far, ndof contains the number of squares.
   // So, subtract here the number of parameters.
   chi2.ndof -= _nParTot;
-  cout << "Finally the chi2 " << chi2 << " " << _nParTot << endl;
   return chi2;
 }
 
@@ -526,17 +516,13 @@ void AstromFit::GetMeasuredStarIndices(const MeasuredStar &Ms,
 				       std::vector<unsigned> &Indices) const
 {
   Indices.clear();
-  cout << "in GetMeasuredStarIndices " << _fittingDistortions << " " << _fittingPos << " " << _fittingPM << endl;
   if (_fittingDistortions)
     {
       const Mapping *mapping = _distortionModel->GetMapping(*Ms.ccdImage);
-        cout << "Ici " << _distortionModel << endl;
       mapping->GetMappingIndices(Indices);
-        cout << "et là " << endl;
     }
   const FittedStar *fs= Ms.GetFittedStar();
   unsigned fsIndex = fs->IndexInMatrix();
-  cout << "fsIndex : " << fsIndex << endl;
   if (_fittingPos)
     {
       Indices.push_back(fsIndex);
@@ -551,7 +537,7 @@ void AstromFit::GetMeasuredStarIndices(const MeasuredStar &Ms,
      able to remove more than 1 star at a time. */
 }
 
-//! Discards measurements contributing more than a cut, computed as <chi2>+NSigCut+rms(chi2). Returns the number of removed outliers. No refit done.
+//! Discards measurements contributing more than a cut, computed as Average(chi2)+NSigCut*rms(chi2). Returns the number of removed outliers. No refit done.
 /*! After returning form here, there are still measurements that
   contribute above the cut, but their contribution should be
   evaluated after a refit before discarding them . */
@@ -590,17 +576,13 @@ unsigned AstromFit::RemoveOutliers(const double &NSigCut)
   Eigen::VectorXi affectedParams(_nParTot);
   affectedParams.setZero();
 
-  cout << "affectedParams vector initialized " << _nParTot << endl;
-
   unsigned removed = 0; // returned to the caller
   // start from the strongest outliers.
   for (auto i = chi2s.rbegin(); i != chi2s.rend(); ++i)
     {
-    cout << "chi2 : " << i->chi2 << " cut : " << cut << endl;
       if (i->chi2 < cut) break; // because the array is sorted. 
       vector<unsigned> indices;
       GetMeasuredStarIndices(*(i->ms), indices);
-      cout << "after GetMeasuredStarIndices" << endl;
       bool drop_it = true;
       /* find out is a stronger outlier contraining on the parameters
 	 this one contrains was already discarded. If yes, we keep this one */
@@ -656,11 +638,7 @@ void AstromFit::AssignIndices(const std::string &WhatToFit)
 
   _nParDistortions = 0;
   if (_fittingDistortions) 
-    {
-      _nParDistortions = _distortionModel->AssignIndices(0,_WhatToFit);
-      cout << "fitting distorsions " << _nParDistortions << endl;
-    }
-      
+    _nParDistortions = _distortionModel->AssignIndices(0,_WhatToFit);
   unsigned ipar = _nParDistortions;
 
   if (_fittingPos)
@@ -686,7 +664,6 @@ void AstromFit::AssignIndices(const std::string &WhatToFit)
     }
   _nParTot = ipar;
 
-  cout << "ici npartot " << _nParTot << std::endl;
 #if (0)  
   //DEBUG
   cout << " INFO: np(d,p, total) = " 
@@ -699,11 +676,12 @@ void AstromFit::AssignIndices(const std::string &WhatToFit)
 #endif
 }
 
+
+      
 void AstromFit::OffsetParams(const Eigen::VectorXd& Delta)
 {
   if (Delta.size() != _nParTot) 
     throw LSST_EXCEPT(pex::exceptions::InvalidParameterError, "AstromFit::OffsetParams : the provided vector length is not compatible with the current WhatToFit setting");
-
   if (_fittingDistortions) 
     _distortionModel->OffsetParams(Delta);
 
@@ -767,14 +745,9 @@ static void write_vect_in_fits(const Eigen::VectorXd &V, const string &FitsName)
 bool AstromFit::Minimize(const std::string &WhatToFit)
 {
   AssignIndices(WhatToFit);
-  const CcdImageList &ccdImageList = _assoc.TheCcdImageList();
-  // Count measurements. unused at the moment ....
-  _nMeasuredStars = 0;
-  for (auto i = ccdImageList.begin(); i!= ccdImageList.end() ; ++i)
-    _nMeasuredStars += (*i)->CatalogForFit().size();
 
   // TODO : write a guesser for the number of triplets
-  unsigned nTrip = (_LastNTrip) ? _LastNTrip: 1e6; // GuessNTrip(ccdImageList);
+  unsigned nTrip = (_LastNTrip) ? _LastNTrip: 1e6;
   TripletList tList(nTrip);
   Eigen::VectorXd grad(_nParTot);  grad.setZero();
 
@@ -791,13 +764,10 @@ bool AstromFit::Minimize(const std::string &WhatToFit)
   SpMat hessian;
   {
 #if (TRIPLET_INTERNAL_COORD == COL)
-    cout << "filling jacobian " << _nParTot << " " << tList.NextFreeIndex() << endl;
     SpMat jacobian(_nParTot,tList.NextFreeIndex());
     jacobian.setFromTriplets(tList.begin(), tList.end());
     // release memory shrink_to_fit is C++11
-//    cout << jacobian << endl;
-    tList.clear(); 
-    //tList.shrink_to_fit();
+    tList.clear(); tList.shrink_to_fit();
     clock_t tstart = clock();
     hessian = jacobian*jacobian.transpose();
     clock_t tend = clock();
@@ -808,15 +778,16 @@ bool AstromFit::Minimize(const std::string &WhatToFit)
     SpMat jacobian(tList.NextRank(), _nParTot);
     jacobian.setFromTriplets(tList.begin(), tList.end());
     // release memory shrink_to_fit is C++11
-    tList.clear(); 
-    //tList.shrink_to_fit(); 
+    tList.clear(); tList.shrink_to_fit(); 
     cout << " starting H=JtJ " << endl;
     hessian = jacobian.transpose()*jacobian;
 #endif
   }// release the Jacobian
 
-  //  write_sparse_matrix_in_fits(hessian, "h.fits");
-  cout << "INFO: hessian : dim=" << hessian.rows() << " " << hessian.cols() 
+
+  //write_sparse_matrix_in_fits(hessian, "h.fits");
+
+  cout << "INFO: hessian : dim=" << hessian.rows() 
        << " nnz=" << hessian.nonZeros() 
        << " filling-frac = " << hessian.nonZeros()/sqr(hessian.rows()) << endl;
   cout << "INFO: starting factorization" << endl;
@@ -829,7 +800,6 @@ bool AstromFit::Minimize(const std::string &WhatToFit)
       return false;
     }
 
-  cout << "grad size " << grad.rows() << " " << grad.cols() << endl;
   Eigen::VectorXd delta = chol.solve(grad);
 
   //  cout << " offsetting parameters" << endl;
@@ -837,9 +807,10 @@ bool AstromFit::Minimize(const std::string &WhatToFit)
   tend = clock();
   std::cout << "INFO: CPU for factor-solve-update " 
   	    << float(tend-tstart)/float(CLOCKS_PER_SEC) << std::endl;
+  return true;
 }
 
-
+/* DEBUGGING routine */
 void AstromFit::CheckStuff()
 {
 #if (0)
@@ -904,12 +875,14 @@ void AstromFit::MakeResTuple(const std::string &TupleName) const
       const Mapping *mapping = _distortionModel->GetMapping(im);
       const Point &refractionVector = im.ParallacticVector();
       double jd = im.JD() - _JDRef;
-      unsigned iband= im.BandIndex();
+      unsigned iband= im.BandRank();
       for (auto is=cat.cbegin(); is!=cat.end(); ++is)
 	{
 	  const MeasuredStar &ms = **is;
 	  FatPoint tpPos;
-	  mapping->TransformPosAndErrors(ms, tpPos);
+	  FatPoint inPos = ms;
+	  TweakAstromMeasurementErrors(inPos,ms);
+	  mapping->TransformPosAndErrors(inPos, tpPos);
 	  const Gtransfo* sky2TP = _distortionModel->Sky2TP(mapping, im);
 	  const FittedStar *fs = ms.GetFittedStar();
 	  

@@ -156,8 +156,8 @@ class AstromFit {
   Point TransformFittedStar(const FittedStar &F,
 			    const Gtransfo * Sky2TP,
 			    const Point &RefractionVector,
-			    const double RefractionCoeff,
-			    const double Jd) const;
+			    const double &RefractionCoeff,
+			    const double &Jd) const;
 
   template <class ListType, class Accum> 
     void AccumulateStatImageList(ListType &L, Accum &A) const;
