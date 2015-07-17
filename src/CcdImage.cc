@@ -64,6 +64,7 @@ void CcdImage::LoadCatalog(const lsst::afw::table::SortedCatalogT<lsst::afw::tab
       ms->vxy = mxy*(ms->vx+ms->vy)/(mxx+myy);
       wholeCatalog.push_back(ms);
     }
+  wholeCatalog.SetCcdImage(this);
 }
 
 
