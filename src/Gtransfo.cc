@@ -989,10 +989,8 @@ double GtransfoPoly::do_the_fit(const StarMatchList &List,
 				const Gtransfo &ShiftToCenter,
 				const bool UseErrors)
 {
-  Eigen::MatrixXd A(2*nterms,2*nterms);
-  Eigen::VectorXd B(2*nterms);
-  A.setZero();
-  B.setZero();
+  Eigen::MatrixXd A(2*nterms,2*nterms);   A.setZero();
+  Eigen::VectorXd B(2*nterms);   B.setZero();
   double sumr2 = 0;
   double monomials[nterms];
   for (auto it = List.begin(); it != List.end(); ++it)
@@ -1030,7 +1028,7 @@ double GtransfoPoly::do_the_fit(const StarMatchList &List,
       double bycoeff = wyy*resy + wxy*resx;
       for (unsigned j=0; j<nterms; ++j)
 	{
-	  for (unsigned i=0; i<=j; ++i)
+	  for (unsigned i=j; i<nterms; ++i)
 	    {
 	      A(i,j) += wxx*monomials[i]*monomials[j];
 	      A(i+nterms,j+nterms) += wyy*monomials[i]*monomials[j];
@@ -1040,13 +1038,14 @@ double GtransfoPoly::do_the_fit(const StarMatchList &List,
 	  B(j+nterms) += bycoeff*monomials[j];
 	}
     } // end loop on points
-  Eigen::LDLT<Eigen::MatrixXd> factor(A);
+  Eigen::LDLT<Eigen::MatrixXd, Eigen::Lower> factor(A);
   // should probably throw
   if (factor.info() != Eigen::Success)
     {
       cout << "GtransfoPoly::fit : could not factorize " << endl;
       return -1;
     }
+  
   Eigen::VectorXd sol = factor.solve(B);
   for (unsigned k=0; k< 2*nterms; ++k) coeffs[k] += sol(k);
   if (List.size() == nterms) return 0;
@@ -1421,8 +1420,8 @@ double  GtransfoLinShift::fit(const StarMatchList &List)
 
   double sumr2 = 0; /* used to compute chi2 without relooping */
   /* loop on pairs  and fill */
-  Eigen::VectorXd B(2);
-  Eigen::MatrixXd A(2,2);
+  Eigen::VectorXd B(2);   B.setZero();
+  Eigen::MatrixXd A(2,2);   A.setZero();
 
   for (auto it = List.begin(); it != List.end(); it++)
     {
