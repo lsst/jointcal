@@ -88,17 +88,18 @@ class SimAstromTask(pipeBase.CmdLineTask):
         filterList = []
         calibList = []
         
+        config = StarSelectorConfig()
+        ss = StarSelector(config)
+        
         for dataRef in ref :
-            src = dataRef.get("src", immediate=False)
+            src = dataRef.get("src", immediate=True)
             calexp = dataRef.get("calexp", immediate=True)
             tanwcs = afwImage.TanWcs.cast(calexp.getWcs())
             bbox = calexp.getBBox()
-            md = dataRef.get("calexp_md", immediate=False)
+            md = dataRef.get("calexp_md", immediate=True)
             calib = afwImage.Calib(md)
             filt = calexp.getFilter().getName()
             
-            config = StarSelectorConfig()
-            ss = StarSelector(config)
             newSrc = ss.select(src, calib)
             print len(newSrc)
             
@@ -142,12 +143,18 @@ class StarSelector(object) :
 
         schema = srcCat.getSchema()
         newCat = afwTable.SourceCatalog(schema)
+        fluxKey = schema["base_PsfFlux_flux"].asKey()
+        flagKeys = []
+        for f in self.config.badFlags :
+            key = schema[f].asKey()
+            flagKeys.append(key)
+        
         for src in srcCat :
             # Reject galaxies
-            if src.get("base_ClassificationExtendedness_value") > 0.5 :
-                continue
+#            if src.get("base_ClassificationExtendedness_value") > 0.5 :
+#                continue
             # Do not consider sources with bad flags
-            for f in self.config.badFlags :
+            for f in flagKeys :
                 rej = 0
                 if src.get(f) :
                     rej = 1
@@ -155,11 +162,11 @@ class StarSelector(object) :
             if rej == 1 :
                 continue
             # Reject negative flux
-            flux = src.get('base_PsfFlux_flux')
+            flux = src.get(fluxKey)
             if flux < 0 :
                 continue
-            # Reject object with magnitude > 19
-            if calib.getMagnitude(flux) > 19 :
+            # Reject objects with magnitude > 21
+            if calib.getMagnitude(flux) > 21 :
                 continue
                 
             newCat.append(src)
