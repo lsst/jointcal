@@ -991,6 +991,8 @@ double GtransfoPoly::do_the_fit(const StarMatchList &List,
 {
   Eigen::MatrixXd A(2*nterms,2*nterms);
   Eigen::VectorXd B(2*nterms);
+  A.setZero();
+  B.setZero();
   double sumr2 = 0;
   double monomials[nterms];
   for (auto it = List.begin(); it != List.end(); ++it)
