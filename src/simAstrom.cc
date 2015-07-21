@@ -5,6 +5,12 @@
 #include <utility>
 #include <vector>
 
+#include <stdlib.h> /* for getenv */
+
+#define _GNU_SOURCE 1
+#define __USE_GNU
+#include <fenv.h> 
+
 //#include "boost/scoped_array.hpp"
 //#include "boost/shared_array.hpp"
 //#include "boost/multi_index_container.hpp"
@@ -35,6 +41,15 @@ namespace afwTable = lsst::afw::table;
 namespace lsst {
 namespace meas {
 namespace simastrom {
+    
+    static void __attribute__ ((constructor))
+trapfpe ()
+{
+  /* Enable some exceptions.  At startup all exceptions are masked. */
+
+  if (getenv("DUMP_CORE_ON_FPE"))
+    feenableexcept (FE_INVALID|FE_DIVBYZERO|FE_OVERFLOW);
+} 
     
     simAstrom::simAstrom(
         std::vector<lsst::afw::table::SortedCatalogT< lsst::afw::table::SourceRecord> > const sourceList,

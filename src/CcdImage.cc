@@ -47,6 +47,8 @@ void CcdImage::LoadCatalog(const lsst::afw::table::SortedCatalogT<lsst::afw::tab
   auto mxxKey = Cat.getSchema().find<double>("base_SdssShape_xx").key;
   auto myyKey = Cat.getSchema().find<double>("base_SdssShape_yy").key;
   auto mxyKey = Cat.getSchema().find<double>("base_SdssShape_xy").key;
+  auto fluxKey = Cat.getSchema().find<double>("base_CircularApertureFlux_5_flux").key;
+  auto efluxKey = Cat.getSchema().find<double>("base_CircularApertureFlux_5_fluxSigma").key;
   wholeCatalog.clear();
   for (auto i = Cat.begin(); i !=Cat.end(); ++i)
     {
@@ -62,6 +64,9 @@ void CcdImage::LoadCatalog(const lsst::afw::table::SortedCatalogT<lsst::afw::tab
       double myy= i->get(myyKey);
       double mxy= i->get(mxyKey);
       ms->vxy = mxy*(ms->vx+ms->vy)/(mxx+myy);
+      ms->flux = i->get(fluxKey);
+      ms->eflux = i->get(efluxKey);
+      ms->SetCcdImage(this);
       wholeCatalog.push_back(ms);
     }
   wholeCatalog.SetCcdImage(this);
