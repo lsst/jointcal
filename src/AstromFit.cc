@@ -1,4 +1,5 @@
 #include <iostream>
+#include <iomanip>
 #include <algorithm>
 #include "lsst/meas/simastrom/AstromFit.h"
 #include "lsst/meas/simastrom/Associations.h"
@@ -584,7 +585,7 @@ unsigned AstromFit::RemoveOutliers(const double &NSigCut)
       vector<unsigned> indices;
       GetMeasuredStarIndices(*(i->ms), indices);
       bool drop_it = true;
-      /* find out is a stronger outlier contraining on the parameters
+      /* find out if a stronger outlier constraining one of the parameters
 	 this one contrains was already discarded. If yes, we keep this one */
       for (auto i=indices.cbegin(); i!= indices.end(); ++i)
 	if (affectedParams(*i) !=0) drop_it = false;
@@ -855,13 +856,16 @@ void AstromFit::MakeResTuple(const std::string &TupleName) const
 	<< "#rx:   residual in degrees in TP" << endl
 	<< "#ry:" << endl
 	<< "#xtp: transformed coordinate in TP " << endl
-	<< "#ytp:" << endl  
+	<< "#ytp:" << endl 
 	<< "#mag: rough mag" << endl
 	<< "#jd: Julian date of the measurement" << endl
     	<< "#rvx: transformed measurement uncertainty " << endl
     	<< "#rvy:" << endl
     	<< "#rvxy:" << endl
 	<< "#color : " << endl
+	<< "#fsindex: some unique index of the object" << endl
+	<< "#ra: pos of fitted star" << endl
+	<< "#dec: pos of fitted star" << endl
 	<< "#chi2: contribution to Chi2 (2D dofs)" << endl
 	<< "#nm: number of measurements of this FittedStar" << endl
     	<< "#chip: chip number" << endl
@@ -897,12 +901,15 @@ void AstromFit::MakeResTuple(const std::string &TupleName) const
 	  double wxy = -tpPos.vxy/det;
 	  //	  double chi2 = rx*(wxx*rx+wxy*ry)+ry*(wxy*rx+wyy*ry);
 	  double chi2 = wxx*res.x*res.x + wyy*res.y*res.y + 2*wxy*res.x*res.y;
+	  tuple << std::setprecision(9);
 	  tuple << ms.x << ' ' << ms.y << ' ' 
 		<< res.x << ' ' << res.y << ' '
 		<< tpPos.x << ' ' << tpPos.y << ' '
 		<< fs->Mag() << ' ' << jd << ' ' 
 		<< tpPos.vx << ' ' << tpPos.vy << ' ' << tpPos.vxy << ' ' 
 		<< fs->color << ' ' 
+		<< fs->IndexInMatrix() << ' '
+	        << fs->x << ' ' << fs->y << ' '
 		<< chi2 << ' ' 
 		<< fs->MeasurementCount() << ' ' 
 		<< im.Chip() << ' ' << im.Shoot() << endl;
