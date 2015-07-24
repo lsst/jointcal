@@ -94,7 +94,7 @@ bool Associations::AddImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::S
   CcdImage *ccdImage = new CcdImage(Ri, commonTangentPoint, wcs, meta, bbox, filter, calib, visit, ccd);
   ccdImageList.push_back(ccdImage);
   std::cout << " we have " << ccdImage->WholeCatalog().size() 
-	    << " objects in this catalog" << std::endl;
+	    << " objects in this catalog " << visit << " " << ccd << std::endl;
   return true;
 }
 
