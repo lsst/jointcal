@@ -60,7 +60,9 @@ public:
             const PTR(lsst::daf::base::PropertySet) meta,
             const lsst::afw::geom::Box2I &bbox,
             const std::string &filter,
-            const PTR(lsst::afw::image::Calib) calib  );
+            const PTR(lsst::afw::image::Calib) calib,
+            const int &visit,
+            const int &ccd );
 
   //! incrementaly builds a merged catalog of all image catalogs
   void AssociateCatalogs(const double MatchCutInArcSec = 0, 

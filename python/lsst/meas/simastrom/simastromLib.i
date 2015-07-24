@@ -38,7 +38,8 @@ Python interface to lsst::meas::simastrom classes
 %template(PropertySetList) std::vector<boost::shared_ptr<lsst::daf::base::PropertySet> >;
 %template(CalibList) std::vector<boost::shared_ptr< lsst::afw::image::Calib > >;
 %template(BboxList) std::vector<lsst::afw::geom::Box2I>;
-%template(BboxList) std::vector<std::string>;
+%template(StringList) std::vector<std::string>;
+%template(IntList) std::vector<int>;
 
 %include "lsst/meas/simastrom/test.h"
 %include "lsst/meas/simastrom/test2.h"

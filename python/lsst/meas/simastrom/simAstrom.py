@@ -87,6 +87,8 @@ class SimAstromTask(pipeBase.CmdLineTask):
         bboxList = []
         filterList = []
         calibList = []
+        visitList = []
+        ccdList = []
         
         config = StarSelectorConfig()
         ss = StarSelector(config)
@@ -112,8 +114,10 @@ class SimAstromTask(pipeBase.CmdLineTask):
             bboxList.append(bbox)
             filterList.append(filt)
             calibList.append(calib)
+            visitList.append(dataRef.dataId['visit'])
+            ccdList.append(dataRef.dataId['ccd'])
             
-        simA = simAstrom(srcList, metaList, wcsList, bboxList, filterList, calibList)
+        simA = simAstrom(srcList, metaList, wcsList, bboxList, filterList, calibList, visitList, ccdList)
 
 class StarSelectorConfig(pexConfig.Config):
     
@@ -165,8 +169,8 @@ class StarSelector(object) :
             flux = src.get(fluxKey)
             if flux < 0 :
                 continue
-            # Reject objects with magnitude > 21
-            if calib.getMagnitude(flux) > 21 :
+            # Reject objects with magnitude > 22.5
+            if calib.getMagnitude(flux) > 22.5 :
                 continue
                 
             newCat.append(src)

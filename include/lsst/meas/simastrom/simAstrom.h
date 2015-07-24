@@ -27,7 +27,9 @@ public:
         std::vector<PTR(lsst::afw::image::TanWcs)> const wcsList,
         std::vector<lsst::afw::geom::Box2I> const bboxList,
         std::vector<std::string> const filterList,
-        std::vector<PTR(lsst::afw::image::Calib)> const calibList
+        std::vector<PTR(lsst::afw::image::Calib)> const calibList,
+        std::vector<int> const visitList,
+        std::vector<int> const ccdList
     );
     
 private:
@@ -38,6 +40,8 @@ private:
     std::vector<lsst::afw::geom::Box2I> _bboxList;
     std::vector<std::string> _filterList;
     std::vector<PTR(lsst::afw::image::Calib)> _calibList;
+    std::vector<int> const _visitList;
+    std::vector<int> const _ccdList;
 };
     
 }}}

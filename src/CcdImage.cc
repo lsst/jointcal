@@ -99,7 +99,9 @@ CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceReco
             const PTR(lsst::daf::base::PropertySet) meta,
             const lsst::afw::geom::Box2I &bbox,
             const std::string &filter,
-            const PTR(lsst::afw::image::Calib) calib  ) :
+            const PTR(lsst::afw::image::Calib) calib,
+            const int &visit,
+            const int &ccd  ) :
             
     index(-1), expindex(-1),
     commonTangentPoint(CommonTangentPoint)
@@ -126,6 +128,8 @@ CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceReco
  
     band = filter;
     bandIndex = getBandIndex(band);
+    chip = ccd;
+    shoot = visit;
 
   /* we don't assume here that we know the internals of TanPix2RaDec:
      to construct pix->TP, we do pix->sky->TP, although pix->sky 
