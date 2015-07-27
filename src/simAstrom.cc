@@ -48,7 +48,8 @@ trapfpe ()
   /* Enable some exceptions.  At startup all exceptions are masked. */
 
   if (getenv("DUMP_CORE_ON_FPE"))
-    feenableexcept (FE_INVALID|FE_DIVBYZERO|FE_OVERFLOW);
+    feenableexcept (FE_INVALID|FE_DIVBYZERO|FE_OVERFLOW|FE_UNDERFLOW);
+//    feenableexcept (FE_ALL_EXCEPT);
 } 
     
     simAstrom::simAstrom(
@@ -145,7 +146,7 @@ trapfpe ()
 
       astromFit.MakeResTuple("res0.list");
 
-      for (unsigned k=0; k<3; ++k)
+      for (unsigned k=0; k<5; ++k)
         {
           astromFit.RemoveOutliers(5.);
           std::cout << "After outliers removal" << std::endl;

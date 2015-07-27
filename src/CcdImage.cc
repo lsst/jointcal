@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <string>
+#include <sstream>
 
 #include "lsst/meas/simastrom/CcdImage.h"
 #include "lsst/meas/simastrom/SipToGtransfo.h"
@@ -66,6 +67,11 @@ void CcdImage::LoadCatalog(const lsst::afw::table::SortedCatalogT<lsst::afw::tab
       double myy= i->get(myyKey);
       double mxy= i->get(mxyKey);
       ms->vxy = mxy*(ms->vx+ms->vy)/(mxx+myy);
+      if (ms->vx < 0 || ms->vy< 0 || (ms->vxy*ms->vxy)>(ms->vx*ms->vy)) {
+          std::cout << "Bad source detected in LoadCatalog : " << ms->vx << " " << ms->vy << " " << 
+          ms->vxy*ms->vxy << " " << ms->vx*ms->vy << std::endl;
+          continue;
+        }
       ms->flux = i->get(fluxKey);
       ms->eflux = i->get(efluxKey);
       ms->SetCcdImage(this);
@@ -130,6 +136,10 @@ CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceReco
     bandIndex = getBandIndex(band);
     chip = ccd;
     shoot = visit;
+    
+    std::stringstream out;
+    out << visit << "_" << ccd;
+    riName = out.str();
 
   /* we don't assume here that we know the internals of TanPix2RaDec:
      to construct pix->TP, we do pix->sky->TP, although pix->sky 

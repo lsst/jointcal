@@ -127,8 +127,11 @@ class StarSelectorConfig(pexConfig.Config):
         default = [ "base_PixelFlags_flag_saturated", 
                     "base_PixelFlags_flag_cr",
                     "base_PixelFlags_flag_interpolated",
-                    "base_PsfFlux_flag_edge", 
-                    "base_SdssCentroid_flag"],
+                    "base_CircularApertureFlux_5_flag",
+                    "base_CircularApertureFlux_5_flag_apertureTruncated",
+#                    "base_PsfFlux_flag_edge", 
+                    "base_SdssCentroid_flag",
+                    "base_SdssShape_flag"],
     )
 
 class StarSelector(object) :
@@ -147,7 +150,10 @@ class StarSelector(object) :
 
         schema = srcCat.getSchema()
         newCat = afwTable.SourceCatalog(schema)
-        fluxKey = schema["base_PsfFlux_flux"].asKey()
+        fluxKey = schema["base_CircularApertureFlux_5_flux"].asKey()
+        fluxErrKey = schema["base_CircularApertureFlux_5_fluxSigma"].asKey()
+#        fluxKey = schema["base_PsfFlux_flux"].asKey()
+#        fluxErrKey = schema["base_PsfFlux_fluxSigma"].asKey()
         flagKeys = []
         for f in self.config.badFlags :
             key = schema[f].asKey()
@@ -169,8 +175,10 @@ class StarSelector(object) :
             flux = src.get(fluxKey)
             if flux < 0 :
                 continue
-            # Reject objects with magnitude > 22.5
-            if calib.getMagnitude(flux) > 22.5 :
+            # Reject objects with too large magnitude
+            fluxErr = src.get(fluxErrKey)
+            mag, magErr = calib.getMagnitude(flux, fluxErr)
+            if mag > 22.5 or magErr > 0.1 or flux/fluxErr < 30 :
                 continue
                 
             newCat.append(src)
