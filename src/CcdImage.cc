@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <string>
 #include <sstream>
+#include <math.h>
 
 #include "lsst/meas/simastrom/CcdImage.h"
 #include "lsst/meas/simastrom/SipToGtransfo.h"
@@ -74,6 +75,7 @@ void CcdImage::LoadCatalog(const lsst::afw::table::SortedCatalogT<lsst::afw::tab
         }
       ms->flux = i->get(fluxKey);
       ms->eflux = i->get(efluxKey);
+      ms->mag = -2.5*log10(ms->flux) + zp; 
       ms->SetCcdImage(this);
       wholeCatalog.push_back(ms);
     }
@@ -113,7 +115,10 @@ CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceReco
     commonTangentPoint(CommonTangentPoint)
 
 {
-  LoadCatalog(Ri);
+    // zero point
+    zp = 2.5*log10(calib->getFluxMag0().first);
+    
+    LoadCatalog(Ri);
       // Just checking that we get something sensible
 //    std::cout << Ri[10].getRa() << std::endl;
 //    std::cout << wcs->getPixelOrigin() << std::endl;
@@ -127,7 +132,6 @@ CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceReco
     
     readWcs = new simAstrom::TanSipPix2RaDec(simAstrom::ConvertTanWcs(wcs));
     
-    // Don't know if the following is necessary. Why shouldn't we use readWcs everywhere instead of tanWcs ?
     TanSipPix2RaDec *tanWcs = dynamic_cast<TanSipPix2RaDec*>(readWcs);
   
     inverseReadWcs = readWcs->InverseTransfo(0.01, imageFrame);

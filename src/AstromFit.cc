@@ -601,7 +601,7 @@ unsigned AstromFit::RemoveOutliers(const double &NSigCut)
 	     
 	     It seems plausible that the adopted mechanism prevents as
 	     well to end up with under-constrained transfos. */
-	  for (auto i=indices.cbegin(); i!= indices.end(); ++i)
+	  for (auto i=indices.cbegin(); i!= indices.cend(); ++i)
 	    affectedParams(*i)++;
 	}
     } // end loop on measurements
@@ -879,10 +879,12 @@ void AstromFit::MakeResTuple(const std::string &TupleName) const
       const Mapping *mapping = _distortionModel->GetMapping(im);
       const Point &refractionVector = im.ParallacticVector();
       double jd = im.JD() - _JDRef;
+      double zp = im.ZP();
       unsigned iband= im.BandRank();
       for (auto is=cat.cbegin(); is!=cat.end(); ++is)
 	{
 	  const MeasuredStar &ms = **is;
+	  if (!ms.IsValid()) continue;
 	  FatPoint tpPos;
 	  FatPoint inPos = ms;
 	  TweakAstromMeasurementErrors(inPos,ms);

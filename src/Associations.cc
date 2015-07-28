@@ -220,9 +220,7 @@ void Associations::AssociateCatalogs(const double MatchCutInArcSec,
       std::cout << " ************" << std::endl;
     } // end of loop on CcdImage's
     
-#ifdef TO_BE_FIXED
   AssignMags();
-#endif
 }
 void Associations::CollectRefStars(const bool ProjectOnTP)
 {
@@ -382,6 +380,23 @@ void Associations::SelectFittedStars()
   std::cout 
     << " number of possible fitted star after cutting on # of measurements " 
     << fittedStarList.size() << std::endl;
+}
+
+void Associations::AssignMags()
+{
+  for (CcdImageIterator i=ccdImageList.begin(); i!= ccdImageList.end(); ++i)
+    {
+      CcdImage &ccdImage = **i;
+      MeasuredStarList &catalog = ccdImage.CatalogForFit();
+      for (MeasuredStarIterator mi = catalog.begin(); 
+	   mi != catalog.end(); ++mi)
+	{
+	  MeasuredStar &mstar = **mi;
+	  FittedStar *fstar = mstar.GetFittedStar();
+	  if (!fstar) continue;
+	  fstar->AddMagMeasurement(mstar.Mag(), mstar.MagWeight());
+	}
+    }
 }
 
 #ifdef TODO
@@ -576,24 +591,6 @@ void Associations::AssociatePhotometricRefStars(double MatchCutInArcSec)
   delete smList;
 }
 
-
-
-void Associations::AssignMags()
-{
-  for (CcdImageIterator i=ccdImageList.begin(); i!= ccdImageList.end(); ++i)
-    {
-      CcdImage &ccdImage = **i;
-      MeasuredStarList &catalog = ccdImage.CatalogForFit();
-      for (MeasuredStarIterator mi = catalog.begin(); 
-	   mi != catalog.end(); ++mi)
-	{
-	  MeasuredStar &mstar = **mi;
-	  FittedStar *fstar = mstar.GetFittedStar();
-	  if (!fstar) continue;
-	  fstar->AddMagMeasurement(mstar.Mag(), mstar.MagWeight());
-	}
-    }
-}
 	  
 
 //void Associations::SetRefPhotFactor(int chip, double photfact)

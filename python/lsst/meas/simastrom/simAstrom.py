@@ -129,7 +129,6 @@ class StarSelectorConfig(pexConfig.Config):
                     "base_PixelFlags_flag_interpolated",
                     "base_CircularApertureFlux_5_flag",
                     "base_CircularApertureFlux_5_flag_apertureTruncated",
-#                    "base_PsfFlux_flag_edge", 
                     "base_SdssCentroid_flag",
                     "base_SdssShape_flag"],
     )
@@ -152,8 +151,7 @@ class StarSelector(object) :
         newCat = afwTable.SourceCatalog(schema)
         fluxKey = schema["base_CircularApertureFlux_5_flux"].asKey()
         fluxErrKey = schema["base_CircularApertureFlux_5_fluxSigma"].asKey()
-#        fluxKey = schema["base_PsfFlux_flux"].asKey()
-#        fluxErrKey = schema["base_PsfFlux_fluxSigma"].asKey()
+        parentKey = schema["parent"].asKey()
         flagKeys = []
         for f in self.config.badFlags :
             key = schema[f].asKey()
@@ -179,6 +177,12 @@ class StarSelector(object) :
             fluxErr = src.get(fluxErrKey)
             mag, magErr = calib.getMagnitude(flux, fluxErr)
             if mag > 22.5 or magErr > 0.1 or flux/fluxErr < 30 :
+                continue
+            # Reject blends
+            if src.get(parentKey) != 0 :
+                continue
+            footprint = src.getFootprint()
+            if footprint is not None and len(footprint.getPeaks()) > 1 :
                 continue
                 
             newCat.append(src)
