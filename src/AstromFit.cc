@@ -768,7 +768,7 @@ bool AstromFit::Minimize(const std::string &WhatToFit)
     SpMat jacobian(_nParTot,tList.NextFreeIndex());
     jacobian.setFromTriplets(tList.begin(), tList.end());
     // release memory shrink_to_fit is C++11
-    tList.clear(); tList.shrink_to_fit();
+    tList.clear(); //tList.shrink_to_fit();
     clock_t tstart = clock();
     hessian = jacobian*jacobian.transpose();
     clock_t tend = clock();
@@ -779,7 +779,7 @@ bool AstromFit::Minimize(const std::string &WhatToFit)
     SpMat jacobian(tList.NextRank(), _nParTot);
     jacobian.setFromTriplets(tList.begin(), tList.end());
     // release memory shrink_to_fit is C++11
-    tList.clear(); tList.shrink_to_fit(); 
+    tList.clear(); //tList.shrink_to_fit(); 
     cout << " starting H=JtJ " << endl;
     hessian = jacobian.transpose()*jacobian;
 #endif

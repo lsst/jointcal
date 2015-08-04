@@ -103,7 +103,10 @@ class SimAstromTask(pipeBase.CmdLineTask):
             filt = calexp.getFilter().getName()
             
             newSrc = ss.select(src, calib)
-            print len(newSrc)
+            if len(newSrc) == 0 :
+                print "no source selected in ", dataRef.dataId["visit"], dataRef.dataId["ccd"]
+                continue
+            print "%d sources selected in visit %d - ccd %d"%(len(newSrc), dataRef.dataId["visit"], dataRef.dataId["ccd"])
             
         # Should call a source selector here in order to send a list
         # of reasonable star to the fitter.
@@ -176,7 +179,7 @@ class StarSelector(object) :
             # Reject objects with too large magnitude
             fluxErr = src.get(fluxErrKey)
             mag, magErr = calib.getMagnitude(flux, fluxErr)
-            if mag > 22.5 or magErr > 0.1 or flux/fluxErr < 30 :
+            if mag > 22.5 or magErr > 0.1 or flux/fluxErr < 10 :
                 continue
             # Reject blends
             if src.get(parentKey) != 0 :
@@ -187,6 +190,6 @@ class StarSelector(object) :
                 
             newCat.append(src)
             
-        print len(srcCat), len(newCat)
+#        print len(srcCat), len(newCat)
         
         return newCat

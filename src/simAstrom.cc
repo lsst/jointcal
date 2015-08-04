@@ -146,7 +146,7 @@ trapfpe ()
 
       astromFit.MakeResTuple("res0.list");
 
-      for (unsigned k=0; k<5; ++k)
+      for (unsigned k=0; k<20; ++k)
         {
           astromFit.RemoveOutliers(5.);
           std::cout << "After outliers removal" << std::endl;

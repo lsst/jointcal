@@ -126,8 +126,6 @@ void Associations::AssociateCatalogs(const double MatchCutInArcSec,
     {
       CcdImage &ccdImage = **i;
       
-         std::cout << "In loop over CcdImages " << std::endl;
-
       const Gtransfo *toCommonTangentPlane = 
 	ccdImage.Pix2CommonTangentPlane(); 
 
@@ -141,7 +139,7 @@ void Associations::AssociateCatalogs(const double MatchCutInArcSec,
 
       // associate with previous lists
       /* to speed up the match (more precisely the contruction of the
-	 FastFinder), select int the fittedStarList the objects that
+	 FastFinder), select in the fittedStarList the objects that
 	 are within reach of the current ccdImage
       */
       Frame ccdImageFrameCPT = 
