@@ -1800,7 +1800,7 @@ TanRaDec2Pix::TanRaDec2Pix(const GtransfoLin &Tan2Pix, const Point &TangentPoint
 
 void TanRaDec2Pix::SetTangentPoint(const Point &TangentPoint)
 {
-/* the radian to degrees convertion after projection 
+/* the radian to degrees conversion after projection 
     is handled in apply */
   ra0  = deg2rad(TangentPoint.x);
   dec0 = deg2rad(TangentPoint.y);

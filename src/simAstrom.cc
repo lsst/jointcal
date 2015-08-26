@@ -98,7 +98,7 @@ trapfpe ()
 //                std::cout << sourcePtr->get(centroidKey) << std::endl;
 //            } 
     
-    // Create and load an Associations object
+    // Create and load an Association object
     Associations *assoc = new Associations();    
     for (int i=0; i<_sourceList.size(); i++) {
         assoc->AddImage(_sourceList[i], _wcsList[i], _metaList[i], _bboxList[i], _filterList[i], 
@@ -128,7 +128,7 @@ trapfpe ()
 	astromFit.Minimize(whatToFit);
       }
       
-      whatToFit = "Positions";
+    whatToFit = "Positions";
     for (unsigned iter=0; iter<2;++iter)
         {
         std::cout << " Fitting only positions" << std::endl;
@@ -138,22 +138,22 @@ trapfpe ()
 
     std::cout << astromFit.ComputeChi2() << std::endl;
     
-      std::cout << " fitting positions and mappings" << std::endl;
+    std::cout << " fitting positions and mappings" << std::endl;
       
-      astromFit.Minimize("Positions Distortions");
+    astromFit.Minimize("Positions Distortions");
 
-      std::cout << astromFit.ComputeChi2() << std::endl;
+    std::cout << astromFit.ComputeChi2() << std::endl;
 
-      astromFit.MakeResTuple("res0.list");
+    astromFit.MakeResTuple("res0.list");
 
-      for (unsigned k=0; k<20; ++k)
+    for (unsigned k=0; k<100; ++k)
         {
           astromFit.RemoveOutliers(5.);
           std::cout << "After outliers removal" << std::endl;
           astromFit.Minimize("Positions Distortions");
           std::cout << astromFit.ComputeChi2() << std::endl;
         }
-      astromFit.MakeResTuple("res.list");
+    astromFit.MakeResTuple("res.list");
 }    
     
 }}}

@@ -94,6 +94,7 @@ Point AstromFit::TransformFittedStar(const FittedStar &F,
 in case we need the mag.  */
 
   static double posErrorIncrement = 0.02; // pixels
+//  static double posErrorIncrement = 0.00; // pixels
 
 static void TweakAstromMeasurementErrors(FatPoint &P, const MeasuredStar &Ms)
 {
@@ -130,7 +131,7 @@ void AstromFit::LSDerivatives(const CcdImage &Ccd,
   unsigned npar_pm = (_fittingPM) ? NPAR_PM : 0;
   unsigned npar_tot =  npar_mapping + npar_pos + npar_refrac + npar_pm;
   // if (npar_tot == 0) this CcdImage does not contribute 
-  // any contraint to the fit, so :
+  // any constraint to the fit, so :
   if (npar_tot == 0) return;
   vector<unsigned> indices(npar_tot,-1);
   if (_fittingDistortions)  mapping->GetMappingIndices(indices);
@@ -145,7 +146,7 @@ void AstromFit::LSDerivatives(const CcdImage &Ccd,
   const Gtransfo* sky2TP = _distortionModel->Sky2TP(mapping, Ccd);
   // reserve matrices once for all measurements
   GtransfoLin dypdy;
-  // the shape of h (et al) is required this way in order to able to 
+  // the shape of h (et al) is required this way in order to be able to 
   // separate derivatives along x and y as vectors.
   Eigen::MatrixX2d h(npar_tot,2), halpha(npar_tot,2), hw(npar_tot,2); 
   Eigen::Matrix2d transW(2,2);
@@ -183,6 +184,7 @@ void AstromFit::LSDerivatives(const CcdImage &Ccd,
       alpha(0,0) = sqrt(transW(0,0));
       // checked that  alpha*alphaT = transW
       alpha(1,0) = transW(0,1)/alpha(0,0); 
+      // DB - I think that the next line is equivalent to : alpha(1,1) = 1./sqrt(outPos.vy)
       alpha(1,1) = 1./sqrt(det*transW(0,0));
       alpha(0,1) = 0;
       
