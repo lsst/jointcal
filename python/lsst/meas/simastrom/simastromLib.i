@@ -24,6 +24,8 @@ Python interface to lsst::meas::simastrom classes
 #include "lsst/meas/simastrom/test.h"
 #include "lsst/meas/simastrom/test2.h"
 #include "lsst/meas/simastrom/simAstrom.h"
+#include "lsst/meas/simastrom/CcdImage.h"
+#include "lsst/meas/simastrom/AstromFit.h"
 %}
 
 %include "lsst/p_lsstSwig.i"
@@ -44,4 +46,9 @@ Python interface to lsst::meas::simastrom classes
 %include "lsst/meas/simastrom/test.h"
 %include "lsst/meas/simastrom/test2.h"
 %include "lsst/meas/simastrom/simAstrom.h"
+class lsst::meas::simastrom::DistortionModel;
+class lsst::meas::simastrom::TripletList;
+class lsst::meas::simastrom::CcdImage;
+class lsst::meas::simastrom::CcdImageList;
+%include "lsst/meas/simastrom/AstromFit.h"
 
