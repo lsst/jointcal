@@ -3,8 +3,7 @@
 #define USNOUTILS__H
 
 #include "lsst/meas/simastrom/BaseStar.h"
-
-
+#include "lsst/meas/simastrom/Frame.h"
 namespace lsst {
 namespace meas {
 namespace simastrom {
@@ -27,6 +26,11 @@ WARNING : The flux of the returned BaseStar's is in fact a magnitude. */
   double RaStringToDeg(const std::string RaString);
 
   double DecStringToDeg(const std::string DecString);
+
+  class Gtransfo;
+  //! Transform a Frame through a Transfo.
+  Frame ApplyTransfo(const Frame& inputframe,const Gtransfo &T, 
+		     const WhichTransformed W);
 
 
 }}} // end of namespaces
