@@ -29,7 +29,8 @@ public:
         std::vector<std::string> const filterList,
         std::vector<PTR(lsst::afw::image::Calib)> const calibList,
         std::vector<int> const visitList,
-        std::vector<int> const ccdList
+        std::vector<int> const ccdList,
+        std::vector<std::string> const cameraList
     );
     
 private:
@@ -42,6 +43,7 @@ private:
     std::vector<PTR(lsst::afw::image::Calib)> _calibList;
     std::vector<int> const _visitList;
     std::vector<int> const _ccdList;
+    std::vector<std::string> const _cameraList;
 };
     
 }}}

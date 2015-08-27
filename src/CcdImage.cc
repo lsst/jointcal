@@ -109,7 +109,8 @@ CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceReco
             const std::string &filter,
             const PTR(lsst::afw::image::Calib) calib,
             const int &visit,
-            const int &ccd  ) :
+            const int &ccd,
+            const std::string &camera ) :
             
     index(-1), expindex(-1),
     commonTangentPoint(CommonTangentPoint)
@@ -166,16 +167,36 @@ CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceReco
       // this one is needed for matches :
     pix2CommonTangentPlane = GtransfoCompose(&raDec2CTP, tanWcs);
     
-    // In the following we read informations directly from the fits header. This will have to be modified in order to be
-    // instrument independent
+    // In the following we read informations directly from the fits header which is instrument dependent
+    // We rely on the camera name which is not optimal as a camera can be mounted on different telescopes. 
+    // We would rather need the telescope name. 
+    // This instrument specific part will eventually have to be handled by the camera mapper
     
-    airMass = meta->get<double>("AIRMASS");
-    jd = meta->get<double>("MJD-OBS");  // Julian date
-    expTime = meta->get<double>("EXPTIME");
-    double latitude = lsst::afw::geom::degToRad(meta->get<double>("LATITUDE"));
-    double lst_obs = lsst::afw::geom::degToRad(RaStringToDeg(meta->get<std::string>("LST-OBS")));
-    double ra = lsst::afw::geom::degToRad(meta->get<double>("RA_DEG"));
-    double dec = lsst::afw::geom::degToRad(meta->get<double>("DEC_DEG"));
+    double latitude;
+    double lst_obs;
+    double ra;
+    double dec;
+    if (camera == "megacam") {
+        airMass = meta->get<double>("AIRMASS");
+        jd = meta->get<double>("MJD-OBS");  // Julian date
+        expTime = meta->get<double>("EXPTIME");
+        latitude = lsst::afw::geom::degToRad(meta->get<double>("LATITUDE"));
+        lst_obs = lsst::afw::geom::degToRad(RaStringToDeg(meta->get<std::string>("LST-OBS")));
+        ra = lsst::afw::geom::degToRad(meta->get<double>("RA_DEG"));
+        dec = lsst::afw::geom::degToRad(meta->get<double>("DEC_DEG"));
+    }
+    else if (camera == "hsc") {
+        airMass = meta->get<double>("AIRMASS");
+        jd = meta->get<double>("MJD");  // Julian date
+        expTime = meta->get<double>("EXPTIME");
+        latitude = lsst::afw::geom::degToRad(19.825252);   // Does not seem to be in the header
+        lst_obs = lsst::afw::geom::degToRad(RaStringToDeg(meta->get<std::string>("LST-STR")));
+        ra = RaStringToDeg(meta->get<std::string>("RA2000"));
+        dec = DecStringToDeg(meta->get<std::string>("DEC2000"));
+    }
+    else {
+        throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,"CcdImage, unsupported camera "+camera);
+    }
     hourAngle = (lst_obs-ra);
     if  (hourAngle>M_PI) hourAngle -= 2*M_PI;
     if  (hourAngle<-M_PI) hourAngle += 2*M_PI;

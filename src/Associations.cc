@@ -48,7 +48,8 @@ bool Associations::AddImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::S
             const std::string &filter,
             const PTR(lsst::afw::image::Calib) calib,
 	    const int &visit,
-	    const int &ccd )
+	    const int &ccd,
+	    const std::string &camera )
 {
 
 //  std::cout << " considering image " << ri.Name() << std::endl;
@@ -63,7 +64,7 @@ bool Associations::AddImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::S
 	commonTangentPoint = Point(crval1, crval2);
 	std::cout << "setting commonTangentPoint" << commonTangentPoint << std::endl;
     }
-  CcdImage *ccdImage = new CcdImage(Ri, commonTangentPoint, wcs, meta, bbox, filter, calib, visit, ccd);
+  CcdImage *ccdImage = new CcdImage(Ri, commonTangentPoint, wcs, meta, bbox, filter, calib, visit, ccd, camera);
   ccdImageList.push_back(ccdImage);
   std::cout << " we have " << ccdImage->WholeCatalog().size() 
 	    << " objects in this catalog " << visit << " " << ccd << std::endl;

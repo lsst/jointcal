@@ -48,6 +48,12 @@ class SimAstromConfig(pexConfig.Config):
         dtype = bool,
         default = True,
     )
+    
+    sourceFluxType = pexConfig.Field(
+        doc = "Type of source flux; typically one of Ap or Psf",
+        dtype = str,
+        default = "base_CircularApertureFlux_5_flux",   # base_CircularApertureFlux_17_0_flux in recent stack version 
+    )
 
 class SimAstromTask(pipeBase.CmdLineTask):
  
@@ -89,6 +95,7 @@ class SimAstromTask(pipeBase.CmdLineTask):
         calibList = []
         visitList = []
         ccdList = []
+        cameraList = []
         
         config = StarSelectorConfig()
         ss = StarSelector(config)
@@ -119,8 +126,9 @@ class SimAstromTask(pipeBase.CmdLineTask):
             calibList.append(calib)
             visitList.append(dataRef.dataId['visit'])
             ccdList.append(dataRef.dataId['ccd'])
+            cameraList.append(dataRef.getButler().mapper.getCameraName())
             
-        simA = simAstrom(srcList, metaList, wcsList, bboxList, filterList, calibList, visitList, ccdList)
+        simA = simAstrom(srcList, metaList, wcsList, bboxList, filterList, calibList, visitList, ccdList, cameraList)
 
 class StarSelectorConfig(pexConfig.Config):
     

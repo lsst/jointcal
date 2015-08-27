@@ -60,7 +60,8 @@ trapfpe ()
         std::vector<std::string> const filterList,
         std::vector<PTR(lsst::afw::image::Calib)> const calibList,
         std::vector<int> const visitList,
-        std::vector<int> const ccdList
+        std::vector<int> const ccdList,
+        std::vector<std::string> const cameraList
     ):
         _sourceList(sourceList),
         _metaList(metaList),
@@ -69,7 +70,8 @@ trapfpe ()
         _filterList(filterList),
         _calibList(calibList),
         _visitList(visitList),
-        _ccdList(ccdList)
+        _ccdList(ccdList),
+        _cameraList(cameraList)
 {
     std::cout << "simAstrom constructor invoked " << std::endl;
     std::cout << "Vectors contain : " << _sourceList.size() << " elements" << std::endl;
@@ -80,6 +82,7 @@ trapfpe ()
     std::cout << _filterList[1] << std::endl;
     std::cout << _visitList[1] << std::endl;
     std::cout << _ccdList[1] << std::endl;
+    std::cout << _cameraList[1] << std::endl;
     
     // Check how to get SIP coefficients from WCS
     lsst::daf::base::PropertyList::Ptr wcsMeta = _wcsList[1]->getFitsMetadata();
@@ -102,7 +105,7 @@ trapfpe ()
     Associations *assoc = new Associations();    
     for (int i=0; i<_sourceList.size(); i++) {
         assoc->AddImage(_sourceList[i], _wcsList[i], _metaList[i], _bboxList[i], _filterList[i], 
-        _calibList[i], _visitList[i], _ccdList[i]);
+        _calibList[i], _visitList[i], _ccdList[i], _cameraList[i]);
     }
     
     // Associates catalog

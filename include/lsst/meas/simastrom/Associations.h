@@ -62,7 +62,8 @@ public:
             const std::string &filter,
             const PTR(lsst::afw::image::Calib) calib,
             const int &visit,
-            const int &ccd );
+            const int &ccd,
+            const std::string &camera );
 
   //! incrementaly builds a merged catalog of all image catalogs
   void AssociateCatalogs(const double MatchCutInArcSec = 0, 

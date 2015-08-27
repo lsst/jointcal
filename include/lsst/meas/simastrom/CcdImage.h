@@ -98,7 +98,7 @@ class CcdImage : public RefCount
   CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &Ri, 
     const Point &CommonTangentPoint, const PTR(lsst::afw::image::TanWcs) wcs, const PTR(lsst::daf::base::PropertySet) meta,
     const lsst::afw::geom::Box2I &bbox, const std::string &filter, const PTR(lsst::afw::image::Calib) calib,
-    const int &visit, const int &ccd );
+    const int &visit, const int &ccd, const std::string &ccdImage );
 
 
     
