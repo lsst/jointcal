@@ -81,18 +81,7 @@ trapfpe ()
         _ccdList(ccdList),
         _cameraList(cameraList)
 {
-    std::cout << "simAstrom constructor invoked " << std::endl;
-    std::cout << "Vectors contain : " << _sourceList.size() << " elements" << std::endl;
-    std::cout << _metaList[0]->get<double>("LATITUDE") << std::endl;
-    std::cout << _sourceList[1][10].getRa() << std::endl;
-    std::cout << _wcsList[1]->getPixelOrigin() << std::endl;
-    std::cout << _bboxList[1] << std::endl;
-    std::cout << _filterList[1] << std::endl;
-    std::cout << _visitList[1] << std::endl;
-    std::cout << _ccdList[1] << std::endl;
-    std::cout << _cameraList[1] << std::endl;
-    
-//    SimAstromControl control;
+
     std::cout << "sourceFluxField is set to : " << control->sourceFluxField << std::endl;
     
     // Check how to get SIP coefficients from WCS
