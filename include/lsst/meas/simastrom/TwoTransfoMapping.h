@@ -24,6 +24,12 @@ class TwoTransfoMapping: public Mapping
   };
 
   std::unique_ptr<tmpVars> tmp;
+  
+  // forbid copies
+  TwoTransfoMapping(const TwoTransfoMapping&);
+  void operator= (const TwoTransfoMapping&);
+  
+
 
  public : 
   //!  

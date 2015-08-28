@@ -16,7 +16,7 @@ TwoTransfoMapping::TwoTransfoMapping(SimpleGtransfoMapping *M1,
   /* Allocate the record of temporary variables, so that they are not
      allocated at every call. This is hidden behind a pointer in order
      to be allowed to alter them in a const routine. */
-  tmp = std::auto_ptr<tmpVars>(new tmpVars);
+  tmp = std::unique_ptr<tmpVars>(new tmpVars);
   SetWhatToFit(true,true);
 }
 
@@ -88,7 +88,6 @@ void TwoTransfoMapping::SetWhatToFit(const bool FittingT1, const bool FittingT2)
     }
   else _nPar2 = 0;
 }
-
 
 
 void TwoTransfoMapping::TransformPosAndErrors(const FatPoint &Where,
