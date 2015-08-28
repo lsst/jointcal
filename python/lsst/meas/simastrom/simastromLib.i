@@ -33,7 +33,10 @@ Python interface to lsst::meas::simastrom classes
 
 %import "lsst/afw/table/tableLib.i"
 
+%include "lsst/pex/config.h"
+
 %shared_ptr(lsst::daf::base::PropertySet);
+%shared_ptr(lsst::meas::simastrom::SimAstromControl);
 
 %template(SourceList) std::vector<lsst::afw::table::SortedCatalogT< lsst::afw::table::SourceRecord> >;
 %template(WcsList) std::vector<boost::shared_ptr<lsst::afw::image::TanWcs> >;

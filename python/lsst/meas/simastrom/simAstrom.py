@@ -34,7 +34,7 @@ from lsst.pipe.tasks.selectImages import WcsSelectImagesTask, SelectStruct
 from lsst.coadd.utils import CoaddDataIdContainer
 from lsst.pipe.tasks.getRepositoryData import DataRefListRunner
 
-from .simastromLib import test, test2, simAstrom
+from .simastromLib import test, test2, simAstrom, SimAstromControl
 
 __all__ = ["SimAstromConfig", "SimAstromTask"]
 
@@ -49,10 +49,10 @@ class SimAstromConfig(pexConfig.Config):
         default = True,
     )
     
-    sourceFluxType = pexConfig.Field(
-        doc = "Type of source flux; typically one of Ap or Psf",
+    sourceFluxField = pexConfig.Field(
+        doc = "Type of source flux",
         dtype = str,
-        default = "base_CircularApertureFlux_5_flux",   # base_CircularApertureFlux_17_0_flux in recent stack version 
+        default = "base_CircularApertureFlux_5",   # base_CircularApertureFlux_17_0 in recent stack version 
     )
 
 class SimAstromTask(pipeBase.CmdLineTask):
@@ -97,8 +97,12 @@ class SimAstromTask(pipeBase.CmdLineTask):
         ccdList = []
         cameraList = []
         
-        config = StarSelectorConfig()
-        ss = StarSelector(config)
+        configSel = StarSelectorConfig()
+        ss = StarSelector(configSel, self.config.sourceFluxField)
+        
+        print self.config.sourceFluxField
+        astromControl = SimAstromControl()
+        astromControl.sourceFluxField = self.config.sourceFluxField
         
         for dataRef in ref :
             src = dataRef.get("src", immediate=True)
@@ -128,7 +132,7 @@ class SimAstromTask(pipeBase.CmdLineTask):
             ccdList.append(dataRef.dataId['ccd'])
             cameraList.append(dataRef.getButler().mapper.getCameraName())
             
-        simA = simAstrom(srcList, metaList, wcsList, bboxList, filterList, calibList, visitList, ccdList, cameraList)
+        simA = simAstrom(srcList, metaList, wcsList, bboxList, filterList, calibList, visitList, ccdList, cameraList, astromControl)
 
 class StarSelectorConfig(pexConfig.Config):
     
@@ -138,8 +142,6 @@ class StarSelectorConfig(pexConfig.Config):
         default = [ "base_PixelFlags_flag_saturated", 
                     "base_PixelFlags_flag_cr",
                     "base_PixelFlags_flag_interpolated",
-                    "base_CircularApertureFlux_5_flag",
-                    "base_CircularApertureFlux_5_flag_apertureTruncated",
                     "base_SdssCentroid_flag",
                     "base_SdssShape_flag"],
     )
@@ -148,25 +150,28 @@ class StarSelector(object) :
     
     ConfigClass = StarSelectorConfig
 
-    def __init__(self, config):
+    def __init__(self, config, sourceFluxField):
         """Construct a star selector
         
         @param[in] config: An instance of StarSelectorConfig
         """
         self.config = config
+        self.sourceFluxField = sourceFluxField
     
     def select(self, srcCat, calib):
 # Return a catalog containing only reasonnable stars
 
         schema = srcCat.getSchema()
         newCat = afwTable.SourceCatalog(schema)
-        fluxKey = schema["base_CircularApertureFlux_5_flux"].asKey()
-        fluxErrKey = schema["base_CircularApertureFlux_5_fluxSigma"].asKey()
+        fluxKey = schema[self.sourceFluxField+"_flux"].asKey()
+        fluxErrKey = schema[self.sourceFluxField+"_fluxSigma"].asKey()
         parentKey = schema["parent"].asKey()
         flagKeys = []
         for f in self.config.badFlags :
             key = schema[f].asKey()
             flagKeys.append(key)
+        fluxFlagKey = schema[self.sourceFluxField+"_flag"].asKey()
+        flagKeys.append(fluxFlagKey)
         
         for src in srcCat :
             # Reject galaxies

@@ -13,13 +13,12 @@
 #include "lsst/meas/simastrom/MeasuredStar.h"
 #include "lsst/meas/simastrom/Gtransfo.h"
 #include "lsst/meas/simastrom/Frame.h"
+//#include "lsst/meas/simastrom/simAstrom.h"
 
 
 namespace lsst {
 namespace meas {
 namespace simastrom {
-
-
 
 typedef int ShootIdType;
 
@@ -91,14 +90,14 @@ class CcdImage : public RefCount
   
   Point  commonTangentPoint;
 
-  void LoadCatalog(const lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &Cat);
+  void LoadCatalog(const lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &Cat, const std::string &fluxField);
 
  public:
 
   CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &Ri, 
     const Point &CommonTangentPoint, const PTR(lsst::afw::image::TanWcs) wcs, const PTR(lsst::daf::base::PropertySet) meta,
     const lsst::afw::geom::Box2I &bbox, const std::string &filter, const PTR(lsst::afw::image::Calib) calib,
-    const int &visit, const int &ccd, const std::string &ccdImage );
+    const int &visit, const int &ccd, const std::string &ccdImage, const std::string &fluxField );
 
 
     

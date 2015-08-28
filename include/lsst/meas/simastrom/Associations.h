@@ -18,6 +18,7 @@
 #include "lsst/meas/simastrom/FittedStar.h"
 #include "lsst/meas/simastrom/CcdImage.h"
 #include "lsst/meas/simastrom/Point.h"
+#include "lsst/meas/simastrom/simAstrom.h"
 
 namespace lsst {
 namespace meas {
@@ -63,7 +64,8 @@ public:
             const PTR(lsst::afw::image::Calib) calib,
             const int &visit,
             const int &ccd,
-            const std::string &camera );
+            const std::string &camera ,
+            const PTR(lsst::meas::simastrom::SimAstromControl) control);
 
   //! incrementaly builds a merged catalog of all image catalogs
   void AssociateCatalogs(const double MatchCutInArcSec = 0, 

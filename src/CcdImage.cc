@@ -40,7 +40,7 @@ namespace simastrom {
 
 static double sq(const double &x) { return x*x;}
 
-void CcdImage::LoadCatalog(const lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &Cat)
+void CcdImage::LoadCatalog(const lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &Cat,const std::string &fluxField)
 {
   auto xKey = Cat.getSchema().find<double>("base_SdssCentroid_x").key;
   auto yKey = Cat.getSchema().find<double>("base_SdssCentroid_y").key;
@@ -49,10 +49,9 @@ void CcdImage::LoadCatalog(const lsst::afw::table::SortedCatalogT<lsst::afw::tab
   auto mxxKey = Cat.getSchema().find<double>("base_SdssShape_xx").key;
   auto myyKey = Cat.getSchema().find<double>("base_SdssShape_yy").key;
   auto mxyKey = Cat.getSchema().find<double>("base_SdssShape_xy").key;
-//  auto fluxKey = Cat.getSchema().find<double>("base_NaiveFlux_flux").key;
-//  auto efluxKey = Cat.getSchema().find<double>("base_NaiveFlux_fluxSigma").key;
-    auto fluxKey = Cat.getSchema().find<double>("base_CircularApertureFlux_5_flux").key;
-    auto efluxKey = Cat.getSchema().find<double>("base_CircularApertureFlux_5_fluxSigma").key;
+  auto fluxKey = Cat.getSchema().find<double>(fluxField + "_flux").key;
+  auto efluxKey = Cat.getSchema().find<double>(fluxField  + "_fluxSigma").key;
+  
   wholeCatalog.clear();
   for (auto i = Cat.begin(); i !=Cat.end(); ++i)
     {
@@ -110,7 +109,8 @@ CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceReco
             const PTR(lsst::afw::image::Calib) calib,
             const int &visit,
             const int &ccd,
-            const std::string &camera ) :
+            const std::string &camera,
+            const std::string &fluxField ) :
             
     index(-1), expindex(-1),
     commonTangentPoint(CommonTangentPoint)
@@ -119,7 +119,7 @@ CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceReco
     // zero point
     zp = 2.5*log10(calib->getFluxMag0().first);
     
-    LoadCatalog(Ri);
+    LoadCatalog(Ri, fluxField);
       // Just checking that we get something sensible
 //    std::cout << Ri[10].getRa() << std::endl;
 //    std::cout << wcs->getPixelOrigin() << std::endl;

@@ -18,6 +18,20 @@ namespace lsst {
 namespace meas {
 namespace simastrom {
     
+    struct SimAstromControl {
+        LSST_CONTROL_FIELD(sourceFluxField, std::string, "name of flux field in source catalog");
+
+        SimAstromControl() :
+            sourceFluxField("base_CircularApertureFlux_7")
+        {
+            validate();
+        }
+        
+        void validate() const;
+
+        ~SimAstromControl() {};
+    };
+    
 class simAstrom {
 public:
     
@@ -30,7 +44,8 @@ public:
         std::vector<PTR(lsst::afw::image::Calib)> const calibList,
         std::vector<int> const visitList,
         std::vector<int> const ccdList,
-        std::vector<std::string> const cameraList
+        std::vector<std::string> const cameraList,
+        PTR(lsst::meas::simastrom::SimAstromControl) const control
     );
     
 private:

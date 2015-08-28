@@ -42,6 +42,13 @@ namespace lsst {
 namespace meas {
 namespace simastrom {
     
+    void SimAstromControl::validate() const {
+        if (sourceFluxField.empty()) {
+            throw LSST_EXCEPT(pexExcept::InvalidParameterError, "sourceFluxField must be specified");
+        }
+        std::cout << sourceFluxField << std::endl;
+    }
+    
     static void __attribute__ ((constructor))
 trapfpe ()
 {
@@ -61,7 +68,8 @@ trapfpe ()
         std::vector<PTR(lsst::afw::image::Calib)> const calibList,
         std::vector<int> const visitList,
         std::vector<int> const ccdList,
-        std::vector<std::string> const cameraList
+        std::vector<std::string> const cameraList,
+        PTR(lsst::meas::simastrom::SimAstromControl) const control
     ):
         _sourceList(sourceList),
         _metaList(metaList),
@@ -84,6 +92,9 @@ trapfpe ()
     std::cout << _ccdList[1] << std::endl;
     std::cout << _cameraList[1] << std::endl;
     
+//    SimAstromControl control;
+    std::cout << "sourceFluxField is set to : " << control->sourceFluxField << std::endl;
+    
     // Check how to get SIP coefficients from WCS
     lsst::daf::base::PropertyList::Ptr wcsMeta = _wcsList[1]->getFitsMetadata();
 //    std::cout << wcsMeta->getOrderedNames() << std::endl;
@@ -105,7 +116,7 @@ trapfpe ()
     Associations *assoc = new Associations();    
     for (int i=0; i<_sourceList.size(); i++) {
         assoc->AddImage(_sourceList[i], _wcsList[i], _metaList[i], _bboxList[i], _filterList[i], 
-        _calibList[i], _visitList[i], _ccdList[i], _cameraList[i]);
+        _calibList[i], _visitList[i], _ccdList[i], _cameraList[i], control);
     }
     
     // Associates catalog
@@ -149,7 +160,7 @@ trapfpe ()
 
     astromFit.MakeResTuple("res0.list");
 
-    for (unsigned k=0; k<100; ++k)
+    for (unsigned k=0; k<20; ++k)
         {
           astromFit.RemoveOutliers(5.);
           std::cout << "After outliers removal" << std::endl;
