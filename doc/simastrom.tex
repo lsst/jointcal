@@ -301,10 +301,10 @@ projection. We use a projector there so that the comparison of
 positions is done using an Euclidean metric.
 
 
-\subsection{Proper motions and atmospheric refraction}
+\section{Proper motions and atmospheric refraction}
 The expression \ref{eq:chi2} above depends on two sets of parameters:
-the parameters defining the mappings and the positions $F_k$. The expression
-above ignores two details implemented in the code: accounting for proper
+the parameters defining the mappings and the positions $F_k$. This expression
+hides two details implemented in the code: accounting for proper
 motions and differential effects of atmospheric refraction.
 
 Proper motions can be accounted for to predict the expected positions
@@ -340,13 +340,14 @@ made this correction zero on average. As for proper motions, fitting
 or not these refraction-induced differential position shifts is left
 to the user (see \S \ref{sec:indices_whattofit}).
 
-\subsection{Minimization approach}
+\section{Minimization approach}
 The expression \ref{eq:chi2} depends on two sets of parameters: the parameters
 defining the mappings $M_\gamma(X) \equiv = M_\gamma(\eta_\gamma,X)$,
-and the positions $F_k$. 
+and the positions $F_k$. There are indeed extra parameter sets and what 
+is described here applies as well to those.
 
 We call $\theta$ the vector that gathers
-all these parameters. For a practical problem its size
+all parameters. For a practical problem its size
 can easily reach $10^5$. But the matrix 
 $d^2 \chi^2/d \theta^2$ is very sparse, because
 there are no terms connecting $F_i$ and $F_j$ if $i \neq j$, and
@@ -420,23 +421,28 @@ $$
 \frac{1}{2} \frac{d^2 \chi^2}{d \theta^2} = J^T J
 $$
 
-The computation of the Jacobian and the gradient 
-orchestrated in the \ClName{AstromFit} class.
-The routines \RoutineName{AstromFit::LSDerivatives1} and 
-\RoutineName{AstromFit::LSDerivatives2} evaluate the contributions of the
-measurement terms and the references terms respectively to the
+In the code, we take advantage of the fact that each term of the
+$\chi^2$ only depends on a small number of parameters. The data
+stuctures allow us to collect easily the indices of these parameters,
+and we evaluate in fact the $H$ matrices for these indices only.
+
+The computation of the Jacobian and the gradient is orchestrated in
+the \ClName{AstromFit} class.  The routines
+\RoutineName{AstromFit::LSDerivatives1} and
+\RoutineName{AstromFit::LSDerivatives2} evaluate the contributions of
+the measurement terms and the references terms respectively to the
 Jacobian and gradient of the $\chi^2$. In these routines, the Jacobian
 is represented as a list of triplets $(i,j,J_{ij})$ describing its
 elements. This list is then transformed into a representation of
 sparse matrices suitable for algebra, and in particular suitable to
-evaluate the product $J^TJ$.  Some sparse algebra package provide
-routines that evaluate the solution of $J^TJ X = g$, given $J$ an
-$g$. A more pedestrian way is to evaluate $H\equiv J^TJ$, and solve
-$HX=g$ using a Cholesky factorization. For sparse algebra, at least
-the Cholmod and Eigen packages provide the required functionalities.
-
-
-
+evaluate the product $J^TJ$. Once we have evaluated $H\equiv J^TJ$, we
+can solve $HX=g$ using a Cholesky factorization. For sparse linear
+algebra, at least the Cholmod and Eigen packages provide the required
+functionalities. It turns out that for practical problems, the
+factorization is the most CPU intensive part of the calculations, and
+there is hence not much to ge gained in speeding up the calculation of
+derivatives. For the factorization, we have tried both Eigen and Cholmod
+(via the Eigen interface) and they are as fast within less than 10 \%. 
 
 
 %In the basic tests we have performed (with typically $\sim 1000$ calexps),
@@ -445,16 +451,17 @@ the Cholmod and Eigen packages provide the required functionalities.
 
 
 \section{Indices of fits parameters and Fits of parameter subsets \label{sec:indices_whattofit}}
-Sine we use vector algebra do represent the fit parameters, we need
+Since we use vector algebra to represent the fit parameters, we need
 some sort of mechanism to associate indices in the vector parameter to
 some subset (e.g. the position of an FittedStar) of these parameters.
 Furthermore, the implementation we have chosen does not allow
 trivially to allocate the actual parameters at successive positions in
-memory.  The \RoutineName{AstromFit::SetWhatToFit} takes care of assigning
-indices to all classes of parameters. For the mappings, the actual
-\ClName{DistortionModel} implementation does the job. All these
-indices are used to properly fill the Jacobian and gradient, and
-eventually to offset parameters in the \RoutineName{AstromFit::OffsetParams}
+memory.  The \RoutineName{AstromFit::SetWhatToFit} takes care of
+assigning indices to all classes of parameters. For the mappings, the
+actual \ClName{DistortionModel} implementation does this part of the
+job. All these indices are used to properly fill the Jacobian and
+gradient, and eventually to offset parameters in the
+\RoutineName{AstromFit::OffsetParams}.
 
 Since the indexing of parameters is done dynamically, it is
 straightforward to only fit a subset of parameters. this is why the routine
