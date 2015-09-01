@@ -83,9 +83,15 @@ trapfpe ()
 {
 
     std::cout << "sourceFluxField is set to : " << control->sourceFluxField << std::endl;
+    if (_wcsList.size() == 0)
+      {
+	std::cout << "simAstrom::simAstrom : empty image list, we give up" << std::endl;
+	return;
+      }
+
     
     // Check how to get SIP coefficients from WCS
-    lsst::daf::base::PropertyList::Ptr wcsMeta = _wcsList[1]->getFitsMetadata();
+    lsst::daf::base::PropertyList::Ptr wcsMeta = _wcsList[0]->getFitsMetadata();
 //    std::cout << wcsMeta->getOrderedNames() << std::endl;
     std::cout << wcsMeta->get<int>("A_ORDER") << std::endl;
     
