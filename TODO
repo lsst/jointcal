@@ -1,19 +1,26 @@
 
-Add an accessor to -sipA and -sipB in TanWcs.h (in afw)
 
-Do A constructor for Frame from a Fits Header which returns the image size,
-  or cookup the Frame from NAXIS1 and NAXIS2
+* Replace the "Preferences" class of gastro by the stack mechanism
+  used to transfer constants from python to C++. There are such
+  quantities in Associations.cc, ConstrainedPolyModel.cc and probably
+  SimplePolyModel.cc (the polynomial degree). Sometimes, the label
+  "propagate those into python" tags the declaration of quantities.
 
-Check that GtransfoPoly::fit still works with Eigen routines
+* Add an outlier rejection of associations to the "USNO" catalog in
+   AstromFit.cc
+
+* Change the name of the LSDerivative routines in AstromFit, because
+   python cannot handle routines with the same name.
+
+* Check all direct readings of the FITS headers in the CcdImage
+  constructor.  They should "just work" when we switch instrument. The
+  stack in principle has a mechanism for providing such abstractions
+  (Chip number, shoot number, latitude of the observatory, airmass,
+  ...)
+   
+
+* Check that GtransfoPoly::fit still works with Eigen routines
+-> DONE (test implemented).
 
 
-Write a real constructor for CcdImage that takes the stack inputs.
-CatalogLoader should be replaced by a real Catalog.
-Since MeasuredStars have a pointer on their CcdImage, this requires to assign
-those in the CcdImage constructor.
-The CcdImage constructor will look like:
-CcdImage(const Fitsmetadata, const TanWcs*, MeasuredStarList&, 
-	 const Point &CommonTangentPoint);
-
-Replace Preferences by the stack mechanism to transfer
-constants from python to C++.
+ 
