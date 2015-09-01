@@ -116,7 +116,7 @@ static unsigned fsIndexDebug = 0;
 
 // we could consider computing the chi2 here.
 // (although it is not extremely useful)
-void AstromFit::LSDerivatives(const CcdImage &Ccd, 
+void AstromFit::LSDerivatives1(const CcdImage &Ccd, 
 			      TripletList &TList, Eigen::VectorXd &Rhs) const
 {
   /***************************************************************************/
@@ -273,24 +273,14 @@ void AstromFit::LSDerivatives(const CcdImage &Ccd,
 
 // we could consider computing the chi2 here.
 // (although it is not extremely useful)
-void AstromFit::LSDerivatives(const CcdImageList  &L, 
-			      TripletList &TList, Eigen::VectorXd &Rhs)
-{
-  for (auto im=L.cbegin(); im!=L.end() ; ++im)
-    {
-      LSDerivatives(**im, TList, Rhs);
-    }
-}
 
 #define HACK_REF_ERRORS 1. // used to isolate the measurement or ref terms
 
-//! this routine computes the derivatives of all LS terms, including the ones that refer to references stars, if any
-void AstromFit::LSDerivatives(TripletList &TList, Eigen::VectorXd &Rhs)
+void AstromFit::LSDerivatives2(TripletList &TList, Eigen::VectorXd &Rhs) const
 {
-  //the terms involving fittedstars and measurements
-  LSDerivatives(_assoc.TheCcdImageList(), TList,Rhs);
-  // terms involving fitted stars and reference stars.
-  // they only provide derivatives if we are fitting positions:
+  /* We compute here the derivatives of the terms involving fitted
+    stars and reference stars. They only provide contributions if we
+    are fitting positions: */
   if (! _fittingPos) return;
   /* the other case where the accumulation of derivatives stops 
      here is when there are no RefStars */
@@ -305,7 +295,7 @@ void AstromFit::LSDerivatives(TripletList &TList, Eigen::VectorXd &Rhs)
   unsigned kTriplets = TList.NextFreeIndex();
   /* We cannot use the spherical coordinates directly to evaluate
      Euclidean distances, we have to use a projector on some plane in
-     order to express least squares. No projecting could lead to a
+     order to express least squares. Not projecting could lead to a
      disaster around the poles or across alpha=0.  So we need a
      projector. We construct a projector and will change its
      projection point at every object */
@@ -383,7 +373,19 @@ void AstromFit::LSDerivatives(TripletList &TList, Eigen::VectorXd &Rhs)
 }
 
 
-// This is almost a selection of lines of LSDerivatives(CccdImge ...)
+//! this routine computes the derivatives of all LS terms, including the ones that refer to references stars, if any
+void AstromFit::LSDerivatives(TripletList &TList, Eigen::VectorXd &Rhs) const
+{
+  auto L = _assoc.TheCcdImageList();
+  for (auto im=L.cbegin(); im!=L.end() ; ++im)
+    {
+      LSDerivatives1(**im, TList, Rhs);
+    }
+  LSDerivatives2(TList, Rhs);
+}
+
+
+// This is almost a selection of lines of LSDerivatives1(CcdImage ...)
 /* This routine (and the following one) is template because it is used
 both with its first argument as "const CCdImage &" and "CcdImage &",
 and I did not want to replicate it.  The constness of the iterators is
@@ -392,9 +394,9 @@ automagically set by declaring them as "auto" */
 template <class ImType, class Accum> 
 void AstromFit::AccumulateStatImage(ImType &Ccd, Accum &Accu) const
 {
-  /*********************************************************************/
-  /**  Changes in this routine should be reflected into LSDerivatives  */
-  /*********************************************************************/
+  /**********************************************************************/
+  /**  Changes in this routine should be reflected into LSDerivatives1  */
+  /**********************************************************************/
   /* Setup */
   // 1 : get the Mapping's
   const Mapping *mapping = _distortionModel->GetMapping(Ccd);
@@ -461,7 +463,7 @@ AstromFit::Chi2 AstromFit::ComputeChi2() const
   // Now add the ref stars
   const FittedStarList &fsl = _assoc.fittedStarList;
   /* If you wonder why we project here, read comments in 
-     AstromFit::LSDerivatives(TripletList &TList, Eigen::VectorXd &Rhs) */
+     AstromFit::LSDerivatives2(TripletList &TList, Eigen::VectorXd &Rhs) */
   TanRaDec2Pix proj(GtransfoLin(), Point(0.,0.));
   for (auto i = fsl.cbegin(); i!= fsl.end(); ++i)
     {

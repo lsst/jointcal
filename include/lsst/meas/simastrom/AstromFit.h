@@ -90,18 +90,18 @@ class AstromFit {
     algebra. */
   bool Minimize(const std::string &WhatToFit);
 
-  //!
-  void LSDerivatives(const CcdImage &Ccd, 
+  //! Compute the derivatives of the measurement terms for this CcdImage
+  void LSDerivatives1(const CcdImage &Ccd, 
 		     TripletList &TList, Eigen::VectorXd &Rhs) const;
 
-  void LSDerivatives(const CcdImageList  &L, 
-		     TripletList &TList, Eigen::VectorXd &Rhs);
+  //! Compute the derivatives of the reference terms
+  void LSDerivatives2(TripletList &TList, Eigen::VectorXd &Rhs) const;
 
   //! Evaluates the chI^2 derivatives (Jacobian and gradient) for the current WhatToFit setting.
   /*! The Jacobian is provided as triplets, the gradient as a dense
-      vector. The parameter which vary are to be set using
+      vector. The parameters which vary are to be set using
       AssignIndices.  */
-  void LSDerivatives(TripletList &TList, Eigen::VectorXd &Rhs);
+  void LSDerivatives(TripletList &TList, Eigen::VectorXd &Rhs) const;
 
   //! Set parameter groups fixed or variable and assign indices to each parameter in the big matrix (which will be used by OffsetParams(...).
   void AssignIndices(const std::string &WhatToFit);
