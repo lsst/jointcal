@@ -4,14 +4,13 @@
 #include "lsst/meas/simastrom/AstromFit.h"
 #include "lsst/meas/simastrom/Associations.h"
 #include "lsst/meas/simastrom/Mapping.h"
-//#include "preferences.h"
+
 #include "lsst/meas/simastrom/Gtransfo.h"
 #include "Eigen/Sparse"
 //#include "Eigen/CholmodSupport" // to switch to cholmod
 #include <time.h> // for clock
 #include "lsst/pex/exceptions.h"
 #include <fstream>
-//#include "lsst/meas/simastrom/Matvect.h"
 #include "lsst/meas/simastrom/Tripletlist.h"
 
 typedef Eigen::SparseMatrix<double> SpMat;
@@ -123,8 +122,9 @@ void AstromFit::LSDerivatives1(const CcdImage &Ccd,
   /**  Changes in this routine should be reflected into AccumulateStatImage  */
   /***************************************************************************/
   /* Setup */
-  // 1 : get the Mapping's
+  // get the Mapping
   const Mapping *mapping = _distortionModel->GetMapping(Ccd);
+  // count parameters
   unsigned npar_mapping = (_fittingDistortions) ? mapping->Npar() : 0;
   unsigned npar_pos = (_fittingPos) ? 2 : 0;
   unsigned npar_refrac = (_fittingRefrac) ? 1 : 0;
@@ -185,16 +185,12 @@ void AstromFit::LSDerivatives1(const CcdImage &Ccd,
       // checked that  alpha*alphaT = transW
       alpha(1,0) = transW(0,1)/alpha(0,0); 
       // DB - I think that the next line is equivalent to : alpha(1,1) = 1./sqrt(outPos.vy)
+      // PA - seems correct !
       alpha(1,1) = 1./sqrt(det*transW(0,0));
       alpha(0,1) = 0;
       
       const FittedStar *fs = ms.GetFittedStar();
-      // DEBUG
-      if (heavyDebug && fsIndexDebug == fs->IndexInMatrix())
-	{
-	  double x = 1;
-	}
-  
+
       Point fittedStarInTP = TransformFittedStar(*fs, sky2TP,
 						 refractionVector, 
 						 refractionCoefficient,
@@ -214,7 +210,9 @@ void AstromFit::LSDerivatives1(const CcdImage &Ccd,
 	  indices.at(npar_mapping+1) = fs->IndexInMatrix()+1;
 	  ipar += npar_pos;
 	}
-      if (_fittingPM) // should add  "&& fs->mightMove" in the test ? 
+      /* only consider proper motions of objects allowed to move,
+	 unless the fit is going to be degenerate */
+      if (_fittingPM && fs->mightMove)
 	{
 	  h(ipar,0) = -jd; // Sign unchecked but consistent with above
 	  h(ipar+1, 1) = -jd;
@@ -256,18 +254,9 @@ void AstromFit::LSDerivatives1(const CcdImage &Ccd,
 #endif
 	    }
 	  Rhs(indices[ipar]) += grad(ipar); 
-	  if (heavyDebug && fsIndexDebug == fs->IndexInMatrix() && (indices[ipar] == fsIndexDebug || indices[ipar] == fsIndexDebug+1))
-	    {
-	      cout << " DEBUG : res " << res(0) << ' ' << res(1) << endl;
-	      cout << " DEBUG : contribs g, j " << grad(ipar) << ' ' <<  halpha(ipar,0) << ' ' <<  halpha(ipar,1) << endl;
-	      unsigned ic = (indices[ipar] == fsIndexDebug) ? 0 : 1;
-	      cout << " DEBUG : h alpha " << h(ipar,0) << ' ' << h(ipar,1) << ' ' << alpha(0, ic) << ' ' << alpha(1,ic) << endl;
-	    }
-	  //#warning : flipped sign of Gradient
-	  //	  Rhs(indices[ipar]) -= grad(ipar); 
 	}
       kTriplets += 2; // each measurement contributes 2 columns in the Jacobian
-    }
+    } // end loop on measurements
   TList.SetNextFreeIndex(kTriplets);
 }    
 
@@ -474,7 +463,7 @@ AstromFit::Chi2 AstromFit::ComputeChi2() const
       // fs projects to (0,0), no need to compute its transform.
       FatPoint rsProj;
       proj.TransformPosAndErrors(*rs, rsProj);
-      // TO DO : account for proper motions.
+      // TO DO : account for proper motions. If you do it here, think about MakeRefResTuple.
       double rx = rsProj.x; // -fsProj.x (which is 0)
       double ry = rsProj.y;
       double det = rsProj.vx*rsProj.vy - sqr(rsProj.vxy);
@@ -516,7 +505,7 @@ struct Chi2Vect : public vector<Chi2Entry>
 
 //! this routine is to be used only in the framework of outlier removal
 /*! it fills the array of indices of parameters that a Measured star
-    contrains. Not really all of them if you check. */
+    constrains. Not really all of them if you check. */
 void AstromFit::GetMeasuredStarIndices(const MeasuredStar &Ms, 
 				       std::vector<unsigned> &Indices) const
 {
@@ -549,7 +538,7 @@ void AstromFit::GetMeasuredStarIndices(const MeasuredStar &Ms,
 unsigned AstromFit::RemoveOutliers(const double &NSigCut)
 {
   /* Some reshuffling would be needed if we wish to use the small-rank
-     update trick rather than resolving over again. Typically We would
+     update trick rather than solving again. Typically We would
      need to compute the Jacobian and RHS contributions of the
      discarded measurement and update the current factorization and
      solution. */
@@ -854,6 +843,22 @@ void AstromFit::CheckStuff()
 
 void AstromFit::MakeResTuple(const std::string &TupleName) const
 {
+  /* cook-up 2 different file names by inserting something just before
+     the dot (if any), and within the actual file name. */
+  size_t dot = TupleName.rfind('.');
+  size_t slash = TupleName.rfind('/');
+  if (dot == string::npos || (slash != string::npos && dot < slash))
+    dot = TupleName.size();  
+  std::string meas_tuple(TupleName);
+  meas_tuple.insert(dot,"-meas");
+  MakeMeasResTuple(meas_tuple);
+  std::string ref_tuple(TupleName);
+  ref_tuple.insert(dot,"-ref");
+  MakeRefResTuple(ref_tuple);
+}
+
+void AstromFit::MakeMeasResTuple(const std::string &TupleName) const
+{
   std::ofstream tuple(TupleName.c_str());
   tuple << "#xccd: coordinate in CCD" << endl
 	<< "#yccd: " << endl
@@ -923,5 +928,54 @@ void AstromFit::MakeResTuple(const std::string &TupleName) const
     }// loop on images
 
 }
+
+void AstromFit::MakeRefResTuple(const std::string &TupleName) const
+{
+  std::ofstream tuple(TupleName.c_str());
+  tuple << "#ra: coordinates of FittedStar" << endl
+	<< "#dec: " << endl
+	<< "#rx:   residual in degrees in TP" << endl
+	<< "#ry:" << endl
+	<< "#mag: mag" << endl
+    	<< "#rvx: transformed measurement uncertainty " << endl
+    	<< "#rvy:" << endl
+    	<< "#rvxy:" << endl
+	<< "#color : " << endl
+	<< "#fsindex: some unique index of the object" << endl
+	<< "#chi2: contribution to Chi2 (2D dofs)" << endl
+	<< "#nm: number of measurements of this FittedStar" << endl
+	<< "#end" << endl;
+  // The following loop is heavily inspired from AstromFit::ComputeChi2()
+  const FittedStarList &fsl = _assoc.fittedStarList;
+  TanRaDec2Pix proj(GtransfoLin(), Point(0.,0.));
+  for (auto i = fsl.cbegin(); i!= fsl.end(); ++i)
+    {
+      const FittedStar &fs = **i;
+      const RefStar *rs = fs.GetRefStar();
+      if (rs == NULL) continue;
+      proj.SetTangentPoint(fs);
+      // fs projects to (0,0), no need to compute its transform.
+      FatPoint rsProj;
+      proj.TransformPosAndErrors(*rs, rsProj);
+      double rx = rsProj.x; // -fsProj.x (which is 0)
+      double ry = rsProj.y;
+      double det = rsProj.vx*rsProj.vy - sqr(rsProj.vxy);
+      double wxx = rsProj.vy/det;
+      double wyy = rsProj.vx/det;
+      double wxy = -rsProj.vxy/det;
+      double chi2 = wxx*sqr(rx) + 2*wxy*rx*ry+ wyy*sqr(ry);
+      tuple << std::setprecision(9);
+      tuple << fs.x << ' ' << fs.y << ' ' 
+	    << rx << ' ' << ry << ' '
+	    << fs.Mag() << ' ' 
+	    << rsProj.vx << ' ' << rsProj.vy << ' ' << rsProj.vxy << ' ' 
+	    << fs.color << ' ' 
+	    << fs.IndexInMatrix() << ' '
+	    << chi2 << ' ' 
+	    << fs.MeasurementCount() << ' '
+	    << endl;
+    }// loop on FittedStars
+}
+
 
 }}}
