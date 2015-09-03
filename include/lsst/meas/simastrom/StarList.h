@@ -36,12 +36,23 @@ NOT Star's. This implies
 that Stars being inserted in the std::list have to be 
 obtained using 'new'.  */
 
+/* CountedRef is very similar to std::shared_ptr, but with the latter
+the following code does not work:
+StarList<BaseStar> L;
+for (auto i = L.begin(); i!= L.end(); ++i)
+  {
+    const BaseStar *s = *i;
+    ...
+  }
+and the code is stuffed with such loops.
+*/
+
 
   template<class Star> class StarList : public std::list <CountedRef<Star> > {
   GlobalVal glob;
 
 public:
-  typedef std::shared_ptr<Star> Element;
+  typedef CountedRef<Star> Element;
   typedef typename std::list<Element>::const_iterator StarCIterator;
   typedef typename std::list<Element>::iterator StarIterator;
 
@@ -61,6 +72,7 @@ public:
 	provide this functionnality.
 	see BaseStar to see a possible implementation. 
   */
+
 
   Star *EmptyStar() const { return new Star();}
 
