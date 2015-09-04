@@ -11,6 +11,7 @@
 
 * Change the name of the LSDerivative routines in AstromFit, because
    python cannot handle routines with the same name.
+  -> DONE.  In fact swig handles routines with the same name. 
 
 * Check all direct readings of the FITS headers in the CcdImage
   constructor.  They should "just work" when we switch instrument. The
