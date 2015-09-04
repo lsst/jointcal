@@ -72,9 +72,6 @@ public:
 			   const bool UseFittedList = false,
 			   const bool EnlargeFittedList = true);
 
-  //! refit (independentlyy) all WCSs using the current fittedStarList    
-  void RefitWCSs(const unsigned Order);
-
 
   //! Collect stars form an external reference catalog (USNO-A by default) that match the FittedStarList. Optionally project these RefStar s on the tangent plane defined by the CommonTangentPoint().
   void CollectRefStars(const bool ProjectOnTP=true);
@@ -82,13 +79,14 @@ public:
 
 
     
-
+#ifdef STORAGE
   //! This is Monte-Carlo stuff -- to remove this from associations
   //! the Association class should provide us w/ iterators and acceptors
   //! that way, all the MC stuff could be removed
   void CollectMCStars(int realization = -1);
   //    void CheckMCStars(); // DELETE THIS METHOD
-  
+
+
   //! This method associates the catalogs with an external 
   //! catalog of photometric ref stars
   void CollectPhotometricRefStars(std::string const& catalogname);
@@ -98,28 +96,21 @@ public:
   //! Sends back the fitted stars coordinates on the sky FittedStarsList::inTangentPlaneCoordinates keeps track of that.
   void DeprojectFittedStars();
 
+#endif
+
   //! Set the color field of FittedStar 's from a colored catalog. 
   /* If Color is "g-i", then the color is assigned from columns "g" and "i" of the colored catalog. */
+#ifdef TODO
   void SetFittedStarColors(std::string DicStarListName, 
 				       std::string Color,
 			   const double &MatchCutArcSec);
-  
+#endif
   //    void SetRefPhotFactor(int chip, double photfact);
   
   //! apply cuts (mainly number of measurements) on potential FittedStars
   void SelectFittedStars();
   
-  void RefineFittedStars();
-
-  void check_refcounts();
-  
-  void PrintStats() const;
-  
   const CcdImageList& TheCcdImageList() const {return ccdImageList;}
-  
-  void SetFittedStarList(const FittedStarList &L);
-  
-  void AssignIndexes();
   
   unsigned int NShoots() const { return nshoots_; }
 

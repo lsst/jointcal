@@ -371,7 +371,6 @@ void Associations::AssignMags()
     }
 }
 
-#ifdef TODO
 
 #ifdef STORAGE
 void Associations::CollectMCStars(int realization)
@@ -422,7 +421,7 @@ void Associations::CollectMCStars(int realization)
       delete smList;
     }
 }
-#endif
+
 
 //void Associations::CheckMCStars()
 //{
@@ -571,91 +570,6 @@ void Associations::AssociatePhotometricRefStars(double MatchCutInArcSec)
 //}
 
 
-void Associations::PrintStats() const
-{ 
-  std::cout << " FittedStarList size " << fittedStarList.size() << std::endl;
-  std::cout << " RefStarList size " << refStarList.size() << std::endl;
-}
-
-
-/*! uses the MeasuredStar -> FittedStar association as it is now
-  to refit the image WCSs. useful after a global fit to refine
-  WCSs before rerunning associations
-*/
-void Associations::RefitWCSs(unsigned Degree)
-{
-  for (CcdImageIterator i=ccdImageList.begin(); i!= ccdImageList.end(); ++i)
-    {
-      CcdImage &ccdImage = **i;
-      MeasuredStarList &catalog = ccdImage.CatalogForFit();
-      StarMatchList sm;
-      const Gtransfo * CTP2TP = ccdImage.CommonTangentPlane2TP();
-      for (MeasuredStarIterator mi = catalog.begin(); 
-	   mi != catalog.end(); ++mi)
-	{
-	  const MeasuredStar &mstar = **mi;
-	  const FittedStar *fstar = mstar.GetFittedStar();
-	  if (!fstar) continue;
-	  Point inTP = CTP2TP->apply(*fstar);
-	  sm.push_back(StarMatch(mstar, inTP, &mstar, fstar));
-	}
-      sm.SetTransfoOrder(Degree);
-      sm.RefineTransfo(3);
-      if (sm.size() < 20)
-	{
-	  cout << " for image : " << ccdImage.Name() << " we only have " 
-	       << sm.size() << " matches left after refitting the WCS " 
-	       << std::endl;
-	}
-      ccdImage.SetPix2TangentPlane(sm.Transfo());
-    }
-}
-	  
-
-
-void Associations::SetFittedStarList(const FittedStarList &L)
-{
-  fittedStarList.clear();
-  L.CopyTo(fittedStarList);
-}
-  
-
-
-void Associations::AssignIndexes()
-{
-  int index = 0;
-  FittedStarIterator I;
-  for(I=fittedStarList.begin();I!=fittedStarList.end();I++)
-    {
-      FittedStar* s = *I;
-      s->SetIndexInMatrix(index++);
-    }
-  
-  index = 0;
-  CcdImageIterator cI;
-  for(cI=ccdImageList.begin();cI!=ccdImageList.end();cI++)
-    {
-      CcdImage& ccdim = **cI;
-      ccdim.SetIndex(index++);
-    }
-  
-  index = 0;
-  map<int,int> shootindex;
-  map<int,int>::iterator mI;
-  for(cI=ccdImageList.begin();cI!=ccdImageList.end();cI++)
-    {
-      CcdImage& ccdim = **cI;
-      int shoot = ccdim.Shoot();
-      mI = shootindex.find(shoot);
-      if(mI==shootindex.end())
-	shootindex[shoot] = index++;
-      ccdim.SetExpIndex( shootindex[shoot] );
-    }
-  
-  nshoots_ = index; // we start counting @ 0
-}
-
-
 void Associations::DeprojectFittedStars()
 {
   /* by default, Associations::fittedStarList is expressed on the
@@ -713,8 +627,7 @@ void Associations::SetFittedStarColors(std::string DicStarListName,
       if (compute_diff) fs->color -= ds->getval(c2);
     }
 }
-				       
-#ifdef STORAGE
+
 void Associations::CollectMCStars(int realization)
 {
   CcdImageIterator I;
@@ -788,7 +701,6 @@ void Associations::CollectMCStars(int realization)
       
     }
 }
-#endif //TODO
-#endif
+#endif /* STORAGE */
 
 }}} // end of namespaces
