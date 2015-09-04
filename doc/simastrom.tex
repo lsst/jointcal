@@ -420,7 +420,6 @@ and we then simply have
 $$
 \frac{1}{2} \frac{d^2 \chi^2}{d \theta^2} = J^T J
 $$
-
 In the code, we take advantage of the fact that each term of the
 $\chi^2$ only depends on a small number of parameters. The data
 stuctures allow us to collect easily the indices of these parameters,
@@ -429,20 +428,21 @@ and we evaluate in fact the $H$ matrices for these indices only.
 The computation of the Jacobian and the gradient is orchestrated in
 the \ClName{AstromFit} class.  The routines
 \RoutineName{AstromFit::LSDerivatives1} and
-\RoutineName{AstromFit::LSDerivatives2} evaluate the contributions of
-the measurement terms and the references terms respectively to the
-Jacobian and gradient of the $\chi^2$. In these routines, the Jacobian
+\RoutineName{AstromFit::LSDerivatives2} evaluate the contributions to
+the Jacobian and gradient of the $\chi^2$ from the measurement terms
+and the references terms respectively. In these routines, the Jacobian
 is represented as a list of triplets $(i,j,J_{ij})$ describing its
 elements. This list is then transformed into a representation of
 sparse matrices suitable for algebra, and in particular suitable to
 evaluate the product $J^TJ$. Once we have evaluated $H\equiv J^TJ$, we
-can solve $HX=g$ using a Cholesky factorization. For sparse linear
+can solve $HX=-g$ using a Cholesky factorization. For sparse linear
 algebra, at least the Cholmod and Eigen packages provide the required
 functionalities. It turns out that for practical problems, the
 factorization is the most CPU intensive part of the calculations, and
-there is hence not much to ge gained in speeding up the calculation of
-derivatives. For the factorization, we have tried both Eigen and Cholmod
-(via the Eigen interface) and they are as fast within less than 10 \%. 
+there is hence not much to be gained in speeding up the calculation of
+derivatives. For the factorization, we have tried both Eigen and
+Cholmod (via the Eigen interface) and their speeds differ by less
+than 10 \%. 
 
 
 %In the basic tests we have performed (with typically $\sim 1000$ calexps),
