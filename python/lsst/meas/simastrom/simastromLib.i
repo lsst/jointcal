@@ -26,6 +26,10 @@ Python interface to lsst::meas::simastrom classes
 #include "lsst/meas/simastrom/simAstrom.h"
 #include "lsst/meas/simastrom/CcdImage.h"
 #include "lsst/meas/simastrom/AstromFit.h"
+#include "lsst/meas/simastrom/Associations.h"
+#include "lsst/meas/simastrom/DistortionModel.h"
+#include "lsst/meas/simastrom/SimplePolyModel.h"
+#include "lsst/meas/simastrom/Projectionhandler.h"
 %}
 
 %include "lsst/p_lsstSwig.i"
@@ -49,9 +53,34 @@ Python interface to lsst::meas::simastrom classes
 %include "lsst/meas/simastrom/test.h"
 %include "lsst/meas/simastrom/test2.h"
 %include "lsst/meas/simastrom/simAstrom.h"
-class lsst::meas::simastrom::DistortionModel;
-class lsst::meas::simastrom::TripletList;
-class lsst::meas::simastrom::CcdImage;
-class lsst::meas::simastrom::CcdImageList;
+namespace lsst {
+namespace meas {
+namespace simastrom {
+class DistortionModel;
+class TripletList;
+class CcdImage;
+class CcdImageList;
+class MeasuredStar;
+}}}
 %include "lsst/meas/simastrom/AstromFit.h"
+namespace lsst {
+namespace meas {
+namespace simastrom {
+class RefStarList;
+class FittedStarList;
+class Point;
+}}}
+%include "lsst/meas/simastrom/Associations.h"
+namespace lsst {
+namespace meas {
+namespace simastrom {
+  class Gtransfo;
+  class Mapping;
+class SimplePolyMapping;
+ class ProjectionHandler;
+}}}
+%include "lsst/meas/simastrom/DistortionModel.h"
+%include "lsst/meas/simastrom/SimplePolyModel.h"
+%include "lsst/meas/simastrom/Projectionhandler.h"
+
 
