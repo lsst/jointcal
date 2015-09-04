@@ -445,7 +445,7 @@ void AstromFit::AccumulateStatImageList(ListType &L, Accum &Accu) const
 }
 
 //! for the list of images in the provided  association and the reference stars, if any
-AstromFit::Chi2 AstromFit::ComputeChi2() const
+Chi2 AstromFit::ComputeChi2() const
 {
   Chi2 chi2;
   AccumulateStatImageList(_assoc.TheCcdImageList(), chi2);
