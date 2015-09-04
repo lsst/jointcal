@@ -3,6 +3,7 @@
 
 #include <string>
 #include <iostream>
+#include <sstream>
 #include <map>
 
 #include "lsst/meas/simastrom/CcdImage.h"
@@ -168,6 +169,13 @@ struct Chi2
     {
       s << "Chi2/ndof : " << C.chi2 << '/' << C.ndof << '=' <<  C.chi2/C.ndof; return s;
     }
+
+  std::string __str__()
+  {
+    std::stringstream s;
+    s << "Chi2/ndof : " << chi2 << '/' << ndof << '=' <<  chi2/ndof; 
+    return s.str();
+  }
 
   // Addentry has a third argument in order to make it compatible with an 
   //other stat accumulator.
