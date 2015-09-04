@@ -59,7 +59,10 @@ private :
   
 class Frame;
 
-typedef StarList<RefStar> RefStarList;
+  //typedef StarList<RefStar> RefStarList;
+class RefStarList : public StarList<RefStar> { };
+
+
 typedef RefStarList::const_iterator RefStarCIterator;
 typedef RefStarList::iterator RefStarIterator;
 typedef CountedRef<RefStar> RefStarRef;
