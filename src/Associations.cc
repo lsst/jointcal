@@ -372,6 +372,23 @@ void Associations::AssignMags()
 }
 
 
+void Associations::DeprojectFittedStars()
+{
+  /* by default, Associations::fittedStarList is expressed on the
+     Associations::commonTangentPlane. For AstromFit, we need it on
+     the sky */
+  if (!fittedStarList.inTangentPlaneCoordinates)
+    {
+      std::cout << "WARNING: Associations::DeprojectFittedStars : Fitted stars are already in sidereal coordinates, nothing done " << std::endl;
+      return;
+    }
+
+  TanPix2RaDec ctp2Sky(GtransfoLin(), CommonTangentPoint());
+  fittedStarList.ApplyTransfo(ctp2Sky);
+  fittedStarList.inTangentPlaneCoordinates = false;
+}
+
+
 #ifdef STORAGE
 void Associations::CollectMCStars(int realization)
 {
@@ -570,15 +587,6 @@ void Associations::AssociatePhotometricRefStars(double MatchCutInArcSec)
 //}
 
 
-void Associations::DeprojectFittedStars()
-{
-  /* by default, Associations::fittedStarList is expressed on the
-     Associations::commonTangentPlane. For AstromFit, we need it on
-     the sky */
-  TanPix2RaDec ctp2Sky(GtransfoLin(), CommonTangentPoint());
-  fittedStarList.ApplyTransfo(ctp2Sky);
-  fittedStarList.inTangentPlaneCoordinates = false;
-}
 
 #include "tstar.h"
 

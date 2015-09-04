@@ -93,10 +93,11 @@ public:
   void AssociatePhotometricRefStars(double MatchCutInArcSec);
   unsigned int GetNbAssociatedPhotometricRefStars() const { return nb_photref_associations; }
 
+#endif
   //! Sends back the fitted stars coordinates on the sky FittedStarsList::inTangentPlaneCoordinates keeps track of that.
   void DeprojectFittedStars();
 
-#endif
+
 
   //! Set the color field of FittedStar 's from a colored catalog. 
   /* If Color is "g-i", then the color is assigned from columns "g" and "i" of the colored catalog. */
