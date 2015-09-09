@@ -8,6 +8,7 @@
 #include "lsst/meas/simastrom/StarMatch.h"
 #include "lsst/meas/simastrom/Gtransfo.h"
 #include "lsst/meas/simastrom/SipToGtransfo.h"
+#include "lsst/meas/simastrom/Frame.h"
 #include "lsst/afw/image/TanWcs.h"
 #include "lsst/afw/image/Utils.h"
 #include "lsst/afw/fits.h"
@@ -100,6 +101,35 @@ BOOST_AUTO_TEST_CASE(test_polyfit)
   std::cout << " chi2/ndf " << chi2 << '/' << sml.size()-pol.Npar() << std::endl;
   // since there is no noise, the chi2 should be very very small:
   BOOST_CHECK( fabs(chi2)<1e-8);
+}
+
+
+BOOST_AUTO_TEST_CASE(test_wcs_convertions)
+{
+  std::string fileName = "tests/header_only.fits";
+
+  lsst::afw::fits::Fits file(fileName, "r",0);
+  PTR(lsst::daf::base::PropertySet) propSet = afwImg::readMetadata(fileName);
+  PTR(afwImg::Wcs) wcs = afwImg::makeWcs(propSet);
+  
+  const PTR(afwImg::TanWcs) tanWcs = boost::dynamic_pointer_cast<afwImg::TanWcs>(wcs);
+  
+  simAstrom::TanSipPix2RaDec gtransfoWcs = simAstrom::ConvertTanWcs(tanWcs);
+  int naxis1 = propSet->get<int>("NAXIS1");
+  int naxis2 = propSet->get<int>("NAXIS2");
+  simAstrom::Frame imageFrame(0,0,naxis1,naxis2);
+
+  PTR(afwImg::TanWcs) tanWcs2 = GtransfoToSip(gtransfoWcs, imageFrame);
+  lsst::afw::geom::Point2D where(100.,200.);
+  PTR(lsst::afw::coord::Coord) coord = wcs->pixelToSky(where);
+  lsst::afw::geom::Point2D outDeg = coord->getPosition(lsst::afw::geom::degrees);
+
+  PTR(lsst::afw::coord::Coord) coord2 = tanWcs2->pixelToSky(where);
+  lsst::afw::geom::Point2D outDeg2 = coord2->getPosition(lsst::afw::geom::degrees);
+
+  std::cout << std::setprecision(12) << outDeg << ' ' << outDeg2 << std::endl;
+
+  BOOST_CHECK(true);
 }
 
 
