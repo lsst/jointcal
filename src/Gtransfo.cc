@@ -815,6 +815,16 @@ double& GtransfoPoly::Coeff(const unsigned Degx, const unsigned Degy,
   return coeffs[(Degx+Degy)*(Degx+Degy+1)/2+Degy+WhichCoord*nterms];
 }
 
+double GtransfoPoly::CoeffOrZero(const unsigned Degx, const unsigned Degy,
+				 const unsigned WhichCoord) const
+{
+  //  assert((Degx+Degy<=deg) && WhichCoord<2);                       
+  assert(WhichCoord<2);
+  if (Degx+Degy<=deg)
+    return coeffs[(Degx+Degy)*(Degx+Degy+1)/2+Degy+WhichCoord*nterms];
+  return 0;
+}
+
 /* parameter serialization for "virtual" fits */
 double GtransfoPoly::ParamRef(const int i) const
 {
@@ -1241,6 +1251,18 @@ GtransfoPoly GtransfoPoly::operator+(const GtransfoPoly &Right) const
       return res;
     }
   else return (Right+(*this));
+}
+
+GtransfoPoly GtransfoPoly::operator-(const GtransfoPoly &Right) const
+{
+  GtransfoPoly res(std::max(deg,Right.deg));
+  for (unsigned i=0; i<=res.deg; ++i)
+    for (unsigned j = 0; j<=res.deg-i; ++j)
+      {
+	res.Coeff(i,j,0) = CoeffOrZero(i,j,0) - Right.CoeffOrZero(i,j,0);
+	res.Coeff(i,j,1) = CoeffOrZero(i,j,1) - Right.CoeffOrZero(i,j,1);
+      }
+  return res;
 }
 
 

@@ -269,6 +269,9 @@ public :
   //! Addition 
   GtransfoPoly operator+(const GtransfoPoly &Right) const;
 
+  //!Subtraction
+  GtransfoPoly operator-(const GtransfoPoly &Right) const;
+
   Gtransfo *ReduceCompo(const Gtransfo *Right) const;
 
   Gtransfo *Clone() const {return new GtransfoPoly(*this);}
@@ -281,6 +284,12 @@ public :
   //! write access
   double& Coeff(const unsigned Powx, const unsigned Powy,
 	       const unsigned WhichCoord);
+
+
+  //! read access, zero if beyond degree
+  double CoeffOrZero(const unsigned Powx, const unsigned Powy,
+		     const unsigned WhichCoord) const;
+
 
   //! access to coefficients via variable names in "old" classes. Here to ease the transition
   double Coeff(const char *CoeffName) const;
