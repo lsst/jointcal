@@ -1298,9 +1298,9 @@ void GtransfoPoly::Read(istream &s)
 GtransfoPoly *InversePolyTransfo(const Gtransfo &Direct, const Frame &F, const double Prec)
 {
   StarMatchList sm;
-  unsigned nx = 10;
+  unsigned nx = 50;
   double stepx = F.Width()/(nx+1);
-  unsigned ny = 10;
+  unsigned ny = 50;
   double stepy= F.Height()/(ny+1);
   for (unsigned i=0 ;i<nx; ++i)
     for (unsigned j=0; j<ny; ++j)
@@ -1317,7 +1317,11 @@ GtransfoPoly *InversePolyTransfo(const Gtransfo &Direct, const Frame &F, const d
     {
       delete poly;
       poly = new GtransfoPoly(degree);
-      double chi2 = poly->fit(sm);
+      poly->fit(sm);
+      // compute the chi2 ignoring errors:
+      double chi2 = 0;
+      for (auto i=sm.cbegin(); i!= sm.end(); ++i)
+	chi2 +=  i->point2.Dist2(poly->apply((i->point1)));
       if (chi2/npairs< Prec*Prec) break;
     }
   if (degree>maxdeg)
