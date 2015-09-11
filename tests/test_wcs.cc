@@ -122,7 +122,7 @@ BOOST_AUTO_TEST_CASE(test_wcs_convertions)
   int naxis2 = propSet->get<int>("NAXIS2");
   simAstrom::Frame imageFrame(0,0,naxis1,naxis2);
 
-  PTR(afwImg::TanWcs) tanWcs2 = GtransfoToSip(gtransfoWcs, imageFrame);
+  PTR(afwImg::TanWcs) tanWcs2 = GtransfoToTanWcs(gtransfoWcs, imageFrame);
   lsst::afw::geom::Point2D where(1000.,200.);
   PTR(lsst::afw::coord::Coord) coord = wcs->pixelToSky(where);
 

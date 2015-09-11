@@ -100,8 +100,8 @@ simAstrom::TanSipPix2RaDec ConvertTanWcs(const boost::shared_ptr<lsst::afw::imag
 
 /* The inverse transformation i.e. convert from the fit result to the SIP
    convention. */
-PTR(afwImg::TanWcs) GtransfoToSip(const simAstrom::TanSipPix2RaDec WcsTransfo, 
-				  const simAstrom::Frame &CcdFrame)
+PTR(afwImg::TanWcs) GtransfoToTanWcs(const simAstrom::TanSipPix2RaDec WcsTransfo, 
+				     const simAstrom::Frame &CcdFrame)
 {
   GtransfoLin linPart = WcsTransfo.LinPart();
   afwGeom::Point2D crpix_lsst; // in LSST "frame"
