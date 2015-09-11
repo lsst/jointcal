@@ -108,9 +108,13 @@ takes a large amount of time and so, solving for the relative photometry
 once they are in memory looks like a good idea.
 
 
-The plan of this note goes as follows.....
+The plan of this note goes as follows: we first sketch the algorithm
+(\S \ref{sec:algo}). We then describe the first step, i.e. how we
+associate the measurements of the same objects in different exposures (\S \ref{sec:assoc}). We provide our least-squares formulation in \S~\ref{sec:ls},
+and describe the how we evaluate the derivatives with respect to the parameters.
 
-\section{Algorithm flow}
+
+\section{Algorithm flow \label{sec:algo}}
 The algorithm assumes that the input images are equipped with a WCS
 accurate to $\sim 1\arcsec$. Currently, the code interprets properly
 the SIP WCS's (relying on the IO's from afw), with or without
@@ -136,7 +140,7 @@ these ensemble of detections with an external catalog (USNO in practise).
 \end{enumerate}
 
 
-\section{Association of the input catalogs}
+\section{Association of the input catalogs \label{sec:assoc}}
 In the LSST stack framework, the reduced input images are called
 ``Calexp''. Each of those typically holds the data from 1 CCD
 and exposure, and associate the ``reduction'' products, typically
@@ -173,9 +177,8 @@ and \ClName{FittedStarList}, which are container derived from \ClName
 are displayed in figure \ref{fig:AssocClasses}.
 
 
-
-
-\section{Least squares}
+\section{Least squares \label{sec:ls}}
+\subsection{Least-squares expression}
 The fit consists of minimizing:
 \begin{align}
 \chi^2 & =  \sum_{\gamma,i}  [M_\gamma(X_{\gamma,i})-P_{\gamma}(F_j) ]^T W_{\gamma,i}  [M_\gamma(X_{\gamma,i})-P_{\gamma}(F_k) ] & \textrm{(meas. terms)} \nonumber \\
@@ -230,7 +233,7 @@ to allow the final user to provide its own version of both the model
 for mappings and the projection scheme. We however provide some 
 implementations for both aspects that we discuss in the next two sections.
 
-\section{The model}
+\subsection{The distortion model}
 The routines in the \ClName{AstromFit} class do not really evaluate
 the derivatives of the mappings, but rather defer those to other classes.
 The main reason for this separation is that one could conceive
@@ -266,7 +269,7 @@ same space as the common orthogonal sets. We have taken care of
 data over the $[-1,1]$ interval), in order to alleviate the well-know
 numerical issues associated to fitting of polynomials.
 
-\section{Choice of projectors}
+\subsection{Choice of projectors}
 In the least squares expression \ref{eq:chi2}, the residuals of the
 measurement terms read:
 $$
@@ -281,7 +284,8 @@ so that the mapping $M_\gamma$ just describes the
 transformation from pixel space to the projection plane.
 For a SIP WCS, one will then naturally choose a gnomonic projector,
 so that $M_\gamma$ can eventually be split into the ``CD'' matrix 
-and the SIP-specific higher order distortion terms.
+and the SIP-specific higher order distortion terms (see \S \ref{sec:sip-wcs}
+for a brief introduction to WCS concepts).
 
 So, the choice of the projectors involved in the fit
 are naturally left to the user. This is done via a
@@ -301,7 +305,7 @@ projection. We use a projector there so that the comparison of
 positions is done using an Euclidean metric.
 
 
-\section{Proper motions and atmospheric refraction}
+\subsection{Proper motions and atmospheric refraction}
 The expression \ref{eq:chi2} above depends on two sets of parameters:
 the parameters defining the mappings and the positions $F_k$. This expression
 hides two details implemented in the code: accounting for proper
@@ -340,7 +344,7 @@ made this correction zero on average. As for proper motions, fitting
 or not these refraction-induced differential position shifts is left
 to the user (see \S \ref{sec:indices_whattofit}).
 
-\section{Minimization approach}
+\subsection{Minimization approach}
 The expression \ref{eq:chi2} depends on two sets of parameters: the parameters
 defining the mappings $M_\gamma(X) \equiv = M_\gamma(\eta_\gamma,X)$,
 and the positions $F_k$. There are indeed extra parameter sets and what 
@@ -450,7 +454,7 @@ than 10 \%.
 %Jacobian and gradient takes of the order of 1s.
 
 
-\section{Indices of fits parameters and Fits of parameter subsets \label{sec:indices_whattofit}}
+\subsection{Indices of fits parameters and Fits of parameter subsets \label{sec:indices_whattofit}}
 Since we use vector algebra to represent the fit parameters, we need
 some sort of mechanism to associate indices in the vector parameter to
 some subset (e.g. the position of an FittedStar) of these parameters.
@@ -468,9 +472,79 @@ straightforward to only fit a subset of parameters. this is why the routine
 \RoutineName{AstromFit::SetWhatToFit} takes a string argument that specifies
 what is to be fitted.
 
+\section{Fitting the transformations between a set of images}
+Some applications require to determine transformations between images
+rather than mappings on the sky. For example a simultaneous fit of PSF
+photometry for the computation of the light curve a point-like
+transient requires mappings between images to transport the common
+position in pixel space from some reference image to any other
+in the series. The calexp series would typically involve
+the CCD from each exposure that covers the region of interest.
+The package described here can fit for the needed mappings:
+\begin{itemize}
+\item in order to remove all reference terms from the $\chi^2$ of eq.~\ref{eq:chi2},
+one just avoids to call \RoutineName{Associations::CollectRefStars}.
+\item One chooses polynomial mappings for all Calexp 
+  but one which will serve as a reference and have a fixed identity mapping.
+The distortion model \ClName{SimplePolyModel} allows to do that.
+\item Chose identity projectors (the class \ClName{IdentityProjector} does precisely that).
+\end{itemize}
+So, fitting transformations between image sets can be done with
+the provided code. 
+
+\section{Run example}
+\begin{verbatim}
+
+        assoc = Associations()
+
+# iterate on the input calexps        
+        for dataRef in ref :
+            src = dataRef.get("src", immediate=True)
+            calexp = dataRef.get("calexp", immediate=True)
+            tanwcs = afwImage.TanWcs.cast(calexp.getWcs())
+            bbox = calexp.getBBox()
+            md = dataRef.get("calexp_md", immediate=True)
+            calib = afwImage.Calib(md)
+            filt = calexp.getFilter().getName()
+# select proper sources            
+            newSrc = ss.select(src, calib)
+
+# actually load the data            
+            assoc.AddImage(newSrc, tanwcs, md, bbox, filt, calib,
+                           dataRef.dataId['visit'], dataRef.dataId['ccd'],
+                           dataRef.getButler().mapper.getCameraName(), 
+                           astromControl)
+
+# carry out the association        
+        matchCut = 3.0
+        assoc.AssociateCatalogs(matchCut)
+# collect reference objects
+        assoc.CollectRefStars(False) # do not project RefStars
+# select objects measured at least twice.
+        assoc.SelectFittedStars()
+# Send back fitted stars on the sky.
+        assoc.DeprojectFittedStars() # required for AstromFit
+# Chose a ProjectionHandler
+        sky2TP = OneTPPerShoot(assoc.TheCcdImageList())
+# chose a distortion model
+        spm = SimplePolyModel(assoc.TheCcdImageList(), sky2TP, True, 0)
+# Assemble the whole thing
+        fit = AstromFit(assoc,spm)
+# we are ready to run. Initialize parameters by running "partial fits"
+        fit.Minimize("Distortions")
+        fit.Minimize("Positions")
+# now fit both sets simultaneously.
+        fit.Minimize("Distortions Positions")
+# output residual tuples
+        fit.MakeResTuple("res.list")
+\end{verbatim}
+  
+
+
+
 
 \appendix
-\section{Representation of distortions in SIP WCSs}
+\section{Representation of distortions in SIP WCS's \label{sec:sip-wcs}}
 The purpose of the appendix is to provide the minimal introduction
 to WCS concepts required to understand the code (and the comments)
 when browsing through it. Readers familiar with WCSs can give up here.
