@@ -469,9 +469,124 @@ straightforward to only fit a subset of parameters. this is why the routine
 what is to be fitted.
 
 
+\appendix
+\section{Representation of distortions in SIP WCSs}
+The purpose of the appendix is to provide the minimal introduction
+to WCS concepts required to understand the code (and the comments)
+when browsing through it. Readers familiar with WCSs can give up here.
+
+WCS's are abstract concepts meant to map data on coordinate systems.
+In the astronomical imaging framework, this almost always means
+mapping the pixel space into sidereal coordinates, expressed in some
+conventional space\footnote{The WCS concepts are broad enough to
+  accommodate mapping of planet images, but we will obviously not
+  venture into that.}. One key aspect of the WCS ``system'' is that
+it proposes some implementation of the mappings in FITS headers, which comes
+with software libraries to decode and encode the mappings. The WCS conventions
+cover a very broad scope of applications, and wide-field imaging
+makes use of a very small subset of those. 
+
+For the mappings used in wide-field imaging, the transformation
+from pixel space to sky can be pictured in two steps:
+\begin{enumerate}
+\item mapping coordinates in pixel space onto a plane.
+\item de-projecting this plane to the celestial sphere.
+\end{enumerate}
+Let us clear up the projection/de-projection step first. There are
+plenty of choices possible here, and the differences only matter fir
+really large images. The projection used by default in the imaging
+community seems to be the gnomonic projection: the intermediate space
+is a plane tangent to the celestial sphere and the
+plane$\rightarrow$sphere correspondence is obtained by drawing lines
+that go through the center of the sphere. In practice there is no need
+to know that, because any software dealing with WCS's can pick up the
+right FITS keywords and compute the required projection and
+de-projection.  For this gnomonic projection, one finds
+\verb&CTYPE1='RA---TAN'& and \verb&CTYPE2='DEC--TAN'& in the FITS
+header. This projection is often used to generate re-sampled and/or
+co-added images and one should keep in mind that, for large images,
+the pixels are not exactly iso-area.  One point of convention that
+might be useful to keep in mind; is that WCS conventions express
+angles in degrees. In the gnomonic projection, offsets in the tangent
+plane are expressed in degrees (defined through angles along great
+circles at the tangent point), so that the metric in the tangent plane
+is ortho-normal), and sidereal angles evaluated on the sky are also
+provided in degrees by the standard implementations. A notable
+exception is the LSST software stack where, by default,
+the angles are provided in radians.
+
+We now come back to the first mapping step, i.e. converting
+coordinates measured in pixel units into some intermediate coordinate
+system.  The universal WCS convention here is pretty minimal: it
+allows for an affine transform, which is in general not sufficient to
+map the optical distortions of the imaging system, even after a clever
+choice of the projection. Extensions of the WCS convention have been
+proposed here, but none is universally understood. The LSST software
+stack implements the SIP addition, which consists in applying a 2-d
+polynomial transform to the CCD space coordinates, prior to entering
+the standard WCS chain (affine transform, then de-projection). In practice,
+the SIP ``twisting'' is applied by the LSST software itself 
+(in the class \ClName{afw::image::TanWcs}), and 
+the ``standard'' part (affine and de-projection, or the reverse transform)
+are sub-contracted to the ``libwcs'' code. 
+
+One common complication of the WCS arena is that it was designed
+in the FITS framework convention, itself highly fortran-biased
+for array indexing, so that the first corner pixel of an image is 
+indexed (1,1). The LSST software, and most modern environments use
+C-like indexing, i.e. images stars at (0,0), as well as coordinates
+in images. The WCS LSST software hides this detail to users, by
+offsetting the pixel space coordinates provided and obtained from
+the wcs-handling library.
+
+We now detail what is involved in the SIP convention: the SIP
+``twisting'' itself is encoded through 4 polynomials of 2 variables,
+which encode the direct and reverse transformations. The standard
+affine transform is expressed through a $2\times 2$ matrix ($Cd$) and
+a reference point $X_{ref}$ (called \verb'CRPIX' in the fits header):
+$$
+ Y_{TP} = Cd (X_{pix} - X_{ref})
+$$
+$X_{pix}$ is a point in the CCD
+space, and $Y_{TP}$ is its transform in the tangent plane. Obviously,
+$X_{pix}$ and $ X_{ref}$ should be expressed in the same frame so that
+the transform does not depend this frame choice. We write symbolically
+this transform as $ Y_{TP} = L(X_{pix})$
+The SIP distortions are defined by a polynomial transformation
+in pixel space, that we call $P_A$, for the forward transformation.
+By convention, the transform from pixel space to tangent plane then
+reads:
+$$
+ Y_{TP} = L\left( X_{pix} - X_{ref} + P_A( X_{pix} - X_{ref}) \right )
+$$
+which again does not depend on the frame choice (0-based or 1-based),
+provided $X_{pix}$ and $X_{ref}$ are expressed in the same frame.
+
+In simastrom ,the internal representation of SIP WCS's uses three
+straight 2d$\rightarrow$2d transformations: the SIP correction, the
+affine transformation and the de-projection. Those are just composed
+to yield the actual transform, and the two first ones are generic
+polynomial transformations. We provide routines to translate the
+TanWcs objects into our representation (\RoutineName{ConvertTanWcs})
+and back (\RoutineName{GtransfoToTanWcs}). In the latter case, we also
+derive the reverse distortion polynomials, which are built if needed
+in our representation of SIP WCSs.
+
+
+
+
+
+
+
+
 
 
 
 
 \end{document}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Local Variables:
+%%% mode: latex
+%%% eval: (flyspell-mode 1) 
+%%% ispell-local-dictionary: "american"
+%%% End:
