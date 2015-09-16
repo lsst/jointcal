@@ -191,8 +191,8 @@ CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceReco
         expTime = meta->get<double>("EXPTIME");
         latitude = lsst::afw::geom::degToRad(19.825252);   // Does not seem to be in the header
         lst_obs = lsst::afw::geom::degToRad(RaStringToDeg(meta->get<std::string>("LST-STR")));
-        ra = RaStringToDeg(meta->get<std::string>("RA2000"));
-        dec = DecStringToDeg(meta->get<std::string>("DEC2000"));
+        ra = lsst::afw::geom::degToRad(RaStringToDeg(meta->get<std::string>("RA2000")));
+        dec = lsst::afw::geom::degToRad(DecStringToDeg(meta->get<std::string>("DEC2000")));
     }
     else {
         throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,"CcdImage, unsupported camera "+camera);
