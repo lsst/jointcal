@@ -20,6 +20,8 @@
 #include "lsst/meas/simastrom/Point.h"
 #include "lsst/meas/simastrom/simAstrom.h"
 
+#include "lsst/afw/table/SortedCatalog.h"
+
 namespace lsst {
 namespace meas {
 namespace simastrom {
@@ -75,6 +77,9 @@ public:
 
   //! Collect stars form an external reference catalog (USNO-A by default) that match the FittedStarList. Optionally project these RefStar s on the tangent plane defined by the CommonTangentPoint().
   void CollectRefStars(const bool ProjectOnTP=true);
+  
+  //! Collect stars from an external reference catalog using the LSST stack mechanism
+  void CollectLSSTRefStars(lsst::afw::table::SortedCatalogT< lsst::afw::table::SimpleRecord > &Ref);
 
 
 
@@ -117,6 +122,9 @@ public:
 
   //! Number of different bands in the input image list. Not implemented so far
   unsigned NBands() const {return 1;}
+  
+  // Return the bounding box in (ra, dec) coordinates containing the whole catalog
+  const lsst::afw::geom::Box2D GetRaDecBBox();
 
   
 private:

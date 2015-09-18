@@ -14,7 +14,10 @@
 #include "lsst/daf/base/PropertySet.h"
 
 #include "lsst/pex/exceptions.h"
-
+#include "lsst/afw/geom/Box.h"
+#include "lsst/afw/geom/Point.h"
+#include "lsst/afw/coord/Coord.h"
+#include "lsst/afw/image/Calib.h"
 
 // TODO: propagate those into python:
 const double usnoMatchCut=3;
@@ -217,6 +220,8 @@ void Associations::CollectRefStars(const bool ProjectOnTP)
   GtransfoLin identity;
   TanPix2RaDec CTP2RaDec(identity, commonTangentPoint);
   Frame raDecFrame = ApplyTransfo(tangentPlaneFrame,CTP2RaDec,LargeFrame);
+  
+  std::cout << "raDecFrame : " << raDecFrame << std::endl;
 
   // collect in USNO catalog
   BaseStarList usno;
@@ -246,9 +251,68 @@ void Associations::CollectRefStars(const bool ProjectOnTP)
     {
       AssociateRefStars(usnoMatchCut, &RaDec2CTP);
     }
-
-
 }
+
+void Associations::CollectLSSTRefStars(lsst::afw::table::SortedCatalogT< lsst::afw::table::SimpleRecord > &Ref)
+{
+  if (Ref.size() == 0)
+    {
+      throw(LSST_EXCEPT(pex::exceptions::InvalidParameterError, " Reference catalog is empty : stop here "));
+    }
+    
+  auto coordKey = Ref.getSchema().find<lsst::afw::coord::Coord>("coord").key;
+  auto fluxKey = Ref.getSchema().find<double>("r_flux").key;
+  auto fluxSigmaKey = Ref.getSchema().find<double>("r_fluxSigma").key;
+    
+  for (auto i = Ref.begin(); i != Ref.end(); i++)
+    {
+	lsst::afw::coord::Coord coord = i->get(coordKey);
+	double flux = i->get(fluxKey);
+	double fluxErr = i->get(fluxSigmaKey);
+	double mag = lsst::afw::image::abMagFromFlux(flux);
+//	std::cout << flux/fluxErr << " " << mag << std::endl;
+	if (flux/fluxErr < 10.0 || mag > 20. || mag < 16.) {
+	    continue;
+	}
+	Point raDec(lsst::afw::geom::radToDeg(coord.getLongitude()), lsst::afw::geom::radToDeg(coord.getLatitude()));
+	BaseStar b(raDec, mag);
+	RefStar *r = new RefStar(b, raDec);
+	refStarList.push_back(r);
+    }
+      
+  // project on CTP (i.e. RaDec2CTP), in degrees
+  GtransfoLin identity;
+  TanRaDec2Pix RaDec2CTP(identity, commonTangentPoint);
+  
+  AssociateRefStars(usnoMatchCut, &RaDec2CTP);
+}
+
+const lsst::afw::geom::Box2D Associations::GetRaDecBBox()
+{
+  // compute the frame on the CTP that contains all input images
+  Frame tangentPlaneFrame;
+  
+  for (CcdImageIterator i=ccdImageList.begin(); i!= ccdImageList.end(); ++i)
+    {
+      CcdImage &ccdImage = **i;
+      Frame CTPFrame = ApplyTransfo(ccdImage.ImageFrame(),*ccdImage.Pix2CommonTangentPlane(),LargeFrame);
+      if (tangentPlaneFrame.Area() == 0) tangentPlaneFrame = CTPFrame;
+      else tangentPlaneFrame += CTPFrame;
+    }
+
+  // convert tangent plane coordinates to RaDec:
+  GtransfoLin identity;
+  TanPix2RaDec CTP2RaDec(identity, commonTangentPoint);
+  Frame raDecFrame = ApplyTransfo(tangentPlaneFrame,CTP2RaDec,LargeFrame);  
+  
+  lsst::afw::geom::Point<double> min(raDecFrame.xMin, raDecFrame.yMin);
+  lsst::afw::geom::Point<double> max(raDecFrame.xMax, raDecFrame.yMax);
+  lsst::afw::geom::Box2D box(min, max);
+  
+  return box;
+  
+}
+
 void Associations::AssociateRefStars(const double &MatchCutInArcSec, 
 				     const Gtransfo* T)
 {

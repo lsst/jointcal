@@ -28,11 +28,14 @@ import lsst.coadd.utils as coaddUtils
 import lsst.pipe.base as pipeBase
 import lsst.afw.image as afwImage
 import lsst.afw.table as afwTable
+import lsst.afw.geom as afwGeom
+import lsst.afw.coord as afwCoord
 
 from lsst.afw.fits import FitsError
 from lsst.pipe.tasks.selectImages import WcsSelectImagesTask, SelectStruct
 from lsst.coadd.utils import CoaddDataIdContainer
 from lsst.pipe.tasks.getRepositoryData import DataRefListRunner
+from lsst.meas.astrom.loadAstrometryNetObjects import LoadAstrometryNetObjectsTask
 
 from lsst.meas.simastrom.simastromLib import SimAstromControl, simAstrom, Associations, ProjectionHandler , AstromFit, SimplePolyModel, OneTPPerShoot
 
@@ -121,7 +124,23 @@ class SimAstromTask(pipeBase.CmdLineTask):
         
         matchCut = 3.0
         assoc.AssociateCatalogs(matchCut)
+        
+        # Get the bounding box overlapping all associated images
+        bbox = assoc.GetRaDecBBox()
+        center = afwCoord.Coord(bbox.getCenter(), afwGeom.degrees)
+        corner = afwCoord.Coord(bbox.getMax(), afwGeom.degrees)
+        radius = center.angularSeparation(corner).asRadians()
+        print "Bounding Box from python", bbox, center, corner, radius, afwGeom.radToDeg(radius)
+        
+        # Get catalog of reference objects
+        task = LoadAstrometryNetObjectsTask.ConfigClass()
+        loader = LoadAstrometryNetObjectsTask(task)
+        filt = 'r'
+        refCat = loader.loadSkyCircle(center, afwGeom.Angle(radius, afwGeom.radians), filt).refCat
+        print refCat.getSchema().getOrderedNames()
+        
         assoc.CollectRefStars(False) # do not project RefStars
+#        assoc.CollectLSSTRefStars(refCat)
         assoc.SelectFittedStars()
         assoc.DeprojectFittedStars() # required for AstromFit
         sky2TP = OneTPPerShoot(assoc.TheCcdImageList())
