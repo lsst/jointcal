@@ -29,6 +29,7 @@ simAstrom::TanSipPix2RaDec ConvertTanWcs(const boost::shared_ptr<lsst::afw::imag
    fitsToLsstPixels, so all the algebra we perform here happens in the
    "Lsst frame", i.e (0,0)-based. this algebra is justified in the
    documentation of the package. */
+
   lsst::afw::geom::Point2D crpix_lsst = wcs->getPixelOrigin();
 
   lsst::daf::base::PropertyList::Ptr wcsMeta = wcs->getFitsMetadata();
@@ -170,18 +171,6 @@ PTR(afwImg::TanWcs) GtransfoToTanWcs(const simAstrom::TanSipPix2RaDec WcsTransfo
 
   return boost::shared_ptr<afwImg::TanWcs>(new afwImg::TanWcs(crval, crpix_lsst, cdMat, sipA, sipB, sipAp, sipBp));
   
-  /* now, one subtelty of SIP: the direct (A,B) and inverse(Ap, Bp) 
-     polynomials are not inverse of each other */
-  
-  
-
-  
-
-
-
-
-
-
 }
 
 }}} 
