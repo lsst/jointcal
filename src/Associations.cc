@@ -10,6 +10,7 @@
 #include "lsst/meas/simastrom/ListMatch.h"
 #include "lsst/meas/simastrom/Frame.h"
 #include "lsst/meas/simastrom/AstroUtils.h"
+#include "lsst/meas/simastrom/FatPoint.h"
 #include "lsst/afw/image/Image.h"
 #include "lsst/daf/base/PropertySet.h"
 
@@ -25,6 +26,8 @@ const bool cleanMatches=true;
 const int minMeasurementCount=2;
 
 namespace simAstrom = lsst::meas::simastrom;
+
+static double sqr(const double &x) {return x*x;}
 
 namespace lsst {
 namespace meas {
@@ -270,13 +273,17 @@ void Associations::CollectLSSTRefStars(lsst::afw::table::SortedCatalogT< lsst::a
 	double flux = i->get(fluxKey);
 	double fluxErr = i->get(fluxSigmaKey);
 	double mag = lsst::afw::image::abMagFromFlux(flux);
+	double ra = lsst::afw::geom::radToDeg(coord.getLongitude());
+	double dec = lsst::afw::geom::radToDeg(coord.getLatitude());
 //	std::cout << flux/fluxErr << " " << mag << std::endl;
-	if (flux/fluxErr < 10.0 || mag > 20. || mag < 16.) {
-	    continue;
-	}
-	Point raDec(lsst::afw::geom::radToDeg(coord.getLongitude()), lsst::afw::geom::radToDeg(coord.getLatitude()));
-	BaseStar b(raDec, mag);
-	RefStar *r = new RefStar(b, raDec);
+//	if (flux/fluxErr < 10.0 || mag > 20. || mag < 16.) {
+//	    continue;
+//	}
+	BaseStar *s = new BaseStar(ra,dec,mag);
+	s->vx = sqr(0.1/3600/cos(coord.getLatitude()));
+	s->vy = sqr(0.1/3600);
+	s->vxy = 0.;
+	RefStar *r = new RefStar(*s, *s);
 	refStarList.push_back(r);
     }
       

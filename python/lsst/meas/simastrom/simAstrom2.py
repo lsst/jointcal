@@ -139,8 +139,8 @@ class SimAstromTask(pipeBase.CmdLineTask):
         refCat = loader.loadSkyCircle(center, afwGeom.Angle(radius, afwGeom.radians), filt).refCat
         print refCat.getSchema().getOrderedNames()
         
-        assoc.CollectRefStars(False) # do not project RefStars
-#        assoc.CollectLSSTRefStars(refCat)
+#        assoc.CollectRefStars(False) # do not project RefStars
+        assoc.CollectLSSTRefStars(refCat)
         assoc.SelectFittedStars()
         assoc.DeprojectFittedStars() # required for AstromFit
         sky2TP = OneTPPerShoot(assoc.TheCcdImageList())
