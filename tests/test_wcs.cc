@@ -136,7 +136,6 @@ BOOST_AUTO_TEST_CASE(test_wcs_convertions)
   //  std::cout << "pix, pixback" << where << ' ' << whereBack << std::endl;
   //  std::cout << " dx dy " << where-whereBack << std::endl;
 
-
   lsst::afw::geom::Point2D outDeg = coord->getPosition(lsst::afw::geom::degrees);
 
   PTR(lsst::afw::coord::Coord) coord2 = tanWcs2->pixelToSky(where);
