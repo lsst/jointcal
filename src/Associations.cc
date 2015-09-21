@@ -263,7 +263,9 @@ void Associations::CollectLSSTRefStars(lsst::afw::table::SortedCatalogT< lsst::a
       throw(LSST_EXCEPT(pex::exceptions::InvalidParameterError, " Reference catalog is empty : stop here "));
     }
     
-  auto coordKey = Ref.getSchema().find<lsst::afw::coord::Coord>("coord").key;
+//  auto coordKey = Ref.getSchema().find<lsst::afw::coord::Coord>("coord").key;	
+// Same syntax as the following line but with auto :  auto coordKey = afwTable::CoordKey(Ref.getSchema()["coord"]);
+  afw::table::CoordKey coordKey = Ref.getSchema()["coord"];
   auto fluxKey = Ref.getSchema().find<double>("r_flux").key;
   auto fluxSigmaKey = Ref.getSchema().find<double>("r_fluxSigma").key;
     
