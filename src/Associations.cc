@@ -267,13 +267,13 @@ void Associations::CollectLSSTRefStars(lsst::afw::table::SortedCatalogT< lsst::a
 // Same syntax as the following line but with auto :  auto coordKey = afwTable::CoordKey(Ref.getSchema()["coord"]);
   afw::table::CoordKey coordKey = Ref.getSchema()["coord"];
   auto fluxKey = Ref.getSchema().find<double>(filter + "_flux").key;
-  auto fluxSigmaKey = Ref.getSchema().find<double>(filter + "_fluxSigma").key;
+//  auto fluxSigmaKey = Ref.getSchema().find<double>(filter + "_fluxSigma").key;
     
   for (auto i = Ref.begin(); i != Ref.end(); i++)
     {
 	lsst::afw::coord::Coord coord = i->get(coordKey);
 	double flux = i->get(fluxKey);
-	double fluxErr = i->get(fluxSigmaKey);
+//	double fluxErr = i->get(fluxSigmaKey);
 	double mag = lsst::afw::image::abMagFromFlux(flux);
 	double ra = lsst::afw::geom::radToDeg(coord.getLongitude());
 	double dec = lsst::afw::geom::radToDeg(coord.getLatitude());
