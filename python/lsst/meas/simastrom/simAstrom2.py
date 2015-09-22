@@ -21,8 +21,10 @@ from __future__ import division, absolute_import
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
 
+import os
 import numpy
 
+import lsst.utils
 import lsst.pex.config as pexConfig
 import lsst.coadd.utils as coaddUtils
 import lsst.pipe.base as pipeBase
@@ -36,6 +38,7 @@ from lsst.pipe.tasks.selectImages import WcsSelectImagesTask, SelectStruct
 from lsst.coadd.utils import CoaddDataIdContainer
 from lsst.pipe.tasks.getRepositoryData import DataRefListRunner
 from lsst.meas.astrom.loadAstrometryNetObjects import LoadAstrometryNetObjectsTask
+from lsst.meas.astrom import AstrometryNetDataConfig
 
 from lsst.meas.simastrom.simastromLib import SimAstromControl, simAstrom, Associations, ProjectionHandler , AstromFit, SimplePolyModel, OneTPPerShoot
 
@@ -125,21 +128,36 @@ class SimAstromTask(pipeBase.CmdLineTask):
         matchCut = 3.0
         assoc.AssociateCatalogs(matchCut)
         
+        # Use external reference catalogs handled by LSST stack mechanism
         # Get the bounding box overlapping all associated images
         bbox = assoc.GetRaDecBBox()
         center = afwCoord.Coord(bbox.getCenter(), afwGeom.degrees)
         corner = afwCoord.Coord(bbox.getMax(), afwGeom.degrees)
         radius = center.angularSeparation(corner).asRadians()
-        print "Bounding Box from python", bbox, center, corner, radius, afwGeom.radToDeg(radius)
         
-        # Get catalog of reference objects
+        # Get astrometry_net_data path
+        anDir = lsst.utils.getPackageDir('astrometry_net_data')
+        if anDir is None:
+            raise RuntimeError("astrometry_net_data is not setup")
+
+        andConfig = AstrometryNetDataConfig()
+        andConfigPath = os.path.join(anDir, "andConfig.py")
+        if not os.path.exists(andConfigPath):
+            raise RuntimeError("astrometry_net_data config file \"%s\" required but not found" %andConfigPath)
+        andConfig.load(andConfigPath)
+        
         task = LoadAstrometryNetObjectsTask.ConfigClass()
         loader = LoadAstrometryNetObjectsTask(task)
-        filt = 'r'
+        
+        # Determine default filter associated to the catalog
+        filt, mfilt = andConfig.magColumnMap.items()[0]
+        print "Using", filt, "band for reference flux"
+
         refCat = loader.loadSkyCircle(center, afwGeom.Angle(radius, afwGeom.radians), filt).refCat
         print refCat.getSchema().getOrderedNames()
         
-#        assoc.CollectRefStars(False) # do not project RefStars
+#        assoc.CollectRefStars(False) # To use USNO-A catalog 
+
         assoc.CollectLSSTRefStars(refCat)
         assoc.SelectFittedStars()
         assoc.DeprojectFittedStars() # required for AstromFit
@@ -151,7 +169,7 @@ class SimAstromTask(pipeBase.CmdLineTask):
         fit.Minimize("Positions")
         fit.Minimize("Distortions Positions")
 
-        for i in range(20): 
+        for i in range(100): 
             nout = fit.RemoveOutliers(5.) # 5 sigma
             fit.Minimize("Distortions Positions")
             chi2 = fit.ComputeChi2()
