@@ -158,7 +158,7 @@ class SimAstromTask(pipeBase.CmdLineTask):
         
 #        assoc.CollectRefStars(False) # To use USNO-A catalog 
 
-        assoc.CollectLSSTRefStars(refCat)
+        assoc.CollectLSSTRefStars(refCat, filt)
         assoc.SelectFittedStars()
         assoc.DeprojectFittedStars() # required for AstromFit
         sky2TP = OneTPPerShoot(assoc.TheCcdImageList())

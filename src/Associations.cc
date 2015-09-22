@@ -256,7 +256,7 @@ void Associations::CollectRefStars(const bool ProjectOnTP)
     }
 }
 
-void Associations::CollectLSSTRefStars(lsst::afw::table::SortedCatalogT< lsst::afw::table::SimpleRecord > &Ref)
+void Associations::CollectLSSTRefStars(lsst::afw::table::SortedCatalogT< lsst::afw::table::SimpleRecord > &Ref, std::string filter)
 {
   if (Ref.size() == 0)
     {
@@ -266,8 +266,8 @@ void Associations::CollectLSSTRefStars(lsst::afw::table::SortedCatalogT< lsst::a
 //  auto coordKey = Ref.getSchema().find<lsst::afw::coord::Coord>("coord").key;	
 // Same syntax as the following line but with auto :  auto coordKey = afwTable::CoordKey(Ref.getSchema()["coord"]);
   afw::table::CoordKey coordKey = Ref.getSchema()["coord"];
-  auto fluxKey = Ref.getSchema().find<double>("r_flux").key;
-  auto fluxSigmaKey = Ref.getSchema().find<double>("r_fluxSigma").key;
+  auto fluxKey = Ref.getSchema().find<double>(filter + "_flux").key;
+  auto fluxSigmaKey = Ref.getSchema().find<double>(filter + "_fluxSigma").key;
     
   for (auto i = Ref.begin(); i != Ref.end(); i++)
     {
