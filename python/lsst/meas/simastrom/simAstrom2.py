@@ -55,6 +55,16 @@ class SimAstromConfig(pexConfig.Config):
         default = True,
     )
     
+    posError = pexConfig.Field(
+        doc = "Constant term for error on position (in pixel unit)",
+        dtype = float,
+        default = 0.02, 
+    )
+    polyOrder = pexConfig.Field(
+        doc = "Order of the polynomial used to fit distorsion",
+        dtype = int,
+        default = 3,
+    )
     sourceFluxField = pexConfig.Field(
         doc = "Type of source flux",
         dtype = str,
@@ -162,12 +172,18 @@ class SimAstromTask(pipeBase.CmdLineTask):
         assoc.SelectFittedStars()
         assoc.DeprojectFittedStars() # required for AstromFit
         sky2TP = OneTPPerShoot(assoc.TheCcdImageList())
-        spm = SimplePolyModel(assoc.TheCcdImageList(), sky2TP, True, 0)
+        spm = SimplePolyModel(assoc.TheCcdImageList(), sky2TP, True, 0, self.config.polyOrder)
 
-        fit = AstromFit(assoc,spm)
+        fit = AstromFit(assoc, spm, self.config.posError)
         fit.Minimize("Distortions")
+        chi2 = fit.ComputeChi2()
+        print chi2
         fit.Minimize("Positions")
+        chi2 = fit.ComputeChi2()
+        print chi2
         fit.Minimize("Distortions Positions")
+        chi2 = fit.ComputeChi2()
+        print chi2
 
         for i in range(100): 
             nout = fit.RemoveOutliers(5.) # 5 sigma

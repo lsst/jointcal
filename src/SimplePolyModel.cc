@@ -8,7 +8,7 @@
 
 #include "lsst/meas/simastrom/Gtransfo.h"
 
-const int distortionDegree=3;
+//const int distortionDegree=3;
 
 namespace lsst {
 namespace meas {
@@ -18,11 +18,12 @@ namespace simastrom {
 SimplePolyModel::SimplePolyModel(const CcdImageList &L, 
 				 const ProjectionHandler* ProjH, 
 				 bool InitFromWCS,
-				 unsigned NNotFit) : _sky2TP(ProjH)
+				 unsigned NNotFit,
+				 unsigned degree) : _sky2TP(ProjH)
 
 {
   // from datacards (or default)
-  unsigned degree = distortionDegree; 
+//  unsigned degree = distortionDegree; 
   unsigned count = 0;
   for (auto i=L.cbegin(); i!= L.end(); ++i, ++count)
     {

@@ -74,11 +74,12 @@ class AstromFit {
   // unsigned int _nParStars; unused presently
   unsigned int _nParTot;
   unsigned _nMeasuredStars;
+  double _posError;  // constant term on error on position (in pixel unit)
   
  public :
 
   //! this is the only constructor
-  AstromFit (Associations &A, DistortionModel *D);
+  AstromFit (Associations &A, DistortionModel *D, double PosError);
   
   //! Does a 1 step minimization, assuming a linear model.
   /*! It calls AssignIndices, LSDerivatives, solves the linear system

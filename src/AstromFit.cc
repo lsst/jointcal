@@ -19,18 +19,20 @@ using namespace std;
 
 static double sqr(const double &x) {return x*x;}
 
-const double posErrorIncrement=0.02;
+//const double posErrorIncrement=0.02;
 
 namespace lsst {
 namespace meas {
 namespace simastrom {
 
 
-AstromFit::AstromFit(Associations &A, DistortionModel *D) : 
-  _assoc(A),  _distortionModel(D)
+AstromFit::AstromFit(Associations &A, DistortionModel *D, double PosError) : 
+  _assoc(A),  _distortionModel(D), _posError(PosError)
 {
   _LastNTrip = 0;
   _JDRef = 0;
+
+  _posError = PosError;
 
   _referenceColor = 0; 
   _sigCol = 0;
@@ -92,16 +94,16 @@ Point AstromFit::TransformFittedStar(const FittedStar &F,
   We'll certainly have to upgrade it. MeasuredStar provided
 in case we need the mag.  */
 
-  static double posErrorIncrement = 0.02; // pixels
+//  static double posErrorIncrement = 0.02; // pixels
 //  static double posErrorIncrement = 0.00; // pixels
 
-static void TweakAstromMeasurementErrors(FatPoint &P, const MeasuredStar &Ms)
+static void TweakAstromMeasurementErrors(FatPoint &P, const MeasuredStar &Ms, double error)
 {
   static bool called=false;
   static double increment = 0;
   if (!called)
     {
-      increment = sqr(posErrorIncrement); // was in Preferences
+      increment = sqr(error); // was in Preferences
       called = true;
     }
   P.vx += increment;
@@ -162,7 +164,7 @@ void AstromFit::LSDerivatives1(const CcdImage &Ccd,
       if (!ms.IsValid()) continue;
       // tweak the measurement errors
       FatPoint inPos = ms;
-      TweakAstromMeasurementErrors(inPos, ms);
+      TweakAstromMeasurementErrors(inPos, ms, _posError);
       h.setZero(); // we cannot be sure that all entries will be overwritten.
       FatPoint outPos;
       // should *not* fill h if WhatToFit excludes mapping parameters.
@@ -406,7 +408,7 @@ void AstromFit::AccumulateStatImage(ImType &Ccd, Accum &Accu) const
       if (!ms.IsValid()) continue;
       // tweak the measurement errors
       FatPoint inPos = ms;
-      TweakAstromMeasurementErrors(inPos, ms);
+      TweakAstromMeasurementErrors(inPos, ms, _posError);
 
       FatPoint outPos;
       // should *not* fill h if WhatToFit excludes mapping parameters.
@@ -896,7 +898,7 @@ void AstromFit::MakeMeasResTuple(const std::string &TupleName) const
 	  if (!ms.IsValid()) continue;
 	  FatPoint tpPos;
 	  FatPoint inPos = ms;
-	  TweakAstromMeasurementErrors(inPos,ms);
+	  TweakAstromMeasurementErrors(inPos, ms, _posError);
 	  mapping->TransformPosAndErrors(inPos, tpPos);
 	  const Gtransfo* sky2TP = _distortionModel->Sky2TP(mapping, im);
 	  const FittedStar *fs = ms.GetFittedStar();

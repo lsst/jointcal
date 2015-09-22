@@ -126,7 +126,8 @@ trapfpe ()
     OneTPPerShoot sky2TP(assoc->TheCcdImageList());
     SimplePolyModel spm(assoc->TheCcdImageList(), &sky2TP, true, 0);
 
-    AstromFit astromFit(*assoc, &spm); 
+    double posError = 0.02;
+    AstromFit astromFit(*assoc, &spm, posError); 
 
     std::string whatToFit = "Distortions";
 

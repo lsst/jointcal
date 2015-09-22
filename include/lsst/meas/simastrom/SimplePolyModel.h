@@ -39,7 +39,8 @@ public :
   SimplePolyModel(const CcdImageList &L, 
 		  const ProjectionHandler* ProjH, 
 		  bool InitFromWCS,
-		  unsigned NNotFit=0);
+		  unsigned NNotFit=0,
+          unsigned degree=3);
 
   // The following routines are the interface to AstromFit
   //!
