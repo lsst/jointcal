@@ -101,9 +101,6 @@ class SimAstromTask(pipeBase.CmdLineTask):
     @pipeBase.timeMethod
     def run(self, ref):
         
-#        sourceCat = test2()
-        
-        
         configSel = StarSelectorConfig()
         ss = StarSelector(configSel, self.config.sourceFluxField)
         
@@ -115,12 +112,17 @@ class SimAstromTask(pipeBase.CmdLineTask):
         
         for dataRef in ref :
             src = dataRef.get("src", immediate=True)
-            calexp = dataRef.get("calexp", immediate=True)
-            tanwcs = afwImage.TanWcs.cast(calexp.getWcs())
-            bbox = calexp.getBBox()
             md = dataRef.get("calexp_md", immediate=True)
+#            calexp = dataRef.get("calexp", immediate=True)
+#            tanwcs = afwImage.TanWcs.cast(calexp.getWcs())
+            tanwcs = afwImage.TanWcs.cast(afwImage.makeWcs(md))
+#            bbox = calexp.getBBox()
+            lLeft = afwImage.getImageXY0FromMetadata(afwImage.wcsNameForXY0, md)
+            uRight  = afwGeom.Point2I(lLeft.getX() + md.get("NAXIS1")-1, lLeft.getY() + md.get("NAXIS2")-1)
+            bbox = afwGeom.Box2I(lLeft, uRight)
             calib = afwImage.Calib(md)
-            filt = calexp.getFilter().getName()
+#            filt = calexp.getFilter().getName()
+            filt = dataRef.dataId['filter']
             
             newSrc = ss.select(src, calib)
             if len(newSrc) == 0 :
@@ -140,6 +142,7 @@ class SimAstromTask(pipeBase.CmdLineTask):
         
         # Use external reference catalogs handled by LSST stack mechanism
         # Get the bounding box overlapping all associated images
+        # ==> This is probably a bad idea to do it this way <==
         bbox = assoc.GetRaDecBBox()
         center = afwCoord.Coord(bbox.getCenter(), afwGeom.degrees)
         corner = afwCoord.Coord(bbox.getMax(), afwGeom.degrees)
@@ -185,7 +188,7 @@ class SimAstromTask(pipeBase.CmdLineTask):
         chi2 = fit.ComputeChi2()
         print chi2
 
-        for i in range(100): 
+        for i in range(30): 
             nout = fit.RemoveOutliers(5.) # 5 sigma
             fit.Minimize("Distortions Positions")
             chi2 = fit.ComputeChi2()
