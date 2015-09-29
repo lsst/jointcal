@@ -17,6 +17,8 @@ namespace simastrom {
 
 class Associations;
 
+ struct Chi2;
+
 /*! This is the class that actually computes the quantities required
 to carry out a LS astrometric fit wrt distortion mappings and coordinates
 of common objects.  Namely it computes the Jacobian and
@@ -53,7 +55,9 @@ would then naturally not have any Kind 2 terms.
 
 */
 
- struct Chi2;
+
+
+//! Class that handles the astrometric least squares problem.
 
 class AstromFit {
   private : 
