@@ -23,7 +23,7 @@ namespace simastrom {
 typedef int ShootIdType;
 
 
-void SetZpKey(const std::string &AKey);
+//void SetZpKey(const std::string &AKey);
 
 //! handler of an actual image from a single CCD
 /*! requires an in-depth cleanup */
@@ -226,7 +226,7 @@ class CcdImage : public RefCount
   //! correction map to convert from one set of fluxes to another
   std::string FlatCVMap() const { return flatcvmap; }
   
-  void SetPix2TangentPlane(const Gtransfo *);
+  //void SetPix2TangentPlane(const Gtransfo *);
   
   //! the wcs read in the header. NOT updated when fitting.
   const Gtransfo *ReadWCS() const {return readWcs;}
@@ -238,7 +238,7 @@ class CcdImage : public RefCount
   const Frame& ImageFrame() const { return imageFrame;}
   
   //! Frame on sky
-  Frame RaDecFrame() const;
+  //Frame RaDecFrame() const;
   
   //! Fitted Ccd object (contain the refscale parameters)
   //  void             SetFittedCcd(FittedCcd* ccd) { if(ccd) fittedccd=ccd; }
@@ -276,13 +276,13 @@ class CcdImageList : public std::list<CountedRef<CcdImage> >
   public:
   
   //! 
-  std::list<std::string> DateObs() const;
+  //std::list<std::string> DateObs() const;
   
   //! 
-  std::list<std::string> Bands() const;
+  //std::list<std::string> Bands() const;
   
   //! 
-  double       MeanAirmass() const;
+  //double       MeanAirmass() const;
   
   //! 
   template<class Accept> CcdImageList SubList(const Accept &OP) const
@@ -294,7 +294,7 @@ class CcdImageList : public std::list<CountedRef<CcdImage> >
     }
   
   // find the matching image. Chip==-1 means any chip
-  double AirMass(const int Shoot, const int Chip = -1) const;
+//  double AirMass(const int Shoot, const int Chip = -1) const;
 };
 
 

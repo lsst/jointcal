@@ -196,6 +196,14 @@ class SimAstromTask(pipeBase.CmdLineTask):
             print chi2
             if (nout == 0) : break
         fit.MakeResTuple("res.list")
+        
+        # Play with fit results and try to find how to get the updated WCSs
+        
+        imList = assoc.TheCcdImageList()
+        print imList
+        print dir(imList)
+        for im in imList :
+            print im
 
 
 

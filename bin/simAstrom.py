@@ -21,6 +21,6 @@
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
 import lsst.pex.logging as pexLog
-from lsst.meas.simastrom.simAstrom3 import SimAstromTask
+from lsst.meas.simastrom.simAstrom2 import SimAstromTask
 
 SimAstromTask.parseAndRun()
