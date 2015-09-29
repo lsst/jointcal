@@ -55,14 +55,18 @@ public :
   /*! the mapping of sky coordinates (i.e. the coordinate system 
   in which fitted stars are reported) onto the Tangent plane
   (into which the pixel coordinates are transformed) */ 
-  const Gtransfo* Sky2TP(const Mapping* M, const CcdImage &C) const
-  { return _sky2TP->Sky2TP(M,C);}
+  const Gtransfo* Sky2TP(const CcdImage &C) const
+  { return _sky2TP->Sky2TP(C);}
 
   //! 
   virtual void FreezeErrorScales();
 
   //! Access to mappings
   const Gtransfo& GetTransfo(const CcdImage &Ccd) const;
+
+
+  //! Cook up a SIP WCS.
+  PTR(TanSipPix2RaDec) ProduceSipWcs(const CcdImage &Ccd) const;
 
 
 };

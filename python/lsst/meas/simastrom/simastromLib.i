@@ -80,6 +80,11 @@ class SimplePolyMapping;
  class ProjectionHandler;
 }}}
 %include "lsst/meas/simastrom/DistortionModel.h"
+namespace lsst {
+namespace meas {
+namespace simastrom {
+  class TanSipPix2RaDec;
+}}}
 %include "lsst/meas/simastrom/SimplePolyModel.h"
 %include "lsst/meas/simastrom/Projectionhandler.h"
 

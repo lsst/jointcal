@@ -73,8 +73,8 @@ public :
   /*! the mapping of sky coordinates (i.e. the coordinate system 
   in which fitted stars are reported) onto the Tangent plane
   (into which the pixel coordinates are transformed) */ 
-  const Gtransfo* Sky2TP(const Mapping* M, const CcdImage &C) const
-  { return _sky2TP->Sky2TP(M,C);}
+  const Gtransfo* Sky2TP(const CcdImage &C) const
+  { return _sky2TP->Sky2TP(C);}
 
   //! Write a transfo file that contains the pixel->tangent plane mappings for each chip.
   /*! These constitute a description of the focal plane

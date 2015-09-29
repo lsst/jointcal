@@ -145,7 +145,7 @@ void AstromFit::LSDerivatives1(const CcdImage &Ccd,
   unsigned iband = Ccd.BandRank();
   double refractionCoefficient = _refracCoefficient.at(iband);
   // transformation from sky to TP
-  const Gtransfo* sky2TP = _distortionModel->Sky2TP(mapping, Ccd);
+  const Gtransfo* sky2TP = _distortionModel->Sky2TP(Ccd);
   // reserve matrices once for all measurements
   GtransfoLin dypdy;
   // the shape of h (et al) is required this way in order to be able to 
@@ -397,7 +397,7 @@ void AstromFit::AccumulateStatImage(ImType &Ccd, Accum &Accu) const
   Point refractionVector = Ccd.ParallacticVector();
   double refractionCoefficient = _refracCoefficient.at(Ccd.BandRank());
   // transformation from sky to TP
-  const Gtransfo* sky2TP = _distortionModel->Sky2TP(mapping, Ccd);
+  const Gtransfo* sky2TP = _distortionModel->Sky2TP(Ccd);
   // reserve matrix once for all measurements
   Eigen::Matrix2Xd transW(2,2);
 
@@ -900,7 +900,7 @@ void AstromFit::MakeMeasResTuple(const std::string &TupleName) const
 	  FatPoint inPos = ms;
 	  TweakAstromMeasurementErrors(inPos, ms, _posError);
 	  mapping->TransformPosAndErrors(inPos, tpPos);
-	  const Gtransfo* sky2TP = _distortionModel->Sky2TP(mapping, im);
+	  const Gtransfo* sky2TP = _distortionModel->Sky2TP(im);
 	  const FittedStar *fs = ms.GetFittedStar();
 	  
 	  Point fittedStarInTP = TransformFittedStar(*fs, sky2TP,

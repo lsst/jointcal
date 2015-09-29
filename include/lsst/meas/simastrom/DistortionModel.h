@@ -32,7 +32,7 @@ public :
   //! The transformation used to project the positions of FittedStars.
   /*! This defines the coordinate system into which the Mapping of
       this Ccdimage maps the pixel coordinates. */
-  virtual const Gtransfo* Sky2TP(const Mapping* M, const CcdImage &C) const = 0;
+  virtual const Gtransfo* Sky2TP(const CcdImage &C) const = 0;
 
 
   //! 

@@ -23,7 +23,7 @@ OneTPPerShoot::OneTPPerShoot(const CcdImageList &L)
     
 }
 
-const Gtransfo* OneTPPerShoot::Sky2TP(const Mapping* M, const CcdImage &C) const
+const Gtransfo* OneTPPerShoot::Sky2TP(const CcdImage &C) const
 {
   auto it=tMap.find(C.Shoot());
   if (it==tMap.end()) return NULL;
