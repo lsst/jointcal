@@ -202,8 +202,9 @@ class SimAstromTask(pipeBase.CmdLineTask):
         imList = assoc.TheCcdImageList()
         print imList
         print dir(imList)
+        print dir(imList[0])
         for im in imList :
-            print im
+            print im.Chip()
 
 
 

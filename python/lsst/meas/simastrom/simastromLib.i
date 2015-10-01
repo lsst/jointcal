@@ -30,6 +30,7 @@ Python interface to lsst::meas::simastrom classes
 #include "lsst/meas/simastrom/DistortionModel.h"
 #include "lsst/meas/simastrom/SimplePolyModel.h"
 #include "lsst/meas/simastrom/Projectionhandler.h"
+#include "lsst/meas/simastrom/CountedRef.h"
 %}
 
 %include "lsst/p_lsstSwig.i"
@@ -49,8 +50,6 @@ Python interface to lsst::meas::simastrom classes
 %template(BboxList) std::vector<lsst::afw::geom::Box2I>;
 %template(StringList) std::vector<std::string>;
 %template(IntList) std::vector<int>;
-
-%template(MyCcdImageList) std::list<lsst::meas::simastrom::CountedRef<lsst::meas::simastrom::CcdImage> >;
 
 %include "lsst/meas/simastrom/test.h"
 %include "lsst/meas/simastrom/test2.h"
@@ -96,13 +95,9 @@ namespace simastrom {
   class MeasuredStarList;
   class Frame;
   }}}
-%include "lsst/meas/simastrom/CcdImage.h"
-%include "lsst/meas/simastrom/CountedRef.h"
 
-//%extend lsst::meas::simastrom::CcdImageList 
-//{ 
-//%insert("python") %{ 
-//    def __iter__(self): 
-//       return CcdImageList.iterator(self);
-//%} 
-//} 
+%include "lsst/meas/simastrom/CountedRef.h"
+%template(CcdImageCountedRef) lsst::meas::simastrom::CountedRef<lsst::meas::simastrom::CcdImage>;
+%template(CcdImageCountedRefList) std::list<lsst::meas::simastrom::CountedRef<lsst::meas::simastrom::CcdImage> >;
+%include "lsst/meas/simastrom/CcdImage.h"
+
