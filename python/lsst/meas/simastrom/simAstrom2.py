@@ -40,7 +40,7 @@ from lsst.pipe.tasks.getRepositoryData import DataRefListRunner
 from lsst.meas.astrom.loadAstrometryNetObjects import LoadAstrometryNetObjectsTask
 from lsst.meas.astrom import AstrometryNetDataConfig
 
-from lsst.meas.simastrom.simastromLib import SimAstromControl, simAstrom, Associations, ProjectionHandler , AstromFit, SimplePolyModel, OneTPPerShoot
+from lsst.meas.simastrom.simastromLib import SimAstromControl, simAstrom, Associations, ProjectionHandler , AstromFit, SimplePolyModel, OneTPPerShoot, CcdImage
 
 __all__ = ["SimAstromConfig", "SimAstromTask"]
 
@@ -113,15 +113,11 @@ class SimAstromTask(pipeBase.CmdLineTask):
         for dataRef in ref :
             src = dataRef.get("src", immediate=True)
             md = dataRef.get("calexp_md", immediate=True)
-#            calexp = dataRef.get("calexp", immediate=True)
-#            tanwcs = afwImage.TanWcs.cast(calexp.getWcs())
             tanwcs = afwImage.TanWcs.cast(afwImage.makeWcs(md))
-#            bbox = calexp.getBBox()
             lLeft = afwImage.getImageXY0FromMetadata(afwImage.wcsNameForXY0, md)
             uRight  = afwGeom.Point2I(lLeft.getX() + md.get("NAXIS1")-1, lLeft.getY() + md.get("NAXIS2")-1)
             bbox = afwGeom.Box2I(lLeft, uRight)
             calib = afwImage.Calib(md)
-#            filt = calexp.getFilter().getName()
             filt = dataRef.dataId['filter']
             
             newSrc = ss.select(src, calib)
@@ -130,8 +126,6 @@ class SimAstromTask(pipeBase.CmdLineTask):
                 continue
             print "%d sources selected in visit %d - ccd %d"%(len(newSrc), dataRef.dataId["visit"], dataRef.dataId["ccd"])
             
-        # Should call a source selector here in order to send a list
-        # of reasonable star to the fitter.
             assoc.AddImage(newSrc, tanwcs, md, bbox, filt, calib,
                            dataRef.dataId['visit'], dataRef.dataId['ccd'],
                            dataRef.getButler().mapper.getCameraName(), 
@@ -169,7 +163,7 @@ class SimAstromTask(pipeBase.CmdLineTask):
         refCat = loader.loadSkyCircle(center, afwGeom.Angle(radius, afwGeom.radians), filt).refCat
         print refCat.getSchema().getOrderedNames()
         
-#        assoc.CollectRefStars(False) # To use USNO-A catalog 
+#        assoc.CollectRefStars(False) # To use the USNO-A catalog a la Poloka
 
         assoc.CollectLSSTRefStars(refCat, filt)
         assoc.SelectFittedStars()
@@ -200,11 +194,17 @@ class SimAstromTask(pipeBase.CmdLineTask):
         # Play with fit results and try to find how to get the updated WCSs
         
         imList = assoc.TheCcdImageList()
-        print imList
-        print dir(imList)
-        print dir(imList[0])
+
         for im in imList :
             print im.Chip()
+            print im
+            tanSip = spm.ProduceSipWcs(im)
+            print dir(tanSip)
+
+#        WcsVect = spm.ProduceSipWcsList(imList)
+#        print WcsVect
+#        print WcsVect[0]
+#        print dir(WcsVect[0])
 
 
 

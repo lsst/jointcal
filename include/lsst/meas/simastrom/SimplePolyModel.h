@@ -67,6 +67,8 @@ public :
 
   //! Cook up a SIP WCS.
   PTR(TanSipPix2RaDec) ProduceSipWcs(const CcdImage &Ccd) const;
+//  PTR(TanSipPix2RaDec) ProduceSipWcs(CcdImagePtr CcdPtr) const;
+//    const TanSipPix2RaDec& ProduceSipWcs(CcdImagePtr CcdPtr) const;
 
 
 };
