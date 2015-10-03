@@ -31,6 +31,11 @@ Python interface to lsst::meas::simastrom classes
 #include "lsst/meas/simastrom/SimplePolyModel.h"
 #include "lsst/meas/simastrom/Projectionhandler.h"
 #include "lsst/meas/simastrom/CountedRef.h"
+#include "lsst/meas/simastrom/SipToGtransfo.h"
+#include "lsst/meas/simastrom/SimplePolyModel.h"
+#include "lsst/meas/simastrom/Gtransfo.h"
+#include "lsst/meas/simastrom/FatPoint.h"
+#include "lsst/meas/simastrom/Point.h"
 %}
 
 %include "lsst/p_lsstSwig.i"
@@ -86,7 +91,6 @@ namespace meas {
 namespace simastrom {
   class TanSipPix2RaDec;
 }}}
-%include "lsst/meas/simastrom/SimplePolyModel.h"
 %include "lsst/meas/simastrom/Projectionhandler.h"
 
 namespace lsst {
@@ -94,10 +98,20 @@ namespace meas {
 namespace simastrom {
   class MeasuredStarList;
   class Frame;
-  }}}
+}}}
 
-%include "lsst/meas/simastrom/CountedRef.h"
-%template(CcdImageCountedRef) lsst::meas::simastrom::CountedRef<lsst::meas::simastrom::CcdImage>;
-%template(CcdImageCountedRefList) std::list<lsst::meas::simastrom::CountedRef<lsst::meas::simastrom::CcdImage> >;
+%shared_ptr(lsst::meas::simastrom::CcdImage);
+%template(CcdImageRef) boost::shared_ptr<lsst::meas::simastrom::CcdImage>;
+%template(CcdImageRefList) std::list<boost::shared_ptr<lsst::meas::simastrom::CcdImage> >;
+%template(TanSipPix2RaDecRef) boost::shared_ptr<lsst::meas::simastrom::TanSipPix2RaDec>;
+
+%shared_ptr(lsst::meas::simastrom::TanSipPix2RaDec);
+%include "lsst/meas/simastrom/Point.h"
+%include "lsst/meas/simastrom/FatPoint.h"
+%include "lsst/meas/simastrom/Gtransfo.h"
+
 %include "lsst/meas/simastrom/CcdImage.h"
+%include "lsst/meas/simastrom/SimplePolyModel.h"
+
+
 

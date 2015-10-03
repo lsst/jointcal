@@ -47,6 +47,7 @@ Associations::Associations()
 //  return AddImage(ri);
 //}
 
+
 bool Associations::AddImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &Ri,
             const PTR(lsst::afw::image::TanWcs) wcs,
             const PTR(lsst::daf::base::PropertySet) meta,
@@ -71,7 +72,9 @@ bool Associations::AddImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::S
 	commonTangentPoint = Point(crval1, crval2);
 	std::cout << "setting commonTangentPoint" << commonTangentPoint << std::endl;
     }
-  CcdImage *ccdImage = new CcdImage(Ri, commonTangentPoint, wcs, meta, bbox, filter, calib, visit, ccd, camera, control->sourceFluxField);
+    
+  boost::shared_ptr<CcdImage> ccdImage(new CcdImage(Ri, commonTangentPoint, wcs, meta, bbox, filter, calib, visit, ccd, camera, control->sourceFluxField));
+//  CcdImage *ccdImage = new CcdImage(Ri, commonTangentPoint, wcs, meta, bbox, filter, calib, visit, ccd, camera, control->sourceFluxField);
   ccdImageList.push_back(ccdImage);
   std::cout << " we have " << ccdImage->WholeCatalog().size() 
 	    << " objects in this catalog " << visit << " " << ccd << std::endl;
