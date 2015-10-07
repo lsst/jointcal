@@ -33,7 +33,7 @@ namespace simastrom {
 class BaseStar : public FatPoint, public RefCount
 {
 
-  public : // si quelqu'un connait un moyen efficace d'eviter ca...
+  public :
 double flux; 
 
 
