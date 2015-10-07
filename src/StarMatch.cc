@@ -345,8 +345,10 @@ void StarMatchList::ApplyTransfo(StarMatchList &Transformed,
 
   for (auto it= begin(); it!= end(); ++it )
     {
-      Point p1 = T1.apply(it->point1);
-      Point p2 = T2.apply(it->point2);
+      FatPoint p1;
+      T1.TransformPosAndErrors(it->point1,p1);
+      FatPoint p2;
+      T2.TransformPosAndErrors(it->point2, p2);
       Transformed.push_back(StarMatch(p1, p2, it->s1, it->s2));
     }
 }

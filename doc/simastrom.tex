@@ -460,7 +460,7 @@ some sort of mechanism to associate indices in the vector parameter to
 some subset (e.g. the position of an FittedStar) of these parameters.
 Furthermore, the implementation we have chosen does not allow
 trivially to allocate the actual parameters at successive positions in
-memory.  The \RoutineName{AstromFit::SetWhatToFit} takes care of
+memory. The \RoutineName{AstromFit::AssignIndices} takes care of
 assigning indices to all classes of parameters. For the mappings, the
 actual \ClName{DistortionModel} implementation does this part of the
 job. All these indices are used to properly fill the Jacobian and
@@ -469,7 +469,7 @@ gradient, and eventually to offset parameters in the
 
 Since the indexing of parameters is done dynamically, it is
 straightforward to only fit a subset of parameters. this is why the routine
-\RoutineName{AstromFit::SetWhatToFit} takes a string argument that specifies
+\RoutineName{AstromFit::AssignIndices} takes a string argument that specifies
 what is to be fitted.
 
 \section{Fitting the transformations between a set of images}

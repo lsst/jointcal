@@ -32,10 +32,10 @@ Python interface to lsst::meas::simastrom classes
 #include "lsst/meas/simastrom/Projectionhandler.h"
 #include "lsst/meas/simastrom/CountedRef.h"
 #include "lsst/meas/simastrom/SipToGtransfo.h"
-#include "lsst/meas/simastrom/SimplePolyModel.h"
 #include "lsst/meas/simastrom/Gtransfo.h"
 #include "lsst/meas/simastrom/FatPoint.h"
 #include "lsst/meas/simastrom/Point.h"
+#include "lsst/meas/simastrom/ConstrainedPolyModel.h"
 %}
 
 %include "lsst/p_lsstSwig.i"
@@ -112,6 +112,8 @@ namespace simastrom {
 
 %include "lsst/meas/simastrom/CcdImage.h"
 %include "lsst/meas/simastrom/SimplePolyModel.h"
+%include "lsst/meas/simastrom/ConstrainedPolyModel.h"
+
 
 %include "lsst/meas/simastrom/SipToGtransfo.h"
 

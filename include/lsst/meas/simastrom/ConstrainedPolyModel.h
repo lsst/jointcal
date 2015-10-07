@@ -76,6 +76,9 @@ public :
   const Gtransfo* Sky2TP(const CcdImage &C) const
   { return _sky2TP->Sky2TP(C);}
 
+ //! Cook up a SIP WCS.
+  PTR(TanSipPix2RaDec) ProduceSipWcs(const CcdImage &Ccd) const;
+
   //! Write a transfo file that contains the pixel->tangent plane mappings for each chip.
   /*! These constitute a description of the focal plane
   arrangement. The produced file is used by matchexposure from

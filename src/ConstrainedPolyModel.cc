@@ -228,6 +228,34 @@ const Gtransfo& ConstrainedPolyModel::GetShootTransfo(const ShootIdType &Shoot) 
   return shootp->second->Transfo();
 }
 
+
+PTR(TanSipPix2RaDec) ConstrainedPolyModel::ProduceSipWcs(const CcdImage &Ccd) const
+{
+  mappingMapType::const_iterator i = _mappings.find(&Ccd);
+  if  (i==_mappings.end()) return NULL;
+  const TwoTransfoMapping *m = i->second;
+  
+  const GtransfoPoly &t1=dynamic_cast<const GtransfoPoly&>(m->T1());
+  const GtransfoPoly &t2=dynamic_cast<const GtransfoPoly&>(m->T2());
+  const TanRaDec2Pix *proj=dynamic_cast<const TanRaDec2Pix*>(Sky2TP(Ccd));
+  if (!(&t1)  || !(&t2) || !proj) return NULL;
+  
+  GtransfoPoly pix2Tp = t2*t1;    
+
+  const GtransfoLin &projLinPart = proj->LinPart(); // should be the identity, but who knows? So, let us incorporate it into the pix2TP part.
+  GtransfoPoly wcsPix2Tp = GtransfoPoly(projLinPart.invert())*pix2Tp;
+  
+  // compute a decent approximation, if higher order corrections get ignored
+  GtransfoLin cdStuff = wcsPix2Tp.LinearApproximation(Ccd.ImageFrame().Center());
+
+  // wcsPix2TP = cdStuff*sip , so
+  GtransfoPoly sip = GtransfoPoly(cdStuff.invert())*wcsPix2Tp;
+  Point tangentPoint( proj->TangentPoint());
+  return boost::shared_ptr<TanSipPix2RaDec>(new TanSipPix2RaDec(cdStuff, tangentPoint, &sip));
+}
+
+
+
 #ifdef STORAGE
 // in the stack framework, some output method has to be devised.
 // The class ChipArrangement could then be imported into this package
