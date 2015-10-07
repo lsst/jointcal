@@ -38,6 +38,8 @@ public :
   //! 
   virtual void FreezeErrorScales() = 0;
 
+  virtual ~DistortionModel() {};
+
 };
 
 

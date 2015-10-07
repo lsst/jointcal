@@ -18,6 +18,9 @@ class CcdImageList;
 struct ProjectionHandler
 {
   virtual const Gtransfo* Sky2TP(const CcdImage &C) const = 0;
+
+  virtual ~ProjectionHandler() {};
+
 };
 
 //! the simplest implementation of ProjectionHandler. Means that coordinates of objects are expressed in the same space as the arrival mapping space. This is useful for fitting transfo rms between images.
@@ -41,6 +44,7 @@ class OneTPPerShoot : public ProjectionHandler
   OneTPPerShoot(const CcdImageList &L);
 
   const Gtransfo* Sky2TP(const CcdImage &C) const;
+
 
 };
 
