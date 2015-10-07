@@ -32,6 +32,7 @@ import lsst.afw.image as afwImage
 import lsst.afw.table as afwTable
 import lsst.afw.geom as afwGeom
 import lsst.afw.coord as afwCoord
+import lsst.pex.exceptions as pexExceptions
 
 from lsst.afw.fits import FitsError
 from lsst.pipe.tasks.selectImages import WcsSelectImagesTask, SelectStruct
@@ -42,7 +43,7 @@ from lsst.meas.astrom import AstrometryNetDataConfig
 
 from .dataIds import PerTractCcdDataIdContainer
 
-from lsst.meas.simastrom.simastromLib import SimAstromControl, simAstrom, Associations, ProjectionHandler , AstromFit, SimplePolyModel, OneTPPerShoot
+from lsst.meas.simastrom.simastromLib import SimAstromControl, simAstrom, Associations, ProjectionHandler , AstromFit, SimplePolyModel, OneTPPerShoot, CcdImage, GtransfoToTanWcs
 
 __all__ = ["SimAstromConfig", "SimAstromTask"]
 
@@ -141,12 +142,17 @@ class SimAstromTask(pipeBase.CmdLineTask):
 
         assoc = Associations()
         
-        for dataRef in ref :
-            print dataRef.dataId
+#        for dataRef in ref :
+#            print dataRef.dataId
+#            print dataRef.dataId["tract"]
+#            print dataRef
+#            print dir(dataRef)
             
-        return    
+#        return    
         
         for dataRef in ref :
+            
+            print dataRef.dataId
             
             src = dataRef.get("src", immediate=True)
             md = dataRef.get("calexp_md", immediate=True)
@@ -200,7 +206,7 @@ class SimAstromTask(pipeBase.CmdLineTask):
         refCat = loader.loadSkyCircle(center, afwGeom.Angle(radius, afwGeom.radians), filt).refCat
         print refCat.getSchema().getOrderedNames()
         
-#        assoc.CollectRefStars(False) # To use USNO-A catalog 
+        # assoc.CollectRefStars(False) # To use USNO-A catalog 
 
         assoc.CollectLSSTRefStars(refCat, filt)
         assoc.SelectFittedStars()
@@ -226,7 +232,31 @@ class SimAstromTask(pipeBase.CmdLineTask):
             
             print chi2
             if (nout == 0) : break
-        fit.MakeResTuple("res.list")
+            
+        # Fill reference and measurement n-tuples for each tract
+        tupleName = "res_" + str(dataRef.dataId["tract"]) + ".list"
+        fit.MakeResTuple(tupleName)
+        
+        # Build an updated wcs for each calexp
+        imList = assoc.TheCcdImageList()
+
+        for im in imList :
+            tanSip = spm.ProduceSipWcs(im)
+            frame = im.ImageFrame()
+            tanWcs = GtransfoToTanWcs(tanSip, frame)
+            
+            name = im.Name()
+            visit, ccd = name.split('_')
+            for dataRef in ref :
+                if dataRef.dataId["visit"] == int(visit) and dataRef.dataId["ccd"] == int(ccd) :
+                    print "Updating WCS for visit: %d, ccd%d"%(int(visit), int(ccd))
+                    exp = afwImage.ExposureI(0,0)
+                    exp.setWcs(tanWcs)
+                    try:
+                        dataRef.put(exp, 'wcs')
+                    except pexExceptions.Exception as e:
+                        self.log.warn('Failed to write updated Wcs: ' + str(e))
+                    break 
 
 
 

@@ -122,7 +122,7 @@ PTR(afwImg::TanWcs) GtransfoToTanWcs(const simAstrom::TanSipPix2RaDec WcsTransfo
   cdMat(0,0) = linPart.Coeff(1,0,0); // CD1_1
   cdMat(0,1) = linPart.Coeff(0,1,0); // CD1_2 
   cdMat(1,0) = linPart.Coeff(1,0,1); // CD2_1
-  cdMat(1,1) = linPart.Coeff(0,1,1); // CD2_1
+  cdMat(1,1) = linPart.Coeff(0,1,1); // CD2_2
   
   if (!WcsTransfo.Corr()) // the WCS has no distortions
     return boost::shared_ptr<afwImg::TanWcs>(new afwImg::TanWcs(crval,crpix_lsst,cdMat));

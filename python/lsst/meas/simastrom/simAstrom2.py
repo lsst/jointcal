@@ -40,7 +40,7 @@ from lsst.pipe.tasks.getRepositoryData import DataRefListRunner
 from lsst.meas.astrom.loadAstrometryNetObjects import LoadAstrometryNetObjectsTask
 from lsst.meas.astrom import AstrometryNetDataConfig
 
-from lsst.meas.simastrom.simastromLib import SimAstromControl, simAstrom, Associations, ProjectionHandler , AstromFit, SimplePolyModel, OneTPPerShoot, CcdImage
+from lsst.meas.simastrom.simastromLib import SimAstromControl, simAstrom, Associations, ProjectionHandler , AstromFit, SimplePolyModel, OneTPPerShoot, CcdImage, GtransfoToTanWcs
 
 __all__ = ["SimAstromConfig", "SimAstromTask"]
 
@@ -196,17 +196,17 @@ class SimAstromTask(pipeBase.CmdLineTask):
         imList = assoc.TheCcdImageList()
 
         for im in imList :
-            print im.Chip()
-            print im
             tanSip = spm.ProduceSipWcs(im)
-            print dir(tanSip)
-
-#        WcsVect = spm.ProduceSipWcsList(imList)
-#        print WcsVect
-#        print WcsVect[0]
-#        print dir(WcsVect[0])
-
-
+            frame = im.ImageFrame()
+            tanWcs = GtransfoToTanWcs(tanSip, frame)
+            
+            name = im.Name()
+            visit, ccd = name.split('_')
+            for dataRef in ref :
+                if dataRef.dataId["visit"] == int(visit) and dataRef.dataId["ccd"] == int(ccd) :
+                    print "found ..."
+                    break 
+            
 
 class StarSelectorConfig(pexConfig.Config):
     

@@ -113,5 +113,5 @@ namespace simastrom {
 %include "lsst/meas/simastrom/CcdImage.h"
 %include "lsst/meas/simastrom/SimplePolyModel.h"
 
-
+%include "lsst/meas/simastrom/SipToGtransfo.h"
 
