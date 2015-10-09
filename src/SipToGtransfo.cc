@@ -102,12 +102,36 @@ simAstrom::TanSipPix2RaDec ConvertTanWcs(const boost::shared_ptr<lsst::afw::imag
 /* The inverse transformation i.e. convert from the fit result to the SIP
    convention. */
 PTR(afwImg::TanWcs) GtransfoToTanWcs(const simAstrom::TanSipPix2RaDec WcsTransfo, 
-				     const simAstrom::Frame &CcdFrame)
+				     const simAstrom::Frame &CcdFrame,
+				     const bool NoLowOrderSipTerms)
 {
   GtransfoLin linPart = WcsTransfo.LinPart();
   afwGeom::Point2D crpix_lsst; // in LSST "frame"
-  // compute crpix as the point that transforms to (0,0):
+  /* In order to remove the low order sip terms, one has to 
+     define the linear WCS transformation as the expansion of 
+     the total pix-to-tangent plane (or focal plane) at the point
+     tangent point. In order to do that, we first have to find
+     which pixel transforms to the tangent point, and then expand there */
+
+  /* compute crpix as the point that is transformed by the linear part
+    into (0,0) */
   linPart.invert().apply(0.,0., crpix_lsst[0], crpix_lsst[1]);
+
+  // This is what we have to respect:
+  simAstrom::GtransfoPoly pix2TP = WcsTransfo.Pix2TangentPlane();
+
+  if (NoLowOrderSipTerms) {
+    Point ctmp = Point(crpix_lsst[0], crpix_lsst[1]);
+    // cookup a large Frame
+    simAstrom::Frame f(ctmp.x-10000, ctmp.y-10000, ctmp.x+10000, ctmp.y +10000);
+    simAstrom::Gtransfo *r =pix2TP.InverseTransfo(1e-6, f);       
+    // overwrite crpix ...
+    r->apply(0,0, crpix_lsst[0], crpix_lsst[1]);
+    delete r;
+    // and the "linpart"
+    linPart = pix2TP.LinearApproximation(Point(crpix_lsst[0], crpix_lsst[1]));
+  }
+
   /* At this stage, crpix should not be shifted from "LSST units" to
      "FITS units" yet because the TanWcs constructors expect it in LSST
      units */
@@ -127,19 +151,26 @@ PTR(afwImg::TanWcs) GtransfoToTanWcs(const simAstrom::TanSipPix2RaDec WcsTransfo
   if (!WcsTransfo.Corr()) // the WCS has no distortions
     return boost::shared_ptr<afwImg::TanWcs>(new afwImg::TanWcs(crval,crpix_lsst,cdMat));
 
+  /* We are now given:
+     - CRPIX
+     - The CD matrix
+     - the lin part (i.e. the combination of CRPIX and CD)
+     - and pix2TP, the total transformation from pixels to tangent plane 
+     and we want to extract the SIP polynomials. The algebra is detailed
+     in the appendix of the documentation */
+
   // This is (the opposite of) the crpix that will go into the fits header:
   simAstrom::GtransfoLinShift s2(-crpix_lsst[0],-crpix_lsst[1]);
-
-  simAstrom::GtransfoPoly pix2TP = WcsTransfo.Pix2TangentPlane();
 
   // for SIP, pix2TP = linpart*sipStuff, so
   simAstrom::GtransfoPoly sipTransform = simAstrom::GtransfoPoly(linPart.invert())* pix2TP;
   // then the sip transform reads ST = (ID+PA*S2)
   //   PA*S2 = ST -ID,   PA = (ST-Id)*S2^-1
-  simAstrom::GtransfoLin id; // default constructor
+  simAstrom::GtransfoLin id; // default constructor = identity
   simAstrom::GtransfoPoly sipPoly = (sipTransform-id)*s2.invert();
 
-  // last argument : prec in pixels.
+  // coockup the inverse sip polynomials 
+  // last argument : precision in pixels.
   simAstrom::GtransfoPoly *tp2Pix = InversePolyTransfo(pix2TP, CcdFrame, 1e-4);
   if (!tp2Pix)
     {
@@ -149,6 +180,7 @@ PTR(afwImg::TanWcs) GtransfoToTanWcs(const simAstrom::TanSipPix2RaDec WcsTransfo
   delete tp2Pix;
   simAstrom::GtransfoPoly sipPolyInv =  (invSipStuff -id)*s2.invert();
   
+  // now extract sip coefficients. First forward ones:
   int sipOrder = sipPoly.Degree();
   Eigen::MatrixXd sipA(Eigen::MatrixXd::Zero(sipOrder+1,sipOrder+1));
   Eigen::MatrixXd sipB(Eigen::MatrixXd::Zero(sipOrder+1,sipOrder+1));
@@ -157,8 +189,11 @@ PTR(afwImg::TanWcs) GtransfoToTanWcs(const simAstrom::TanSipPix2RaDec WcsTransfo
       {
 	sipA(i,j) = sipPoly.Coeff(i,j,0);
 	sipB(i,j) = sipPoly.Coeff(i,j,1);
+	// DEBUG
+	//	std::cout << "sipAB " << i << ' ' << j << ' ' << sipA(i,j) << ' ' << sipB(i,j)  << std::endl;
       }
 
+  // now backwards coefficients
   sipOrder = sipPolyInv.Degree();
   Eigen::MatrixXd sipAp(Eigen::MatrixXd::Zero(sipOrder+1,sipOrder+1));
   Eigen::MatrixXd sipBp(Eigen::MatrixXd::Zero(sipOrder+1,sipOrder+1));

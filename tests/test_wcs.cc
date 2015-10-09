@@ -122,37 +122,39 @@ BOOST_AUTO_TEST_CASE(test_wcs_convertions)
   int naxis2 = propSet->get<int>("NAXIS2");
   simAstrom::Frame imageFrame(0,0,naxis1,naxis2);
 
-  PTR(afwImg::TanWcs) tanWcs2 = GtransfoToTanWcs(gtransfoWcs, imageFrame);
-  lsst::afw::geom::Point2D where(1000.,200.);
-  PTR(lsst::afw::coord::Coord) coord = wcs->pixelToSky(where);
 
 
-  /* one afw check : if we use pix->sky->pix with an afw WCS, how
-     close do we get back ?  */
+  // test the back conversion, in two cases
+  for (int noLowOrderSipTerm  = 0; noLowOrderSipTerm <=1; noLowOrderSipTerm++) {
+    PTR(afwImg::TanWcs) tanWcs2 = GtransfoToTanWcs(gtransfoWcs, 
+						   imageFrame,
+						   noLowOrderSipTerm);
+    lsst::afw::geom::Point2D where(1000.,200.);
 
-  lsst::afw::geom::Point2D whereBack = wcs->skyToPixel((*coord)[0], (*coord)[1]);
-  BOOST_CHECK_CLOSE(where[0], whereBack[0], 1e-3);
-  BOOST_CHECK_CLOSE(where[1], whereBack[1], 1e-3);
-  //  std::cout << "pix, pixback" << where << ' ' << whereBack << std::endl;
-  //  std::cout << " dx dy " << where-whereBack << std::endl;
+    PTR(lsst::afw::coord::Coord) coord = wcs->pixelToSky(where);
+    /* one afw check : if we use pix->sky->pix with an afw WCS, how
+       close do we get back ?  */
 
-  lsst::afw::geom::Point2D outDeg = coord->getPosition(lsst::afw::geom::degrees);
+    lsst::afw::geom::Point2D whereBack = wcs->skyToPixel((*coord)[0], (*coord)[1]);
+    BOOST_CHECK_CLOSE(where[0], whereBack[0], 1e-3);
+    BOOST_CHECK_CLOSE(where[1], whereBack[1], 1e-3);
 
-  PTR(lsst::afw::coord::Coord) coord2 = tanWcs2->pixelToSky(where);
-  lsst::afw::geom::Point2D outDeg2 = coord2->getPosition(lsst::afw::geom::degrees);
-  //  std::cout << std::setprecision(12) << outDeg << ' ' << outDeg2 << std::endl;
-  // checking pix -> sky
-  BOOST_CHECK_CLOSE(outDeg[0], outDeg2[0], 1e-7);
-  BOOST_CHECK_CLOSE(outDeg[1], outDeg2[1], 1e-7);
 
-  // sky to pixels
-  lsst::afw::geom::Point2D whereBack2 = tanWcs2->skyToPixel((*coord2)[0], (*coord2)[1]);
+    lsst::afw::geom::Point2D outDeg = coord->getPosition(lsst::afw::geom::degrees);
 
-  //  std::cout << std::setprecision(10);
-  //  std::cout << "pix pix 2 " << whereBack <<' ' << whereBack2 << " diff " << whereBack-whereBack2  << std::endl;
-  // chekc that the two wcs sky2pix transfos agree at the 1e-4 pixel level 
-  BOOST_CHECK_CLOSE(whereBack[0], whereBack2[0], 1e-4);
-  BOOST_CHECK_CLOSE(whereBack[1], whereBack2[1], 1e-4);
+    PTR(lsst::afw::coord::Coord) coord2 = tanWcs2->pixelToSky(where);
+    lsst::afw::geom::Point2D outDeg2 = coord2->getPosition(lsst::afw::geom::degrees);
+    // Check the proximity on sky
+    BOOST_CHECK_CLOSE(outDeg[0], outDeg2[0], 1e-7);
+    BOOST_CHECK_CLOSE(outDeg[1], outDeg2[1], 1e-7);
+
+    // sky to pixels
+    lsst::afw::geom::Point2D whereBack2 = tanWcs2->skyToPixel((*coord2)[0], (*coord2)[1]);
+
+
+    BOOST_CHECK_CLOSE(whereBack[0], whereBack2[0], 1e-4);
+    BOOST_CHECK_CLOSE(whereBack[1], whereBack2[1], 1e-4);
+  }
 
 
 }

@@ -18,8 +18,8 @@ TanSipPix2RaDec ConvertTanWcs(const boost::shared_ptr<lsst::afw::image::TanWcs> 
 //! Transform the other way around
  PTR(lsst::afw::image::TanWcs) 
    GtransfoToTanWcs(const lsst::meas::simastrom::TanSipPix2RaDec WcsTransfo, 
-		    const lsst::meas::simastrom::Frame &CcdFrame);
-
+		    const lsst::meas::simastrom::Frame &CcdFrame,
+		    const bool NoLowOrderSipTerms=false);
     
 }}} // end of namespaces
 
