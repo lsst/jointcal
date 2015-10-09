@@ -225,7 +225,7 @@ class SimAstromTask(pipeBase.CmdLineTask):
         chi2 = fit.ComputeChi2()
         print chi2
 
-        for i in range(30): 
+        for i in range(80): 
             nout = fit.RemoveOutliers(5.) # 5 sigma
             fit.Minimize("Distortions Positions")
             chi2 = fit.ComputeChi2()
@@ -243,7 +243,7 @@ class SimAstromTask(pipeBase.CmdLineTask):
         for im in imList :
             tanSip = spm.ProduceSipWcs(im)
             frame = im.ImageFrame()
-            tanWcs = GtransfoToTanWcs(tanSip, frame)
+            tanWcs = GtransfoToTanWcs(tanSip, frame, True)
             
             name = im.Name()
             visit, ccd = name.split('_')
