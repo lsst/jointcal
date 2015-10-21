@@ -45,7 +45,7 @@ public :
 
   double PhotomFactor(const Point &Where, const CcdImage& C) const;
 
-  virtual unsigned GetIndicesAndDerivatives(const Point &Where,
+  virtual unsigned GetIndicesAndDerivatives(const MeasuredStar &M,
 					    const CcdImage &Ccd, 
 					      std::vector<unsigned> &Indices,
 					    Eigen::VectorXd &D);

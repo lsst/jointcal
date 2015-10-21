@@ -1,5 +1,6 @@
 #include "lsst/meas/simastrom/SimplePhotomModel.h"
 #include "lsst/meas/simastrom/CcdImage.h"
+#include "lsst/meas/simastrom/MeasuredStar.h"
 
 namespace lsst {
 namespace meas {
@@ -64,7 +65,7 @@ SimplePhotomModel::SimplePhotomModel(const CcdImageList &L)
    return pf.factor;
  }
      
- unsigned SimplePhotomModel::GetIndicesAndDerivatives(const Point &Where,
+ unsigned SimplePhotomModel::GetIndicesAndDerivatives(const MeasuredStar &M,
 						      const CcdImage &Ccd, 
 						      std::vector<unsigned> &Indices,
 						      Eigen::VectorXd &D)

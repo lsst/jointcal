@@ -10,6 +10,7 @@ namespace simastrom {
 
 class CcdImage;
 class Point;
+class MeasuredStar;
 
 //! Interface class for PhotomFit
 class PhotomModel
@@ -26,7 +27,7 @@ public :
 
   virtual double PhotomFactor(const Point &Where, const CcdImage& C) const =0;
 
-  virtual unsigned GetIndicesAndDerivatives(const Point &Where,
+  virtual unsigned GetIndicesAndDerivatives(const MeasuredStar &M,
 					    const CcdImage &Ccd, 
 					      std::vector<unsigned> &Indices,
 					      Eigen::VectorXd &D) = 0;
