@@ -19,10 +19,9 @@ namespace simastrom {
 class Associations;
 
 /*! Some comments.
-  /*
+  
 
 */
-
 
 
 //! Class that handles the photometric least squares problem.
@@ -70,6 +69,8 @@ class PhotomFit {
   //! Returns a chi2 for the current state
   Chi2 ComputeChi2() const;
 
+  //! Produces an ntuple 
+  void MakeResTuple(const std::string &TupleName) const;
 
  private:
 
@@ -93,8 +94,6 @@ class PhotomFit {
   //! Produces a tuple containing residuals of reference terms.
   void MakeRefResTuple(const std::string &TupleName) const;
 
-  //! Produces both ntuples (cook up names from the provided string)
-  void MakeResTuple(const std::string &TupleName) const;
 
   //! access to the fitted refraction coefficients. Unit depends on scale in the tangentPlane. Degrees for an actual tangent plane.
   std::vector<double> RefractionCoefficients() const 

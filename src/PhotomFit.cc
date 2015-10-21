@@ -75,29 +75,17 @@ void PhotomFit::LSDerivatives(TripletList &TList, Eigen::VectorXd &Rhs) const
 
 
 
-// we could consider computing the chi2 here.
-// (although it is not extremely useful)
 void PhotomFit::LSDerivatives(const CcdImage &Ccd, 
 			      TripletList &TList, Eigen::VectorXd &Rhs) const
 {
   /***************************************************************************/
-  /**  Changes in this routine should be reflected into AccumulateStatImage  */
+  /**  Changes in this routine should be reflected into AccumulateStat       */
   /***************************************************************************/
-  /* Setup */
-  // count parameters
-  //  unsigned npar_flux = (_fittingFlux) ? 2 : 0;
-  //  unsigned npar_refrac = (_fittingRefrac) ? 1 : 0;
-  //  unsigned npar_pm = (_fittingPM) ? NPAR_PM : 0;
-  //  unsigned npar_tot =  npar_mapping + npar_pos + npar_refrac + npar_pm;
-  // if (npar_tot == 0) this CcdImage does not contribute 
-  // any constraint to the fit, so :
-  //  if (npar_tot == 0) return;
-  unsigned npar_max = 100;
+
+  unsigned npar_max = 100; // anything large
   vector<unsigned> indices(npar_max,-1);
 
-  // the shape of h (et al) is required this way in order to be able to 
-  // separate derivatives along x and y as vectors.
-  Eigen::VectorXd h(npar_max);// halpha(npar_tot,2), hw(npar_tot,2); 
+  Eigen::VectorXd h(npar_max);
   Eigen::VectorXd grad(npar_max);
   // current position in the Jacobian
   unsigned kTriplets = TList.NextFreeIndex();
@@ -411,6 +399,67 @@ bool PhotomFit::Minimize(const std::string &WhatToFit)
 }
 
 
+void PhotomFit::MakeResTuple(const std::string &TupleName) const
+{
+  std::ofstream tuple(TupleName.c_str());
+  /* If we think the some coordinate on the focal plane is relevant in
+     the ntuple, because thmodel relies on it, then we have to add
+     some function to the model that returns this relevant
+     coordinate. */
+  tuple << "#xccd: coordinate in CCD" << endl
+	<< "#yccd: " << endl
+	<< "#mag: rough mag" << endl
+	<< "#flux : measured flux" << endl
+	<< "#eflux : measured flux erro" << endl
+	<< "#fflux : fitted flux" << endl
+	<< "#phot_factor:" <<  endl
+	<< "#jd: Julian date of the measurement" << endl
+	<< "#color : " << endl
+	<< "#fsindex: some unique index of the object" << endl
+	<< "#ra: pos of fitted star" << endl
+	<< "#dec: pos of fitted star" << endl
+	<< "#chi2: contribution to Chi2 (1 dof)" << endl
+	<< "#nm: number of measurements of this FittedStar" << endl
+    	<< "#chip: chip number" << endl
+    	<< "#shoot: shoot id" << endl
+	<< "#end" << endl;
+  const CcdImageList &L=_assoc.TheCcdImageList();
+  for (auto i=L.cbegin(); i!=L.end() ; ++i)
+    {
+      const CcdImage &im = **i;
+      const MeasuredStarList &cat = im.CatalogForFit();
+      for (auto is=cat.cbegin(); is!=cat.end(); ++is)
+	{
+	  const MeasuredStar &ms = **is;
+	  if (!ms.IsValid()) continue;
+	  double sigma = ms.eflux;
+#ifdef FUTURE
+	  TweakPhotomMeasurementErrors(inPos, ms, _posError);
+#endif
+	  double pf = _photomModel->PhotomFactor(ms, im);
+	  double jd = im.JD();
+	  const FittedStar *fs = ms.GetFittedStar();
+	  double res = ms.flux - pf * fs->flux;            
+	  double chi2Val = sqr(res/sigma);
+	  tuple << ms.x << ' ' << ms.y << ' ' 
+		<< fs->Mag() << ' '
+		<< ms.flux << ' ' << ms.eflux << ' '
+		<< fs->flux << ' ' 
+		<< pf << ' ' 
+		<< jd << ' '
+		<< fs->color << ' ' 
+		<< fs->IndexInMatrix() << ' '
+	        << fs->x << ' ' << fs->y << ' '
+		<< chi2Val << ' ' 
+		<< fs->MeasurementCount() << ' ' 
+		<< im.Chip() << ' ' << im.Shoot() << endl;
+	}// loop on measurements in image
+    }// loop on images
+
+}
+
+
+
 
 
 // should not be too large !
@@ -478,93 +527,6 @@ void PhotomFit::CheckStuff()
     }
 }
 
-void PhotomFit::MakeResTuple(const std::string &TupleName) const
-{
-  /* cook-up 2 different file names by inserting something just before
-     the dot (if any), and within the actual file name. */
-  size_t dot = TupleName.rfind('.');
-  size_t slash = TupleName.rfind('/');
-  if (dot == string::npos || (slash != string::npos && dot < slash))
-    dot = TupleName.size();  
-  std::string meas_tuple(TupleName);
-  meas_tuple.insert(dot,"-meas");
-  MakeMeasResTuple(meas_tuple);
-  std::string ref_tuple(TupleName);
-  ref_tuple.insert(dot,"-ref");
-  MakeRefResTuple(ref_tuple);
-}
-
-void PhotomFit::MakeMeasResTuple(const std::string &TupleName) const
-{
-  std::ofstream tuple(TupleName.c_str());
-  tuple << "#xccd: coordinate in CCD" << endl
-	<< "#yccd: " << endl
-	<< "#rx:   residual in degrees in TP" << endl
-	<< "#ry:" << endl
-	<< "#xtp: transformed coordinate in TP " << endl
-	<< "#ytp:" << endl 
-	<< "#mag: rough mag" << endl
-	<< "#jd: Julian date of the measurement" << endl
-    	<< "#rvx: transformed measurement uncertainty " << endl
-    	<< "#rvy:" << endl
-    	<< "#rvxy:" << endl
-	<< "#color : " << endl
-	<< "#fsindex: some unique index of the object" << endl
-	<< "#ra: pos of fitted star" << endl
-	<< "#dec: pos of fitted star" << endl
-	<< "#chi2: contribution to Chi2 (2D dofs)" << endl
-	<< "#nm: number of measurements of this FittedStar" << endl
-    	<< "#chip: chip number" << endl
-    	<< "#shoot: shoot id" << endl
-	<< "#end" << endl;
-  const CcdImageList &L=_assoc.TheCcdImageList();
-  for (auto i=L.cbegin(); i!=L.end() ; ++i)
-    {
-      const CcdImage &im = **i;
-      const MeasuredStarList &cat = im.CatalogForFit();
-      const Mapping *mapping = _distortionModel->GetMapping(im);
-      const Point &refractionVector = im.ParallacticVector();
-      double jd = im.JD() - _JDRef;
-      double zp = im.ZP();
-      unsigned iband= im.BandRank();
-      for (auto is=cat.cbegin(); is!=cat.end(); ++is)
-	{
-	  const MeasuredStar &ms = **is;
-	  if (!ms.IsValid()) continue;
-	  FatPoint tpPos;
-	  FatPoint inPos = ms;
-	  TweakPhotomMeasurementErrors(inPos, ms, _posError);
-	  mapping->TransformPosAndErrors(inPos, tpPos);
-	  const Gtransfo* sky2TP = _distortionModel->Sky2TP(im);
-	  const FittedStar *fs = ms.GetFittedStar();
-	  
-	  Point fittedStarInTP = TransformFittedStar(*fs, sky2TP,
-						     refractionVector, 
-						     _refracCoefficient[iband],
-						     jd);
-	  Point res=tpPos-fittedStarInTP;
-	  double det = tpPos.vx*tpPos.vy-sqr(tpPos.vxy);
-	  double wxx = tpPos.vy/det;
-	  double wyy = tpPos.vx/det;
-	  double wxy = -tpPos.vxy/det;
-	  //	  double chi2 = rx*(wxx*rx+wxy*ry)+ry*(wxy*rx+wyy*ry);
-	  double chi2 = wxx*res.x*res.x + wyy*res.y*res.y + 2*wxy*res.x*res.y;
-	  tuple << std::setprecision(9);
-	  tuple << ms.x << ' ' << ms.y << ' ' 
-		<< res.x << ' ' << res.y << ' '
-		<< tpPos.x << ' ' << tpPos.y << ' '
-		<< fs->Mag() << ' ' << jd << ' ' 
-		<< tpPos.vx << ' ' << tpPos.vy << ' ' << tpPos.vxy << ' ' 
-		<< fs->color << ' ' 
-		<< fs->IndexInMatrix() << ' '
-	        << fs->x << ' ' << fs->y << ' '
-		<< chi2 << ' ' 
-		<< fs->MeasurementCount() << ' ' 
-		<< im.Chip() << ' ' << im.Shoot() << endl;
-	}// loop on measurements in image
-    }// loop on images
-
-}
 
 void PhotomFit::MakeRefResTuple(const std::string &TupleName) const
 {
