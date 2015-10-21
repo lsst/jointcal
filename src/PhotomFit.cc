@@ -143,75 +143,40 @@ void PhotomFit::LSDerivatives(const CcdImage &Ccd,
   TList.SetNextFreeIndex(kTriplets);
 }    
 
-#ifdef STORAGE
-
-// This is almost a selection of lines of LSDerivatives1(CcdImage ...)
-/* This routine (and the following one) is template because it is used
-both with its first argument as "const CCdImage &" and "CcdImage &",
+// This is almost a selection of lines of LSDerivatives(CcdImage ...)
+/* This routine is template because it is used
+both with its first argument as "const CcdImageList &" and "CcdImageList &",
 and I did not want to replicate it.  The constness of the iterators is
 automagically set by declaring them as "auto" */
 
-template <class ImType, class Accum> 
-void PhotomFit::AccumulateStatImage(ImType &Ccd, Accum &Accu) const
-{
-  /**********************************************************************/
-  /**  Changes in this routine should be reflected into LSDerivatives1  */
-  /**********************************************************************/
-  /* Setup */
-  // 1 : get the Mapping's
-  const Mapping *mapping = _distortionModel->GetMapping(Ccd);
-  // proper motion stuff
-  double jd = Ccd.JD() - _JDRef;
-  // refraction stuff
-  Point refractionVector = Ccd.ParallacticVector();
-  double refractionCoefficient = _refracCoefficient.at(Ccd.BandRank());
-  // transformation from sky to TP
-  const Gtransfo* sky2TP = _distortionModel->Sky2TP(Ccd);
-  // reserve matrix once for all measurements
-  Eigen::Matrix2Xd transW(2,2);
 
-  auto &catalog = Ccd.CatalogForFit();
-  for (auto i = catalog.begin(); i!= catalog.end(); ++i)
-    {
-      auto &ms = **i;
-      if (!ms.IsValid()) continue;
-      // tweak the measurement errors
-      FatPoint inPos = ms;
-      TweakPhotomMeasurementErrors(inPos, ms, _posError);
-
-      FatPoint outPos;
-      // should *not* fill h if WhatToFit excludes mapping parameters.
-      mapping->TransformPosAndErrors(inPos, outPos);
-      double det = outPos.vx*outPos.vy-sqr(outPos.vxy);
-      if (det <=0 || outPos.vx <=0 || outPos.vy<=0) {
-	cout << " WARNING: inconsistent measurement errors :drop measurement at " << Point(ms) << " in image " << Ccd.Name() << endl;
-	continue;
-      }	
-      transW(0,0) = outPos.vy/det;
-      transW(1,1) = outPos.vx/det;
-      transW(0,1) = transW(1,0) = -outPos.vxy/det;
-
-      const FittedStar *fs = ms.GetFittedStar();
-      Point fittedStarInTP = TransformFittedStar(*fs, sky2TP,
-						 refractionVector, 
-						 refractionCoefficient,
-						 jd);
-
-      Eigen::Vector2d res(fittedStarInTP.x-outPos.x, fittedStarInTP.y-outPos.y); 
-      double chi2Val = res.transpose()*transW*res;
-
-      Accu.AddEntry(chi2Val, 2, &ms);
-    }// end of loop on measurements
-}
-
-
-//! for a list of images.
 template <class ListType, class Accum> 
-void PhotomFit::AccumulateStatImageList(ListType &L, Accum &Accu) const
+void PhotomFit::AccumulateStat(ListType &L, Accum &Accu) const
 {
   for (auto im=L.begin(); im!=L.end() ; ++im)
     {
-      AccumulateStatImage(**im, Accu);
+  /**********************************************************************/
+  /**  Changes in this routine should be reflected into LSDerivatives  */
+  /**********************************************************************/
+      auto &Ccd = **im;
+      auto &catalog = Ccd.CatalogForFit();
+
+      for (auto i = catalog.begin(); i!= catalog.end(); ++i)
+	{
+	  const MeasuredStar& ms = **i;
+	  if (!ms.IsValid()) continue;
+	  // tweak the measurement errors
+	  double sigma=ms.eflux;
+#ifdef FUTURE
+	  TweakPhotomMeasurementErrors(inPos, ms, _posError);
+#endif
+	  
+	  double pf = _photomModel->PhotomFactor(ms,Ccd);
+	  const FittedStar *fs = ms.GetFittedStar();
+	  double res = ms.flux - pf * fs->flux;            
+	  double chi2Val = sqr(res/sigma);
+	  Accu.AddEntry(chi2Val, 1, &ms);
+	} // end loop on measurements
     }
 }
 
@@ -219,39 +184,15 @@ void PhotomFit::AccumulateStatImageList(ListType &L, Accum &Accu) const
 Chi2 PhotomFit::ComputeChi2() const
 {
   Chi2 chi2;
-  AccumulateStatImageList(_assoc.TheCcdImageList(), chi2);
-  // Now add the ref stars
-  const FittedStarList &fsl = _assoc.fittedStarList;
-  /* If you wonder why we project here, read comments in 
-     PhotomFit::LSDerivatives2(TripletList &TList, Eigen::VectorXd &Rhs) */
-  TanRaDec2Pix proj(GtransfoLin(), Point(0.,0.));
-  for (auto i = fsl.cbegin(); i!= fsl.end(); ++i)
-    {
-      const FittedStar &fs = **i;
-      const RefStar *rs = fs.GetRefStar();
-      if (rs == NULL) continue;
-      proj.SetTangentPoint(fs);
-      // fs projects to (0,0), no need to compute its transform.
-      FatPoint rsProj;
-      proj.TransformPosAndErrors(*rs, rsProj);
-      // TO DO : account for proper motions. If you do it here, think about MakeRefResTuple.
-      double rx = rsProj.x; // -fsProj.x (which is 0)
-      double ry = rsProj.y;
-      double det = rsProj.vx*rsProj.vy - sqr(rsProj.vxy);
-      double wxx = rsProj.vy/det;
-      double wyy = rsProj.vx/det;
-      double wxy = -rsProj.vxy/det;
-      wxx *= HACK_REF_ERRORS;
-      wyy *= HACK_REF_ERRORS;
-      wxy *= HACK_REF_ERRORS;
-      chi2.AddEntry(wxx*sqr(rx) + 2*wxy*rx*ry+ wyy*sqr(ry), 2, NULL);
-    }
-  // so far, ndof contains the number of squares.
+  AccumulateStat(_assoc.TheCcdImageList(), chi2);
+  // so far, chi2.ndof contains the number of squares.
   // So, subtract here the number of parameters.
   chi2.ndof -= _nParTot;
   return chi2;
 }
 
+
+#ifdef STORAGE
 //! a class to accumulate chi2 contributions together with pointers to the contributors.
 /*! This structure allows to compute the chi2 statistics (average and
   variance) and directly point back to the bad guys without

@@ -10,14 +10,13 @@
 #include "lsst/meas/simastrom/Eigenstuff.h"
 #include "lsst/meas/simastrom/Tripletlist.h"
 #include "lsst/meas/simastrom/PhotomModel.h"
+#include "lsst/meas/simastrom/Chi2.h"
 
 namespace lsst {
 namespace meas {
 namespace simastrom {
 
 class Associations;
-
- struct Chi2;
 
 /*! Some comments.
   /*
@@ -68,6 +67,15 @@ class PhotomFit {
       only test the size. */
   void OffsetParams(const Eigen::VectorXd &Delta);
 
+  //! Returns a chi2 for the current state
+  Chi2 ComputeChi2() const;
+
+
+ private:
+
+  template <class ListType, class Accum> 
+    void AccumulateStat(ListType &L, Accum &A) const;
+
 
 #ifdef STORAGE
   //! Compute the derivatives of the reference terms
@@ -75,11 +83,6 @@ class PhotomFit {
 
   //! Evaluates the chI^2 derivatives (Jacobian and gradient) for the current WhatToFit setting.
 
-
-
-
-  //! Returns a chi2 for the current state
-  Chi2 ComputeChi2() const;
 
   //! returns how many outliers were removed. No refit done.
   unsigned RemoveOutliers(const double &NSigCut);
@@ -107,51 +110,12 @@ class PhotomFit {
 			    const double &RefractionCoeff,
 			    const double &Jd) const;
 
-  template <class ListType, class Accum> 
-    void AccumulateStatImageList(ListType &L, Accum &A) const;
-
-  template <class ImType, class Accum> 
-    void AccumulateStatImage(ImType &I, Accum &A) const;
-  
   //! only for outlier removal
   void GetMeasuredStarIndices(const MeasuredStar &Ms, 
 			      std::vector<unsigned> &Indices) const;
 #endif
 };
 
-//! Simple structure to accumulate Chi2 and Ndof
-struct Chi2
-{
-  double chi2;
-  unsigned ndof;
-
-  Chi2() : chi2(0), ndof(0) {};
-
-  friend std::ostream& operator << (std::ostream& s, const Chi2 &C)
-    {
-      s << "Chi2/ndof : " << C.chi2 << '/' << C.ndof << '=' <<  C.chi2/C.ndof; return s;
-    }
-
-  std::string __str__()
-  {
-    std::stringstream s;
-    s << "Chi2/ndof : " << chi2 << '/' << ndof << '=' <<  chi2/ndof; 
-    return s.str();
-  }
-
-  // Addentry has a third argument in order to make it compatible with an 
-  //other stat accumulator.
-  void AddEntry(double Inc, unsigned Dof, const MeasuredStar *M) 
-  {chi2+= Inc; ndof += Dof;}
-
-  void operator += (const Chi2 &R) 
-  {chi2 += R.chi2; ndof += R.ndof;}
-
-
-}; // end of struct Chi2
-
-
-
 
 }}}
-#endif /* ASTROMFIT__H */
+#endif /* PHOTOMFIT__H */
