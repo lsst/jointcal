@@ -36,6 +36,8 @@ Python interface to lsst::meas::simastrom classes
 #include "lsst/meas/simastrom/FatPoint.h"
 #include "lsst/meas/simastrom/Point.h"
 #include "lsst/meas/simastrom/ConstrainedPolyModel.h"
+#include "lsst/meas/simastrom/PhotomFit.h"
+#include "lsst/meas/simastrom/SimplePhotomModel.h"
 %}
 
 %include "lsst/p_lsstSwig.i"
@@ -115,6 +117,12 @@ namespace simastrom {
 %include "lsst/meas/simastrom/SimplePolyModel.h"
 %include "lsst/meas/simastrom/ConstrainedPolyModel.h"
 
-
 %include "lsst/meas/simastrom/SipToGtransfo.h"
+namespace lsst {
+namespace meas {
+namespace simastrom {
+  class PhotomModel;
+}}}
+%include "lsst/meas/simastrom/PhotomFit.h"
+%include "lsst/meas/simastrom/SimplePhotomModel.h"
 
