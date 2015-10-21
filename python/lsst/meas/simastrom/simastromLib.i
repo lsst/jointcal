@@ -68,6 +68,7 @@ class CcdImage;
 class CcdImageList;
 class MeasuredStar;
 }}}
+%include "lsst/meas/simastrom/Chi2.h"
 %include "lsst/meas/simastrom/AstromFit.h"
 namespace lsst {
 namespace meas {
