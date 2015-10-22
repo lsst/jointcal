@@ -27,10 +27,11 @@ public :
 
   virtual double PhotomFactor(const Point &Where, const CcdImage& C) const =0;
 
-  virtual unsigned GetIndicesAndDerivatives(const MeasuredStar &M,
-					    const CcdImage &Ccd, 
-					      std::vector<unsigned> &Indices,
-					      Eigen::VectorXd &D) = 0;
+  //! number of parameters to be read in Indices.size()
+  virtual void GetIndicesAndDerivatives(const MeasuredStar &M,
+					const CcdImage &Ccd, 
+					std::vector<unsigned> &Indices,
+					Eigen::VectorXd &D) = 0;
 
 
   virtual ~PhotomModel() {};

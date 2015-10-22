@@ -65,13 +65,14 @@ SimplePhotomModel::SimplePhotomModel(const CcdImageList &L)
    return pf.factor;
  }
      
- unsigned SimplePhotomModel::GetIndicesAndDerivatives(const MeasuredStar &M,
-						      const CcdImage &Ccd, 
-						      std::vector<unsigned> &Indices,
-						      Eigen::VectorXd &D)
+ void SimplePhotomModel::GetIndicesAndDerivatives(const MeasuredStar &M,
+						  const CcdImage &Ccd, 
+						  std::vector<unsigned> &Indices,
+						  Eigen::VectorXd &D)
  {
    PhotomStuff &pf = find(Ccd);
-   if (pf.fixed) return 0;
+   if (pf.fixed) {Indices.resize(0); return;}
+   Indices.resize(1);
    Indices[0] = pf.index;
    D[0] = 1;
  }
