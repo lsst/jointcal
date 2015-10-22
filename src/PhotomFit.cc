@@ -76,11 +76,17 @@ void PhotomFit::LSDerivatives(TripletList &TList, Eigen::VectorXd &Rhs) const
 
 
 void PhotomFit::LSDerivatives(const CcdImage &Ccd, 
-			      TripletList &TList, Eigen::VectorXd &Rhs) const
+			      TripletList &TList, Eigen::VectorXd &Rhs,
+			      const MeasuredStarList *M) const
 {
   /***************************************************************************/
   /**  Changes in this routine should be reflected into AccumulateStat       */
   /***************************************************************************/
+  /* this routine works in two different ways: either providing the
+     Ccd, of providing the MeasuredStarList. In the latter case, the
+     Ccd should match the one(s) in the list. */
+  if (M) 
+    assert ( (*(M->begin()))->ccdImage == &Ccd);
 
   unsigned npar_max = 100; // anything large
   vector<unsigned> indices(npar_max,-1);
@@ -89,7 +95,7 @@ void PhotomFit::LSDerivatives(const CcdImage &Ccd,
   Eigen::VectorXd grad(npar_max);
   // current position in the Jacobian
   unsigned kTriplets = TList.NextFreeIndex();
-  const MeasuredStarList &catalog = Ccd.CatalogForFit();
+  const MeasuredStarList &catalog = (M) ? *M : Ccd.CatalogForFit();
 
   for (auto i = catalog.begin(); i!= catalog.end(); ++i)
     {
@@ -109,11 +115,11 @@ void PhotomFit::LSDerivatives(const CcdImage &Ccd,
             
       if (_fittingModel) 
 	{
-	  unsigned nIndices = _photomModel->GetIndicesAndDerivatives(ms,
-								     Ccd, 
-								     indices,
-								     h);
-	  for (unsigned k=0; k<nIndices; k++)
+	  _photomModel->GetIndicesAndDerivatives(ms,
+						 Ccd, 
+						 indices,
+						 h);
+	  for (unsigned k=0; k<indices.size(); k++)
 	    {
 	      unsigned l = indices[k];
 	      TList.AddTriplet(l, kTriplets, h[k]*fs->flux/sigma);
@@ -151,7 +157,7 @@ void PhotomFit::AccumulateStat(ListType &L, Accum &Accu) const
 
       for (auto i = catalog.begin(); i!= catalog.end(); ++i)
 	{
-	  const MeasuredStar& ms = **i;
+	  auto &ms = **i;
 	  if (!ms.IsValid()) continue;
 	  // tweak the measurement errors
 	  double sigma=ms.eflux;
@@ -179,8 +185,23 @@ Chi2 PhotomFit::ComputeChi2() const
   return chi2;
 }
 
+void PhotomFit::OutliersContributions(MeasuredStarList &Outliers, 
+				      TripletList &TList, 
+				      Eigen::VectorXd &Grad)
+{
+  for (auto i= Outliers.begin(); i!= Outliers.end(); ++i)
+    {
+      MeasuredStar &out = **i;
+      MeasuredStarList tmp;
+      tmp.push_back(&out);
+      const CcdImage &ccd = *(out.ccdImage);
+      LSDerivatives(ccd, TList, Grad, &tmp);
+      out.SetValid(false);
+      out.GetFittedStar()->MeasurementCount()--;
+    }
+}
 
-#ifdef STORAGE
+
 //! a class to accumulate chi2 contributions together with pointers to the contributors.
 /*! This structure allows to compute the chi2 statistics (average and
   variance) and directly point back to the bad guys without
@@ -202,7 +223,92 @@ struct Chi2Vect : public vector<Chi2Entry>
   { push_back(Chi2Entry(Chi2Val,ms));}
 
 };
-#endif
+
+//! this routine is to be used only in the framework of outlier removal
+/*! it fills the array of indices of parameters that a Measured star
+    constrains. Not really all of them if you check. */
+void PhotomFit::GetMeasuredStarIndices(const MeasuredStar &Ms, 
+				       std::vector<unsigned> &Indices) const
+{
+  Indices.clear();
+  if (_fittingModel)
+    {
+      Eigen::VectorXd h(100);
+      _photomModel->GetIndicesAndDerivatives(Ms,
+					     *Ms.ccdImage, 
+					     Indices,
+					     h);
+    }
+  if (_fittingFluxes)
+    {
+      const FittedStar *fs= Ms.GetFittedStar();
+      unsigned fsIndex = fs->IndexInMatrix();
+      Indices.push_back(fsIndex);
+    }
+}
+
+
+
+void PhotomFit::FindOutliers(const double &NSigCut, 
+			     MeasuredStarList &Outliers) const
+{
+  /* Aims at providing an outlier list for small-rank update 
+     of the factorization. */
+
+  CcdImageList &L=_assoc.ccdImageList;
+  // collect chi2 contributions of the measurements.
+  Chi2Vect chi2s;
+  //  chi2s.reserve(_nMeasuredStars);
+  AccumulateStat(_assoc.ccdImageList, chi2s);
+  // do some stat
+  unsigned nval = chi2s.size();
+  if (nval==0) return;
+  sort(chi2s.begin(), chi2s.end()); // increasing order. We rely on this later.
+  double median = (nval & 1)? chi2s[nval/2].chi2 :  
+    0.5*(chi2s[nval/2-1].chi2 + chi2s[nval/2].chi2);
+  // some more stats. should go into the class if recycled anywhere else
+  double sum=0; double sum2 = 0;
+  for (auto i=chi2s.begin(); i!=chi2s.end(); ++i) 
+    {sum+= i->chi2;sum2+= sqr(i->chi2);}
+  double average = sum/nval;
+  double sigma = sqrt(sum2/nval - sqr(average));
+  cout << "INFO : FindOutliers chi2 stat: mean/median/sigma " 
+       << average << '/'<< median << '/' << sigma << endl;
+  double cut = average+NSigCut*sigma;
+  /* For each of the parameters, we will not remove more than 1
+     measurement that contributes to constraining it. Keep track 
+     of the affected parameters using an integer vector. This is the
+     trick that Marc Betoule came up to for outlier removals in "star
+     flats" fits. */
+  Eigen::VectorXi affectedParams(_nParTot);
+  affectedParams.setZero();
+
+  unsigned removed = 0; // returned to the caller
+  // start from the strongest outliers, i.e. at the end of the array.
+  for (auto i = chi2s.rbegin(); i != chi2s.rend(); ++i)
+    {
+      if (i->chi2 < cut) break; // because the array is sorted. 
+      vector<unsigned> indices;
+      GetMeasuredStarIndices(*(i->ms), indices);
+      bool drop_it = true;
+      /* find out if a stronger outlier constraining one of the parameters
+	 this one contrains was already discarded. If yes, we keep this one */
+      for (auto i=indices.cbegin(); i!= indices.end(); ++i)
+	if (affectedParams(*i) !=0) drop_it = false;
+      
+      if (drop_it)
+	{
+	  for (auto i=indices.cbegin(); i!= indices.end(); ++i)
+	    affectedParams(*i)++;
+	  Outliers.push_back(i->ms);
+	}
+    } // end loop on measurements
+  cout << "INFO : FindMeasOutliers : found " 
+       << Outliers.size() << " outliers" << endl;
+}
+
+
+
 
 
 #ifdef STORAGE

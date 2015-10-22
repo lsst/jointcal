@@ -53,9 +53,10 @@ class PhotomFit {
   //! Derivatives of the Chi2
   void LSDerivatives(TripletList &TList, Eigen::VectorXd &Rhs) const;
 
-  //! Compute the derivatives for this CcdImage
-  void LSDerivatives(const CcdImage &Ccd, 
-		     TripletList &TList, Eigen::VectorXd &Rhs) const;
+  //! Compute the derivatives for this CcdImage. The last argument allows to to process a sub-list (used for outlier removal)
+void LSDerivatives(const CcdImage &Ccd, 
+		   TripletList &TList, Eigen::VectorXd &Rhs,
+		   const MeasuredStarList *M=NULL) const;
 
   //! Set parameter groups fixed or variable and assign indices to each parameter in the big matrix (which will be used by OffsetParams(...).
   void AssignIndices(const std::string &WhatToFit);
@@ -76,6 +77,18 @@ class PhotomFit {
 
   template <class ListType, class Accum> 
     void AccumulateStat(ListType &L, Accum &A) const;
+
+
+  void OutliersContributions(MeasuredStarList &Outliers, 
+			     TripletList &TList, 
+			     Eigen::VectorXd &Grad);
+
+  void FindOutliers(const double &NSigCut, 
+		    MeasuredStarList &Outliers) const;
+
+
+  void GetMeasuredStarIndices(const MeasuredStar &Ms, 
+			      std::vector<unsigned> &Indices) const;
 
 
 #ifdef STORAGE
