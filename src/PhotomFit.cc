@@ -108,7 +108,7 @@ void PhotomFit::LSDerivatives(const CcdImage &Ccd,
 #endif
       h.setZero(); // we cannot be sure that all entries will be overwritten.
 
-      double pf = _photomModel->PhotomFactor(ms,Ccd);
+      double pf = _photomModel->PhotomFactor(Ccd, ms);
       const FittedStar *fs = ms.GetFittedStar();
 
       double res = ms.flux - pf * fs->flux;
@@ -165,7 +165,7 @@ void PhotomFit::AccumulateStat(ListType &L, Accum &Accu) const
 	  TweakPhotomMeasurementErrors(inPos, ms, _posError);
 #endif
 	  
-	  double pf = _photomModel->PhotomFactor(ms,Ccd);
+	  double pf = _photomModel->PhotomFactor(Ccd, ms);
 	  const FittedStar *fs = ms.GetFittedStar();
 	  double res = ms.flux - pf * fs->flux;            
 	  double chi2Val = sqr(res/sigma);
@@ -283,7 +283,6 @@ void PhotomFit::FindOutliers(const double &NSigCut,
   Eigen::VectorXi affectedParams(_nParTot);
   affectedParams.setZero();
 
-  unsigned removed = 0; // returned to the caller
   // start from the strongest outliers, i.e. at the end of the array.
   for (auto i = chi2s.rbegin(); i != chi2s.rend(); ++i)
     {
@@ -542,7 +541,7 @@ void PhotomFit::MakeResTuple(const std::string &TupleName) const
 #ifdef FUTURE
 	  TweakPhotomMeasurementErrors(inPos, ms, _posError);
 #endif
-	  double pf = _photomModel->PhotomFactor(ms, im);
+	  double pf = _photomModel->PhotomFactor(im, ms);
 	  double jd = im.JD();
 	  const FittedStar *fs = ms.GetFittedStar();
 	  double res = ms.flux - pf * fs->flux;            

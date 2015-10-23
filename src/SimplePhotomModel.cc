@@ -1,3 +1,5 @@
+#include <iostream>
+
 #include "lsst/meas/simastrom/SimplePhotomModel.h"
 #include "lsst/meas/simastrom/CcdImage.h"
 #include "lsst/meas/simastrom/MeasuredStar.h"
@@ -19,7 +21,8 @@ SimplePhotomModel::SimplePhotomModel(const CcdImageList &L)
       if (shoot==refShoot)
 	  _myMap[&im].fixed=true;
       else _myMap[&im].fixed=false;
-    }	      
+    }
+  std::cout << "INFO: SimplePhotomModel : using exposure " << refShoot << " as photometric reference " << std::endl;
 }
 
  unsigned SimplePhotomModel::AssignIndices(unsigned FirstIndex)
@@ -59,7 +62,7 @@ SimplePhotomModel::SimplePhotomModel(const CcdImageList &L)
    }
 
 
- double SimplePhotomModel::PhotomFactor(const Point &Where, const CcdImage& C) const
+  double SimplePhotomModel::PhotomFactor(const CcdImage &C, const Point &Where) const
  {
    const PhotomStuff &pf = find(C);
    return pf.factor;

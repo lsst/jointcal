@@ -13,7 +13,8 @@ class CcdImageList;
 class CcdImage;
 class Point;
 
-//! Interface class for PhotomFit
+//! Photometric response model which has a single photometric factor per CcdImage.
+/*! It considers a full exposure as reference. */  
  class SimplePhotomModel : public PhotomModel
 {
 
@@ -43,7 +44,8 @@ public :
       AssignIndices. */
   void OffsetParams(const Eigen::VectorXd &Delta);
 
-  double PhotomFactor(const Point &Where, const CcdImage& C) const;
+  //! This model ignores "Where".
+  double PhotomFactor(const CcdImage& C, const Point &Where) const;
 
   virtual void GetIndicesAndDerivatives(const MeasuredStar &M,
 					const CcdImage &Ccd, 

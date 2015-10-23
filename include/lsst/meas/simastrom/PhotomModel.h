@@ -25,7 +25,8 @@ public :
       AssignIndices. */
   virtual void OffsetParams(const Eigen::VectorXd &Delta) = 0;
 
-  virtual double PhotomFactor(const Point &Where, const CcdImage& C) const =0;
+  //! Where is to be expressed in Ccd coordinates.
+  virtual double PhotomFactor(const CcdImage& C, const Point &Where) const =0;
 
   //! number of parameters to be read in Indices.size()
   virtual void GetIndicesAndDerivatives(const MeasuredStar &M,
