@@ -118,11 +118,7 @@ namespace simastrom {
 %include "lsst/meas/simastrom/ConstrainedPolyModel.h"
 
 %include "lsst/meas/simastrom/SipToGtransfo.h"
-namespace lsst {
-namespace meas {
-namespace simastrom {
-  class PhotomModel;
-}}}
+%include "lsst/meas/simastrom/PhotomModel.h"
 %include "lsst/meas/simastrom/PhotomFit.h"
 %include "lsst/meas/simastrom/SimplePhotomModel.h"
 
