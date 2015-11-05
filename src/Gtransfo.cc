@@ -1863,13 +1863,13 @@ void TanRaDec2Pix::TransformPosAndErrors(const FatPoint &In,
      2 global scalings that cancel each other. 
      Derivatives were computed using maple:
 
-     l1 := sin(a - a0) cos(d)
+     l1 := sin(a - a0)*cos(d);
      m1 := sin(d)*sin(d0)+cos(d)*cos(d0)*cos(a-a0);
      l2 := sin(d)*cos(d0)-cos(d)*sin(d0)*cos(a-a0);
-     simplify(diff(l1/m1,a);
-     simplify(diff(l1/m1,d);
-     simplify(diff(l2/m1,a);
-     simplify(diff(l2/m1,d);
+     simplify(diff(l1/m1,a));
+     simplify(diff(l1/m1,d));
+     simplify(diff(l2/m1,a));
+     simplify(diff(l2/m1,d));
 
      Checked against Gtransfo::TransformPosAndErrors (dec 09)
   */
@@ -1892,7 +1892,7 @@ void TanRaDec2Pix::TransformPosAndErrors(const FatPoint &In,
   // derivatives
   double deno = sq(sin0)-sq(coss)+sq(coss*cos0)*(1+sq(cosda))+2*sins*sin0*coss*cos0*cosda;
   double a11 = coss*(cosda*sins*sin0+coss*cos0)/deno;
-  double a12 = sinda*sin0/deno;
+  double a12 = -sinda*sin0/deno;
   double a21 = coss*sinda*sins/deno;
   double a22 = cosda/deno;
   
