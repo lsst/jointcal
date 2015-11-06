@@ -1700,8 +1700,13 @@ GtransfoPoly TanPix2RaDec::Pix2TangentPlane() const
 void TanPix2RaDec::Pix2TP(const double &Xin, const double &Yin, 
 			  double &Xtp, double & Ytp) const
 {
-  linPix2Tan.apply(Xin,Yin,Xtp,Ytp); // l, m in degrees.
-  if (corr) corr->apply(Xtp, Ytp, Xtp,Ytp); // still in degrees.
+  linPix2Tan.apply(Xin, Yin, Xtp, Ytp); // Xtp, Ytp in degrees.
+  if (corr)
+    {
+      double xtmp = Xtp;
+      double ytmp = Ytp;
+      corr->apply(xtmp , ytmp, Xtp, Ytp); // still in degrees.
+    }
 }
 
 
@@ -1777,9 +1782,14 @@ GtransfoPoly TanSipPix2RaDec::Pix2TangentPlane() const
 
 void TanSipPix2RaDec::Pix2TP(const double &Xin, const double &Yin, 
 			  double &Xtp, double & Ytp) const
-{
-  if (corr) corr->apply(Xin, Yin,Xtp,Ytp); // still in degrees.
-  linPix2Tan.apply(Xtp,Ytp,Xtp,Ytp); // Xtp, Ytp in degrees
+{ // Xtp, Ytp returned in degrees
+  if (corr)
+    {
+      double xtmp, ytmp;
+      corr->apply(Xin, Yin, xtmp, ytmp);
+      linPix2Tan.apply(xtmp, ytmp, Xtp, Ytp);
+    }
+  else linPix2Tan.apply(Xin, Yin, Xtp, Ytp);
 }
 
 
