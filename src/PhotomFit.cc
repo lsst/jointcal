@@ -34,7 +34,7 @@ PhotomFit::PhotomFit(Associations &A, PhotomModel *M, double FluxError) :
   // The various _npar... are initialized in AssignIndices.
   // Although there is no reason to adress them before one might be tempted by
   // evaluating a Chi2 rightaway, .. which uses these counts, so:
-  //  AssignIndices("");
+  AssignIndices("");
 
 }
 
@@ -399,9 +399,7 @@ void PhotomFit::AssignIndices(const std::string &WhatToFit)
   _fittingFluxes = (_WhatToFit.find("Fluxes") != string::npos);
 // When entering here, we assume that WhatToFit has already been interpreted.
 
-
-  if (_fittingModel) 
-    _nParModel = _photomModel->AssignIndices(0);
+  _nParModel =   (_fittingModel) ? _photomModel->AssignIndices(0) : 0;
   unsigned ipar = _nParModel;
 
   if (_fittingFluxes)
