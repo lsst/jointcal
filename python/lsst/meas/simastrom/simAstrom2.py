@@ -190,22 +190,6 @@ class SimAstromTask(pipeBase.CmdLineTask):
             print chi2
             if (nout == 0) : break
         fit.MakeResTuple("res.list")
-        
-        # Play with fit results and try to find how to get the updated WCSs
-        
-        imList = assoc.TheCcdImageList()
-
-        for im in imList :
-            tanSip = spm.ProduceSipWcs(im)
-            frame = im.ImageFrame()
-            tanWcs = GtransfoToTanWcs(tanSip, frame)
-            
-            name = im.Name()
-            visit, ccd = name.split('_')
-            for dataRef in ref :
-                if dataRef.dataId["visit"] == int(visit) and dataRef.dataId["ccd"] == int(ccd) :
-                    print "found ..."
-                    break 
             
 
 class StarSelectorConfig(pexConfig.Config):
