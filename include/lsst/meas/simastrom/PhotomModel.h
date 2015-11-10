@@ -2,7 +2,8 @@
 #define PHOTOMMODEL__H
 
 #include "lsst/meas/simastrom/Eigenstuff.h"
-
+#include <string>
+#include <vector>
 
 namespace lsst {
 namespace meas {
@@ -18,7 +19,7 @@ class PhotomModel
 public :
 
   //! Assign indices to parameters involved in mappings, starting at FirstIndex. Returns the highest assigned index.
-  virtual unsigned AssignIndices(unsigned FirstIndex) = 0;
+  virtual unsigned AssignIndices(const std::string &WhatToFit, unsigned FirstIndex) = 0;
 
   //! Offset the parameters by the provided amounts. 
   /*! The shifts are applied according to the indices given in

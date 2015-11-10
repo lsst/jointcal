@@ -25,18 +25,18 @@ SimplePhotomModel::SimplePhotomModel(const CcdImageList &L)
   std::cout << "INFO: SimplePhotomModel : using exposure " << refShoot << " as photometric reference " << std::endl;
 }
 
- unsigned SimplePhotomModel::AssignIndices(unsigned FirstIndex)
- {
-   unsigned ipar = FirstIndex;
-   for (auto i = _myMap.begin(); i!= _myMap.end(); ++i)
-     {
-       PhotomStuff& pf=i->second;
-       if (pf.fixed) continue;
-       pf.index=ipar;
-       ipar++;
-     }
-   return ipar;
- }
+unsigned SimplePhotomModel::AssignIndices(const std::string &WhatToFit,  unsigned FirstIndex)
+{
+  unsigned ipar = FirstIndex;
+  for (auto i = _myMap.begin(); i!= _myMap.end(); ++i)
+    {
+      PhotomStuff& pf=i->second;
+      if (pf.fixed) continue;
+      pf.index=ipar;
+      ipar++;
+    }
+  return ipar;
+}
 
  void SimplePhotomModel::OffsetParams(const Eigen::VectorXd &Delta)
  {

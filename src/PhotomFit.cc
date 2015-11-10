@@ -255,7 +255,6 @@ void PhotomFit::FindOutliers(const double &NSigCut,
   /* Aims at providing an outlier list for small-rank update 
      of the factorization. */
 
-  CcdImageList &L=_assoc.ccdImageList;
   // collect chi2 contributions of the measurements.
   Chi2Vect chi2s;
   //  chi2s.reserve(_nMeasuredStars);
@@ -380,16 +379,15 @@ unsigned PhotomFit::RemoveOutliers(const double &NSigCut)
 }
 #endif
 
-/*! WhatToFit is searched for strings : "Distortions", "Positions",
-"Refrac", "PM" which define which parameter set is going to be
-variable when computing derivatives (LSDerivatives) and minimizing
-(Minimize()).  WhatToFit="Positions Distortions" will minimize w.r.t
-mappings and objects positions, and not w.r.t proper motions and
-refraction modeling.  However if proper motions and/or refraction
-parameters have already been set, then they are accounted for when
-computing residuals.  The string is forwarded to the DistortionModel,
-and it can then be used to turn subsets of distortion parameter on or
-off, if the DistortionModel implements such a thing.
+/*! WhatToFit is searched for strings : "Model", "Fluxes",
+ which define which parameter sets are going to be
+fitted. This routine is called by Minimize().
+WhatToFit="Model Fluxes"  will set both parameter sets variable
+when computing derivatives. Provided it contains "Model", 
+WhatToFit is passed over to the PhotomModel,
+and can hence be used to control more finely which subsets
+of the photometric model are being fitted, if the 
+the actual PhotomModel implements such a possibility.
 */
 void PhotomFit::AssignIndices(const std::string &WhatToFit)
 {
@@ -399,7 +397,7 @@ void PhotomFit::AssignIndices(const std::string &WhatToFit)
   _fittingFluxes = (_WhatToFit.find("Fluxes") != string::npos);
 // When entering here, we assume that WhatToFit has already been interpreted.
 
-  _nParModel =   (_fittingModel) ? _photomModel->AssignIndices(0) : 0;
+  _nParModel =   (_fittingModel) ? _photomModel->AssignIndices(WhatToFit,0) : 0;
   unsigned ipar = _nParModel;
 
   if (_fittingFluxes)

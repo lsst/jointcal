@@ -37,7 +37,7 @@ public :
   SimplePhotomModel(const CcdImageList &L);
 
   //! Assign indices to parameters involved in mappings, starting at FirstIndex. Returns the highest assigned index.
-  unsigned AssignIndices(unsigned FirstIndex);
+  unsigned AssignIndices(const std::string &WhatToFit, unsigned FirstIndex);
 
   //! Offset the parameters by the provided amounts. 
   /*! The shifts are applied according to the indices given in
