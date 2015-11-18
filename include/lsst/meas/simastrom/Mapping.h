@@ -4,7 +4,7 @@
 
 #include <vector>
 #include "lsst/meas/simastrom/Eigenstuff.h"
-#include "lsst/meas/simastrom/CountedRef.h"
+//#include "lsst/meas/simastrom/CountedRef.h"
 
 
 
@@ -16,7 +16,7 @@ class FatPoint;
 class Point;
 
 //! virtual class needed in the abstraction of the distortion model
-class Mapping  : public RefCount
+class Mapping 
 {
 
     public :

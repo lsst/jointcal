@@ -52,7 +52,7 @@ ConstrainedPolyModel::ConstrainedPolyModel(const CcdImageList &L,
 # warning : hack in ConstrainedPolyModel::ConstrainedPolyModel : rotated frame
 	      _shootMap[shoot] = new SimpleGtransfoMapping(GtransfoLinRot(3.141927/2.), /* ToFit = */ false);
 #else
-	      _shootMap[shoot] = new SimpleGtransfoMapping(GtransfoIdentity());
+	      _shootMap[shoot] = std::unique_ptr<SimpleGtransfoMapping>(new SimpleGtransfoMapping(GtransfoIdentity()));
 #endif
 	      refShoot = shoot;
 	      _instName = im.Instrument();
@@ -65,8 +65,8 @@ ConstrainedPolyModel::ConstrainedPolyModel(const CcdImageList &L,
 		_shootMap[shoot] = new SimplePolyMapping(GtransfoLin(), poly);
 	      }
 #else
-	  _shootMap[shoot] = new SimplePolyMapping(GtransfoLin(),
-						       GtransfoPoly(degree));
+	  _shootMap[shoot] = std::unique_ptr<SimplePolyMapping>(new SimplePolyMapping(GtransfoLin(),
+										      GtransfoPoly(degree)));
 #endif
 	}	      
       auto chipp = _chipMap.find(chip);
@@ -80,7 +80,7 @@ ConstrainedPolyModel::ConstrainedPolyModel(const CcdImageList &L,
 			   degree);
 	  GtransfoLin shiftAndNormalize = NormalizeCoordinatesTransfo(frame);
 	  
-	  _chipMap[chip] = new SimplePolyMapping(shiftAndNormalize, pol*shiftAndNormalize.invert());
+	  _chipMap[chip] = std::unique_ptr<SimplePolyMapping>(new SimplePolyMapping(shiftAndNormalize, pol*shiftAndNormalize.invert()));
 	}
     }
   // now, second loop to set the mappings of the CCdImages
@@ -96,10 +96,10 @@ ConstrainedPolyModel::ConstrainedPolyModel(const CcdImageList &L,
 	  std::cout << " WARNING: the chip " << chip << " is missing in the \
 reference exposure, expect troubles" << std::endl;
 	  GtransfoLin norm = NormalizeCoordinatesTransfo(im.ImageFrame());
-	  _chipMap[chip] = new SimplePolyMapping(norm,
-						 GtransfoPoly(degree));
+	  _chipMap[chip] = std::unique_ptr<SimplePolyMapping>( new SimplePolyMapping(norm,
+										     GtransfoPoly(degree)));
 	}
-      _mappings[&im] = new TwoTransfoMapping(_chipMap[chip], _shootMap[shoot]);
+      _mappings[&im] = std::unique_ptr<TwoTransfoMapping>(new TwoTransfoMapping(_chipMap[chip].get(), _shootMap[shoot].get()));
     
     }  
   cout << "INFO: ConstrainedPolyModel : we have " << _chipMap.size() << " chip mappings " << endl;
@@ -114,7 +114,7 @@ const Mapping* ConstrainedPolyModel::GetMapping(const CcdImage &C) const
 {
   mappingMapType::const_iterator i = _mappings.find(&C);
   if  (i==_mappings.end()) return NULL;
-  return (i->second);
+  return (i->second.get());
 }
 
 /*! This routine decodes "DistortionsChip" and "DistortionsShoot" in
@@ -233,7 +233,7 @@ PTR(TanSipPix2RaDec) ConstrainedPolyModel::ProduceSipWcs(const CcdImage &Ccd) co
 {
   mappingMapType::const_iterator i = _mappings.find(&Ccd);
   if  (i==_mappings.end()) return NULL;
-  const TwoTransfoMapping *m = i->second;
+  const TwoTransfoMapping *m = i->second.get();
   
   const GtransfoPoly &t1=dynamic_cast<const GtransfoPoly&>(m->T1());
   const GtransfoPoly &t2=dynamic_cast<const GtransfoPoly&>(m->T2());
