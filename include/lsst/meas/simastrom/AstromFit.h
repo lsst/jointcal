@@ -126,10 +126,10 @@ class AstromFit {
   Chi2 ComputeChi2() const;
 
   //! returns how many outliers were removed. No refit done. MeasOrRef can be "Meas" , "Ref", or "Meas Ref".
-  unsigned RemoveOutliers(const double &NSigCut, const std::string &MeasOrRef);
+  unsigned RemoveOutliers(const double &NSigCut, const std::string &MeasOrRef = "Meas Ref");
 
   unsigned FindOutliers(const double &NSigCut,
-			MeasuredStarList &MSOutliers,
+			MeasuredStarList &MSOutliers,x
 			FittedStarList &FSOutliers,
 			const std::string &MeasOrRef = "Meas Ref") const;
 
