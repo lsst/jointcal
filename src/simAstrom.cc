@@ -96,7 +96,7 @@ trapfpe ()
     std::cout << wcsMeta->get<int>("A_ORDER") << std::endl;
     
     Eigen::MatrixXd sipA;
-    lsst:afw::image::TanWcs::decodeSipHeader(*wcsMeta, "A", sipA);
+    afw::image::TanWcs::decodeSipHeader(*wcsMeta, "A", sipA);
     std::cout << sipA << std::endl;
     
     //    std::cout << _sourceList[1].getSchema() << std::endl;
@@ -158,7 +158,7 @@ trapfpe ()
 
     for (unsigned k=0; k<20; ++k)
         {
-          astromFit.RemoveOutliers(5.);
+          astromFit.RemoveOutliers(5.,"Meas Ref");
           std::cout << "After outliers removal" << std::endl;
           astromFit.Minimize("Positions Distortions");
           std::cout << astromFit.ComputeChi2() << std::endl;

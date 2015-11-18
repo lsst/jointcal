@@ -130,7 +130,7 @@ class FittedStar : public BaseStar, public PmBlock {
   int  IndexInMatrix() const { return indexInMatrix;}
 
   //! 
-  void SetRefStar(const RefStar &);
+  void SetRefStar(const RefStar*);
 
   //! 
   const RefStar *GetRefStar() const { return refStar;};
