@@ -129,7 +129,7 @@ class AstromFit {
   unsigned RemoveOutliers(const double &NSigCut, const std::string &MeasOrRef = "Meas Ref");
 
   unsigned FindOutliers(const double &NSigCut,
-			MeasuredStarList &MSOutliers,x
+			MeasuredStarList &MSOutliers,
 			FittedStarList &FSOutliers,
 			const std::string &MeasOrRef = "Meas Ref") const;
 

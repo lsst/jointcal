@@ -25,7 +25,7 @@ FittedStar::FittedStar(const MeasuredStar &M) :
 
 void FittedStar::SetRefStar(const RefStar *R)
 {
-  if (refStar != NULL && (&R)) // Exception ??
+  if (refStar != NULL && (R)) // Exception ??
     std::cerr << " FittedStar : " << *this 
 	      << " is already matched to an other RefStar " << std::endl
 	      << " Clean up your lists " << std::endl;
