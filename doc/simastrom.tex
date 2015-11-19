@@ -181,13 +181,18 @@ are displayed in figure \ref{fig:AssocClasses}.
 \subsection{Least-squares expression}
 The fit consists of minimizing:
 \begin{align}
-\chi^2 & =  \sum_{\gamma,i}  [M_\gamma(X_{\gamma,i})-P_{\gamma}(F_i) ]^T W_{\gamma,i}  [M_\gamma(X_{\gamma,i})-P_{\gamma}(F_i) ] & \textrm{(meas. terms)} \nonumber \\
+\chi^2 & =  \sum_{\gamma,i}  [M_\gamma(X_{\gamma,i})-P_{\gamma}(F_k) ]^T W_{\gamma,i}  [M_\gamma(X_{\gamma,i})-P_{\gamma}(F_k) ] & \textrm{(meas. terms)} \nonumber \\
          &+\sum_j [P(F_j)-P(R_j)]^T W_j [P(F_j)-P(R_j)] & \textrm{(ref. terms)} \label{eq:chi2}
 \end{align}
 where the first line iterates on all MeasuredStar ($i$) from all
 CcdImage (indexed by $\gamma$), and the second iterates on all RefStar
-($j$). The measurement terms compare the measurement positions
-to objects positions, the second compares object positions 
+($j$). In the first terms, the object at position $F_k$ is the one
+that was measured at position $X_{\gamma,i}$ in image $\gamma$. 
+The association between measurements and objects is 
+described in the above paragraph. 
+
+    The measurement terms compare the measurement positions
+to objects positions, the reference terms compare object positions 
 to reference positions. We need these two sets of terms
 because not all objects $F_k$ in the first terms appear
 in the second terms: there are plenty of objects in the images
