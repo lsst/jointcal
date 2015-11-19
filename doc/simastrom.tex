@@ -181,7 +181,7 @@ are displayed in figure \ref{fig:AssocClasses}.
 \subsection{Least-squares expression}
 The fit consists of minimizing:
 \begin{align}
-\chi^2 & =  \sum_{\gamma,i}  [M_\gamma(X_{\gamma,i})-P_{\gamma}(F_j) ]^T W_{\gamma,i}  [M_\gamma(X_{\gamma,i})-P_{\gamma}(F_k) ] & \textrm{(meas. terms)} \nonumber \\
+\chi^2 & =  \sum_{\gamma,i}  [M_\gamma(X_{\gamma,i})-P_{\gamma}(F_i) ]^T W_{\gamma,i}  [M_\gamma(X_{\gamma,i})-P_{\gamma}(F_i) ] & \textrm{(meas. terms)} \nonumber \\
          &+\sum_j [P(F_j)-P(R_j)]^T W_j [P(F_j)-P(R_j)] & \textrm{(ref. terms)} \label{eq:chi2}
 \end{align}
 where the first line iterates on all MeasuredStar ($i$) from all
