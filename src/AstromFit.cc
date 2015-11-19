@@ -7,13 +7,124 @@
 
 #include "lsst/meas/simastrom/Gtransfo.h"
 #include "Eigen/Sparse"
-//#include "Eigen/CholmodSupport" // to switch to cholmod
+#include "Eigen/CholmodSupport" // to switch to cholmod
 #include <time.h> // for clock
 #include "lsst/pex/exceptions.h"
 #include <fstream>
 #include "lsst/meas/simastrom/Tripletlist.h"
 
 typedef Eigen::SparseMatrix<double> SpMat;
+
+
+#if 0
+template<typename _MatrixType, int _UpLo = Eigen::Lower>
+class CholmodSupernodalLLT2 : public Eigen::CholmodBase<_MatrixType, _UpLo, CholmodSupernodalLLT2<_MatrixType, _UpLo> >
+{
+  typedef Eigen::CholmodBase<_MatrixType, _UpLo, CholmodSupernodalLLT2> Base;
+    using Base::m_cholmod;
+    
+  public:
+    
+    typedef _MatrixType MatrixType;
+    typedef typename MatrixType::Index Index;
+    
+    CholmodSupernodalLLT2() : Base() { init(); }
+  //! The factorization happens in the constructor.
+    CholmodSupernodalLLT2(const MatrixType& matrix) : Base()
+    {
+      init();
+      this->compute(matrix);
+    }
+
+  //! this routine is the one we added.
+  int update(const SpMat &H, const bool UpOrDown)
+  {
+    // check size
+    const Index size = Base::m_cholmodFactor->n;
+    EIGEN_UNUSED_VARIABLE(size);
+    eigen_assert(size==H.rows());
+    cholmod_sparse C_cs = viewAsCholmod(H);
+    /* We have to apply the magic permutation to the update matrix, 
+       read page 117 of Cholmod UserGuide.pdf */
+    cholmod_sparse *C_cs_perm = cholmod_submatrix(C_cs,
+						  Base::m_cholmodFactor->Perm,
+						  Base::m_cholmodFactor->n,
+						  NULL, -1, NULL, true, true,
+						  &this->cholmod());
+    
+    int ret = cholmod_updown(UpOrDown, &C_cs_perm, Base::m_cholmodFactor, &this->cholmod());
+    cholmod_free_sparse(C_cs_perm,  &this->cholmod());
+    return ret;
+  }
+
+    ~CholmodSupernodalLLT2() {}
+  protected:
+    void init()
+    {
+      m_cholmod.final_asis = 1;
+      m_cholmod.supernodal = CHOLMOD_SUPERNODAL;
+    }
+};
+#endif
+
+
+//! Cholesky factorization class using cholmod, with the small-rank update capability. 
+/*! Class derived from Eigen's CholmodBase, to add the factorization
+    update capability to the interface. Besides this addition, it
+    behaves the same way as Eigen's native Cholesky factorization
+    classes. It relies on the simplicial LDLt factorization.*/
+template<typename _MatrixType, int _UpLo = Eigen::Lower>
+class CholmodSimplicialLDLT2 : public Eigen::CholmodBase<_MatrixType, _UpLo, CholmodSimplicialLDLT2<_MatrixType, _UpLo> >
+{
+  typedef Eigen::CholmodBase<_MatrixType, _UpLo, CholmodSimplicialLDLT2> Base;
+    using Base::m_cholmod;
+    
+  public:
+    
+    typedef _MatrixType MatrixType;
+  typedef typename MatrixType::Index Index;
+    
+    CholmodSimplicialLDLT2() : Base() { init(); }
+
+    CholmodSimplicialLDLT2(const MatrixType& matrix) : Base()
+    {
+      init();
+      this->compute(matrix);
+    }
+
+    // this routine is the one we added
+    int update(const SpMat &H, const bool UpOrDown)
+    {
+      // check size
+      const Index size = Base::m_cholmodFactor->n;
+      EIGEN_UNUSED_VARIABLE(size);
+      eigen_assert(size==H.rows());
+      
+      cholmod_sparse C_cs = viewAsCholmod(H);
+      /* We have to apply the magic permutation to the update matrix, 
+	 read page 117 of Cholmod UserGuide.pdf */
+      cholmod_sparse *C_cs_perm = cholmod_submatrix(&C_cs,
+						    (int *) Base::m_cholmodFactor->Perm,
+						    Base::m_cholmodFactor->n,
+						    NULL, -1, true, true,
+						    &this->cholmod());
+      assert(C_cs_perm);
+      int ret = cholmod_updown(UpOrDown, C_cs_perm, Base::m_cholmodFactor, &this->cholmod());
+      cholmod_free_sparse(&C_cs_perm,  &this->cholmod());
+      assert(ret != 0);
+      return ret;
+    }
+
+    ~CholmodSimplicialLDLT2() {}
+  protected:
+    void init()
+    {
+      m_cholmod.final_asis = 1;
+      m_cholmod.supernodal = CHOLMOD_SIMPLICIAL;
+    }
+};
+
+
 
 using namespace std;
 
@@ -114,12 +225,19 @@ static unsigned fsIndexDebug = 0;
 // we could consider computing the chi2 here.
 // (although it is not extremely useful)
 void AstromFit::LSDerivatives1(const CcdImage &Ccd, 
-			      TripletList &TList, Eigen::VectorXd &Rhs) const
+			      TripletList &TList, Eigen::VectorXd &Rhs,
+			      const MeasuredStarList *M) const
 {
   /***************************************************************************/
   /**  Changes in this routine should be reflected into AccumulateStatImage  */
   /***************************************************************************/
   /* Setup */
+  /* this routine works in two different ways: either providing the
+     Ccd, of providing the MeasuredStarList. In the latter case, the
+     Ccd should match the one(s) in the list. */
+  if (M) 
+    assert ( (*(M->begin()))->ccdImage == &Ccd);
+
   // get the Mapping
   const Mapping *mapping = _distortionModel->GetMapping(Ccd);
   // count parameters
@@ -152,7 +270,7 @@ void AstromFit::LSDerivatives1(const CcdImage &Ccd,
   Eigen::VectorXd grad(npar_tot);
   // current position in the Jacobian
   unsigned kTriplets = TList.NextFreeIndex();
-  const MeasuredStarList &catalog = Ccd.CatalogForFit();
+  const MeasuredStarList &catalog = (M) ? *M : Ccd.CatalogForFit();
 
   for (auto i = catalog.begin(); i!= catalog.end(); ++i)
     {
@@ -266,8 +384,8 @@ void AstromFit::LSDerivatives1(const CcdImage &Ccd,
 void AstromFit::LSDerivatives2(const FittedStarList &Fsl, TripletList &TList, Eigen::VectorXd &Rhs) const
 {
   /* We compute here the derivatives of the terms involving fitted
-    stars and reference stars. They only provide contributions if we
-    are fitting positions: */
+     stars and reference stars. They only provide contributions if we
+     are fitting positions: */
   if (! _fittingPos) return;
   /* the other case where the accumulation of derivatives stops 
      here is when there are no RefStars */
@@ -535,10 +653,26 @@ void AstromFit::GetMeasuredStarIndices(const MeasuredStar &Ms,
      able to remove more than 1 star at a time. */
 }
 
-//! Discards measurements contributing more than a cut, computed as Average(chi2)+NSigCut*rms(chi2). Returns the number of removed outliers. No refit done.
-/*! After returning form here, there are still measurements that
-  contribute above the cut, but their contribution should be
-  evaluated after a refit before discarding them . */
+//! contributions to derivatives of (presumambly) outlier terms. No discarding done.
+void AstromFit::OutliersContributions(MeasuredStarList &MOutliers,
+				      FittedStarList &FOutLiers,
+				      TripletList &TList, 
+				      Eigen::VectorXd &Grad)
+{
+  // contributions from measurement terms:
+  for (auto i= MOutliers.begin(); i!= MOutliers.end(); ++i)
+    {
+      MeasuredStar &out = **i;
+      MeasuredStarList tmp;
+      tmp.push_back(&out);
+      const CcdImage &ccd = *(out.ccdImage);
+      LSDerivatives1(ccd, TList, Grad, &tmp);
+    }
+  LSDerivatives2(FOutLiers, TList, Grad);
+}
+
+
+//! Discards measurements and reference contributions contributing to the chi2 more than a cut, computed as <chi2>+NSigCut+rms(chi2) (statistics over contributions to the chi2). Returns the number of removed outliers. No refit done.
 unsigned AstromFit::RemoveOutliers(const double &NSigCut,
 				   const std::string &MeasOrRef)
 {
@@ -663,8 +797,6 @@ void AstromFit::RemoveMeasOutliers(MeasuredStarList &Outliers)
     }
 }
   
-
-
 
 void AstromFit::RemoveRefOutliers(FittedStarList &Outliers)
 {
@@ -810,7 +942,7 @@ static void write_vect_in_fits(const Eigen::VectorXd &V, const string &FitsName)
 /*! This is a complete Newton Raphson step. Compute first and 
   second derivatives, solve for the step and apply it, without 
   a line search. */
-bool AstromFit::Minimize(const std::string &WhatToFit)
+bool AstromFit::Minimize(const std::string &WhatToFit, const double NSigRejCut)
 {
   AssignIndices(WhatToFit);
 
@@ -853,28 +985,71 @@ bool AstromFit::Minimize(const std::string &WhatToFit)
   }// release the Jacobian
 
 
-  //write_sparse_matrix_in_fits(hessian, "h.fits");
-
   cout << "INFO: hessian : dim=" << hessian.rows() 
        << " nnz=" << hessian.nonZeros() 
        << " filling-frac = " << hessian.nonZeros()/sqr(hessian.rows()) << endl;
   cout << "INFO: starting factorization" << endl;
 
   tstart = clock();
-  Eigen::SimplicialLDLT<SpMat> chol(hessian);
+  CholmodSimplicialLDLT2<SpMat> chol(hessian);
   if (chol.info() != Eigen::Success)
     {
       cout << "ERROR: AstromFit::Minimize : factorization failed " << endl;
       return false;
     }
 
-  Eigen::VectorXd delta = chol.solve(grad);
-
-  //  cout << " offsetting parameters" << endl;
-  OffsetParams(delta);
   tend = clock();
-  std::cout << "INFO: CPU for factor-solve-update " 
+  std::cout << "INFO: CPU for factorize-solve " 
   	    << float(tend-tstart)/float(CLOCKS_PER_SEC) << std::endl;
+  tstart = tend;
+
+  unsigned tot_outliers = 0;
+  double old_chi2 = ComputeChi2().chi2;
+
+  while (true)
+    {
+      Eigen::VectorXd delta = chol.solve(grad);
+      //  cout << " offsetting parameters" << endl;
+      OffsetParams(delta);
+      Chi2 current_chi2(ComputeChi2());
+      cout << current_chi2 << endl;
+      if (current_chi2.chi2 > old_chi2)
+	{
+	  cout << "WARNING: chi2 went up, exiting outlier rejection loop" << endl;
+	  break;
+	}
+      old_chi2 = current_chi2.chi2;
+
+      if (NSigRejCut == 0) break;
+      MeasuredStarList moutliers;
+      FittedStarList foutliers;
+      int n_outliers = FindOutliers(NSigRejCut, moutliers, foutliers);
+      tot_outliers += n_outliers;
+      if (n_outliers == 0) break;
+      TripletList tList(1000); // initial allocation size.
+      grad.setZero(); // recycle the gradient
+      // compute the contributions of outliers to derivatives
+      OutliersContributions(moutliers, foutliers, tList, grad);
+      // actually discard them
+      RemoveMeasOutliers(moutliers);
+      RemoveRefOutliers(foutliers);      
+      // convert triplet list to eigen internal format
+      SpMat h(_nParTot,tList.NextFreeIndex());
+      h.setFromTriplets(tList.begin(), tList.end());
+      int update_status = chol.update(h, false /* means downdate */);
+      cout << "INFO: cholmod  update_status " << update_status << endl;
+      /* The contribution of outliers to the gradient is the opposite
+	 of the contribution of all other terms, because they add up
+	 to 0 */
+      grad *= -1;
+      tend = clock();
+      std::cout << "INFO: CPU for chi2-update_factor "  
+		<< float(tend-tstart)/float(CLOCKS_PER_SEC) << std::endl;
+      tstart = tend;
+    }
+
+  cout << "INFO: total number of outliers " << tot_outliers << endl;
+
   return true;
 }
 

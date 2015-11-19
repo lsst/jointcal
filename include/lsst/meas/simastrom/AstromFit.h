@@ -88,16 +88,15 @@ class AstromFit {
   /*! It calls AssignIndices, LSDerivatives, solves the linear system
     and calls OffsetParams. No line search. Relies on sparse linear
     algebra. */
-  bool Minimize(const std::string &WhatToFit);
+  bool Minimize(const std::string &WhatToFit, const double NSigRejCut=0);
 
-  //! Compute the derivatives of the measurement terms for this CcdImage
+  //! Compute derivatives of measurement terms for this CcdImage
   void LSDerivatives1(const CcdImage &Ccd, 
-		     TripletList &TList, Eigen::VectorXd &Rhs) const;
+		      TripletList &TList, Eigen::VectorXd &Rhs,
+		      const MeasuredStarList *M=NULL) const;
 
-#ifndef SWIG
-  //! Compute the derivatives of the reference terms
-  void LSDerivatives2(const FittedStarList &Fsl, TripletList &TList, Eigen::VectorXd &Rhs) const;
-#endif
+  //! Compute derivatives of reference terms (if any), associated to the FittedStarList
+  void LSDerivatives2(const FittedStarList & Fsl, TripletList &TList, Eigen::VectorXd &Rhs) const;
 
   //! Evaluates the chI^2 derivatives (Jacobian and gradient) for the current WhatToFit setting.
   /*! The Jacobian is provided as triplets, the gradient as a dense
@@ -125,11 +124,18 @@ class AstromFit {
   //! Returns a chi2 for the current state
   Chi2 ComputeChi2() const;
 
+  //! Contributions to derivatives from (presumably) outlier terms. No discarding done.
+  void OutliersContributions(MeasuredStarList &MOutliers,
+			     FittedStarList &FOutLiers,
+			     TripletList &TList, 
+			     Eigen::VectorXd &Grad);
+
+
   //! returns how many outliers were removed. No refit done. MeasOrRef can be "Meas" , "Ref", or "Meas Ref".
   unsigned RemoveOutliers(const double &NSigCut, const std::string &MeasOrRef = "Meas Ref");
 
   unsigned FindOutliers(const double &NSigCut,
-			MeasuredStarList &MSOutliers,x
+			MeasuredStarList &MSOutliers,
 			FittedStarList &FSOutliers,
 			const std::string &MeasOrRef = "Meas Ref") const;
 
@@ -139,15 +145,14 @@ class AstromFit {
   //! Just removes outliers from the fit. No Refit done.
   void RemoveRefOutliers(FittedStarList &Outliers);
 
+  //! Produces both ntuples (cook up names from the provided string)
+  void MakeResTuple(const std::string &TupleName) const;
 
   //! Produces a tuple containing residuals of measurement terms.
   void MakeMeasResTuple(const std::string &TupleName) const;
 
   //! Produces a tuple containing residuals of reference terms.
   void MakeRefResTuple(const std::string &TupleName) const;
-
-  //! Produces both ntuples (cook up names from the provided string)
-  void MakeResTuple(const std::string &TupleName) const;
 
   //! access to the fitted refraction coefficients. Unit depends on scale in the tangentPlane. Degrees for an actual tangent plane.
   std::vector<double> RefractionCoefficients() const 
