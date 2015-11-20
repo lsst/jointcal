@@ -31,8 +31,8 @@ SimplePolyModel::SimplePolyModel(const CcdImageList &L,
       if (count < NNotFit)
 	{
 	  SimpleGtransfoMapping * id = new SimpleGtransfoMapping(GtransfoIdentity());
-	  _myMap[&im] = id;
 	  id->SetIndex(-1); // non sense, because it has no parameters
+	  _myMap[&im] = std::unique_ptr<SimpleGtransfoMapping>(id);
 	}
       else
 	// Given how AssignIndices works, only the SimplePolyMapping's
@@ -49,7 +49,7 @@ SimplePolyModel::SimplePolyModel(const CcdImageList &L,
 	      pol = pol*shiftAndNormalize.invert();
 
 	    }
-	  _myMap[&im] = new SimplePolyMapping(shiftAndNormalize, pol);
+	  _myMap[&im] = std::unique_ptr<SimpleGtransfoMapping>(new SimplePolyMapping(shiftAndNormalize, pol));
 	}
     }
 }
@@ -59,7 +59,7 @@ const Mapping* SimplePolyModel::GetMapping(const CcdImage &C) const
 {
   mapType::const_iterator i = _myMap.find(&C);
   if  (i==_myMap.end()) throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,"SimplePolyModel::GetMapping, never heard of CcdImage "+C.Name());
-  return (i->second);
+  return (i->second.get());
 }
 
 unsigned SimplePolyModel::AssignIndices(unsigned FirstIndex, std::string &WhatToFit)

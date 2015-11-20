@@ -21,7 +21,7 @@ RefStar::RefStar(const BaseStar &B, const Point &RaDec)
 void RefStar::SetFittedStar(FittedStar &F)
 { 
   fittedStar = &F;
-  if (fittedStar) fittedStar->SetRefStar(*this);
+  if (fittedStar) fittedStar->SetRefStar(this);
 }
 
 

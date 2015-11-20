@@ -1,6 +1,8 @@
 #ifndef CONSTRAINEDPOLYMODEL__H
 #define CONSTRAINEDPOLYMODEL__H
 
+#include "memory" // for std::*_ptr
+
 #include "lsst/meas/simastrom/Eigenstuff.h"
 
 class CcdImage;
@@ -29,11 +31,11 @@ class ConstrainedPolyModel : public DistortionModel
 {
   /* using ref counts here allows us to not write a destructor nor a copy
      constructor. I could *not* get it to work using std::auto_ptr. */
-  typedef std::map<const CcdImage*, CountedRef<TwoTransfoMapping> > mappingMapType;
+  typedef std::map<const CcdImage*, std::unique_ptr<TwoTransfoMapping> > mappingMapType;
   mappingMapType _mappings;
-  typedef std::map<unsigned, CountedRef<SimpleGtransfoMapping> > chipMapType;
+  typedef std::map<unsigned, std::unique_ptr<SimpleGtransfoMapping> > chipMapType;
   chipMapType _chipMap;
-  typedef std::map<ShootIdType, CountedRef<SimpleGtransfoMapping> > shootMapType;
+  typedef std::map<ShootIdType, std::unique_ptr<SimpleGtransfoMapping> > shootMapType;
   shootMapType _shootMap;
   const ProjectionHandler* _sky2TP;
   bool _fittingChips, _fittingShoots;

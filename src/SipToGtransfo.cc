@@ -109,7 +109,7 @@ PTR(afwImg::TanWcs) GtransfoToTanWcs(const simAstrom::TanSipPix2RaDec WcsTransfo
   afwGeom::Point2D crpix_lsst; // in LSST "frame"
   /* In order to remove the low order sip terms, one has to 
      define the linear WCS transformation as the expansion of 
-     the total pix-to-tangent plane (or focal plane) at the point
+     the total pix-to-tangent plane (or focal plane) at the
      tangent point. In order to do that, we first have to find
      which pixel transforms to the tangent point, and then expand there */
 

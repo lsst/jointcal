@@ -69,6 +69,8 @@ class TripletList;
 class CcdImage;
 class CcdImageList;
 class MeasuredStar;
+class FittedStarList;
+class MeasuredStarList;
 }}}
 %include "lsst/meas/simastrom/Chi2.h"
 %include "lsst/meas/simastrom/AstromFit.h"

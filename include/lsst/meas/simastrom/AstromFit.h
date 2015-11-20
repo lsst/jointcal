@@ -94,8 +94,10 @@ class AstromFit {
   void LSDerivatives1(const CcdImage &Ccd, 
 		     TripletList &TList, Eigen::VectorXd &Rhs) const;
 
+#ifndef SWIG
   //! Compute the derivatives of the reference terms
-  void LSDerivatives2(TripletList &TList, Eigen::VectorXd &Rhs) const;
+  void LSDerivatives2(const FittedStarList &Fsl, TripletList &TList, Eigen::VectorXd &Rhs) const;
+#endif
 
   //! Evaluates the chI^2 derivatives (Jacobian and gradient) for the current WhatToFit setting.
   /*! The Jacobian is provided as triplets, the gradient as a dense
@@ -123,8 +125,20 @@ class AstromFit {
   //! Returns a chi2 for the current state
   Chi2 ComputeChi2() const;
 
-  //! returns how many outliers were removed. No refit done.
-  unsigned RemoveOutliers(const double &NSigCut);
+  //! returns how many outliers were removed. No refit done. MeasOrRef can be "Meas" , "Ref", or "Meas Ref".
+  unsigned RemoveOutliers(const double &NSigCut, const std::string &MeasOrRef = "Meas Ref");
+
+  unsigned FindOutliers(const double &NSigCut,
+			MeasuredStarList &MSOutliers,
+			FittedStarList &FSOutliers,
+			const std::string &MeasOrRef = "Meas Ref") const;
+
+  //! Just removes outliers from the fit. No Refit done.
+  void RemoveMeasOutliers(MeasuredStarList &Outliers);
+
+  //! Just removes outliers from the fit. No Refit done.
+  void RemoveRefOutliers(FittedStarList &Outliers);
+
 
   //! Produces a tuple containing residuals of measurement terms.
   void MakeMeasResTuple(const std::string &TupleName) const;
@@ -154,6 +168,10 @@ class AstromFit {
 
   template <class ImType, class Accum> 
     void AccumulateStatImage(ImType &I, Accum &A) const;
+
+  template <class Accum> 
+    void AccumulateStatRefStars(Accum &Accu) const;
+
   
   //! only for outlier removal
   void GetMeasuredStarIndices(const MeasuredStar &Ms, 

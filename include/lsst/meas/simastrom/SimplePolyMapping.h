@@ -1,7 +1,7 @@
 #ifndef SIMPLEPOLYMAPPING__H
 #define SIMPLEPOLYMAPPING__H
 
-#include <memory> // for auto_ptr
+#include <memory> // for unique_ptr
 
 #include "lsst/meas/simastrom/Mapping.h"
 #include "lsst/meas/simastrom/Gtransfo.h"
@@ -24,12 +24,13 @@ class SimpleGtransfoMapping : public Mapping
   unsigned index;
   /* inheritance may also work. Perhaps with some trouble because
      some routines in Mapping and Gtransfo have the same name */
-  CountedRef<Gtransfo> transfo; 
+  std::shared_ptr<Gtransfo> transfo; 
+
+  std::shared_ptr<Gtransfo> errorProp;
   /* to avoid allocation at every call of PosDerivatives. 
      use a pointer for constness */
   std::unique_ptr<GtransfoLin> lin; 
 
-  CountedRef<Gtransfo> errorProp;
 
 #ifdef STORAGE
   //! this is modern compilation-time check:
@@ -40,16 +41,18 @@ class SimpleGtransfoMapping : public Mapping
 
  public :
 
- SimpleGtransfoMapping(const Gtransfo &T, bool ToFit=true) : toFit(ToFit)
+ SimpleGtransfoMapping(const Gtransfo &T, bool ToFit=true) : toFit(ToFit), transfo(T.Clone()), errorProp(transfo), lin(new GtransfoLin)
   {
-    transfo = T.Clone(); 
-    errorProp = transfo;
-    lin.reset(new GtransfoLin); // reserve space for derivative computation
+    // in this order:
+    // take a copy of the input transfo,
+    // assign the transformation used to propagate errors to the transfo itself
+    // reserve some memory space to compute the derivatives (efficiency).
   }
 
   virtual void FreezeErrorScales()
   {
-    errorProp = transfo->Clone();
+    // from there on, updating the transfo does not change the errors.
+    errorProp.reset(transfo->Clone());
   }
 
   // interface Mapping functions:

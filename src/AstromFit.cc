@@ -90,13 +90,9 @@ Point AstromFit::TransformFittedStar(const FittedStar &F,
   return fittedStarInTP;
 }
 
-/*! this is the first implementation of an error "model". 
-  We'll certainly have to upgrade it. MeasuredStar provided
-in case we need the mag.  */
-
-//  static double posErrorIncrement = 0.02; // pixels
-//  static double posErrorIncrement = 0.00; // pixels
-
+/*! This is the first implementation of an error "model".  We'll
+  certainly have to upgrade it. MeasuredStar provides the mag in case
+  we need it.  */
 static void TweakAstromMeasurementErrors(FatPoint &P, const MeasuredStar &Ms, double error)
 {
   static bool called=false;
@@ -267,7 +263,7 @@ void AstromFit::LSDerivatives1(const CcdImage &Ccd,
 
 #define HACK_REF_ERRORS 1. // used to isolate the measurement or ref terms
 
-void AstromFit::LSDerivatives2(TripletList &TList, Eigen::VectorXd &Rhs) const
+void AstromFit::LSDerivatives2(const FittedStarList &Fsl, TripletList &TList, Eigen::VectorXd &Rhs) const
 {
   /* We compute here the derivatives of the terms involving fitted
     stars and reference stars. They only provide contributions if we
@@ -276,7 +272,6 @@ void AstromFit::LSDerivatives2(TripletList &TList, Eigen::VectorXd &Rhs) const
   /* the other case where the accumulation of derivatives stops 
      here is when there are no RefStars */
   if (_assoc.refStarList.size() == 0) return;
-  const FittedStarList &fsl = _assoc.fittedStarList;
   Eigen::Matrix2d w(2,2);
   Eigen::Matrix2d alpha(2,2);
   Eigen::Matrix2d h(2,2), halpha(2,2), hw(2,2);
@@ -291,7 +286,7 @@ void AstromFit::LSDerivatives2(TripletList &TList, Eigen::VectorXd &Rhs) const
      projector. We construct a projector and will change its
      projection point at every object */
   TanRaDec2Pix proj(GtransfoLin(), Point(0.,0.));
-  for (auto i = fsl.cbegin(); i!= fsl.end(); ++i)
+  for (auto i = Fsl.cbegin(); i!= Fsl.end(); ++i)
     {
       const FittedStar &fs = **i;
       const RefStar *rs = fs.GetRefStar();
@@ -372,7 +367,7 @@ void AstromFit::LSDerivatives(TripletList &TList, Eigen::VectorXd &Rhs) const
     {
       LSDerivatives1(**im, TList, Rhs);
     }
-  LSDerivatives2(TList, Rhs);
+  LSDerivatives2(_assoc.fittedStarList, TList, Rhs);
 }
 
 
@@ -446,26 +441,23 @@ void AstromFit::AccumulateStatImageList(ListType &L, Accum &Accu) const
     }
 }
 
-//! for the list of images in the provided  association and the reference stars, if any
-Chi2 AstromFit::ComputeChi2() const
+template <class Accum> 
+void AstromFit::AccumulateStatRefStars(Accum &Accu) const
 {
-  Chi2 chi2;
-  AccumulateStatImageList(_assoc.TheCcdImageList(), chi2);
-  // Now add the ref stars
-  const FittedStarList &fsl = _assoc.fittedStarList;
   /* If you wonder why we project here, read comments in 
      AstromFit::LSDerivatives2(TripletList &TList, Eigen::VectorXd &Rhs) */
+  FittedStarList &fsl = _assoc.fittedStarList;
   TanRaDec2Pix proj(GtransfoLin(), Point(0.,0.));
-  for (auto i = fsl.cbegin(); i!= fsl.end(); ++i)
+  for (auto i = fsl.begin(); i!= fsl.end(); ++i)
     {
-      const FittedStar &fs = **i;
+      FittedStar &fs = **i;
       const RefStar *rs = fs.GetRefStar();
       if (rs == NULL) continue;
       proj.SetTangentPoint(fs);
       // fs projects to (0,0), no need to compute its transform.
       FatPoint rsProj;
       proj.TransformPosAndErrors(*rs, rsProj);
-      // TO DO : account for proper motions. If you do it here, think about MakeRefResTuple.
+      // TO DO : account for proper motions.
       double rx = rsProj.x; // -fsProj.x (which is 0)
       double ry = rsProj.y;
       double det = rsProj.vx*rsProj.vy - sqr(rsProj.vxy);
@@ -475,8 +467,18 @@ Chi2 AstromFit::ComputeChi2() const
       wxx *= HACK_REF_ERRORS;
       wyy *= HACK_REF_ERRORS;
       wxy *= HACK_REF_ERRORS;
-      chi2.AddEntry(wxx*sqr(rx) + 2*wxy*rx*ry+ wyy*sqr(ry), 2, NULL);
+      Accu.AddEntry(wxx*sqr(rx) + 2*wxy*rx*ry+ wyy*sqr(ry), 2, &fs);
     }
+}
+
+
+//! for the list of images in the provided  association and the reference stars, if any
+Chi2 AstromFit::ComputeChi2() const
+{
+  Chi2 chi2;
+  AccumulateStatImageList(_assoc.TheCcdImageList(), chi2);
+  // now ref stars:
+  AccumulateStatRefStars(chi2);
   // so far, ndof contains the number of squares.
   // So, subtract here the number of parameters.
   chi2.ndof -= _nParTot;
@@ -491,17 +493,17 @@ Chi2 AstromFit::ComputeChi2() const
 struct Chi2Entry
 {
   double chi2;
-  MeasuredStar *ms;
+  BaseStar *ps;
 
-  Chi2Entry(const double &c, MeasuredStar *s): chi2(c), ms(s) {}
+  Chi2Entry(const double &c, BaseStar *s): chi2(c), ps(s) {}
   // for sort
   bool operator < (const Chi2Entry &R) const {return (chi2<R.chi2);}
 };
 
-struct Chi2Vect : public vector<Chi2Entry>
+struct Chi2Vect : public std::vector<Chi2Entry>
 {
-  void AddEntry(const double &Chi2Val, unsigned ndof, MeasuredStar *ms)
-  { push_back(Chi2Entry(Chi2Val,ms));}
+  void AddEntry(const double &Chi2Val, unsigned ndof, BaseStar *ps)
+  { this->push_back(Chi2Entry(Chi2Val,ps));}
 
 };
 
@@ -537,18 +539,42 @@ void AstromFit::GetMeasuredStarIndices(const MeasuredStar &Ms,
 /*! After returning form here, there are still measurements that
   contribute above the cut, but their contribution should be
   evaluated after a refit before discarding them . */
-unsigned AstromFit::RemoveOutliers(const double &NSigCut)
+unsigned AstromFit::RemoveOutliers(const double &NSigCut,
+				   const std::string &MeasOrRef)
 {
-  /* Some reshuffling would be needed if we wish to use the small-rank
-     update trick rather than solving again. Typically We would
-     need to compute the Jacobian and RHS contributions of the
-     discarded measurement and update the current factorization and
-     solution. */
+  MeasuredStarList MSOutliers;
+  FittedStarList FSOutliers;
+  unsigned n = FindOutliers(NSigCut, MSOutliers, FSOutliers, MeasOrRef);
+  RemoveMeasOutliers(MSOutliers);
+  RemoveRefOutliers(FSOutliers);
+  return n;
+}
+  
+
+
+//! Find Measurements and references contributing more than a cut, computed as <chi2>+NSigCut+rms(chi2). The outliers are NOT removed, and no refit is done.
+/*! After returning from here, there are still measurements that
+  contribute above the cut, but their contribution should be
+  evaluated after a refit before discarding them. */
+unsigned AstromFit::FindOutliers(const double &NSigCut,
+				 MeasuredStarList &MSOutliers,
+				 FittedStarList &FSOutliers,
+				 const std::string &MeasOrRef) const
+{
+  bool searchMeas = (MeasOrRef.find("Meas") != std::string::npos);
+  bool searchRef = (MeasOrRef.find("Ref") != std::string::npos);
+
   CcdImageList &L=_assoc.ccdImageList;
   // collect chi2 contributions
   Chi2Vect chi2s;
-  chi2s.reserve(_nMeasuredStars);
-  AccumulateStatImageList(_assoc.ccdImageList, chi2s);
+  chi2s.reserve(_nMeasuredStars+_assoc.refStarList.size());
+  // contributions from measurement terms:
+  if (searchMeas)
+    AccumulateStatImageList(_assoc.ccdImageList, chi2s);
+  // and from reference terms
+  if (searchRef)
+    AccumulateStatRefStars(chi2s);
+
   // do some stat
   unsigned nval = chi2s.size();
   if (nval==0) return 0;
@@ -572,38 +598,84 @@ unsigned AstromFit::RemoveOutliers(const double &NSigCut)
   Eigen::VectorXi affectedParams(_nParTot);
   affectedParams.setZero();
 
-  unsigned removed = 0; // returned to the caller
+  unsigned nOutliers = 0; // returned to the caller
   // start from the strongest outliers.
   for (auto i = chi2s.rbegin(); i != chi2s.rend(); ++i)
     {
       if (i->chi2 < cut) break; // because the array is sorted. 
       vector<unsigned> indices;
-      GetMeasuredStarIndices(*(i->ms), indices);
+      indices.reserve(100); // just there to limit reallocations.
+      /* now, we want to get the indices of the parameters this chi2
+	 term depends on. We have to figure out which kind of term it
+	 is; we use for that the type of the star attached to
+	 the Chi2Entry. */
+      MeasuredStar *ms = dynamic_cast<MeasuredStar *>(i->ps); 
+      FittedStar *fs = NULL;
+      if (!ms) // it is reference term.
+	{
+	  fs = dynamic_cast<FittedStar *>(i->ps); 
+	  indices.push_back(fs->IndexInMatrix());
+	  indices.push_back(fs->IndexInMatrix()+1); // probably useless
+	  /* One might think it would be useful to account for PM
+	     parameters here, but it is just useless */
+	}
+      else // it is a measurement term.
+	{
+	  GetMeasuredStarIndices(*ms, indices);
+	}
+
+      /* Find out if we already discarded a stronger outlier
+	 constraining some parameter this one constrains as well. If
+	 yes, we keep this one, because this stronger outlier could be 
+	 causing the large chi2 we have in hand.  */
       bool drop_it = true;
-      /* find out if a stronger outlier constraining one of the parameters
-	 this one contrains was already discarded. If yes, we keep this one */
       for (auto i=indices.cbegin(); i!= indices.end(); ++i)
 	if (affectedParams(*i) !=0) drop_it = false;
       
-      if (drop_it)
+      if (drop_it) // store the outlier in one of the lists:
 	{
-	  FittedStar *fs = i->ms->GetFittedStar();
-	  i->ms->SetValid(false); removed++;
-	  fs->MeasurementCount()--; // could be put in SetValid
-	  /* By making sure that we do not remove all MeasuredStars
-	     pointing to a FittedStar in a single go,
-	     fs->MeasurementCount() should never go to 0. 
-	     
-	     It seems plausible that the adopted mechanism prevents as
-	     well to end up with under-constrained transfos. */
-	  for (auto i=indices.cbegin(); i!= indices.cend(); ++i)
+	  if (ms) // measurement term
+	    MSOutliers.push_back(ms);
+	  else // ref term
+	    FSOutliers.push_back(fs);
+	  // mark the parameters as directly changed when we discard this chi2 term.
+	  for (auto i=indices.cbegin(); i!= indices.end(); ++i)
 	    affectedParams(*i)++;
+	  nOutliers++;
 	}
-    } // end loop on measurements
-  cout << "INFO : RemoveOutliers : found and removed " 
-       << removed << " outliers" << endl;
-  return removed;
+    } // end loop on measurements/references
+  cout << "INFO : FindOutliers : found " 
+       << MSOutliers.size() << " meas outliers and " 
+       << FSOutliers.size ()<< " ref outliers " << endl;
+  
+  return nOutliers;
 }
+
+
+void AstromFit::RemoveMeasOutliers(MeasuredStarList &Outliers)
+{
+  for (auto i = Outliers.begin(); i!= Outliers.end(); ++i)
+    {
+      MeasuredStar &ms = **i;
+      FittedStar *fs = ms.GetFittedStar();
+      ms.SetValid(false); 
+      fs->MeasurementCount()--; // could be put in SetValid
+    }
+}
+  
+
+
+
+void AstromFit::RemoveRefOutliers(FittedStarList &Outliers)
+{
+  for (auto i=Outliers.begin(); i!= Outliers.end() ;++i)
+    {
+      FittedStar &fs = **i;
+      fs.SetRefStar(NULL);
+    }
+}
+
+
 
 /*! WhatToFit is searched for strings : "Distortions", "Positions",
 "Refrac", "PM" which define which parameter set is going to be
@@ -974,8 +1046,7 @@ void AstromFit::MakeRefResTuple(const std::string &TupleName) const
 	    << fs.color << ' ' 
 	    << fs.IndexInMatrix() << ' '
 	    << chi2 << ' ' 
-	    << fs.MeasurementCount() << ' '
-	    << endl;
+	    << fs.MeasurementCount() << endl;
     }// loop on FittedStars
 }
 

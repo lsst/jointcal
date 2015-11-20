@@ -367,7 +367,7 @@ void Associations::AssociateRefStars(const double &MatchCutInArcSec,
       bs = starMatch.s2;
       FittedStar *fs = dynamic_cast<FittedStar *>(bs);
       //rs->SetFittedStar(*fs);
-      fs->SetRefStar(*rs);
+      fs->SetRefStar(rs);
     }
 
   std::cout << " associated " << smList->size() << " REFERENCE stars " 

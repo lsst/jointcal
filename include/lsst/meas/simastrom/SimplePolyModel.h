@@ -1,6 +1,8 @@
 #ifndef SIMPLEPOLYMODEL__H
 #define SIMPLEPOLYMODEL__H
 
+#include "memory"
+
 #include "lsst/meas/simastrom/Eigenstuff.h"
 
 #include "lsst/meas/simastrom/DistortionModel.h"
@@ -29,7 +31,7 @@ class SimplePolyModel : public DistortionModel
 {
   /* using ref counts here allows us to not write a destructor nor a copy
      constructor. I could *not* get it to work using std::auto_ptr. */
-  typedef std::map<const CcdImage*, CountedRef<SimpleGtransfoMapping> > mapType;
+  typedef std::map<const CcdImage*, std::unique_ptr<SimpleGtransfoMapping> > mapType;
   mapType _myMap;
   const ProjectionHandler* _sky2TP;
 
