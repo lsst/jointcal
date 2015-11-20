@@ -620,14 +620,8 @@ void GtransfoPoly::apply(const double Xin, const double Yin,
     class (such as PolyXY) to handle each polynomial.
 
     The code works even if &Xin == &Xout (or &Yin == &Yout)
-
-<<<<<<< HEAD
-    It uses Variable Lenth Allocation (VLA) rather than a vector<double>
-    because allocating the later costs about 50 ns. 
-=======
     It uses Variable Length Allocation (VLA) rather than a vector<double>
     because allocating the later costs about 50 ns. All VLA uses are tagged.
->>>>>>> 70dbb6c94aa9b22ceda0347c5bb75d91f8abdc7b
   */
   double monomials[nterms];    // this is VLA, which is (perhaps) not casher C++
   compute_monomials(Xin, Yin, monomials);
@@ -1567,6 +1561,7 @@ void  BaseTanWcs::operator = (const BaseTanWcs &Original)
   corr = NULL;
   if (Original.corr) corr = new GtransfoPoly(*Original.corr);
 }  
+
 
 void BaseTanWcs::apply(const double Xin, const double Yin, 
 			 double &Xout, double &Yout) const
