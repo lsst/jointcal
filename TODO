@@ -1,27 +1,82 @@
+*13: Get rid of the home-made memory handling (CountedRef and
+  RefCount).  We have to replace it by recent smat pointer models. A
+  discussion with Jim Bosch has started (
+  https://jira.lsstcorp.org/browse/DM-4043 ) and converged towards a
+  similar model using intrusive_prt. When this is done, we could think
+  about using some automatic tool to detect memory problems (leaks in
+  particular). 
 
+ *12: Identify how to hand over the photometric scalings to the
+  stacking.  At the moment, PhotomFit does not produce any result
+  besides a residual ntuple
 
-* Replace the "Preferences" class of gastro by the stack mechanism
+*11: Study if the "error model" (at the moment a constant added
+  quadratically to the shot noise contribution, see
+  TweakMeasurementErrors) could be devised automatically. There could
+  be some complication here (not handled by the current code) that
+  contributions could be different for different exposures.
+
+*10: Same question as above for the photometry.
+
+*9: Diagnosic plots. We should deliver scripts to produce diagnostic
+  plots, as SCAMP does.  Some inspiration can be found in the
+  description of CHECKPLOT_TYPE in the scamp documentation (to be
+  found on http://www.astromatic.net/software/scamp).
+  There are examples on the web from the CFHTLS processing:
+  http://terapix.iap.fr/cplt/T0007/table_syn_T0007.html 
+  (where column 16 provides a few hints).
+
+*8: Fitting the non-uniformity of photometric response after
+  flat-fielding. There is a single model coded for the photometric
+  scaling.  this is inadequate to evaluate the non-uniformity of
+  response across the focal plane after detrending. For Megacam, there
+  are sets of exposures collected to measure that. To fit the
+  correction, we need a model that provides a photometric factor that
+  smoothly depends on the position in the focal plane. This has to be
+  coded as a class deriving from PhotomModel. The way it was done for
+  SNLS is described in
+  http://cdsads.u-strasbg.fr/abs/2013A%26A...552A.124B . This might
+  require an alternative way to load catalogs, because we would like
+  to run the fit on stars only, although the CFHT fields we are using
+  to fit that are so redenned that there are essentially no galaxies
+  in them.
+
+*7: Handling the geometry of focal planes. There are several instances
+  (e.g. just above) where we need a mapping from pixel coordinates in
+  a given chip to position in the focal plane (or in some tangent
+  plane). This is for example useful to assemble catalogs from
+  different chips from te same exposure in order to match the whole
+  exposure at once to an external catalog. It models as well optical
+  distortions, the removal of which is often helpful when it comes to
+  combinatorial matching. Its is also often necessary when it comes to
+  corrections of specifics of the instrument (e.g. non uniform
+  filters). We are fitting such a model in ConstrainedPolyModel, but
+  how to we output it, and retrieve it later?
+ 
+
+*6: Replace the "Preferences" class of gastro by the stack mechanism
   used to transfer constants from python to C++. There are such
   quantities in Associations.cc, ConstrainedPolyModel.cc and probably
   SimplePolyModel.cc (the polynomial degree). Sometimes, the label
   "propagate those into python" tags the declaration of quantities.
 
-* Add an outlier rejection of associations to the "USNO" catalog in
-   AstromFit.cc
-
-* Change the name of the LSDerivative routines in AstromFit, because
+*5: Add an outlier rejection of associations to the "USNO" catalog in
+   AstromFit.cc : 
+    DONE:  there is a single routine that handles both kinds of terms.
+     
+*4: Change the name of the LSDerivative routines in AstromFit, because
    python cannot handle routines with the same name.
-  -> DONE.  In fact swig handles routines with the same name. 
+  DONE:  In fact swig handles routines with the same name. 
 
-* Check all direct readings of the FITS headers in the CcdImage
+*3: Check all direct readings of the FITS headers in the CcdImage
   constructor.  They should "just work" when we switch instrument. The
   stack in principle has a mechanism for providing such abstractions
   (Chip number, shoot number, latitude of the observatory, airmass,
   ...)
-   
+  Done ? I don't think so
 
 * Check that GtransfoPoly::fit still works with Eigen routines
--> DONE (test implemented).
+  -> DONE (test implemented).
 
 
  
