@@ -1,3 +1,15 @@
 ===============================================================================
 Simultaneous astrometry 
 ===============================================================================
+
+Prerequites
+===========
+
+We should use C++11
+
+at CCIN2P3:
+to get version g++ 4.9.1:
+
+  export PATH=/opt/rh/devtoolset-3/root/usr/bin:${PATH}
+
+This package needs **micro_cholmod**
