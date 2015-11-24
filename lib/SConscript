@@ -1,3 +1,9 @@
 # -*- python -*-
-from lsst.sconsUtils import scripts
+from lsst.sconsUtils import scripts, targets, env
+
+for flag in ("-fexceptions", "-DNSUPERNODAL", "-DNPARTITION"):
+    env["CFLAGS"].append(flag)
+    env["CXXFLAGS"].append(flag)
+
 scripts.BasicSConscript.lib()
+
