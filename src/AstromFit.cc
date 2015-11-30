@@ -63,6 +63,9 @@ class CholmodSupernodalLLT2 : public Eigen::CholmodBase<_MatrixType, _UpLo, Chol
     {
       m_cholmod.final_asis = 1;
       m_cholmod.supernodal = CHOLMOD_SUPERNODAL;
+      // In CholmodBase::CholmodBase(), the following statement is missing in
+      // SuiteSparse 3.2.0.8. Fixed in 3.2.7
+      Base::m_shiftOffset[0] = Base::m_shiftOffset[1] = RealScalar(0.0);
     }
 };
 #endif
@@ -82,7 +85,8 @@ class CholmodSimplicialLDLT2 : public Eigen::CholmodBase<_MatrixType, _UpLo, Cho
   public:
     
     typedef _MatrixType MatrixType;
-  typedef typename MatrixType::Index Index;
+    typedef typename MatrixType::Index Index;
+    typedef typename MatrixType::RealScalar RealScalar;
     
     CholmodSimplicialLDLT2() : Base() { init(); }
 
@@ -121,6 +125,9 @@ class CholmodSimplicialLDLT2 : public Eigen::CholmodBase<_MatrixType, _UpLo, Cho
     {
       m_cholmod.final_asis = 1;
       m_cholmod.supernodal = CHOLMOD_SIMPLICIAL;
+      // In CholmodBase::CholmodBase(), the following statement is missing in
+      // SuiteSparse 3.2.0.8. Fixed in 3.2.7
+      Base::m_shiftOffset[0] = Base::m_shiftOffset[1] = RealScalar(0.0);
     }
 };
 
