@@ -1310,7 +1310,7 @@ GtransfoPoly *InversePolyTransfo(const Gtransfo &Direct, const Frame &F, const d
 	sm.push_back(StarMatch(out, in , NULL,NULL));
       }
   unsigned npairs = sm.size();
-  int maxdeg = 4;
+  int maxdeg = 9;
   int degree;
   GtransfoPoly *poly = NULL;
   for (degree=1; degree<=maxdeg; ++degree)
