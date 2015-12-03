@@ -225,13 +225,28 @@ class SimAstromTask(pipeBase.CmdLineTask):
         chi2 = fit.ComputeChi2()
         print chi2
 
-        for i in range(80): 
-            nout = fit.RemoveOutliers(5.) # 5 sigma
-            fit.Minimize("Distortions Positions")
+        for i in range(20) :
+            r = fit.Minimize("Distortions Positions",5) # outliers removal at 5 sigma.
             chi2 = fit.ComputeChi2()
-            
             print chi2
-            if (nout == 0) : break
+            if r == 0 :
+                print "fit has converged - no more outliers"
+                break
+            elif r == 2 :
+                print "minimization failed"
+            elif r == 1 :
+                print "still some ouliers but chi2 increases - retry"
+            else :
+                break
+                print "unxepected return code from Minimize"
+        
+#        for i in range(80): 
+#            nout = fit.RemoveOutliers(5.) # 5 sigma
+#            fit.Minimize("Distortions Positions")
+#            chi2 = fit.ComputeChi2()
+            
+#            print chi2
+#            if (nout == 0) : break
             
         # Fill reference and measurement n-tuples for each tract
         tupleName = "res_" + str(dataRef.dataId["tract"]) + ".list"

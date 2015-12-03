@@ -949,9 +949,15 @@ static void write_vect_in_fits(const Eigen::VectorXd &V, const string &FitsName)
 /*! This is a complete Newton Raphson step. Compute first and 
   second derivatives, solve for the step and apply it, without 
   a line search. */
-bool AstromFit::Minimize(const std::string &WhatToFit, const double NSigRejCut)
+unsigned AstromFit::Minimize(const std::string &WhatToFit, const double NSigRejCut)
 {
   AssignIndices(WhatToFit);
+  
+  // return code can take 3 values : 
+  // 0 : fit has converged - no more outliers
+  // 1 : still some ouliers but chi2 increases
+  // 2 : factorization failed
+  unsigned returnCode = 0;
 
   // TODO : write a guesser for the number of triplets
   unsigned nTrip = (_LastNTrip) ? _LastNTrip: 1e6;
@@ -1002,7 +1008,7 @@ bool AstromFit::Minimize(const std::string &WhatToFit, const double NSigRejCut)
   if (chol.info() != Eigen::Success)
     {
       cout << "ERROR: AstromFit::Minimize : factorization failed " << endl;
-      return false;
+      return 2;
     }
 
   tend = clock();
@@ -1023,6 +1029,7 @@ bool AstromFit::Minimize(const std::string &WhatToFit, const double NSigRejCut)
       if (current_chi2.chi2 > old_chi2)
 	{
 	  cout << "WARNING: chi2 went up, exiting outlier rejection loop" << endl;
+	  returnCode = 1;
 	  break;
 	}
       old_chi2 = current_chi2.chi2;
@@ -1057,7 +1064,7 @@ bool AstromFit::Minimize(const std::string &WhatToFit, const double NSigRejCut)
 
   cout << "INFO: total number of outliers " << tot_outliers << endl;
 
-  return true;
+  return returnCode;
 }
 
 /* DEBUGGING routine */
