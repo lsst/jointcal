@@ -258,7 +258,7 @@ class SimAstromTask(pipeBase.CmdLineTask):
         for im in imList :
             tanSip = spm.ProduceSipWcs(im)
             frame = im.ImageFrame()
-            tanWcs = GtransfoToTanWcs(tanSip, frame, False)
+            tanWcs = afwImage.TanWcs.cast(GtransfoToTanWcs(tanSip, frame, False))
             
             name = im.Name()
             visit, ccd = name.split('_')
