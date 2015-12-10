@@ -72,7 +72,7 @@ class MeasuredStar : public BaseStar
   //! the inverse of the mag variance
   double MagWeight() const { return (flux*flux/(eflux*eflux));}
 
-  const FittedStar* GetFittedStar() const { return fittedStar;};
+  const FittedStar* GetFittedStar() const { return fittedStar.get();};
 
   const CcdImage &GetCcdImage()  const { return *ccdImage;};
 

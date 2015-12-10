@@ -160,13 +160,13 @@ void Associations::AssociateCatalogs(const double MatchCutInArcSec,
       for (StarMatchIterator i= smList->begin(); i != smList->end(); ++i)
 	{
 	  StarMatch &starMatch = *i;
-	  const BaseStar *bs = starMatch.s1;
-	  const MeasuredStar *ms_const = dynamic_cast<const MeasuredStar *>(bs);
-	  MeasuredStar *ms= const_cast<MeasuredStar *>(ms_const);
-	  bs = starMatch.s2;
-	  const FittedStar *fs_const = dynamic_cast<const FittedStar *>(bs);
-	  FittedStar * fs = const_cast<FittedStar *>(fs_const);
-	  ms->SetFittedStar(fs);
+	  const BaseStar &bs = *starMatch.s1;
+	  const MeasuredStar &ms_const = dynamic_cast<const MeasuredStar &>(bs);
+	  MeasuredStar &ms= const_cast<MeasuredStar &>(ms_const);
+	  const BaseStar &bs2 = *starMatch.s2;
+	  const FittedStar &fs_const = dynamic_cast<const FittedStar &>(bs2);
+	  FittedStar &fs = const_cast<FittedStar &>(fs_const);
+	  ms.SetFittedStar(&fs);
 	  matchedCount++;
 	  
 	  //	  if(  fs->Distance(toCommonTangentPlane->apply(*ms)) > 1.5/3600. )
@@ -364,14 +364,14 @@ void Associations::AssociateRefStars(const double &MatchCutInArcSec,
   for (StarMatchIterator i= smList->begin(); i != smList->end(); ++i)
     {
       StarMatch &starMatch = *i;
-      const BaseStar *bs = starMatch.s1;
-      const RefStar *rs_const = dynamic_cast<const RefStar *>(bs);
-      RefStar *rs = const_cast<RefStar *>(rs_const);
-      bs = starMatch.s2;
-      const FittedStar *fs_const = dynamic_cast<const FittedStar *>(bs);
-      FittedStar *fs = const_cast<FittedStar *>(fs_const);
+      const BaseStar &bs = *starMatch.s1;
+      const RefStar &rs_const = dynamic_cast<const RefStar &>(bs);
+      RefStar &rs = const_cast<RefStar &>(rs_const);
+      const BaseStar &bs2 = *starMatch.s2;
+      const FittedStar &fs_const = dynamic_cast<const FittedStar &>(bs2);
+      FittedStar &fs = const_cast<FittedStar &>(fs_const);
       //rs->SetFittedStar(*fs);
-      fs->SetRefStar(rs);
+      fs.SetRefStar(&rs);
     }
 
   std::cout << " associated " << smList->size() << " REFERENCE stars " 
@@ -422,8 +422,7 @@ void Associations::SelectFittedStars()
   for (FittedStarIterator fi = fittedStarList.begin();
        fi != fittedStarList.end();  )
     {
-      FittedStar *s = *fi;
-      if (s->MeasurementCount() == 0) fi = fittedStarList.erase(fi);
+      if ((*fi)->MeasurementCount() == 0) fi = fittedStarList.erase(fi);
       else ++fi;
     }
 

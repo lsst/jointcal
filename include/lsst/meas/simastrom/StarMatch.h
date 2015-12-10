@@ -126,7 +126,7 @@ inline bool DecPhoRatio(const StarMatch &S1, const StarMatch &S2)
 
 inline bool CompareS1(const StarMatch &one, const StarMatch &two)
 { 
-  return ((one.s1 == two.s1) ? (one.distance < two.distance) : ( (const BaseStar*) one.s1 > (const BaseStar *) two.s1));
+  return ((one.s1 == two.s1) ? (one.distance < two.distance) : ( &(*one.s1) > &(*two.s1)));
 }
 
 inline bool SameS1(const StarMatch &one, const StarMatch &two)
@@ -136,7 +136,7 @@ inline bool SameS1(const StarMatch &one, const StarMatch &two)
 
 inline bool CompareS2(const StarMatch &one, const StarMatch &two)
 { 
-  return ((one.s2 == two.s2) ? (one.distance < two.distance) : ((const BaseStar *)one.s2 > (const BaseStar *) two.s2));
+  return ((one.s2 == two.s2) ? (one.distance < two.distance) : (&(*one.s2) > &(*two.s2)));
 }
 
 inline bool SameS2(const StarMatch &one, const StarMatch &two)

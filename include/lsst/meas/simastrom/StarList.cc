@@ -149,16 +149,18 @@ for (auto s= this->begin(); s!= this->end() && (count < NHead); ++s, count++)
   }
 }
 
-
+#if 0
 template<class Star>
 bool DecreasingFlux(const Star *S1, const Star *S2)
 {
   return (S1->flux > S2->flux);
 }
+#endif
 
 template<class Star>void StarList<Star>::FluxSort()
 {
-  this->sort(&DecreasingFlux<Star>);
+  typedef StarList<Star>::Element E;
+  this->sort([] (const E &E1, const E &E2) {return (E1->flux > E2->flux);});
 }
 
 template<class Star>void StarList<Star>::CutTail(const int NKeep)
@@ -174,7 +176,7 @@ template<class Star>void StarList<Star>::ExtractInFrame(StarList<Star> &Out, con
 {
   for (auto s= this->begin(); s!= this->end(); ++s)
     {
-      const Star *st  = *s;
+      auto &st  = *s;
       if (aFrame.InFrame(*st))
 	{
 	  Star *copy = new Star(*st);

@@ -36,15 +36,18 @@ template <class T> void intrusive_ptr_release(T* p)
 }
 
 
-template <class T> struct CountedRef: public boost::intrusive_ptr<T> 
+
+// complicated typedef for templates ("alias typedef"):
+template <typename T> using CountedRef = boost::intrusive_ptr<T> ;
+#if 0
 {
   CountedRef() : boost::intrusive_ptr<T>() {};
   CountedRef(T* t) :  boost::intrusive_ptr<T>(t) {};
   CountedRef(const CountedRef<T> &Other) : boost::intrusive_ptr<T>(Other) {};
 
-  operator T*() const { return boost::intrusive_ptr<T>::get();}
+  //  operator T*() const { return boost::intrusive_ptr<T>::get();}
 };
-
+#endif
 
 }}}
 
