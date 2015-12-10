@@ -797,7 +797,7 @@ void AstromFit::RemoveMeasOutliers(MeasuredStarList &Outliers)
   for (auto i = Outliers.begin(); i!= Outliers.end(); ++i)
     {
       MeasuredStar &ms = **i;
-      FittedStar *fs = ms.GetFittedStar();
+      FittedStar *fs = const_cast<FittedStar *>(ms.GetFittedStar());
       ms.SetValid(false); 
       fs->MeasurementCount()--; // could be put in SetValid
     }

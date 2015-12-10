@@ -160,10 +160,12 @@ void Associations::AssociateCatalogs(const double MatchCutInArcSec,
       for (StarMatchIterator i= smList->begin(); i != smList->end(); ++i)
 	{
 	  StarMatch &starMatch = *i;
-	  BaseStar *bs = starMatch.s1;
-	  MeasuredStar *ms = dynamic_cast<MeasuredStar *>(bs);
+	  const BaseStar *bs = starMatch.s1;
+	  const MeasuredStar *ms_const = dynamic_cast<const MeasuredStar *>(bs);
+	  MeasuredStar *ms= const_cast<MeasuredStar *>(ms_const);
 	  bs = starMatch.s2;
-	  FittedStar *fs = dynamic_cast<FittedStar *>(bs);
+	  const FittedStar *fs_const = dynamic_cast<const FittedStar *>(bs);
+	  FittedStar * fs = const_cast<FittedStar *>(fs_const);
 	  ms->SetFittedStar(fs);
 	  matchedCount++;
 	  
@@ -362,10 +364,12 @@ void Associations::AssociateRefStars(const double &MatchCutInArcSec,
   for (StarMatchIterator i= smList->begin(); i != smList->end(); ++i)
     {
       StarMatch &starMatch = *i;
-      BaseStar *bs = starMatch.s1;
-      RefStar *rs = dynamic_cast<RefStar *>(bs);
+      const BaseStar *bs = starMatch.s1;
+      const RefStar *rs_const = dynamic_cast<const RefStar *>(bs);
+      RefStar *rs = const_cast<RefStar *>(rs_const);
       bs = starMatch.s2;
-      FittedStar *fs = dynamic_cast<FittedStar *>(bs);
+      const FittedStar *fs_const = dynamic_cast<const FittedStar *>(bs);
+      FittedStar *fs = const_cast<FittedStar *>(fs_const);
       //rs->SetFittedStar(*fs);
       fs->SetRefStar(rs);
     }
@@ -389,7 +393,7 @@ void Associations::SelectFittedStars()
 	{
 	  MeasuredStar &mstar = **mi;
 	  
-	  FittedStar *fstar = mstar.GetFittedStar();
+	  const FittedStar *fstar = mstar.GetFittedStar();
 	  if (!fstar) {++mi;continue;}
 	  int nmes = fstar->MeasurementCount(); // DEBUG
 	  
@@ -399,7 +403,8 @@ void Associations::SelectFittedStars()
 	  if (!fstar->GetRefStar() 
 	      &&  fstar->MeasurementCount()< minMeasurementCount)
 	    {
-	      mstar.GetFittedStar()->MeasurementCount()--;
+	      FittedStar *f = const_cast<FittedStar *>(fstar);
+	      f->MeasurementCount()--;
 	      mi = catalog.erase(mi);
 	      // DEBUG
 	      if (fstar && fstar->MeasurementCount() != nmes -1)
@@ -440,9 +445,10 @@ void Associations::AssignMags()
 	   mi != catalog.end(); ++mi)
 	{
 	  MeasuredStar &mstar = **mi;
-	  FittedStar *fstar = mstar.GetFittedStar();
+	  const FittedStar *fstar = mstar.GetFittedStar();
 	  if (!fstar) continue;
-	  fstar->AddMagMeasurement(mstar.Mag(), mstar.MagWeight());
+	  FittedStar *f= const_cast<FittedStar *>(fstar);
+	  f->AddMagMeasurement(mstar.Mag(), mstar.MagWeight());
 	}
     }
 }

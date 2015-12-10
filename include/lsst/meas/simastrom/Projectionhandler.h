@@ -37,7 +37,7 @@ class IdentityProjection : public ProjectionHandler
 /* ! We arbitrarily chose that all chips from a same shoot have the same tangent point, but other choices can be made. */
 class OneTPPerShoot : public ProjectionHandler
 {
-  typedef std::map<const unsigned, CountedRef<Gtransfo> > TransfoMap;
+  typedef std::map<const unsigned, CountedRef<const Gtransfo> > TransfoMap;
   TransfoMap tMap;
 
  public:
