@@ -11,7 +11,7 @@ namespace simastrom {
 using namespace std;
 
 // could become an argument of the constructor..
-#define NSLICE 100
+#define NSLICE 100U
 
 
 // used to sort the array of pointers.
@@ -27,32 +27,22 @@ static bool CompareY(const BaseStar* p1, const BaseStar* p2)
 }
 
 
-FastFinder::FastFinder(const BaseStarList &List)
+FastFinder::FastFinder(const BaseStarList &List) : baselist(List), count(List.size()), stars(count), index(nslice+1)
 {
-  baselist = &List;
-  count = List.size();
-  stars = NULL;
-  index = NULL;
-  if (count == 0) return;
-
-  stars = new const BaseStar*[count];
-
   // fill "stars"
   int j=0;
   for (BaseStarCIterator ci = List.begin(); ci != List.end(); ++ci)
     {
-      stars[j] = *ci;
+      stars[j] = ci->get();
       j++;
     }
-  sort(stars,stars+count,CompareX);
+
+  sort(stars.begin(), stars.end(),[](const stars_element &E1, const stars_element &E2) -> bool { return (E1->x < E2->x);} );
 
   xmin = stars[0]->x;
   xmax = stars[count-1]->x;
   nslice = min(NSLICE,count);
   if (xmin == xmax) nslice = 1;
-
-  // index enables fast access to a given x slice.
-  index = new int[nslice+1]; // "+1" because index contains the limits of NSLICE slices.
 
   // the x size of each slice:
   xstep = (xmax-xmin)/nslice;
@@ -60,30 +50,25 @@ FastFinder::FastFinder(const BaseStarList &List)
 
   // fill the index array with the first star beyond the slice limit.
   index[0] = 0; // first
-  int istar=0;
-  for (int islice=1; islice<nslice; ++islice)
+  unsigned istar=0;
+  for (unsigned islice=1; islice<nslice; ++islice)
     {
       double xend = xmin+(islice)*xstep;
       while (istar < count && stars[istar]->x < xend) ++istar;
       index[islice] = istar;
     }
   index[nslice] = count; // last
-  for (int islice=0; islice<nslice; ++islice)
+  for (unsigned islice=0; islice<nslice; ++islice)
     {
-      sort(stars+index[islice], stars+index[islice+1], CompareY);  // sort each slice in y.
+      sort(stars.begin()+index[islice], stars.begin()+index[islice+1], CompareY);  // sort each slice in y.
     }
   //dump();
 }
 
-FastFinder::~FastFinder()
-{ 
-  if (stars) delete [] stars; 
-  if (index) delete [] index;}
-
 
 void FastFinder::dump() const
 {
-  for (int i=0; i<count; ++i)
+  for (unsigned i=0; i<count; ++i)
     {
       stars[i]->dump();
     }
@@ -151,14 +136,14 @@ const BaseStar *FastFinder::SecondClosest(const Point &Where,
    It is nor clear to me (P.A) why they are different... but they really are.
 */
 
-const BaseStar **FastFinder::locate_y_start(const BaseStar **Begin, const BaseStar **End, const double &YVal) const
+FastFinder::pstar FastFinder::locate_y_start(pstar Begin, pstar End, const double &YVal) const
 {
-  if (!Begin || Begin == End) return NULL;
+  if (Begin==stars.end() || Begin == End) return stars.end();
   int span = End - Begin -1;
   while (span > 1)
     {
       int half_span = span/2;
-      const BaseStar **middle = Begin + half_span;
+      pstar middle = Begin + half_span;
       if ((*middle)->y < YVal)
 	{
 	  Begin += half_span;
@@ -173,14 +158,14 @@ const BaseStar **FastFinder::locate_y_start(const BaseStar **Begin, const BaseSt
 }
 
 
-const BaseStar **FastFinder::locate_y_end(const BaseStar **Begin, const BaseStar **End, const double &YVal) const
+FastFinder::pstar FastFinder::locate_y_end(pstar Begin, pstar End, const double &YVal) const
 {
-  if (!Begin) return NULL;
+  if (Begin==stars.end()) return stars.end();
   int span = End - Begin -1;
   while (span > 1)
     {
       int half_span = span/2;
-      const BaseStar **middle = End - half_span;
+      pstar middle = End - half_span;
       if ((*middle)->y > YVal)
 	{
 	  End -= half_span;
@@ -195,40 +180,40 @@ const BaseStar **FastFinder::locate_y_end(const BaseStar **Begin, const BaseStar
 }
 
 
-void FastFinder::yslice(const int iSlice, const double YStart, const double YEnd, const BaseStar **&Start, const BaseStar **&End) const
+void FastFinder::yslice(const int iSlice, const double YStart, const double YEnd, pstar &Start, pstar &End) const
 {
-  Start = locate_y_start(stars+index[iSlice], stars+index[iSlice+1],  YStart);
-  End   = locate_y_end(Start,stars+index[iSlice+1], YEnd);
+  Start = locate_y_start(stars.begin()+index[iSlice], stars.begin()+index[iSlice+1],  YStart);
+  End   = locate_y_end(Start,stars.begin()+index[iSlice+1], YEnd);
 }
 
 FastFinder::Iterator  FastFinder::begin_scan(const Point &Where, const double &MaxDist) const
 {
-  FastFinder::Iterator iterator;
-  iterator.finder = this;
+  FastFinder::Iterator iterator(this);
   if (xstep != 0)
     {
       iterator.startSlice = max(0,int((Where.x-MaxDist-xmin)/xstep));
-      iterator.endSlice = min(nslice,int((Where.x+MaxDist-xmin)/xstep)+1);
+      int endslice = min(int(nslice),int((Where.x+MaxDist-xmin)/xstep)+1);
+      iterator.endSlice = (endslice > 0) ? endslice : 0;
     }
   else 
     {
       iterator.startSlice = 0;
       iterator.endSlice = 1;
     }
-  iterator.current = NULL;
+  iterator.current = stars.end();
   if (iterator.startSlice >= nslice || iterator.endSlice < 0) return iterator;
-  iterator.current = NULL;
+  iterator.current = stars.end();
   iterator.yStart = Where.y - MaxDist;
   iterator.yEnd   = Where.y + MaxDist;
-  iterator.current = iterator.pend = NULL;
+  iterator.current = iterator.pend = stars.end();
   iterator.currentSlice = iterator.startSlice - 1;
   ++iterator;
   return iterator;
 }
 
-const BaseStar*  FastFinder::Iterator::operator*() const
+FastFinder::stars_element  FastFinder::Iterator::operator*() const
 {
-  if (current) return *current; else return NULL;
+  if (current==null_value) return *current; else return NULL;
 }
 
 void FastFinder::Iterator::operator++()
@@ -238,18 +223,19 @@ void FastFinder::Iterator::operator++()
   do 
     {
       currentSlice++;
-      if (currentSlice >= endSlice) {current = NULL; return;}
+      if (currentSlice >= endSlice) {current = null_value; return;}
       finder->yslice(currentSlice, yStart, yEnd, current, pend);
-    } while(current == NULL);
+    } while(current == null_value);
   check();
 }
 
 
 void FastFinder::Iterator::check() const
 {
-  if (current && (current < finder->stars || current >= finder->stars+finder->count))
+  if (current != null_value && (current < finder->stars.begin() || current >= finder->stars.begin()+finder->count))
     {
-      std::cout << " alerte !! " << current << " " << finder->stars << ' ' << finder->stars+finder->count << std::endl;
+      std::cout << " alerte !! " << *current << " " << *(finder->stars.begin()) << ' ' << *(finder->stars.begin()+finder->count) << std::endl;
+      exit(1);
     }
 }
 

@@ -1,6 +1,7 @@
 #ifndef FASTFINDER__H
 #define FASTFINDER__H
 
+#include <vector>
 #include "lsst/meas/simastrom/BaseStar.h"
 
 namespace lsst {
@@ -30,17 +31,21 @@ class FastFinder
 {
   //  private :
   public :
-  const BaseStar **stars;        // array of pointers to objects in the StarList 
+  const BaseStarList baselist; // pointer to the initial list of stars
+  unsigned count;               // total number of objects (size of stars).
+  std::vector<const BaseStar*>  stars;
+  typedef decltype(stars)::value_type stars_element;
+  typedef decltype(stars)::const_iterator pstar;
+  std::vector<unsigned> index;              // index in "stars" of first object of each slice.
   double xmin,xmax, xstep; // x interval, slice size 
-  int nslice; // number of slices
-  int *index;              // index in "stars" of first object of each slice.
-  int count;               // total number of objects (size of stars).
-  const BaseStarList* baselist; // pointer to the initial list of stars
+  unsigned nslice; // number of slices
+
+
+
 
 public :
     //! -
   FastFinder(const BaseStarList &List);
-  ~FastFinder();
   //! -
   const BaseStar *FindClosest(const Point &Where, const double MaxDist, 
 			      bool (*SkipIt)(const BaseStar *) = NULL) const;
@@ -57,26 +62,27 @@ public :
 
   class Iterator {
     public : // could be made private, but what for??
-    int startSlice;
-    int endSlice;
-    int currentSlice;
-    double yStart, yEnd;
-    const BaseStar **current, **pend;
     const FastFinder *finder;
+    unsigned startSlice;
+    unsigned endSlice;
+    unsigned currentSlice;
+    double yStart, yEnd;
+    pstar current, pend, null_value;
     void check() const;
 
   public:
+  Iterator(const FastFinder *f) : finder(f), null_value(f->stars.end()) {}
     void operator++() ;
-    const BaseStar* operator*() const;
+    stars_element operator*() const;
   };
 
 #ifndef SWIG
   Iterator begin_scan(const Point &Where, const double &MaxDist) const;
 #endif
 
-  void yslice(const int iSlice, const double YStart, const double YEnd, const BaseStar **&Start, const BaseStar **&End) const;
-  const BaseStar** locate_y_start(const BaseStar **Begin, const BaseStar **End, const double &YVal) const;
-  const BaseStar** locate_y_end(const BaseStar **Begin, const BaseStar **End, const double &YVal) const;
+  void yslice(const int iSlice, const double YStart, const double YEnd, pstar &Start, pstar &End) const;
+  pstar locate_y_start(pstar Begin, pstar End, const double &YVal) const;
+  pstar locate_y_end(pstar Begin, pstar End, const double &YVal) const;
 
 };
 
