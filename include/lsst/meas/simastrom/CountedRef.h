@@ -24,6 +24,8 @@ struct RefCount
 
 };
 
+/* The two follwing routines have to be provided by the end user when
+   using boost::intrusive_ptr. So, here they are: */
 template <class T> void intrusive_ptr_add_ref(T * p)
 {
     if (p) p->refcount++;
@@ -36,18 +38,8 @@ template <class T> void intrusive_ptr_release(T* p)
 }
 
 
-
-// complicated typedef for templates ("alias typedef"):
+// complicated typedef for templates (aka "alias typedef"):
 template <typename T> using CountedRef = boost::intrusive_ptr<T> ;
-#if 0
-{
-  CountedRef() : boost::intrusive_ptr<T>() {};
-  CountedRef(T* t) :  boost::intrusive_ptr<T>(t) {};
-  CountedRef(const CountedRef<T> &Other) : boost::intrusive_ptr<T>(Other) {};
-
-  //  operator T*() const { return boost::intrusive_ptr<T>::get();}
-};
-#endif
 
 }}}
 
