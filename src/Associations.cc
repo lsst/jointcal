@@ -286,11 +286,12 @@ void Associations::CollectLSSTRefStars(lsst::afw::table::SortedCatalogT< lsst::a
 //	if (flux/fluxErr < 10.0 || mag > 20. || mag < 16.) {
 //	    continue;
 //	}
-	BaseStar *s = new BaseStar(ra,dec,mag);
-	s->vx = sqr(0.1/3600/cos(coord.getLatitude()));
-	s->vy = sqr(0.1/3600);
-	s->vxy = 0.;
-	RefStar *r = new RefStar(*s, *s);
+	BaseStar s(ra,dec,mag);
+	// cook up errors: 100 mas per cooordinate
+	s.vx = sqr(0.1/3600/cos(coord.getLatitude()));
+	s.vy = sqr(0.1/3600);
+	s.vxy = 0.;
+	RefStar *r = new RefStar(s, s);
 	refStarList.push_back(r);
     }
       
