@@ -6,6 +6,10 @@
   about using some automatic tool to detect memory problems (leaks in
   particular). 
 
+  Done in branch "memory", itself a spin-off of cholmod-update.
+  Valgrind was run, withou reporting anything worrying, 
+  but not in the stack framework.
+
  *12: Identify how to hand over the photometric scalings to the
   stacking.  At the moment, PhotomFit does not produce any result
   besides a residual ntuple
