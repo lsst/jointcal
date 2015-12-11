@@ -8,40 +8,26 @@ namespace meas {
 namespace simastrom {
 
 
-using namespace std;
 
-// could become an argument of the constructor..
-#define NSLICE 100U
-
-
-// used to sort the array of pointers.
-static bool CompareX(const BaseStar* p1, const BaseStar* p2)
+FastFinder::FastFinder(const BaseStarList &List, const unsigned NXslice) : baselist(List), count(List.size()), stars(count), nslice(NXslice), index(nslice+1)
 {
-  return (p1->x < p2->x);
-}
+  if (count==0) return;
 
-
-static bool CompareY(const BaseStar* p1, const BaseStar* p2)
-{
-  return (p1->y < p2->y);
-}
-
-
-FastFinder::FastFinder(const BaseStarList &List) : baselist(List), count(List.size()), stars(count), index(nslice+1)
-{
   // fill "stars"
-  int j=0;
+  unsigned j=0;
   for (BaseStarCIterator ci = List.begin(); ci != List.end(); ++ci)
     {
       stars[j] = ci->get();
-      j++;
+      ++j;
     }
 
-  sort(stars.begin(), stars.end(),[](const stars_element &E1, const stars_element &E2) -> bool { return (E1->x < E2->x);} );
+  sort(stars.begin(), stars.end(),
+       [](const stars_element &E1, const stars_element &E2) 
+       { return (E1->x < E2->x);} );
 
   xmin = stars[0]->x;
   xmax = stars[count-1]->x;
-  nslice = min(NSLICE,count);
+  nslice = std::min(nslice, count);
   if (xmin == xmax) nslice = 1;
 
   // the x size of each slice:
@@ -60,7 +46,9 @@ FastFinder::FastFinder(const BaseStarList &List) : baselist(List), count(List.si
   index[nslice] = count; // last
   for (unsigned islice=0; islice<nslice; ++islice)
     {
-      sort(stars.begin()+index[islice], stars.begin()+index[islice+1], CompareY);  // sort each slice in y.
+      sort(stars.begin()+index[islice], stars.begin()+index[islice+1], 
+       [](const stars_element &E1, const stars_element &E2) 
+       { return (E1->y < E2->y);} );// sort each slice in y.
     }
   //dump();
 }
@@ -135,7 +123,8 @@ const BaseStar *FastFinder::SecondClosest(const Point &Where,
 /* It is by no means clear the the 2 following routines are actually needed.
    It is nor clear to me (P.A) why they are different... but they really are.
 */
-
+/* Locate the last position (in the sorted array) between Begin and
+   End that lies before YVal.*/
 FastFinder::pstar FastFinder::locate_y_start(pstar Begin, pstar End, const double &YVal) const
 {
   if (Begin==stars.end() || Begin == End) return stars.end();
@@ -157,7 +146,8 @@ FastFinder::pstar FastFinder::locate_y_start(pstar Begin, pstar End, const doubl
   return Begin;
 }
 
-
+/* Locate the first position (in the sorted array) between Begin and
+   End that lies beyond YVal.*/
 FastFinder::pstar FastFinder::locate_y_end(pstar Begin, pstar End, const double &YVal) const
 {
   if (Begin==stars.end()) return stars.end();
@@ -180,43 +170,59 @@ FastFinder::pstar FastFinder::locate_y_end(pstar Begin, pstar End, const double 
 }
 
 
-void FastFinder::yslice(const int iSlice, const double YStart, const double YEnd, pstar &Start, pstar &End) const
+void FastFinder::find_range_in_slice(const int iSlice, 
+				     const double YStart, const double YEnd, 
+				     pstar &Start, pstar &End) const
 {
   Start = locate_y_start(stars.begin()+index[iSlice], stars.begin()+index[iSlice+1],  YStart);
   End   = locate_y_end(Start,stars.begin()+index[iSlice+1], YEnd);
 }
 
+
 FastFinder::Iterator  FastFinder::begin_scan(const Point &Where, const double &MaxDist) const
 {
-  FastFinder::Iterator iterator(this);
-  if (xstep != 0)
+  return FastFinder::Iterator(*this,Where, MaxDist);
+}
+
+using Iterator = FastFinder::Iterator;
+
+
+Iterator::Iterator(const FastFinder &F, const Point &Where, 
+		   const double &MaxDist) 
+  : finder(F), null_value(F.stars.end()) 
+{
+  current = pend = null_value;// does not iterate
+  int startSlice = 0;
+  if (finder.xstep != 0) // means we have several slices
     {
-      iterator.startSlice = max(0,int((Where.x-MaxDist-xmin)/xstep));
-      int endslice = min(int(nslice),int((Where.x+MaxDist-xmin)/xstep)+1);
-      iterator.endSlice = (endslice > 0) ? endslice : 0;
+      startSlice = std::max(0,int((Where.x-MaxDist-finder.xmin)/finder.xstep));
+      /* obviously, endSlice (and starSlice) can be negative. 
+	 This is why slice indices are "int" rather than "unsigned". */
+      endSlice = std::min(int(finder.nslice),int((Where.x+MaxDist-finder.xmin)/finder.xstep)+1);
     }
   else 
     {
-      iterator.startSlice = 0;
-      iterator.endSlice = 1;
+      startSlice = 0;
+      endSlice = 1;
     }
-  iterator.current = stars.end();
-  if (iterator.startSlice >= nslice || iterator.endSlice < 0) return iterator;
-  iterator.current = stars.end();
-  iterator.yStart = Where.y - MaxDist;
-  iterator.yEnd   = Where.y + MaxDist;
-  iterator.current = iterator.pend = stars.end();
-  iterator.currentSlice = iterator.startSlice - 1;
-  ++iterator;
-  return iterator;
+  // beyond limits: 
+  if (startSlice >= int(finder.nslice) || endSlice < 0) return;
+  // we are inside in x, so, we setup the y range:
+  yStart = Where.y - MaxDist;
+  yEnd   = Where.y + MaxDist;
+  /* rather than initializing here, we step back one 
+     slice and let "++" do its job */
+  currentSlice = startSlice -1 ; // again, this requires "int" slices
+  ++(*this);
 }
 
-FastFinder::stars_element  FastFinder::Iterator::operator*() const
+FastFinder::stars_element  Iterator::operator*() const
 {
-  if (current==null_value) return *current; else return NULL;
+  if (current!=null_value) return *current; 
+  return NULL;
 }
 
-void FastFinder::Iterator::operator++()
+void Iterator::operator++()
 {
   if (current != pend) {current++;}
   else
@@ -224,7 +230,7 @@ void FastFinder::Iterator::operator++()
     {
       currentSlice++;
       if (currentSlice >= endSlice) {current = null_value; return;}
-      finder->yslice(currentSlice, yStart, yEnd, current, pend);
+      finder.find_range_in_slice(currentSlice, yStart, yEnd, current, pend);
     } while(current == null_value);
   check();
 }
@@ -232,10 +238,9 @@ void FastFinder::Iterator::operator++()
 
 void FastFinder::Iterator::check() const
 {
-  if (current != null_value && (current < finder->stars.begin() || current >= finder->stars.begin()+finder->count))
+  if (current != null_value && (current < finder.stars.begin() || current >= finder.stars.begin()+finder.count))
     {
-      std::cout << " alerte !! " << *current << " " << *(finder->stars.begin()) << ' ' << *(finder->stars.begin()+finder->count) << std::endl;
-      exit(1);
+      std::cout << "ERROR in FastFinder " << *current << " " << *(finder.stars.begin()) << ' ' << *(finder.stars.begin()+finder.count) << std::endl;
     }
 }
 
