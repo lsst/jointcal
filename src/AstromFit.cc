@@ -513,7 +513,6 @@ struct Chi2Vect : public std::vector<Chi2Entry>
 void AstromFit::GetMeasuredStarIndices(const MeasuredStar &Ms, 
 				       std::vector<unsigned> &Indices) const
 {
-  Indices.clear();
   if (_fittingDistortions)
     {
       const Mapping *mapping = _distortionModel->GetMapping(*Ms.ccdImage);
