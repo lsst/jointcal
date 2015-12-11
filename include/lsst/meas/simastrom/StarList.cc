@@ -38,7 +38,8 @@ template<class Star> int StarList<Star>::read(std::istream & r)
       if ( (c == '@') ) 
 	{
 	  r.getline(buff,4096); 
-	  glob.ProcessLine(buff);
+	  std::cout << "WARNING: ignoring @lines " << std::endl;
+	  //	  glob.ProcessLine(buff);
 	  continue;
 	}
       if ( (c == '#') ) // we jump over the line  (not always ...)
@@ -113,10 +114,12 @@ template<class Star> int StarList<Star>::write(std::ostream & pr) const
   int oldprec = pr.precision();
   pr<< std::setprecision(8);
 
+#if (0)
   // write GlobalValues if any
   std::vector<std::string> globs = glob.OutputLines();
   for (unsigned k = 0; k < globs.size(); ++k)
     pr << '@' << globs[k] << std::endl;
+#endif
 
   // cannot use front() to detect emptyness
   if (this->begin() == this->end()) // empty std::list, and faster than (size() == 0)
@@ -201,7 +204,7 @@ template<class Star>void StarList<Star>::CutEdges(const Frame &aFrame, float min
 template<class Star>void StarList<Star>::CopyTo(StarList<Star> &Copy) const
 {
   Copy.ClearList();
-  Copy.GlobVal() = this->GlobVal();
+  //  Copy.GlobVal() = this->GlobVal();
   for (auto si = this->begin(); si != this->end(); ++si) 
     Copy.push_back(new Star(*(*si)));
 }
