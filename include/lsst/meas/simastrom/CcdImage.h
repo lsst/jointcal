@@ -41,16 +41,16 @@ class CcdImage : public RefCount
   // these 2 transfos are NOT updated when fitting
 //  Gtransfo *readWcs; // i.e. from pix to sky
 //  Gtransfo *inverseReadWcs; // i.e. from sky to pix  
-  BaseTanWcs *readWcs; // i.e. from pix to sky
-  Gtransfo *inverseReadWcs; // i.e. from sky to pix
+  CountedRef<BaseTanWcs> readWcs; // i.e. from pix to sky
+  CountedRef<Gtransfo> inverseReadWcs; // i.e. from sky to pix
 
   // The following ones should probably be mostly removed.
-  Gtransfo *CTP2TP; // go from CommonTangentPlane to this tangent plane.
-  Gtransfo *TP2CTP; // reverse one
-  Gtransfo *pix2CommonTangentPlane;// pixels -> CTP
-  Gtransfo *pix2TP;
+  CountedRef<Gtransfo> CTP2TP; // go from CommonTangentPlane to this tangent plane.
+  CountedRef<Gtransfo> TP2CTP; // reverse one
+  CountedRef<Gtransfo> pix2CommonTangentPlane;// pixels -> CTP
+  CountedRef<Gtransfo> pix2TP;
   
-  Gtransfo* sky2TP;
+  CountedRef<Gtransfo> sky2TP;
   
   std::string riName;
   std::string riDir;
@@ -123,23 +123,23 @@ class CcdImage : public RefCount
 
   //! 
   const Gtransfo* Pix2CommonTangentPlane() const 
-    { return pix2CommonTangentPlane;}
+  { return pix2CommonTangentPlane.get();}
 
   //! 
   const Gtransfo* CommonTangentPlane2TP() const 
-    { return CTP2TP;}
+  { return CTP2TP.get();}
   
   //! 
   const Gtransfo* TP2CommonTangentPlane() const 
-    { return TP2CTP;}
+  { return TP2CTP.get();}
   
   //! 
   const Gtransfo* Pix2TangentPlane() const 
-    { return pix2TP;}
+  { return pix2TP.get();}
 
   //! 
   const Gtransfo* Sky2TP() const 
-    { return sky2TP;}
+  { return sky2TP.get();}
   
   //! returns chip ID
   int Chip() const { return chip;}
@@ -229,10 +229,10 @@ class CcdImage : public RefCount
   //void SetPix2TangentPlane(const Gtransfo *);
   
   //! the wcs read in the header. NOT updated when fitting.
-  const Gtransfo *ReadWCS() const {return readWcs;}
+  const Gtransfo *ReadWCS() const {return readWcs.get();}
   
   //! the inverse of the one above.
-  const Gtransfo *InverseReadWCS() const {return inverseReadWcs;}
+  const Gtransfo *InverseReadWCS() const {return inverseReadWcs.get();}
   
   //! Frame in pixels
   const Frame& ImageFrame() const { return imageFrame;}

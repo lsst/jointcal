@@ -132,9 +132,11 @@ CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceReco
     imageFrame = Frame(lowerLeft, upperRight);
     
     readWcs = new simAstrom::TanSipPix2RaDec(simAstrom::ConvertTanWcs(wcs));
-    
-    TanSipPix2RaDec *tanWcs = dynamic_cast<TanSipPix2RaDec*>(readWcs);
-  
+
+    // use some other variable in case we later have to actually convert the 
+    // read wcs:
+    const BaseTanWcs* tanWcs = readWcs.get();
+
     inverseReadWcs = readWcs->InverseTransfo(0.01, imageFrame);
  
     band = filter;
