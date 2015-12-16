@@ -38,7 +38,8 @@ template<class Star> int StarList<Star>::read(std::istream & r)
       if ( (c == '@') ) 
 	{
 	  r.getline(buff,4096); 
-	  glob.ProcessLine(buff);
+	  std::cout << "WARNING: ignoring @lines " << std::endl;
+	  //	  glob.ProcessLine(buff);
 	  continue;
 	}
       if ( (c == '#') ) // we jump over the line  (not always ...)
@@ -113,10 +114,12 @@ template<class Star> int StarList<Star>::write(std::ostream & pr) const
   int oldprec = pr.precision();
   pr<< std::setprecision(8);
 
+#if (0)
   // write GlobalValues if any
   std::vector<std::string> globs = glob.OutputLines();
   for (unsigned k = 0; k < globs.size(); ++k)
     pr << '@' << globs[k] << std::endl;
+#endif
 
   // cannot use front() to detect emptyness
   if (this->begin() == this->end()) // empty std::list, and faster than (size() == 0)
@@ -149,16 +152,18 @@ for (auto s= this->begin(); s!= this->end() && (count < NHead); ++s, count++)
   }
 }
 
-
+#if 0
 template<class Star>
 bool DecreasingFlux(const Star *S1, const Star *S2)
 {
   return (S1->flux > S2->flux);
 }
+#endif
 
 template<class Star>void StarList<Star>::FluxSort()
 {
-  this->sort(&DecreasingFlux<Star>);
+  typedef StarList<Star>::Element E;
+  this->sort([] (const E &E1, const E &E2) {return (E1->flux > E2->flux);});
 }
 
 template<class Star>void StarList<Star>::CutTail(const int NKeep)
@@ -174,7 +179,7 @@ template<class Star>void StarList<Star>::ExtractInFrame(StarList<Star> &Out, con
 {
   for (auto s= this->begin(); s!= this->end(); ++s)
     {
-      const Star *st  = *s;
+      auto &st  = *s;
       if (aFrame.InFrame(*st))
 	{
 	  Star *copy = new Star(*st);
@@ -199,7 +204,7 @@ template<class Star>void StarList<Star>::CutEdges(const Frame &aFrame, float min
 template<class Star>void StarList<Star>::CopyTo(StarList<Star> &Copy) const
 {
   Copy.ClearList();
-  Copy.GlobVal() = this->GlobVal();
+  //  Copy.GlobVal() = this->GlobVal();
   for (auto si = this->begin(); si != this->end(); ++si) 
     Copy.push_back(new Star(*(*si)));
 }

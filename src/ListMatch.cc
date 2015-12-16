@@ -134,9 +134,9 @@ SegmentList::SegmentList(const BaseStarList &L, const int NStars, const Gtransfo
   for (auto si1 = L.begin(); si1 != siStop; ++si1, rank++) 
     for (auto si2 = siStop; si2 != si1; --si2)
       {
-         const BaseStar *s1 = *si1;
-         const BaseStar *s2 = *si2;
-         push_back(Segment(s1,s2, rank, Tin));
+         const BaseStar &s1 = **si1;
+         const BaseStar &s2 = **si2;
+         push_back(Segment(&s1,&s2, rank, Tin));
       }
   this->sort(DecreasingLength); /* allows a break in loops */
   // cout << " DEBUG : size " << size() << std::endl;
@@ -683,7 +683,7 @@ StarMatchList *ListMatchCollect(const BaseStarList &L1,
       double distance =p2.Distance(*neighbour); 
       if (distance < MaxDist)
 	{
-	  matches->push_back(StarMatch(*p1,*neighbour,*si,neighbour));
+	  matches->push_back(StarMatch(*p1,*neighbour,&(*p1),neighbour));
 	  // assign the distance, since we have it in hand: 
 	  matches->back().distance = distance;
 	}
@@ -743,7 +743,7 @@ StarMatchList *ListMatchCollect(const BaseStarList &L1, const BaseStarList &L2, 
       double distance =p1->Distance(*neighbour); 
       if (distance < MaxDist)
 	{
-	  matches->push_back(StarMatch(*p1,*neighbour,*si,neighbour));
+	  matches->push_back(StarMatch(*p1,*neighbour,&(*p1),neighbour));
 	  // assign the distance, since we have it in hand: 
 	  matches->back().distance = distance;
 	}
@@ -773,9 +773,9 @@ static double transfo_diff(const BaseStarList &List, const Gtransfo *T1, const G
   Point tf2;
   int count = 0;
   for (BaseStarCIterator it = List.begin(); it != List.end(); ++it) {
-    const BaseStar *s = *it;
-    T1->TransformPosAndErrors(*s, tf1);
-    T2->apply(*s, tf2);
+    const BaseStar &s = **it;
+    T1->TransformPosAndErrors(s, tf1);
+    T2->apply(s, tf2);
     double dx = tf1.x - tf2.x;
     double dy = tf1.y - tf2.y;
     diff2 += (tf1.vy*dx*dx + tf1.vx*dy*dy - 2*tf1.vxy*dx*dy) / (tf1.vx*tf1.vy-tf1.vxy*tf1.vxy);

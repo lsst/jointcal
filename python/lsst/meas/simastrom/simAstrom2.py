@@ -134,38 +134,41 @@ class SimAstromTask(pipeBase.CmdLineTask):
         matchCut = 3.0
         assoc.AssociateCatalogs(matchCut)
         
-        # Use external reference catalogs handled by LSST stack mechanism
-        # Get the bounding box overlapping all associated images
-        # ==> This is probably a bad idea to do it this way <==
-        bbox = assoc.GetRaDecBBox()
-        center = afwCoord.Coord(bbox.getCenter(), afwGeom.degrees)
-        corner = afwCoord.Coord(bbox.getMax(), afwGeom.degrees)
-        radius = center.angularSeparation(corner).asRadians()
+        usingAstromNet = False
+        if usingAstromNet :
+            # Use external reference catalogs handled by LSST stack mechanism
+            # Get the bounding box overlapping all associated images
+            # ==> This is probably a bad idea to do it this way <==
+            bbox = assoc.GetRaDecBBox()
+            center = afwCoord.Coord(bbox.getCenter(), afwGeom.degrees)
+            corner = afwCoord.Coord(bbox.getMax(), afwGeom.degrees)
+            radius = center.angularSeparation(corner).asRadians()
         
-        # Get astrometry_net_data path
-        anDir = lsst.utils.getPackageDir('astrometry_net_data')
-        if anDir is None:
-            raise RuntimeError("astrometry_net_data is not setup")
+            # Get astrometry_net_data path
+            anDir = lsst.utils.getPackageDir('astrometry_net_data')
+            if anDir is None:
+                raise RuntimeError("astrometry_net_data is not setup")
 
-        andConfig = AstrometryNetDataConfig()
-        andConfigPath = os.path.join(anDir, "andConfig.py")
-        if not os.path.exists(andConfigPath):
-            raise RuntimeError("astrometry_net_data config file \"%s\" required but not found" %andConfigPath)
-        andConfig.load(andConfigPath)
+            andConfig = AstrometryNetDataConfig()
+            andConfigPath = os.path.join(anDir, "andConfig.py")
+            if not os.path.exists(andConfigPath):
+                raise RuntimeError("astrometry_net_data config file \"%s\" required but not found" %andConfigPath)
+            andConfig.load(andConfigPath)
         
-        task = LoadAstrometryNetObjectsTask.ConfigClass()
-        loader = LoadAstrometryNetObjectsTask(task)
+            task = LoadAstrometryNetObjectsTask.ConfigClass()
+            loader = LoadAstrometryNetObjectsTask(task)
         
-        # Determine default filter associated to the catalog
-        filt, mfilt = andConfig.magColumnMap.items()[0]
-        print "Using", filt, "band for reference flux"
+            # Determine default filter associated to the catalog
+            filt, mfilt = andConfig.magColumnMap.items()[0]
+            print "Using", filt, "band for reference flux"
 
-        refCat = loader.loadSkyCircle(center, afwGeom.Angle(radius, afwGeom.radians), filt).refCat
-        print refCat.getSchema().getOrderedNames()
-        
-#        assoc.CollectRefStars(False) # To use the USNO-A catalog a la Poloka
+            refCat = loader.loadSkyCircle(center, afwGeom.Angle(radius, afwGeom.radians), filt).refCat
+            print refCat.getSchema().getOrderedNames()
+            assoc.CollectLSSTRefStars(refCat, filt)
+        else:
+            assoc.CollectRefStars(False) # To use the USNO-A catalog a la Poloka
 
-        assoc.CollectLSSTRefStars(refCat, filt)
+
         assoc.SelectFittedStars()
         assoc.DeprojectFittedStars() # required for AstromFit
         sky2TP = OneTPPerShoot(assoc.TheCcdImageList())
@@ -182,13 +185,14 @@ class SimAstromTask(pipeBase.CmdLineTask):
         chi2 = fit.ComputeChi2()
         print chi2
 
-        for i in range(30): 
-            nout = fit.RemoveOutliers(5.) # 5 sigma
-            fit.Minimize("Distortions Positions")
-            chi2 = fit.ComputeChi2()
-            
-            print chi2
-            if (nout == 0) : break
+        fit.Minimize("Distortions Positions",5) # outliers removal at 5 sigma.
+#        for i in range(30): 
+#            nout = fit.RemoveOutliers(5.) # 5 sigma
+#            fit.Minimize("Distortions Positions")
+#            chi2 = fit.ComputeChi2()
+#            
+#            print chi2
+#            if (nout == 0) : break
         fit.MakeResTuple("res.list")
             
 

@@ -16,3 +16,4 @@ to get version g++ 4.9.1:
 This package needs **micro_cholmod**
 
 This code successfully compiles using g++ 4.8, 4.9 and clang 3.5
+

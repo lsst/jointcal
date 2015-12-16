@@ -96,8 +96,8 @@ static double *get_dist2_array(const StarMatchList &L, const Gtransfo &T)
 
 int StarMatchList::Dof(const Gtransfo* T) const
 {
-  if (!T) T=transfo;
-  int dof = 2*size() - T->Npar();
+  int npar = (T)? T->Npar() : (&(*transfo)?  transfo->Npar() : 0);
+  int dof = 2*size() - npar;
   return (dof>0) ? dof : 0;
 }
 
@@ -349,7 +349,7 @@ void StarMatchList::ApplyTransfo(StarMatchList &Transformed,
       T1.TransformPosAndErrors(it->point1,p1);
       FatPoint p2;
       T2.TransformPosAndErrors(it->point2, p2);
-      Transformed.push_back(StarMatch(p1, p2, it->s1, it->s2));
+      Transformed.push_back(StarMatch(p1, p2, &*(it->s1), &*(it->s2)));
     }
 }
 

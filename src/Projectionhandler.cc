@@ -27,7 +27,7 @@ const Gtransfo* OneTPPerShoot::Sky2TP(const CcdImage &C) const
 {
   auto it=tMap.find(C.Shoot());
   if (it==tMap.end()) return NULL;
-  return it->second;
+  return &*(it->second);
 }
 
 }}}
