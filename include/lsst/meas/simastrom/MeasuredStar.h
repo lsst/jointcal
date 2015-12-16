@@ -14,10 +14,7 @@ namespace simastrom {
 
 
 
-//class SEStar;
 class CcdImage;
-//class ReducedImage;
-//class fastifstream;
 
 /*! \file */
 
@@ -37,7 +34,7 @@ class MeasuredStar : public BaseStar
   
   private :
 
-    FittedStarRef fittedStar;
+    CountedRef<const FittedStar> fittedStar;
     bool   valid;
 
 
@@ -49,14 +46,12 @@ class MeasuredStar : public BaseStar
     : BaseStar(),
       mag(0.), wmag(0.), eflux(0.), aperrad(0.), 
       ccdImage(0),
-      fittedStar((const FittedStar*)NULL), 
       valid(true) {}
   
   MeasuredStar(const BaseStar &B, const FittedStar *F = NULL) : 
     BaseStar(B), 
     mag(0.), wmag(0.), eflux(0.), aperrad(0.), 
     ccdImage(0),
-    fittedStar(F),
     valid(true)
     
   {
@@ -77,9 +72,7 @@ class MeasuredStar : public BaseStar
   //! the inverse of the mag variance
   double MagWeight() const { return (flux*flux/(eflux*eflux));}
 
-  const FittedStar* GetFittedStar() const { return fittedStar;};
-
-  FittedStar* GetFittedStar()  { return fittedStar;};
+  const FittedStar* GetFittedStar() const { return fittedStar.get();};
 
   const CcdImage &GetCcdImage()  const { return *ccdImage;};
 

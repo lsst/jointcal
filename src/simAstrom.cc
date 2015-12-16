@@ -109,7 +109,7 @@ trapfpe ()
     
     // Create and load an Association object
     Associations *assoc = new Associations();    
-    for (int i=0; i<_sourceList.size(); i++) {
+    for (unsigned i=0; i<_sourceList.size(); i++) {
         assoc->AddImage(_sourceList[i], _wcsList[i], _metaList[i], _bboxList[i], _filterList[i], 
         _calibList[i], _visitList[i], _ccdList[i], _cameraList[i], control);
     }

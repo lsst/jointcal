@@ -197,7 +197,8 @@ void PhotomFit::OutliersContributions(MeasuredStarList &Outliers,
       const CcdImage &ccd = *(out.ccdImage);
       LSDerivatives(ccd, TList, Grad, &tmp);
       out.SetValid(false);
-      out.GetFittedStar()->MeasurementCount()--;
+      FittedStar *fs = const_cast<FittedStar *>(out.GetFittedStar());
+      fs->MeasurementCount()--;
     }
 }
 

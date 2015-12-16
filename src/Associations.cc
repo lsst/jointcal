@@ -160,11 +160,13 @@ void Associations::AssociateCatalogs(const double MatchCutInArcSec,
       for (StarMatchIterator i= smList->begin(); i != smList->end(); ++i)
 	{
 	  StarMatch &starMatch = *i;
-	  BaseStar *bs = starMatch.s1;
-	  MeasuredStar *ms = dynamic_cast<MeasuredStar *>(bs);
-	  bs = starMatch.s2;
-	  FittedStar *fs = dynamic_cast<FittedStar *>(bs);
-	  ms->SetFittedStar(fs);
+	  const BaseStar &bs = *starMatch.s1;
+	  const MeasuredStar &ms_const = dynamic_cast<const MeasuredStar &>(bs);
+	  MeasuredStar &ms= const_cast<MeasuredStar &>(ms_const);
+	  const BaseStar &bs2 = *starMatch.s2;
+	  const FittedStar &fs_const = dynamic_cast<const FittedStar &>(bs2);
+	  FittedStar &fs = const_cast<FittedStar &>(fs_const);
+	  ms.SetFittedStar(&fs);
 	  matchedCount++;
 	  
 	  //	  if(  fs->Distance(toCommonTangentPlane->apply(*ms)) > 1.5/3600. )
@@ -284,11 +286,12 @@ void Associations::CollectLSSTRefStars(lsst::afw::table::SortedCatalogT< lsst::a
 //	if (flux/fluxErr < 10.0 || mag > 20. || mag < 16.) {
 //	    continue;
 //	}
-	BaseStar *s = new BaseStar(ra,dec,mag);
-	s->vx = sqr(0.1/3600/cos(coord.getLatitude()));
-	s->vy = sqr(0.1/3600);
-	s->vxy = 0.;
-	RefStar *r = new RefStar(*s, *s);
+	BaseStar s(ra,dec,mag);
+	// cook up errors: 100 mas per cooordinate
+	s.vx = sqr(0.1/3600/cos(coord.getLatitude()));
+	s.vy = sqr(0.1/3600);
+	s.vxy = 0.;
+	RefStar *r = new RefStar(s, s);
 	refStarList.push_back(r);
     }
       
@@ -362,12 +365,14 @@ void Associations::AssociateRefStars(const double &MatchCutInArcSec,
   for (StarMatchIterator i= smList->begin(); i != smList->end(); ++i)
     {
       StarMatch &starMatch = *i;
-      BaseStar *bs = starMatch.s1;
-      RefStar *rs = dynamic_cast<RefStar *>(bs);
-      bs = starMatch.s2;
-      FittedStar *fs = dynamic_cast<FittedStar *>(bs);
+      const BaseStar &bs = *starMatch.s1;
+      const RefStar &rs_const = dynamic_cast<const RefStar &>(bs);
+      RefStar &rs = const_cast<RefStar &>(rs_const);
+      const BaseStar &bs2 = *starMatch.s2;
+      const FittedStar &fs_const = dynamic_cast<const FittedStar &>(bs2);
+      FittedStar &fs = const_cast<FittedStar &>(fs_const);
       //rs->SetFittedStar(*fs);
-      fs->SetRefStar(rs);
+      fs.SetRefStar(&rs);
     }
 
   std::cout << " associated " << smList->size() << " REFERENCE stars " 
@@ -389,7 +394,7 @@ void Associations::SelectFittedStars()
 	{
 	  MeasuredStar &mstar = **mi;
 	  
-	  FittedStar *fstar = mstar.GetFittedStar();
+	  const FittedStar *fstar = mstar.GetFittedStar();
 	  if (!fstar) {++mi;continue;}
 	  int nmes = fstar->MeasurementCount(); // DEBUG
 	  
@@ -399,7 +404,8 @@ void Associations::SelectFittedStars()
 	  if (!fstar->GetRefStar() 
 	      &&  fstar->MeasurementCount()< minMeasurementCount)
 	    {
-	      mstar.GetFittedStar()->MeasurementCount()--;
+	      FittedStar *f = const_cast<FittedStar *>(fstar);
+	      f->MeasurementCount()--;
 	      mi = catalog.erase(mi);
 	      // DEBUG
 	      if (fstar && fstar->MeasurementCount() != nmes -1)
@@ -417,8 +423,7 @@ void Associations::SelectFittedStars()
   for (FittedStarIterator fi = fittedStarList.begin();
        fi != fittedStarList.end();  )
     {
-      FittedStar *s = *fi;
-      if (s->MeasurementCount() == 0) fi = fittedStarList.erase(fi);
+      if ((*fi)->MeasurementCount() == 0) fi = fittedStarList.erase(fi);
       else ++fi;
     }
 
@@ -440,9 +445,10 @@ void Associations::AssignMags()
 	   mi != catalog.end(); ++mi)
 	{
 	  MeasuredStar &mstar = **mi;
-	  FittedStar *fstar = mstar.GetFittedStar();
+	  const FittedStar *fstar = mstar.GetFittedStar();
 	  if (!fstar) continue;
-	  fstar->AddMagMeasurement(mstar.Mag(), mstar.MagWeight());
+	  FittedStar *f= const_cast<FittedStar *>(fstar);
+	  f->AddMagMeasurement(mstar.Mag(), mstar.MagWeight());
 	}
     }
 }

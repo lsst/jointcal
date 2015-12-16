@@ -10,7 +10,7 @@
 //#include "countedref.h"
 #include "lsst/meas/simastrom/Point.h"
 #include "lsst/meas/simastrom/CountedRef.h"
-#include "lsst/meas/simastrom/GlobalVal.h"
+//#include "lsst/meas/simastrom/GlobalVal.h"
 
 namespace lsst {
 namespace meas {
@@ -49,7 +49,7 @@ and the code is stuffed with such loops.
 
 
   template<class Star> class StarList : public std::list <CountedRef<Star> > {
-  GlobalVal glob;
+    //  GlobalVal glob;
 
 public:
   typedef CountedRef<Star> Element;
@@ -81,15 +81,13 @@ public:
   //! obvious meaning
   int read(const std::string &FileName);
 
+#if (0)
   //! enables to access global values (lines starting with '@' in ascii files)
   GlobalVal &GlobVal() { return glob;}
 
   //! enables to access global values (lines starting with '@' in ascii files)
   const GlobalVal &GlobVal() const { return glob;}
-
-  /* the previous one hides the following one ?! */
-  //  void push_back(const Element& e) {std::list<Element>::push_back(e);}
-
+#endif
 
 /* destructor */
   virtual ~StarList() {};
