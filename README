@@ -8,8 +8,12 @@ Prerequites
 We should use C++11
 
 at CCIN2P3:
+
 to get version g++ 4.9.1:
 
   export PATH=/opt/rh/devtoolset-3/root/usr/bin:${PATH}
 
 This package needs **micro_cholmod**
+
+This code successfully compiles using g++ 4.8, 4.9 and clang 3.5
+

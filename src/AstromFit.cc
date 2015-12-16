@@ -1234,8 +1234,7 @@ void AstromFit::MakeRefResTuple(const std::string &TupleName) const
 	    << fs.color << ' ' 
 	    << fs.IndexInMatrix() << ' '
 	    << chi2 << ' ' 
-	    << fs.MeasurementCount() << ' '
-	    << endl;
+	    << fs.MeasurementCount() << endl;
     }// loop on FittedStars
 }
 

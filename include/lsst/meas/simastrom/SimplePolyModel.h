@@ -70,6 +70,7 @@ public :
   //! Cook up a SIP WCS.
   PTR(TanSipPix2RaDec) ProduceSipWcs(const CcdImage &Ccd) const;
 
+  ~SimplePolyModel() {};
 
 };
 
