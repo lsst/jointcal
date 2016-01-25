@@ -101,6 +101,12 @@ class SimAstromConfig(pexConfig.Config):
         dtype = str,
         default = "base_CircularApertureFlux_5",   # base_CircularApertureFlux_17_0 in recent stack version 
     )
+    maxMag = pexConfig.Field(
+        doc = "Maximum magnitude for sources to be included in the fit",
+        dtype = float,
+        default = 22.5, 
+    )
+
 
 class SimAstromTask(pipeBase.CmdLineTask):
  
@@ -134,7 +140,7 @@ class SimAstromTask(pipeBase.CmdLineTask):
     def run(self, ref, tract):
         
         configSel = StarSelectorConfig()
-        ss = StarSelector(configSel, self.config.sourceFluxField)
+        ss = StarSelector(configSel, self.config.sourceFluxField, self.config.maxMag)
         
         print self.config.sourceFluxField
         astromControl = SimAstromControl()
@@ -291,13 +297,14 @@ class StarSelector(object) :
     
     ConfigClass = StarSelectorConfig
 
-    def __init__(self, config, sourceFluxField):
+    def __init__(self, config, sourceFluxField, maxMag):
         """Construct a star selector
         
         @param[in] config: An instance of StarSelectorConfig
         """
         self.config = config
         self.sourceFluxField = sourceFluxField
+        self.maxMag = maxMag
     
     def select(self, srcCat, calib):
 # Return a catalog containing only reasonnable stars / galaxies
@@ -330,7 +337,7 @@ class StarSelector(object) :
             # Reject objects with too large magnitude
             fluxErr = src.get(fluxErrKey)
             mag, magErr = calib.getMagnitude(flux, fluxErr)
-            if mag > 22.5 or magErr > 0.1 or flux/fluxErr < 10 :
+            if mag > self.maxMag or magErr > 0.1 or flux/fluxErr < 10 :
                 continue
             # Reject blends
             if src.get(parentKey) != 0 :
