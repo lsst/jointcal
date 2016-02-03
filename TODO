@@ -22,7 +22,7 @@
 
 *10: Same question as above for the photometry.
 
-*9: Diagnosic plots. We should deliver scripts to produce diagnostic
+*9: (@johannct) Diagnosic plots. We should deliver scripts to produce diagnostic
   plots, as SCAMP does.  Some inspiration can be found in the
   description of CHECKPLOT_TYPE in the scamp documentation (to be
   found on http://www.astromatic.net/software/scamp).
