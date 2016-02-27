@@ -1,18 +1,17 @@
-#include "lsst/meas/simastrom/Eigenstuff.h"
-#include "lsst/meas/simastrom/SimplePolyModel.h"
-#include "lsst/meas/simastrom/SimplePolyMapping.h"
-#include "lsst/meas/simastrom/CcdImage.h"
-#include "lsst/meas/simastrom/Projectionhandler.h"
+#include "lsst/jointcal/Eigenstuff.h"
+#include "lsst/jointcal/SimplePolyModel.h"
+#include "lsst/jointcal/SimplePolyMapping.h"
+#include "lsst/jointcal/CcdImage.h"
+#include "lsst/jointcal/Projectionhandler.h"
 #include "lsst/pex/exceptions.h"
 #include <string>
 
-#include "lsst/meas/simastrom/Gtransfo.h"
+#include "lsst/jointcal/Gtransfo.h"
 
 //const int distortionDegree=3;
 
 namespace lsst {
-namespace meas {
-namespace simastrom {
+namespace jointcal {
 
 // need a way to propagate the requested degree !
 SimplePolyModel::SimplePolyModel(const CcdImageList &L, 
@@ -125,4 +124,4 @@ PTR(TanSipPix2RaDec) SimplePolyModel::ProduceSipWcs(const CcdImage &Ccd) const
 
 
 
-}}}
+}} // end of namespaces

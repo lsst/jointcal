@@ -1,12 +1,11 @@
 #include <iostream>
 
-#include "lsst/meas/simastrom/SimplePhotomModel.h"
-#include "lsst/meas/simastrom/CcdImage.h"
-#include "lsst/meas/simastrom/MeasuredStar.h"
+#include "lsst/jointcal/SimplePhotomModel.h"
+#include "lsst/jointcal/CcdImage.h"
+#include "lsst/jointcal/MeasuredStar.h"
 
 namespace lsst {
-namespace meas {
-namespace simastrom {
+namespace jointcal {
 
 
 
@@ -82,4 +81,4 @@ unsigned SimplePhotomModel::AssignIndices(const std::string &WhatToFit,  unsigne
 
 
 
-}}}
+}} // end of namespaces

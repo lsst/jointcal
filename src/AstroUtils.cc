@@ -5,14 +5,13 @@
 #include <endian.h>
 #include <string.h>
 
-#include "lsst/meas/simastrom/BaseStar.h"
-#include "lsst/meas/simastrom/AstroUtils.h"
-#include "lsst/meas/simastrom/Frame.h"
-#include "lsst/meas/simastrom/Gtransfo.h"
+#include "lsst/jointcal/BaseStar.h"
+#include "lsst/jointcal/AstroUtils.h"
+#include "lsst/jointcal/Frame.h"
+#include "lsst/jointcal/Gtransfo.h"
 
 namespace lsst {
-namespace meas {
-namespace simastrom {
+namespace jointcal {
 
 #ifndef M_PI
 #define     M_PI            3.14159265358979323846  /* pi */
@@ -411,4 +410,4 @@ Frame ApplyTransfo(const Frame& inputframe,const Gtransfo &T, const WhichTransfo
 
 
 
-}}} // end of namespaces
+}} // end of namespaces

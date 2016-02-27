@@ -1,9 +1,9 @@
-#include "lsst/meas/simastrom/Eigenstuff.h"
-#include "lsst/meas/simastrom/SimplePolyModel.h"
-#include "lsst/meas/simastrom/ConstrainedPolyModel.h"
-#include "lsst/meas/simastrom/CcdImage.h"
-#include "lsst/meas/simastrom/Gtransfo.h"
-#include "lsst/meas/simastrom/AstroUtils.h" // ApplyTransfo(Frame)
+#include "lsst/jointcal/Eigenstuff.h"
+#include "lsst/jointcal/SimplePolyModel.h"
+#include "lsst/jointcal/ConstrainedPolyModel.h"
+#include "lsst/jointcal/CcdImage.h"
+#include "lsst/jointcal/Gtransfo.h"
+#include "lsst/jointcal/AstroUtils.h" // ApplyTransfo(Frame)
 
 #include "lsst/pex/exceptions.h"
 namespace pexExcept = lsst::pex::exceptions;
@@ -12,8 +12,7 @@ namespace pexExcept = lsst::pex::exceptions;
 #include <iostream>
 
 namespace lsst {
-namespace meas {
-namespace simastrom {
+namespace jointcal {
 
 /* This code does not contain anything involved. It just maps the
 routines AstromFit needs to what is needed for this two-transfo model.
@@ -285,4 +284,4 @@ bool ConstrainedPolyModel::WriteChipArrangement(const std::string &FileName) con
 }
 #endif
 
-}}} // end of namespaces
+}} // end of namespaces

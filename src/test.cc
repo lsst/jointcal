@@ -16,14 +16,13 @@
 #include "lsst/pex/exceptions.h"
 #include "lsst/afw/image/Wcs.h"
 #include "lsst/afw/geom/Angle.h"
-#include "lsst/meas/simastrom/test.h"
+#include "lsst/jointcal/test.h"
 
 namespace pexExcept = lsst::pex::exceptions;
 namespace afwTable = lsst::afw::table;
 
 namespace lsst {
-namespace meas {
-namespace simastrom {
+namespace jointcal {
     
     void test(
         lsst::afw::table::SourceCatalog const &sourceCat,
@@ -42,4 +41,4 @@ namespace simastrom {
                 count++;
         }
     }
-}}}
+}} // end of namespaces

@@ -18,14 +18,13 @@
 #include "lsst/pex/exceptions.h"
 #include "lsst/afw/image/Wcs.h"
 #include "lsst/afw/geom/Angle.h"
-#include "lsst/meas/simastrom/test2.h"
+#include "lsst/jointcal/test2.h"
 
 namespace pexExcept = lsst::pex::exceptions;
 namespace afwTable = lsst::afw::table;
 
 namespace lsst {
-namespace meas {
-namespace simastrom {
+namespace jointcal {
     
     test2::test2()
 {
@@ -49,4 +48,4 @@ void test2::addMetaList(std::vector<PTR(lsst::daf::base::PropertySet)> ll) {
     std::cout << ll[0]->get<double>("LATITUDE") << std::endl;
 }
     
-}}}
+}} // end of namespaces

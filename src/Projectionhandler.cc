@@ -1,10 +1,9 @@
-#include "lsst/meas/simastrom/Projectionhandler.h"
-#include "lsst/meas/simastrom/Gtransfo.h"
-#include "lsst/meas/simastrom/CcdImage.h"
+#include "lsst/jointcal/Projectionhandler.h"
+#include "lsst/jointcal/Gtransfo.h"
+#include "lsst/jointcal/CcdImage.h"
 
 namespace lsst {
-namespace meas {
-namespace simastrom {
+namespace jointcal {
 
 
 class Mapping;
@@ -30,4 +29,4 @@ const Gtransfo* OneTPPerShoot::Sky2TP(const CcdImage &C) const
   return &*(it->second);
 }
 
-}}}
+}} // end of namespaces

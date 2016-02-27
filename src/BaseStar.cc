@@ -2,15 +2,14 @@
 #include <fstream>
 #include <string.h> // strstr
 
-#include "lsst/meas/simastrom/BaseStar.h"
-#include "lsst/meas/simastrom/StarList.cc"
+#include "lsst/jointcal/BaseStar.h"
+#include "lsst/jointcal/StarList.cc"
 #include "lsst/pex/exceptions.h"
 
 namespace pexExcept = lsst::pex::exceptions;
 
 namespace lsst {
-namespace meas {
-namespace simastrom {
+namespace jointcal {
 
 static double sq(const double &x) { return x*x;}
 
@@ -130,4 +129,4 @@ return atoi( p + strlen(StarName));
 template class StarList<BaseStar>; /* to force instanciation */
 
 
-}}} // end of namespaces
+}} // end of namespaces

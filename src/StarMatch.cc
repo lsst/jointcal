@@ -2,9 +2,9 @@
 #include <fstream>
 #include <iomanip>
 
-#include "lsst/meas/simastrom/Gtransfo.h"
-#include "lsst/meas/simastrom/StarMatch.h"
-#include "lsst/meas/simastrom/BaseStar.h"
+#include "lsst/jointcal/Gtransfo.h"
+#include "lsst/jointcal/StarMatch.h"
+#include "lsst/jointcal/BaseStar.h"
 #include "algorithm" // for copy
 //#include "vutils.h" /* for DArrayMedian */
 
@@ -14,8 +14,7 @@
 */
 
 namespace lsst {
-namespace meas {
-namespace simastrom {
+namespace jointcal {
 
 
 
@@ -404,4 +403,4 @@ double ComputeChi2(const StarMatchList &L, const Gtransfo &T)
 }
 
 
-}}}
+}} // end of namespaces

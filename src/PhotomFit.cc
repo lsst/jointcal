@@ -1,16 +1,16 @@
 #include <iostream>
 #include <iomanip>
 #include <algorithm>
-#include "lsst/meas/simastrom/PhotomFit.h"
-#include "lsst/meas/simastrom/Associations.h"
+#include "lsst/jointcal/PhotomFit.h"
+#include "lsst/jointcal/Associations.h"
 
-#include "lsst/meas/simastrom/Gtransfo.h"
+#include "lsst/jointcal/Gtransfo.h"
 #include "Eigen/Sparse"
 //#include "Eigen/CholmodSupport" // to switch to cholmod
 #include <time.h> // for clock
 #include "lsst/pex/exceptions.h"
 #include <fstream>
-#include "lsst/meas/simastrom/Tripletlist.h"
+#include "lsst/jointcal/Tripletlist.h"
 
 typedef Eigen::SparseMatrix<double> SpMat;
 
@@ -19,8 +19,7 @@ using namespace std;
 static double sqr(const double &x) {return x*x;}
 
 namespace lsst {
-namespace meas {
-namespace simastrom {
+namespace jointcal {
 
 
 PhotomFit::PhotomFit(Associations &A, PhotomModel *M, double FluxError) : 
@@ -679,4 +678,4 @@ void PhotomFit::MakeRefResTuple(const std::string &TupleName) const
 }
 #endif
 
-}}}
+}} // end of namespaces

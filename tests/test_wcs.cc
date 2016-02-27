@@ -5,10 +5,10 @@
 //The boost unit test header
 #include "boost/test/unit_test.hpp"
 
-#include "lsst/meas/simastrom/StarMatch.h"
-#include "lsst/meas/simastrom/Gtransfo.h"
-#include "lsst/meas/simastrom/SipToGtransfo.h"
-#include "lsst/meas/simastrom/Frame.h"
+#include "lsst/jointcal/StarMatch.h"
+#include "lsst/jointcal/Gtransfo.h"
+#include "lsst/jointcal/SipToGtransfo.h"
+#include "lsst/jointcal/Frame.h"
 #include "lsst/afw/image/TanWcs.h"
 #include "lsst/afw/image/Utils.h"
 #include "lsst/afw/fits.h"
@@ -31,10 +31,10 @@ trapfpe ()
 }
  
 
-namespace simAstrom = lsst::meas::simastrom; 
+namespace jointcal = lsst::jointcal; 
 namespace afwImg = lsst::afw::image;
 
-/* Test simAstrom::TanSipPix2RaDec::apply against afwImg::Wcs::pixelToSky */
+/* Test jointcal::TanSipPix2RaDec::apply against afwImg::Wcs::pixelToSky */
 
 BOOST_AUTO_TEST_SUITE(test_transfos)
 
@@ -49,9 +49,9 @@ BOOST_AUTO_TEST_CASE(test_wcs)
   
   const PTR(afwImg::TanWcs) tanWcs = boost::dynamic_pointer_cast<afwImg::TanWcs>(wcs);
   
-  simAstrom::TanSipPix2RaDec gtransfoWcs = simAstrom::ConvertTanWcs(tanWcs);
-  simAstrom::Point where(100.,200.);
-  simAstrom::Point outPol = gtransfoWcs.apply(where);
+  jointcal::TanSipPix2RaDec gtransfoWcs = jointcal::ConvertTanWcs(tanWcs);
+  jointcal::Point where(100.,200.);
+  jointcal::Point outPol = gtransfoWcs.apply(where);
   std::cout << std::setprecision(12) << "Poloka : " << outPol.x << ' ' << outPol.y << std::endl;
   
   lsst::afw::geom::Point2D whereSame(100.,200.);
@@ -78,25 +78,25 @@ BOOST_AUTO_TEST_CASE(test_polyfit)
   
   const PTR(afwImg::TanWcs) tanWcs = boost::dynamic_pointer_cast<afwImg::TanWcs>(wcs);
   
-  simAstrom::TanSipPix2RaDec gtransfoWcs = simAstrom::ConvertTanWcs(tanWcs);
+  jointcal::TanSipPix2RaDec gtransfoWcs = jointcal::ConvertTanWcs(tanWcs);
 
-  simAstrom::StarMatchList sml;
-  simAstrom::BaseStarList bsl1, bsl2;
+  jointcal::StarMatchList sml;
+  jointcal::BaseStarList bsl1, bsl2;
 
   for (double x=10; x<2000; x+= 120)
     for (double y=20; y<4000; y+=160)
       {
-	simAstrom::BaseStar *s1 = new simAstrom::BaseStar(x,y,1);
+	jointcal::BaseStar *s1 = new jointcal::BaseStar(x,y,1);
 	s1->vx = 0.1;
 	s1->vy = 0.2;
 	s1->vxy = 0.05;
-	simAstrom::BaseStar *s2 = new simAstrom::BaseStar();
+	jointcal::BaseStar *s2 = new jointcal::BaseStar();
 	gtransfoWcs.TransformPosAndErrors(*s1, *s2);
 	bsl1.push_back(s1);
 	bsl2.push_back(s2);		       
-	sml.push_back(simAstrom::StarMatch(*s1,*s2,s1,s2));
+	sml.push_back(jointcal::StarMatch(*s1,*s2,s1,s2));
       }
-  simAstrom::GtransfoPoly pol(3);
+  jointcal::GtransfoPoly pol(3);
   double chi2 = pol.fit(sml);
   std::cout << " chi2/ndf " << chi2 << '/' << sml.size()-pol.Npar() << std::endl;
   // since there is no noise, the chi2 should be very very small:
@@ -104,7 +104,7 @@ BOOST_AUTO_TEST_CASE(test_polyfit)
 }
 
 
-/* this routine checks that converting a WCS from afs to simAstrom and
+/* this routine checks that converting a WCS from afs to jointcal and
    back to afw does not change anything. It checks both that pix2sky and 
    sky2pix transformations are preserved. */
 BOOST_AUTO_TEST_CASE(test_wcs_convertions)
@@ -117,10 +117,10 @@ BOOST_AUTO_TEST_CASE(test_wcs_convertions)
   
   const PTR(afwImg::TanWcs) tanWcs = boost::dynamic_pointer_cast<afwImg::TanWcs>(wcs);
   
-  simAstrom::TanSipPix2RaDec gtransfoWcs = simAstrom::ConvertTanWcs(tanWcs);
+  jointcal::TanSipPix2RaDec gtransfoWcs = jointcal::ConvertTanWcs(tanWcs);
   int naxis1 = propSet->get<int>("NAXIS1");
   int naxis2 = propSet->get<int>("NAXIS2");
-  simAstrom::Frame imageFrame(0,0,naxis1,naxis2);
+  jointcal::Frame imageFrame(0,0,naxis1,naxis2);
 
 
 

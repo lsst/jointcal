@@ -7,17 +7,16 @@
 #define     M_PI            3.14159265358979323846  /* pi */
 #endif
 
-#include "lsst/meas/simastrom/BaseStar.h"
-#include "lsst/meas/simastrom/StarMatch.h"
-#include "lsst/meas/simastrom/Gtransfo.h"
-#include "lsst/meas/simastrom/Histo2d.h"
-#include "lsst/meas/simastrom/Histo4d.h"
-#include "lsst/meas/simastrom/FastFinder.h"
-#include "lsst/meas/simastrom/ListMatch.h"
+#include "lsst/jointcal/BaseStar.h"
+#include "lsst/jointcal/StarMatch.h"
+#include "lsst/jointcal/Gtransfo.h"
+#include "lsst/jointcal/Histo2d.h"
+#include "lsst/jointcal/Histo4d.h"
+#include "lsst/jointcal/FastFinder.h"
+#include "lsst/jointcal/ListMatch.h"
 
 namespace lsst {
-namespace meas {
-namespace simastrom {
+namespace jointcal {
 
 
 // cuts.. limits, etc for combinatorial match
@@ -895,4 +894,4 @@ Gtransfo* ListMatchRefine(const BaseStarList& List1, const BaseStarList& List2, 
   return transfo;
 }
 
-}}}
+}} // end of namespaces

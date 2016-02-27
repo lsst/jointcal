@@ -6,9 +6,9 @@
 #include "assert.h"
 #include <sstream>
 
-#include "lsst/meas/simastrom/Gtransfo.h"
-#include "lsst/meas/simastrom/Frame.h"
-#include "lsst/meas/simastrom/StarMatch.h"
+#include "lsst/jointcal/Gtransfo.h"
+#include "lsst/jointcal/Frame.h"
+#include "lsst/jointcal/StarMatch.h"
 #include "lsst/pex/exceptions.h"
 #include "Eigen/Cholesky"
 
@@ -17,8 +17,7 @@ namespace pexExcept = lsst::pex::exceptions; //?
 using namespace std;
 
 namespace lsst {
-namespace meas {
-namespace simastrom {
+namespace jointcal {
 
 
 bool IsIdentity(const Gtransfo *a_transfo)
@@ -2041,4 +2040,4 @@ Gtransfo* GtransfoRead(istream &s)
 }
 
 
-}}} // end of namespaces
+}} // end of namespaces

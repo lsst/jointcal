@@ -8,11 +8,10 @@
 // 
 #include <iostream>
 
-#include "lsst/meas/simastrom/Frame.h"
+#include "lsst/jointcal/Frame.h"
 
 namespace lsst {
-namespace meas {
-namespace simastrom {
+namespace jointcal {
 
 
 
@@ -156,4 +155,4 @@ void  Frame::dump(ostream & stream) const
 	 << " xmax ymax " << xMax << ' ' << yMax << endl;
 }
 
-}}} // end of namespaces
+}} // end of namespaces

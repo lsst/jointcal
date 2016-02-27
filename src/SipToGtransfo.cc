@@ -1,29 +1,28 @@
 #include <algorithm>
 
 #include "Eigen/Core"
-#include "lsst/meas/simastrom/SipToGtransfo.h"
+#include "lsst/jointcal/SipToGtransfo.h"
 #include "lsst/afw/image/ImageUtils.h"
-#include "lsst/meas/simastrom/Point.h"
-#include "lsst/meas/simastrom/Frame.h"
+#include "lsst/jointcal/Point.h"
+#include "lsst/jointcal/Frame.h"
 #include "lsst/daf/base/PropertySet.h"
 
-namespace simAstrom = lsst::meas::simastrom; 
+namespace jointcal = lsst::jointcal; 
 namespace afwImg = lsst::afw::image;
 namespace afwGeom  = lsst::afw::geom;
 
 namespace lsst {
-namespace meas {
-namespace simastrom {
+namespace jointcal {
 
 static const int lsstToFitsPixels = +1;
 static const int fitsToLsstPixels = -1;
 
-typedef boost::shared_ptr<simAstrom::GtransfoPoly> GtPoly_Ptr;
+typedef boost::shared_ptr<jointcal::GtransfoPoly> GtPoly_Ptr;
 	
 
-simAstrom::TanSipPix2RaDec ConvertTanWcs(const boost::shared_ptr<lsst::afw::image::TanWcs> wcs)
+jointcal::TanSipPix2RaDec ConvertTanWcs(const boost::shared_ptr<lsst::afw::image::TanWcs> wcs)
 {
-  GtPoly_Ptr sipCorr(new simAstrom::GtransfoPoly(0));
+  GtPoly_Ptr sipCorr(new jointcal::GtransfoPoly(0));
   
   /* beware : Wcs::getPixelOrigin return crpix_fits +
    fitsToLsstPixels, so all the algebra we perform here happens in the
@@ -43,7 +42,7 @@ simAstrom::TanSipPix2RaDec ConvertTanWcs(const boost::shared_ptr<lsst::afw::imag
   
       int sipOrder = std::max(wcsMeta->get<int>("A_ORDER"), wcsMeta->get<int>("B_ORDER"));
 
-      simAstrom::GtransfoPoly sipPoly(sipOrder);
+      jointcal::GtransfoPoly sipPoly(sipOrder);
       for (int i=0; i<=sipOrder; ++i)
         {
 	  for (int j=0; j<=sipOrder; ++j)
@@ -55,7 +54,7 @@ simAstrom::TanSipPix2RaDec ConvertTanWcs(const boost::shared_ptr<lsst::afw::imag
 	    }
 	}
 
-      simAstrom::GtransfoLinShift s2(-crpix_lsst[0], - crpix_lsst[1]);
+      jointcal::GtransfoLinShift s2(-crpix_lsst[0], - crpix_lsst[1]);
 
       /* then the SIP correction (TanWcs::undistorPixel, last line)
 	 returns pix + sipPoly*secondShift(pix) where secondShift
@@ -67,33 +66,33 @@ simAstrom::TanSipPix2RaDec ConvertTanWcs(const boost::shared_ptr<lsst::afw::imag
 
       GtransfoLin id; // identity is the default constructor.
       // This is what is returned by TanWcs::undistortpixel
-      simAstrom::GtransfoPoly actualSip = id + sipPoly*s2;
+      jointcal::GtransfoPoly actualSip = id + sipPoly*s2;
       	
-      sipCorr.reset(new simAstrom::GtransfoPoly(actualSip));
+      sipCorr.reset(new jointcal::GtransfoPoly(actualSip));
     }
 
   // now compute the lin part (nothing to do with SIP) */
   Eigen::Matrix2d cdMat = wcs->getCDMatrix();
-  simAstrom::GtransfoLin cdTrans;
+  jointcal::GtransfoLin cdTrans;
   cdTrans.Coeff(1,0,0) = cdMat(0,0); // CD1_1
   cdTrans.Coeff(0,1,0) = cdMat(0,1); // CD1_2 
   cdTrans.Coeff(1,0,1) = cdMat(1,0); // CD2_1
   cdTrans.Coeff(0,1,1) = cdMat(1,1); // CD2_1
   // this is by chance equal to s2, but we will not rely on this fact:
-  simAstrom::GtransfoLinShift crpixShift(-crpix_lsst[0], -crpix_lsst[1]); 
+  jointcal::GtransfoLinShift crpixShift(-crpix_lsst[0], -crpix_lsst[1]); 
 
   // CD's apply to CRPIX-shifted coordinate
-  simAstrom::GtransfoLin linPart = cdTrans * crpixShift;
+  jointcal::GtransfoLin linPart = cdTrans * crpixShift;
 
   //  lsst::afw::coord::Coord tp = wcs->getSkyOrigin()->getPosition(lsst::afw::geom::degrees);
   // the above line returns radians ?!
   double ra  = wcsMeta->get<double>("CRVAL1");
   double dec = wcsMeta->get<double>("CRVAL2");
   
-  simAstrom::Point tangentPoint(ra,dec);
+  jointcal::Point tangentPoint(ra,dec);
 
-  // return simAstrom::TanSipPix2RaDec(linPart, tangentPoint, sipCorr->get());
-  return simAstrom::TanSipPix2RaDec(linPart, tangentPoint, (const simAstrom::GtransfoPoly*) sipCorr.get());
+  // return jointcal::TanSipPix2RaDec(linPart, tangentPoint, sipCorr->get());
+  return jointcal::TanSipPix2RaDec(linPart, tangentPoint, (const jointcal::GtransfoPoly*) sipCorr.get());
 
 }
 
@@ -101,8 +100,8 @@ simAstrom::TanSipPix2RaDec ConvertTanWcs(const boost::shared_ptr<lsst::afw::imag
 
 /* The inverse transformation i.e. convert from the fit result to the SIP
    convention. */
-PTR(afwImg::TanWcs) GtransfoToTanWcs(const simAstrom::TanSipPix2RaDec WcsTransfo, 
-				     const simAstrom::Frame &CcdFrame,
+PTR(afwImg::TanWcs) GtransfoToTanWcs(const jointcal::TanSipPix2RaDec WcsTransfo, 
+				     const jointcal::Frame &CcdFrame,
 				     const bool NoLowOrderSipTerms)
 {
   GtransfoLin linPart = WcsTransfo.LinPart();
@@ -118,13 +117,13 @@ PTR(afwImg::TanWcs) GtransfoToTanWcs(const simAstrom::TanSipPix2RaDec WcsTransfo
   linPart.invert().apply(0.,0., crpix_lsst[0], crpix_lsst[1]);
 
   // This is what we have to respect:
-  simAstrom::GtransfoPoly pix2TP = WcsTransfo.Pix2TangentPlane();
+  jointcal::GtransfoPoly pix2TP = WcsTransfo.Pix2TangentPlane();
 
   if (NoLowOrderSipTerms) {
     Point ctmp = Point(crpix_lsst[0], crpix_lsst[1]);
     // cookup a large Frame
-    simAstrom::Frame f(ctmp.x-10000, ctmp.y-10000, ctmp.x+10000, ctmp.y +10000);
-    simAstrom::Gtransfo *r =pix2TP.InverseTransfo(1e-6, f);       
+    jointcal::Frame f(ctmp.x-10000, ctmp.y-10000, ctmp.x+10000, ctmp.y +10000);
+    jointcal::Gtransfo *r =pix2TP.InverseTransfo(1e-6, f);       
     // overwrite crpix ...
     r->apply(0,0, crpix_lsst[0], crpix_lsst[1]);
     delete r;
@@ -160,25 +159,25 @@ PTR(afwImg::TanWcs) GtransfoToTanWcs(const simAstrom::TanSipPix2RaDec WcsTransfo
      in the appendix of the documentation */
 
   // This is (the opposite of) the crpix that will go into the fits header:
-  simAstrom::GtransfoLinShift s2(-crpix_lsst[0],-crpix_lsst[1]);
+  jointcal::GtransfoLinShift s2(-crpix_lsst[0],-crpix_lsst[1]);
 
   // for SIP, pix2TP = linpart*sipStuff, so
-  simAstrom::GtransfoPoly sipTransform = simAstrom::GtransfoPoly(linPart.invert())* pix2TP;
+  jointcal::GtransfoPoly sipTransform = jointcal::GtransfoPoly(linPart.invert())* pix2TP;
   // then the sip transform reads ST = (ID+PA*S2)
   //   PA*S2 = ST -ID,   PA = (ST-Id)*S2^-1
-  simAstrom::GtransfoLin id; // default constructor = identity
-  simAstrom::GtransfoPoly sipPoly = (sipTransform-id)*s2.invert();
+  jointcal::GtransfoLin id; // default constructor = identity
+  jointcal::GtransfoPoly sipPoly = (sipTransform-id)*s2.invert();
 
   // coockup the inverse sip polynomials 
   // last argument : precision in pixels.
-  simAstrom::GtransfoPoly *tp2Pix = InversePolyTransfo(pix2TP, CcdFrame, 1e-4);
+  jointcal::GtransfoPoly *tp2Pix = InversePolyTransfo(pix2TP, CcdFrame, 1e-4);
   if (!tp2Pix)
     {
       throw LSST_EXCEPT(pex::exceptions::InvalidParameterError, "GtransfoToSip: could not invert the input wcs ");
     }
-  simAstrom::GtransfoPoly invSipStuff = (*tp2Pix)*linPart;
+  jointcal::GtransfoPoly invSipStuff = (*tp2Pix)*linPart;
   delete tp2Pix;
-  simAstrom::GtransfoPoly sipPolyInv =  (invSipStuff -id)*s2.invert();
+  jointcal::GtransfoPoly sipPolyInv =  (invSipStuff -id)*s2.invert();
   
   // now extract sip coefficients. First forward ones:
   int sipOrder = sipPoly.Degree();
@@ -208,7 +207,7 @@ PTR(afwImg::TanWcs) GtransfoToTanWcs(const simAstrom::TanSipPix2RaDec WcsTransfo
   
 }
 
-}}} 
+}} // end of namespaces 
 
   
    

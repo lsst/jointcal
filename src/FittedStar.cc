@@ -1,16 +1,15 @@
 #include <iostream>
 #include <iomanip>
 
-#include "lsst/meas/simastrom/FittedStar.h"
-#include "lsst/meas/simastrom/RefStar.h"
-#include "lsst/meas/simastrom/MeasuredStar.h"
-#include "lsst/meas/simastrom/Gtransfo.h"
-#include "lsst/meas/simastrom/StarList.cc"
+#include "lsst/jointcal/FittedStar.h"
+#include "lsst/jointcal/RefStar.h"
+#include "lsst/jointcal/MeasuredStar.h"
+#include "lsst/jointcal/Gtransfo.h"
+#include "lsst/jointcal/StarList.cc"
 
 
 namespace lsst {
-namespace meas {
-namespace simastrom {
+namespace jointcal {
 
 
 // cannot be in fittedstar.h, because of "crossed includes"
@@ -214,4 +213,4 @@ BaseStar* FittedStar::read(std::istream& s, const char* format)
 }
 
 
-}}} // end of namespaces
+}} // end of namespaces

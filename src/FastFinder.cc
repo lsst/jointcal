@@ -1,11 +1,10 @@
 #include <algorithm>
 
-#include "lsst/meas/simastrom/BaseStar.h"
-#include "lsst/meas/simastrom/FastFinder.h"
+#include "lsst/jointcal/BaseStar.h"
+#include "lsst/jointcal/FastFinder.h"
 
 namespace lsst {
-namespace meas {
-namespace simastrom {
+namespace jointcal {
 
 
 
@@ -244,4 +243,4 @@ void FastFinder::Iterator::check() const
     }
 }
 
-}}} // end of namespaces
+}} // end of namespaces

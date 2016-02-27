@@ -3,11 +3,10 @@
 #include <assert.h>
 #include <iomanip>
 
-#include "lsst/meas/simastrom/RefStar.h"
+#include "lsst/jointcal/RefStar.h"
 
 namespace lsst {
-namespace meas {
-namespace simastrom {
+namespace jointcal {
 
 
 RefStar::RefStar(const BaseStar &B, const Point &RaDec) 
@@ -109,5 +108,5 @@ void RefStarTuple::AddEntry(const RefStar &R, const FittedStar &F)
   stream.flags(old_flags);
 }  
 
-}}} // end of namespaces
+}} // end of namespaces
 
