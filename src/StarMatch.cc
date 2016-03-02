@@ -237,8 +237,8 @@ void StarMatchList::write_wnoheader(std::ostream & pr,
     }
 
   std::ios::fmtflags  old_flags =  pr.flags(); 
-  pr  << resetiosflags(std::ios::scientific) ;
-  pr  << setiosflags(std::ios::fixed) ;
+  pr  << std::resetiosflags(std::ios::scientific) ;
+  pr  << std::setiosflags(std::ios::fixed) ;
   int oldprec = pr.precision();
   pr<< std::setprecision(10);
   for (auto it= begin(); it!= end(); it++ )

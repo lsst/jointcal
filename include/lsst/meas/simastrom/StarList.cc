@@ -108,9 +108,9 @@ template<class Star> int StarList<Star>::write(const std::string &FileName) cons
 template<class Star> int StarList<Star>::write(std::ostream & pr) const
 {
   std::ios::fmtflags  old_flags =  pr.flags(); 
-  pr  << resetiosflags(std::ios::scientific) ;
+  pr  << std::resetiosflags(std::ios::scientific) ;
   // pr  << setiosflags(0) ;
-  pr  << setiosflags(std::ios::fixed) ;
+  pr  << std::setiosflags(std::ios::fixed) ;
   int oldprec = pr.precision();
   pr<< std::setprecision(8);
 
