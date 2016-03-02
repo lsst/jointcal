@@ -1,6 +1,13 @@
 ===============================================================================
-Simultaneous astrometry 
+Joint Calibration
 ===============================================================================
+
+This package performs joint astrometry across multiple visits of the same field.
+It will eventually be extended to also perform joint photometry at the same time.
+
+It was derived from lsst_france/meas_simastrom
+
+Old readme notes below (to be deleted when no longer relevant):
 
 Prerequites
 ===========
