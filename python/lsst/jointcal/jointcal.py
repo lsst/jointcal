@@ -99,12 +99,17 @@ class JointcalConfig(pexConfig.Config):
     sourceFluxField = pexConfig.Field(
         doc = "Type of source flux",
         dtype = str,
-        default = "base_CircularApertureFlux_5",   # base_CircularApertureFlux_17_0 in recent stack version 
+        default = "slot_CalibFlux"
     )
     maxMag = pexConfig.Field(
         doc = "Maximum magnitude for sources to be included in the fit",
         dtype = float,
         default = 22.5, 
+    )
+    coaddName = pexConfig.Field(
+        doc = "Type of coadd",
+        dtype = str,
+        default = "deep"
     )
 
 
@@ -143,7 +148,7 @@ class JointcalTask(pipeBase.CmdLineTask):
         ss = StarSelector(configSel, self.config.sourceFluxField, self.config.maxMag)
         
         print self.config.sourceFluxField
-        astromControl = jointcalControl()
+        astromControl = JointcalControl()
         astromControl.sourceFluxField = self.config.sourceFluxField
 
         assoc = Associations()
@@ -274,7 +279,8 @@ class JointcalTask(pipeBase.CmdLineTask):
                     exp = afwImage.ExposureI(0,0)
                     exp.setWcs(tanWcs)
                     try:
-                        dataRef.put(exp, 'wcs')
+                        # dataRef.put(exp, 'wcs')
+                        dataRef.put(exp, 'calexp')
                     except pexExceptions.Exception as e:
                         self.log.warn('Failed to write updated Wcs: ' + str(e))
                     break 

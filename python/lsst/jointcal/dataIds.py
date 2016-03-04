@@ -31,7 +31,7 @@ import lsst.afw.table
 import lsst.afw.image
 from lsst.geom import convexHull
 
-from lsst.pipe.tasks.coaddBase import CoaddDataIdContainer
+from lsst.coadd.utils import CoaddDataIdContainer
 
 
 class PerTractCcdDataIdContainer(CoaddDataIdContainer):
@@ -88,7 +88,7 @@ class PerTractCcdDataIdContainer(CoaddDataIdContainer):
                     log = lsst.pex.logging.Log.getDefaultLog()
                 log.info("Reading WCS for components of dataId=%s to determine tracts" % (dict(dataId),))
                 if skymap is None:
-                    skymap = self.getSkymap(namespace, "deepCoadd")
+                    skymap = self.getSkymap(namespace)
                     print skymap
 
                 for ref in namespace.butler.subset("calexp", dataId=dataId):
