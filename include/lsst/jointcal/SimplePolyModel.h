@@ -18,8 +18,8 @@ class CcdImage;
 class CcdImageList;
 
 /* We deal here with coordinate transforms which are fitted
-   and/or necessary to AstromFit. The classes SimplePolyModel 
-and SimplePolyMapping implement a model where  there is one 
+   and/or necessary to AstromFit. The classes SimplePolyModel
+and SimplePolyMapping implement a model where  there is one
 separate transfrom per CcdImage. One could chose other setups.
 
 */
@@ -37,8 +37,8 @@ class SimplePolyModel : public DistortionModel
 public :
 
   //! Sky2TP is just a name, it can be anything
-  SimplePolyModel(const CcdImageList &L, 
-		  const ProjectionHandler* ProjH, 
+  SimplePolyModel(const CcdImageList &L,
+		  const ProjectionHandler* ProjH,
 		  bool InitFromWCS,
 		  unsigned NNotFit=0,
           unsigned degree=3);
@@ -50,16 +50,16 @@ public :
   //! Positions the various parameter sets into the parameter vector, starting at FirstIndex
   unsigned AssignIndices(unsigned FirstIndex, std::string &WhatToFit);
 
-  // dispaches the offsets after a fit step into the actual locations of parameters 
+  // dispaches the offsets after a fit step into the actual locations of parameters
   void OffsetParams(const Eigen::VectorXd &Delta);
   
-  /*! the mapping of sky coordinates (i.e. the coordinate system 
+  /*! the mapping of sky coordinates (i.e. the coordinate system
   in which fitted stars are reported) onto the Tangent plane
-  (into which the pixel coordinates are transformed) */ 
+  (into which the pixel coordinates are transformed) */
   const Gtransfo* Sky2TP(const CcdImage &C) const
   { return _sky2TP->Sky2TP(C);}
 
-  //! 
+  //!
   virtual void FreezeErrorScales();
 
   //! Access to mappings
@@ -75,4 +75,4 @@ public :
 
 }} // end of namespaces
 
-#endif /* SIMPLEPOLYMODEL__H */ 
+#endif /* SIMPLEPOLYMODEL__H */

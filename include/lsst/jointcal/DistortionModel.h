@@ -23,7 +23,7 @@ public :
   //! Assign indices to parameters involved in mappings, starting at FirstIndex. Returns the highest assigned index.
   virtual unsigned AssignIndices(unsigned FirstIndex, std::string &WhatToFit) = 0;
 
-  //! Offset the parameters by the provided amounts. 
+  //! Offset the parameters by the provided amounts.
   /*! The shifts are applied according to the indices given in
       AssignIndices. */
   virtual void OffsetParams(const Eigen::VectorXd &Delta) = 0;
@@ -34,7 +34,7 @@ public :
   virtual const Gtransfo* Sky2TP(const CcdImage &C) const = 0;
 
 
-  //! 
+  //!
   virtual void FreezeErrorScales() = 0;
 
   virtual ~DistortionModel() {};
@@ -44,4 +44,4 @@ public :
 
 }}
 
-#endif /*DISTORTIONSMODEL__H */ 
+#endif /*DISTORTIONSMODEL__H */

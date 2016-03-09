@@ -92,7 +92,7 @@ BOOST_AUTO_TEST_CASE(test_polyfit)
 	jointcal::BaseStar *s2 = new jointcal::BaseStar();
 	gtransfoWcs.TransformPosAndErrors(*s1, *s2);
 	bsl1.push_back(s1);
-	bsl2.push_back(s2);		       
+	bsl2.push_back(s2);
 	sml.push_back(jointcal::StarMatch(*s1,*s2,s1,s2));
       }
   jointcal::GtransfoPoly pol(3);
@@ -104,7 +104,7 @@ BOOST_AUTO_TEST_CASE(test_polyfit)
 
 
 /* this routine checks that converting a WCS from afs to jointcal and
-   back to afw does not change anything. It checks both that pix2sky and 
+   back to afw does not change anything. It checks both that pix2sky and
    sky2pix transformations are preserved. */
 BOOST_AUTO_TEST_CASE(test_wcs_convertions)
 {
@@ -125,7 +125,7 @@ BOOST_AUTO_TEST_CASE(test_wcs_convertions)
 
   // test the back conversion, in two cases
   for (int noLowOrderSipTerm  = 0; noLowOrderSipTerm <=1; noLowOrderSipTerm++) {
-    PTR(afwImg::TanWcs) tanWcs2 = GtransfoToTanWcs(gtransfoWcs, 
+    PTR(afwImg::TanWcs) tanWcs2 = GtransfoToTanWcs(gtransfoWcs,
 						   imageFrame,
 						   noLowOrderSipTerm);
     lsst::afw::geom::Point2D where(1000.,200.);

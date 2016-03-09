@@ -26,9 +26,9 @@ class Associations;
 //! Class that handles the photometric least squares problem.
 
 class PhotomFit {
-  private : 
+  private :
 
-  Associations &_assoc; 
+  Associations &_assoc;
   std::string _WhatToFit;
   bool _fittingModel, _fittingFluxes;
   unsigned _nParModel, _nParFluxes, _nParTot;
@@ -53,7 +53,7 @@ class PhotomFit {
   void LSDerivatives(TripletList &TList, Eigen::VectorXd &Rhs) const;
 
   //! Compute the derivatives for this CcdImage. The last argument allows to to process a sub-list (used for outlier removal)
-void LSDerivatives(const CcdImage &Ccd, 
+void LSDerivatives(const CcdImage &Ccd,
 		   TripletList &TList, Eigen::VectorXd &Rhs,
 		   const MeasuredStarList *M=NULL) const;
 
@@ -69,24 +69,24 @@ void LSDerivatives(const CcdImage &Ccd,
   //! Returns a chi2 for the current state
   Chi2 ComputeChi2() const;
 
-  //! Produces an ntuple 
+  //! Produces an ntuple
   void MakeResTuple(const std::string &TupleName) const;
 
  private:
 
-  template <class ListType, class Accum> 
+  template <class ListType, class Accum>
     void AccumulateStat(ListType &L, Accum &A) const;
 
 
-  void OutliersContributions(MeasuredStarList &Outliers, 
-			     TripletList &TList, 
+  void OutliersContributions(MeasuredStarList &Outliers,
+			     TripletList &TList,
 			     Eigen::VectorXd &Grad);
 
-  void FindOutliers(const double &NSigCut, 
+  void FindOutliers(const double &NSigCut,
 		    MeasuredStarList &Outliers) const;
 
 
-  void GetMeasuredStarIndices(const MeasuredStar &Ms, 
+  void GetMeasuredStarIndices(const MeasuredStar &Ms,
 			      std::vector<unsigned> &Indices) const;
 
 
@@ -108,12 +108,12 @@ void LSDerivatives(const CcdImage &Ccd,
 
 
   //! access to the fitted refraction coefficients. Unit depends on scale in the tangentPlane. Degrees for an actual tangent plane.
-  std::vector<double> RefractionCoefficients() const 
+  std::vector<double> RefractionCoefficients() const
     { return _refracCoefficient;}
 
   void CheckStuff();
 
- private : 
+ private :
 
   Point TransformFittedStar(const FittedStar &F,
 			    const Gtransfo * Sky2TP,
@@ -122,7 +122,7 @@ void LSDerivatives(const CcdImage &Ccd,
 			    const double &Jd) const;
 
   //! only for outlier removal
-  void GetMeasuredStarIndices(const MeasuredStar &Ms, 
+  void GetMeasuredStarIndices(const MeasuredStar &Ms,
 			      std::vector<unsigned> &Indices) const;
 #endif
 };

@@ -9,7 +9,7 @@ namespace lsst {
 namespace jointcal {
 
 
-RefStar::RefStar(const BaseStar &B, const Point &RaDec) 
+RefStar::RefStar(const BaseStar &B, const Point &RaDec)
   : BaseStar(B), index(0)
 {
     
@@ -18,7 +18,7 @@ RefStar::RefStar(const BaseStar &B, const Point &RaDec)
 }
 
 void RefStar::SetFittedStar(FittedStar &F)
-{ 
+{
   fittedStar = &F;
   if (fittedStar) fittedStar->SetRefStar(this);
 }
@@ -67,7 +67,7 @@ const BaseStarList* Ref2Base(const RefStarList *This)
 
 
 /********* RefStarStuple *************/
-RefStarTuple::RefStarTuple(const std::string &FileName) 
+RefStarTuple::RefStarTuple(const std::string &FileName)
   : stream(FileName.c_str())
 {
   stream << "# ra : ref RA" << std::endl
@@ -92,21 +92,21 @@ void RefStarTuple::AddEntry(const RefStar &R, const FittedStar &F)
   stream << std::setprecision(10);
   stream << R.Ra() << ' '
 	 << R.Dec() << ' '
-	 << R.x << ' ' 
-	 << R.y << ' ' 
+	 << R.x << ' '
+	 << R.y << ' '
 	 << F.x << ' '
 	 << F.y << ' '
-	 << R.x - F.x << ' ' 
-	 << R.y - F.y << ' ' 
+	 << R.x - F.x << ' '
+	 << R.y - F.y << ' '
     ;
   stream << std::setprecision(5);
   stream << R.flux << ' '
 	 << F.Mag() << ' '
-	 << F.MeasurementCount() << ' ' 
+	 << F.MeasurementCount() << ' '
 	 << std::endl;
 
   stream.flags(old_flags);
-}  
+}
 
 }} // end of namespaces
 

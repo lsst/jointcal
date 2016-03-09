@@ -13,7 +13,7 @@ namespace jointcal {
 class Gtransfo; class GtransfoLin;
 
 //! Parameters to be provided to combinatorial searches
-struct MatchConditions 
+struct MatchConditions
 {
   int NStarsL1, NStarsL2;
   int MaxTrialCount;
@@ -25,8 +25,8 @@ struct MatchConditions
 
   MatchConditions(/* const std::string &DatacardsName = ""*/ );
 
-  double MinSizeRatio() const { return SizeRatio - DeltaSizeRatio;}  
-  double MaxSizeRatio() const { return SizeRatio + DeltaSizeRatio;}  
+  double MinSizeRatio() const { return SizeRatio - DeltaSizeRatio;}
+  double MaxSizeRatio() const { return SizeRatio + DeltaSizeRatio;}
 
 } ;
 
@@ -39,7 +39,7 @@ struct MatchConditions
 two lists of stars to match geometrically as well as possible. They are used
 either to match two images of the same sky area, or an image with a catalogue.
 They assume that fluxes assigned to stars are actual fluxes, i.e. the brighter
-the star, the higher the flux. They however only rely on flux ordering, 
+the star, the higher the flux. They however only rely on flux ordering,
 not values.
  */
 
@@ -70,17 +70,17 @@ StarMatchList *ListMatchCollect(const BaseStarList &L1, const BaseStarList &L2, 
 
 
 
-GtransfoLin *ListMatchupShift(const BaseStarList &L1, 
-			      const BaseStarList &L2, 
-			      const Gtransfo &Tin, 
+GtransfoLin *ListMatchupShift(const BaseStarList &L1,
+			      const BaseStarList &L2,
+			      const Gtransfo &Tin,
 			      double MaxShift, double BinSize = 0);
 
 
-Gtransfo* ListMatchCombinatorial(const BaseStarList &List1, 
+Gtransfo* ListMatchCombinatorial(const BaseStarList &List1,
 				 const BaseStarList &List2,
 				 const MatchConditions& Conditions=MatchConditions());
-Gtransfo* ListMatchRefine(const BaseStarList& List1, 
-			    const BaseStarList& List2, 
+Gtransfo* ListMatchRefine(const BaseStarList& List1,
+			    const BaseStarList& List2,
 			    Gtransfo* transfo, const int maxOrder=3);
 
 #ifdef DO_WE_NEED_THAT

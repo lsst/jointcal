@@ -8,8 +8,8 @@ namespace lsst {
 namespace jointcal {
 
 
-TwoTransfoMapping::TwoTransfoMapping(SimpleGtransfoMapping *M1, 
-				     SimpleGtransfoMapping *M2): 
+TwoTransfoMapping::TwoTransfoMapping(SimpleGtransfoMapping *M1,
+				     SimpleGtransfoMapping *M2):
   _m1(M1), _m2(M2)
 {
   /* Allocate the record of temporary variables, so that they are not
@@ -28,7 +28,7 @@ unsigned TwoTransfoMapping::Npar() const
 void TwoTransfoMapping::GetMappingIndices(std::vector<unsigned> &Indices) const
 {
   unsigned npar = Npar();
-  if (Indices.size()<npar) Indices.resize(npar); 
+  if (Indices.size()<npar) Indices.resize(npar);
   // in case we are only fitting one of the two transfos
   if (_nPar1) _m1->GetMappingIndices(Indices);
   else if (_nPar2) {_m2->GetMappingIndices(Indices); return;}
@@ -41,7 +41,7 @@ void TwoTransfoMapping::GetMappingIndices(std::vector<unsigned> &Indices) const
 
 void TwoTransfoMapping::ComputeTransformAndDerivatives(const FatPoint &Where,
 						       FatPoint &OutPos,
-						       Eigen::MatrixX2d &H) 
+						       Eigen::MatrixX2d &H)
   const
 {
   // not true in general. Will crash if H is too small.
@@ -53,8 +53,8 @@ void TwoTransfoMapping::ComputeTransformAndDerivatives(const FatPoint &Where,
   if (_nPar1)
     {
       _m1->ComputeTransformAndDerivatives(Where, pMid,  tmp->h1);
-      // the last argument is epsilon and is not used for polynomials      
-      _m2->PosDerivative(pMid, tmp->dt2dx, 1e-4); 
+      // the last argument is epsilon and is not used for polynomials
+      _m2->PosDerivative(pMid, tmp->dt2dx, 1e-4);
       H.block(0,0,_nPar1,2) = tmp->h1*tmp->dt2dx;
     }
   else _m1->TransformPosAndErrors(Where, pMid);
@@ -97,8 +97,8 @@ void TwoTransfoMapping::TransformPosAndErrors(const FatPoint &Where,
   _m2->TransformPosAndErrors(pMid, OutPos);
 }
 
-void  TwoTransfoMapping::PosDerivative(const Point &Where, 
-				       Eigen::Matrix2d &Der, 
+void  TwoTransfoMapping::PosDerivative(const Point &Where,
+				       Eigen::Matrix2d &Der,
 				       const double & Eps) const
 {
   Eigen::Matrix2d d1,d2; // seems that it does not trigger dynamic allocation
@@ -106,15 +106,15 @@ void  TwoTransfoMapping::PosDerivative(const Point &Where,
   FatPoint pMid;
   _m1->TransformPosAndErrors(Where, pMid);
   _m2->PosDerivative(pMid, d2, 1e-4);
-  /* The following line is not a mistake. It is a consequence 
+  /* The following line is not a mistake. It is a consequence
      of chosing Der(0,1) = d(y_out)/d x_in. */
   Der = d1*d2;
-} 
+}
 
 void TwoTransfoMapping::FreezeErrorScales()
 {
-  throw LSST_EXCEPT(pexExcept::TypeError," The routine  TwoTransfoMapping::FreezeErrorScales() was thought to be useless and is not implemented (yet)"); 
-} 
+  throw LSST_EXCEPT(pexExcept::TypeError," The routine  TwoTransfoMapping::FreezeErrorScales() was thought to be useless and is not implemented (yet)");
+}
 
 }} // end of namespaces
 

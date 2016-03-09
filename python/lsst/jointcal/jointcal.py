@@ -89,7 +89,7 @@ class JointcalConfig(pexConfig.Config):
     posError = pexConfig.Field(
         doc = "Constant term for error on position (in pixel unit)",
         dtype = float,
-        default = 0.02, 
+        default = 0.02,
     )
     polyOrder = pexConfig.Field(
         doc = "Polynomial order for fitting distorsion",
@@ -104,7 +104,7 @@ class JointcalConfig(pexConfig.Config):
     maxMag = pexConfig.Field(
         doc = "Maximum magnitude for sources to be included in the fit",
         dtype = float,
-        default = 22.5, 
+        default = 22.5,
     )
     coaddName = pexConfig.Field(
         doc = "Type of coadd",
@@ -159,7 +159,7 @@ class JointcalTask(pipeBase.CmdLineTask):
 #            print dataRef
 #            print dir(dataRef)
             
-#        return    
+#        return
         
         for dataRef in ref :
             
@@ -182,7 +182,7 @@ class JointcalTask(pipeBase.CmdLineTask):
             
             assoc.AddImage(newSrc, tanwcs, md, bbox, filt, calib,
                            dataRef.dataId['visit'], dataRef.dataId['ccd'],
-                           dataRef.getButler().mapper.getCameraName(), 
+                           dataRef.getButler().mapper.getCameraName(),
                            astromControl)
         
         matchCut = 3.0
@@ -217,7 +217,7 @@ class JointcalTask(pipeBase.CmdLineTask):
         refCat = loader.loadSkyCircle(center, afwGeom.Angle(radius, afwGeom.radians), filt).refCat
         print refCat.getSchema().getOrderedNames()
         
-        # assoc.CollectRefStars(False) # To use USNO-A catalog 
+        # assoc.CollectRefStars(False) # To use USNO-A catalog
 
         assoc.CollectLSSTRefStars(refCat, filt)
         assoc.SelectFittedStars()
@@ -251,7 +251,7 @@ class JointcalTask(pipeBase.CmdLineTask):
                 break
                 print "unxepected return code from Minimize"
         
-#        for i in range(80): 
+#        for i in range(80):
 #            nout = fit.RemoveOutliers(5.) # 5 sigma
 #            fit.Minimize("Distortions Positions")
 #            chi2 = fit.ComputeChi2()
@@ -283,7 +283,7 @@ class JointcalTask(pipeBase.CmdLineTask):
                         dataRef.put(exp, 'calexp')
                     except pexExceptions.Exception as e:
                         self.log.warn('Failed to write updated Wcs: ' + str(e))
-                    break 
+                    break
 
 
 
@@ -292,7 +292,7 @@ class StarSelectorConfig(pexConfig.Config):
     badFlags = pexConfig.ListField(
         doc = "List of flags which cause a source to be rejected as bad",
         dtype = str,
-        default = [ "base_PixelFlags_flag_saturated", 
+        default = [ "base_PixelFlags_flag_saturated",
                     "base_PixelFlags_flag_cr",
                     "base_PixelFlags_flag_interpolated",
                     "base_SdssCentroid_flag",

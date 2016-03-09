@@ -14,15 +14,15 @@ namespace lsst {
 namespace jointcal {
 
 // need a way to propagate the requested degree !
-SimplePolyModel::SimplePolyModel(const CcdImageList &L, 
-				 const ProjectionHandler* ProjH, 
+SimplePolyModel::SimplePolyModel(const CcdImageList &L,
+				 const ProjectionHandler* ProjH,
 				 bool InitFromWCS,
 				 unsigned NNotFit,
 				 unsigned degree) : _sky2TP(ProjH)
 
 {
   // from datacards (or default)
-//  unsigned degree = distortionDegree; 
+//  unsigned degree = distortionDegree;
   unsigned count = 0;
   for (auto i=L.cbegin(); i!= L.end(); ++i, ++count)
     {
@@ -40,8 +40,8 @@ SimplePolyModel::SimplePolyModel(const CcdImageList &L,
 	  GtransfoPoly pol(degree);
 	  const Frame &frame  = im.ImageFrame();
 	  GtransfoLin shiftAndNormalize = NormalizeCoordinatesTransfo(frame);
-	  if (InitFromWCS) 
-	    {	
+	  if (InitFromWCS)
+	    {
 	      pol = GtransfoPoly(im.Pix2TangentPlane(),
 				 frame,
 				 degree);
@@ -64,7 +64,7 @@ const Mapping* SimplePolyModel::GetMapping(const CcdImage &C) const
 unsigned SimplePolyModel::AssignIndices(unsigned FirstIndex, std::string &WhatToFit)
 {
   if (WhatToFit.find("Distortions") == std::string::npos)
-    { 
+    {
       std::cout << "SimplePolyModel::AssignIndices is called and Distortions is *not*  in WhatToFit" << std::endl;
       return 0;
     }
@@ -84,7 +84,7 @@ void SimplePolyModel::OffsetParams(const Eigen::VectorXd &Delta)
   for (auto i = _myMap.begin(); i!=_myMap.end(); ++i)
     {
       SimplePolyMapping *p = dynamic_cast<SimplePolyMapping *>(&*(i->second));
-      if (!p) continue; // it should be GtransfoIdentity      
+      if (!p) continue; // it should be GtransfoIdentity
       p->OffsetParams(&Delta(p->Index()));
     }
 }
@@ -100,9 +100,9 @@ const Gtransfo& SimplePolyModel::GetTransfo(const CcdImage &Ccd) const
 {
   // return GetMapping(Ccd)->Transfo(); // cannot do that
   auto p = _myMap.find(&Ccd);
-  if  (p==_myMap.end()) throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,"SimplePolyModel::GetTransfo, never heard of CcdImage "+Ccd.Name()); 
-  return p->second->Transfo();  
-}  
+  if  (p==_myMap.end()) throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,"SimplePolyModel::GetTransfo, never heard of CcdImage "+Ccd.Name());
+  return p->second->Transfo();
+}
 
 PTR(TanSipPix2RaDec) SimplePolyModel::ProduceSipWcs(const CcdImage &Ccd) const
 {

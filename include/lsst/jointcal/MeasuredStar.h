@@ -41,15 +41,15 @@ class MeasuredStar : public BaseStar
   public :
     
     //!
-  MeasuredStar() 
+  MeasuredStar()
     : BaseStar(),
-      mag(0.), wmag(0.), eflux(0.), aperrad(0.), 
+      mag(0.), wmag(0.), eflux(0.), aperrad(0.),
       ccdImage(0),
       valid(true) {}
   
-  MeasuredStar(const BaseStar &B, const FittedStar *F = NULL) : 
-    BaseStar(B), 
-    mag(0.), wmag(0.), eflux(0.), aperrad(0.), 
+  MeasuredStar(const BaseStar &B, const FittedStar *F = NULL) :
+    BaseStar(B),
+    mag(0.), wmag(0.), eflux(0.), aperrad(0.),
     ccdImage(0),
     valid(true)
     
@@ -59,7 +59,7 @@ class MeasuredStar : public BaseStar
 
     //  MeasuredStar( const SEStar &S);
 
-  void SetFittedStar(FittedStar *F) 
+  void SetFittedStar(FittedStar *F)
       { if (F)  F->MeasurementCount()++; fittedStar = F;
       }
 
@@ -136,12 +136,12 @@ public:
     loader = l;
   }
   bool operator()(const ReducedImage & ri,
-			  const CcdImage & ccdim, 
+			  const CcdImage & ccdim,
 			  MeasuredStarList & stl) const{
     return load(ri, ccdim, stl);
   }
   virtual bool load(const ReducedImage & ri,
-		    const CcdImage & ccdim, 
+		    const CcdImage & ccdim,
 		    MeasuredStarList & stl) const{
     return (*loader)(ri, ccdim, stl);
   }

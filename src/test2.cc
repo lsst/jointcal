@@ -29,7 +29,7 @@ namespace jointcal {
     test2::test2()
 {
     std::cout << "test2 constructor called " << std::endl;
-}    
+}
     
 void test2::addSourceTable(
     lsst::afw::table::SourceCatalog const &sourceCat,

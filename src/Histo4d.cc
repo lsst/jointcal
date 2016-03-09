@@ -11,7 +11,7 @@ namespace jointcal {
 
 using namespace std;
 
-SparseHisto4d::SparseHisto4d(const int N1, double Min1, double Max1, 
+SparseHisto4d::SparseHisto4d(const int N1, double Min1, double Max1,
 			     const int N2, double Min2, double Max2,
 			     const int N3, double Min3, double Max3,
 			     const int N4, double Min4, double Max4,

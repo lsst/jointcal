@@ -1,9 +1,9 @@
 // -*- C++ -*-
-// 
+//
 // \file gtransfo.h
 // \brief Geometrical transformations (of 2D points)
-// 
-// 
+//
+//
 #ifndef GTRANSFO_H
 #define GTRANSFO_H
 
@@ -24,7 +24,7 @@ class Frame;
 class GtransfoLin;
 
 
-//! a virtual (interface) class for geometric transformations. 
+//! a virtual (interface) class for geometric transformations.
 /*! We implement here One Gtransfo interface class, and actual derived
     classes. Composition in the usual (mathematical) sense is provided
     using GtransfoCompose(), and some classes (e.g. GtransfoLin)
@@ -45,26 +45,26 @@ class Gtransfo: public RefCount{
 public:
   
   //!
-  virtual void  apply(const double Xin, const double Yin, 
+  virtual void  apply(const double Xin, const double Yin,
 		      double &Xout, double &Yout) const = 0 ;
   
   //! applies the tranfo to Pin and writes into Pout. Is indeed virtual.
-  void apply(const Point &Pin, Point &Pout) const 
+  void apply(const Point &Pin, Point &Pout) const
       {apply(Pin.x, Pin.y, Pout.x, Pout.y);}
 
   //! All these apply(..) shadow the virtual one in derived classes, unless one writes "using Gtransfo::apply".
-  Point apply(const Point &Pin) const 
-      {double xout, yout; apply(Pin.x, Pin.y, xout,yout); 
+  Point apply(const Point &Pin) const
+      {double xout, yout; apply(Pin.x, Pin.y, xout,yout);
       return Point(xout,yout);}
 
-  //! dumps the transfo coefficients to stream. 
+  //! dumps the transfo coefficients to stream.
   virtual void dump(std::ostream &stream = std::cout) const = 0;
 
 
   //! fits a transfo to a std::list of Point pairs (p1,p2, the Point fields in StarMatch).
-  /*! After the fit this(p1) yields approximately p2. 
+  /*! After the fit this(p1) yields approximately p2.
     The returned value is the sum of squared residuals.
-    If you want to fit a partial transfo (e.g. such that 
+    If you want to fit a partial transfo (e.g. such that
     this(T1(p1)) = T2(p2), use StarMatchList::ApplyTransfo beforehand. */
   virtual double fit(const StarMatchList &List) = 0;
 
@@ -85,22 +85,22 @@ public:
   virtual double Jacobian(const double x, const double y) const;
 
   //! Computes the local Derivative of a transfo. Step is used for numerical derivation.
-  virtual void Derivative(const Point &Where, GtransfoLin &Der, 
+  virtual void Derivative(const Point &Where, GtransfoLin &Der,
 			  const double Step = 0.01) const;
 
   //! linear (local) approximation.
-  virtual GtransfoLin LinearApproximation(const Point &Where, 
+  virtual GtransfoLin LinearApproximation(const Point &Where,
 					  const double step = 0.01) const;
 
   virtual void TransformPosAndErrors(const FatPoint &In, FatPoint &Out) const;
 
 
   //! transform errors (represented as double[3] in order V(xx),V(yy),Cov(xy))
-  virtual void TransformErrors(const Point &Where, const double *VIn, 
+  virtual void TransformErrors(const Point &Where, const double *VIn,
 			       double *VOut) const;
 
   //! returns an inverse transfo. Numerical if not overloaded.
-  /*! Precision and Region refer to the "input" side of this, 
+  /*! Precision and Region refer to the "input" side of this,
     and hence to the output side of the returned Gtransfo. */
   virtual Gtransfo* InverseTransfo(const double Precision,
 				   const Frame& Region) const;
@@ -109,7 +109,7 @@ public:
   //! Params should be at least Npar() long
   void GetParams(double *Params) const;
 
-  //! 
+  //!
   void OffsetParams(const double *Params);
 
   //!
@@ -121,8 +121,8 @@ public:
   //! Derivative w.r.t parameters. Derivatives should be al least 2*NPar long. first Npar, for x, last Npar for y.
   virtual void ParamDerivatives(const Point &Where, double *Dx, double *Dy) const;
 
-  //! Rough inverse. 
-  /*! Stored by the numerical inverter to guess starting point 
+  //! Rough inverse.
+  /*! Stored by the numerical inverter to guess starting point
      for the trials. Just here to enable overloading. */
   virtual Gtransfo* RoughInverse(const Frame &Region) const;
 
@@ -142,7 +142,7 @@ public:
 
 typedef CountedRef<Gtransfo> GtransfoRef;
 
-//! allows 'stream << Transfo;' (by calling T.dump(stream)). 
+//! allows 'stream << Transfo;' (by calling T.dump(stream)).
 std::ostream & operator << (std::ostream &stream, const Gtransfo & T);
 
 
@@ -162,28 +162,28 @@ public:
     GtransfoIdentity() {}
 
   //! Xout = Xin; Yout = Yin !
-    void apply(const double Xin, const double Yin, 
-	       double &Xout, double &Yout) const 
+    void apply(const double Xin, const double Yin,
+	       double &Xout, double &Yout) const
       {Xout = Xin; Yout = Yin;}; // to speed up
 
     double fit(const StarMatchList &List)
-      {std:: cerr << "GtransfoIdentity cannot be fitted for std::list : "  
+      {std:: cerr << "GtransfoIdentity cannot be fitted for std::list : "
 		  << &List << std::endl;
       return -1;
       }
 
     Gtransfo* ReduceCompo(const Gtransfo *Right) const { return Right->Clone();}
-    void dump(std::ostream &stream = std::cout) const 
+    void dump(std::ostream &stream = std::cout) const
          { stream << "x' = x\ny' = y"<< std::endl;}
 
     int Npar() const {return 0;}
     Gtransfo *Clone() const { return new GtransfoIdentity;}
 
-    void Derivative(const Point &Where, GtransfoLin &Derivative, 
+    void Derivative(const Point &Where, GtransfoLin &Derivative,
 		    const double Step = 0.01) const;
 
     //! linear approximation.
-    virtual GtransfoLin LinearApproximation(const Point &Where, 
+    virtual GtransfoLin LinearApproximation(const Point &Where,
 					    const double Step = 0.01) const;
 
   void Write(std::ostream &s) const;
@@ -194,7 +194,7 @@ public:
     //    ClassDef(GtransfoIdentity,1)
 };
 
-//! Shorthand test to tell if a transfo belongs to the GtransfoIdentity class. 
+//! Shorthand test to tell if a transfo belongs to the GtransfoIdentity class.
 bool IsIdentity(const Gtransfo *a_transfo);
 
 //! Shorthand test to tell if a transfo is a simple integer shift
@@ -211,23 +211,23 @@ public :
 private:
   unsigned deg; // the degree
   unsigned nterms; // number of parameters per coordinate
-  std::vector<double> coeffs; // the actual coefficients 
+  std::vector<double> coeffs; // the actual coefficients
   // both polynomials in a single vector to speed up allocation and copies
 
-  /* use std::vector rather than double * to avoid 
+  /* use std::vector rather than double * to avoid
      writing copy constructor and "operator =".
-     Vect would work as well but introduces a dependence 
+     Vect would work as well but introduces a dependence
      that can be avoided */
 
   /* This routine take a double * for the vector because the array can
      then be allocated on the execution stack, which speeds thing
      up. However this uses Variable Length Array (VLA) which is not
      part of C++, but gcc implements it. */
-  void compute_monomials(const double &Xin, const double &Yin, 
+  void compute_monomials(const double &Xin, const double &Yin,
 			 double *Monom) const;
 
 public :
-  //! Default transfo : identity for all degrees (>=1 ). The degree refers to the highest total power (x+y) of monomials. 
+  //! Default transfo : identity for all degrees (>=1 ). The degree refers to the highest total power (x+y) of monomials.
   GtransfoPoly(const unsigned Deg=1) ;
 
   //! Constructs a "polynomial image" from an existing transfo, over a specified domain
@@ -236,14 +236,14 @@ public :
 	       unsigned Degree,
 	       unsigned NPoint=1000);
 
-  //sets the polynomial degree. 
+  //sets the polynomial degree.
   void SetDegree(const unsigned Deg);
 
-  void apply(const double Xin, const double Yin, 
+  void apply(const double Xin, const double Yin,
 	     double &Xout, double &Yout) const;
 
   //! specialised analytic routine
-  void Derivative(const Point &Where, GtransfoLin &Der, 
+  void Derivative(const Point &Where, GtransfoLin &Der,
 		  const double Step = 0.01) const;
 
   //! a mix of apply and Derivative
@@ -265,7 +265,7 @@ public :
   //! Composition (internal stuff in quadruple precision)
   GtransfoPoly operator*(const GtransfoPoly &Right) const;
 
-  //! Addition 
+  //! Addition
   GtransfoPoly operator+(const GtransfoPoly &Right) const;
 
   //!Subtraction
@@ -327,7 +327,7 @@ GtransfoPoly *InversePolyTransfo(const Gtransfo &Direct, const Frame &F, const d
 GtransfoLin NormalizeCoordinatesTransfo(const Frame & F);
 
 /*=============================================================*/
-//! implements the linear transformations (6 real coefficients). 
+//! implements the linear transformations (6 real coefficients).
 class GtransfoLin : public GtransfoPoly {
   
  public:
@@ -340,20 +340,20 @@ class GtransfoLin : public GtransfoPoly {
   //! This triggers an exception if P.Degree() != 1
   explicit GtransfoLin(const GtransfoPoly &P);
 
-  //!  enables to combine linear tranformations: T1=T2*T3 is legal. 
+  //!  enables to combine linear tranformations: T1=T2*T3 is legal.
   GtransfoLin  operator*(const  GtransfoLin &T2) const;
   
-  //! returns the inverse: T1 = T2.invert(); 
+  //! returns the inverse: T1 = T2.invert();
   GtransfoLin  invert() const;
   
   
   // useful?    double Jacobian(const double x, const double y) const { return Determinant();}
   
   //!
-  void Derivative(const Point &Where, GtransfoLin &Derivative, 
+  void Derivative(const Point &Where, GtransfoLin &Derivative,
 		  const double Step = 0.01) const;
   //!
-  GtransfoLin LinearApproximation(const Point &Where, 
+  GtransfoLin LinearApproximation(const Point &Where,
 				  const double step = 0.01) const;
   
   
@@ -361,12 +361,12 @@ class GtransfoLin : public GtransfoPoly {
   
   // double fit(const StarMatchList &List);
     
-  //! the constructor that enables to set all parameters independently. Not very useful. 
-  GtransfoLin(const double ox, const double oy , const double aa11, 
+  //! the constructor that enables to set all parameters independently. Not very useful.
+  GtransfoLin(const double ox, const double oy , const double aa11,
 	      const double aa12, const double aa21, const double aa22);
   
   //! Handy converter:
-  GtransfoLin(const GtransfoIdentity &T) : GtransfoPoly(1) 
+  GtransfoLin(const GtransfoIdentity &T) : GtransfoPoly(1)
   { if (&T) {} /* avoid a warning */};
   
   Gtransfo* Clone() const { return new GtransfoLin(*this);}
@@ -426,7 +426,7 @@ public:
   using Gtransfo::apply; // to unhide apply(const Point&)
  
     GtransfoLinRot() : GtransfoLin() {};
-    GtransfoLinRot(const double AngleRad, const Point *Center=NULL, 
+    GtransfoLinRot(const double AngleRad, const Point *Center=NULL,
 		   const double ScaleFactor=1.0);
     double fit(const StarMatchList &List);
 
@@ -439,13 +439,13 @@ public:
 //! just here to provide specialized constructors. GtransfoLin fit routine.
 class GtransfoLinScale :  public GtransfoLin {
   
- public: 
+ public:
   using Gtransfo::apply; // to unhide apply(const Point&)
     //!
     GtransfoLinScale(const double Scale=1) : GtransfoLin(0.0, 0.0, Scale, 0.,0.,Scale) {};
     //!
-    GtransfoLinScale(const double ScaleX, const double ScaleY) : 
-	GtransfoLin(0.0, 0.0, ScaleX, 0.,0.,ScaleY) {};    
+    GtransfoLinScale(const double ScaleX, const double ScaleY) :
+	GtransfoLin(0.0, 0.0, ScaleX, 0.,0.,ScaleY) {};
 
     int Npar() const {return 2;}
 };
@@ -453,25 +453,25 @@ class GtransfoLinScale :  public GtransfoLin {
 
 /*==================WCS's transfo's =====================================*/
 
-class BaseTanWcs: public Gtransfo 
+class BaseTanWcs: public Gtransfo
 {
-protected : 
+protected :
   GtransfoLin linPix2Tan; // pixels to tangent plane (internally in radians)
   GtransfoPoly *corr;
   double ra0, dec0; // in radians
-  double cos0, sin0; // cos(dec0), sin(dec0) 
+  double cos0, sin0; // cos(dec0), sin(dec0)
 
 public :
   using Gtransfo::apply; // to unhide apply(const Point&)
 
-  BaseTanWcs(const GtransfoLin &Pix2Tan, const Point &TangentPoint, 
+  BaseTanWcs(const GtransfoLin &Pix2Tan, const Point &TangentPoint,
 	     const GtransfoPoly* Corrections = NULL);
 
   BaseTanWcs(const BaseTanWcs &Original);
 
   void operator = (const BaseTanWcs &Original);
 
-  void apply(const double Xin, const double Yin, 
+  void apply(const double Xin, const double Yin,
 	     double &Xout, double &Yout) const;
 
   //! The tangent point (in degrees)
@@ -480,8 +480,8 @@ public :
   //! The Linear part (corresponding to CD's and CRPIX's)
   GtransfoLin LinPart() const;
 
-  //! the "correction" 
-  const GtransfoPoly* Corr() const {return corr;} 
+  //! the "correction"
+  const GtransfoPoly* Corr() const {return corr;}
   
   //!Assign the correction polynomial (what it means is left to derived classes)
   void SetCorrections(const GtransfoPoly *Corrections);
@@ -509,7 +509,7 @@ public:
 
   using Gtransfo::apply; // to unhide apply(const Point&)
     //! Pix2Tan describes the transfo from pix to tangent plane (in degrees). TangentPoint in degrees. Corrections are applied between Lin and deprojection parts (as in Swarp).
-  TanPix2RaDec(const GtransfoLin &Pix2Tan, const Point &TangentPoint, 
+  TanPix2RaDec(const GtransfoLin &Pix2Tan, const Point &TangentPoint,
 	       const GtransfoPoly* Corrections = NULL);
 
 
@@ -517,7 +517,7 @@ public:
   GtransfoPoly Pix2TangentPlane() const;
 
   //! transforms from pixel space to tangent plane
-  virtual void Pix2TP(const double &Xpix, const double &Ypix, 
+  virtual void Pix2TP(const double &Xpix, const double &Ypix,
 		      double &Xtp, double & Ytp) const;
 
   TanPix2RaDec();
@@ -555,7 +555,7 @@ class TanSipPix2RaDec : public BaseTanWcs
 public:
 
     //! Pix2Tan describes the transfo from pix to tangent plane (in degrees). TangentPoint in degrees. Corrections are applied before Lin.
-  TanSipPix2RaDec(const GtransfoLin &Pix2Tan, const Point &TangentPoint, 
+  TanSipPix2RaDec(const GtransfoLin &Pix2Tan, const Point &TangentPoint,
 		  const GtransfoPoly* Corrections = NULL);
 
 
@@ -563,7 +563,7 @@ public:
   GtransfoPoly Pix2TangentPlane() const;
 
   //! transforms from pixel space to tangent plane
-  virtual void Pix2TP(const double &Xpix, const double &Ypix, 
+  virtual void Pix2TP(const double &Xpix, const double &Ypix,
 		      double &Xtp, double & Ytp) const;
 
   TanSipPix2RaDec();
@@ -586,13 +586,13 @@ public:
 
 
 //! This one is the Tangent Plane (called gnomonic) projection (from celestial sphere to tangent plane)
-/*! this transfo does not implement corrections, since 
-   they are defined the other way around (from pixels to sky), 
+/*! this transfo does not implement corrections, since
+   they are defined the other way around (from pixels to sky),
    and not invertible analytically. The inversion of tangent
    point WCS (TanPix2RaDec) is obtained via InverseTransfo().
 */
 
-class TanRaDec2Pix : public Gtransfo 
+class TanRaDec2Pix : public Gtransfo
 {
 
     double ra0, dec0; //tangent point (internally in radians)
@@ -621,7 +621,7 @@ class TanRaDec2Pix : public Gtransfo
     void apply(const double Xin, const double Yin, double &Xout, double &Yout) const;
 
     //! transform with analytical derivatives
-    void TransformPosAndErrors(const FatPoint &In, 
+    void TransformPosAndErrors(const FatPoint &In,
 			       FatPoint &Out) const;
 
 
@@ -638,7 +638,7 @@ class TanRaDec2Pix : public Gtransfo
 
     void dump(std::ostream &stream) const;
 
-    Gtransfo * Clone() const; 
+    Gtransfo * Clone() const;
 
     double fit(const StarMatchList &List);
 
@@ -647,7 +647,7 @@ class TanRaDec2Pix : public Gtransfo
 
 
 //! signature of the user-provided routine that actually does the coordinate transfo for UserTransfo.
-typedef void (GtransfoFun)(const double, const double, 
+typedef void (GtransfoFun)(const double, const double,
 			   double &, double &, const void*);
 
 
@@ -665,7 +665,7 @@ class UserTransfo : public Gtransfo
   //! the transfo routine and extra data that it may need.
   UserTransfo(GtransfoFun &Fun, const void *UserData);
 
-  void apply(const double Xin, const double Yin, 
+  void apply(const double Xin, const double Yin,
 			  double &Xout, double &Yout) const;
 
   void dump(std::ostream &stream = std::cout) const;

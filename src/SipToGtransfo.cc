@@ -7,7 +7,7 @@
 #include "lsst/jointcal/Frame.h"
 #include "lsst/daf/base/PropertySet.h"
 
-namespace jointcal = lsst::jointcal; 
+namespace jointcal = lsst::jointcal;
 namespace afwImg = lsst::afw::image;
 namespace afwGeom  = lsst::afw::geom;
 
@@ -47,9 +47,9 @@ jointcal::TanSipPix2RaDec ConvertTanWcs(const boost::shared_ptr<lsst::afw::image
         {
 	  for (int j=0; j<=sipOrder; ++j)
 	    {
-	      if (i<sipA.cols() && j<sipA.rows()&& (i+j)<= sipOrder) 
+	      if (i<sipA.cols() && j<sipA.rows()&& (i+j)<= sipOrder)
 	        sipPoly.Coeff(i,j,0) = sipA(i,j);
-	      if (i<sipB.cols() && j<sipB.rows() && (i+j)<= sipOrder) 
+	      if (i<sipB.cols() && j<sipB.rows() && (i+j)<= sipOrder)
 	        sipPoly.Coeff(i,j,1) = sipB(i,j);
 	    }
 	}
@@ -60,8 +60,8 @@ jointcal::TanSipPix2RaDec ConvertTanWcs(const boost::shared_ptr<lsst::afw::image
 	 returns pix + sipPoly*secondShift(pix) where secondShift
 	 subtracts crpix_header from (1,1) based coordinates, i.e. the
 	 same thing as subtracting crpix_lsst from (0,0-based
-	 coordinates. So undistort pixel does: 
-            id+sipPoly*s2 
+	 coordinates. So undistort pixel does:
+            id+sipPoly*s2
       */
 
       GtransfoLin id; // identity is the default constructor.
@@ -75,11 +75,11 @@ jointcal::TanSipPix2RaDec ConvertTanWcs(const boost::shared_ptr<lsst::afw::image
   Eigen::Matrix2d cdMat = wcs->getCDMatrix();
   jointcal::GtransfoLin cdTrans;
   cdTrans.Coeff(1,0,0) = cdMat(0,0); // CD1_1
-  cdTrans.Coeff(0,1,0) = cdMat(0,1); // CD1_2 
+  cdTrans.Coeff(0,1,0) = cdMat(0,1); // CD1_2
   cdTrans.Coeff(1,0,1) = cdMat(1,0); // CD2_1
   cdTrans.Coeff(0,1,1) = cdMat(1,1); // CD2_1
   // this is by chance equal to s2, but we will not rely on this fact:
-  jointcal::GtransfoLinShift crpixShift(-crpix_lsst[0], -crpix_lsst[1]); 
+  jointcal::GtransfoLinShift crpixShift(-crpix_lsst[0], -crpix_lsst[1]);
 
   // CD's apply to CRPIX-shifted coordinate
   jointcal::GtransfoLin linPart = cdTrans * crpixShift;
@@ -100,14 +100,14 @@ jointcal::TanSipPix2RaDec ConvertTanWcs(const boost::shared_ptr<lsst::afw::image
 
 /* The inverse transformation i.e. convert from the fit result to the SIP
    convention. */
-PTR(afwImg::TanWcs) GtransfoToTanWcs(const jointcal::TanSipPix2RaDec WcsTransfo, 
+PTR(afwImg::TanWcs) GtransfoToTanWcs(const jointcal::TanSipPix2RaDec WcsTransfo,
 				     const jointcal::Frame &CcdFrame,
 				     const bool NoLowOrderSipTerms)
 {
   GtransfoLin linPart = WcsTransfo.LinPart();
   afwGeom::Point2D crpix_lsst; // in LSST "frame"
-  /* In order to remove the low order sip terms, one has to 
-     define the linear WCS transformation as the expansion of 
+  /* In order to remove the low order sip terms, one has to
+     define the linear WCS transformation as the expansion of
      the total pix-to-tangent plane (or focal plane) at the
      tangent point. In order to do that, we first have to find
      which pixel transforms to the tangent point, and then expand there */
@@ -123,7 +123,7 @@ PTR(afwImg::TanWcs) GtransfoToTanWcs(const jointcal::TanSipPix2RaDec WcsTransfo,
     Point ctmp = Point(crpix_lsst[0], crpix_lsst[1]);
     // cookup a large Frame
     jointcal::Frame f(ctmp.x-10000, ctmp.y-10000, ctmp.x+10000, ctmp.y +10000);
-    jointcal::Gtransfo *r =pix2TP.InverseTransfo(1e-6, f);       
+    jointcal::Gtransfo *r =pix2TP.InverseTransfo(1e-6, f);
     // overwrite crpix ...
     r->apply(0,0, crpix_lsst[0], crpix_lsst[1]);
     delete r;
@@ -143,7 +143,7 @@ PTR(afwImg::TanWcs) GtransfoToTanWcs(const jointcal::TanSipPix2RaDec WcsTransfo,
   // CD matrix:
   Eigen::Matrix2d cdMat;
   cdMat(0,0) = linPart.Coeff(1,0,0); // CD1_1
-  cdMat(0,1) = linPart.Coeff(0,1,0); // CD1_2 
+  cdMat(0,1) = linPart.Coeff(0,1,0); // CD1_2
   cdMat(1,0) = linPart.Coeff(1,0,1); // CD2_1
   cdMat(1,1) = linPart.Coeff(0,1,1); // CD2_2
   
@@ -154,7 +154,7 @@ PTR(afwImg::TanWcs) GtransfoToTanWcs(const jointcal::TanSipPix2RaDec WcsTransfo,
      - CRPIX
      - The CD matrix
      - the lin part (i.e. the combination of CRPIX and CD)
-     - and pix2TP, the total transformation from pixels to tangent plane 
+     - and pix2TP, the total transformation from pixels to tangent plane
      and we want to extract the SIP polynomials. The algebra is detailed
      in the appendix of the documentation */
 
@@ -168,7 +168,7 @@ PTR(afwImg::TanWcs) GtransfoToTanWcs(const jointcal::TanSipPix2RaDec WcsTransfo,
   jointcal::GtransfoLin id; // default constructor = identity
   jointcal::GtransfoPoly sipPoly = (sipTransform-id)*s2.invert();
 
-  // coockup the inverse sip polynomials 
+  // coockup the inverse sip polynomials
   // last argument : precision in pixels.
   jointcal::GtransfoPoly *tp2Pix = InversePolyTransfo(pix2TP, CcdFrame, 1e-4);
   if (!tp2Pix)
@@ -207,7 +207,7 @@ PTR(afwImg::TanWcs) GtransfoToTanWcs(const jointcal::TanSipPix2RaDec WcsTransfo,
   
 }
 
-}} // end of namespaces 
+}} // end of namespaces
 
   
    

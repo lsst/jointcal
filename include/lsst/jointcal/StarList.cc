@@ -19,7 +19,7 @@ namespace jointcal {
 
 
 
-template<class Star> StarList<Star>::StarList(const std::string &FileName) /* to be changed if switch to Star rather than pointers to Stars */ 
+template<class Star> StarList<Star>::StarList(const std::string &FileName) /* to be changed if switch to Star rather than pointers to Stars */
 {
   this->read(FileName);
 }
@@ -34,9 +34,9 @@ template<class Star> int StarList<Star>::read(std::istream & r)
   while( r >> c ) // to test eof
     {
       r.unget() ;
-      if ( (c == '@') ) 
+      if ( (c == '@') )
 	{
-	  r.getline(buff,4096); 
+	  r.getline(buff,4096);
 	  std::cout << "WARNING: ignoring @lines " << std::endl;
 	  //	  glob.ProcessLine(buff);
 	  continue;
@@ -54,27 +54,27 @@ template<class Star> int StarList<Star>::read(std::istream & r)
       else // actual star data
 	{
 	  Star* s = dynamic_cast<Star*>(Star::read(r, format));
-	  if (!r) // means I/O issue 
+	  if (!r) // means I/O issue
 	    {
 	      delete s;
 	      return 0;
 	    }
-	  if (!s) return 0; // other kind of I/O issue. 
+	  if (!s) return 0; // other kind of I/O issue.
 	  // read the end of line, in case there are some items left
 	  r.getline(buff,4096);
-	  this->push_back(s); 
+	  this->push_back(s);
 	}
     }
   return 1;
 }
 
-template<class Star> int 
+template<class Star> int
 StarList<Star>::read(const std::string &FileName)
 {
   return ascii_read(FileName);
 }
 
-template<class Star> int 
+template<class Star> int
 StarList<Star>::ascii_read(const std::string &FileName)
 {
   std::ifstream rd(FileName.c_str());
@@ -106,7 +106,7 @@ template<class Star> int StarList<Star>::write(const std::string &FileName) cons
 
 template<class Star> int StarList<Star>::write(std::ostream & pr) const
 {
-  std::ios::fmtflags  old_flags =  pr.flags(); 
+  std::ios::fmtflags  old_flags =  pr.flags();
   pr  << std::resetiosflags(std::ios::scientific) ;
   // pr  << setiosflags(0) ;
   pr  << std::setiosflags(std::ios::fixed) ;
@@ -128,7 +128,7 @@ template<class Star> int StarList<Star>::write(std::ostream & pr) const
     }
   else this->front()->WriteHeader(pr);
   for (auto it= this->begin(); it!=this->end() ; it++ )
-    {    
+    {
       (*it)->write(pr);
     }
   pr.flags(old_flags);
@@ -187,13 +187,13 @@ template<class Star>void StarList<Star>::ExtractInFrame(StarList<Star> &Out, con
     }
 }
 
-template<class Star>void StarList<Star>::CutEdges(const Frame &aFrame, float mindist) 
+template<class Star>void StarList<Star>::CutEdges(const Frame &aFrame, float mindist)
 {
   for (auto si= this->begin(); si!= this->end();)
     {
       if (aFrame.MinDistToEdges(**si) < mindist)
 	{
-	  si = this->erase(si); 
+	  si = this->erase(si);
 	}
       else
 	si++;
@@ -204,7 +204,7 @@ template<class Star>void StarList<Star>::CopyTo(StarList<Star> &Copy) const
 {
   Copy.ClearList();
   //  Copy.GlobVal() = this->GlobVal();
-  for (auto si = this->begin(); si != this->end(); ++si) 
+  for (auto si = this->begin(); si != this->end(); ++si)
     Copy.push_back(new Star(*(*si)));
 }
 

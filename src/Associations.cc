@@ -1,5 +1,5 @@
 // -*- C++ -*-
-// 
+//
 #include <iostream>
 #include <sstream>
 
@@ -61,7 +61,7 @@ bool Associations::AddImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::S
 
 //  std::cout << " considering image " << ri.Name() << std::endl;
   
-  /* if commonTangentPoint was never initialized 
+  /* if commonTangentPoint was never initialized
      take the one from this image */
   if (commonTangentPoint.x  == 0. && commonTangentPoint.y == 0.)
     {
@@ -75,16 +75,16 @@ bool Associations::AddImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::S
   boost::shared_ptr<CcdImage> ccdImage(new CcdImage(Ri, commonTangentPoint, wcs, meta, bbox, filter, calib, visit, ccd, camera, control->sourceFluxField));
 //  CcdImage *ccdImage = new CcdImage(Ri, commonTangentPoint, wcs, meta, bbox, filter, calib, visit, ccd, camera, control->sourceFluxField);
   ccdImageList.push_back(ccdImage);
-  std::cout << " we have " << ccdImage->WholeCatalog().size() 
+  std::cout << " we have " << ccdImage->WholeCatalog().size()
 	    << " objects in this catalog " << visit << " " << ccd << std::endl;
   return true;
 }
 
-void Associations::AssociateCatalogs(const double MatchCutInArcSec, 
+void Associations::AssociateCatalogs(const double MatchCutInArcSec,
 				     const bool UseFittedList,
 				     const bool EnlargeFittedList)
 {
-  double matchCut = MatchCutInArcSec; 
+  double matchCut = MatchCutInArcSec;
 
   std::cout << " associating using a cut of " << matchCut << " arcsec" << std::endl;
 
@@ -97,7 +97,7 @@ void Associations::AssociateCatalogs(const double MatchCutInArcSec,
   if (!UseFittedList) fittedStarList.clear();
   else // clear measurement counts and associations to refstars.
     {
-      for (FittedStarIterator i= fittedStarList.begin(); 
+      for (FittedStarIterator i= fittedStarList.begin();
 	 i != fittedStarList.end(); ++i)
 	{
 	  (*i)->ClearBeforeAssoc();
@@ -108,8 +108,8 @@ void Associations::AssociateCatalogs(const double MatchCutInArcSec,
     {
       CcdImage &ccdImage = **i;
       
-      const Gtransfo *toCommonTangentPlane = 
-	ccdImage.Pix2CommonTangentPlane(); 
+      const Gtransfo *toCommonTangentPlane =
+	ccdImage.Pix2CommonTangentPlane();
 
       /* clear the catalog to fit and copy the whole catalog into it.
 	 this enables to reassociate from scratch after a fit
@@ -124,18 +124,18 @@ void Associations::AssociateCatalogs(const double MatchCutInArcSec,
 	 FastFinder), select in the fittedStarList the objects that
 	 are within reach of the current ccdImage
       */
-      Frame ccdImageFrameCPT = 
+      Frame ccdImageFrameCPT =
 	ApplyTransfo(ccdImage.ImageFrame(), *toCommonTangentPlane, LargeFrame);
       ccdImageFrameCPT = ccdImageFrameCPT.Rescale(1.10); // add 10 % margin.
-      /* we cannot use FittedStarList::ExtractInFrame, because it does an 
-	 actual copy, which we don't want here: we want the pointers in 
+      /* we cannot use FittedStarList::ExtractInFrame, because it does an
+	 actual copy, which we don't want here: we want the pointers in
 	 the StarMatch to refer to fittedStarList elements. */
       FittedStarList toMatch;
       
-      for (FittedStarCIterator i=fittedStarList.begin(); 
+      for (FittedStarCIterator i=fittedStarList.begin();
 	   i!= fittedStarList.end(); ++i)
 	{
-	  if (ccdImageFrameCPT.InFrame(**i)) 
+	  if (ccdImageFrameCPT.InFrame(**i))
 	  {
 	    toMatch.push_back(*i);
 	  }
@@ -152,7 +152,7 @@ void Associations::AssociateCatalogs(const double MatchCutInArcSec,
 //      if (Preferences().cleanMatches)
 	smList->RemoveAmbiguities(*toCommonTangentPlane);
 
-      /* associate MeasuredStar -> FittedStar using the 
+      /* associate MeasuredStar -> FittedStar using the
 	 surviving matches */
 
       int matchedCount = 0;
@@ -169,12 +169,12 @@ void Associations::AssociateCatalogs(const double MatchCutInArcSec,
 	  matchedCount++;
 	  
 	  //	  if(  fs->Distance(toCommonTangentPlane->apply(*ms)) > 1.5/3600. )
-	  //	    cout << " OUTLIER: " << ccdImage.Shoot() << "p" << ccdImage.Chip() 
-	  //		 << ms->x << "," << ms->y 
+	  //	    cout << " OUTLIER: " << ccdImage.Shoot() << "p" << ccdImage.Chip()
+	  //		 << ms->x << "," << ms->y
 	  //		 << endl;
 
 	}
-      std::cout << " matched " << matchedCount << " objects" 
+      std::cout << " matched " << matchedCount << " objects"
 		<< " in " << ccdImage.Name() << std::endl;
       // delete the matches
       delete smList;
@@ -184,7 +184,7 @@ void Associations::AssociateCatalogs(const double MatchCutInArcSec,
       for (MeasuredStarIterator i = catalog.begin(); i!= catalog.end(); ++i)
 	{
 	  MeasuredStar &mstar = **i;
-	  // to check if it was matched, just check if it has 
+	  // to check if it was matched, just check if it has
 	  // a fittedStar Pointer assigned
 	  if (mstar.GetFittedStar()) continue;
 	  if (EnlargeFittedList)
@@ -218,8 +218,8 @@ void Associations::CollectRefStars(const bool ProjectOnTP)
       else tangentPlaneFrame += CTPFrame;
     }
 
-  // DEBUG 
-  std::cout << " commonTangentPlane Frame " << tangentPlaneFrame 
+  // DEBUG
+  std::cout << " commonTangentPlane Frame " << tangentPlaneFrame
 	    << " Tangent Point " << commonTangentPoint << std::endl;
   // END DEBUG
 
@@ -240,7 +240,7 @@ void Associations::CollectRefStars(const bool ProjectOnTP)
   for (BaseStarCIterator i= usno.begin(); i != usno.end(); ++i)
     {
       const BaseStar &b = **i;
-      //USNO position uncertainties are set in 
+      //USNO position uncertainties are set in
       // poloka-core/src/usnoutils.cc (readusno)
       RefStar *r = new RefStar(b,b);
       refStarList.push_back(r);
@@ -267,7 +267,7 @@ void Associations::CollectLSSTRefStars(lsst::afw::table::SortedCatalogT< lsst::a
       throw(LSST_EXCEPT(pex::exceptions::InvalidParameterError, " Reference catalog is empty : stop here "));
     }
     
-//  auto coordKey = Ref.getSchema().find<lsst::afw::coord::Coord>("coord").key;	
+//  auto coordKey = Ref.getSchema().find<lsst::afw::coord::Coord>("coord").key;
 // Same syntax as the following line but with auto :  auto coordKey = afwTable::CoordKey(Ref.getSchema()["coord"]);
   afw::table::CoordKey coordKey = Ref.getSchema()["coord"];
   auto fluxKey = Ref.getSchema().find<double>(filter + "_flux").key;
@@ -317,7 +317,7 @@ const lsst::afw::geom::Box2D Associations::GetRaDecBBox()
   // convert tangent plane coordinates to RaDec:
   GtransfoLin identity;
   TanPix2RaDec CTP2RaDec(identity, commonTangentPoint);
-  Frame raDecFrame = ApplyTransfo(tangentPlaneFrame,CTP2RaDec,LargeFrame);  
+  Frame raDecFrame = ApplyTransfo(tangentPlaneFrame,CTP2RaDec,LargeFrame);
   
   lsst::afw::geom::Point<double> min(raDecFrame.xMin, raDecFrame.yMin);
   lsst::afw::geom::Point<double> max(raDecFrame.xMax, raDecFrame.yMax);
@@ -327,7 +327,7 @@ const lsst::afw::geom::Box2D Associations::GetRaDecBBox()
   
 }
 
-void Associations::AssociateRefStars(const double &MatchCutInArcSec, 
+void Associations::AssociateRefStars(const double &MatchCutInArcSec,
 				     const Gtransfo* T)
 {
   //DEBUG
@@ -335,7 +335,7 @@ void Associations::AssociateRefStars(const double &MatchCutInArcSec,
   // std::cout << "fitted list size " << fittedStarList.size() << endl;
   // std::cout << fittedStarList << std::endl;
 
-  // clear previous associations if any : 
+  // clear previous associations if any :
   for (RefStarIterator i = refStarList.begin(); i != refStarList.end(); ++i)
     {
       (*i)->SetFittedStar(*(FittedStar *) NULL );
@@ -353,10 +353,10 @@ void Associations::AssociateRefStars(const double &MatchCutInArcSec,
   
   if (cleanMatches)
     {
-      std::cout << " number of matches before removing ambiguities " 
+      std::cout << " number of matches before removing ambiguities "
 		<< smList->size() << std::endl;
       smList->RemoveAmbiguities(*T);
-      std::cout << " number of matches after removing ambiguities " 
+      std::cout << " number of matches after removing ambiguities "
 		<< smList->size() << std::endl;
     }
 
@@ -374,7 +374,7 @@ void Associations::AssociateRefStars(const double &MatchCutInArcSec,
       fs.SetRefStar(&rs);
     }
 
-  std::cout << " associated " << smList->size() << " REFERENCE stars " 
+  std::cout << " associated " << smList->size() << " REFERENCE stars "
 	    << " among a list of " << refStarList.size() << std::endl;
   delete smList;
 }
@@ -382,7 +382,7 @@ void Associations::SelectFittedStars()
 {
   std::cout << " number of possible fitted star before cutting on # of measurements " << fittedStarList.size() << std::endl;
   std::cout << " INFO: min # of measurements " <<  minMeasurementCount << std::endl;
-  /* first pass : remove objects that have less than a 
+  /* first pass : remove objects that have less than a
      certain number of measurements.
   */
   for (CcdImageIterator i=ccdImageList.begin(); i!= ccdImageList.end(); ++i)
@@ -400,7 +400,7 @@ void Associations::SelectFittedStars()
 	  /*  keep FittedStar's which either have a minimum number of
 	      measurements, or are matched to a RefStar (i.e. USNO)
 	  */
-	  if (!fstar->GetRefStar() 
+	  if (!fstar->GetRefStar()
 	      &&  fstar->MeasurementCount()< minMeasurementCount)
 	    {
 	      FittedStar *f = const_cast<FittedStar *>(fstar);
@@ -416,7 +416,7 @@ void Associations::SelectFittedStars()
 	}// end loop on objects in catalog
     } // end loop on catalogs
 
-  /* now FittedStars with less than minMeasurementCount should have 
+  /* now FittedStars with less than minMeasurementCount should have
      zero MeasurementCount(); */
 
   for (FittedStarIterator fi = fittedStarList.begin();
@@ -427,10 +427,10 @@ void Associations::SelectFittedStars()
     }
 
   // just for printouts:
-  // fittedStarList.sort(&DecreasingMeasurementCount); 
+  // fittedStarList.sort(&DecreasingMeasurementCount);
     
-  std::cout 
-    << " number of possible fitted star after cutting on # of measurements " 
+  std::cout
+    << " number of possible fitted star after cutting on # of measurements "
     << fittedStarList.size() << std::endl;
 }
 
@@ -440,7 +440,7 @@ void Associations::AssignMags()
     {
       CcdImage &ccdImage = **i;
       MeasuredStarList &catalog = ccdImage.CatalogForFit();
-      for (MeasuredStarIterator mi = catalog.begin(); 
+      for (MeasuredStarIterator mi = catalog.begin();
 	   mi != catalog.end(); ++mi)
 	{
 	  MeasuredStar &mstar = **mi;
@@ -525,7 +525,7 @@ void Associations::CollectMCStars(int realization)
 //{
 //  CcdImageIterator I;
 //  StarMatchIterator smI;
-//  
+//
 //  for(I=ccdImageList.begin();I!=ccdImageList.end();I++)
 //    {
 //      CcdImage& ccdImage = **I;
@@ -534,7 +534,7 @@ void Associations::CollectMCStars(int realization)
 //      string mctruth = dbimdir + "/mctruth.list";
 //      GtransfoIdentity gti;
 //      MeasuredStarList& catalog = ccdImage.CatalogForFit();
-//      
+//
 //      MeasuredStarIterator msII;
 //      for(msII=catalog.begin();msII!=catalog.end();msII++)
 //      	{
@@ -571,8 +571,8 @@ void Associations::CollectPhotometricRefStars(string const& catalogname)
       DicStar& ds = **I;
       
       // I am here (debugging the star positions)
-      //       cout << "[DEBUG] x,y=" 
-      // 	   << ds.x << " " << ds.y 
+      //       cout << "[DEBUG] x,y="
+      // 	   << ds.x << " " << ds.y
       // 	   << endl;
       
       refflux[0] = getflux(ds, "mu");
@@ -626,20 +626,20 @@ void Associations::AssociatePhotometricRefStars(double MatchCutInArcSec)
     }
   
   GtransfoIdentity gtransfoIdentity;
-  StarMatchList* smList = ListMatchCollect(Ref2Base(photRefStarList), 
+  StarMatchList* smList = ListMatchCollect(Ref2Base(photRefStarList),
 					   Fitted2Base(fittedStarList),
 					   &gtransfoIdentity,
 					   MatchCutInArcSec/3600.);
   
   if(Preferences().cleanMatches)
     {
-      cout << "  (*) removing ambiguities: " 
+      cout << "  (*) removing ambiguities: "
 	   << smList->size();
       smList->RemoveAmbiguities(gtransfoIdentity);
       cout << " --> "  << smList->size() << endl;
     }
   
-  // associate the RefStars and the fitted stars ... 
+  // associate the RefStars and the fitted stars ...
   StarMatchIterator smI;
   for(smI=smList->begin(); smI!=smList->end(); smI++)
     {
@@ -664,14 +664,14 @@ void Associations::AssociatePhotometricRefStars(double MatchCutInArcSec)
 
 //void Associations::SetRefPhotFactor(int chip, double photfact)
 //{
-//  
+//
 //}
 
 
 
 #include "tstar.h"
 
-void Associations::SetFittedStarColors(std::string DicStarListName, 
+void Associations::SetFittedStarColors(std::string DicStarListName,
 				       std::string Color,
 				       const double &MatchCutArcSec)
 {
@@ -684,7 +684,7 @@ void Associations::SetFittedStarColors(std::string DicStarListName,
     c2 = Color.substr(pos_minus+1,string::npos);
   DicStarList cList(DicStarListName);
   if (!cList.HasKey(c1)) throw(GastroException("Associations::SetFittedstarColors : "+DicStarListName+" misses  a key named \""+c1+"\""));
-  if (compute_diff && !cList.HasKey(c2)) 
+  if (compute_diff && !cList.HasKey(c2))
     throw(GastroException("Associations::SetFittedstarColors : "+DicStarListName+" misses  a key named \""+c2+"\""));
   // we associate in some tangent plane. The reference catalog is expressed on the sky,
   // but FittedStar's may be still in this tangent plane.
@@ -702,7 +702,7 @@ void Associations::SetFittedStarColors(std::string DicStarListName,
 				       id_or_proj,
 				       MatchCutArcSec/3600);
 
-  cout << "INFO : matched " << sm->size()<< '/' << fittedStarList.size() 
+  cout << "INFO : matched " << sm->size()<< '/' << fittedStarList.size()
        << " FittedStars to color catalog" << endl;
   // Evaluate and assign colors.
   for (auto i=sm->begin();i != sm->end(); ++i)

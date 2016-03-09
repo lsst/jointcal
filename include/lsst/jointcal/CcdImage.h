@@ -31,7 +31,7 @@ class CcdImage : public RefCount
  private:
 
   Frame imageFrame; // in pixels
-  // wholeCatalog is just store the catalog of selected sources 
+  // wholeCatalog is just store the catalog of selected sources
   //  lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> wholeCatalog;
   
   MeasuredStarList wholeCatalog; // the catalog of measured objets
@@ -39,7 +39,7 @@ class CcdImage : public RefCount
 
   // these 2 transfos are NOT updated when fitting
 //  Gtransfo *readWcs; // i.e. from pix to sky
-//  Gtransfo *inverseReadWcs; // i.e. from sky to pix  
+//  Gtransfo *inverseReadWcs; // i.e. from sky to pix
   CountedRef<BaseTanWcs> readWcs; // i.e. from pix to sky
   CountedRef<Gtransfo> inverseReadWcs; // i.e. from sky to pix
 
@@ -93,14 +93,14 @@ class CcdImage : public RefCount
 
  public:
 
-  CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &Ri, 
+  CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &Ri,
     const Point &CommonTangentPoint, const PTR(lsst::afw::image::TanWcs) wcs, const PTR(lsst::daf::base::PropertySet) meta,
     const lsst::afw::geom::Box2I &bbox, const std::string &filter, const PTR(lsst::afw::image::Calib) calib,
     const int &visit, const int &ccd, const std::string &ccdImage, const std::string &fluxField );
 
 
     
-#ifdef TO_BE_FIXED 
+#ifdef TO_BE_FIXED
   //!
   CcdImage(const ReducedImage &Ri, const Point &CommonTangentPoint, const CatalogLoader * LoadIt);
 #endif
@@ -120,24 +120,24 @@ class CcdImage : public RefCount
   //!
   MeasuredStarList & CatalogForFit()  { return catalogForFit;}
 
-  //! 
-  const Gtransfo* Pix2CommonTangentPlane() const 
+  //!
+  const Gtransfo* Pix2CommonTangentPlane() const
   { return pix2CommonTangentPlane.get();}
 
-  //! 
-  const Gtransfo* CommonTangentPlane2TP() const 
+  //!
+  const Gtransfo* CommonTangentPlane2TP() const
   { return CTP2TP.get();}
   
-  //! 
-  const Gtransfo* TP2CommonTangentPlane() const 
+  //!
+  const Gtransfo* TP2CommonTangentPlane() const
   { return TP2CTP.get();}
   
-  //! 
-  const Gtransfo* Pix2TangentPlane() const 
+  //!
+  const Gtransfo* Pix2TangentPlane() const
   { return pix2TP.get();}
 
-  //! 
-  const Gtransfo* Sky2TP() const 
+  //!
+  const Gtransfo* Sky2TP() const
   { return sky2TP.get();}
   
   //! returns chip ID
@@ -146,7 +146,7 @@ class CcdImage : public RefCount
   //! instrument (TOADINST fits pseudo-key)
   std::string Instrument() const {return instrument;}
 
-  //! some incremental band rank. Is used to incrementally index bands in a sample of input images. Different from BandIndex() 
+  //! some incremental band rank. Is used to incrementally index bands in a sample of input images. Different from BandIndex()
   unsigned BandRank() const {return bandRank;}
 
   //! returns seeing
@@ -186,10 +186,10 @@ class CcdImage : public RefCount
   //! absorption term
   double PhotK() const { return photk; }
   
-  //! original ZP 
+  //! original ZP
   double PhotC() const { return photc; }
 
-  //! 
+  //!
   double HourAngle() const { return hourAngle; }
 
   //! Parallactic angle
@@ -210,7 +210,7 @@ class CcdImage : public RefCount
   //! return the CcdImage band name
   std::string Band() const { return band;}
   
-  //! return the CcdImage band index. This is a static index that mostly turns a letter (e.g. 'g') into a number (e.g. 2). Different from BandRank() 
+  //! return the CcdImage band index. This is a static index that mostly turns a letter (e.g. 'g') into a number (e.g. 2). Different from BandRank()
   int BandIndex() const { return bandIndex; }
   
   //! Flat used to flatfield
@@ -274,16 +274,16 @@ class CcdImageList : public std::list<boost::shared_ptr<CcdImage> >
 {
   public:
   
-  //! 
+  //!
   //std::list<std::string> DateObs() const;
   
-  //! 
+  //!
   //std::list<std::string> Bands() const;
   
-  //! 
+  //!
   //double       MeanAirmass() const;
   
-  //! 
+  //!
   template<class Accept> CcdImageList SubList(const Accept &OP) const
     {
       CcdImageList out;

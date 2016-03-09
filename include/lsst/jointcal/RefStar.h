@@ -5,7 +5,7 @@
 #include <vector>
 #include <fstream>
 
-#include "lsst/jointcal/FittedStar.h" 
+#include "lsst/jointcal/FittedStar.h"
 #include "lsst/jointcal/StarList.h"
 
 namespace lsst {
@@ -32,10 +32,10 @@ private :
   //!
   void SetFittedStar(FittedStar &F);
 
-  //! 
+  //!
   double Ra() const { return raDec.x;}
 
-  //! 
+  //!
   double Dec() const {return raDec.y;}
   
   //! reference flux

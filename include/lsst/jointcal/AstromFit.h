@@ -21,11 +21,11 @@ class Associations;
 to carry out a LS astrometric fit wrt distortion mappings and coordinates
 of common objects.  Namely it computes the Jacobian and
 gradient of the chi2 (w.r.t. parameters), and the Chi2 itself.
-It interfaces with the actual modelling of distortions 
+It interfaces with the actual modelling of distortions
 via a mimimum virtual interface DistortionModel, and the actual mappings
-via an other virtual interface : Mapping. 
+via an other virtual interface : Mapping.
 
-  In short AstromFit aims at computing derivatives of 
+  In short AstromFit aims at computing derivatives of
 least quares. The terms of the chi2 are of two kinds:
 
 kind 1 ->   (T(X_M) - p(F))^T W (T(X_M) - p(F))
@@ -38,17 +38,17 @@ maps the CCD coordinates onto this TP. p is obtained via the DistorsionModel
 and can be different for all CcdImage's. Depending on what is beeing fitted,
 one could imagine cases where the projector p is the same for all CcdImages.
 
-Kind 2  -> (p'(F)-p'(R))^T  W_R (p'(F)-p'(R)) 
-R refers to some  externally-provided reference object position, 
-and p' to some projector from sky to some plane. The reference 
-objects define the overall coordinate frame, which is required 
-when all T and all F are fitted  simultaneously. There is one 
-such term per external reference object. There can be more 
+Kind 2  -> (p'(F)-p'(R))^T  W_R (p'(F)-p'(R))
+R refers to some  externally-provided reference object position,
+and p' to some projector from sky to some plane. The reference
+objects define the overall coordinate frame, which is required
+when all T and all F are fitted  simultaneously. There is one
+such term per external reference object. There can be more
 F (fitted) objects than R (reference) objects.
 
-In the same framework, one can fit relative transforms between images by 
+In the same framework, one can fit relative transforms between images by
 setting p = Identity for all input CcdImages and not fitting T for
-one of the CcdImage's. One does not need reference object and 
+one of the CcdImage's. One does not need reference object and
 would then naturally not have any Kind 2 terms.
 
 */
@@ -58,9 +58,9 @@ would then naturally not have any Kind 2 terms.
 //! Class that handles the astrometric least squares problem.
 
 class AstromFit {
-  private : 
+  private :
 
-  Associations &_assoc; 
+  Associations &_assoc;
   std::string _WhatToFit;
   bool _fittingDistortions, _fittingPos, _fittingRefrac, _fittingPM;
   DistortionModel * _distortionModel;
@@ -90,7 +90,7 @@ class AstromFit {
   unsigned Minimize(const std::string &WhatToFit, const double NSigRejCut=0);
 
   //! Compute derivatives of measurement terms for this CcdImage
-  void LSDerivatives1(const CcdImage &Ccd, 
+  void LSDerivatives1(const CcdImage &Ccd,
 		      TripletList &TList, Eigen::VectorXd &Rhs,
 		      const MeasuredStarList *M=NULL) const;
 
@@ -126,7 +126,7 @@ class AstromFit {
   //! Contributions to derivatives from (presumably) outlier terms. No discarding done.
   void OutliersContributions(MeasuredStarList &MOutliers,
 			     FittedStarList &FOutLiers,
-			     TripletList &TList, 
+			     TripletList &TList,
 			     Eigen::VectorXd &Grad);
 
 
@@ -154,12 +154,12 @@ class AstromFit {
   void MakeRefResTuple(const std::string &TupleName) const;
 
   //! access to the fitted refraction coefficients. Unit depends on scale in the tangentPlane. Degrees for an actual tangent plane.
-  std::vector<double> RefractionCoefficients() const 
+  std::vector<double> RefractionCoefficients() const
     { return _refracCoefficient;}
 
   void CheckStuff();
 
- private : 
+ private :
 
   Point TransformFittedStar(const FittedStar &F,
 			    const Gtransfo * Sky2TP,
@@ -167,18 +167,18 @@ class AstromFit {
 			    const double &RefractionCoeff,
 			    const double &Jd) const;
 
-  template <class ListType, class Accum> 
+  template <class ListType, class Accum>
     void AccumulateStatImageList(ListType &L, Accum &A) const;
 
-  template <class ImType, class Accum> 
+  template <class ImType, class Accum>
     void AccumulateStatImage(ImType &I, Accum &A) const;
 
-  template <class Accum> 
+  template <class Accum>
     void AccumulateStatRefStars(Accum &Accu) const;
 
   
   //! only for outlier removal
-  void GetMeasuredStarIndices(const MeasuredStar &Ms, 
+  void GetMeasuredStarIndices(const MeasuredStar &Ms,
 			      std::vector<unsigned> &Indices) const;
 
 };

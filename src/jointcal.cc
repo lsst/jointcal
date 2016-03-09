@@ -90,17 +90,17 @@ namespace jointcal {
 //            sourcePtr != _sourceList[1].end(); ++sourcePtr) {
 //                std::cout << sourcePtr->getCentroid() << std::endl;
 //                std::cout << sourcePtr->get(centroidKey) << std::endl;
-//            } 
+//            }
     
     // Create and load an Association object
-    Associations *assoc = new Associations();    
+    Associations *assoc = new Associations();
     for (unsigned i=0; i<_sourceList.size(); i++) {
-        assoc->AddImage(_sourceList[i], _wcsList[i], _metaList[i], _bboxList[i], _filterList[i], 
+        assoc->AddImage(_sourceList[i], _wcsList[i], _metaList[i], _bboxList[i], _filterList[i],
         _calibList[i], _visitList[i], _ccdList[i], _cameraList[i], control);
     }
     
     // Associates catalog
-    double matchCut = 3.0;   // Should be passed as a parameter  
+    double matchCut = 3.0;   // Should be passed as a parameter
     assoc->AssociateCatalogs(matchCut);
     assoc->CollectRefStars(/*ProjectOnTP =  */ false);
     assoc->SelectFittedStars();
@@ -112,7 +112,7 @@ namespace jointcal {
     SimplePolyModel spm(assoc->TheCcdImageList(), &sky2TP, true, 0);
 
     double posError = 0.02;
-    AstromFit astromFit(*assoc, &spm, posError); 
+    AstromFit astromFit(*assoc, &spm, posError);
 
     std::string whatToFit = "Distortions";
 
@@ -149,6 +149,6 @@ namespace jointcal {
           std::cout << astromFit.ComputeChi2() << std::endl;
         }
     astromFit.MakeResTuple("res.list");
-}    
+}
     
 }} // end of namespaces

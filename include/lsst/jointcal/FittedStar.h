@@ -36,7 +36,7 @@ struct PmBlock
 
 };
 
-//! The objects which have been measured several times. The MeasuredStar s measuring the same object in differenr CcdImage s point to the same FittedStar. 
+//! The objects which have been measured several times. The MeasuredStar s measuring the same object in differenr CcdImage s point to the same FittedStar.
 class FittedStar : public BaseStar, public PmBlock {
 
   friend class PhotomFit;
@@ -50,7 +50,7 @@ class FittedStar : public BaseStar, public PmBlock {
   double col;
   int    gen;
   double wmag;
-  unsigned indexInMatrix; 
+  unsigned indexInMatrix;
   int measurementCount;
   const RefStar *refStar;
   
@@ -59,17 +59,17 @@ class FittedStar : public BaseStar, public PmBlock {
   double fluxErr2;
 
  public:
-  FittedStar() : 
-    BaseStar(), mag(-1), emag(-1), col(0.), gen(-1), wmag(0), 
+  FittedStar() :
+    BaseStar(), mag(-1), emag(-1), col(0.), gen(-1), wmag(0),
     indexInMatrix(-1), measurementCount(0), refStar(NULL),
-    flux2(-1), 
+    flux2(-1),
     fluxErr(-1),
     fluxErr2(-1) {}
   
-  FittedStar(const BaseStar &B) : 
-    BaseStar(B), mag(-1), emag(-1), col(0.), gen(-1), wmag(0), 
+  FittedStar(const BaseStar &B) :
+    BaseStar(B), mag(-1), emag(-1), col(0.), gen(-1), wmag(0),
     indexInMatrix(0), measurementCount(0), refStar(NULL),
-    flux2(-1), 
+    flux2(-1),
     fluxErr(-1),
     fluxErr2(-1) {}
     
@@ -78,11 +78,11 @@ class FittedStar : public BaseStar, public PmBlock {
   //      index(F.index), measurementCount(F.measurementCount), refStar(F.refStar),
   //      flux2(F.flux2), fluxErr(F.fluxErr), fluxErr2(F.fluxErr2) {}
     
-  //! 
+  //!
   FittedStar(const MeasuredStar &M);
 
 
-  //! 
+  //!
   void ClearBeforeAssoc()
   {
     indexInMatrix = -1;
@@ -94,8 +94,8 @@ class FittedStar : public BaseStar, public PmBlock {
 
   //!
   void dump(std::ostream & stream = std::cout) const
-    { BaseStar::dumpn(stream); 
-    stream << " mcount " 
+    { BaseStar::dumpn(stream);
+    stream << " mcount "
 	   << measurementCount << std::endl;
     }
 
@@ -115,11 +115,11 @@ class FittedStar : public BaseStar, public PmBlock {
   int     Generation() const { return gen;}
   int&    Generation() { return gen; }
 
-  //! 
+  //!
   void  SetMag(double Value) { mag = Value;}
 
   //! this routine will hopefully soon disappear.
-  void AddMagMeasurement(const double &MagValue, 
+  void AddMagMeasurement(const double &MagValue,
 			 const double &MagWeight);
 
   //! index is a value that a fit can set and reread....
@@ -128,10 +128,10 @@ class FittedStar : public BaseStar, public PmBlock {
   //!
   int  IndexInMatrix() const { return indexInMatrix;}
 
-  //! 
+  //!
   void SetRefStar(const RefStar*);
 
-  //! 
+  //!
   const RefStar *GetRefStar() const { return refStar;};
   
   //! getters
@@ -145,7 +145,7 @@ class FittedStar : public BaseStar, public PmBlock {
   double         FluxErr2() const { return fluxErr2; }
   double&        FluxErr2() { return fluxErr2; }
   
-  //! write stuff 
+  //! write stuff
   std::string       WriteHeader_(std::ostream& pr=std::cout, const char* i=NULL) const;
   virtual void      writen(std::ostream& s) const;
 virtual void      read_it(std::istream& s, const char* format);
@@ -177,7 +177,7 @@ class FittedStarList : public  StarList<FittedStar>
       coordinates to sideral ones. GoodStars refer to those that are
       connected to ref Ccds and hence have a magnitude.
      */
-    void WriteTuple(const std::string &FileName, 
+    void WriteTuple(const std::string &FileName,
 		    const Gtransfo &TP2RaDec,
 		    const bool OnlyGoodStars = true);
 

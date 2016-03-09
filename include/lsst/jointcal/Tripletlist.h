@@ -12,7 +12,7 @@ namespace jointcal {
 typedef Eigen::Triplet<double> Trip;
 
 // at the moment this class implements the eigen format.
-// it would be wise to implement it differently if talking to cholmod 
+// it would be wise to implement it differently if talking to cholmod
 class TripletList : public std::vector<Trip>
 {
   unsigned nextFreeIndex;

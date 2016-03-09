@@ -19,16 +19,16 @@ class SimpleGtransfoMapping : public Mapping
 {
 
  protected:
-  bool toFit; 
+  bool toFit;
   unsigned index;
   /* inheritance may also work. Perhaps with some trouble because
      some routines in Mapping and Gtransfo have the same name */
-  std::shared_ptr<Gtransfo> transfo; 
+  std::shared_ptr<Gtransfo> transfo;
 
   std::shared_ptr<Gtransfo> errorProp;
-  /* to avoid allocation at every call of PosDerivatives. 
+  /* to avoid allocation at every call of PosDerivatives.
      use a pointer for constness */
-  std::unique_ptr<GtransfoLin> lin; 
+  std::unique_ptr<GtransfoLin> lin;
 
 
 #ifdef STORAGE
@@ -57,7 +57,7 @@ class SimpleGtransfoMapping : public Mapping
   // interface Mapping functions:
 
   //!
-  unsigned Npar() const 
+  unsigned Npar() const
   {
     if (toFit) return transfo->Npar();
     else return 0;
@@ -83,12 +83,12 @@ class SimpleGtransfoMapping : public Mapping
   }
 
   //!
-  void  PosDerivative(const Point &Where, Eigen::Matrix2d &Der, 
+  void  PosDerivative(const Point &Where, Eigen::Matrix2d &Der,
 		      const double & Eps) const
   {
     errorProp->Derivative(Where, *lin, Eps);
     Der(0,0) = lin->Coeff(1,0,0);
-    // 
+    //
     /* This does not work : it was proved by rotating the frame
        see the compilation switch ROTATE_T2 in constrainedpolymodel.cc
     Der(1,0) = lin->Coeff(1,0,1);
@@ -116,7 +116,7 @@ class SimpleGtransfoMapping : public Mapping
 					      Eigen::MatrixX2d &H) const
   {
     TransformPosAndErrors(Where,OutPos);
-    transfo->ParamDerivatives(Where, &H(0,0), &H(0,1));      
+    transfo->ParamDerivatives(Where, &H(0,0), &H(0,1));
   }
 
   //! Access to the (fitted) transfo
@@ -124,10 +124,10 @@ class SimpleGtransfoMapping : public Mapping
 
 };
 
-//! Mapping implementation for a polynomial transformation. 
+//! Mapping implementation for a polynomial transformation.
 class SimplePolyMapping : public SimpleGtransfoMapping
 {
-  /* to better condition the 2nd derivative matrix, the 
+  /* to better condition the 2nd derivative matrix, the
   transformed coordinates are mapped (roughly) on [-1,1].
   We need both the transform and its derivative. */
   GtransfoLin _centerAndScale;
@@ -136,7 +136,7 @@ class SimplePolyMapping : public SimpleGtransfoMapping
   /* Where we store the combination. We use a pointer for
   constness. Could not get it to work with smart pointers.
   */
-  GtransfoPoly* actualResult; 
+  GtransfoPoly* actualResult;
 
  public:
 
@@ -144,10 +144,10 @@ class SimplePolyMapping : public SimpleGtransfoMapping
 
 
 
-  // ! contructor. 
+  // ! contructor.
   /*! The transformation will be initialized to Transfo, so that the effective transformation
     reads Transfo*CenterAndScale */
- SimplePolyMapping(const GtransfoLin &CenterAndScale , 
+ SimplePolyMapping(const GtransfoLin &CenterAndScale ,
 		   const GtransfoPoly& Transfo):
   SimpleGtransfoMapping(Transfo), _centerAndScale(CenterAndScale)
   {
@@ -171,13 +171,13 @@ class SimplePolyMapping : public SimpleGtransfoMapping
   /* The SimpleGtransfoMapping version does not account for the
      _centerAndScale transfo */
 
-  void  PosDerivative(const Point &Where, Eigen::Matrix2d &Der, 
+  void  PosDerivative(const Point &Where, Eigen::Matrix2d &Der,
 		      const double & Eps) const
   {
     Point tmp = _centerAndScale.apply(Where);
     errorProp->Derivative(tmp, *lin, Eps);
     Der(0,0) = lin->Coeff(1,0,0);
-    // 
+    //
     /* This does not work : it was proved by rotating the frame
        see the compilation switch ROTATE_T2 in constrainedpolymodel.cc
     Der(1,0) = lin->Coeff(1,0,1);
@@ -207,7 +207,7 @@ class SimplePolyMapping : public SimpleGtransfoMapping
       OutPos.vx = tmp.vx;
       OutPos.vy = tmp.vy;
       OutPos.vxy = tmp.vxy;
-      transfo->ParamDerivatives(mid, &H(0,0), &H(0,1));      
+      transfo->ParamDerivatives(mid, &H(0,0), &H(0,1));
     }
 
   //! Implements as well the centering and scaling of coordinates
@@ -242,7 +242,7 @@ class SimplePolyMapping : public SimpleGtransfoMapping
   coordinate system */
 class SimpleIdentityMapping : public SimpleGtransfoMapping<GtransfoIdentity>
 {
- public: 
+ public:
 
   //! nothing to do.
   virtual void ComputeTransformAndDerivatives(const FatPoint &Where,

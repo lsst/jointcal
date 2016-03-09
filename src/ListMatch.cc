@@ -45,7 +45,7 @@ MatchConditions::MatchConditions()
   NStarsL1 = 70; NStarsL2=70;
   MaxTrialCount = 4;
   NSigmas = 3.;
-  MaxShiftX = 50; MaxShiftY = 50; 
+  MaxShiftX = 50; MaxShiftY = 50;
   SizeRatio = 1; DeltaSizeRatio = 0.1*SizeRatio;
   MinMatchRatio = 1./3.;
   PrintLevel = 0;
@@ -84,15 +84,15 @@ struct Segment{
   int s1rank;
 
   /* constructor (could set last argument to identity by default)  */
-  Segment(const BaseStar *S1, 
-    const BaseStar *S2, 
+  Segment(const BaseStar *S1,
+    const BaseStar *S2,
     const int S1Rank, const Gtransfo &Tin)
-  {s1rank = S1Rank; s1=S1; 
+  {s1rank = S1Rank; s1=S1;
   s2=S2;
       Point P1 = Tin.apply(*S1); Point P2= Tin.apply(*S2); dx = P2.x - P1.x; dy = P2.y - P1.y; r = sqrt(dx*dx+dy*dy);}
 
   /* arg(Seg2/(*this)) if considered as complex(dx,dy) */
-  double relative_angle(Segment *Seg2) 
+  double relative_angle(Segment *Seg2)
            { return atan2( Seg2->dx*dy - dx*Seg2->dy,  dx*Seg2->dx + dy*Seg2->dy);}
 
   friend std::ostream& operator <<(std::ostream & stream, const Segment &S)
@@ -117,7 +117,7 @@ return (first.r > second.r);
 }
 
 
-SegmentList::SegmentList(const BaseStarList &L, const int NStars, const Gtransfo &Tin) 
+SegmentList::SegmentList(const BaseStarList &L, const int NStars, const Gtransfo &Tin)
 {
   BaseStarCIterator siStop;
 
@@ -130,7 +130,7 @@ SegmentList::SegmentList(const BaseStarList &L, const int NStars, const Gtransfo
 
   // iterate on star pairs
   int rank = 0;
-  for (auto si1 = L.begin(); si1 != siStop; ++si1, rank++) 
+  for (auto si1 = L.begin(); si1 != siStop; ++si1, rank++)
     for (auto si2 = siStop; si2 != si1; --si2)
       {
          const BaseStar &s1 = **si1;
@@ -164,14 +164,14 @@ for (SegmentPairListCIterator spi = PairList.begin(); spi != PairList.end(); spi
   {
   const SegmentPair& a_pair = *spi;
   if (a_pair.first->s1rank != Rank1 || a_pair.second->s1rank != Rank2) continue;
-  /* now we store as star matches both ends of segment pairs , 
-     but only once the beginning of segments because they all have the same, 
+  /* now we store as star matches both ends of segment pairs ,
+     but only once the beginning of segments because they all have the same,
      given the selection 3 lines above  */
-  if (matchList->size() == 0) 
-     matchList->push_back(StarMatch(Tin.apply(*(a_pair.first->s1)), *(a_pair.second->s1), 
+  if (matchList->size() == 0)
+     matchList->push_back(StarMatch(Tin.apply(*(a_pair.first->s1)), *(a_pair.second->s1),
                             a_pair.first->s1, a_pair.second->s1));
   /* always store the match at end */
-  matchList->push_back(StarMatch(Tin.apply(*(a_pair.first->s2)), *(a_pair.second->s2), 
+  matchList->push_back(StarMatch(Tin.apply(*(a_pair.first->s2)), *(a_pair.second->s2),
                             a_pair.first->s2, a_pair.second->s2));
   }
 // cout << " matchList size " << matchList->size() << std::endl;
@@ -194,7 +194,7 @@ typedef SolList::iterator SolIterator;
 };
 
 
-static void dump_input_list(const BaseStarList &L, const int NStars, 
+static void dump_input_list(const BaseStarList &L, const int NStars,
 			      const Gtransfo &Tin, const std::string FileName)
 {
   BaseStarList list;
@@ -210,14 +210,14 @@ static void dump_input_list(const BaseStarList &L, const int NStars,
 of star pairs ( Segment's) built from the 2 lists */
 
 
-static StarMatchList *ListMatchupRotShift_Old(BaseStarList &L1, BaseStarList &L2, 
+static StarMatchList *ListMatchupRotShift_Old(BaseStarList &L1, BaseStarList &L2,
                                           const Gtransfo &Tin, const MatchConditions &Conditions)
 {
 SegmentList sList1(L1, Conditions.NStarsL1, Tin);
 SegmentList sList2(L2, Conditions.NStarsL2, GtransfoIdentity());
 
-  /* choose the binning of the histogram so that 
-     1: ratio = 1 and rotation angle = n * (pi/2) are bin centers. since 
+  /* choose the binning of the histogram so that
+     1: ratio = 1 and rotation angle = n * (pi/2) are bin centers. since
      the angle is computed using atan2, its range is [-pi,pi],
      and the histogram range is [-pi-eps, pi-eps], so
      if (angle>pi- angleOffset) angle -= 2*pi before filling.   */
@@ -226,11 +226,11 @@ int nBinsAngle = 180; /* can be divided by 4 */
 double angleOffset = M_PI/nBinsAngle;
 double minRatio = Conditions.MinSizeRatio();
 double maxRatio = Conditions.MaxSizeRatio();
-Histo2d histo(nBinsR, minRatio, maxRatio,  
+Histo2d histo(nBinsR, minRatio, maxRatio,
                   nBinsAngle, -M_PI- angleOffset, M_PI - angleOffset);
 
 SegmentIterator segi1,segi2;
-Segment *seg1,*seg2; 
+Segment *seg1,*seg2;
 double ratio, angle;
 for (segi1 = sList1.begin(); segi1 != sList1.end(); ++segi1)
   {
@@ -265,17 +265,17 @@ for (int i = 0; i<Conditions.MaxTrialCount; ++i)
   double ratioMax, angleMax;
   double maxContent = histo.MaxBin(ratioMax,angleMax);
   histo.Fill(ratioMax,angleMax, - maxContent);
-  if (Conditions.PrintLevel >= 1) 
+  if (Conditions.PrintLevel >= 1)
     {
       std::cout << " valMax " << maxContent
-		<< " ratio " << ratioMax 
+		<< " ratio " << ratioMax
 		<< " angle " << angleMax << std::endl;
     }
   minRatio = ratioMax - binr/2; maxRatio = ratioMax+binr/2;
   double minAngle = angleMax - bina/2; double maxAngle = angleMax+bina/2;
   SegmentPairList pairList;
-  Histo2d historank(Conditions.NStarsL1, 0., Conditions.NStarsL1, 
-                    Conditions.NStarsL2, 0., Conditions.NStarsL2); 
+  Histo2d historank(Conditions.NStarsL1, 0., Conditions.NStarsL1,
+                    Conditions.NStarsL2, 0., Conditions.NStarsL2);
   /* reloop on segment pairs to select the ones in this specific bin */
   
   for (segi1 = sList1.begin(); segi1 != sList1.end(); ++segi1)
@@ -292,7 +292,7 @@ for (int i = 0; i<Conditions.MaxTrialCount; ++i)
       if (angle > M_PI - angleOffset) angle -= 2.*M_PI;
       if (angle < minAngle || angle > maxAngle) continue;
       pairList.push_back(SegmentPair(seg1, seg2)); /* store the match */
-      historank.Fill(seg1->s1rank + 0.5 , seg2->s1rank+0.5);      
+      historank.Fill(seg1->s1rank + 0.5 , seg2->s1rank+0.5);
       }
     }
   for (int iteration=0; iteration < Conditions.MaxTrialCount; iteration++)
@@ -312,10 +312,10 @@ for (int i = 0; i<Conditions.MaxTrialCount; ++i)
   StarMatchList *best = *Solutions.begin();
   /* remove the first one from the list */
   Solutions.pop_front();
-  if (Conditions.PrintLevel >=1) 
+  if (Conditions.PrintLevel >=1)
     {
-      std::cout << " best solution " << best->Residual() 
-		<< " npairs " << best->size() << std::endl 
+      std::cout << " best solution " << best->Residual()
+		<< " npairs " << best->size() << std::endl
 		<< *(best->Transfo());
       std::cout << " Chi2 " << best->Chi2() << ','
 		<< " Number of solutions " << Solutions.size() << std::endl;
@@ -333,12 +333,12 @@ for (int i = 0; i<Conditions.MaxTrialCount; ++i)
     objets (2 on each list) fall in this 4 parameter space.
 
     One trick is that rather than using actual offsets, we histogram
-    object indices of the combination: 
+    object indices of the combination:
 */
 
-static StarMatchList *ListMatchupRotShift_New(BaseStarList &L1, BaseStarList &L2, 
-					      const Gtransfo &Tin, 
-					      const MatchConditions &Conditions) 
+static StarMatchList *ListMatchupRotShift_New(BaseStarList &L1, BaseStarList &L2,
+					      const Gtransfo &Tin,
+					      const MatchConditions &Conditions)
 {
   if (L1.size() <= 4 || L2.size() <= 4)
     {
@@ -346,7 +346,7 @@ static StarMatchList *ListMatchupRotShift_New(BaseStarList &L1, BaseStarList &L2
       return NULL;
     }
 
-  SegmentList sList1(L1, Conditions.NStarsL1, Tin); 
+  SegmentList sList1(L1, Conditions.NStarsL1, Tin);
   SegmentList sList2(L2, Conditions.NStarsL2, GtransfoIdentity());
 
  if (getenv("DUMP_INPUT_LISTS"))
@@ -357,8 +357,8 @@ static StarMatchList *ListMatchupRotShift_New(BaseStarList &L1, BaseStarList &L2
 
 
 
-  /* choose the binning of the histogram so that 
-     1: ratio = 1 and rotation angle = n * (pi/2) are bin centers. since 
+  /* choose the binning of the histogram so that
+     1: ratio = 1 and rotation angle = n * (pi/2) are bin centers. since
      the angle is computed using atan2, its range is [-pi,pi],
      and the histogram range is [-pi-eps, pi-eps], so
      if (angle>pi- angleOffset) angle -= 2*pi before filling.   */
@@ -369,12 +369,12 @@ double minRatio = Conditions.MinSizeRatio();
 double maxRatio = Conditions.MaxSizeRatio();
  SparseHisto4d histo(nBinsR, minRatio, maxRatio,
 		     nBinsAngle, -M_PI- angleOffset, M_PI - angleOffset,
-		     Conditions.NStarsL1, 0., Conditions.NStarsL1, 
+		     Conditions.NStarsL1, 0., Conditions.NStarsL1,
 		     Conditions.NStarsL2, 0., Conditions.NStarsL2,
-		     sList1.size()*sList2.size()); 
+		     sList1.size()*sList2.size());
 
 SegmentIterator segi1,segi2;
-Segment *seg1,*seg2; 
+Segment *seg1,*seg2;
 double ratio, angle;
 
 for (segi1 = sList1.begin(); segi1 != sList1.end(); ++segi1)
@@ -399,27 +399,27 @@ for (segi1 = sList1.begin(); segi1 != sList1.end(); ++segi1)
 
 SolList Solutions;
 /* now we find the highest bins of the histogram, and recover the original objects.
-   This involves actually re-looping on the combinations, but it is much 
-   faster that the original histogram filling loop, since we only compute 
+   This involves actually re-looping on the combinations, but it is much
+   faster that the original histogram filling loop, since we only compute
    angle and ratio for Segments that have the right first object
 */
 
- int oldMaxContent = 0; 
+ int oldMaxContent = 0;
 
  for (int i = 0; i<4*Conditions.MaxTrialCount; ++i) // leave a limit to make avoid (almost)  infinite loops
    {
      double pars[4];
      int maxContent = histo.MaxBin(pars);
      if (maxContent == 0) break;
-     if (Conditions.PrintLevel >=1) 
+     if (Conditions.PrintLevel >=1)
        {
-	 std::cout << " ValMax " << maxContent 
+	 std::cout << " ValMax " << maxContent
 	      <<" ratio " << pars[0] << " angle " << pars[1] << std::endl;
        }
      histo.ZeroBin(pars);
      if (i>0)
        { /* the match possibilities come out in a random order when they have the same content.
-	    so, we stop investigating guesses when the content goes down AND the requested search depth 
+	    so, we stop investigating guesses when the content goes down AND the requested search depth
             (MaxTrialCount) is reached */
 	 if (maxContent < oldMaxContent && i>=Conditions.MaxTrialCount) break;
 
@@ -444,7 +444,7 @@ SolList Solutions;
 	     seg2 = &(*segi2);
 	     if (seg2->s1rank != rank1L2) continue;
 	     // push in the list the match corresponding to end number 1 of segments
-	     if (a_list->size() == 0) 
+	     if (a_list->size() == 0)
 	       a_list->push_back(StarMatch(*(seg1->s1), *(seg2->s1), seg1->s1, seg2->s1));
 	     ratio = seg2->r/seg1->r;
 	     if (ratio > maxRatio) continue;
@@ -487,7 +487,7 @@ SolList Solutions;
   StarMatchList *best = *Solutions.begin();
   /* remove the first one from the list */
   Solutions.pop_front();
-  if (Conditions.PrintLevel >=1) 
+  if (Conditions.PrintLevel >=1)
     {
       std::cout << " best solution " << best->Residual() << " npairs " << best->size() << std::endl << *(best->Transfo());
       std::cout << " Chi2 " << best->Chi2() << ','
@@ -497,7 +497,7 @@ SolList Solutions;
 }
 
 
-static StarMatchList *ListMatchupRotShift(BaseStarList &L1, BaseStarList &L2, 
+static StarMatchList *ListMatchupRotShift(BaseStarList &L1, BaseStarList &L2,
                                           const Gtransfo &Tin, const MatchConditions &Conditions)
 {
   if (Conditions.Algorithm == 1) return ListMatchupRotShift_Old(L1, L2, Tin, Conditions);
@@ -530,7 +530,7 @@ StarMatchList *MatchSearchRotShiftFlip(BaseStarList &L1, BaseStarList &L2, const
     }
   if (DecreasingQuality(flipped,unflipped))
     {
-      if (Conditions.PrintLevel >=1) 
+      if (Conditions.PrintLevel >=1)
 	std::cout << " keeping flipped solution" << std::endl;
       delete unflipped;
       // One should NOT apply the flip to the result because the matchlist
@@ -540,7 +540,7 @@ StarMatchList *MatchSearchRotShiftFlip(BaseStarList &L1, BaseStarList &L2, const
     }
   else
     {
-      if (Conditions.PrintLevel >=1) 
+      if (Conditions.PrintLevel >=1)
 	std::cout << " keeping unflipped solution" << std::endl;
       delete flipped;
       return unflipped;
@@ -613,7 +613,7 @@ GtransfoLin *ListMatchupShift(const BaseStarList &L1, const BaseStarList &L2, co
   //  return new GtransfoLinShift(dx,dy);
   SolList Solutions;
   for (int i=0; i<4; ++i)
-    {      
+    {
       double dx = 0, dy = 0;
       double count = histo.MaxBin(dx,dy);
       histo.Fill(dx,dy,-count); // zero the maxbin
@@ -631,7 +631,7 @@ GtransfoLin *ListMatchupShift(const BaseStarList &L1, const BaseStarList &L2, co
     }
   Solutions.sort(DecreasingQuality);
   GtransfoLin *best = new GtransfoLin(* const_cast<GtransfoLin*>(dynamic_cast<const GtransfoLin*> (Solutions.front()->Transfo())));
-  //  std::cout << " best \"shift\" found " << std::endl << *best; 
+  //  std::cout << " best \"shift\" found " << std::endl << *best;
   return best;
 }
 
@@ -652,11 +652,11 @@ StarMatchList *ListMatchCollect_Slow(const BaseStarList &L1, const BaseStarList 
       const BaseStar *neighbour = L2.FindClosest(p2);
       //   BaseStar *neighbour = finder.FindClosest(p2,MaxDist);
       if (!neighbour) continue;
-      double distance =p2.Distance(*neighbour); 
+      double distance =p2.Distance(*neighbour);
       if (distance < MaxDist)
 	{
 	  matches->push_back(StarMatch(*p1,*neighbour,*si,neighbour));
-	  // assign the distance, since we have it in hand: 
+	  // assign the distance, since we have it in hand:
 	  matches->back().distance = distance;
 	}
     }
@@ -666,7 +666,7 @@ StarMatchList *ListMatchCollect_Slow(const BaseStarList &L1, const BaseStarList 
 
 // here is the real active routine:
 
-StarMatchList *ListMatchCollect(const BaseStarList &L1, 
+StarMatchList *ListMatchCollect(const BaseStarList &L1,
 				const BaseStarList &L2,
 				const Gtransfo *Guess, const double MaxDist)
 {
@@ -679,11 +679,11 @@ StarMatchList *ListMatchCollect(const BaseStarList &L1,
       Point p2 = Guess->apply(*p1);
       const BaseStar *neighbour = finder.FindClosest(p2,MaxDist);
       if (!neighbour) continue;
-      double distance =p2.Distance(*neighbour); 
+      double distance =p2.Distance(*neighbour);
       if (distance < MaxDist)
 	{
 	  matches->push_back(StarMatch(*p1,*neighbour,&(*p1),neighbour));
-	  // assign the distance, since we have it in hand: 
+	  // assign the distance, since we have it in hand:
 	  matches->back().distance = distance;
 	}
 
@@ -706,10 +706,10 @@ StarMatchList *CollectAndFit(const BaseStarList &L1, const BaseStarList &L2,
       StarMatchList *m = ListMatchCollect(L1,L2,bestTransfo, MaxDist);
       m->SetTransfo(bestTransfo);
       m->RefineTransfo(3.);
-      std::cout << " iterating : resid " << m->Residual() 
+      std::cout << " iterating : resid " << m->Residual()
 	   << ' ' << " size " << m->size() << std::endl;
-      if (!prevMatch || 
-	  (prevMatch 
+      if (!prevMatch ||
+	  (prevMatch
 	   && m->Residual() < prevMatch->Residual()*0.999
 	   && m->Chi2()>0)
 	  )
@@ -718,7 +718,7 @@ StarMatchList *CollectAndFit(const BaseStarList &L1, const BaseStarList &L2,
 	  prevMatch = m;
 	  bestTransfo = m->Transfo();
 	}
-      else 
+      else
 	{
 	  delete m;
 	  break;
@@ -726,7 +726,7 @@ StarMatchList *CollectAndFit(const BaseStarList &L1, const BaseStarList &L2,
     }
   return prevMatch;
 }
-#endif 
+#endif
 
 
 
@@ -739,11 +739,11 @@ StarMatchList *ListMatchCollect(const BaseStarList &L1, const BaseStarList &L2, 
       const BaseStarRef &p1 = (*si);
       const BaseStar *neighbour = finder.FindClosest(*p1,MaxDist);
       if (!neighbour) continue;
-      double distance =p1->Distance(*neighbour); 
+      double distance =p1->Distance(*neighbour);
       if (distance < MaxDist)
 	{
 	  matches->push_back(StarMatch(*p1,*neighbour,&(*p1),neighbour));
-	  // assign the distance, since we have it in hand: 
+	  // assign the distance, since we have it in hand:
 	  matches->back().distance = distance;
 	}
     }
@@ -755,13 +755,13 @@ StarMatchList *ListMatchCollect(const BaseStarList &L1, const BaseStarList &L2, 
 
 
 
-static bool is_transfo_ok(const StarMatchList* match, 
+static bool is_transfo_ok(const StarMatchList* match,
 			  const double& pixSizeRatio2, const size_t nmin) {
 
   if ((fabs(fabs(dynamic_cast<const GtransfoLin*>(match->Transfo())->Determinant())-pixSizeRatio2)/pixSizeRatio2 < 0.2) && (match->size() > nmin))
     return true;
   std::cout << " is_transfo_ok: no\n";
-  match->DumpTransfo();  
+  match->DumpTransfo();
   return false;
 }
 
@@ -780,7 +780,7 @@ static double transfo_diff(const BaseStarList &List, const Gtransfo *T1, const G
     diff2 += (tf1.vy*dx*dx + tf1.vx*dy*dy - 2*tf1.vxy*dx*dy) / (tf1.vx*tf1.vy-tf1.vxy*tf1.vxy);
     count++;
   }
-  if (count) 
+  if (count)
     return diff2 / double(count);
   return 0;
 }
@@ -828,7 +828,7 @@ Gtransfo* ListMatchCombinatorial(const BaseStarList &List1, const BaseStarList &
       std::cout << " ListMatchCombinatorial: found the following transfo\n"
 	   << *transfo << std::endl;
   } else
-    std::cerr << "FAILED\n. Error: ListMatchCombinatorial: failed to find a transfo\n";  
+    std::cerr << "FAILED\n. Error: ListMatchCombinatorial: failed to find a transfo\n";
   return transfo;
 }
 
@@ -854,8 +854,8 @@ Gtransfo* ListMatchRefine(const BaseStarList& List1, const BaseStarList& List2, 
   double curChi2 = ComputeChi2(*brightMatch, *transfo) / brightMatch->size();
 
   std::cout << " ListMatchRefine: start  "
-       << " med.resid "  << median_distance(fullMatch, transfo) 
-       << " #match " << fullMatch->size() 
+       << " med.resid "  << median_distance(fullMatch, transfo)
+       << " #match " << fullMatch->size()
        << std::endl;
 
   do { // loop on transfo order on full list of stars
@@ -877,7 +877,7 @@ Gtransfo* ListMatchRefine(const BaseStarList& List1, const BaseStarList& List2, 
     delete fullMatch;
     fullMatch = ListMatchCollect(List1, List2, curTransfo, fullDist);
     std::cout << " ListMatchRefine: order " << order
-	 << " med.resid "  << median_distance(fullMatch, curTransfo) 
+	 << " med.resid "  << median_distance(fullMatch, curTransfo)
 	 << " #match " << fullMatch->size()
 	 << std::endl;
     if (((prevChi2 - curChi2) > 0.01*curChi2) && curChi2 > 0) {

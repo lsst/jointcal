@@ -36,7 +36,7 @@ class JointcalCoaddTask(MakeCoaddTempExpTask):
         return self.applyjointcalResultsExposure(dataRef, calexp).exposure
         
     def applyjointcalResultsExposure(self, dataRef, calexp=None):
-        """Update an Exposure with the Wcs, from meas_jointcal 
+        """Update an Exposure with the Wcs, from meas_jointcal
         (Calib and flux sacling will be also used later).
         If None, the calexp will be loaded from the dataRef.  Otherwise it is
         updated in-place.

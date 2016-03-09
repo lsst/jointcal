@@ -26,16 +26,16 @@ public:
   //! Default constructor
   Frame();
     
-  //! this one is dangerous: you may swap the 2 middle arguments. 
+  //! this one is dangerous: you may swap the 2 middle arguments.
   //! Prefer next one
-  Frame(const double &xMin, const double &yMin, 
+  Frame(const double &xMin, const double &yMin,
 	const double &xMax, const double &yMax);
   
   //! typical use: Frame(Point(xmin,ymin),Point(xmax,ymax))
   Frame(const Point &LowerLeft, const Point &UpperRight);
 
 #ifdef TO_BE_FIXED
-  //! 2 kinds of bounds in headers, the chip size and some 
+  //! 2 kinds of bounds in headers, the chip size and some
   //! that may be added by hand. See WriteInHeader().
   Frame(const FitsHeader &header, WhichFrame which=ClippedSizeFrame);
 #endif
@@ -83,7 +83,7 @@ public:
   bool InFrame(const double &x, const double &y) const;
   
   //! same as above
-  bool InFrame(const Point &pt) const 
+  bool InFrame(const Point &pt) const
   {return InFrame(pt.x,pt.y);}
   
   //! distance to closest boundary.
@@ -92,7 +92,7 @@ public:
   void dump(std::ostream & stream = std::cout) const;
   
   //! allows \verbatim std::cout << frame; \endverbatim.
-  friend std::ostream & operator<<(std::ostream &stream, const Frame &Right) 
+  friend std::ostream & operator<<(std::ostream &stream, const Frame &Right)
           { Right.dump(stream); return stream;};
   
 private:

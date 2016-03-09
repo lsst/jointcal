@@ -42,7 +42,7 @@ if (sscanf(RaString.c_str(),"%d:%d:%lf", &hours, &minutes, &seconds) == 3)
   char dec[64];
   strcpy(dec, DecString.c_str());
   double minus_char = 1; /* no minus sign */
-  for (char *p = dec; *p; p++) 
+  for (char *p = dec; *p; p++)
     {
       if (*p == ':' || *p == '\'' ) *p = ' ';
       if (*p == '-') minus_char = -1.;
@@ -78,7 +78,7 @@ static inline void intswap(unsigned int &a_word)
 
 
 static inline void read_a_star(FILE *ifp, unsigned int &raword, unsigned int  &decword, unsigned int &magword)
-{ 
+{
   fread(&raword,4,1,ifp);
   fread(&decword,4,1,ifp);
   fread(&magword,4,1,ifp);
@@ -101,7 +101,7 @@ static inline void read_a_star(FILE *ifp, unsigned int &raword, unsigned int  &d
 
 static void readusno(const std::string &filebase,double minra,double maxra,
 		     double mindec,double maxdec, UsnoColor Color,
-		     BaseStarList &ApmList, 
+		     BaseStarList &ApmList,
 		     const GtransfoLinShift& T= GtransfoLinShift(0,0))
 {
 
@@ -164,11 +164,11 @@ fprintf(stderr,"Seeking to position %d in file %s\n",idx[raidx0],catname.c_str()
 
 
   int mag_fact; /* mag = (magword/mag_fact)%1000, where mag_fact = 1 for R and 1000 for B  */
-  if (Color == RColor) mag_fact = 1; 
+  if (Color == RColor) mag_fact = 1;
   else if (Color == BColor) mag_fact = 1000;
-  else 
+  else
     {
-      std::cerr << " unknown color value requested in UsnoListGet " << std::endl; fclose(ifp); 
+      std::cerr << " unknown color value requested in UsnoListGet " << std::endl; fclose(ifp);
       return;
     }
 
@@ -191,10 +191,10 @@ while (raword<minraword && !feof(ifp)) read_a_star(ifp, raword, decword, magword
 /* Read as long as we are in the right RA range; if a star read
    is in the right dec range, then keep it */
 
-  while (raword<=maxraword  && !feof(ifp)) 
+  while (raword<=maxraword  && !feof(ifp))
   {
     read_a_star(ifp, raword, decword, magword);
-    if (decword>=mindecword && decword<=maxdecword && raword<=maxraword ) 
+    if (decword>=mindecword && decword<=maxdecword && raword<=maxraword )
     {
       mag=(double)((magword/mag_fact)%1000)/10.;
       double ra = double(raword)/3600./100.;
@@ -202,19 +202,19 @@ while (raword<minraword && !feof(ifp)) read_a_star(ifp, raword, decword, magword
       if (mag<99.9)
         {
           BaseStar *s = new BaseStar(ra,dec,mag);
-	  /* We have to set errors here, because there is no single place 
-	     below where it could easily be done. I wish we had a projection 
+	  /* We have to set errors here, because there is no single place
+	     below where it could easily be done. I wish we had a projection
 	     transfo in hand to define errors in the tangent plane.
 	     For the value, we chose 0.3" r.m.s
 	  */
 	  s->vx = sq(0.3/3600/cos(dec*M_PI/180.));
 	  s->vy = sq(0.3/3600);
 	  s->vxy = 0;
-	  if (s->x <minra || s->x > maxra) 
+	  if (s->x <minra || s->x > maxra)
 	    std::cout << " problem with usno star  : " << s << std::endl;
           *s = T.apply(*s); // no need to transfor errors : the transfo is a shift
 	  ApmList.push_back(s);
-        }        
+        }
     }
 }
   
@@ -224,24 +224,24 @@ while (raword<minraword && !feof(ifp)) read_a_star(ifp, raword, decword, magword
 
 // read an ascii file containing alpha,delta mag, 1 item per line.
 /* \page usno_file_format Astrometric file format
-    You can provide your own match catalog to matchusno, either on the 
+    You can provide your own match catalog to matchusno, either on the
     command line, or via the USNOFILE environment variable. The code
     expects and ascii file and interprets the 3 first items of
-    every line as alpha, delta (equatorial) and mag (where the mag 
-    is mainly used to 
+    every line as alpha, delta (equatorial) and mag (where the mag
+    is mainly used to
     isolate the brightest objects). Sexagesimal coordinates are accepted.
 */
   
-static void read_ascii_astrom_file(const std::string &FileName, 
+static void read_ascii_astrom_file(const std::string &FileName,
 				  double MinRa,  double MaxRa,
-				  double MinDec, double MaxDec, 
-				  BaseStarList &ApmList, 
+				  double MinDec, double MaxDec,
+				  BaseStarList &ApmList,
 				  const GtransfoLinShift& T= GtransfoLinShift(0,0))
 {
   FILE *file = fopen(FileName.c_str(),"r");
   if (!file)
     {
-      std::cerr << " cannot open (supposedly ascii USNO file ) " 
+      std::cerr << " cannot open (supposedly ascii USNO file ) "
 		<< FileName << std::endl;
       return;
     }
@@ -253,7 +253,7 @@ static void read_ascii_astrom_file(const std::string &FileName,
       double mag;
       if (sscanf(line,"%s %s %lf",cra,cdec,&mag) != 3)
 	{
-	  std::cerr << " cannot decode ra dec mag in :" << std::endl 
+	  std::cerr << " cannot decode ra dec mag in :" << std::endl
 		    << line << std::endl;
 	  break;
 	}
@@ -265,20 +265,20 @@ static void read_ascii_astrom_file(const std::string &FileName,
       *s = T.apply(*s);
       ApmList.push_back(s);
     }
-  std::cout << " collected " << ApmList.size() 
+  std::cout << " collected " << ApmList.size()
 	    << " objects from " << FileName << std::endl;
   fclose(file);
 }
 
 
 static void actual_usno_read(const std::string &usnodir,
-			     double minra, double maxra, 
+			     double minra, double maxra,
 			     double mindec, double maxdec, UsnoColor Color,
 			     BaseStarList &ApmList)
 {
   int cat0,cat1;
   
-  std::cout << " reading usno in window (" << minra << ',' 
+  std::cout << " reading usno in window (" << minra << ','
 	    << maxra << ") (" << mindec << ',' << maxdec << ")" << std::endl;
 
   /* Read parameters */
@@ -307,7 +307,7 @@ static void actual_usno_read(const std::string &usnodir,
 #ifdef DEBUG_READ
   fprintf(stderr,"cat0=%d,cat1=%d\n",cat0,cat1);
 #endif
-  for ( ; cat0<=cat1; cat0+=75) 
+  for ( ; cat0<=cat1; cat0+=75)
     {
       char cat_char[12];
       sprintf(cat_char,"zone%04d",cat0);
@@ -318,24 +318,24 @@ static void actual_usno_read(const std::string &usnodir,
     std::string filename = usnodir+'/'+cat_char;
     if (minra<0 and maxra >0)
       {
-	readusno(filename, minra+360.0,360.0,mindec,maxdec,Color, ApmList, 
+	readusno(filename, minra+360.0,360.0,mindec,maxdec,Color, ApmList,
 		 GtransfoLinShift(-360, 0));
 	readusno(filename, 0,maxra,mindec,maxdec,Color, ApmList);
       }
     else if (minra<0 and maxra <0)
       {
-	readusno(filename, minra+360.0,maxra+360.0,mindec,maxdec,Color, ApmList, 
+	readusno(filename, minra+360.0,maxra+360.0,mindec,maxdec,Color, ApmList,
 		 GtransfoLinShift(-360, 0));
       }
     else if (maxra>360. and minra<360.)
       {
 	readusno(filename, minra, 360,mindec,maxdec,Color, ApmList);
-	readusno(filename, 0,maxra-360,mindec,maxdec,Color, ApmList, 
+	readusno(filename, 0,maxra-360,mindec,maxdec,Color, ApmList,
 		 GtransfoLinShift(360,0));
       }
     else if (maxra>360. and minra>360.)
       {
-	readusno(filename, minra-360.,maxra-360,mindec,maxdec,Color, ApmList, 
+	readusno(filename, minra-360.,maxra-360,mindec,maxdec,Color, ApmList,
 		 GtransfoLinShift(360,0));
       }
     else readusno(filename, minra,maxra,mindec,maxdec,Color, ApmList);
@@ -351,8 +351,8 @@ static void actual_usno_read(const std::string &usnodir,
 
 
 //! ra's and dec's in degrees. Handles limits across alpha=0. (not with USNOFILE)
-int UsnoRead(double minra, double maxra, 
-	     double mindec, double maxdec, UsnoColor Color, 
+int UsnoRead(double minra, double maxra,
+	     double mindec, double maxdec, UsnoColor Color,
 	     BaseStarList &ApmList)
 {
   const char *ascii_source = NULL;
@@ -361,20 +361,20 @@ int UsnoRead(double minra, double maxra,
   if (env_var) ascii_source = env_var;
 
   if (ascii_source)
-    read_ascii_astrom_file(ascii_source, minra,maxra,mindec,maxdec, 
+    read_ascii_astrom_file(ascii_source, minra,maxra,mindec,maxdec,
 			   ApmList);
   else
     {
       const char *usno_dir = getenv("USNODIR");
       if (usno_dir)
 	{
-	  actual_usno_read(usno_dir, 
-			   minra, maxra, mindec, maxdec, Color, 
+	  actual_usno_read(usno_dir,
+			   minra, maxra, mindec, maxdec, Color,
 			   ApmList);
 	}
       else
 	{
-	  std::cerr << " ERROR : You should define USNODIR or USNOFILE env var, " 
+	  std::cerr << " ERROR : You should define USNODIR or USNOFILE env var, "
 		    << std::endl
 		    << " or provide ASTROM_CATALOG_NAME via datacards to run this code " << std::endl;
 	  return 0;
@@ -389,19 +389,19 @@ int UsnoRead(const Frame &W, UsnoColor Color, BaseStarList &ApmList)
   return UsnoRead(W.xMin, W.xMax, W.yMin, W.yMax, Color, ApmList);
 }
 
-Frame ApplyTransfo(const Frame& inputframe,const Gtransfo &T, const WhichTransformed W) 
+Frame ApplyTransfo(const Frame& inputframe,const Gtransfo &T, const WhichTransformed W)
 {
   // 2 opposite corners
   double xtmin1, xtmax1, ytmin1, ytmax1;
   T.apply(inputframe.xMin,inputframe.yMin,xtmin1,ytmin1);
   T.apply(inputframe.xMax,inputframe.yMax,xtmax1,ytmax1);
-  Frame fr1(std::min(xtmin1,xtmax1), std::min(ytmin1,ytmax1), 
+  Frame fr1(std::min(xtmin1,xtmax1), std::min(ytmin1,ytmax1),
 	    std::max(xtmin1,xtmax1), std::max(ytmin1,ytmax1));
   // 2 other corners
   double xtmin2, xtmax2, ytmin2, ytmax2;
   T.apply(inputframe.xMin, inputframe.yMax, xtmin2, ytmax2);
   T.apply(inputframe.xMax, inputframe.yMin, xtmax2, ytmin2);
-  Frame fr2(std::min(xtmin2,xtmax2), std::min(ytmin2,ytmax2), 
+  Frame fr2(std::min(xtmin2,xtmax2), std::min(ytmin2,ytmax2),
 	    std::max(xtmin2,xtmax2), std::max(ytmin2,ytmax2));
 
   if (W == SmallFrame) return fr1*fr2;

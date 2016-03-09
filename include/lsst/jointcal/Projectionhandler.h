@@ -32,7 +32,7 @@ class IdentityProjection : public ProjectionHandler
 
 };
 
-//! A possible implementation of ProjectionHandler for fitting actual WCS's. 
+//! A possible implementation of ProjectionHandler for fitting actual WCS's.
 /* ! We arbitrarily chose that all chips from a same shoot have the same tangent point, but other choices can be made. */
 class OneTPPerShoot : public ProjectionHandler
 {
@@ -53,4 +53,4 @@ class OneTPPerShoot : public ProjectionHandler
 
 
 
-#endif 
+#endif

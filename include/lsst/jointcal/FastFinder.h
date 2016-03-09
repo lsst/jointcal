@@ -37,10 +37,10 @@ class FastFinder
   /* the sorted pointer array: It does not seem very wise to use smart
      pointers here because reference counts will uselessly jump around
      during sorting */
-  std::vector<const BaseStar*>  stars; 
+  std::vector<const BaseStar*>  stars;
   unsigned nslice; // number of (X) slices
   std::vector<unsigned> index;// index in "stars" of first object of each slice.
-  double xmin,xmax, xstep; // x bounds, slice size 
+  double xmin,xmax, xstep; // x bounds, slice size
 
   typedef decltype(stars)::value_type stars_element;
   typedef decltype(stars)::const_iterator pstar;
@@ -49,19 +49,19 @@ public :
     //! Constructor
   FastFinder(const BaseStarList &List, const unsigned NXslice = 100);
 
-  //! Find the closest with some rejection capability 
-  const BaseStar *FindClosest(const Point &Where, const double MaxDist, 
+  //! Find the closest with some rejection capability
+  const BaseStar *FindClosest(const Point &Where, const double MaxDist,
 			      bool (*SkipIt)(const BaseStar *) = NULL) const;
 
   //!
-  const BaseStar *SecondClosest(const Point &Where, 
-				const double MaxDist, 
+  const BaseStar *SecondClosest(const Point &Where,
+				const double MaxDist,
 				const BaseStar* &Closest,
   				bool (*SkipIt)(const BaseStar *)= NULL) const;
 
 
   //! mostly for debugging
-  void dump() const;  
+  void dump() const;
 
 
   //! Iterator meant to traverse objects within some limiting distance. Initializer is begin_scan and end condition is (*it == NULL). Used by FindClosest & co.
@@ -73,7 +73,7 @@ public :
     double yStart, yEnd; // Y limits ( for all stripes)
     /* pointers to the first and beyond last stars in the y range for
        the current stripe :  */
-    pstar current, pend; 
+    pstar current, pend;
     pstar null_value; // with pointers being iterators, the null value is not NULL
 
     void check() const;

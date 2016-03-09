@@ -9,8 +9,8 @@
 //#include "vutils.h" /* for DArrayMedian */
 
 /* TO DO:
-   think about imposing a maximum number of matches that may 
-   be discarded in Cleanup. 
+   think about imposing a maximum number of matches that may
+   be discarded in Cleanup.
 */
 
 namespace lsst {
@@ -34,18 +34,18 @@ double StarMatch::Chi2(const Gtransfo &T) const
 
 
 std::ostream& operator << (std::ostream &stream, const StarMatch &Match)
-{ 
-  stream << Match.point1.x << ' ' << Match.point1.y << ' ' 
-	 << Match.point2.x << ' ' << Match.point2.y << ' ' 
-	 << Match.distance << std::endl; return stream; 
+{
+  stream << Match.point1.x << ' ' << Match.point1.y << ' '
+	 << Match.point2.x << ' ' << Match.point2.y << ' '
+	 << Match.distance << std::endl; return stream;
 }
 
   std::ostream& operator << (std::ostream &stream, const StarMatchList &List)
-{ 
-  stream << " number of elements " << List.size() << std::endl; 
-  copy(List.begin(), List.end(), std::ostream_iterator<StarMatch>(stream)); 
+{
+  stream << " number of elements " << List.size() << std::endl;
+  copy(List.begin(), List.end(), std::ostream_iterator<StarMatch>(stream));
   return stream;
-} 
+}
 
 static double* chi2_array(const StarMatchList &L,const Gtransfo &T)
 {
@@ -58,7 +58,7 @@ static double* chi2_array(const StarMatchList &L,const Gtransfo &T)
 }
 
 
-static unsigned chi2_cleanup(StarMatchList &L,  const double Chi2Cut, 
+static unsigned chi2_cleanup(StarMatchList &L,  const double Chi2Cut,
 			     const Gtransfo &T)
 {
   unsigned erased = L.RemoveAmbiguities(T);
@@ -79,7 +79,7 @@ static unsigned chi2_cleanup(StarMatchList &L,  const double Chi2Cut,
 static double *get_dist2_array(const StarMatchList &L, const Gtransfo &T)
 {
   unsigned npair = L.size();
-  if (npair == 0) return NULL; 
+  if (npair == 0) return NULL;
   double *dist = new double [npair];
 
   unsigned i=0;
@@ -104,7 +104,7 @@ int StarMatchList::Dof(const Gtransfo* T) const
 
 
   /*! removes pairs beyond NSigmas in distance (where the sigma scale is
-     set by the fit) and iterates until stabilization of the number of pairs. 
+     set by the fit) and iterates until stabilization of the number of pairs.
      If the transfo is not assigned, it will be set to a GtransfoLinear. User
      can set an other type/degree using SetTransfo() before call. */
 void StarMatchList::RefineTransfo(const double &NSigmas)
@@ -112,13 +112,13 @@ void StarMatchList::RefineTransfo(const double &NSigmas)
   double cut;
   unsigned nremoved;
   if (!transfo) transfo = new GtransfoLin;
-  do 
+  do
     {
       int nused = size();
       if (nused <= 2) { chi2 = -1; break;}
       chi2 = transfo->fit(*this);
-      /* convention of the fitted routines : 
-	 -  chi2 = 0 means zero degrees of freedom 
+      /* convention of the fitted routines :
+	 -  chi2 = 0 means zero degrees of freedom
               (this was not enforced in Gtransfo{Lin,Quad,Cub} ...)
 	 -  chi2 = -1 means ndof <0 (and hence no possible fit)
 	 --> in either case, refinement is over
@@ -136,7 +136,7 @@ void StarMatchList::RefineTransfo(const double &NSigmas)
       for (auto it= begin(); it!= end(); ++it)
 	chi2_array[count++] = it->chi2 = it->Chi2(*transfo);
       std::sort(chi2_array, chi2_array+npair);
-      double median =  (npair&1)? chi2_array[npair/2] : 
+      double median =  (npair&1)? chi2_array[npair/2] :
 	(chi2_array[npair/2-1] + chi2_array[npair/2])*0.5;
 
       delete [] chi2_array;
@@ -144,7 +144,7 @@ void StarMatchList::RefineTransfo(const double &NSigmas)
       // discard outliers : the cut is understood as a "distance" cut
       cut = sq(NSigmas)*median;
       nremoved = chi2_cleanup(*this, cut, *transfo);
-    } 
+    }
   while (nremoved);
   dist2 = ComputeDist2(*this, *transfo);
 }
@@ -164,7 +164,7 @@ void StarMatchList::SetDistance(const Gtransfo &Transfo)
 }
 
 
-unsigned StarMatchList::RemoveAmbiguities(const Gtransfo &Transfo, 
+unsigned StarMatchList::RemoveAmbiguities(const Gtransfo &Transfo,
 				     const int Which)
 {
   if (!Which) return 0;
@@ -194,13 +194,13 @@ void StarMatchList::SetTransfoOrder(const int Order)
 
 
 
-/* This routine should operate on a copy : RefineTransfo 
+/* This routine should operate on a copy : RefineTransfo
    might shorten the list */
 Gtransfo* StarMatchList::InverseTransfo() /* it is not const although it tries not to change anything  */
 {
   if (!transfo) return NULL;
 
-  Gtransfo *old_transfo = transfo->Clone();  
+  Gtransfo *old_transfo = transfo->Clone();
   double old_chi2 = chi2;
 
   Swap();
@@ -225,7 +225,7 @@ erase(si, end());
 }
 
 
-void StarMatchList::write_wnoheader(std::ostream & pr, 
+void StarMatchList::write_wnoheader(std::ostream & pr,
     const Gtransfo* Transfo) const
 {
 
@@ -235,7 +235,7 @@ void StarMatchList::write_wnoheader(std::ostream & pr,
       return ;
     }
 
-  std::ios::fmtflags  old_flags =  pr.flags(); 
+  std::ios::fmtflags  old_flags =  pr.flags();
   pr  << std::resetiosflags(std::ios::scientific) ;
   pr  << std::setiosflags(std::ios::fixed) ;
   int oldprec = pr.precision();
@@ -248,7 +248,7 @@ void StarMatchList::write_wnoheader(std::ostream & pr,
       pr << " " ;
       // transformed coordinates
       FatPoint p1 = *starm.s1;
-      if (Transfo) 
+      if (Transfo)
 	{
 	  Transfo->TransformPosAndErrors(p1,p1);
 	  pr << p1.x << ' ' << p1.y << ' ';
@@ -265,7 +265,7 @@ void StarMatchList::write_wnoheader(std::ostream & pr,
       // chi2 assoc
       if (Transfo)
 	pr << it->Chi2(*Transfo) << ' ';
-      else 
+      else
 	pr << it->Chi2(GtransfoIdentity()) << ' ';
       pr << std::endl ;
     }
@@ -282,21 +282,21 @@ void StarMatchList::write(std::ostream &pr, const Gtransfo *tf) const
       return ;
     }
 
-  const StarMatch &starm = front(); 
+  const StarMatch &starm = front();
   (starm.s1)->WriteHeader_(pr, "1");
   if (tf)
     {
-      pr << "# x1tf: transformed x1 coordinate "  << std::endl ; 
-      pr << "# y1tf: transformed y1 coordinate "  << std::endl ; 
-      pr << "# sx1tf: transformed sx1 "  << std::endl ; 
-      pr << "# sy1tf: transformed sy1 "  << std::endl ; 
-      pr << "# rxy1tf: transformed rhoxy1 "  << std::endl ; 
+      pr << "# x1tf: transformed x1 coordinate "  << std::endl ;
+      pr << "# y1tf: transformed y1 coordinate "  << std::endl ;
+      pr << "# sx1tf: transformed sx1 "  << std::endl ;
+      pr << "# sy1tf: transformed sy1 "  << std::endl ;
+      pr << "# rxy1tf: transformed rhoxy1 "  << std::endl ;
     }
   (starm.s2)->WriteHeader_(pr, "2");
   pr << "# dx : diff in x" << std::endl;
   pr << "# dy : diff in y" << std::endl;
-  pr << "# dass : association distance"  << std::endl ; 
-  pr << "# chi2ass : assoc chi2"  << std::endl ; 
+  pr << "# dass : association distance"  << std::endl ;
+  pr << "# chi2ass : assoc chi2"  << std::endl ;
   pr << "# end " << std::endl ;
 
   write_wnoheader(pr, tf);
@@ -316,7 +316,7 @@ void StarMatchList::Swap()
 {
   for (auto it= begin(); it!= end(); ++it )
     {
-      it->Swap() ; 
+      it->Swap() ;
     }
 }
 
@@ -333,7 +333,7 @@ int StarMatchList::RecoveredNumber(double mindist) const
 }
 
 
-void StarMatchList::ApplyTransfo(StarMatchList &Transformed, 
+void StarMatchList::ApplyTransfo(StarMatchList &Transformed,
 				 const Gtransfo *PriorTransfo,
 				 const Gtransfo *PosteriorTransfo) const
 {
@@ -363,7 +363,7 @@ void StarMatchList::SetChi2()
 }
 
 void StarMatchList::DumpTransfo(std::ostream &stream) const
-{ 
+{
   stream << " ================================================================" << std::endl
   << " Transformation between lists of order " << TransfoOrder() << std::endl
 	 << *transfo //<< endl

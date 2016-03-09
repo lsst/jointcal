@@ -13,7 +13,7 @@ class CcdImage;
 class Point;
 
 //! Photometric response model which has a single photometric factor per CcdImage.
-/*! It considers a full exposure as reference. */  
+/*! It considers a full exposure as reference. */
  class SimplePhotomModel : public PhotomModel
 {
 
@@ -38,7 +38,7 @@ public :
   //! Assign indices to parameters involved in mappings, starting at FirstIndex. Returns the highest assigned index.
   unsigned AssignIndices(const std::string &WhatToFit, unsigned FirstIndex);
 
-  //! Offset the parameters by the provided amounts. 
+  //! Offset the parameters by the provided amounts.
   /*! The shifts are applied according to the indices given in
       AssignIndices. */
   void OffsetParams(const Eigen::VectorXd &Delta);
@@ -47,7 +47,7 @@ public :
   double PhotomFactor(const CcdImage& C, const Point &Where) const;
 
   virtual void GetIndicesAndDerivatives(const MeasuredStar &M,
-					const CcdImage &Ccd, 
+					const CcdImage &Ccd,
 					std::vector<unsigned> &Indices,
 					Eigen::VectorXd &D);
 
@@ -56,4 +56,4 @@ public :
 
 }} // end of namespaces
 
-#endif /*SIMPLEPHOTOMMODEL__H */ 
+#endif /*SIMPLEPHOTOMMODEL__H */

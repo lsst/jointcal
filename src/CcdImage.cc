@@ -30,7 +30,7 @@ namespace jointcal {
   'base_SdssShape_yy'
   'base_SdssShape_xy'
 
-  for fluxes, we might use : 
+  for fluxes, we might use :
   'base_CircularApertureFlux_2_flux'
   'base_CircularApertureFlux_2_fluxSigma'
 
@@ -67,13 +67,13 @@ void CcdImage::LoadCatalog(const lsst::afw::table::SortedCatalogT<lsst::afw::tab
       double mxy= i->get(mxyKey);
       ms->vxy = mxy*(ms->vx+ms->vy)/(mxx+myy);
       if (ms->vx < 0 || ms->vy< 0 || (ms->vxy*ms->vxy)>(ms->vx*ms->vy)) {
-          std::cout << "Bad source detected in LoadCatalog : " << ms->vx << " " << ms->vy << " " << 
+          std::cout << "Bad source detected in LoadCatalog : " << ms->vx << " " << ms->vy << " " <<
           ms->vxy*ms->vxy << " " << ms->vx*ms->vy << std::endl;
           continue;
         }
       ms->flux = i->get(fluxKey);
       ms->eflux = i->get(efluxKey);
-      ms->mag = -2.5*log10(ms->flux) + zp; 
+      ms->mag = -2.5*log10(ms->flux) + zp;
       ms->SetCcdImage(this);
       wholeCatalog.push_back(ms);
     }
@@ -132,7 +132,7 @@ CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceReco
     
     readWcs = new jointcal::TanSipPix2RaDec(jointcal::ConvertTanWcs(wcs));
 
-    // use some other variable in case we later have to actually convert the 
+    // use some other variable in case we later have to actually convert the
     // read wcs:
     const BaseTanWcs* tanWcs = readWcs.get();
 
@@ -148,7 +148,7 @@ CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceReco
     riName = out.str();
 
   /* we don't assume here that we know the internals of TanPix2RaDec:
-     to construct pix->TP, we do pix->sky->TP, although pix->sky 
+     to construct pix->TP, we do pix->sky->TP, although pix->sky
      actually goes through TP */
 
     GtransfoLin identity;
@@ -169,8 +169,8 @@ CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceReco
     pix2CommonTangentPlane = GtransfoCompose(&raDec2CTP, tanWcs);
     
     // In the following we read informations directly from the fits header which is instrument dependent
-    // We rely on the camera name which is not optimal as a camera can be mounted on different telescopes. 
-    // We would rather need the telescope name. 
+    // We rely on the camera name which is not optimal as a camera can be mounted on different telescopes.
+    // We would rather need the telescope name.
     // This instrument specific part will eventually have to be handled by the camera mapper
     
     double latitude;
@@ -207,7 +207,7 @@ CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceReco
     else
     {
       double cosz = 1./airMass;
-      double sinz = sqrt(1-cosz*cosz); //astronomers usually observe above the horizon 
+      double sinz = sqrt(1-cosz*cosz); //astronomers usually observe above the horizon
       tgz = sinz/cosz;
       sineta = cos(latitude)*sin(hourAngle)/sinz;
       coseta = sqrt(1-sineta*sineta);
