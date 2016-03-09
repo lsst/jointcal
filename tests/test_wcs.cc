@@ -30,7 +30,6 @@ static void __attribute__ ((constructor)) trapfpe ()
 }
 #endif
 
-
 namespace jointcal = lsst::jointcal;
 namespace afwImg = lsst::afw::image;
 
