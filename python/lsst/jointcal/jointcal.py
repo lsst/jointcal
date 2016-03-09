@@ -1,4 +1,4 @@
-from __future__ import division, absolute_import
+from __future__ import division, absolute_import, print_statement
 #
 # LSST Data Management System
 # Copyright 2008, 2009, 2010, 2011, 2012 LSST Corporation.
@@ -147,23 +147,23 @@ class JointcalTask(pipeBase.CmdLineTask):
         configSel = StarSelectorConfig()
         ss = StarSelector(configSel, self.config.sourceFluxField, self.config.maxMag)
         
-        print self.config.sourceFluxField
+        print(self.config.sourceFluxField)
         astromControl = JointcalControl()
         astromControl.sourceFluxField = self.config.sourceFluxField
 
         assoc = Associations()
         
 #        for dataRef in ref :
-#            print dataRef.dataId
-#            print dataRef.dataId["tract"]
-#            print dataRef
-#            print dir(dataRef)
+#            print(dataRef.dataId)
+#            print(dataRef.dataId["tract"])
+#            print(dataRef)
+#            print(dir(dataRef))
             
 #        return
         
         for dataRef in ref :
             
-            print dataRef.dataId
+            print(dataRef.dataId)
             
             src = dataRef.get("src", immediate=True)
             md = dataRef.get("calexp_md", immediate=True)
@@ -176,9 +176,9 @@ class JointcalTask(pipeBase.CmdLineTask):
             
             newSrc = ss.select(src, calib)
             if len(newSrc) == 0 :
-                print "no source selected in ", dataRef.dataId["visit"], dataRef.dataId["ccd"]
+                print("no source selected in ", dataRef.dataId["visit"], dataRef.dataId["ccd"])
                 continue
-            print "%d sources selected in visit %d - ccd %d"%(len(newSrc), dataRef.dataId["visit"], dataRef.dataId["ccd"])
+            print("%d sources selected in visit %d - ccd %d"%(len(newSrc), dataRef.dataId["visit"], dataRef.dataId["ccd"]))
             
             assoc.AddImage(newSrc, tanwcs, md, bbox, filt, calib,
                            dataRef.dataId['visit'], dataRef.dataId['ccd'],
@@ -212,10 +212,10 @@ class JointcalTask(pipeBase.CmdLineTask):
         
         # Determine default filter associated to the catalog
         filt, mfilt = andConfig.magColumnMap.items()[0]
-        print "Using", filt, "band for reference flux"
+        print("Using", filt, "band for reference flux")
 
         refCat = loader.loadSkyCircle(center, afwGeom.Angle(radius, afwGeom.radians), filt).refCat
-        print refCat.getSchema().getOrderedNames()
+        print(refCat.getSchema().getOrderedNames())
         
         # assoc.CollectRefStars(False) # To use USNO-A catalog
 
@@ -228,28 +228,28 @@ class JointcalTask(pipeBase.CmdLineTask):
         fit = AstromFit(assoc, spm, self.config.posError)
         fit.Minimize("Distortions")
         chi2 = fit.ComputeChi2()
-        print chi2
+        print(chi2)
         fit.Minimize("Positions")
         chi2 = fit.ComputeChi2()
-        print chi2
+        print(chi2)
         fit.Minimize("Distortions Positions")
         chi2 = fit.ComputeChi2()
-        print chi2
+        print(chi2)
 
         for i in range(20) :
             r = fit.Minimize("Distortions Positions",5) # outliers removal at 5 sigma.
             chi2 = fit.ComputeChi2()
             print chi2
             if r == 0 :
-                print "fit has converged - no more outliers"
+                print("fit has converged - no more outliers")
                 break
             elif r == 2 :
-                print "minimization failed"
+                print("minimization failed")
             elif r == 1 :
-                print "still some ouliers but chi2 increases - retry"
+                print("still some ouliers but chi2 increases - retry")
             else :
                 break
-                print "unxepected return code from Minimize"
+                print("unxepected return code from Minimize")
         
 #        for i in range(80):
 #            nout = fit.RemoveOutliers(5.) # 5 sigma
@@ -275,7 +275,7 @@ class JointcalTask(pipeBase.CmdLineTask):
             visit, ccd = name.split('_')
             for dataRef in ref :
                 if dataRef.dataId["visit"] == int(visit) and dataRef.dataId["ccd"] == int(ccd) :
-                    print "Updating WCS for visit: %d, ccd%d"%(int(visit), int(ccd))
+                    print("Updating WCS for visit: %d, ccd%d"%(int(visit), int(ccd)))
                     exp = afwImage.ExposureI(0,0)
                     exp.setWcs(tanWcs)
                     try:

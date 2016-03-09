@@ -1,3 +1,4 @@
+from __future__ import division, absolute_import, print_statement
 #!/usr/bin/env python
 #
 # LSST Data Management System
@@ -89,11 +90,11 @@ class PerTractCcdDataIdContainer(CoaddDataIdContainer):
                 log.info("Reading WCS for components of dataId=%s to determine tracts" % (dict(dataId),))
                 if skymap is None:
                     skymap = self.getSkymap(namespace)
-                    print skymap
+                    print(skymap)
 
                 for ref in namespace.butler.subset("calexp", dataId=dataId):
                     if not ref.datasetExists("calexp"):
-                        print "Not found"
+                        print("Not found")
                         continue
 
                     # XXX fancier mechanism to select an individual exposure than just pulling out "visit"?
@@ -109,7 +110,7 @@ class PerTractCcdDataIdContainer(CoaddDataIdContainer):
                     # Going with just the nearest tract.  Since we're throwing all tracts for the visit
                     # together, this shouldn't be a problem unless the tracts are much smaller than a CCD.
                     tract = skymap.findTract(wcs.pixelToSky(box.getCenter()))
-                    print "tract = ",tract
+                    print("tract = ",tract)
                     if overlapsTract(tract, wcs, box):
                         if visit not in visitTract:
                             visitTract[visit] = set()

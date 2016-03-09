@@ -1,3 +1,5 @@
+from __future__ import division, absolute_import, print_statement
+
 from lsst.pipe.tasks.makeCoaddTempExp import MakeCoaddTempExpTask
 from lsst.pipe.base import Struct
 import lsst.afw.image as afwImage
