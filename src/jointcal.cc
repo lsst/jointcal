@@ -7,10 +7,6 @@
 
 #include <stdlib.h> /* for getenv */
 
-#define _GNU_SOURCE 1
-#define __USE_GNU
-#include <fenv.h> 
-
 //#include "boost/scoped_array.hpp"
 //#include "boost/shared_array.hpp"
 //#include "boost/multi_index_container.hpp"
@@ -47,16 +43,6 @@ namespace jointcal {
         }
         std::cout << sourceFluxField << std::endl;
     }
-    
-    static void __attribute__ ((constructor))
-trapfpe ()
-{
-  /* Enable some exceptions.  At startup all exceptions are masked. */
-
-  if (getenv("DUMP_CORE_ON_FPE"))
-    feenableexcept (FE_INVALID|FE_DIVBYZERO|FE_OVERFLOW|FE_UNDERFLOW);
-//    feenableexcept (FE_ALL_EXCEPT);
-} 
     
     Jointcal::Jointcal(
         std::vector<lsst::afw::table::SortedCatalogT< lsst::afw::table::SourceRecord> > const sourceList,
