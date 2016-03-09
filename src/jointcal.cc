@@ -45,7 +45,7 @@ namespace jointcal {
     }
     
 // NOTE: turn this flag on to raise exceptions on floating point errors.
-// NOTE: this only works on GNU/Linux (fenv is not C++ standard).
+// NOTE: this only works on GNU/Linux (fenableexcept is not C++ standard).
 // #define DUMP_CORE_ON_FPE
 #ifdef DUMP_CORE_ON_FPE
 #define _GNU_SOURCE 1
