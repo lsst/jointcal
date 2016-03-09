@@ -2,9 +2,9 @@
 #include <fstream>
 #include <iomanip>
 
-#include "lsst/meas/simastrom/Gtransfo.h"
-#include "lsst/meas/simastrom/StarMatch.h"
-#include "lsst/meas/simastrom/BaseStar.h"
+#include "lsst/jointcal/Gtransfo.h"
+#include "lsst/jointcal/StarMatch.h"
+#include "lsst/jointcal/BaseStar.h"
 #include "algorithm" // for copy
 //#include "vutils.h" /* for DArrayMedian */
 
@@ -14,8 +14,7 @@
 */
 
 namespace lsst {
-namespace meas {
-namespace simastrom {
+namespace jointcal {
 
 
 
@@ -237,8 +236,8 @@ void StarMatchList::write_wnoheader(std::ostream & pr,
     }
 
   std::ios::fmtflags  old_flags =  pr.flags(); 
-  pr  << resetiosflags(std::ios::scientific) ;
-  pr  << setiosflags(std::ios::fixed) ;
+  pr  << std::resetiosflags(std::ios::scientific) ;
+  pr  << std::setiosflags(std::ios::fixed) ;
   int oldprec = pr.precision();
   pr<< std::setprecision(10);
   for (auto it= begin(); it!= end(); it++ )
@@ -404,4 +403,4 @@ double ComputeChi2(const StarMatchList &L, const Gtransfo &T)
 }
 
 
-}}}
+}} // end of namespaces

@@ -3,14 +3,14 @@
 #include <iostream>
 #include <sstream>
 
-#include "lsst/meas/simastrom/Associations.h"
-#include "lsst/meas/simastrom/CcdImage.h"
-#include "lsst/meas/simastrom/SipToGtransfo.h"
-#include "lsst/meas/simastrom/StarMatch.h"
-#include "lsst/meas/simastrom/ListMatch.h"
-#include "lsst/meas/simastrom/Frame.h"
-#include "lsst/meas/simastrom/AstroUtils.h"
-#include "lsst/meas/simastrom/FatPoint.h"
+#include "lsst/jointcal/Associations.h"
+#include "lsst/jointcal/CcdImage.h"
+#include "lsst/jointcal/SipToGtransfo.h"
+#include "lsst/jointcal/StarMatch.h"
+#include "lsst/jointcal/ListMatch.h"
+#include "lsst/jointcal/Frame.h"
+#include "lsst/jointcal/AstroUtils.h"
+#include "lsst/jointcal/FatPoint.h"
 #include "lsst/afw/image/Image.h"
 #include "lsst/daf/base/PropertySet.h"
 
@@ -25,13 +25,12 @@ const double usnoMatchCut=3;
 const bool cleanMatches=true;
 const int minMeasurementCount=2;
 
-namespace simAstrom = lsst::meas::simastrom;
+namespace jointcal = lsst::jointcal;
 
 static double sqr(const double &x) {return x*x;}
 
 namespace lsst {
-namespace meas {
-namespace simastrom {
+namespace jointcal {
     
 // Source selection is performed in the python, so Associations' constructor is just initializing couple of variables
 Associations::Associations()
@@ -57,7 +56,7 @@ bool Associations::AddImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::S
 	    const int &visit,
 	    const int &ccd,
 	    const std::string &camera,
-	    const PTR(lsst::meas::simastrom::SimAstromControl) control)
+	    const PTR(lsst::jointcal::JointcalControl) control)
 {
 
 //  std::cout << " considering image " << ri.Name() << std::endl;
@@ -793,4 +792,4 @@ void Associations::CollectMCStars(int realization)
 }
 #endif /* STORAGE */
 
-}}} // end of namespaces
+}} // end of namespaces

@@ -1,12 +1,11 @@
-#include "lsst/meas/simastrom/TwoTransfoMapping.h"
+#include "lsst/jointcal/TwoTransfoMapping.h"
 #include "lsst/pex/exceptions.h"
 
 namespace pexExcept = lsst::pex::exceptions;
 
 
 namespace lsst {
-namespace meas {
-namespace simastrom {
+namespace jointcal {
 
 
 TwoTransfoMapping::TwoTransfoMapping(SimpleGtransfoMapping *M1, 
@@ -117,5 +116,5 @@ void TwoTransfoMapping::FreezeErrorScales()
   throw LSST_EXCEPT(pexExcept::TypeError," The routine  TwoTransfoMapping::FreezeErrorScales() was thought to be useless and is not implemented (yet)"); 
 } 
 
-}}} // end of namespaces
+}} // end of namespaces
 

@@ -2,9 +2,9 @@
 #include <cmath>
 #include <vector>
 
-#include "lsst/meas/simastrom/MeasuredStar.h"
-#include "lsst/meas/simastrom/StarList.cc"
-#include "lsst/meas/simastrom/CcdImage.h"
+#include "lsst/jointcal/MeasuredStar.h"
+#include "lsst/jointcal/StarList.cc"
+#include "lsst/jointcal/CcdImage.h"
 
 //#include "preferences.h"
 //#include "ccdimage.h"
@@ -12,8 +12,7 @@
 
 
 namespace lsst {
-namespace meas {
-namespace simastrom {
+namespace jointcal {
 
   /* Interesting fields of the stack catalogs :
  'base_SdssCentroid_x'
@@ -325,7 +324,7 @@ CatalogLoader * CatalogLoader::getDefaultCatalogLoader(){
 
 #endif /* WE_WILL_USE_SOME_OTHER_MECHANISM */
 
-}}} // end of namespaces
+}} // end of namespaces
 
 
 

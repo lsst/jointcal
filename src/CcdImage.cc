@@ -3,21 +3,20 @@
 #include <sstream>
 #include <math.h>
 
-#include "lsst/meas/simastrom/CcdImage.h"
-#include "lsst/meas/simastrom/SipToGtransfo.h"
-#include "lsst/meas/simastrom/AstroUtils.h"
+#include "lsst/jointcal/CcdImage.h"
+#include "lsst/jointcal/SipToGtransfo.h"
+#include "lsst/jointcal/AstroUtils.h"
 #include "lsst/afw/image/Image.h"
-#include "lsst/meas/simastrom/Gtransfo.h"
-#include "lsst/meas/simastrom/Point.h"
+#include "lsst/jointcal/Gtransfo.h"
+#include "lsst/jointcal/Point.h"
 #include "lsst/pex/exceptions.h"
 #include "lsst/afw/geom/Angle.h"
 
-namespace simAstrom = lsst::meas::simastrom;
+namespace jointcal = lsst::jointcal;
 namespace afwImg = lsst::afw::image;
 
 namespace lsst {
-namespace meas {
-namespace simastrom {
+namespace jointcal {
 
   /* Interesting fields of the stack catalogs :
  'base_SdssCentroid_x'
@@ -131,7 +130,7 @@ CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceReco
     Point upperRight(bbox.getMaxX(), bbox.getMaxY());
     imageFrame = Frame(lowerLeft, upperRight);
     
-    readWcs = new simAstrom::TanSipPix2RaDec(simAstrom::ConvertTanWcs(wcs));
+    readWcs = new jointcal::TanSipPix2RaDec(jointcal::ConvertTanWcs(wcs));
 
     // use some other variable in case we later have to actually convert the 
     // read wcs:
@@ -217,4 +216,4 @@ CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceReco
     bandRank = 0; // will be set by Associations if pertinent.
 }
     
-}}} // end of namespaces
+}} // end of namespaces

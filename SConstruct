@@ -1,3 +1,3 @@
 # -*- python -*-
 from lsst.sconsUtils import scripts
-scripts.BasicSConstruct("meas_simastrom")
+scripts.BasicSConstruct("jointcal")

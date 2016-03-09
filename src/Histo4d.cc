@@ -4,11 +4,10 @@
 #include <algorithm> /* for sort */
 #include <limits.h>
 
-#include "lsst/meas/simastrom/Histo4d.h"
+#include "lsst/jointcal/Histo4d.h"
 
 namespace lsst {
-namespace meas {
-namespace simastrom {
+namespace jointcal {
 
 using namespace std;
 
@@ -157,4 +156,4 @@ void SparseHisto4d::dump() const
   std::cout << std::endl;
 }
 
-}}}
+}} // end of namespaces

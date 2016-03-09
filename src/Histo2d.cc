@@ -2,11 +2,10 @@
 #include <math.h> /* for floor */
 #include <string.h> /* for memset*/
 
-#include "lsst/meas/simastrom/Histo2d.h"
+#include "lsst/jointcal/Histo2d.h"
 
 namespace lsst {
-namespace meas {
-namespace simastrom {
+namespace jointcal {
 
 
   //using namespace std;
@@ -88,4 +87,4 @@ double Histo2d::BinContent(const double &X, const double &Y) const
   return -1e30;
 }
 
-}}} //end of namespaces
+}} //end of namespaces
