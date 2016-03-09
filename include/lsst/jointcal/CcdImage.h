@@ -13,7 +13,7 @@
 #include "lsst/jointcal/MeasuredStar.h"
 #include "lsst/jointcal/Gtransfo.h"
 #include "lsst/jointcal/Frame.h"
-//#include "lsst/jointcal/jointcal.h"
+//#include "lsst/jointcal/Jointcal.h"
 
 
 namespace lsst {

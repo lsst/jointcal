@@ -18,7 +18,7 @@
 #include "lsst/jointcal/FittedStar.h"
 #include "lsst/jointcal/CcdImage.h"
 #include "lsst/jointcal/Point.h"
-#include "lsst/jointcal/jointcal.h"
+#include "lsst/jointcal/Jointcal.h"
 
 #include "lsst/afw/table/SortedCatalog.h"
 
