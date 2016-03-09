@@ -12,26 +12,26 @@
 #include "lsst/afw/image/TanWcs.h"
 #include "lsst/afw/image/Utils.h"
 #include "lsst/afw/fits.h"
-#include "lsst/daf/base.h" 
+#include "lsst/daf/base.h"
 
 #include <stdlib.h> /* for getenv */
 
+// NOTE: turn this flag on to raise exceptions on floating point errors.
+// NOTE: this only works on GNU/Linux (fenv is not C++ standard).
+// #define DUMP_CORE_ON_FPE
+#ifdef DUMP_CORE_ON_FPE
 #define _GNU_SOURCE 1
 #define __USE_GNU
 #include <fenv.h>
-
-
-static void __attribute__ ((constructor))
-trapfpe ()
+static void __attribute__ ((constructor)) trapfpe ()
 {
-  /* Enable some exceptions.  At startup all exceptions are masked.  */
-  
-  if (getenv("DUMP_CORE_ON_FPE"))
-    feenableexcept (FE_INVALID|FE_DIVBYZERO|FE_OVERFLOW);
+   // Enable some exceptions.  At startup all exceptions are masked.
+  feenableexcept (FE_INVALID|FE_DIVBYZERO|FE_OVERFLOW);
 }
- 
+#endif
 
-namespace jointcal = lsst::jointcal; 
+
+namespace jointcal = lsst::jointcal;
 namespace afwImg = lsst::afw::image;
 
 /* Test jointcal::TanSipPix2RaDec::apply against afwImg::Wcs::pixelToSky */
