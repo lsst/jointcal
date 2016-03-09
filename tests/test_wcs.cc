@@ -12,7 +12,7 @@
 #include "lsst/afw/image/TanWcs.h"
 #include "lsst/afw/image/Utils.h"
 #include "lsst/afw/fits.h"
-#include "lsst/daf/base.h" 
+#include "lsst/daf/base.h"
 
 #include <stdlib.h> /* for getenv */
 
@@ -31,7 +31,7 @@ static void __attribute__ ((constructor)) trapfpe ()
 #endif
 
 
-namespace jointcal = lsst::jointcal; 
+namespace jointcal = lsst::jointcal;
 namespace afwImg = lsst::afw::image;
 
 /* Test jointcal::TanSipPix2RaDec::apply against afwImg::Wcs::pixelToSky */
