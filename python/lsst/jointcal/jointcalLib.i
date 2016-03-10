@@ -1,5 +1,5 @@
 // -*- lsst-c++ -*-
-%define meas_jointcalLib_DOCSTRING
+%define jointcalLib_DOCSTRING
 "
 Python interface to lsst::jointcal classes
 "
@@ -7,7 +7,7 @@ Python interface to lsst::jointcal classes
 
 %feature("autodoc", "1");
 
-%module(package="lsst.jointcal", docstring=meas_jointcalLib_DOCSTRING) jointcalLib
+%module(package="lsst.jointcal", docstring=jointcalLib_DOCSTRING) jointcalLib
 
 %{
 #include <exception>
@@ -23,7 +23,7 @@ Python interface to lsst::jointcal classes
 #include "lsst/daf/base/PropertySet.h"
 #include "lsst/jointcal/test.h"
 #include "lsst/jointcal/test2.h"
-#include "lsst/jointcal/jointcal.h"
+#include "lsst/jointcal/Jointcal.h"
 #include "lsst/jointcal/CcdImage.h"
 #include "lsst/jointcal/AstromFit.h"
 #include "lsst/jointcal/Associations.h"
@@ -41,7 +41,7 @@ Python interface to lsst::jointcal classes
 %}
 
 %include "lsst/p_lsstSwig.i"
-%initializeNumPy(meas_jointcal)
+%initializeNumPy(jointcal)
 
 %import "lsst/afw/table/tableLib.i"
 
@@ -60,7 +60,7 @@ Python interface to lsst::jointcal classes
 
 %include "lsst/jointcal/test.h"
 %include "lsst/jointcal/test2.h"
-%include "lsst/jointcal/jointcal.h"
+%include "lsst/jointcal/Jointcal.h"
 namespace lsst {
 namespace jointcal {
 class DistortionModel;

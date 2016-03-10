@@ -1,4 +1,6 @@
-from __future__ import division, absolute_import, print_statement
+# See COPYRIGHT file at the top of the source tree.
+
+from __future__ import division, absolute_import, print_function
 
 from lsst.pipe.tasks.makeCoaddTempExp import MakeCoaddTempExpTask
 from lsst.pipe.base import Struct
