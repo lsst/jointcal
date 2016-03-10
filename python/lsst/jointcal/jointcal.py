@@ -96,10 +96,10 @@ class JointcalTask(pipeBase.CmdLineTask):
     
     def __init__(self, *args, **kwargs):
         pipeBase.Task.__init__(self, *args, **kwargs)
-#        self.makeSubtask("select")
+        # self.makeSubtask("select")
 
-# We don't need to persist config and metadata at this stage. In this way, we don't need to put a specific entry in the
-# camera mapper policy file
+    # We don't need to persist config and metadata at this stage.
+    # In this way, we don't need to put a specific entry in the camera mapper policy file
     def _getConfigName(self):
         return None
         
@@ -153,7 +153,9 @@ class JointcalTask(pipeBase.CmdLineTask):
             if len(newSrc) == 0 :
                 print("no source selected in ", dataRef.dataId["visit"], dataRef.dataId["ccd"])
                 continue
-            print("%d sources selected in visit %d - ccd %d"%(len(newSrc), dataRef.dataId["visit"], dataRef.dataId["ccd"]))
+            print("%d sources selected in visit %d - ccd %d"%(len(newSrc),
+                                                              dataRef.dataId["visit"],
+                                                              dataRef.dataId["ccd"]))
             
             assoc.AddImage(newSrc, tanwcs, md, bbox, filt, calib,
                            dataRef.dataId['visit'], dataRef.dataId['ccd'],
