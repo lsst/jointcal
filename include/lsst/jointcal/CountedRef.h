@@ -10,11 +10,11 @@ namespace lsst {
 namespace jointcal {
 
 
-//! an implementation of "smart pointers" that counts references to an object. The object it "points" to has to derive from RefCount. 
+//! an implementation of "smart pointers" that counts references to an object. The object it "points" to has to derive from RefCount.
 
-struct RefCount 
+struct RefCount
 {
-  // the actual count has to be mutable so that one can pass a const reference. 
+  // the actual count has to be mutable so that one can pass a const reference.
   mutable unsigned refcount;
 
 

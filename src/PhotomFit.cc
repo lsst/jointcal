@@ -22,7 +22,7 @@ namespace lsst {
 namespace jointcal {
 
 
-PhotomFit::PhotomFit(Associations &A, PhotomModel *M, double FluxError) : 
+PhotomFit::PhotomFit(Associations &A, PhotomModel *M, double FluxError) :
   _assoc(A),  _photomModel(M), _fluxError(FluxError)
 {
   _LastNTrip = 0;
@@ -40,7 +40,7 @@ PhotomFit::PhotomFit(Associations &A, PhotomModel *M, double FluxError) :
 
 
 
-/*! this is the first implementation of an error "model". 
+/*! this is the first implementation of an error "model".
   We'll certainly have to upgrade it. MeasuredStar provided
 in case we need the mag.  */
 
@@ -74,7 +74,7 @@ void PhotomFit::LSDerivatives(TripletList &TList, Eigen::VectorXd &Rhs) const
 
 
 
-void PhotomFit::LSDerivatives(const CcdImage &Ccd, 
+void PhotomFit::LSDerivatives(const CcdImage &Ccd,
 			      TripletList &TList, Eigen::VectorXd &Rhs,
 			      const MeasuredStarList *M) const
 {
@@ -84,7 +84,7 @@ void PhotomFit::LSDerivatives(const CcdImage &Ccd,
   /* this routine works in two different ways: either providing the
      Ccd, of providing the MeasuredStarList. In the latter case, the
      Ccd should match the one(s) in the list. */
-  if (M) 
+  if (M)
     assert ( (*(M->begin()))->ccdImage == &Ccd);
 
   unsigned npar_max = 100; // anything large
@@ -112,10 +112,10 @@ void PhotomFit::LSDerivatives(const CcdImage &Ccd,
 
       double res = ms.flux - pf * fs->flux;
             
-      if (_fittingModel) 
+      if (_fittingModel)
 	{
 	  _photomModel->GetIndicesAndDerivatives(ms,
-						 Ccd, 
+						 Ccd,
 						 indices,
 						 h);
 	  for (unsigned k=0; k<indices.size(); k++)
@@ -134,7 +134,7 @@ void PhotomFit::LSDerivatives(const CcdImage &Ccd,
       kTriplets += 1; // each measurement contributes 1 column in the Jacobian
     } // end loop on measurements
   TList.SetNextFreeIndex(kTriplets);
-}    
+}
 
 // This is almost a selection of lines of LSDerivatives(CcdImage ...)
 /* This routine is template because it is used
@@ -143,7 +143,7 @@ and I did not want to replicate it.  The constness of the iterators is
 automagically set by declaring them as "auto" */
 
 
-template <class ListType, class Accum> 
+template <class ListType, class Accum>
 void PhotomFit::AccumulateStat(ListType &L, Accum &Accu) const
 {
   for (auto im=L.begin(); im!=L.end() ; ++im)
@@ -166,7 +166,7 @@ void PhotomFit::AccumulateStat(ListType &L, Accum &Accu) const
 	  
 	  double pf = _photomModel->PhotomFactor(Ccd, ms);
 	  const FittedStar *fs = ms.GetFittedStar();
-	  double res = ms.flux - pf * fs->flux;            
+	  double res = ms.flux - pf * fs->flux;
 	  double chi2Val = sqr(res/sigma);
 	  Accu.AddEntry(chi2Val, 1, &ms);
 	} // end loop on measurements
@@ -184,8 +184,8 @@ Chi2 PhotomFit::ComputeChi2() const
   return chi2;
 }
 
-void PhotomFit::OutliersContributions(MeasuredStarList &Outliers, 
-				      TripletList &TList, 
+void PhotomFit::OutliersContributions(MeasuredStarList &Outliers,
+				      TripletList &TList,
 				      Eigen::VectorXd &Grad)
 {
   for (auto i= Outliers.begin(); i!= Outliers.end(); ++i)
@@ -227,7 +227,7 @@ struct Chi2Vect : public vector<Chi2Entry>
 //! this routine is to be used only in the framework of outlier removal
 /*! it fills the array of indices of parameters that a Measured star
     constrains. Not really all of them if you check. */
-void PhotomFit::GetMeasuredStarIndices(const MeasuredStar &Ms, 
+void PhotomFit::GetMeasuredStarIndices(const MeasuredStar &Ms,
 				       std::vector<unsigned> &Indices) const
 {
   Indices.clear();
@@ -235,7 +235,7 @@ void PhotomFit::GetMeasuredStarIndices(const MeasuredStar &Ms,
     {
       Eigen::VectorXd h(100);
       _photomModel->GetIndicesAndDerivatives(Ms,
-					     *Ms.ccdImage, 
+					     *Ms.ccdImage,
 					     Indices,
 					     h);
     }
@@ -249,10 +249,10 @@ void PhotomFit::GetMeasuredStarIndices(const MeasuredStar &Ms,
 
 
 
-void PhotomFit::FindOutliers(const double &NSigCut, 
+void PhotomFit::FindOutliers(const double &NSigCut,
 			     MeasuredStarList &Outliers) const
 {
-  /* Aims at providing an outlier list for small-rank update 
+  /* Aims at providing an outlier list for small-rank update
      of the factorization. */
 
   // collect chi2 contributions of the measurements.
@@ -263,19 +263,19 @@ void PhotomFit::FindOutliers(const double &NSigCut,
   unsigned nval = chi2s.size();
   if (nval==0) return;
   sort(chi2s.begin(), chi2s.end()); // increasing order. We rely on this later.
-  double median = (nval & 1)? chi2s[nval/2].chi2 :  
+  double median = (nval & 1)? chi2s[nval/2].chi2 :
     0.5*(chi2s[nval/2-1].chi2 + chi2s[nval/2].chi2);
   // some more stats. should go into the class if recycled anywhere else
   double sum=0; double sum2 = 0;
-  for (auto i=chi2s.begin(); i!=chi2s.end(); ++i) 
+  for (auto i=chi2s.begin(); i!=chi2s.end(); ++i)
     {sum+= i->chi2;sum2+= sqr(i->chi2);}
   double average = sum/nval;
   double sigma = sqrt(sum2/nval - sqr(average));
-  cout << "INFO : FindOutliers chi2 stat: mean/median/sigma " 
+  cout << "INFO : FindOutliers chi2 stat: mean/median/sigma "
        << average << '/'<< median << '/' << sigma << endl;
   double cut = average+NSigCut*sigma;
   /* For each of the parameters, we will not remove more than 1
-     measurement that contributes to constraining it. Keep track 
+     measurement that contributes to constraining it. Keep track
      of the affected parameters using an integer vector. This is the
      trick that Marc Betoule came up to for outlier removals in "star
      flats" fits. */
@@ -285,7 +285,7 @@ void PhotomFit::FindOutliers(const double &NSigCut,
   // start from the strongest outliers, i.e. at the end of the array.
   for (auto i = chi2s.rbegin(); i != chi2s.rend(); ++i)
     {
-      if (i->chi2 < cut) break; // because the array is sorted. 
+      if (i->chi2 < cut) break; // because the array is sorted.
       vector<unsigned> indices;
       GetMeasuredStarIndices(*(i->ms), indices);
       bool drop_it = true;
@@ -301,7 +301,7 @@ void PhotomFit::FindOutliers(const double &NSigCut,
 	  Outliers.push_back(i->ms);
 	}
     } // end loop on measurements
-  cout << "INFO : FindMeasOutliers : found " 
+  cout << "INFO : FindMeasOutliers : found "
        << Outliers.size() << " outliers" << endl;
 }
 
@@ -326,15 +326,15 @@ unsigned PhotomFit::RemoveOutliers(const double &NSigCut)
   unsigned nval = chi2s.size();
   if (nval==0) return 0;
   sort(chi2s.begin(), chi2s.end());
-  double median = (nval & 1)? chi2s[nval/2].chi2 :  
+  double median = (nval & 1)? chi2s[nval/2].chi2 :
     0.5*(chi2s[nval/2-1].chi2 + chi2s[nval/2].chi2);
   // some more stats. should go into the class if recycled anywhere else
   double sum=0; double sum2 = 0;
-  for (auto i=chi2s.begin(); i!=chi2s.end(); ++i) 
+  for (auto i=chi2s.begin(); i!=chi2s.end(); ++i)
     {sum+= i->chi2;sum2+= sqr(i->chi2);}
   double average = sum/nval;
   double sigma = sqrt(sum2/nval - sqr(average));
-  cout << "INFO : RemoveOutliers chi2 stat: mean/median/sigma " 
+  cout << "INFO : RemoveOutliers chi2 stat: mean/median/sigma "
        << average << '/'<< median << '/' << sigma << endl;
   double cut = average+NSigCut*sigma;
   /* For each of the parameters, we will not remove more than 1
@@ -349,7 +349,7 @@ unsigned PhotomFit::RemoveOutliers(const double &NSigCut)
   // start from the strongest outliers.
   for (auto i = chi2s.rbegin(); i != chi2s.rend(); ++i)
     {
-      if (i->chi2 < cut) break; // because the array is sorted. 
+      if (i->chi2 < cut) break; // because the array is sorted.
       vector<unsigned> indices;
       GetMeasuredStarIndices(*(i->ms), indices);
       bool drop_it = true;
@@ -365,7 +365,7 @@ unsigned PhotomFit::RemoveOutliers(const double &NSigCut)
 	  fs->MeasurementCount()--; // could be put in SetValid
 	  /* By making sure that we do not remove all MeasuredStars
 	     pointing to a FittedStar in a single go,
-	     fs->MeasurementCount() should never go to 0. 
+	     fs->MeasurementCount() should never go to 0.
 	     
 	     It seems plausible that the adopted mechanism prevents as
 	     well to end up with under-constrained transfos. */
@@ -373,7 +373,7 @@ unsigned PhotomFit::RemoveOutliers(const double &NSigCut)
 	    affectedParams(*i)++;
 	}
     } // end loop on measurements
-  cout << "INFO : RemoveOutliers : found and removed " 
+  cout << "INFO : RemoveOutliers : found and removed "
        << removed << " outliers" << endl;
   return removed;
 }
@@ -383,10 +383,10 @@ unsigned PhotomFit::RemoveOutliers(const double &NSigCut)
  which define which parameter sets are going to be
 fitted. This routine is called by Minimize().
 WhatToFit="Model Fluxes"  will set both parameter sets variable
-when computing derivatives. Provided it contains "Model", 
+when computing derivatives. Provided it contains "Model",
 WhatToFit is passed over to the PhotomModel,
 and can hence be used to control more finely which subsets
-of the photometric model are being fitted, if the 
+of the photometric model are being fitted, if the
 the actual PhotomModel implements such a possibility.
 */
 void PhotomFit::AssignIndices(const std::string &WhatToFit)
@@ -419,9 +419,9 @@ void PhotomFit::AssignIndices(const std::string &WhatToFit)
 
 void PhotomFit::OffsetParams(const Eigen::VectorXd& Delta)
 {
-  if (Delta.size() != _nParTot) 
+  if (Delta.size() != _nParTot)
     throw LSST_EXCEPT(pex::exceptions::InvalidParameterError, "PhotomFit::OffsetParams : the provided vector length is not compatible with the current WhatToFit setting");
-  if (_fittingModel) 
+  if (_fittingModel)
     _photomModel->OffsetParams(Delta);
 
   if (_fittingFluxes)
@@ -440,8 +440,8 @@ void PhotomFit::OffsetParams(const Eigen::VectorXd& Delta)
 }
 
 
-/*! This is a complete Newton Raphson step. Compute first and 
-  second derivatives, solve for the step and apply it, without 
+/*! This is a complete Newton Raphson step. Compute first and
+  second derivatives, solve for the step and apply it, without
   a line search. */
 bool PhotomFit::Minimize(const std::string &WhatToFit)
 {
@@ -456,10 +456,10 @@ bool PhotomFit::Minimize(const std::string &WhatToFit)
   clock_t tstart = clock();
   LSDerivatives(tList, grad);
   clock_t tend = clock();
-  _LastNTrip = tList.size(); 
+  _LastNTrip = tList.size();
 
-  cout << " INFO: End of triplet filling, ntrip = " << tList.size() 
-       << " CPU = " << float(tend-tstart)/float(CLOCKS_PER_SEC) 
+  cout << " INFO: End of triplet filling, ntrip = " << tList.size()
+       << " CPU = " << float(tend-tstart)/float(CLOCKS_PER_SEC)
        << endl;
 
   SpMat hessian;
@@ -471,13 +471,13 @@ bool PhotomFit::Minimize(const std::string &WhatToFit)
     clock_t tstart = clock();
     hessian = jacobian*jacobian.transpose();
     clock_t tend = clock();
-    std::cout << "INFO: CPU for J*Jt " 
+    std::cout << "INFO: CPU for J*Jt "
 	      << float(tend-tstart)/float(CLOCKS_PER_SEC) << std::endl;
   }// release the Jacobian
 
 
-  cout << "INFO: hessian : dim=" << hessian.rows() 
-       << " nnz=" << hessian.nonZeros() 
+  cout << "INFO: hessian : dim=" << hessian.rows()
+       << " nnz=" << hessian.nonZeros()
        << " filling-frac = " << hessian.nonZeros()/sqr(hessian.rows()) << endl;
   cout << "INFO: starting factorization" << endl;
 
@@ -494,7 +494,7 @@ bool PhotomFit::Minimize(const std::string &WhatToFit)
   //  cout << " offsetting parameters" << endl;
   OffsetParams(delta);
   tend = clock();
-  std::cout << "INFO: CPU for factor-solve-update " 
+  std::cout << "INFO: CPU for factor-solve-update "
   	    << float(tend-tstart)/float(CLOCKS_PER_SEC) << std::endl;
   return true;
 }
@@ -540,19 +540,19 @@ void PhotomFit::MakeResTuple(const std::string &TupleName) const
 	  double pf = _photomModel->PhotomFactor(im, ms);
 	  double jd = im.JD();
 	  const FittedStar *fs = ms.GetFittedStar();
-	  double res = ms.flux - pf * fs->flux;            
+	  double res = ms.flux - pf * fs->flux;
 	  double chi2Val = sqr(res/sigma);
-	  tuple << ms.x << ' ' << ms.y << ' ' 
+	  tuple << ms.x << ' ' << ms.y << ' '
 		<< fs->Mag() << ' '
 		<< ms.flux << ' ' << ms.eflux << ' '
-		<< fs->flux << ' ' 
-		<< pf << ' ' 
+		<< fs->flux << ' '
+		<< pf << ' '
 		<< jd << ' '
-		<< fs->color << ' ' 
+		<< fs->color << ' '
 		<< fs->IndexInMatrix() << ' '
 	        << fs->x << ' ' << fs->y << ' '
-		<< chi2Val << ' ' 
-		<< fs->MeasurementCount() << ' ' 
+		<< chi2Val << ' '
+		<< fs->MeasurementCount() << ' '
 		<< im.Chip() << ' ' << im.Shoot() << endl;
 	}// loop on measurements in image
     }// loop on images
@@ -596,7 +596,7 @@ void PhotomFit::CheckStuff()
 {
 #if (0)
   const char *what2fit[] = {"Positions", "Distortions", "Refrac",
-		      "Positions Distortions", "Positions Refrac", 
+		      "Positions Distortions", "Positions Refrac",
 		      "Distortions Refrac",
 		      "Positions Distortions Refrac"};
 #endif
@@ -611,12 +611,12 @@ void PhotomFit::CheckStuff()
       heavyDebug = true;
 #endif
       TripletList tList(10000);
-      Eigen::VectorXd rhs(_nParTot);  rhs.setZero();		    
+      Eigen::VectorXd rhs(_nParTot);  rhs.setZero();
       LSDerivatives(tList, rhs);
       SpMat jacobian(_nParTot,tList.NextFreeIndex());
       jacobian.setFromTriplets(tList.begin(), tList.end());
       SpMat hessian = jacobian*jacobian.transpose();
-#ifdef STORAGE      
+#ifdef STORAGE
       char name[24];
       sprintf(name,"h%d.fits", k);
       write_sparse_matrix_in_fits(hessian, name);
@@ -665,13 +665,13 @@ void PhotomFit::MakeRefResTuple(const std::string &TupleName) const
       double wxy = -rsProj.vxy/det;
       double chi2 = wxx*sqr(rx) + 2*wxy*rx*ry+ wyy*sqr(ry);
       tuple << std::setprecision(9);
-      tuple << fs.x << ' ' << fs.y << ' ' 
+      tuple << fs.x << ' ' << fs.y << ' '
 	    << rx << ' ' << ry << ' '
-	    << fs.Mag() << ' ' 
-	    << rsProj.vx << ' ' << rsProj.vy << ' ' << rsProj.vxy << ' ' 
-	    << fs.color << ' ' 
+	    << fs.Mag() << ' '
+	    << rsProj.vx << ' ' << rsProj.vy << ' ' << rsProj.vxy << ' '
+	    << fs.color << ' '
 	    << fs.IndexInMatrix() << ' '
-	    << chi2 << ' ' 
+	    << chi2 << ' '
 	    << fs.MeasurementCount() << ' '
 	    << endl;
     }// loop on FittedStars

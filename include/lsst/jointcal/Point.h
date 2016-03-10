@@ -39,11 +39,11 @@ public:
   Point operator - (const Point &Right) const { return Point(x-Right.x, y-Right.y);}
 
   //! utility
-  virtual void dump(std::ostream& s = std::cout) const { s <<" x " << x << " y " << y;}  
+  virtual void dump(std::ostream& s = std::cout) const { s <<" x " << x << " y " << y;}
 
 #ifndef SWIG
   //! -
-  friend std::ostream& operator << (std::ostream& stream, const Point &point) 
+  friend std::ostream& operator << (std::ostream& stream, const Point &point)
   { point.dump(stream); return stream;}
 #endif
 };

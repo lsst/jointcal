@@ -33,20 +33,20 @@ class BaseStar : public FatPoint, public RefCount
 {
 
   public :
-double flux; 
+double flux;
 
 
   public:
  BaseStar(){x=0;y=0;flux=0;};
   //! constructor
- BaseStar(double xx, double yy, double ff) : FatPoint(xx,yy), flux(ff) 
+ BaseStar(double xx, double yy, double ff) : FatPoint(xx,yy), flux(ff)
   {};
  BaseStar(const Point &a_point, double a_flux) : FatPoint(a_point), flux(a_flux)
   {};
 
   //! access stuff.
   double X() const { return x;}
-  //! 
+  //!
   double Y() const { return y;}
 
   static BaseStar* read(std::istream & rd, const char *format);
@@ -83,7 +83,7 @@ double flux;
 unsigned NValsBaseStar(const char *Format);
 
 
-//! enables to sort easily a starList (of anything that derives from BaseStar) 
+//! enables to sort easily a starList (of anything that derives from BaseStar)
 bool DecreasingFlux(const BaseStar *S1, const BaseStar *S2);
 
 
@@ -103,4 +103,4 @@ typedef BaseStarList::const_iterator BaseStarCIterator;
 
 }}
 
-#endif /* BASESTAR__H */  
+#endif /* BASESTAR__H */

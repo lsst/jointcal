@@ -15,7 +15,7 @@ class FatPoint;
 class Point;
 
 //! virtual class needed in the abstraction of the distortion model
-class Mapping 
+class Mapping
 {
 
     public :
@@ -56,4 +56,4 @@ class Mapping
 // typedef MappingList::const_iterator MappingCIterator;
 
 }} // end of namespaces
-#endif /* MAPPING__H */ 
+#endif /* MAPPING__H */

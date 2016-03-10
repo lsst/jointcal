@@ -4,10 +4,10 @@
   https://jira.lsstcorp.org/browse/DM-4043 ) and converged towards a
   similar model using intrusive_prt. When this is done, we could think
   about using some automatic tool to detect memory problems (leaks in
-  particular). 
+  particular).
 
   Done in branch "memory", itself a spin-off of cholmod-update.
-  Valgrind was run, withou reporting anything worrying, 
+  Valgrind was run, withou reporting anything worrying,
   but not in the stack framework.
 
  *12: Identify how to hand over the photometric scalings to the
@@ -27,7 +27,7 @@
   description of CHECKPLOT_TYPE in the scamp documentation (to be
   found on http://www.astromatic.net/software/scamp).
   There are examples on the web from the CFHTLS processing:
-  http://terapix.iap.fr/cplt/T0007/table_syn_T0007.html 
+  http://terapix.iap.fr/cplt/T0007/table_syn_T0007.html
   (where column 16 provides a few hints).
 
 *8: Fitting the non-uniformity of photometric response after
@@ -65,12 +65,12 @@
   "propagate those into python" tags the declaration of quantities.
 
 *5: Add an outlier rejection of associations to the "USNO" catalog in
-   AstromFit.cc : 
+   AstromFit.cc :
     DONE:  there is a single routine that handles both kinds of terms.
      
 *4: Change the name of the LSDerivative routines in AstromFit, because
    python cannot handle routines with the same name.
-  DONE:  In fact swig handles routines with the same name. 
+  DONE:  In fact swig handles routines with the same name.
 
 *3: Check all direct readings of the FITS headers in the CcdImage
   constructor.  They should "just work" when we switch instrument. The

@@ -17,7 +17,7 @@ static double sq(const double &x) { return x*x;}
 void BaseStar::read_it(std::istream & rd, const char *format)
 {
  int formatValue = 0;
- if (format) 
+ if (format)
    formatValue = DecodeFormat(format,"BaseStar");
  if (formatValue == 3)
    {
@@ -36,7 +36,7 @@ void BaseStar::read_it(std::istream & rd, const char *format)
      y -= MEMPIX2DISK;
    }
  else throw  LSST_EXCEPT(pexExcept::OutOfRangeError," Unknown format value for BaseStar ");
-}  
+}
 
 /* this routine is used by DicStar. It *HAS* to be consistent with BaseStar::read_it, above */
 unsigned NValsBaseStar(const char *Format)
@@ -60,39 +60,39 @@ BaseStar* BaseStar::read(std::istream & rd, const char *format)
 std::string BaseStar::WriteHeader_(std::ostream & stream, const char*i) const
 {
   if (i==NULL) i = "";
-  stream << "# x"<< i <<" : x position (pixels)" << std::endl 
-	 << "# y"<< i <<" : y position (pixels)" << std::endl 
+  stream << "# x"<< i <<" : x position (pixels)" << std::endl
+	 << "# y"<< i <<" : y position (pixels)" << std::endl
 	 << "# sx"<< i <<" : x position r.m.s " << std::endl
 	 << "# sy"<< i <<" : y position r.m.s " << std::endl
 	 << "# rhoxy"<< i <<" : xy correlation " << std::endl
 	 << "# flux"<< i <<" : flux in image ADUs" << std::endl ;
-  return " BaseStar 3 "; 
+  return " BaseStar 3 ";
 }
 
 void BaseStar::WriteHeader(std::ostream & stream) const
-{ 
-  std::string format = WriteHeader_(stream); 
+{
+  std::string format = WriteHeader_(stream);
   stream << "# format " << format << std::endl;
   stream << "# end " << std::endl ;
 };
 
 
-void BaseStar::writen(std::ostream &s) const 
+void BaseStar::writen(std::ostream &s) const
 {
   assert(vx>0 && vy>0 && sq(vxy)<vx*vy);
-  /* write (sigx,sigy,rho) rather than (vx,vy,vxy). 
-     This limits shortcomings of truncation, and is more useful 
+  /* write (sigx,sigy,rho) rather than (vx,vy,vxy).
+     This limits shortcomings of truncation, and is more useful
      when reading or plotting.
   */
   double sx = sqrt(vx);
   double sy = sqrt(vy);
-  s << x << ' ' << y << ' ' 
-    << sx << ' ' << sy << ' ' << vxy/sx/sy << ' ' 
+  s << x << ' ' << y << ' '
+    << sx << ' ' << sy << ' ' << vxy/sx/sy << ' '
     << flux << ' ' ;
 }
 
 
-void BaseStar::write(std::ostream &s) const 
+void BaseStar::write(std::ostream &s) const
 {
   writen(s);
   s << std::endl ;

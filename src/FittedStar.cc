@@ -25,7 +25,7 @@ FittedStar::FittedStar(const MeasuredStar &M) :
 void FittedStar::SetRefStar(const RefStar *R)
 {
   if (refStar != NULL && (R)) // Exception ??
-    std::cerr << " FittedStar : " << *this 
+    std::cerr << " FittedStar : " << *this
 	      << " is already matched to an other RefStar " << std::endl
 	      << " Clean up your lists " << std::endl;
   else refStar = R;
@@ -34,7 +34,7 @@ void FittedStar::SetRefStar(const RefStar *R)
 static double sq(const double &x) {return x*x;}
 
 
-void FittedStar::AddMagMeasurement(const double &MagValue, 
+void FittedStar::AddMagMeasurement(const double &MagValue,
 				   const double &MagWeight)
 {
   mag = (mag*wmag+MagValue*MagWeight)/(wmag+MagWeight);
@@ -96,7 +96,7 @@ const BaseStarList* Fitted2Base(const FittedStarList *This)
 
 
 
-void FittedStarList::WriteTuple(const std::string &FileName, 
+void FittedStarList::WriteTuple(const std::string &FileName,
 			  const Gtransfo &T,
 			  const bool OnlyGoodStars)
 {
@@ -104,7 +104,7 @@ void FittedStarList::WriteTuple(const std::string &FileName,
   for (FittedStarCIterator i = begin(); i != end(); ++i)
     {
       const FittedStar &f = **i;
-      if (OnlyGoodStars && f.flux < 0) continue; 
+      if (OnlyGoodStars && f.flux < 0) continue;
       Point raDec = T.apply(f);
       tuple.AddEntry(f, raDec);
     }
@@ -113,7 +113,7 @@ void FittedStarList::WriteTuple(const std::string &FileName,
 
 /****************/
  
-FittedStarTuple::FittedStarTuple(const std::string &FileName) 
+FittedStarTuple::FittedStarTuple(const std::string &FileName)
   : stream(FileName.c_str())
 {
   stream << "# ra : " << std::endl
@@ -133,12 +133,12 @@ void FittedStarTuple::AddEntry(const FittedStar &F, const Point &RaDec)
 {
   std::ios::fmtflags  old_flags =  stream.flags();
   stream << std::setprecision(10);
-  stream << RaDec.x << ' ' 
-	 << RaDec.y << ' ' 
+  stream << RaDec.x << ' '
+	 << RaDec.y << ' '
     ;
   stream << std::setprecision(5);
   stream << F.Mag() << ' '
-	 << F.MeasurementCount() << ' ' 
+	 << F.MeasurementCount() << ' '
 	 << std::endl;
 
   stream.flags(old_flags);

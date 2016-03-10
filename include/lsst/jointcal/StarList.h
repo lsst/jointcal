@@ -18,21 +18,21 @@ namespace jointcal {
 
 class Frame;
 
-//! std::lists of Stars. 
+//! std::lists of Stars.
 /*!     It is a template class, which means that the Star
-type remains undefined until a user defines it. 
+type remains undefined until a user defines it.
 The std::list related operations (insertion,
-sort, traversal) are to be carried out using STL 
+sort, traversal) are to be carried out using STL
 list operations. Most of the
-Star operations rely on routines to be provided in 
+Star operations rely on routines to be provided in
 the Star class, usually
-user defined. The instanciation of this class for 
-BaseStar (i.e. the replacement 
-of the formal parameter 'Star' by 'BaseStar') is 
-called BaseStarList. 
-Take care: what is stored is pointers on Star's and 
+user defined. The instanciation of this class for
+BaseStar (i.e. the replacement
+of the formal parameter 'Star' by 'BaseStar') is
+called BaseStarList.
+Take care: what is stored is pointers on Star's and
 NOT Star's. This implies
-that Stars being inserted in the std::list have to be 
+that Stars being inserted in the std::list have to be
 obtained using 'new'.  */
 
 /* CountedRef is very similar to std::shared_ptr, but with the latter
@@ -57,19 +57,19 @@ public:
 
 
 /* constructors */
-//! : default constructor (empty std::list). 
+//! : default constructor (empty std::list).
   StarList() {};
 
- //! reads a StarList from a file, 
+ //! reads a StarList from a file,
   /*!
-     using the read method from the Star class. 
+     using the read method from the Star class.
      See BaseStar for an example of implementation. */
-  StarList(const std::string &FileName); 
+  StarList(const std::string &FileName);
   //! writes to a file
-  /*!  calls iteratively the write method of the Star 
-	class. It is unusable if the Star class does not 
+  /*!  calls iteratively the write method of the Star
+	class. It is unusable if the Star class does not
 	provide this functionnality.
-	see BaseStar to see a possible implementation. 
+	see BaseStar to see a possible implementation.
   */
 
 
@@ -92,13 +92,13 @@ public:
   virtual ~StarList() {};
 
   
-  //! invokes dump(stream) for all Stars in the std::list. 
- void dump(std::ostream &stream = std::cout ) const { 
-    for (auto p = this->begin(); 
+  //! invokes dump(stream) for all Stars in the std::list.
+ void dump(std::ostream &stream = std::cout ) const {
+    for (auto p = this->begin();
 	 p !=this->end(); ++p) (*p)->dump(stream);}
 
-  //!a model routine to sort the std::list 
-  /*! see DecreasingFlux() to see what it is, if you 
+  //!a model routine to sort the std::list
+  /*! see DecreasingFlux() to see what it is, if you
      want another sorting criterion) */
   // le premier de la std::liste a le plus grand flux
   void FluxSort();
@@ -106,7 +106,7 @@ public:
   //! copy the head of the std::list at the  end of an other std::list (that may be empty on input)
   void ExtractHead(StarList<Star> &Out, int NHead) const;
 
-  //! cuts the end of the std::list 
+  //! cuts the end of the std::list
   void CutTail(const int NKeep);
 
   //! copy the part of the std::list which is included in the frame at the end of another std::list
@@ -114,16 +114,16 @@ public:
  //! cut the part of the std::list which is at a distance < mindist of the edges defined by frame.
   void CutEdges(const Frame &aFrame, float mindist);
 
-  //! clears Copy and makes a copy of the std::list to Copy 
+  //! clears Copy and makes a copy of the std::list to Copy
   void CopyTo(StarList<Star> &Copy) const;
 
-  //! Clears the std::list 
+  //! Clears the std::list
   void ClearList() { CutTail(0);};
 
   //! enables to apply a geometrical transfo if Star is Basestar or derives from it.
   /*! could be extended to other type of transformations. */
 
-  template<class Operator> void ApplyTransfo(const Operator &Op) 
+  template<class Operator> void ApplyTransfo(const Operator &Op)
   {for (auto p = this->begin(); p != this->end(); ++p) Op.TransformStar(*(*p));}
 
 
@@ -137,7 +137,7 @@ private :
 
 public :
 
-  //!: with descriptor for l2tup 
+  //!: with descriptor for l2tup
   int  write(std::ostream & pr) const;
 
 
@@ -145,9 +145,9 @@ public :
 
   //! enables \verbatim  std::cout << my_list; \endverbatim
 #ifndef SWIG
-template <class Star>  std::ostream & operator <<(std::ostream &stream, const StarList<Star> &List) 
+template <class Star>  std::ostream & operator <<(std::ostream &stream, const StarList<Star> &List)
     {List.dump(stream); return stream; }
-#endif 
+#endif
 
 }} // end of namespaces
 

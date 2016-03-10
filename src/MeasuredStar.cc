@@ -24,9 +24,9 @@ namespace jointcal {
   We can cook it up from the sdss shape:
   'base_SdssShape_xx'
   'base_SdssShape_yy'
-  'base_SdssShape_xy' 
+  'base_SdssShape_xy'
 
-  for fluxes, we might use : 
+  for fluxes, we might use :
   'base_CircularApertureFlux_2_flux'
   'base_CircularApertureFlux_2_fluxSigma'
 
@@ -41,8 +41,8 @@ namespace jointcal {
 //#define WRITE_STARS
 
 #ifdef TO_BE_FIXED
-MeasuredStar::MeasuredStar( const SEStar &S) : 
-  BaseStar(S), 
+MeasuredStar::MeasuredStar( const SEStar &S) :
+  BaseStar(S),
   mag(0.), wmag(0.), eflux(0.), aperrad(0.), ccdImage(0),
   fittedStar((const FittedStar *)NULL),
   valid(true)
@@ -92,7 +92,7 @@ const BaseStarList* Measured2Base(const MeasuredStarList *This)
 
 //! StarList ascii IO's
 
-  std::string MeasuredStar::WriteHeader_(std::ostream & pr , 
+  std::string MeasuredStar::WriteHeader_(std::ostream & pr ,
 					 const char* i) const
 {
   //  string format = BaseStar::WriteHeader_(pr,i);
@@ -152,15 +152,15 @@ void MeasuredStar::writen(std::ostream& s) const
   
   BaseStar::writen(s);
 
-  s << eflux << ' ' 
-    << (std::isnan(mag)? -1 : mag) << ' ' 
+  s << eflux << ' '
+    << (std::isnan(mag)? -1 : mag) << ' '
     << wmag << ' ';
   
   if(ccdImage)
     std::cout << "ccdImage ! " << ccdImage << std::endl;
   
   if(ccdImage)
-    s << ccdImage->Chip() << ' ' 
+    s << ccdImage->Chip() << ' '
       << ccdImage->Shoot() << ' '
       << ccdImage->AirMass() << ' '
       << ccdImage->BandIndex() << ' ';
@@ -203,7 +203,7 @@ void  MeasuredStarList::SetCcdImage(const CcdImage *C)
 
 
 
-template class StarList<MeasuredStar>; // to force instanciation 
+template class StarList<MeasuredStar>; // to force instanciation
 
 
 #ifdef WE_WILL_USE_SOME_OTHER_MECHANISM
@@ -211,7 +211,7 @@ template class StarList<MeasuredStar>; // to force instanciation
 /************* routines related to loading input catalogs *****/
 
 
-/* 
+/*
    did not focus on flexibility... The trivial way to change
    cuts on loading scheme is to provide a home made catalog loader
    to MeasuredStarList constructor.  Associations' constructor
@@ -222,8 +222,8 @@ template class StarList<MeasuredStar>; // to force instanciation
 /* selection routine for SExtractor input catalogs */
 bool KeepSEStar(const SEStar &S)
 {
-  return (S.Flag() ==0 
-	  && S.FlagBad() == 0  
+  return (S.Flag() ==0
+	  && S.FlagBad() == 0
 	  &&  S.EFlux() > 0
           && S.Fwhm() > 0
 	  && S.flux > Preferences().minSigToNoise*S.EFlux());
@@ -232,13 +232,13 @@ bool KeepSEStar(const SEStar &S)
 
 bool KeepAperSEStar(const AperSEStar &S)
 {
- if (S.Flag() == 0 
+ if (S.Flag() == 0
      && S.FlagBad() == 0
      && S.neighborContamination == false)
    {
      //     const AperSEStar::Aperture &aper = S.apers[Preferences().aperRank];
      const Aperture &aper = S.apers[Preferences().aperRank];
-     return (aper.eflux > 0 && 
+     return (aper.eflux > 0 &&
 	     aper.flux > aper.eflux * Preferences().minSigToNoise);
    }
  return false;
@@ -247,7 +247,7 @@ bool KeepAperSEStar(const AperSEStar &S)
 
 
 
-bool SECatalogLoader_(const ReducedImage &Ri, const CcdImage &ccdImage, 
+bool SECatalogLoader_(const ReducedImage &Ri, const CcdImage &ccdImage,
 			    MeasuredStarList &List)
 {
   if (!&ccdImage) {} // warning killer
@@ -265,13 +265,13 @@ bool SECatalogLoader_(const ReducedImage &Ri, const CcdImage &ccdImage,
 
 
 
-bool AperSECatalogLoader_(const ReducedImage &Ri, const CcdImage &ccdImage, 
+bool AperSECatalogLoader_(const ReducedImage &Ri, const CcdImage &ccdImage,
 				MeasuredStarList &List)
 {
   if (!&ccdImage) {} // warning killer
   List.clear();
   string fileName(Ri.AperCatalogName());
-  AperSEStarList al(fileName); 
+  AperSEStarList al(fileName);
   unsigned rank = Preferences().aperRank;
   //  double seeing = al.GlobVal().Value("SEEING");
   double seeing = al.GlobVal().getDoubleValue("SEEING");
@@ -305,18 +305,18 @@ bool AperSECatalogLoader_(const ReducedImage &Ri, const CcdImage &ccdImage,
 CatalogLoader * CatalogLoader::getDefaultCatalogLoader(){
   switch (Preferences().catalogToRead)
     {
-    case SE_CATALOG : 
+    case SE_CATALOG :
       return new CatalogLoader(&SECatalogLoader_);
       break;
-    case APER_CATALOG : 
+    case APER_CATALOG :
       return new CatalogLoader(&AperSECatalogLoader_);
       break;
     default :
-    std::cerr << " DONT KNOW THIS kind of catalog " 
+    std::cerr << " DONT KNOW THIS kind of catalog "
 	   << Preferences().catalogToRead << std::endl
-	   << " allowed values in Preferences().catalogToRead " 
+	   << " allowed values in Preferences().catalogToRead "
 	   << " and CATALOG_TO_READ key in datacards " << std::endl
-	   << APER_CATALOG << ',' << SE_CATALOG << std::endl;      
+	   << APER_CATALOG << ',' << SE_CATALOG << std::endl;
       throw(PolokaException(" Unkown catalog type in CatalogLoader::getDefaultCatalogLoader "));
     }
   return NULL;

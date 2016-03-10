@@ -46,7 +46,7 @@ unsigned SimplePhotomModel::AssignIndices(const std::string &WhatToFit,  unsigne
      }
  }
 
- SimplePhotomModel::PhotomStuff& SimplePhotomModel::find(const CcdImage &C) 
+ SimplePhotomModel::PhotomStuff& SimplePhotomModel::find(const CcdImage &C)
    {
      auto i = _myMap.find(&C);
      if  (i==_myMap.end()) throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,"SimplePolyModel::find, never heard of CcdImage "+C.Name());
@@ -68,7 +68,7 @@ unsigned SimplePhotomModel::AssignIndices(const std::string &WhatToFit,  unsigne
  }
      
  void SimplePhotomModel::GetIndicesAndDerivatives(const MeasuredStar &M,
-						  const CcdImage &Ccd, 
+						  const CcdImage &Ccd,
 						  std::vector<unsigned> &Indices,
 						  Eigen::VectorXd &D)
  {

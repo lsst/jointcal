@@ -15,7 +15,7 @@ enum UsnoColor { RColor , BColor};
 /*! The x and y coordinates of the given stars refer to RA and DEC respectively
 expressed in  degrees. The location of the catalog should be set by the user
 in the USNODIR environment variable. The catalog contains both
-R and B magnitude. The Color argument has to be RColor or BColor. 
+R and B magnitude. The Color argument has to be RColor or BColor.
 WARNING : The flux of the returned BaseStar's is in fact a magnitude. */
 
 
@@ -28,7 +28,7 @@ WARNING : The flux of the returned BaseStar's is in fact a magnitude. */
 
   class Gtransfo;
   //! Transform a Frame through a Transfo.
-  Frame ApplyTransfo(const Frame& inputframe,const Gtransfo &T, 
+  Frame ApplyTransfo(const Frame& inputframe,const Gtransfo &T,
 		     const WhichTransformed W);
 
 

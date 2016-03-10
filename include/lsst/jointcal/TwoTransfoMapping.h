@@ -30,9 +30,9 @@ class TwoTransfoMapping: public Mapping
   
 
 
- public : 
-  //!  
-  TwoTransfoMapping(SimpleGtransfoMapping *ChipM, 
+ public :
+  //!
+  TwoTransfoMapping(SimpleGtransfoMapping *ChipM,
 		   SimpleGtransfoMapping *ShootM);
   //!
   unsigned Npar() const;
@@ -48,11 +48,11 @@ class TwoTransfoMapping: public Mapping
   void TransformPosAndErrors(const FatPoint &Where,
 			    FatPoint &OutPos) const;
 
-  //! 
+  //!
   void OffsetParams(const double *Delta)
   {// this routine is not used when fitting. used for debugging
     _m1->OffsetParams(Delta);
-    _m2->OffsetParams(Delta+ _m1->Npar());    
+    _m2->OffsetParams(Delta+ _m1->Npar());
   }
 
  //! access to transfos
@@ -74,7 +74,7 @@ class TwoTransfoMapping: public Mapping
  private:
 
  friend class ConstrainedPolyModel;
- //! 
+ //!
  void SetWhatToFit(const bool FittingT1, const bool FittingT2);
 
 };

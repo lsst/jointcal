@@ -21,7 +21,7 @@ FastFinder::FastFinder(const BaseStarList &List, const unsigned NXslice) : basel
     }
 
   sort(stars.begin(), stars.end(),
-       [](const stars_element &E1, const stars_element &E2) 
+       [](const stars_element &E1, const stars_element &E2)
        { return (E1->x < E2->x);} );
 
   xmin = stars[0]->x;
@@ -45,8 +45,8 @@ FastFinder::FastFinder(const BaseStarList &List, const unsigned NXslice) : basel
   index[nslice] = count; // last
   for (unsigned islice=0; islice<nslice; ++islice)
     {
-      sort(stars.begin()+index[islice], stars.begin()+index[islice+1], 
-       [](const stars_element &E1, const stars_element &E2) 
+      sort(stars.begin()+index[islice], stars.begin()+index[islice+1],
+       [](const stars_element &E1, const stars_element &E2)
        { return (E1->y < E2->y);} );// sort each slice in y.
     }
   //dump();
@@ -61,8 +61,8 @@ void FastFinder::dump() const
     }
 }
 
-const BaseStar *FastFinder::FindClosest(const Point &Where, 
-					const double MaxDist, 
+const BaseStar *FastFinder::FindClosest(const Point &Where,
+					const double MaxDist,
 					bool (*SkipIt)(const BaseStar *)) const
 {
   if (count == 0) return NULL;
@@ -75,14 +75,14 @@ const BaseStar *FastFinder::FindClosest(const Point &Where,
       const BaseStar *p = *it;
       if (SkipIt && SkipIt(p)) continue;
       double dist2 = Where.Dist2(*p);
-      if (dist2 < minDist2) { pbest = p; minDist2 = dist2; } 
+      if (dist2 < minDist2) { pbest = p; minDist2 = dist2; }
     }
   //  cout << "Distance " << minDist2 << " " << dist  << endl;
   return pbest;
 }
 
-const BaseStar *FastFinder::SecondClosest(const Point &Where, 
-					  const double MaxDist, 
+const BaseStar *FastFinder::SecondClosest(const Point &Where,
+					  const double MaxDist,
 					  const BaseStar* &Closest,
 					  bool (*SkipIt)(const BaseStar *)) const
 {
@@ -99,11 +99,11 @@ const BaseStar *FastFinder::SecondClosest(const Point &Where,
       const BaseStar *p = *it;
       if (SkipIt && SkipIt(p)) continue;
       double dist2 = Where.Dist2(*p);
-      if (dist2 < minDist1_2) 
-	{ 
+      if (dist2 < minDist1_2)
+	{
 	  pbest2= pbest1;
 	  minDist2_2 = minDist1_2;
-	  pbest1 = p; 
+	  pbest1 = p;
 	  minDist1_2 = dist2;
 	}
       else if (dist2< minDist2_2)
@@ -169,8 +169,8 @@ FastFinder::pstar FastFinder::locate_y_end(pstar Begin, pstar End, const double 
 }
 
 
-void FastFinder::find_range_in_slice(const int iSlice, 
-				     const double YStart, const double YEnd, 
+void FastFinder::find_range_in_slice(const int iSlice,
+				     const double YStart, const double YEnd,
 				     pstar &Start, pstar &End) const
 {
   Start = locate_y_start(stars.begin()+index[iSlice], stars.begin()+index[iSlice+1],  YStart);
@@ -186,30 +186,30 @@ FastFinder::Iterator  FastFinder::begin_scan(const Point &Where, const double &M
 using Iterator = FastFinder::Iterator;
 
 
-Iterator::Iterator(const FastFinder &F, const Point &Where, 
-		   const double &MaxDist) 
-  : finder(F), null_value(F.stars.end()) 
+Iterator::Iterator(const FastFinder &F, const Point &Where,
+		   const double &MaxDist)
+  : finder(F), null_value(F.stars.end())
 {
   current = pend = null_value;// does not iterate
   int startSlice = 0;
   if (finder.xstep != 0) // means we have several slices
     {
       startSlice = std::max(0,int((Where.x-MaxDist-finder.xmin)/finder.xstep));
-      /* obviously, endSlice (and starSlice) can be negative. 
+      /* obviously, endSlice (and starSlice) can be negative.
 	 This is why slice indices are "int" rather than "unsigned". */
       endSlice = std::min(int(finder.nslice),int((Where.x+MaxDist-finder.xmin)/finder.xstep)+1);
     }
-  else 
+  else
     {
       startSlice = 0;
       endSlice = 1;
     }
-  // beyond limits: 
+  // beyond limits:
   if (startSlice >= int(finder.nslice) || endSlice < 0) return;
   // we are inside in x, so, we setup the y range:
   yStart = Where.y - MaxDist;
   yEnd   = Where.y + MaxDist;
-  /* rather than initializing here, we step back one 
+  /* rather than initializing here, we step back one
      slice and let "++" do its job */
   currentSlice = startSlice -1 ; // again, this requires "int" slices
   ++(*this);
@@ -217,7 +217,7 @@ Iterator::Iterator(const FastFinder &F, const Point &Where,
 
 FastFinder::stars_element  Iterator::operator*() const
 {
-  if (current!=null_value) return *current; 
+  if (current!=null_value) return *current;
   return NULL;
 }
 
@@ -225,7 +225,7 @@ void Iterator::operator++()
 {
   if (current != pend) {current++;}
   else
-  do 
+  do
     {
       currentSlice++;
       if (currentSlice >= endSlice) {current = null_value; return;}

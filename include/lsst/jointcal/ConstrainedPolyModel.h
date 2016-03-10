@@ -24,7 +24,7 @@ namespace jointcal {
 
 class CcdImageList;
 
-//! This is the model used to fit mappings as the combination of a transformation depending on the chip number (instrument model) and a transformation per shoot (anamorphism). The two-transformation Mapping required for this model is TwoTransfoMapping. 
+//! This is the model used to fit mappings as the combination of a transformation depending on the chip number (instrument model) and a transformation per shoot (anamorphism). The two-transformation Mapping required for this model is TwoTransfoMapping.
 /*! This modeling of distortions is meant for set of images from a single mosaic imager. */
 class ConstrainedPolyModel : public DistortionModel
 {
@@ -44,8 +44,8 @@ class ConstrainedPolyModel : public DistortionModel
 
 public :
   //!
-  ConstrainedPolyModel(const CcdImageList &L, 
-		       const ProjectionHandler* ProjH, 
+  ConstrainedPolyModel(const CcdImageList &L,
+		       const ProjectionHandler* ProjH,
 		       bool InitFromWCS,
 		       unsigned NNotFit=0);
 
@@ -56,7 +56,7 @@ public :
   //! Positions the various parameter sets into the parameter vector, starting at FirstIndex
   unsigned AssignIndices(unsigned FirstIndex, std::string &WhatToFit);
 
-  // dispaches the offsets after a fit step into the actual locations of parameters 
+  // dispaches the offsets after a fit step into the actual locations of parameters
   void OffsetParams(const Eigen::VectorXd &Delta);
 
   //! From there on, measurement errors are propagated using the current transfos (and no longer evolve).
@@ -71,9 +71,9 @@ public :
   //! Access to array of shoots involved in the solution.
   std::vector<ShootIdType> GetShoots() const;
    
-  /*! the mapping of sky coordinates (i.e. the coordinate system 
+  /*! the mapping of sky coordinates (i.e. the coordinate system
   in which fitted stars are reported) onto the Tangent plane
-  (into which the pixel coordinates are transformed) */ 
+  (into which the pixel coordinates are transformed) */
   const Gtransfo* Sky2TP(const CcdImage &C) const
   { return _sky2TP->Sky2TP(C);}
 
@@ -91,4 +91,4 @@ public :
 
 }} // end of namespaces
 
-#endif /* CONSTRAINEDPOLYMODEL__H */ 
+#endif /* CONSTRAINEDPOLYMODEL__H */

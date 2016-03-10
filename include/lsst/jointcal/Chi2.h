@@ -22,20 +22,20 @@ struct Chi2
     }
 
 
-  //! this routine is the one called by the python print. 
+  //! this routine is the one called by the python print.
   std::string __str__()
   {
     std::stringstream s;
-    s << "Chi2/ndof : " << chi2 << '/' << ndof << '=' <<  chi2/ndof; 
+    s << "Chi2/ndof : " << chi2 << '/' << ndof << '=' <<  chi2/ndof;
     return s.str();
   }
 
-  // Addentry has a third argument in order to make it compatible with an 
+  // Addentry has a third argument in order to make it compatible with an
   //other stat accumulator.
-  void AddEntry(double Inc, unsigned Dof, const void *M) 
+  void AddEntry(double Inc, unsigned Dof, const void *M)
   {chi2+= Inc; ndof += Dof;}
 
-  void operator += (const Chi2 &R) 
+  void operator += (const Chi2 &R)
   {chi2 += R.chi2; ndof += R.ndof;}
 
 }; // end of struct Chi2

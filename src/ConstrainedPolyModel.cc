@@ -25,16 +25,16 @@ mappings.*/
 
 using namespace std;
 
-ConstrainedPolyModel::ConstrainedPolyModel(const CcdImageList &L, 
-					   const ProjectionHandler* ProjH, 
+ConstrainedPolyModel::ConstrainedPolyModel(const CcdImageList &L,
+					   const ProjectionHandler* ProjH,
 					   bool InitFromWCS,
 					   unsigned NNotFit) : _sky2TP(ProjH)
 
 {
   // from datacards (or default)
-  unsigned degree = DistortionDegree; 
+  unsigned degree = DistortionDegree;
   unsigned count = 0;
-  ShootIdType refShoot; 
+  ShootIdType refShoot;
   // first loop to initialize all shoot  and chip transfos.
   for (auto i=L.cbegin(); i!= L.end(); ++i, ++count)
     {
@@ -42,7 +42,7 @@ ConstrainedPolyModel::ConstrainedPolyModel(const CcdImageList &L,
       unsigned shoot = im.Shoot();
       unsigned chip = im.Chip();
       auto shootp = _shootMap.find(shoot);
-      if (shootp == _shootMap.end()) 
+      if (shootp == _shootMap.end())
 	{
 	  if (_shootMap.size() == 0)
 	    {
@@ -67,7 +67,7 @@ ConstrainedPolyModel::ConstrainedPolyModel(const CcdImageList &L,
 	  _shootMap[shoot] = std::unique_ptr<SimplePolyMapping>(new SimplePolyMapping(GtransfoLin(),
 										      GtransfoPoly(degree)));
 #endif
-	}	      
+	}
       auto chipp = _chipMap.find(chip);
       if ((chipp == _chipMap.end()) && shoot == refShoot )
 	{
@@ -89,7 +89,7 @@ ConstrainedPolyModel::ConstrainedPolyModel(const CcdImageList &L,
       unsigned shoot = im.Shoot();
       unsigned chip = im.Chip();
       // check that the chip_indexed part was indeed assigned
-      // (i.e. the reference shoot was complete) 
+      // (i.e. the reference shoot was complete)
       if (_chipMap.find(chip) == _chipMap.end())
 	{
 	  std::cout << " WARNING: the chip " << chip << " is missing in the \
@@ -100,7 +100,7 @@ reference exposure, expect troubles" << std::endl;
 	}
       _mappings[&im] = std::unique_ptr<TwoTransfoMapping>(new TwoTransfoMapping(_chipMap[chip].get(), _shootMap[shoot].get()));
     
-    }  
+    }
   cout << "INFO: ConstrainedPolyModel : we have " << _chipMap.size() << " chip mappings " << endl;
   cout << "INFO: and " << _shootMap.size() << " shoot mappings " << endl;
   // DEBUG
@@ -120,12 +120,12 @@ const Mapping* ConstrainedPolyModel::GetMapping(const CcdImage &C) const
   WhatToFit. If WhatToFit contains "Distortions" and not
   Distortions<Something>, it is understood as both chips and
   shoots. */
-unsigned ConstrainedPolyModel::AssignIndices(unsigned FirstIndex, 
+unsigned ConstrainedPolyModel::AssignIndices(unsigned FirstIndex,
 					     std::string &WhatToFit)
-{ 
+{
   unsigned index=FirstIndex;
   if (WhatToFit.find("Distortions") == std::string::npos)
-    { 
+    {
       std::cout << "SimplePolyModel::AssignIndices is called and Distortions is *not*  in WhatToFit" << std::endl;
       return 0;
     }
@@ -204,10 +204,10 @@ void ConstrainedPolyModel::FreezeErrorScales()
 const Gtransfo& ConstrainedPolyModel::GetChipTransfo(const unsigned Chip) const
 {
   auto chipp = _chipMap.find(Chip);
-  if (chipp == _chipMap.end()) 
+  if (chipp == _chipMap.end())
     return *static_cast<const Gtransfo*>(NULL);// return 0, basically
   return chipp->second->Transfo();
-}  
+}
 
 // Array of shoots involved in the solution.
 std::vector<ShootIdType> ConstrainedPolyModel::GetShoots() const
@@ -222,7 +222,7 @@ std::vector<ShootIdType> ConstrainedPolyModel::GetShoots() const
 const Gtransfo& ConstrainedPolyModel::GetShootTransfo(const ShootIdType &Shoot) const
 {
   auto shootp = _shootMap.find(Shoot);
-  if (shootp == _shootMap.end()) 
+  if (shootp == _shootMap.end())
     return *static_cast<const Gtransfo*>(NULL); // return 0, basically
   return shootp->second->Transfo();
 }
@@ -239,7 +239,7 @@ PTR(TanSipPix2RaDec) ConstrainedPolyModel::ProduceSipWcs(const CcdImage &Ccd) co
   const TanRaDec2Pix *proj=dynamic_cast<const TanRaDec2Pix*>(Sky2TP(Ccd));
   if (!(&t1)  || !(&t2) || !proj) return NULL;
   
-  GtransfoPoly pix2Tp = t2*t1;    
+  GtransfoPoly pix2Tp = t2*t1;
 
   const GtransfoLin &projLinPart = proj->LinPart(); // should be the identity, but who knows? So, let us incorporate it into the pix2TP part.
   GtransfoPoly wcsPix2Tp = GtransfoPoly(projLinPart.invert())*pix2Tp;

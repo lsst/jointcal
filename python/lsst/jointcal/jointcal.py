@@ -1,32 +1,11 @@
-from __future__ import division, absolute_import
-#
-# LSST Data Management System
-# Copyright 2008, 2009, 2010, 2011, 2012 LSST Corporation.
-#
-# This product includes software developed by the
-# LSST Project (http://www.lsst.org/).
-#
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.    See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the LSST License Statement and
-# the GNU General Public License along with this program.  If not,
-# see <http://www.lsstcorp.org/LegalNotices/>.
-#
+# See COPYRIGHT file at the top of the source tree.
+
+from __future__ import division, absolute_import, print_function
 
 import os
-import numpy
 
 import lsst.utils
 import lsst.pex.config as pexConfig
-import lsst.coadd.utils as coaddUtils
 import lsst.pipe.base as pipeBase
 import lsst.afw.image as afwImage
 import lsst.afw.table as afwTable
@@ -34,16 +13,12 @@ import lsst.afw.geom as afwGeom
 import lsst.afw.coord as afwCoord
 import lsst.pex.exceptions as pexExceptions
 
-from lsst.afw.fits import FitsError
-from lsst.pipe.tasks.selectImages import WcsSelectImagesTask, SelectStruct
-from lsst.coadd.utils import CoaddDataIdContainer
-from lsst.pipe.tasks.getRepositoryData import DataRefListRunner
 from lsst.meas.astrom.loadAstrometryNetObjects import LoadAstrometryNetObjectsTask
 from lsst.meas.astrom import AstrometryNetDataConfig
 
 from .dataIds import PerTractCcdDataIdContainer
 
-from lsst.jointcal.jointcalLib import JointcalControl, Jointcal, Associations, ProjectionHandler , AstromFit, SimplePolyModel, OneTPPerShoot, CcdImage, GtransfoToTanWcs
+from . import jointcalLib
 
 __all__ = ["JointcalConfig", "JointcalTask"]
 
@@ -73,7 +48,7 @@ class JointcalRunner(pipeBase.TaskRunner):
 
     def __call__(self, args):
         task = self.TaskClass(config=self.config, log=self.log)
-        result = task.run(*args)
+        task.run(*args)
 
 
 class JointcalConfig(pexConfig.Config):
@@ -89,7 +64,7 @@ class JointcalConfig(pexConfig.Config):
     posError = pexConfig.Field(
         doc = "Constant term for error on position (in pixel unit)",
         dtype = float,
-        default = 0.02, 
+        default = 0.02,
     )
     polyOrder = pexConfig.Field(
         doc = "Polynomial order for fitting distorsion",
@@ -104,7 +79,7 @@ class JointcalConfig(pexConfig.Config):
     maxMag = pexConfig.Field(
         doc = "Maximum magnitude for sources to be included in the fit",
         dtype = float,
-        default = 22.5, 
+        default = 22.5,
     )
     coaddName = pexConfig.Field(
         doc = "Type of coadd",
@@ -147,23 +122,23 @@ class JointcalTask(pipeBase.CmdLineTask):
         configSel = StarSelectorConfig()
         ss = StarSelector(configSel, self.config.sourceFluxField, self.config.maxMag)
         
-        print self.config.sourceFluxField
-        astromControl = JointcalControl()
+        print(self.config.sourceFluxField)
+        astromControl = jointcalLib.JointcalControl()
         astromControl.sourceFluxField = self.config.sourceFluxField
 
-        assoc = Associations()
+        assoc = jointcalLib.Associations()
         
 #        for dataRef in ref :
-#            print dataRef.dataId
-#            print dataRef.dataId["tract"]
-#            print dataRef
-#            print dir(dataRef)
+#            print(dataRef.dataId)
+#            print(dataRef.dataId["tract"])
+#            print(dataRef)
+#            print(dir(dataRef))
             
-#        return    
+#        return
         
         for dataRef in ref :
             
-            print dataRef.dataId
+            print(dataRef.dataId)
             
             src = dataRef.get("src", immediate=True)
             md = dataRef.get("calexp_md", immediate=True)
@@ -176,13 +151,13 @@ class JointcalTask(pipeBase.CmdLineTask):
             
             newSrc = ss.select(src, calib)
             if len(newSrc) == 0 :
-                print "no source selected in ", dataRef.dataId["visit"], dataRef.dataId["ccd"]
+                print("no source selected in ", dataRef.dataId["visit"], dataRef.dataId["ccd"])
                 continue
-            print "%d sources selected in visit %d - ccd %d"%(len(newSrc), dataRef.dataId["visit"], dataRef.dataId["ccd"])
+            print("%d sources selected in visit %d - ccd %d"%(len(newSrc), dataRef.dataId["visit"], dataRef.dataId["ccd"]))
             
             assoc.AddImage(newSrc, tanwcs, md, bbox, filt, calib,
                            dataRef.dataId['visit'], dataRef.dataId['ccd'],
-                           dataRef.getButler().mapper.getCameraName(), 
+                           dataRef.getButler().mapper.getCameraName(),
                            astromControl)
         
         matchCut = 3.0
@@ -212,46 +187,46 @@ class JointcalTask(pipeBase.CmdLineTask):
         
         # Determine default filter associated to the catalog
         filt, mfilt = andConfig.magColumnMap.items()[0]
-        print "Using", filt, "band for reference flux"
+        print("Using", filt, "band for reference flux")
 
         refCat = loader.loadSkyCircle(center, afwGeom.Angle(radius, afwGeom.radians), filt).refCat
-        print refCat.getSchema().getOrderedNames()
+        print(refCat.getSchema().getOrderedNames())
         
-        # assoc.CollectRefStars(False) # To use USNO-A catalog 
+        # assoc.CollectRefStars(False) # To use USNO-A catalog
 
         assoc.CollectLSSTRefStars(refCat, filt)
         assoc.SelectFittedStars()
         assoc.DeprojectFittedStars() # required for AstromFit
-        sky2TP = OneTPPerShoot(assoc.TheCcdImageList())
-        spm = SimplePolyModel(assoc.TheCcdImageList(), sky2TP, True, 0, self.config.polyOrder)
+        sky2TP = jointcalLib.OneTPPerShoot(assoc.TheCcdImageList())
+        spm = jointcalLib.SimplePolyModel(assoc.TheCcdImageList(), sky2TP, True, 0, self.config.polyOrder)
 
-        fit = AstromFit(assoc, spm, self.config.posError)
+        fit = jointcalLib.AstromFit(assoc, spm, self.config.posError)
         fit.Minimize("Distortions")
         chi2 = fit.ComputeChi2()
-        print chi2
+        print(chi2)
         fit.Minimize("Positions")
         chi2 = fit.ComputeChi2()
-        print chi2
+        print(chi2)
         fit.Minimize("Distortions Positions")
         chi2 = fit.ComputeChi2()
-        print chi2
+        print(chi2)
 
         for i in range(20) :
             r = fit.Minimize("Distortions Positions",5) # outliers removal at 5 sigma.
             chi2 = fit.ComputeChi2()
-            print chi2
+            print(chi2)
             if r == 0 :
-                print "fit has converged - no more outliers"
+                print("fit has converged - no more outliers")
                 break
             elif r == 2 :
-                print "minimization failed"
+                print("minimization failed")
             elif r == 1 :
-                print "still some ouliers but chi2 increases - retry"
+                print("still some ouliers but chi2 increases - retry")
             else :
                 break
-                print "unxepected return code from Minimize"
+                print("unxepected return code from Minimize")
         
-#        for i in range(80): 
+#        for i in range(80):
 #            nout = fit.RemoveOutliers(5.) # 5 sigma
 #            fit.Minimize("Distortions Positions")
 #            chi2 = fit.ComputeChi2()
@@ -269,13 +244,13 @@ class JointcalTask(pipeBase.CmdLineTask):
         for im in imList :
             tanSip = spm.ProduceSipWcs(im)
             frame = im.ImageFrame()
-            tanWcs = afwImage.TanWcs.cast(GtransfoToTanWcs(tanSip, frame, False))
+            tanWcs = afwImage.TanWcs.cast(jointcalLib.GtransfoToTanWcs(tanSip, frame, False))
             
             name = im.Name()
             visit, ccd = name.split('_')
             for dataRef in ref :
                 if dataRef.dataId["visit"] == int(visit) and dataRef.dataId["ccd"] == int(ccd) :
-                    print "Updating WCS for visit: %d, ccd%d"%(int(visit), int(ccd))
+                    print("Updating WCS for visit: %d, ccd%d"%(int(visit), int(ccd)))
                     exp = afwImage.ExposureI(0,0)
                     exp.setWcs(tanWcs)
                     try:
@@ -283,7 +258,7 @@ class JointcalTask(pipeBase.CmdLineTask):
                         dataRef.put(exp, 'calexp')
                     except pexExceptions.Exception as e:
                         self.log.warn('Failed to write updated Wcs: ' + str(e))
-                    break 
+                    break
 
 
 
@@ -292,7 +267,7 @@ class StarSelectorConfig(pexConfig.Config):
     badFlags = pexConfig.ListField(
         doc = "List of flags which cause a source to be rejected as bad",
         dtype = str,
-        default = [ "base_PixelFlags_flag_saturated", 
+        default = [ "base_PixelFlags_flag_saturated",
                     "base_PixelFlags_flag_cr",
                     "base_PixelFlags_flag_interpolated",
                     "base_SdssCentroid_flag",

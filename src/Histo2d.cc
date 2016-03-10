@@ -16,9 +16,9 @@ Histo2d::Histo2d(int nnx, float mminx, float mmaxx, int nny, float mminy,float m
   ny = nny;
   minx = mminx;
   miny = mminy;
-  if (mmaxx!= mminx) 
-    scalex = nx/(mmaxx-mminx); 
-  else 
+  if (mmaxx!= mminx)
+    scalex = nx/(mmaxx-mminx);
+  else
     {
       std::cerr << " Histo2d: minx = maxx requested" << std::endl;
       scalex = 1.0;
@@ -55,7 +55,7 @@ void Histo2d::Fill(float X, float Y, float Weight)
   if (indices(X,Y,ix,iy)) data[iy + ny*ix] += Weight;
 }
 
-double Histo2d::MaxBin(double &X, double &Y) const 
+double Histo2d::MaxBin(double &X, double &Y) const
 {
   float *p, *pend;
   int imax=0;

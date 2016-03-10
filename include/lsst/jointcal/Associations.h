@@ -1,5 +1,5 @@
 // -*- C++ -*-
-// 
+//
 #ifndef ASSOCIATIONS__H
 #define ASSOCIATIONS__H
 
@@ -18,7 +18,7 @@
 #include "lsst/jointcal/FittedStar.h"
 #include "lsst/jointcal/CcdImage.h"
 #include "lsst/jointcal/Point.h"
-#include "lsst/jointcal/jointcal.h"
+#include "lsst/jointcal/Jointcal.h"
 
 #include "lsst/afw/table/SortedCatalog.h"
 
@@ -27,7 +27,7 @@ namespace jointcal {
 
 //! The class that implements the relations between MeasuredStar and FittedStar.
 class Associations {
-  public: 
+  public:
 
   CcdImageList ccdImageList; // the catalog handlers
   RefStarList refStarList;// the (e.g.) USNO stars
@@ -69,7 +69,7 @@ public:
             const PTR(lsst::jointcal::JointcalControl) control);
 
   //! incrementaly builds a merged catalog of all image catalogs
-  void AssociateCatalogs(const double MatchCutInArcSec = 0, 
+  void AssociateCatalogs(const double MatchCutInArcSec = 0,
 			   const bool UseFittedList = false,
 			   const bool EnlargeFittedList = true);
 
@@ -91,7 +91,7 @@ public:
   //    void CheckMCStars(); // DELETE THIS METHOD
 
 
-  //! This method associates the catalogs with an external 
+  //! This method associates the catalogs with an external
   //! catalog of photometric ref stars
   void CollectPhotometricRefStars(std::string const& catalogname);
   void AssociatePhotometricRefStars(double MatchCutInArcSec);
@@ -103,10 +103,10 @@ public:
 
 
 
-  //! Set the color field of FittedStar 's from a colored catalog. 
+  //! Set the color field of FittedStar 's from a colored catalog.
   /* If Color is "g-i", then the color is assigned from columns "g" and "i" of the colored catalog. */
 #ifdef TODO
-  void SetFittedStarColors(std::string DicStarListName, 
+  void SetFittedStarColors(std::string DicStarListName,
 				       std::string Color,
 			   const double &MatchCutArcSec);
 #endif

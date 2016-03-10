@@ -20,7 +20,7 @@ public :
   //! Assign indices to parameters involved in mappings, starting at FirstIndex. Returns the highest assigned index.
   virtual unsigned AssignIndices(const std::string &WhatToFit, unsigned FirstIndex) = 0;
 
-  //! Offset the parameters by the provided amounts. 
+  //! Offset the parameters by the provided amounts.
   /*! The shifts are applied according to the indices given in
       AssignIndices. */
   virtual void OffsetParams(const Eigen::VectorXd &Delta) = 0;
@@ -30,7 +30,7 @@ public :
 
   //! number of parameters to be read in Indices.size()
   virtual void GetIndicesAndDerivatives(const MeasuredStar &M,
-					const CcdImage &Ccd, 
+					const CcdImage &Ccd,
 					std::vector<unsigned> &Indices,
 					Eigen::VectorXd &D) = 0;
 
@@ -42,4 +42,4 @@ public :
 
 }} // end of namespaces
 
-#endif /*DISTORTIONSMODEL__H */ 
+#endif /*DISTORTIONSMODEL__H */
