@@ -194,11 +194,20 @@ CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceReco
         lst_obs = lsst::afw::geom::degToRad(RaStringToDeg(meta->get<std::string>("LST-STR")));
         ra = lsst::afw::geom::degToRad(RaStringToDeg(meta->get<std::string>("RA2000")));
         dec = lsst::afw::geom::degToRad(DecStringToDeg(meta->get<std::string>("DEC2000")));
+    } else if (camera == "DECAM" || camera == "decam") {
+        airMass = meta->get<double>("AIRMASS");
+        jd = meta->get<double>("MJD-OBS");  // Julian date
+        expTime = meta->get<double>("EXPTIME");
+        latitude = lsst::afw::geom::degToRad(-30.16606);
+        //lst_obs = lsst::afw::geom::degToRad(RaStringToDeg(meta->get<std::string>("ST-STR")));  // LST-STR
+        hourAngle = lsst::afw::geom::degToRad(RaStringToDeg(meta->get<std::string>("HA")));
+        ra = lsst::afw::geom::degToRad(RaStringToDeg(meta->get<std::string>("RA")));
+        dec = lsst::afw::geom::degToRad(DecStringToDeg(meta->get<std::string>("DEC")));
     }
     else {
         throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,"CcdImage, unsupported camera "+camera);
     }
-    hourAngle = (lst_obs-ra);
+    //hourAngle = (lst_obs-ra);
     if  (hourAngle>M_PI) hourAngle -= 2*M_PI;
     if  (hourAngle<-M_PI) hourAngle += 2*M_PI;
     

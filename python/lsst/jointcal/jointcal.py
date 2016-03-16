@@ -155,11 +155,12 @@ class JointcalTask(pipeBase.CmdLineTask):
                 continue
             print("%d sources selected in visit %d - ccd %d"%(len(newSrc),
                                                               dataRef.dataId["visit"],
-                                                              dataRef.dataId["ccd"]))
+                                                              dataRef.dataId["ccdnum"]))
             
             assoc.AddImage(newSrc, tanwcs, md, bbox, filt, calib,
-                           dataRef.dataId['visit'], dataRef.dataId['ccd'],
-                           dataRef.getButler().mapper.getCameraName(),
+                           dataRef.dataId['visit'], dataRef.dataId['ccdnum'],
+                           #dataRef.getButler().repository._mapper.getCameraName(),
+                           dataRef.getButler().get("camera").getName(),
                            astromControl)
         
         matchCut = 3.0
@@ -251,7 +252,7 @@ class JointcalTask(pipeBase.CmdLineTask):
             name = im.Name()
             visit, ccd = name.split('_')
             for dataRef in ref :
-                if dataRef.dataId["visit"] == int(visit) and dataRef.dataId["ccd"] == int(ccd) :
+                if dataRef.dataId["visit"] == int(visit) and dataRef.dataId["ccdnum"] == int(ccd) :
                     print("Updating WCS for visit: %d, ccd%d"%(int(visit), int(ccd)))
                     exp = afwImage.ExposureI(0,0)
                     exp.setWcs(tanWcs)
