@@ -2,7 +2,7 @@
 #include <iostream>
 #include <fstream>
 #include <stdio.h>
-#include <endian.h>
+// #include <endian.h>
 #include <string.h>
 
 #include "lsst/jointcal/BaseStar.h"
@@ -72,8 +72,8 @@ static double sq(const double &x) { return x*x;}
 
 static inline void intswap(unsigned int &a_word)
 {
-  int tmp = be32toh(a_word);
-  a_word = tmp;
+  // int tmp = be32toh(a_word);
+  // a_word = tmp;
 }
 
 
