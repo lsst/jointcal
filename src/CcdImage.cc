@@ -50,7 +50,7 @@ void CcdImage::LoadCatalog(const lsst::afw::table::SortedCatalogT<lsst::afw::tab
   auto mxyKey = Cat.getSchema().find<double>("base_SdssShape_xy").key;
   auto fluxKey = Cat.getSchema().find<double>(fluxField + "_flux").key;
   auto efluxKey = Cat.getSchema().find<double>(fluxField  + "_fluxSigma").key;
-  
+
   wholeCatalog.clear();
   for (auto i = Cat.begin(); i !=Cat.end(); ++i)
     {
@@ -81,7 +81,7 @@ void CcdImage::LoadCatalog(const lsst::afw::table::SortedCatalogT<lsst::afw::tab
 }
 
 
-    
+
 static int getBandIndex(std::string const& band)
 {
   if(band == "u") return 0;
@@ -110,14 +110,14 @@ CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceReco
             const int &ccd,
             const std::string &camera,
             const std::string &fluxField ) :
-            
+
     index(-1), expindex(-1),
     commonTangentPoint(CommonTangentPoint)
 
 {
     // zero point
     zp = 2.5*log10(calib->getFluxMag0().first);
-    
+
     LoadCatalog(Ri, fluxField);
       // Just checking that we get something sensible
 //    std::cout << Ri[10].getRa() << std::endl;
@@ -129,7 +129,7 @@ CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceReco
     Point lowerLeft(bbox.getMinX(), bbox.getMinY());
     Point upperRight(bbox.getMaxX(), bbox.getMaxY());
     imageFrame = Frame(lowerLeft, upperRight);
-    
+
     readWcs = new jointcal::TanSipPix2RaDec(jointcal::ConvertTanWcs(wcs));
 
     // use some other variable in case we later have to actually convert the
@@ -137,12 +137,12 @@ CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceReco
     const BaseTanWcs* tanWcs = readWcs.get();
 
     inverseReadWcs = readWcs->InverseTransfo(0.01, imageFrame);
- 
+
     band = filter;
     bandIndex = getBandIndex(band);
     chip = ccd;
     shoot = visit;
-    
+
     std::stringstream out;
     out << visit << "_" << ccd;
     riName = out.str();
@@ -167,17 +167,17 @@ CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceReco
 
       // this one is needed for matches :
     pix2CommonTangentPlane = GtransfoCompose(&raDec2CTP, tanWcs);
-    
+
     // In the following we read informations directly from the fits header which is instrument dependent
     // We rely on the camera name which is not optimal as a camera can be mounted on different telescopes.
     // We would rather need the telescope name.
     // This instrument specific part will eventually have to be handled by the camera mapper
-    
+
     double latitude;
     double lst_obs;
     double ra;
     double dec;
-    if (camera == "megacam") {
+    if (camera == "megacam" || camera == "CFHT MegaCam") {
         airMass = meta->get<double>("AIRMASS");
         jd = meta->get<double>("MJD-OBS");  // Julian date
         expTime = meta->get<double>("EXPTIME");
@@ -201,7 +201,7 @@ CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceReco
     hourAngle = (lst_obs-ra);
     if  (hourAngle>M_PI) hourAngle -= 2*M_PI;
     if  (hourAngle<-M_PI) hourAngle += 2*M_PI;
-    
+
     if (airMass==1)
        sineta = coseta = tgz = 0;
     else
@@ -215,5 +215,5 @@ CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceReco
     }
     bandRank = 0; // will be set by Associations if pertinent.
 }
-    
+
 }} // end of namespaces
