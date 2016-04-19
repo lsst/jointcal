@@ -24,6 +24,7 @@ SimplePolyModel::SimplePolyModel(const CcdImageList &L,
   // from datacards (or default)
 //  unsigned degree = distortionDegree;
   unsigned count = 0;
+
   for (auto i=L.cbegin(); i!= L.end(); ++i, ++count)
     {
       const CcdImage &im = **i;
@@ -37,7 +38,27 @@ SimplePolyModel::SimplePolyModel(const CcdImageList &L,
 	// Given how AssignIndices works, only the SimplePolyMapping's
 	// will actually be fitted, as NNotFit requests.
 	{
+		/* first check that there are enough measurements for the
+	  requested polynomial degree */
+	  unsigned nObj = im.CatalogForFit().size();
+	  if (nObj == 0)
+	    {
+	      std::cout << "WARNING: empty catalog from image : "
+			<< im.Name() << std::endl;
+	      continue;
+	    }
 	  GtransfoPoly pol(degree);
+		if (pol.Degree() > 0) // if not, it cannot be decreased
+	    while (unsigned(pol.Npar()) > 2*nObj)
+	      pol.SetDegree(pol.Degree() - 1);
+	  /* We have to center and normalize the coordinates so that
+	     the fit matrix is not too ill-conditionned. Basically, x
+	     and y in pixels are mapped to [-1,1]. When the
+	     transformation of SimplePolyMapping transformation is
+	     accessed, the combination of the normalization and the
+	     fitted transformation is returned, so that the trick
+	     remains hidden
+	   */
 	  const Frame &frame  = im.ImageFrame();
 	  GtransfoLin shiftAndNormalize = NormalizeCoordinatesTransfo(frame);
 	  if (InitFromWCS)
@@ -112,7 +133,7 @@ PTR(TanSipPix2RaDec) SimplePolyModel::ProduceSipWcs(const CcdImage &Ccd) const
 
   const GtransfoLin &projLinPart = proj->LinPart(); // should be the identity, but who knows? So, let us incorporate it into the pix2TP part.
   GtransfoPoly wcsPix2Tp = GtransfoPoly(projLinPart.invert())*pix2Tp;
-  
+
   // compute a decent approximation, if higher order corrections get ignored
   GtransfoLin cdStuff = wcsPix2Tp.LinearApproximation(Ccd.ImageFrame().Center());
 
@@ -121,7 +142,5 @@ PTR(TanSipPix2RaDec) SimplePolyModel::ProduceSipWcs(const CcdImage &Ccd) const
   Point tangentPoint( proj->TangentPoint());
   return boost::shared_ptr<TanSipPix2RaDec>(new TanSipPix2RaDec(cdStuff, tangentPoint, &sip));
 }
-
-
 
 }} // end of namespaces

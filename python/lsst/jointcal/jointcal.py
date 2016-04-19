@@ -3,6 +3,7 @@
 from __future__ import division, absolute_import, print_function
 
 import os
+import numpy as np
 
 import lsst.utils
 import lsst.pex.config as pexConfig
@@ -86,14 +87,23 @@ class JointcalConfig(pexConfig.Config):
         dtype = str,
         default = "deep"
     )
-
+    centroid = pexConfig.Field(
+        doc = "Centroid type for position estimation",
+        dtype = str,
+        default = "base_SdssCentroid",
+    )
+    shape = pexConfig.Field(
+        doc = "Shape for error estimation",
+        dtype = str,
+        default = "base_SdssShape",
+    )
 
 class JointcalTask(pipeBase.CmdLineTask):
- 
+
     ConfigClass = JointcalConfig
     RunnerClass = JointcalRunner
     _DefaultName = "jointcal"
-    
+
     def __init__(self, *args, **kwargs):
         pipeBase.Task.__init__(self, *args, **kwargs)
         # self.makeSubtask("select")
@@ -102,10 +112,10 @@ class JointcalTask(pipeBase.CmdLineTask):
     # In this way, we don't need to put a specific entry in the camera mapper policy file
     def _getConfigName(self):
         return None
-        
+
     def _getMetadataName(self):
         return None
-        
+
     @classmethod
     def _makeArgumentParser(cls):
         """Create an argument parser
@@ -118,28 +128,21 @@ class JointcalTask(pipeBase.CmdLineTask):
 
     @pipeBase.timeMethod
     def run(self, ref, tract):
-        
+
         configSel = StarSelectorConfig()
-        ss = StarSelector(configSel, self.config.sourceFluxField, self.config.maxMag)
-        
+        ss = StarSelector(configSel, self.config.sourceFluxField, self.config.maxMag,
+            self.config.centroid, self.config.shape)
+
         print(self.config.sourceFluxField)
         astromControl = jointcalLib.JointcalControl()
         astromControl.sourceFluxField = self.config.sourceFluxField
 
         assoc = jointcalLib.Associations()
-        
-#        for dataRef in ref :
-#            print(dataRef.dataId)
-#            print(dataRef.dataId["tract"])
-#            print(dataRef)
-#            print(dir(dataRef))
-            
-#        return
-        
+
         for dataRef in ref :
-            
+
             print(dataRef.dataId)
-            
+
             src = dataRef.get("src", immediate=True)
             md = dataRef.get("calexp_md", immediate=True)
             tanwcs = afwImage.TanWcs.cast(afwImage.makeWcs(md))
@@ -148,7 +151,7 @@ class JointcalTask(pipeBase.CmdLineTask):
             bbox = afwGeom.Box2I(lLeft, uRight)
             calib = afwImage.Calib(md)
             filt = dataRef.dataId['filter']
-            
+
             newSrc = ss.select(src, calib)
             if len(newSrc) == 0 :
                 print("no source selected in ", dataRef.dataId["visit"], dataRef.dataId["ccd"])
@@ -156,15 +159,15 @@ class JointcalTask(pipeBase.CmdLineTask):
             print("%d sources selected in visit %d - ccd %d"%(len(newSrc),
                                                               dataRef.dataId["visit"],
                                                               dataRef.dataId["ccd"]))
-            
+
             assoc.AddImage(newSrc, tanwcs, md, bbox, filt, calib,
                            dataRef.dataId['visit'], dataRef.dataId['ccd'],
-                           dataRef.getButler().mapper.getCameraName(),
+                           dataRef.getButler().get("camera").getName(),
                            astromControl)
-        
+
         matchCut = 3.0
         assoc.AssociateCatalogs(matchCut)
-        
+
         # Use external reference catalogs handled by LSST stack mechanism
         # Get the bounding box overlapping all associated images
         # ==> This is probably a bad idea to do it this way <== To be improved
@@ -172,7 +175,7 @@ class JointcalTask(pipeBase.CmdLineTask):
         center = afwCoord.Coord(bbox.getCenter(), afwGeom.degrees)
         corner = afwCoord.Coord(bbox.getMax(), afwGeom.degrees)
         radius = center.angularSeparation(corner).asRadians()
-        
+
         # Get astrometry_net_data path
         anDir = lsst.utils.getPackageDir('astrometry_net_data')
         if anDir is None:
@@ -183,17 +186,17 @@ class JointcalTask(pipeBase.CmdLineTask):
         if not os.path.exists(andConfigPath):
             raise RuntimeError("astrometry_net_data config file \"%s\" required but not found" %andConfigPath)
         andConfig.load(andConfigPath)
-        
+
         task = LoadAstrometryNetObjectsTask.ConfigClass()
         loader = LoadAstrometryNetObjectsTask(task)
-        
+
         # Determine default filter associated to the catalog
         filt, mfilt = andConfig.magColumnMap.items()[0]
         print("Using", filt, "band for reference flux")
 
         refCat = loader.loadSkyCircle(center, afwGeom.Angle(radius, afwGeom.radians), filt).refCat
         print(refCat.getSchema().getOrderedNames())
-        
+
         # assoc.CollectRefStars(False) # To use USNO-A catalog
 
         assoc.CollectLSSTRefStars(refCat, filt)
@@ -218,7 +221,11 @@ class JointcalTask(pipeBase.CmdLineTask):
             chi2 = fit.ComputeChi2()
             print(chi2)
             if r == 0 :
-                print("fit has converged - no more outliers")
+                print("fit has converged - no more outliers - redo minimixation one more time in case we have lost accuracy in rank update")
+                # Redo minimization one more time in case we have lost accuracy in rank update
+                r = fit.Minimize("Distortions Positions",5) # outliers removal at 5 sigma.
+                chi2 = fit.ComputeChi2()
+                print(chi2)
                 break
             elif r == 2 :
                 print("minimization failed")
@@ -227,19 +234,11 @@ class JointcalTask(pipeBase.CmdLineTask):
             else :
                 break
                 print("unxepected return code from Minimize")
-        
-#        for i in range(80):
-#            nout = fit.RemoveOutliers(5.) # 5 sigma
-#            fit.Minimize("Distortions Positions")
-#            chi2 = fit.ComputeChi2()
-            
-#            print chi2
-#            if (nout == 0) : break
-            
+
         # Fill reference and measurement n-tuples for each tract
         tupleName = "res_" + str(dataRef.dataId["tract"]) + ".list"
         fit.MakeResTuple(tupleName)
-        
+
         # Build an updated wcs for each calexp
         imList = assoc.TheCcdImageList()
 
@@ -247,7 +246,7 @@ class JointcalTask(pipeBase.CmdLineTask):
             tanSip = spm.ProduceSipWcs(im)
             frame = im.ImageFrame()
             tanWcs = afwImage.TanWcs.cast(jointcalLib.GtransfoToTanWcs(tanSip, frame, False))
-            
+
             name = im.Name()
             visit, ccd = name.split('_')
             for dataRef in ref :
@@ -256,16 +255,13 @@ class JointcalTask(pipeBase.CmdLineTask):
                     exp = afwImage.ExposureI(0,0)
                     exp.setWcs(tanWcs)
                     try:
-                        # dataRef.put(exp, 'wcs')
-                        dataRef.put(exp, 'calexp')
+                        dataRef.put(exp, 'wcs')
                     except pexExceptions.Exception as e:
                         self.log.warn('Failed to write updated Wcs: ' + str(e))
                     break
 
-
-
 class StarSelectorConfig(pexConfig.Config):
-    
+
     badFlags = pexConfig.ListField(
         doc = "List of flags which cause a source to be rejected as bad",
         dtype = str,
@@ -277,18 +273,20 @@ class StarSelectorConfig(pexConfig.Config):
     )
 
 class StarSelector(object) :
-    
+
     ConfigClass = StarSelectorConfig
 
-    def __init__(self, config, sourceFluxField, maxMag):
+    def __init__(self, config, sourceFluxField, maxMag, centroid, shape):
         """Construct a star selector
-        
+
         @param[in] config: An instance of StarSelectorConfig
         """
         self.config = config
         self.sourceFluxField = sourceFluxField
         self.maxMag = maxMag
-    
+        self.centroid=centroid
+        self.shape=shape
+
     def select(self, srcCat, calib):
 # Return a catalog containing only reasonnable stars / galaxies
 
@@ -303,7 +301,7 @@ class StarSelector(object) :
             flagKeys.append(key)
         fluxFlagKey = schema[self.sourceFluxField+"_flag"].asKey()
         flagKeys.append(fluxFlagKey)
-        
+
         for src in srcCat :
             # Do not consider sources with bad flags
             for f in flagKeys :
@@ -328,7 +326,18 @@ class StarSelector(object) :
             footprint = src.getFootprint()
             if footprint is not None and len(footprint.getPeaks()) > 1 :
                 continue
-                
+
+            # Check consistency of variances and second moments
+            vx = np.square(src.get(self.centroid + "_xSigma"))
+            vy = np.square(src.get(self.centroid + "_ySigma"))
+            mxx = src.get(self.shape + "_xx")
+            myy = src.get(self.shape + "_yy")
+            mxy = src.get(self.shape + "_xy")
+            vxy = mxy*(vx+vy)/(mxx+myy);
+
+            if vxy*vxy > vx*vy or np.isnan(vx) or np.isnan(vy):
+                continue
+
             newCat.append(src)
-            
+
         return newCat
