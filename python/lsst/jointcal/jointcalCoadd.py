@@ -6,6 +6,7 @@ from lsst.pipe.tasks.makeCoaddTempExp import MakeCoaddTempExpTask
 from lsst.pipe.base import Struct
 import lsst.afw.image as afwImage
 
+
 class JointcalCoaddTask(MakeCoaddTempExpTask):
     def getCalExp(self, dataRef, bgSubtracted):
         """!Return one "calexp" calibrated exposure
@@ -31,14 +32,14 @@ class JointcalCoaddTask(MakeCoaddTempExpTask):
         self.log.info("doApplyUberCal is set - Using jointcal updated calibrations")
         self.applyjointcalResults(dataRef, calexp=exposure)
         return exposure
-    
+
     def applyjointcalResults(self, dataRef, calexp=None):
         """Deprecated function to apply the results to an exposure
         Deprecated, because the mosaic results can be applied to more than
         one kind of target, so it's worth changing the name to be specific.
         """
         return self.applyjointcalResultsExposure(dataRef, calexp).exposure
-        
+
     def applyjointcalResultsExposure(self, dataRef, calexp=None):
         """Update an Exposure with the Wcs, from meas_jointcal
         (Calib and flux sacling will be also used later).
@@ -48,8 +49,8 @@ class JointcalCoaddTask(MakeCoaddTempExpTask):
         if calexp is None:
             calexp = dataRef.get("calexp", immediate=True)
 
-        wcsCont = dataRef.get("wcs",  immediate=True)
+        wcsCont = dataRef.get("wcs", immediate=True)
         wcs = afwImage.TanWcs.cast(wcsCont.getWcs())
         calexp.setWcs(wcs)
-        
+
         return Struct(exposure=calexp)

@@ -76,13 +76,13 @@ public:
 
   //! Collect stars form an external reference catalog (USNO-A by default) that match the FittedStarList. Optionally project these RefStar s on the tangent plane defined by the CommonTangentPoint().
   void CollectRefStars(const bool ProjectOnTP=true);
-  
+
   //! Collect stars from an external reference catalog using the LSST stack mechanism
   void CollectLSSTRefStars(lsst::afw::table::SortedCatalogT< lsst::afw::table::SimpleRecord > &Ref, std::string filter);
 
 
 
-    
+
 #ifdef STORAGE
   //! This is Monte-Carlo stuff -- to remove this from associations
   //! the Association class should provide us w/ iterators and acceptors
@@ -111,21 +111,21 @@ public:
 			   const double &MatchCutArcSec);
 #endif
   //    void SetRefPhotFactor(int chip, double photfact);
-  
+
   //! apply cuts (mainly number of measurements) on potential FittedStars
   void SelectFittedStars();
-  
+
   const CcdImageList& TheCcdImageList() const {return ccdImageList;}
-  
+
   unsigned int NShoots() const { return nshoots_; }
 
   //! Number of different bands in the input image list. Not implemented so far
   unsigned NBands() const {return 1;}
-  
+
   // Return the bounding box in (ra, dec) coordinates containing the whole catalog
   const lsst::afw::geom::Box2D GetRaDecBBox();
 
-  
+
 private:
   void AssociateRefStars(const double &MatchCutInArcSec, const Gtransfo *T);
   unsigned int nshoots_;

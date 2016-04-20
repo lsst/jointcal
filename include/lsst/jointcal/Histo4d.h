@@ -15,7 +15,7 @@ class SparseHisto4d {
   double minVal[4],maxVal[4];
   double scale[4];
   bool sorted;
-  
+
  public:
   SparseHisto4d() {}
   // obvious meanings. NEntries is used as the size of the primary allocation.

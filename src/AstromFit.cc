@@ -22,12 +22,12 @@ class CholmodSupernodalLLT2 : public Eigen::CholmodBase<_MatrixType, _UpLo, Chol
 {
   typedef Eigen::CholmodBase<_MatrixType, _UpLo, CholmodSupernodalLLT2> Base;
     using Base::m_cholmod;
-    
+
   public:
-    
+
     typedef _MatrixType MatrixType;
     typedef typename MatrixType::Index Index;
-    
+
     CholmodSupernodalLLT2() : Base() { init(); }
   //! The factorization happens in the constructor.
     CholmodSupernodalLLT2(const MatrixType& matrix) : Base()
@@ -51,7 +51,7 @@ class CholmodSupernodalLLT2 : public Eigen::CholmodBase<_MatrixType, _UpLo, Chol
 						  Base::m_cholmodFactor->n,
 						  NULL, -1, NULL, true, true,
 						  &this->cholmod());
-    
+
     int ret = cholmod_updown(UpOrDown, &C_cs_perm, Base::m_cholmodFactor, &this->cholmod());
     cholmod_free_sparse(C_cs_perm,  &this->cholmod());
     return ret;
@@ -81,13 +81,13 @@ class CholmodSimplicialLDLT2 : public Eigen::CholmodBase<_MatrixType, _UpLo, Cho
 {
   typedef Eigen::CholmodBase<_MatrixType, _UpLo, CholmodSimplicialLDLT2> Base;
     using Base::m_cholmod;
-    
+
   public:
-    
+
     typedef _MatrixType MatrixType;
     typedef typename MatrixType::Index Index;
     typedef typename MatrixType::RealScalar RealScalar;
-    
+
     CholmodSimplicialLDLT2() : Base() { init(); }
 
     CholmodSimplicialLDLT2(const MatrixType& matrix) : Base()
@@ -103,7 +103,7 @@ class CholmodSimplicialLDLT2 : public Eigen::CholmodBase<_MatrixType, _UpLo, Cho
       const Index size = Base::m_cholmodFactor->n;
       EIGEN_UNUSED_VARIABLE(size);
       eigen_assert(size==H.rows());
-      
+
       cholmod_sparse C_cs = viewAsCholmod(H);
       /* We have to apply the magic permutation to the update matrix,
 	 read page 117 of Cholmod UserGuide.pdf */
@@ -310,7 +310,7 @@ void AstromFit::LSDerivatives1(const CcdImage &Ccd,
       // PA - seems correct !
       alpha(1,1) = 1./sqrt(det*transW(0,0));
       alpha(0,1) = 0;
-      
+
       const FittedStar *fs = ms.GetFittedStar();
 
       Point fittedStarInTP = TransformFittedStar(*fs, sky2TP,
@@ -688,7 +688,7 @@ unsigned AstromFit::RemoveOutliers(const double &NSigCut,
   RemoveRefOutliers(FSOutliers);
   return n;
 }
-  
+
 
 
 //! Find Measurements and references contributing more than a cut, computed as <chi2>+NSigCut+rms(chi2). The outliers are NOT removed, and no refit is done.
@@ -770,7 +770,7 @@ unsigned AstromFit::FindOutliers(const double &NSigCut,
       bool drop_it = true;
       for (auto i=indices.cbegin(); i!= indices.end(); ++i)
 	if (affectedParams(*i) !=0) drop_it = false;
-      
+
       if (drop_it) // store the outlier in one of the lists:
 	{
 	  if (ms) // measurement term
@@ -786,7 +786,7 @@ unsigned AstromFit::FindOutliers(const double &NSigCut,
   cout << "INFO : FindOutliers : found "
        << MSOutliers.size() << " meas outliers and "
        << FSOutliers.size ()<< " ref outliers " << endl;
-  
+
   return nOutliers;
 }
 
@@ -801,7 +801,7 @@ void AstromFit::RemoveMeasOutliers(MeasuredStarList &Outliers)
       fs->MeasurementCount()--; // could be put in SetValid
     }
 }
-  
+
 
 void AstromFit::RemoveRefOutliers(FittedStarList &Outliers)
 {
@@ -882,7 +882,7 @@ void AstromFit::AssignIndices(const std::string &WhatToFit)
 }
 
 
-      
+
 void AstromFit::OffsetParams(const Eigen::VectorXd& Delta)
 {
   if (Delta.size() != _nParTot)
@@ -950,7 +950,7 @@ static void write_vect_in_fits(const Eigen::VectorXd &V, const string &FitsName)
 unsigned AstromFit::Minimize(const std::string &WhatToFit, const double NSigRejCut)
 {
   AssignIndices(WhatToFit);
-  
+
   // return code can take 3 values :
   // 0 : fit has converged - no more outliers
   // 1 : still some ouliers but chi2 increases
@@ -1161,7 +1161,7 @@ void AstromFit::MakeMeasResTuple(const std::string &TupleName) const
 	  mapping->TransformPosAndErrors(inPos, tpPos);
 	  const Gtransfo* sky2TP = _distortionModel->Sky2TP(im);
 	  const FittedStar *fs = ms.GetFittedStar();
-	  
+
 	  Point fittedStarInTP = TransformFittedStar(*fs, sky2TP,
 						     refractionVector,
 						     _refracCoefficient[iband],

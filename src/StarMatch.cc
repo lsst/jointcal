@@ -73,7 +73,7 @@ static unsigned chi2_cleanup(StarMatchList &L,  const double Chi2Cut,
     }
   return erased;
 }
-  
+
 
 #ifdef DO_WE_NEED_IT
 static double *get_dist2_array(const StarMatchList &L, const Gtransfo &T)
@@ -215,7 +215,7 @@ Gtransfo* StarMatchList::InverseTransfo() /* it is not const although it tries n
   return inverted_transfo;
 }
 
- 
+
 void StarMatchList::CutTail(const int NKeep)
 {
 iterator si;

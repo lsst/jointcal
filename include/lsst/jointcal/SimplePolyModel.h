@@ -52,7 +52,7 @@ public :
 
   // dispaches the offsets after a fit step into the actual locations of parameters
   void OffsetParams(const Eigen::VectorXd &Delta);
-  
+
   /*! the mapping of sky coordinates (i.e. the coordinate system
   in which fitted stars are reported) onto the Tangent plane
   (into which the pixel coordinates are transformed) */

@@ -33,7 +33,7 @@ class CcdImage : public RefCount
   Frame imageFrame; // in pixels
   // wholeCatalog is just store the catalog of selected sources
   //  lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> wholeCatalog;
-  
+
   MeasuredStarList wholeCatalog; // the catalog of measured objets
   MeasuredStarList catalogForFit;
 
@@ -48,16 +48,16 @@ class CcdImage : public RefCount
   CountedRef<Gtransfo> TP2CTP; // reverse one
   CountedRef<Gtransfo> pix2CommonTangentPlane;// pixels -> CTP
   CountedRef<Gtransfo> pix2TP;
-  
+
   CountedRef<Gtransfo> sky2TP;
-  
+
   std::string riName;
   std::string riDir;
   std::string instrument;
   int chip; // CCD number
   ShootIdType shoot; // Same value for all CcdImages from the same exposure
   unsigned bandRank; // some incremental band indicator.
-  
+
 
   double expTime; // seconds
   double airMass; // airmass value.
@@ -75,7 +75,7 @@ class CcdImage : public RefCount
   std::string dateObs;
   // refraction
   double sineta,coseta,tgz,hourAngle;  // eta : parallactic angle, z: zenithal angle (X = 1/cos(z))
-  
+
   std::string band;
   std::string flatName;
   //  std::string flat; // full flat name
@@ -86,7 +86,7 @@ class CcdImage : public RefCount
   int    bandIndex;
   int    index;
   int    expindex;
-  
+
   Point  commonTangentPoint;
 
   void LoadCatalog(const lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &Cat, const std::string &fluxField);
@@ -99,7 +99,7 @@ class CcdImage : public RefCount
     const int &visit, const int &ccd, const std::string &ccdImage, const std::string &fluxField );
 
 
-    
+
 #ifdef TO_BE_FIXED
   //!
   CcdImage(const ReducedImage &Ri, const Point &CommonTangentPoint, const CatalogLoader * LoadIt);
@@ -107,7 +107,7 @@ class CcdImage : public RefCount
 
   //!
   std::string Name() const { return riName;}
-  
+
   //!
   std::string Dir() const { return riDir; }
 
@@ -127,11 +127,11 @@ class CcdImage : public RefCount
   //!
   const Gtransfo* CommonTangentPlane2TP() const
   { return CTP2TP.get();}
-  
+
   //!
   const Gtransfo* TP2CommonTangentPlane() const
   { return TP2CTP.get();}
-  
+
   //!
   const Gtransfo* Pix2TangentPlane() const
   { return pix2TP.get();}
@@ -139,7 +139,7 @@ class CcdImage : public RefCount
   //!
   const Gtransfo* Sky2TP() const
   { return sky2TP.get();}
-  
+
   //! returns chip ID
   int Chip() const { return chip;}
 
@@ -151,29 +151,29 @@ class CcdImage : public RefCount
 
   //! returns seeing
   //  double Seeing() const { return seeing;}
-  
+
   //! returns gfseeing
   //  double GFSeeing() const { return gfseeing;}
-  
+
   //! returns sigma back
   //  double SigmaBack() const { return sigmaback;}
-  
+
   //! returns shoot ID
   ShootIdType Shoot() const { return shoot;}
-  
+
   //! Exposure time (s)
   double ExpTime() const { return expTime;}
-  
+
   //!  Airmass
   double AirMass() const {return airMass;}
-  
+
   //! Date Obs
   std::string DateObs() const { return dateObs; }
 
   //! Julian Date
   double JD() const { return jd; }
 
-  
+
   //!Elixir ZP (applies to fluxes in ADU/sec at airmass 1).
   double ElixirZP() const { return elixirZP;}
 
@@ -182,10 +182,10 @@ class CcdImage : public RefCount
 
   //!zp from the psf zp file, returns 0 if not present
   double PSFZP() const { return psfzp;}
-  
+
   //! absorption term
   double PhotK() const { return photk; }
-  
+
   //! original ZP
   double PhotC() const { return photc; }
 
@@ -206,58 +206,58 @@ class CcdImage : public RefCount
 
   //!conversion from ADU to ADU/sec at airmass=1
   double FluxCoeff() const { return fluxCoeff;}
-  
+
   //! return the CcdImage band name
   std::string Band() const { return band;}
-  
+
   //! return the CcdImage band index. This is a static index that mostly turns a letter (e.g. 'g') into a number (e.g. 2). Different from BandRank()
   int BandIndex() const { return bandIndex; }
-  
+
   //! Flat used to flatfield
   std::string FlatName() const { return flatName;}
 
   //! Full path of the scatter corrections
   std::string CFHTScatter() const { return cfhtscatter; }
-  
+
   //! SNLS grid
   std::string SNLSGrid() const { return snlsgrid; }
-  
+
   //! correction map to convert from one set of fluxes to another
   std::string FlatCVMap() const { return flatcvmap; }
-  
+
   //void SetPix2TangentPlane(const Gtransfo *);
-  
+
   //! the wcs read in the header. NOT updated when fitting.
   const Gtransfo *ReadWCS() const {return readWcs.get();}
-  
+
   //! the inverse of the one above.
   const Gtransfo *InverseReadWCS() const {return inverseReadWcs.get();}
-  
+
   //! Frame in pixels
   const Frame& ImageFrame() const { return imageFrame;}
-  
+
   //! Frame on sky
   //Frame RaDecFrame() const;
-  
+
   //! Fitted Ccd object (contain the refscale parameters)
   //  void             SetFittedCcd(FittedCcd* ccd) { if(ccd) fittedccd=ccd; }
   //  FittedCcd*       GetFittedCcd() { return fittedccd; }
   //  FittedCcd const* GetFittedCcd() const { return fittedccd; }
-  
+
   //! returns wether "this" overlaps with Other.
   //  bool Overlaps(const CcdImage &Other) const;
-  
+
   //! CcdImage index
   int     Index() const { return index; }
   void    SetIndex(int idx) { index = idx; }
-  
+
   //! Exposure Index
   int     ExpIndex() const { return expindex; }
   void    SetExpIndex(int idx) { expindex = idx; }
-  
+
   //! Common Tangent Point
   Point const&       CommonTangentPoint() const { return commonTangentPoint; }
-  
+
  private:
   CcdImage(const CcdImage &); // forbid copies
 
@@ -273,16 +273,16 @@ class CcdImage : public RefCount
 class CcdImageList : public std::list<boost::shared_ptr<CcdImage> >
 {
   public:
-  
+
   //!
   //std::list<std::string> DateObs() const;
-  
+
   //!
   //std::list<std::string> Bands() const;
-  
+
   //!
   //double       MeanAirmass() const;
-  
+
   //!
   template<class Accept> CcdImageList SubList(const Accept &OP) const
     {
@@ -291,7 +291,7 @@ class CcdImageList : public std::list<boost::shared_ptr<CcdImage> >
 	if (OP(**i)) out.push_back(*i);
       return out;
     }
-  
+
   // find the matching image. Chip==-1 means any chip
 //  double AirMass(const int Shoot, const int Chip = -1) const;
 };

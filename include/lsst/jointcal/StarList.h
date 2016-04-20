@@ -91,7 +91,7 @@ public:
 /* destructor */
   virtual ~StarList() {};
 
-  
+
   //! invokes dump(stream) for all Stars in the std::list.
  void dump(std::ostream &stream = std::cout ) const {
     for (auto p = this->begin();

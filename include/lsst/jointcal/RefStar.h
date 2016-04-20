@@ -37,17 +37,17 @@ private :
 
   //!
   double Dec() const {return raDec.y;}
-  
+
   //! reference flux
   double Flux(int band) const;
-  
+
   //! assign the reference fluxes
   void   AssignRefFluxes(std::vector<double> const& refflux);
-  
+
   //! star index
   unsigned int &  Index() { return index; }
   unsigned int    Index() const { return index; }
-  
+
 };
 
 
@@ -55,7 +55,7 @@ private :
 
 /****** RefStarList ***********/
 
-  
+
 class Frame;
 
   //typedef StarList<RefStar> RefStarList;
@@ -65,7 +65,7 @@ class RefStarList : public StarList<RefStar> { };
 typedef RefStarList::const_iterator RefStarCIterator;
 typedef RefStarList::iterator RefStarIterator;
 typedef CountedRef<RefStar> RefStarRef;
- 
+
 
 BaseStarList& Ref2Base(RefStarList &This);
 BaseStarList* Ref2Base(RefStarList *This);

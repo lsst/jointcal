@@ -18,7 +18,7 @@ namespace jointcal {
 class Associations;
 
 /*! Some comments.
-  
+
 
 */
 
@@ -37,12 +37,12 @@ class PhotomFit {
   int _LastNTrip; // last triplet count, used to speed up allocation
 
 
-  
+
  public :
 
   //! this is the only constructor
   PhotomFit (Associations &A, PhotomModel *M, double PosError);
-  
+
   //! Does a 1 step minimization, assuming a linear model.
   /*! It calls AssignIndices, LSDerivatives, solves the linear system
     and calls OffsetParams. No line search. Relies on sparse linear

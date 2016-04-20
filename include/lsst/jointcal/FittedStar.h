@@ -32,7 +32,7 @@ struct PmBlock
 
   PmBlock() : pmx(0), pmy(0), epmx(0), epmy(0), epmxy(0), color(0), mightMove(false) {};
 
-  
+
 
 };
 
@@ -53,7 +53,7 @@ class FittedStar : public BaseStar, public PmBlock {
   unsigned indexInMatrix;
   int measurementCount;
   const RefStar *refStar;
-  
+
   double flux2;
   double fluxErr;
   double fluxErr2;
@@ -65,19 +65,19 @@ class FittedStar : public BaseStar, public PmBlock {
     flux2(-1),
     fluxErr(-1),
     fluxErr2(-1) {}
-  
+
   FittedStar(const BaseStar &B) :
     BaseStar(B), mag(-1), emag(-1), col(0.), gen(-1), wmag(0),
     indexInMatrix(0), measurementCount(0), refStar(NULL),
     flux2(-1),
     fluxErr(-1),
     fluxErr2(-1) {}
-    
+
   //  FittedStar(const FittedStar& F)
   //    : BaseStar(F), mag(F.mag), emag(F.emag), col(F.col), gen(F.gen), wmag(F.wmag),
   //      index(F.index), measurementCount(F.measurementCount), refStar(F.refStar),
   //      flux2(F.flux2), fluxErr(F.fluxErr), fluxErr2(F.fluxErr2) {}
-    
+
   //!
   FittedStar(const MeasuredStar &M);
 
@@ -90,7 +90,7 @@ class FittedStar : public BaseStar, public PmBlock {
     refStar = NULL;
     wmag = 0;
   }
-  
+
 
   //!
   void dump(std::ostream & stream = std::cout) const
@@ -133,18 +133,18 @@ class FittedStar : public BaseStar, public PmBlock {
 
   //!
   const RefStar *GetRefStar() const { return refStar;};
-  
+
   //! getters
   double         Flux() const { return flux; }
   double&        Flux() { return flux; }
   double         FluxErr() const { return fluxErr; }
   double&        FluxErr() { return fluxErr; }
-  
+
   double         Flux2() const { return flux2; }
   double&        Flux2() { return flux2; }
   double         FluxErr2() const { return fluxErr2; }
   double&        FluxErr2() { return fluxErr2; }
-  
+
   //! write stuff
   std::string       WriteHeader_(std::ostream& pr=std::cout, const char* i=NULL) const;
   virtual void      writen(std::ostream& s) const;
@@ -160,7 +160,7 @@ static BaseStar*  read(std::istream& s, const char* format);
 //! A list of FittedStar s. Such a list is typically constructed by Associations
 class FittedStarList : public  StarList<FittedStar>
 {
- 
+
   public :
 
   bool  inTangentPlaneCoordinates;
@@ -183,7 +183,7 @@ class FittedStarList : public  StarList<FittedStar>
 
 
 };
- 
+
 typedef FittedStarList::const_iterator FittedStarCIterator;
 typedef FittedStarList::iterator FittedStarIterator;
 typedef CountedRef<FittedStar> FittedStarRef;
