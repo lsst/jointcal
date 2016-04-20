@@ -1,6 +1,6 @@
 setupRequired(scons)
 setupRequired(sconsUtils)
-setupRequired(Eigen)
+setupRequired(eigen)
 setupRequired(boost)
 setupRequired(afw)
 setupRequired(daf_persistence)
