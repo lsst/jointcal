@@ -34,7 +34,7 @@ bool IsIntegerShift(const Gtransfo *a_transfo)
 
   double dx = shift->Coeff(0,0,0);
   double dy = shift->Coeff(0,0,1);
-  
+
   static Point dumb(4000,4000);
   if (fabs(dx - int(floor(dx+0.5))) < eps &&
       fabs(dy - int(floor(dy+0.5))) < eps &&
@@ -133,7 +133,7 @@ void Gtransfo::TransformErrors(const Point &Where,
   /*      (a11 a12)          (vxx  vxy)
      M =  (       )  and V = (        )
           (a21 a22)          (xvy  vyy)
-     
+
      Vxx = Vin[0], vyy = Vin[1], Vxy = Vin[2];
      we want to compute M*V*tp(M)
      A lin alg light package would be perfect...
@@ -142,7 +142,7 @@ void Gtransfo::TransformErrors(const Point &Where,
   int yy = 1;
   int xy = 2;
   // M*V :
-  
+
   double b11 = a11 * VIn[xx] + a12 * VIn[xy];
   double b22 = a21 * VIn[xy] + a22 * VIn[yy];
   double b12 = a11 * VIn[xy] + a12 * VIn[yy];
@@ -214,7 +214,7 @@ void Gtransfo::ParamDerivatives(const Point &Where,
   if ((Where.x || Dx ) || Dy) {} // compilation warning killer
   throw LSST_EXCEPT(pex::exceptions::InvalidParameterError, "Gtransfo::ParamDerivatives() should never be called ");
 }
-  
+
 
 ostream & operator << (ostream &stream, const Gtransfo & T)
            {T.dump(stream); return stream;}
@@ -247,7 +247,7 @@ private:
   Gtransfo *direct;
   Gtransfo *roughInverse;
   double precision2;
-  
+
 
 public:
   GtransfoInverse(const Gtransfo* Direct,
@@ -850,7 +850,7 @@ typedef struct
   const char *name;
   const unsigned char px,py,whichCoord;
 } CoeffTagStruct;
-  
+
 static const CoeffTagStruct CoeffTags[] =
   {
     {"dx",   0,0,0},
@@ -924,7 +924,7 @@ static string monomial_string(const unsigned powx, const unsigned powy)
   if (powy>1) ss<<"^"<<powy;
   return ss.str();
 }
-  
+
 void  GtransfoPoly::dump(ostream &S) const
 {
   for (unsigned ic=0; ic<2; ++ic)
@@ -987,7 +987,7 @@ static GtransfoLin shift_and_normalize(const StarMatchList &List)
 }
 
 static double sq(const double &x) { return x*x;}
-  
+
 double GtransfoPoly::do_the_fit(const StarMatchList &List,
 				const Gtransfo &ShiftToCenter,
 				const bool UseErrors)
@@ -1048,7 +1048,7 @@ double GtransfoPoly::do_the_fit(const StarMatchList &List,
       cout << "GtransfoPoly::fit : could not factorize " << endl;
       return -1;
     }
-  
+
   Eigen::VectorXd sol = factor.solve(B);
   for (unsigned k=0; k< 2*nterms; ++k) coeffs[k] += sol(k);
   if (List.size() == nterms) return 0;
@@ -1069,7 +1069,7 @@ double  GtransfoPoly::fit(const StarMatchList &List)
   do_the_fit(List, conditionner, false); // get a rough solution
   do_the_fit(List, conditionner, true); // weight with it
   double chi2 = do_the_fit(List, conditionner, true); // once more
-  
+
   (*this) = (*this)*conditionner;
   if (List.size() == nterms) return 0;
   return chi2;
@@ -1122,7 +1122,7 @@ public :
       for (unsigned py=0; py<=deg-px; ++py)
 	Coeff(px,py) = P.Coeff(px,py,WhichCoord);
   }
-	
+
 
   long double Coeff(const unsigned powx, const unsigned powy) const
   {
@@ -1177,7 +1177,7 @@ static PolyXY Product(const PolyXY &P1, const PolyXY &P2)
   return result;
 }
 
-	
+
 /* Powers[k](x,y) = P(x,y)**k, 0 <= k <= MaxP */
 static void ComputePowers(const PolyXY &P, const unsigned MaxP, vector<PolyXY> &Powers)
 {
@@ -1483,7 +1483,7 @@ GtransfoLinRot::GtransfoLinRot(const double AngleRad, const Point *Center,
   a11() = a22() = c;
   a21() = s;
   a12() = -s;
-  
+
   // we want that the center does not move : T+M*C = C ==> T = C - M*C
   Point a_point(0.,0.);
   if (Center) a_point = *Center;
@@ -1845,7 +1845,7 @@ TanRaDec2Pix::TanRaDec2Pix() : linTan2Pix()
   cos0 = 1;
   sin0 = 0;
 }
-  
+
 
 
 Point TanRaDec2Pix::TangentPoint() const
@@ -1883,7 +1883,7 @@ void TanRaDec2Pix::TransformPosAndErrors(const FatPoint &In,
   if (ra-ra0 < -M_PI ) ra += (2.* M_PI);
   // Code inspired from worldpos.c in wcssubs (ancestor of the wcslib)
   // The same code is copied in ::apply()
-  
+
   double coss = cos(dec);
   double sins = sin(dec);
   double sinda = sin(ra-ra0);
@@ -1899,7 +1899,7 @@ void TanRaDec2Pix::TransformPosAndErrors(const FatPoint &In,
   double a12 = -sinda*sin0/deno;
   double a21 = coss*sinda*sins/deno;
   double a22 = cosda/deno;
-  
+
   FatPoint tmp;
   tmp.vx = a11*(a11*In.vx + 2*a12*In.vxy) + a12*a12*In.vy;
   tmp.vy = a21*a21*In.vx + a22*a22*In.vy + 2.*a21*a22*In.vxy;
@@ -1908,7 +1908,7 @@ void TanRaDec2Pix::TransformPosAndErrors(const FatPoint &In,
   // l and m are now coordinates in the tangent plane, in radians.
   tmp.x = rad2deg(l);
   tmp.y = rad2deg(m);
-  
+
   linTan2Pix.TransformPosAndErrors(tmp, Out);
 }
 

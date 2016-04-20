@@ -202,7 +202,7 @@ static void dump_input_list(const BaseStarList &L, const int NStars,
   list.ApplyTransfo(Tin);
   list.write(FileName);
 }
-  
+
 
 
 
@@ -277,7 +277,7 @@ for (int i = 0; i<Conditions.MaxTrialCount; ++i)
   Histo2d historank(Conditions.NStarsL1, 0., Conditions.NStarsL1,
                     Conditions.NStarsL2, 0., Conditions.NStarsL2);
   /* reloop on segment pairs to select the ones in this specific bin */
-  
+
   for (segi1 = sList1.begin(); segi1 != sList1.end(); ++segi1)
     {
     seg1 = &(*segi1);
@@ -433,7 +433,7 @@ SolList Solutions;
      histo.BinLimits(pars,1, minAngle, maxAngle);
 
      StarMatchList *a_list = new StarMatchList;
-     
+
      for (segi1 = sList1.begin(); segi1 != sList1.end(); ++segi1)
        {
 	 seg1 = &(*segi1);
@@ -462,7 +462,7 @@ SolList Solutions;
        }
 
      // a basic check for sanity of the algorithm :
-     
+
      if (int(a_list->size() ) != maxContent+1 )
        {
 	 std::cerr << " There is an internal inconsistency in ListMatchupRotShift " << std::endl
@@ -558,7 +558,7 @@ GtransfoLin *ListMatchupShift(const BaseStarList &L1, const BaseStarList &L2, co
   if (ncomb > 10000) nx = 100; else nx = (int) sqrt(ncomb);
 
   Histo2d histo(nx, -MaxShift, MaxShift, nx, -MaxShift, MaxShift);
-  
+
   BaseStarCIterator s1,s2;
   double x1,y1;
   for (s1 = L1.begin(); s1 != L1.end(); ++s1)
@@ -593,7 +593,7 @@ GtransfoLin *ListMatchupShift(const BaseStarList &L1, const BaseStarList &L2, co
 
   Histo2d histo(nx, -MaxShift, MaxShift, nx, -MaxShift, MaxShift);
   double binSize = 2*MaxShift/nx;
-  
+
   BaseStarCIterator s1;
   FastFinder finder(L2);
   double x1,y1;
@@ -870,7 +870,7 @@ Gtransfo* ListMatchRefine(const BaseStarList& List1, const BaseStarList& List2, 
       delete brightMatch;
       brightMatch = ListMatchCollect(L1, L2, curTransfo, brightDist);
     } while (brightMatch->size() > nstarmin && transDiff > 0.05 && ++iter < 5);
-    
+
     double prevChi2 = curChi2;
     curChi2 = ComputeChi2(*brightMatch, *curTransfo) / brightMatch->size();
 

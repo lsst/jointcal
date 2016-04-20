@@ -12,7 +12,7 @@ namespace jointcal {
 RefStar::RefStar(const BaseStar &B, const Point &RaDec)
   : BaseStar(B), index(0)
 {
-    
+
   fittedStar = (FittedStar*) NULL;
   raDec = RaDec;
 }
@@ -48,22 +48,22 @@ BaseStarList& Ref2Base(RefStarList &This)
 {
   return (BaseStarList&) This;
 }
-  
+
 BaseStarList* Ref2Base(RefStarList *This)
 {
   return (BaseStarList*) This;
 }
-  
+
 const BaseStarList& Ref2Base(const RefStarList &This)
 {
   return (const BaseStarList &) This;
 }
-  
+
 const BaseStarList* Ref2Base(const RefStarList *This)
 {
   return (BaseStarList*) This;
 }
-  
+
 
 
 /********* RefStarStuple *************/
@@ -83,7 +83,7 @@ RefStarTuple::RefStarTuple(const std::string &FileName)
 	 << "# nm : number of measurements" << std::endl
 	 << "# end " << std::endl;
     ;
-  
+
 }
 
 void RefStarTuple::AddEntry(const RefStar &R, const FittedStar &F)

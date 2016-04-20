@@ -19,7 +19,7 @@ TanSipPix2RaDec ConvertTanWcs(const boost::shared_ptr<lsst::afw::image::TanWcs> 
    GtransfoToTanWcs(const lsst::jointcal::TanSipPix2RaDec WcsTransfo,
 		    const lsst::jointcal::Frame &CcdFrame,
 		    const bool NoLowOrderSipTerms=false);
-    
+
 }} // end of namespaces
 
 #endif /* SIPTOGTRANSFO__H */

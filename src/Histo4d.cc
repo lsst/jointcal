@@ -35,7 +35,7 @@ SparseHisto4d::SparseHisto4d(const int N1, double Min1, double Max1,
   maxVal[1] = Max2;
   maxVal[2] = Max3;
   maxVal[3] = Max4;
-  
+
   for (int i =0; i < 4; ++i)
     scale[i] = n[i]/(maxVal[i]-minVal[i]);
   data = new int[nEntries];

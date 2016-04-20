@@ -34,11 +34,11 @@ namespace jointcal {
 
 //! A hanger for star associations
 class StarMatch {
-  
+
   friend class StarMatchList;
 
 public: /* if one sets that private, then fitting routines will be a nightmare. we could set all the Transfo classes friend... */
-  
+
   FatPoint point1, point2; //!< 2 points
   CountedRef<const BaseStar> s1, s2; //!< the Star pointers (the pointer is in fact generic, pointed data is never used).
   double distance;
@@ -50,7 +50,7 @@ public :
     (which are there for user convenience). */
   StarMatch(const FatPoint &p1, const FatPoint &p2, const BaseStar *S1, const BaseStar *S2) :
     point1(p1), point2(p2), s1(S1), s2(S2), distance(0.) {};
-  
+
   // the next one would require that StarMatch knows BaseStar which is not mandatory for StarMatch to work
   // StarMatch(BaseStar *S1, BaseStar *S2) : point1(*S1), point2(*S2), s1(S1), s2(S2) {};
 
@@ -73,10 +73,10 @@ public :
   friend bool DecreasingDistances(const StarMatch &one, const StarMatch &two);
   friend bool DecPhoRatio(const StarMatch &S1, const StarMatch &S2);
 #endif
-  
+
   /* comparison that ensures that after a sort, duplicates are next one another */
   explicit StarMatch() {};
-  
+
 #ifndef SWIG
   friend std::ostream& operator << (std::ostream &stream, const StarMatch &Match);
 #endif
@@ -86,7 +86,7 @@ public :
 
  private:
   //  bool operator <  (const StarMatch & other) const { return (s1 > other.s1) ? s1 > other.s1 : s2 > other.s2;}
- 
+
   /* for unique to remove duplicates */
   bool operator == (const StarMatch &other) const { return (s1 == other.s1 && s2 == other.s2); };
   bool operator != (const StarMatch &other) const { return (s1 != other.s1 || s2 != other.s2); };
@@ -95,7 +95,7 @@ public :
   friend bool SameS1(const StarMatch &one, const StarMatch &two);
   friend bool CompareS2(const StarMatch &one, const StarMatch &two);
   friend bool SameS2(const StarMatch &one, const StarMatch &two);
-  
+
   //! enables \verbatim std::cout << mystarMatch << std::endl; \endverbatim
 
   //  ClassDef(StarMatch,1);
@@ -213,7 +213,7 @@ class StarMatchList : public std::list<StarMatch> {
   //! returns the order of the used transfo
   int TransfoOrder() const {return order;}
 
-  
+
   //! swaps elements 1 and 2 of each starmatch in std::list.
     void Swap () ;
 
@@ -224,8 +224,8 @@ class StarMatchList : public std::list<StarMatch> {
      The distance is computed using Transfo. Which = 1 (2) removes ambiguities
      on the first (second) term of the match. Which=3 does both.*/
   unsigned RemoveAmbiguities(const Gtransfo &Transfo, const int Which=3);
-  
-  
+
+
   //! sets a transfo between the 2 std::lists and deletes the previous or default one.  No fit.
   void SetTransfo(const Gtransfo *Transfo) { transfo = Transfo->Clone();}
   //!
@@ -252,7 +252,7 @@ class StarMatchList : public std::list<StarMatch> {
   void DumpTransfo(std::ostream &stream = std::cout) const;
 
   ~StarMatchList() {/* should delete the transfo.... or use counted refs*/ };
-  
+
   //!: without descriptor for l2tup
   void write_wnoheader(std::ostream & pr=std::cout, const Gtransfo *T=NULL ) const ;
 

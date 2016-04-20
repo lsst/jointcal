@@ -77,12 +77,12 @@ class AstromFit {
   unsigned int _nParTot;
   unsigned _nMeasuredStars;
   double _posError;  // constant term on error on position (in pixel unit)
-  
+
  public :
 
   //! this is the only constructor
   AstromFit (Associations &A, DistortionModel *D, double PosError);
-  
+
   //! Does a 1 step minimization, assuming a linear model.
   /*! It calls AssignIndices, LSDerivatives, solves the linear system
     and calls OffsetParams. No line search. Relies on sparse linear
@@ -176,7 +176,7 @@ class AstromFit {
   template <class Accum>
     void AccumulateStatRefStars(Accum &Accu) const;
 
-  
+
   //! only for outlier removal
   void GetMeasuredStarIndices(const MeasuredStar &Ms,
 			      std::vector<unsigned> &Indices) const;

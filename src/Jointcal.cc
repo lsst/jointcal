@@ -34,14 +34,14 @@ namespace afwTable = lsst::afw::table;
 
 namespace lsst {
 namespace jointcal {
-    
+
     void JointcalControl::validate() const {
         if (sourceFluxField.empty()) {
             throw LSST_EXCEPT(pexExcept::InvalidParameterError, "sourceFluxField must be specified");
         }
         std::cout << sourceFluxField << std::endl;
     }
-    
+
     Jointcal::Jointcal(
         std::vector<lsst::afw::table::SortedCatalogT< lsst::afw::table::SourceRecord> > const sourceList,
         std::vector<PTR(lsst::daf::base::PropertySet)> const metaList,
@@ -72,16 +72,16 @@ namespace jointcal {
 	return;
       }
 
-    
+
     // Check how to get SIP coefficients from WCS
     lsst::daf::base::PropertyList::Ptr wcsMeta = _wcsList[0]->getFitsMetadata();
 //    std::cout << wcsMeta->getOrderedNames() << std::endl;
     std::cout << wcsMeta->get<int>("A_ORDER") << std::endl;
-    
+
     Eigen::MatrixXd sipA;
     afw::image::TanWcs::decodeSipHeader(*wcsMeta, "A", sipA);
     std::cout << sipA << std::endl;
-    
+
     //    std::cout << _sourceList[1].getSchema() << std::endl;
 //    auto centroidKey = _sourceList[1].getSchema().find<double>("base_SdssCentroid_x").key;
 //    for (afwTable::SourceCatalog::const_iterator sourcePtr = _sourceList[1].begin();
@@ -89,22 +89,22 @@ namespace jointcal {
 //                std::cout << sourcePtr->getCentroid() << std::endl;
 //                std::cout << sourcePtr->get(centroidKey) << std::endl;
 //            }
-    
+
     // Create and load an Association object
     Associations *assoc = new Associations();
     for (unsigned i=0; i<_sourceList.size(); i++) {
         assoc->AddImage(_sourceList[i], _wcsList[i], _metaList[i], _bboxList[i], _filterList[i],
         _calibList[i], _visitList[i], _ccdList[i], _cameraList[i], control);
     }
-    
+
     // Associates catalog
     double matchCut = 3.0;   // Should be passed as a parameter
     assoc->AssociateCatalogs(matchCut);
     assoc->CollectRefStars(/*ProjectOnTP =  */ false);
     assoc->SelectFittedStars();
-    
+
     TanPix2RaDec ctp2Sky(GtransfoLin(), assoc->CommonTangentPoint());
-    
+
     assoc->fittedStarList.ApplyTransfo(ctp2Sky);
     OneTPPerShoot sky2TP(assoc->TheCcdImageList());
     SimplePolyModel spm(assoc->TheCcdImageList(), &sky2TP, true, 0);
@@ -120,7 +120,7 @@ namespace jointcal {
 	std::cout << astromFit.ComputeChi2() << std::endl;
 	astromFit.Minimize(whatToFit);
       }
-      
+
     whatToFit = "Positions";
     for (unsigned iter=0; iter<2;++iter)
         {
@@ -130,9 +130,9 @@ namespace jointcal {
         }
 
     std::cout << astromFit.ComputeChi2() << std::endl;
-    
+
     std::cout << " fitting positions and mappings" << std::endl;
-      
+
     astromFit.Minimize("Positions Distortions");
 
     std::cout << astromFit.ComputeChi2() << std::endl;
@@ -148,5 +148,5 @@ namespace jointcal {
         }
     astromFit.MakeResTuple("res.list");
 }
-    
+
 }} // end of namespaces

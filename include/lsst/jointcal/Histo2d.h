@@ -7,7 +7,7 @@ namespace jointcal {
 
 
 class Histo2d {
- 
+
  private:
   float *data;
   int nx,ny;

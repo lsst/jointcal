@@ -11,7 +11,7 @@ namespace jointcal {
 /*! \file
     \brief Fast locator in starlists.
 */
- 
+
 /*!  This is an auxillary class for matching objects from
   starlists. It allows to locate rapidly the closest objects from a
   given position. The very simple strategy is to sort objects

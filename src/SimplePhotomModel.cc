@@ -66,7 +66,7 @@ unsigned SimplePhotomModel::AssignIndices(const std::string &WhatToFit,  unsigne
    const PhotomStuff &pf = find(C);
    return pf.factor;
  }
-     
+
  void SimplePhotomModel::GetIndicesAndDerivatives(const MeasuredStar &M,
 						  const CcdImage &Ccd,
 						  std::vector<unsigned> &Indices,

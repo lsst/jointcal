@@ -31,7 +31,7 @@ FastFinder::FastFinder(const BaseStarList &List, const unsigned NXslice) : basel
 
   // the x size of each slice:
   xstep = (xmax-xmin)/nslice;
-  
+
 
   // fill the index array with the first star beyond the slice limit.
   index[0] = 0; // first
@@ -117,7 +117,7 @@ const BaseStar *FastFinder::SecondClosest(const Point &Where,
   return pbest2;
 }
 
-     
+
 
 /* It is by no means clear the the 2 following routines are actually needed.
    It is nor clear to me (P.A) why they are different... but they really are.

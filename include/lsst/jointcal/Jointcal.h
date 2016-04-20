@@ -16,7 +16,7 @@
 
 namespace lsst {
 namespace jointcal {
-    
+
     struct JointcalControl {
         LSST_CONTROL_FIELD(sourceFluxField, std::string, "name of flux field in source catalog");
 
@@ -25,15 +25,15 @@ namespace jointcal {
         {
             validate();
         }
-        
+
         void validate() const;
 
         ~JointcalControl() {};
     };
-    
+
 class Jointcal {
 public:
-    
+
     Jointcal (
         std::vector<lsst::afw::table::SortedCatalogT< lsst::afw::table::SourceRecord> > const sourceList,
         std::vector<PTR(lsst::daf::base::PropertySet)> const metaList,
@@ -46,9 +46,9 @@ public:
         std::vector<std::string> const cameraList,
         PTR(lsst::jointcal::JointcalControl) const control
     );
-    
+
 private:
-    
+
     std::vector<lsst::afw::table::SortedCatalogT< lsst::afw::table::SourceRecord> > _sourceList;
     std::vector <boost::shared_ptr<lsst::daf::base::PropertySet> > _metaList;
     std::vector<PTR(lsst::afw::image::TanWcs)> _wcsList;
@@ -59,7 +59,7 @@ private:
     std::vector<int> const _ccdList;
     std::vector<std::string> const _cameraList;
 };
-    
+
 }} // end of namespaces
 
 #endif

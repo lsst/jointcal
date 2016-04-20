@@ -18,7 +18,7 @@ class TripletList : public std::vector<Trip>
   unsigned nextFreeIndex;
  public :
   TripletList(int Count) {nextFreeIndex = 0; reserve(Count);};
-    
+
   void AddTriplet(const unsigned i, const unsigned j, double val)
   {
     push_back(Trip(i,j,val));

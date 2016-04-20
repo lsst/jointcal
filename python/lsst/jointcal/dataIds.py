@@ -60,8 +60,8 @@ class PerTractCcdDataIdContainer(CoaddDataIdContainer):
             raise RuntimeError("Must call setDatasetType first")
         skymap = None
         log = None
-        visitTract = {} # Set of tracts for each visit
-        visitRefs = {} # List of data references for each visit
+        visitTract = {}  # Set of tracts for each visit
+        visitRefs = {}  # List of data references for each visit
         for dataId in self.idList:
             if "tract" not in dataId:
                 # Discover which tracts the data overlaps
@@ -90,7 +90,7 @@ class PerTractCcdDataIdContainer(CoaddDataIdContainer):
                     # Going with just the nearest tract.  Since we're throwing all tracts for the visit
                     # together, this shouldn't be a problem unless the tracts are much smaller than a CCD.
                     tract = skymap.findTract(wcs.pixelToSky(box.getCenter()))
-                    print("tract = ",tract)
+                    print("tract = ", tract)
                     if overlapsTract(tract, wcs, box):
                         if visit not in visitTract:
                             visitTract[visit] = set()
@@ -137,4 +137,4 @@ def overlapsTract(tract, imageWcs, imageBox):
     imagePoly = convexHull([coord.getVector() for coord in imageCorners])
     if imagePoly is None:
         return False
-    return tractPoly.intersects(imagePoly) # "intersects" also covers "contains" or "is contained by"
+    return tractPoly.intersects(imagePoly)  # "intersects" also covers "contains" or "is contained by"

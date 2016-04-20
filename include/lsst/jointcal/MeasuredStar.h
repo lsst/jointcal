@@ -26,33 +26,33 @@ class MeasuredStar : public BaseStar
   double eflux;
   double aperrad;
   double chi2;
-  
-  
+
+
   const CcdImage *ccdImage;
   std::vector<double> usrVals;
-  
+
   private :
 
     CountedRef<const FittedStar> fittedStar;
     bool   valid;
 
 
-  
+
   public :
-    
+
     //!
   MeasuredStar()
     : BaseStar(),
       mag(0.), wmag(0.), eflux(0.), aperrad(0.),
       ccdImage(0),
       valid(true) {}
-  
+
   MeasuredStar(const BaseStar &B, const FittedStar *F = NULL) :
     BaseStar(B),
     mag(0.), wmag(0.), eflux(0.), aperrad(0.),
     ccdImage(0),
     valid(true)
-    
+
   {
     //    InitialStarRef = &B;
   }
@@ -67,7 +67,7 @@ class MeasuredStar : public BaseStar
 
   double Mag() const { return mag;}
   double AperRad() const { return aperrad; }
-  
+
   //! the inverse of the mag variance
   double MagWeight() const { return (flux*flux/(eflux*eflux));}
 
@@ -76,12 +76,12 @@ class MeasuredStar : public BaseStar
   const CcdImage &GetCcdImage()  const { return *ccdImage;};
 
   void SetCcdImage(const CcdImage *C) { ccdImage = C;};
-  
+
   //! Fits may use that to discard outliers
   bool  IsValid() const { return valid; }
   //! Fits may use that to discard outliers
   void  SetValid(bool v) { valid=v; }
-  
+
   // No longer decrement counter of associated fitted star in destructor (P. El-Hage le 10/04/2012)
   // ~MeasuredStar() { if (fittedStar) fittedStar->MeasurementCount()--;}
 
@@ -106,7 +106,7 @@ class MeasuredStarList : public StarList<MeasuredStar> {
 
   public :
     MeasuredStarList() {};
-  
+
 
   void SetZeroPoint(const double &ZP);
 
@@ -150,7 +150,7 @@ public:
 
   static CatalogLoader * DefaultCatalogLoader;
   static CatalogLoader * getDefaultCatalogLoader();
-   
+
 protected:
   CatalogLoader(){}
 };
@@ -176,4 +176,4 @@ void SelectFluxForFitCatalog(std::string const& filename);
 }}  // end of namespaces
 
 #endif /* MEASUREDSTAR__H */
-    
+

@@ -70,7 +70,7 @@ FittedStarList::FittedStarList(const std::string &FileName)
 }
 
 #endif /* DO_WE_NEED_IT */
-  
+
 
 
 
@@ -78,17 +78,17 @@ BaseStarList& Fitted2Base(FittedStarList &This)
 {
   return (BaseStarList&) This;
 }
- 
+
 BaseStarList* Fitted2Base(FittedStarList *This)
 {
   return (BaseStarList*) This;
 }
- 
+
 const BaseStarList& Fitted2Base(const FittedStarList &This)
 {
   return (const BaseStarList &) This;
 }
- 
+
 const BaseStarList* Fitted2Base(const FittedStarList *This)
 {
   return (BaseStarList*) This;
@@ -112,7 +112,7 @@ void FittedStarList::WriteTuple(const std::string &FileName,
 
 
 /****************/
- 
+
 FittedStarTuple::FittedStarTuple(const std::string &FileName)
   : stream(FileName.c_str())
 {
@@ -122,7 +122,7 @@ FittedStarTuple::FittedStarTuple(const std::string &FileName)
 	 << "# nm : number of measurements" << std::endl
 	 << "# end " << std::endl;
     ;
-  
+
 }
 
 
@@ -152,7 +152,7 @@ std::string FittedStar::WriteHeader_(std::ostream& pr, const char* i) const
 {
  std::string format = BaseStar::WriteHeader_(pr, i);
   if(i==NULL) i = "";
-  
+
   pr << "# mag"   << i << " : fitted magnitude" << std::endl;
   pr << "# emag"  << i << " : error on the fitted magnitude" << std::endl;
   pr << "# col"   << i << " : star color" << std::endl;
@@ -163,7 +163,7 @@ std::string FittedStar::WriteHeader_(std::ostream& pr, const char* i) const
   pr << "# flux2" << i << " : flux in some other band ()" << std::endl;
   pr << "# fluxErr" << i << " : flux error" << std::endl;
   pr << "# fluxErr2" << i << " : flux2 error" << std::endl;
-  
+
   format += "FittedStar 1";
   return format;
 }
@@ -174,7 +174,7 @@ std::string FittedStar::WriteHeader_(std::ostream& pr, const char* i) const
 {
   s.setf(std::ios::scientific);
   s << std::setprecision(12);
-  
+
   BaseStar::writen(s);
   s << mag     << " "
     << emag    << " "

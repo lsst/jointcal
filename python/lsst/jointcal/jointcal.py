@@ -23,6 +23,7 @@ from . import jointcalLib
 
 __all__ = ["JointcalConfig", "JointcalTask"]
 
+
 class JointcalRunner(pipeBase.TaskRunner):
     """Subclass of TaskRunner for jointcalTask (copied from the HSC MosaicRunner)
 
@@ -98,6 +99,7 @@ class JointcalConfig(pexConfig.Config):
         default = "base_SdssShape",
     )
 
+
 class JointcalTask(pipeBase.CmdLineTask):
 
     ConfigClass = JointcalConfig
@@ -123,7 +125,7 @@ class JointcalTask(pipeBase.CmdLineTask):
         parser = pipeBase.ArgumentParser(name=cls._DefaultName)
 
         parser.add_id_argument("--id", "calexp", help="data ID, e.g. --selectId visit=6789 ccd=0..9",
-                                ContainerClass=PerTractCcdDataIdContainer)
+                               ContainerClass=PerTractCcdDataIdContainer)
         return parser
 
     @pipeBase.timeMethod
@@ -131,7 +133,7 @@ class JointcalTask(pipeBase.CmdLineTask):
 
         configSel = StarSelectorConfig()
         ss = StarSelector(configSel, self.config.sourceFluxField, self.config.maxMag,
-            self.config.centroid, self.config.shape)
+                          self.config.centroid, self.config.shape)
 
         print(self.config.sourceFluxField)
         astromControl = jointcalLib.JointcalControl()
@@ -139,7 +141,7 @@ class JointcalTask(pipeBase.CmdLineTask):
 
         assoc = jointcalLib.Associations()
 
-        for dataRef in ref :
+        for dataRef in ref:
 
             print(dataRef.dataId)
 
@@ -147,13 +149,13 @@ class JointcalTask(pipeBase.CmdLineTask):
             md = dataRef.get("calexp_md", immediate=True)
             tanwcs = afwImage.TanWcs.cast(afwImage.makeWcs(md))
             lLeft = afwImage.getImageXY0FromMetadata(afwImage.wcsNameForXY0, md)
-            uRight  = afwGeom.Point2I(lLeft.getX() + md.get("NAXIS1")-1, lLeft.getY() + md.get("NAXIS2")-1)
+            uRight = afwGeom.Point2I(lLeft.getX() + md.get("NAXIS1")-1, lLeft.getY() + md.get("NAXIS2")-1)
             bbox = afwGeom.Box2I(lLeft, uRight)
             calib = afwImage.Calib(md)
             filt = dataRef.dataId['filter']
 
             newSrc = ss.select(src, calib)
-            if len(newSrc) == 0 :
+            if len(newSrc) == 0:
                 print("no source selected in ", dataRef.dataId["visit"], dataRef.dataId["ccd"])
                 continue
             print("%d sources selected in visit %d - ccd %d"%(len(newSrc),
@@ -184,7 +186,7 @@ class JointcalTask(pipeBase.CmdLineTask):
         andConfig = AstrometryNetDataConfig()
         andConfigPath = os.path.join(anDir, "andConfig.py")
         if not os.path.exists(andConfigPath):
-            raise RuntimeError("astrometry_net_data config file \"%s\" required but not found" %andConfigPath)
+            raise RuntimeError("astrometry_net_data config file \"%s\" required but not found"%andConfigPath)
         andConfig.load(andConfigPath)
 
         task = LoadAstrometryNetObjectsTask.ConfigClass()
@@ -201,7 +203,7 @@ class JointcalTask(pipeBase.CmdLineTask):
 
         assoc.CollectLSSTRefStars(refCat, filt)
         assoc.SelectFittedStars()
-        assoc.DeprojectFittedStars() # required for AstromFit
+        assoc.DeprojectFittedStars()  # required for AstromFit
         sky2TP = jointcalLib.OneTPPerShoot(assoc.TheCcdImageList())
         spm = jointcalLib.SimplePolyModel(assoc.TheCcdImageList(), sky2TP, True, 0, self.config.polyOrder)
 
@@ -216,22 +218,22 @@ class JointcalTask(pipeBase.CmdLineTask):
         chi2 = fit.ComputeChi2()
         print(chi2)
 
-        for i in range(20) :
-            r = fit.Minimize("Distortions Positions",5) # outliers removal at 5 sigma.
+        for i in range(20):
+            r = fit.Minimize("Distortions Positions", 5)  # outliers removal at 5 sigma.
             chi2 = fit.ComputeChi2()
             print(chi2)
-            if r == 0 :
+            if r == 0:
                 print("fit has converged - no more outliers - redo minimixation one more time in case we have lost accuracy in rank update")
                 # Redo minimization one more time in case we have lost accuracy in rank update
-                r = fit.Minimize("Distortions Positions",5) # outliers removal at 5 sigma.
+                r = fit.Minimize("Distortions Positions", 5)  # outliers removal at 5 sigma.
                 chi2 = fit.ComputeChi2()
                 print(chi2)
                 break
-            elif r == 2 :
+            elif r == 2:
                 print("minimization failed")
-            elif r == 1 :
+            elif r == 1:
                 print("still some ouliers but chi2 increases - retry")
-            else :
+            else:
                 break
                 print("unxepected return code from Minimize")
 
@@ -242,17 +244,17 @@ class JointcalTask(pipeBase.CmdLineTask):
         # Build an updated wcs for each calexp
         imList = assoc.TheCcdImageList()
 
-        for im in imList :
+        for im in imList:
             tanSip = spm.ProduceSipWcs(im)
             frame = im.ImageFrame()
             tanWcs = afwImage.TanWcs.cast(jointcalLib.GtransfoToTanWcs(tanSip, frame, False))
 
             name = im.Name()
             visit, ccd = name.split('_')
-            for dataRef in ref :
-                if dataRef.dataId["visit"] == int(visit) and dataRef.dataId["ccd"] == int(ccd) :
+            for dataRef in ref:
+                if dataRef.dataId["visit"] == int(visit) and dataRef.dataId["ccd"] == int(ccd):
                     print("Updating WCS for visit: %d, ccd%d"%(int(visit), int(ccd)))
-                    exp = afwImage.ExposureI(0,0)
+                    exp = afwImage.ExposureI(0, 0)
                     exp.setWcs(tanWcs)
                     try:
                         dataRef.put(exp, 'wcs')
@@ -260,19 +262,21 @@ class JointcalTask(pipeBase.CmdLineTask):
                         self.log.warn('Failed to write updated Wcs: ' + str(e))
                     break
 
+
 class StarSelectorConfig(pexConfig.Config):
 
     badFlags = pexConfig.ListField(
         doc = "List of flags which cause a source to be rejected as bad",
         dtype = str,
-        default = [ "base_PixelFlags_flag_saturated",
-                    "base_PixelFlags_flag_cr",
-                    "base_PixelFlags_flag_interpolated",
-                    "base_SdssCentroid_flag",
-                    "base_SdssShape_flag"],
+        default = ["base_PixelFlags_flag_saturated",
+                   "base_PixelFlags_flag_cr",
+                   "base_PixelFlags_flag_interpolated",
+                   "base_SdssCentroid_flag",
+                   "base_SdssShape_flag"],
     )
 
-class StarSelector(object) :
+
+class StarSelector(object):
 
     ConfigClass = StarSelectorConfig
 
@@ -284,11 +288,11 @@ class StarSelector(object) :
         self.config = config
         self.sourceFluxField = sourceFluxField
         self.maxMag = maxMag
-        self.centroid=centroid
-        self.shape=shape
+        self.centroid = centroid
+        self.shape = shape
 
     def select(self, srcCat, calib):
-# Return a catalog containing only reasonnable stars / galaxies
+        """Return a catalog containing only reasonnable stars / galaxies."""
 
         schema = srcCat.getSchema()
         newCat = afwTable.SourceCatalog(schema)
@@ -296,35 +300,35 @@ class StarSelector(object) :
         fluxErrKey = schema[self.sourceFluxField+"_fluxSigma"].asKey()
         parentKey = schema["parent"].asKey()
         flagKeys = []
-        for f in self.config.badFlags :
+        for f in self.config.badFlags:
             key = schema[f].asKey()
             flagKeys.append(key)
         fluxFlagKey = schema[self.sourceFluxField+"_flag"].asKey()
         flagKeys.append(fluxFlagKey)
 
-        for src in srcCat :
+        for src in srcCat:
             # Do not consider sources with bad flags
-            for f in flagKeys :
+            for f in flagKeys:
                 rej = 0
-                if src.get(f) :
+                if src.get(f):
                     rej = 1
                     break
-            if rej == 1 :
+            if rej == 1:
                 continue
             # Reject negative flux
             flux = src.get(fluxKey)
-            if flux < 0 :
+            if flux < 0:
                 continue
             # Reject objects with too large magnitude
             fluxErr = src.get(fluxErrKey)
             mag, magErr = calib.getMagnitude(flux, fluxErr)
-            if mag > self.maxMag or magErr > 0.1 or flux/fluxErr < 10 :
+            if mag > self.maxMag or magErr > 0.1 or flux/fluxErr < 10:
                 continue
             # Reject blends
-            if src.get(parentKey) != 0 :
+            if src.get(parentKey) != 0:
                 continue
             footprint = src.getFootprint()
-            if footprint is not None and len(footprint.getPeaks()) > 1 :
+            if footprint is not None and len(footprint.getPeaks()) > 1:
                 continue
 
             # Check consistency of variances and second moments
@@ -333,7 +337,7 @@ class StarSelector(object) :
             mxx = src.get(self.shape + "_xx")
             myy = src.get(self.shape + "_yy")
             mxy = src.get(self.shape + "_xy")
-            vxy = mxy*(vx+vy)/(mxx+myy);
+            vxy = mxy*(vx+vy)/(mxx+myy)
 
             if vxy*vxy > vx*vy or np.isnan(vx) or np.isnan(vy):
                 continue

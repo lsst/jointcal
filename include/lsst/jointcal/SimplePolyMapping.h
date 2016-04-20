@@ -110,7 +110,7 @@ class SimpleGtransfoMapping : public Mapping
 
   //!
   void  SetIndex(unsigned I) {index=I;}
-  
+
   virtual void ComputeTransformAndDerivatives(const FatPoint &Where,
 					      FatPoint &OutPos,
 					      Eigen::MatrixX2d &H) const
@@ -132,7 +132,7 @@ class SimplePolyMapping : public SimpleGtransfoMapping
   We need both the transform and its derivative. */
   GtransfoLin _centerAndScale;
   Eigen::Matrix2d preDer;
-  
+
   /* Where we store the combination. We use a pointer for
   constness. Could not get it to work with smart pointers.
   */
