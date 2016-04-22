@@ -9,6 +9,7 @@
 #include "lsst/jointcal/AstroUtils.h"
 #include "lsst/jointcal/Frame.h"
 #include "lsst/jointcal/Gtransfo.h"
+#include "lsst/pex/exceptions.h"
 
 namespace lsst {
 namespace jointcal {
@@ -72,19 +73,25 @@ static double sq(const double &x) { return x*x;}
 
 static inline void intswap(unsigned int &a_word)
 {
-  // int tmp = be32toh(a_word);
-  // a_word = tmp;
+  char tmp;
+  char *p = reinterpret_cast<char *>(&a_word);
+  tmp = p[0]; p[0] = p[3]; p[3] = tmp; tmp = p[2]; p[2] = p[1]; p[1] = tmp;
 }
 
+
+#define IS_LITTLE_ENDIAN ((union { uint16_t u16; unsigned char c; }){ .u16 = 1 }.c)
 
 static inline void read_a_star(FILE *ifp, unsigned int &raword, unsigned int  &decword, unsigned int &magword)
 {
   fread(&raword,4,1,ifp);
   fread(&decword,4,1,ifp);
   fread(&magword,4,1,ifp);
-  intswap(raword);
-  intswap(decword);
-  intswap(magword);
+  if (IS_LITTLE_ENDIAN)
+    {
+      intswap(raword);
+      intswap(decword);
+      intswap(magword);
+    }
 }
 
 
@@ -346,6 +353,40 @@ static void actual_usno_read(const std::string &usnodir,
 #endif
   int count = ApmList.size();
   std::cout << " collected " << count  << " objects" << std::endl;
+}
+
+
+static void ConvertMagToFlux(BaseStarList *List, const double Zp)
+{
+  
+  for (auto si = List->begin(); si != List->end(); ++si)
+    {
+      BaseStar &s = *(*si);
+      if (s.flux < 40)  s.flux = pow(10., -(s.flux-Zp)*0.4);
+      else s.flux = 0;
+    }
+}
+
+
+
+bool UsnoCollect(const Frame &usnoFrame, const TanPix2RaDec &Wcs, BaseStarList &UsnoCat)
+{
+  UsnoCat.clear();
+  UsnoRead(usnoFrame, RColor, UsnoCat);
+  if (UsnoCat.size() == 0)
+    {
+      std::cerr << "ERROR: Could not collect anything from a ref catalog : giving up" << std::endl;
+      throw LSST_EXCEPT(lsst::pex::exceptions::DomainError, "No objects grabbed in the reference catalog."); 
+      return false;
+    }
+
+  ConvertMagToFlux( &UsnoCat, 0.); 
+
+  TanRaDec2Pix UsnoToPix = Wcs.invert();
+
+  // convert the ( ra, dec) to pixel scale
+  UsnoCat.ApplyTransfo(UsnoToPix);
+  return true;
 }
 
 

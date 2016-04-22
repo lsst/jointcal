@@ -10,6 +10,7 @@ namespace jointcal {
 enum UsnoColor { RColor , BColor};
 
   class Frame;
+  class TanPix2RaDec;
 
 //!This routine reads the USNO catalog stars within the given bounds.
 /*! The x and y coordinates of the given stars refer to RA and DEC respectively
@@ -18,8 +19,10 @@ in the USNODIR environment variable. The catalog contains both
 R and B magnitude. The Color argument has to be RColor or BColor.
 WARNING : The flux of the returned BaseStar's is in fact a magnitude. */
 
-
   int UsnoRead(const Frame &F, UsnoColor Color, BaseStarList &ApmList);
+
+  bool UsnoCollect(const Frame &usnoFrame, const TanPix2RaDec &Wcs, 
+		   BaseStarList &UsnoCat);
 
   //! accepts both sexagesimal and decimal values.
   double RaStringToDeg(const std::string RaString);
