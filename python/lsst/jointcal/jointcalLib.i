@@ -38,6 +38,9 @@ Python interface to lsst::jointcal classes
 #include "lsst/jointcal/ConstrainedPolyModel.h"
 #include "lsst/jointcal/PhotomFit.h"
 #include "lsst/jointcal/SimplePhotomModel.h"
+#include "lsst/jointcal/MatchExposure.h"
+#include "lsst/jointcal/ChipArrangement.h"
+#include "lsst/jointcal/ExposureCatalog.h"
 %}
 
 %include "lsst/p_lsstSwig.i"
@@ -119,3 +122,6 @@ namespace jointcal {
 %include "lsst/jointcal/PhotomFit.h"
 %include "lsst/jointcal/SimplePhotomModel.h"
 
+%include "lsst/jointcal/MatchExposure.h"
+%include "lsst/jointcal/ChipArrangement.h"
+%include "lsst/jointcal/ExposureCatalog.h"
