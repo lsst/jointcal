@@ -44,7 +44,7 @@ from lsst.meas.astrom import AstrometryNetDataConfig
 
 from .dataIds import PerTractCcdDataIdContainer
 
-from lsst.jointcal.simastromLib import SimAstromControl, simAstrom, ExposureCatalog, PolyMappingArrangement, ChipArrangement, MatchExposure, Point
+from lsst.jointcal.jointcalLib import JointcalControl, ExposureCatalog, PolyMappingArrangement, ChipArrangement, MatchExposure, Point
 
 __all__ = ["MatchExposureConfig", "MatchExposureTask"]
 
@@ -78,10 +78,10 @@ class MatchExposureRunner(pipeBase.TaskRunner):
         result = task.run(*args)
 
 from lsst.pex.config import wrap
-# with this decorator, MatchExposureConfig also contains SimAstromControl
-@wrap(SimAstromControl)
+# with this decorator, MatchExposureConfig also contains JointcalControl
+@wrap(JointcalControl)
 class MatchExposureConfig(pexConfig.Config):
-    """Config for SimAstromTask
+    """Config for JointcalTask
     """
 
 # Keep this config parameter as a place holder
@@ -178,9 +178,15 @@ class MatchExposureTask(pipeBase.CmdLineTask):
             # pick a tangent point in the first image
             if tangentPoint.x ==-1. :
                 md = dataRef.get("calexp_md", immediate=True)
-                tanwcs = afwImage.TanWcs.cast(afwImage.makeWcs(md))
-                tp = tanwcs.getSkyOrigin().getPosition()
-                tangentPoint.x ,tangentPoint.y  = tp[0], tp[1]
+                ra = md.get("RA")
+                ra = afwGeom.radToDeg(float(afwCoord.hmsStringToAngle(ra)))
+                dec = md.get("DEC")
+                dec = afwGeom.radToDeg(float(afwCoord.dmsStringToAngle(dec)))
+
+#                tanwcs = afwImage.TanWcs.cast(afwImage.makeWcs(md))
+#                tp = tanwcs.getSkyOrigin().getPosition()
+#                tangentPoint.x ,tangentPoint.y  = tp[0], tp[1]
+                tangentPoint.x ,tangentPoint.y  = ra, dec
                 print "assumed tangent point ra=%f dec=%f"%(tangentPoint.x, tangentPoint.y)
 
             newSrc = ss.select(src, None)
@@ -189,7 +195,7 @@ class MatchExposureTask(pipeBase.CmdLineTask):
                 continue
             print "%d sources selected in visit %d - ccd %d (out of %d)"%(len(newSrc), dataRef.dataId["visit"], dataRef.dataId["ccd"], len(src))
             
-            expCat.AddCalexp(newSrc, dataRef.dataId['ccd'], astromControl)
+            expCat.AddCalexp(newSrc, dataRef.dataId['ccd'], astromControl.sourceFluxField)
 
 
         MatchExposure(expCat, tangentPoint, astromControl)
@@ -238,6 +244,8 @@ class StarSelector(object) :
             flagKeys.append(key)
         fluxFlagKey = schema[self.sourceFluxField+"_flag"].asKey()
         flagKeys.append(fluxFlagKey)
+        # DEBUG for timing:
+        # return srcCat
         # DEBUG
         flagKeys = []
         for src in srcCat :
