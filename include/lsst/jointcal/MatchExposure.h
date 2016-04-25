@@ -13,8 +13,9 @@ namespace jointcal {
   struct SimAstromControl;
 
   //! Routine to astrometrically match a whole exposure at once, relying on a ChipArrangement
-  bool MatchExposure(ExposureCatalog &EC, const Point &TangentPoint, const SimAstromControl &AstromControl);
+  bool MatchExposure(ExposureCatalog &EC, const Point &TangentPoint, const JointcalControl &Control);
     
 }}
 
 #endif
+
