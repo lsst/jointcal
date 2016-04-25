@@ -30,12 +30,13 @@ static double sq(const double &x) { return x*x;}
   BaseStarList &catalog =  catalogs.back();
   for (auto i = Cat.begin(); i !=Cat.end(); ++i)
     {
-      BaseStar *s = new BaseStar();
+      CountedRef<BaseStar> s(new BaseStar());
       s->x = i->get(xKey);
       s->y = i->get(yKey);
       s->vx = sq(i->get(xsKey));
       s->vy = sq(i->get(ysKey));
       s->flux = i->get(fluxKey);
+      if (std::isnan(s->vx) || std::isnan(s->vy)) continue;
       catalog.push_back(s);
     }
   std::cout << "INFO: catalog for chip " << Chip << " has " << catalog.size() << " entries" << std::endl;
