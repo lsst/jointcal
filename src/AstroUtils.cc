@@ -79,19 +79,18 @@ static inline void intswap(unsigned int &a_word)
 }
 
 
-#define IS_LITTLE_ENDIAN ((union { uint16_t u16; unsigned char c; }){ .u16 = 1 }.c)
+  //#define IS_LITTLE_ENDIAN ((union { uint16_t u16; unsigned char c; }){ .u16 = 1 }.c)
 
 static inline void read_a_star(FILE *ifp, unsigned int &raword, unsigned int  &decword, unsigned int &magword)
 {
   fread(&raword,4,1,ifp);
   fread(&decword,4,1,ifp);
   fread(&magword,4,1,ifp);
-  if (IS_LITTLE_ENDIAN)
-    {
-      intswap(raword);
-      intswap(decword);
-      intswap(magword);
-    }
+#if (LSST_LITTLE_ENDIAN==1)   // defined as socket.htons(1) != 1
+  intswap(raword);
+  intswap(decword);
+  intswap(magword);
+#endif
 }
 
 
