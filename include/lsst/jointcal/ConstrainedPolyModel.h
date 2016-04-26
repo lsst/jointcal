@@ -84,7 +84,7 @@ public :
   /*! These constitute a description of the focal plane
   arrangement. The produced file is used by matchexposure from
   poloka-core */
-  //  bool WriteChipArrangement(const std::string &FileName) const;
+  void WriteChipArrangement(const std::string &FileName) const;
 
  
 };

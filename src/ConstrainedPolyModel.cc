@@ -4,12 +4,14 @@
 #include "lsst/jointcal/CcdImage.h"
 #include "lsst/jointcal/Gtransfo.h"
 #include "lsst/jointcal/AstroUtils.h" // ApplyTransfo(Frame)
+#include "lsst/jointcal/ChipArrangement.h"
 
 #include "lsst/pex/exceptions.h"
 namespace pexExcept = lsst::pex::exceptions;
 
 #include <string>
 #include <iostream>
+#include <vector>
 
 namespace lsst {
 namespace jointcal {
@@ -255,33 +257,22 @@ PTR(TanSipPix2RaDec) ConstrainedPolyModel::ProduceSipWcs(const CcdImage &Ccd) co
 
 
 
-#ifdef STORAGE
-// in the stack framework, some output method has to be devised.
-// The class ChipArrangement could then be imported into this package
 
-#include <vector>
-bool ConstrainedPolyModel::WriteChipArrangement(const std::string &FileName) const
+void ConstrainedPolyModel::WriteChipArrangement(const std::string &FileName) const
 {
-  std::vector<const Gtransfo *> transfos(_chipMap.size());
+  ChipTransfosType transfos;
   for (auto i = _chipMap.begin(); i!=_chipMap.end(); ++i)
     {
       unsigned chip = i->first;
       if (chip+1 > transfos.size())
 	{
-	  std::cout << "ERROR: WriteChipArrangement : some chip transfos are probably undefined"<< std::endl;
-	  return false;
-	  //	  transfos.resize(chip+1, NULL);
+	  std::cout << "WARNING (or ERROR?): WriteChipArrangement : some chip transfos are probably undefined"<< std::endl;
 	}
-      transfos[chip] = &(i->second->Transfo());
+      transfos[chip] = i->second->Transfo().Clone();
     }
   // _tpFrame is computed in constructor
-  WriteTransfoFile(FileName, transfos, _tpFrame);
   std::cout << "INFO: Writing chip mappings to " << FileName << std::endl;
-
-  std::cout << "INFO: In order to make it available to matchexposure, you have to copy it as" << std::endl;
-  std::cout << "INFO: $TOADSCARDS/"+ArrangementFileFromInstrumentName(_instName) << std::endl;
-  return true;
+  WriteTransfoFile(FileName, transfos, _tpFrame);
 }
-#endif
 
 }} // end of namespaces
