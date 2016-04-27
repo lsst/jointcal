@@ -120,8 +120,7 @@ class JointcalTask(pipeBase.CmdLineTask):
 
     @classmethod
     def _makeArgumentParser(cls):
-        """Create an argument parser
-        """
+        """Create an argument parser"""
         parser = pipeBase.ArgumentParser(name=cls._DefaultName)
 
         parser.add_id_argument("--id", "calexp", help="data ID, e.g. --selectId visit=6789 ccd=0..9",
@@ -129,21 +128,25 @@ class JointcalTask(pipeBase.CmdLineTask):
         return parser
 
     @pipeBase.timeMethod
-    def run(self, ref, tract):
+    def run(self, dataRefs):
+        """
+        !Jointly calibrate the astrometry and photometry across a set of images.
+
+        @param dataRefs  list of data references.
+        """
+        if len(dataRefs) == 0:
+            raise ValueError('Need a list of data references!')
 
         configSel = StarSelectorConfig()
         ss = StarSelector(configSel, self.config.sourceFluxField, self.config.maxMag,
                           self.config.centroid, self.config.shape)
 
-        print(self.config.sourceFluxField)
         astromControl = jointcalLib.JointcalControl()
         astromControl.sourceFluxField = self.config.sourceFluxField
 
         assoc = jointcalLib.Associations()
 
-        for dataRef in ref:
-
-            print(dataRef.dataId)
+        for dataRef in dataRefs:
 
             src = dataRef.get("src", immediate=True)
             md = dataRef.get("calexp_md", immediate=True)
@@ -168,6 +171,8 @@ class JointcalTask(pipeBase.CmdLineTask):
                            astromControl)
 
         matchCut = 3.0
+        # TODO: this should not print "trying to invert a singular transformation:"
+        # if it does that, something's not right about the WCS...
         assoc.AssociateCatalogs(matchCut)
 
         # Use external reference catalogs handled by LSST stack mechanism
@@ -197,7 +202,6 @@ class JointcalTask(pipeBase.CmdLineTask):
         print("Using", filt, "band for reference flux")
 
         refCat = loader.loadSkyCircle(center, afwGeom.Angle(radius, afwGeom.radians), filt).refCat
-        print(refCat.getSchema().getOrderedNames())
 
         # assoc.CollectRefStars(False) # To use USNO-A catalog
 
@@ -206,6 +210,14 @@ class JointcalTask(pipeBase.CmdLineTask):
         assoc.DeprojectFittedStars()  # required for AstromFit
         sky2TP = jointcalLib.OneTPPerShoot(assoc.TheCcdImageList())
         spm = jointcalLib.SimplePolyModel(assoc.TheCcdImageList(), sky2TP, True, 0, self.config.polyOrder)
+
+        # TODO: these should be len(blah), but we need this properly wrapped first.
+        if assoc.refStarListSize() == 0:
+            raise RuntimeError('No stars in the reference star list!')
+        if len(assoc.ccdImageList) == 0:
+            raise RuntimeError('No images in the ccdImageList!')
+        if assoc.fittedStarListSize() == 0:
+            raise RuntimeError('No stars in the fittedStarList!')
 
         fit = jointcalLib.AstromFit(assoc, spm, self.config.posError)
         fit.Minimize("Distortions")
@@ -223,7 +235,8 @@ class JointcalTask(pipeBase.CmdLineTask):
             chi2 = fit.ComputeChi2()
             print(chi2)
             if r == 0:
-                print("fit has converged - no more outliers - redo minimixation one more time in case we have lost accuracy in rank update")
+                print("""fit has converged - no more outliers - redo minimixation\
+                      one more time in case we have lost accuracy in rank update""")
                 # Redo minimization one more time in case we have lost accuracy in rank update
                 r = fit.Minimize("Distortions Positions", 5)  # outliers removal at 5 sigma.
                 chi2 = fit.ComputeChi2()
@@ -251,7 +264,7 @@ class JointcalTask(pipeBase.CmdLineTask):
 
             name = im.Name()
             visit, ccd = name.split('_')
-            for dataRef in ref:
+            for dataRef in dataRefs:
                 if dataRef.dataId["visit"] == int(visit) and dataRef.dataId["ccd"] == int(ccd):
                     print("Updating WCS for visit: %d, ccd%d"%(int(visit), int(ccd)))
                     exp = afwImage.ExposureI(0, 0)
