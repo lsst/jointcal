@@ -120,8 +120,7 @@ class JointcalTask(pipeBase.CmdLineTask):
 
     @classmethod
     def _makeArgumentParser(cls):
-        """Create an argument parser
-        """
+        """Create an argument parser"""
         parser = pipeBase.ArgumentParser(name=cls._DefaultName)
 
         parser.add_id_argument("--id", "calexp", help="data ID, e.g. --selectId visit=6789 ccd=0..9",
@@ -129,7 +128,14 @@ class JointcalTask(pipeBase.CmdLineTask):
         return parser
 
     @pipeBase.timeMethod
-    def run(self, ref, tract):
+    def run(self, dataRefs):
+        """
+        !Jointly calibrate the astrometry and photometry across a set of images.
+
+        @param dataRefs  list of data references.
+        """
+        if len(dataRefs) == 0:
+            raise ValueError('Need a list of data references!')
 
         configSel = StarSelectorConfig()
         ss = StarSelector(configSel, self.config.sourceFluxField, self.config.maxMag,
@@ -141,7 +147,7 @@ class JointcalTask(pipeBase.CmdLineTask):
 
         assoc = jointcalLib.Associations()
 
-        for dataRef in ref:
+        for dataRef in dataRefs:
 
             print(dataRef.dataId)
 
@@ -207,6 +213,25 @@ class JointcalTask(pipeBase.CmdLineTask):
         sky2TP = jointcalLib.OneTPPerShoot(assoc.TheCcdImageList())
         spm = jointcalLib.SimplePolyModel(assoc.TheCcdImageList(), sky2TP, True, 0, self.config.polyOrder)
 
+        # import ipdb
+        # ipdb.set_trace()
+        print('########################')
+        print(type(assoc.ccdImageList))
+        print(type(assoc.refStarList))
+        print(type(assoc.fittedStarList))
+        print(dir(assoc.ccdImageList))
+        print('.................')
+        print(dir(assoc.refStarList))
+        print('.................')
+        print(dir(assoc.fittedStarList))
+        print('########################')
+        if len(assoc.refStarList) == 0:
+            raise RuntimeError('No stars in the reference star list!')
+        if len(assoc.ccdImageList) == 0:
+            raise RuntimeError('No stars in the ccdImageList!')
+        if len(assoc.fittedStarList) == 0:
+            raise RuntimeError('No stars in the fittedStarList!')
+
         fit = jointcalLib.AstromFit(assoc, spm, self.config.posError)
         fit.Minimize("Distortions")
         chi2 = fit.ComputeChi2()
@@ -251,7 +276,7 @@ class JointcalTask(pipeBase.CmdLineTask):
 
             name = im.Name()
             visit, ccd = name.split('_')
-            for dataRef in ref:
+            for dataRef in dataRefs:
                 if dataRef.dataId["visit"] == int(visit) and dataRef.dataId["ccd"] == int(ccd):
                     print("Updating WCS for visit: %d, ccd%d"%(int(visit), int(ccd)))
                     exp = afwImage.ExposureI(0, 0)

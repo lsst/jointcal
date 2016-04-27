@@ -23,6 +23,10 @@ Python interface to lsst::jointcal classes
 #include "lsst/daf/base/PropertySet.h"
 #include "lsst/jointcal/test.h"
 #include "lsst/jointcal/test2.h"
+#include "lsst/jointcal/BaseStar.h"
+#include "lsst/jointcal/StarList.h"
+#include "lsst/jointcal/FittedStar.h"
+#include "lsst/jointcal/RefStar.h"
 #include "lsst/jointcal/Jointcal.h"
 #include "lsst/jointcal/CcdImage.h"
 #include "lsst/jointcal/AstromFit.h"
@@ -42,6 +46,8 @@ Python interface to lsst::jointcal classes
 
 %include "lsst/p_lsstSwig.i"
 %initializeNumPy(jointcal)
+
+%include "intrusive_ptr.i"
 
 %import "lsst/afw/table/tableLib.i"
 
@@ -69,16 +75,16 @@ class CcdImage;
 class CcdImageList;
 class MeasuredStar;
 class FittedStarList;
+class RefStarList;
 class MeasuredStarList;
+class BaseStar;
+class RefStar;
+class StarList;
+class FittedStar;
+class Point;
 }}
 %include "lsst/jointcal/Chi2.h"
 %include "lsst/jointcal/AstromFit.h"
-namespace lsst {
-namespace jointcal {
-class RefStarList;
-class FittedStarList;
-class Point;
-}}
 %include "lsst/jointcal/Associations.h"
 namespace lsst {
 namespace jointcal {
@@ -101,9 +107,21 @@ namespace jointcal {
 }}
 
 %shared_ptr(lsst::jointcal::CcdImage);
-%template(CcdImageRef) boost::shared_ptr<lsst::jointcal::CcdImage>;
+// TODO: NOTE: this may not be needed? Unclear.
+// %template(CcdImageRef) boost::shared_ptr<lsst::jointcal::CcdImage>;
 %template(CcdImageRefList) std::list<boost::shared_ptr<lsst::jointcal::CcdImage> >;
 %template(TanSipPix2RaDecRef) boost::shared_ptr<lsst::jointcal::TanSipPix2RaDec>;
+
+// %shared_ptr(lsst::jointcal::BaseStar);
+// %shared_ptr(lsst::jointcal::RefStar);
+// %shared_ptr(lsst::jointcal::FittedStar);
+// %template(RefStarRef) boost::shared_ptr<lsst::jointcal::RefStar>;
+%intrusive_ptr(lsst::jointcal::RefStar);
+%template(StarListOfRefStar) std::list<boost::intrusive_ptr<lsst::jointcal::RefStar> >;
+%include "lsst/jointcal/StarList.h"
+// %template(StarListMonkey) lsst::jointcal::StarList<lsst::jointcal::RefStar>;
+// typedef StarList std::list<lsst::jointcal::CountedRef>;
+// %template(RefStarRefList) std::list<lsst::jointcal::RefStar>;
 
 %shared_ptr(lsst::jointcal::TanSipPix2RaDec);
 %include "lsst/jointcal/Point.h"
@@ -111,6 +129,9 @@ namespace jointcal {
 %include "lsst/jointcal/Gtransfo.h"
 
 %include "lsst/jointcal/CcdImage.h"
+%include "lsst/jointcal/BaseStar.h"
+%include "lsst/jointcal/FittedStar.h"
+%include "lsst/jointcal/RefStar.h"
 %include "lsst/jointcal/SimplePolyModel.h"
 %include "lsst/jointcal/ConstrainedPolyModel.h"
 
