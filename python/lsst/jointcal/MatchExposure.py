@@ -39,10 +39,10 @@ import lsst.pex.exceptions as pexExceptions
 #from lsst.pipe.tasks.selectImages import WcsSelectImagesTask, SelectStruct
 #from lsst.coadd.utils import CoaddDataIdContainer
 #from lsst.pipe.tasks.getRepositoryData import DataRefListRunner
-from lsst.meas.astrom.loadAstrometryNetObjects import LoadAstrometryNetObjectsTask
-from lsst.meas.astrom import AstrometryNetDataConfig
+#from lsst.meas.astrom.loadAstrometryNetObjects import LoadAstrometryNetObjectsTask
+#from lsst.meas.astrom import AstrometryNetDataConfig
 
-from .dataIds import PerTractCcdDataIdContainer
+#from .dataIds import PerTractCcdDataIdContainer
 
 from lsst.jointcal.jointcalLib import JointcalControl, ExposureCatalog, PolyMappingArrangement, ChipArrangement, MatchExposure, Point
 
@@ -174,7 +174,7 @@ class MatchExposureTask(pipeBase.CmdLineTask):
             
             print dataRef.dataId
             
-            src = dataRef.get("src", immediate=True)
+            src = dataRef.get("src", immediate=True, flags=afwTable.SOURCE_IO_NO_FOOTPRINTS)
             # pick a tangent point in the first image
             if tangentPoint.x ==-1. :
                 md = dataRef.get("calexp_md", immediate=True)
@@ -231,21 +231,33 @@ class StarSelector(object) :
     
     def select(self, srcCat, calib):
 # Return a catalog containing only reasonnable stars / galaxies
-
+# DEBUG for timing:
         schema = srcCat.getSchema()
         #print schema.getOrderedNames()
-        newCat = afwTable.SourceCatalog(schema)
         fluxKey = schema[self.sourceFluxField+"_flux"].asKey()
         fluxErrKey = schema[self.sourceFluxField+"_fluxSigma"].asKey()
         parentKey = schema["parent"].asKey()
-        flagKeys = []
-        for f in self.config.badFlags :
-            key = schema[f].asKey()
-            flagKeys.append(key)
-        fluxFlagKey = schema[self.sourceFluxField+"_flag"].asKey()
-        flagKeys.append(fluxFlagKey)
-        # DEBUG for timing:
-        # return srcCat
+        cuts = []
+# these flags discard essentially all useful sources ?!
+        if False :
+            for f in self.config.badFlags :
+                key = schema[f].asKey()
+                cuts.append(srcCat.get(key))
+            fluxFlagKey = schema[self.sourceFluxField+"_flag"].asKey()
+            cuts.append(srcCat.get(fluxFlagKey))
+        # grab fluxes
+        fluxes = srcCat.get(fluxKey)
+        # negative fluxes
+        cuts.append(fluxes>0)
+        # S/N : 
+        snCut = 20 # should be an argument
+        cuts.append(fluxes/srcCat.get(fluxErrKey)> snCut)
+        # finite sizes
+        cuts.append(np.isfinite(srcCat.get(self.centroid + "_xSigma")))
+        cuts.append(np.isfinite(srcCat.get(self.centroid + "_ySigma")))
+        # apply cuts: 
+        mask = np.logical_and.reduce(cuts)
+        return srcCat[mask]
         # DEBUG
         flagKeys = []
         for src in srcCat :
