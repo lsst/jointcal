@@ -119,8 +119,8 @@ class FittedStar : public BaseStar, public PmBlock {
   void  SetMag(double Value) { mag = Value;}
 
   //! this routine will hopefully soon disappear.
-  void AddMagMeasurement(const double &MagValue,
-			 const double &MagWeight);
+  void AddMagMeasurement(const double MagValue,
+			 const double MagWeight);
 
   //! index is a value that a fit can set and reread....
   void SetIndexInMatrix(const unsigned &Index){ indexInMatrix = Index;};
@@ -153,12 +153,11 @@ static BaseStar*  read(std::istream& s, const char* format);
 };
 
 
-/****** FittedStarList */
 
-
+class Gtransfo;
 
 //! A list of FittedStar s. Such a list is typically constructed by Associations
-class FittedStarList : public  StarList<FittedStar>
+class FittedStarList : public StarList<FittedStar>
 {
 
   public :
@@ -178,22 +177,13 @@ class FittedStarList : public  StarList<FittedStar>
       connected to ref Ccds and hence have a magnitude.
      */
     void WriteTuple(const std::string &FileName,
-		    const Gtransfo &TP2RaDec,
-		    const bool OnlyGoodStars = true);
-
-
+        const Gtransfo &TP2RaDec,
+        const bool OnlyGoodStars = true);
 };
 
 typedef FittedStarList::const_iterator FittedStarCIterator;
 typedef FittedStarList::iterator FittedStarIterator;
 typedef CountedRef<FittedStar> FittedStarRef;
-
-BaseStarList& Fitted2Base(FittedStarList &This);
-BaseStarList* Fitted2Base(FittedStarList *This);
-const BaseStarList& Fitted2Base(const FittedStarList &This);
-const BaseStarList* Fitted2Base(const FittedStarList *This);
-
-
 
 
 

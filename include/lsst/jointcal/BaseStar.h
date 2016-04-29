@@ -97,8 +97,8 @@ int DecodeFormat(const char *FormatLine, const char *StarName);
 typedef StarList<BaseStar> BaseStarList;
 
 typedef BaseStarList::const_iterator BaseStarCIterator;
- typedef BaseStarList::iterator BaseStarIterator;
- typedef CountedRef<BaseStar> BaseStarRef;
+typedef BaseStarList::iterator BaseStarIterator;
+typedef CountedRef<BaseStar> BaseStarRef;
 
 
 }}

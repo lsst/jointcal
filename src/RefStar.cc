@@ -9,6 +9,10 @@ namespace lsst {
 namespace jointcal {
 
 
+RefStar::RefStar()
+  : BaseStar(), index(0), fittedStar(nullptr), raDec(), refFlux()
+{}
+
 RefStar::RefStar(const BaseStar &B, const Point &RaDec)
   : BaseStar(B), index(0)
 {
@@ -41,28 +45,6 @@ void RefStar::AssignRefFluxes(std::vector<double> const& reffluxes)
 //#include <starlist.cc>
 /** RefStarList ***/
 //template class StarList<RefStar>; /* to force instanciation */
-
-
-
-BaseStarList& Ref2Base(RefStarList &This)
-{
-  return (BaseStarList&) This;
-}
-
-BaseStarList* Ref2Base(RefStarList *This)
-{
-  return (BaseStarList*) This;
-}
-
-const BaseStarList& Ref2Base(const RefStarList &This)
-{
-  return (const BaseStarList &) This;
-}
-
-const BaseStarList* Ref2Base(const RefStarList *This)
-{
-  return (BaseStarList*) This;
-}
 
 
 

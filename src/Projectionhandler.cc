@@ -1,6 +1,7 @@
 #include "lsst/jointcal/Projectionhandler.h"
 #include "lsst/jointcal/Gtransfo.h"
 #include "lsst/jointcal/CcdImage.h"
+#include "lsst/jointcal/CcdImageList.h"
 
 namespace lsst {
 namespace jointcal {

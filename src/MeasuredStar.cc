@@ -69,27 +69,6 @@ MeasuredStar::MeasuredStar( const SEStar &S) :
 #endif
 
 
-BaseStarList& Measured2Base(MeasuredStarList &This)
-{
-  return (BaseStarList&) This;
-}
-
-BaseStarList* Measured2Base(MeasuredStarList *This)
-{
-  return (BaseStarList*) This;
-}
-
-const BaseStarList& Measured2Base(const MeasuredStarList &This)
-{
-  return (const BaseStarList &) This;
-}
-
-const BaseStarList* Measured2Base(const MeasuredStarList *This)
-{
-  return (BaseStarList*) This;
-}
-
-
 //! StarList ascii IO's
 
   std::string MeasuredStar::WriteHeader_(std::ostream & pr ,
@@ -182,7 +161,7 @@ void MeasuredStar::writen(std::ostream& s) const
 
 
 
-void MeasuredStarList::SetZeroPoint(const double &ZP)
+void MeasuredStarList::SetZeroPoint(const double ZP)
 {
   zeroPoint = ZP;
   for (MeasuredStarIterator i= begin(); i != end(); ++i)

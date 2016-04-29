@@ -4,7 +4,6 @@
 #include <sstream>
 
 #include "lsst/jointcal/Associations.h"
-#include "lsst/jointcal/CcdImage.h"
 #include "lsst/jointcal/SipToGtransfo.h"
 #include "lsst/jointcal/StarMatch.h"
 #include "lsst/jointcal/ListMatch.h"
@@ -143,8 +142,8 @@ void Associations::AssociateCatalogs(const double MatchCutInArcSec,
 
 
       // divide by 3600 because coordinates in CTP are in degrees.
-      StarMatchList *smList = ListMatchCollect(Measured2Base(catalog),
-					   Fitted2Base(toMatch),
+      StarMatchList *smList = ListMatchCollect((const BaseStarList &) catalog,
+					   (const BaseStarList &) toMatch,
 					   toCommonTangentPlane,
 					   matchCut/3600.);
 
@@ -346,8 +345,8 @@ void Associations::AssociateRefStars(const double &MatchCutInArcSec,
   // associate with FittedStars
   // 3600 because coordinates are in degrees (in CTP).
 
-  StarMatchList *smList = ListMatchCollect(Ref2Base(refStarList),
-					   Fitted2Base(fittedStarList),
+  StarMatchList *smList = ListMatchCollect((const BaseStarList &) refStarList,
+					   (const BaseStarList &) fittedStarList,
 					   T,
 					   MatchCutInArcSec/3600.);
 
@@ -495,7 +494,7 @@ void Associations::CollectMCStars(int realization)
 
       //      BaseStarWithErrorList mctruthlist(mctruth);
       DicStarList mctruthlist(mctruth);
-      StarMatchList* smList = ListMatchCollect(Measured2Base(catalog),
+      StarMatchList* smList = ListMatchCollect((const BaseStarList &) catalog,
 					       Dic2Base(mctruthlist),
 					       &gti, 1. /* pixel ? */);
       if(smList)
@@ -626,8 +625,8 @@ void Associations::AssociatePhotometricRefStars(double MatchCutInArcSec)
     }
 
   GtransfoIdentity gtransfoIdentity;
-  StarMatchList* smList = ListMatchCollect(Ref2Base(photRefStarList),
-					   Fitted2Base(fittedStarList),
+  StarMatchList* smList = ListMatchCollect((const BaseStarList &) photRefStarList,
+					   (const BaseStarList &) fittedStarList,
 					   &gtransfoIdentity,
 					   MatchCutInArcSec/3600.);
 
@@ -697,7 +696,7 @@ void Associations::SetFittedStarColors(std::string DicStarListName,
   // The color List is to be projected:
   TStarList projected_cList((BaseStarList &) cList, proj);
   // Associate
-  StarMatchList *sm = ListMatchCollect(Fitted2Base(fittedStarList),
+  StarMatchList *sm = ListMatchCollect((const BaseStarList &) fittedStarList,
 				       (const BaseStarList &) projected_cList,
 				       id_or_proj,
 				       MatchCutArcSec/3600);
@@ -743,7 +742,7 @@ void Associations::CollectMCStars(int realization)
       MeasuredStarList& catalog = ccdImage.CatalogForFit();
 
       BaseStarWithErrorList mcstarlist(mcstars);
-      StarMatchList *smList = ListMatchCollect(Measured2Base(catalog),
+      StarMatchList *smList = ListMatchCollect((const BaseStarList &) catalog,
 					       BaseStarWithError2Base(mcstarlist),
 					       &gti, 1. /*pixel*/);
       if(smList)
@@ -762,7 +761,7 @@ void Associations::CollectMCStars(int realization)
 
       BaseStarWithErrorList mctruthlist(mctruth);
       //      DictStarList mctruthlist(mctruth);
-      smList = ListMatchCollect(Measured2Base(catalog),
+      smList = ListMatchCollect((const BaseStarList &) catalog,
 				BaseStarWithError2Base(mctruthlist),
 				&gti, 1. /* pixel ? */);
       if(smList)

@@ -2,6 +2,7 @@
 #include "lsst/jointcal/SimplePolyModel.h"
 #include "lsst/jointcal/ConstrainedPolyModel.h"
 #include "lsst/jointcal/CcdImage.h"
+#include "lsst/jointcal/CcdImageList.h"
 #include "lsst/jointcal/Gtransfo.h"
 #include "lsst/jointcal/AstroUtils.h" // ApplyTransfo(Frame)
 

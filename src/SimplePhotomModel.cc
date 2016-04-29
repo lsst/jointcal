@@ -2,6 +2,7 @@
 
 #include "lsst/jointcal/SimplePhotomModel.h"
 #include "lsst/jointcal/CcdImage.h"
+#include "lsst/jointcal/CcdImageList.h"
 #include "lsst/jointcal/MeasuredStar.h"
 
 namespace lsst {

@@ -25,20 +25,23 @@ struct RefCount
 
 /* The two follwing routines have to be provided by the end user when
    using boost::intrusive_ptr. So, here they are: */
-template <class T> void intrusive_ptr_add_ref(T * p)
+template <typename T> inline void intrusive_ptr_add_ref(const T * p)
 {
     if (p) p->refcount++;
 }
 
-template <class T> void intrusive_ptr_release(T* p)
+template <typename T> inline void intrusive_ptr_release(const T * p)
 { // might check p->count>0
   if (p)
     if (--(p->refcount)==0) delete p;
 }
 
+//#ifndef SWIG
 
 // complicated typedef for templates (aka "alias typedef"):
 template <typename T> using CountedRef = boost::intrusive_ptr<T> ;
+
+//#endif
 
 }}
 

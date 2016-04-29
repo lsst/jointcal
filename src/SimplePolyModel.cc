@@ -2,6 +2,7 @@
 #include "lsst/jointcal/SimplePolyModel.h"
 #include "lsst/jointcal/SimplePolyMapping.h"
 #include "lsst/jointcal/CcdImage.h"
+#include "lsst/jointcal/CcdImageList.h"
 #include "lsst/jointcal/Projectionhandler.h"
 #include "lsst/pex/exceptions.h"
 #include <string>

@@ -34,8 +34,8 @@ void FittedStar::SetRefStar(const RefStar *R)
 static double sq(const double &x) {return x*x;}
 
 
-void FittedStar::AddMagMeasurement(const double &MagValue,
-				   const double &MagWeight)
+void FittedStar::AddMagMeasurement(const double MagValue,
+				   const double MagWeight)
 {
   mag = (mag*wmag+MagValue*MagWeight)/(wmag+MagWeight);
   wmag += MagWeight;
@@ -71,28 +71,6 @@ FittedStarList::FittedStarList(const std::string &FileName)
 
 #endif /* DO_WE_NEED_IT */
 
-
-
-
-BaseStarList& Fitted2Base(FittedStarList &This)
-{
-  return (BaseStarList&) This;
-}
-
-BaseStarList* Fitted2Base(FittedStarList *This)
-{
-  return (BaseStarList*) This;
-}
-
-const BaseStarList& Fitted2Base(const FittedStarList &This)
-{
-  return (const BaseStarList &) This;
-}
-
-const BaseStarList* Fitted2Base(const FittedStarList *This)
-{
-  return (BaseStarList*) This;
-}
 
 
 

@@ -25,6 +25,7 @@ private :
 
   public :
 
+  RefStar();
 
   //!
   RefStar(const BaseStar &, const Point &RaDec);
@@ -52,26 +53,11 @@ private :
 
 
 
-
-/****** RefStarList ***********/
-
-
-class Frame;
-
-  //typedef StarList<RefStar> RefStarList;
 class RefStarList : public StarList<RefStar> { };
-
 
 typedef RefStarList::const_iterator RefStarCIterator;
 typedef RefStarList::iterator RefStarIterator;
 typedef CountedRef<RefStar> RefStarRef;
-
-
-BaseStarList& Ref2Base(RefStarList &This);
-BaseStarList* Ref2Base(RefStarList *This);
-const BaseStarList& Ref2Base(const RefStarList &This);
-const BaseStarList* Ref2Base(const RefStarList *This);
-
 
 
 

@@ -2,8 +2,6 @@
 #define CCDIMAGE__H
 
 #include <string>
-#include <list>
-#include <vector>
 
 #include "lsst/afw/table/Source.h"
 #include "lsst/afw/image/TanWcs.h"
@@ -26,7 +24,7 @@ typedef int ShootIdType;
 
 //! handler of an actual image from a single CCD
 /*! requires an in-depth cleanup */
-class CcdImage : public RefCount
+class CcdImage
 {
  private:
 
@@ -263,42 +261,6 @@ class CcdImage : public RefCount
 
 
 };
-
-
-/********* CcdImageList *************/
-
-
-//! a  list of CcdImage. Usually produced by Associations
-//class CcdImageList : public std::list<CountedRef<CcdImage> >
-class CcdImageList : public std::list<boost::shared_ptr<CcdImage> >
-{
-  public:
-
-  //!
-  //std::list<std::string> DateObs() const;
-
-  //!
-  //std::list<std::string> Bands() const;
-
-  //!
-  //double       MeanAirmass() const;
-
-  //!
-  template<class Accept> CcdImageList SubList(const Accept &OP) const
-    {
-      CcdImageList out;
-      for (const_iterator i = begin(); i != end() ; ++i)
-	if (OP(**i)) out.push_back(*i);
-      return out;
-    }
-
-  // find the matching image. Chip==-1 means any chip
-//  double AirMass(const int Shoot, const int Chip = -1) const;
-};
-
-
-typedef CcdImageList::iterator CcdImageIterator;
-typedef CcdImageList::const_iterator CcdImageCIterator;
 
 }} // end of namespaces
 

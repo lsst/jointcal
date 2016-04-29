@@ -17,6 +17,7 @@
 #include "lsst/jointcal/RefStar.h"
 #include "lsst/jointcal/FittedStar.h"
 #include "lsst/jointcal/CcdImage.h"
+#include "lsst/jointcal/CcdImageList.h"
 #include "lsst/jointcal/Point.h"
 #include "lsst/jointcal/Jointcal.h"
 

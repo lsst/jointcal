@@ -108,7 +108,7 @@ class MeasuredStarList : public StarList<MeasuredStar> {
     MeasuredStarList() {};
 
 
-  void SetZeroPoint(const double &ZP);
+  void SetZeroPoint(const double ZP);
 
   void SetCcdImage(const CcdImage *C);
 };
@@ -118,11 +118,6 @@ class MeasuredStarList : public StarList<MeasuredStar> {
 typedef MeasuredStarList::const_iterator MeasuredStarCIterator;
 typedef MeasuredStarList::iterator MeasuredStarIterator;
 typedef CountedRef<MeasuredStar> MeasuredStarRef;
-
-BaseStarList& Measured2Base(MeasuredStarList &This);
-BaseStarList* Measured2Base(MeasuredStarList *This);
-const BaseStarList& Measured2Base(const MeasuredStarList &This);
-const BaseStarList* Measured2Base(const MeasuredStarList *This);
 
 
 #ifdef TO_BE_REPLACED
