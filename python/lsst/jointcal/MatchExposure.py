@@ -198,7 +198,7 @@ class MatchExposureTask(pipeBase.CmdLineTask):
             expCat.AddCalexp(newSrc, dataRef.dataId['ccd'], astromControl.sourceFluxField)
 
 
-        MatchExposure(expCat, tangentPoint, astromControl)
+        sol = MatchExposure(expCat, tangentPoint, astromControl)
         # code to write WCS's here
 
 

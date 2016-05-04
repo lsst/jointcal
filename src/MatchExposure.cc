@@ -52,7 +52,7 @@ static bool accept_star_for_fit(const ExposureStar &S)
 
 
 // This is the routine that does the job
-bool MatchExposure(ExposureCatalog &EC, const Point &TangentPoint, const JointcalControl &Control)
+ ExposureSolutionType MatchExposure(ExposureCatalog &EC, const Point &TangentPoint, const JointcalControl &Control)
 {
   // The arrangement has to be known by ExposureCatalog:
   const ChipArrangement &arrangement = EC.Arrangement(); 
@@ -90,7 +90,7 @@ bool MatchExposure(ExposureCatalog &EC, const Point &TangentPoint, const Jointca
   conditions.DeltaSizeRatio = 0.02; 
   cout << " INFO: running combinatorics: it takes a few seconds... " << endl;
   StarMatchList *match = MatchSearchRotShiftFlip((BaseStarList&)tpCat, refCat, conditions);
-  if (!match) return false;
+  if (!match) return ExposureSolutionType();
 
   GtransfoLin guessCorr = *dynamic_cast<const GtransfoLin *>(match->Transfo());
   cout << " INFO: correction to guessed WCS, found using " << match->size() 
@@ -136,6 +136,7 @@ bool MatchExposure(ExposureCatalog &EC, const Point &TangentPoint, const Jointca
     }
 
   // Now compute WCSs
+  ExposureSolutionType res;
   for (unsigned k=0; k<chips.size(); ++k)
     {
       unsigned chip = chips[k];
@@ -189,125 +190,10 @@ arrangement file contains other stuff than polynomials. But there could be a way
 	  pixToTP = new GtransfoPoly(corr);
 	}
 
-#ifdef STORAGE
-      // should we write?
-      if (MatchPrefs.writeWCS == false) continue;
-      ReducedImage ri(EC.ImageNames()[k]);
-      string outFitsFileName(ri.FitsName());
-      
-      // where to output stuff : in the regular fits stuff or somewhere else? 
-      if (MatchPrefs.wcsFileName != "") 
-	{
-	  if (strstr(MatchPrefs.wcsFileName.c_str(),"%s"))
-	    {
-	      char toto[256];
-	      sprintf(toto, ("%s/"+MatchPrefs.wcsFileName).c_str(),
-		      ri.Dir().c_str(), ri.Name().c_str());
-	      outFitsFileName = toto;
-	    }
-	  else
-	    outFitsFileName = ri.Dir()+"/"+MatchPrefs.wcsFileName;
-	}
-      if (outFitsFileName == ri.FitsName() && MatchPrefs.asciiWCS)
-	{
-	  cout << " ERROR : I refuse to overwrite a fits file by an ascii file : check the datacards " << std::endl;
-	  cout << " no output " << endl;
-	  return false;
-	}
-      
-      cout << " writing WCS to " << outFitsFileName << endl; 
-      {
-	TanWCS2Header(outFitsFileName, *wcs);
-	FitsHeader header(outFitsFileName, RW);
-	header.AddOrModKey("RMATCHUS", residual, 
-			   " 1d geom residual to ref catalog (arcsec)");
-	header.AddOrModKey("NMATCHUS", int(subList.size()), 
-			 " number of objects matched to ref catalog");
-	string astromRef;
-	if (MatchPrefs.astromCatalogName != "") 
-	  astromRef = MatchPrefs.astromCatalogName;
-	else 
-	  {
-	    char *usno_dir = getenv("USNODIR");
-	    if (usno_dir) astromRef = BaseName(usno_dir); // strip path
-	  }
-	header.AddOrModKey("REFCAT",BaseName(astromRef), " Name of the ref. cat. astrom. and photom.");
-      } // fitsfile is closed.
-
-      if (MatchPrefs.asciiWCS) // convert to ASCII
-	{
-	  FitsHeader head(outFitsFileName);
-	  unlink(outFitsFileName.c_str()); // means delete
-	  ofstream s(outFitsFileName.c_str());
-	  s << head << "END    " << std::endl;
-	  s.close();
-	}
-#endif /* STORAGE */
+      res[chip] = pixToTP;
     }// end loop on chips
-  return true;
+  return res;
 }
-
-#ifdef STORAGE
-static void usage(const char *pgname)
-{
-  cout << "usage : " << endl; 
-  cout << pgname << ' ' << " <dbimage names> " << endl
-       << " [-n] just print, won't alter WCS" << endl
-       << " [-c <datacards> (example in datacards/match.datacards)]" << endl
-       << " [-a <astrometric catalog>] (if applicable, superseeds value in datacards)" << endl;
-  cout << " This code matches several CCDs from the same exposure " << endl
-       << " to an astrometric catalogue (USNO-a by default) and" << endl
-       << " sets WCSs (with distortions) in the fits headers" << endl;
-  exit(1);
-}
-
-
-int main(int nargs, char** args)
-{
-  vector<string> images;
-  try
-    {
-      for (int k=1; k<nargs; ++k) // first loop on arguments to read datacards name, if any
-	{
-	  const char *arg = args[k];
-	  if (arg[0] != '-') continue;
-	  if (arg[1] == 'c')
-	    {
-	      MatchPrefs.ReadCards(string(args[++k]));
-	      break;
-	    }
-	}
-      for (int k=1; k<nargs; ++k)
-	{
-	  const char *arg = args[k];
-	  if (arg[0] == '-')
-	    {
-	      switch (arg[1])
-		{
-		case 'c' : k++; break; // datacards read above
-		case 'n' : MatchPrefs.writeWCS = false; break;
-		case 'a' : MatchPrefs.astromCatalogName = args[++k]; break;
-		  if (access(MatchPrefs.astromCatalogName.c_str(),'r')!=0)
-		    throw(PolokaException("ERROR: cannot find "+MatchPrefs.astromCatalogName));
-		case 'h': 
-		default : usage(args[0]);
-		}
-	    }
-	  else
-	    images.push_back(args[k]);
-	} // end decoding arguments
-      if (images.size() == 0) usage(args[0]);
-      
-      ExposureCatalog ec(images);
-      if (match_exposure(ec)) return EXIT_SUCCESS;
-    }
-  catch(PolokaException p) {
-    p.PrintMessage(cout);
-  }    
-  return EXIT_FAILURE;
-}
-#endif
-
 
 /*
   This code matches several CCDs from the same exposure to a reference
