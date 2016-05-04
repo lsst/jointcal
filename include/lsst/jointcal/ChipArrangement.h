@@ -33,6 +33,7 @@ class ChipArrangement
   virtual Frame TangentPlaneFrame() const =0;
 
 
+  virtual ~ChipArrangement() {};
 };
 
 //! A concrete implementation with polynomial mappings from CCD to TP coordinates
