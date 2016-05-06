@@ -12,7 +12,6 @@
 #include "boost/multi_index/ordered_index.hpp"
 #include "boost/multi_index/global_fun.hpp"
 
-#include "lsst/utils/ieee.h"
 #include "lsst/pex/exceptions.h"
 #include "lsst/afw/image/Wcs.h"
 #include "lsst/afw/geom/Angle.h"
