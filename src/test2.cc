@@ -14,7 +14,6 @@
 
 #include "boost/make_shared.hpp"
 
-#include "lsst/utils/ieee.h"
 #include "lsst/pex/exceptions.h"
 #include "lsst/afw/image/Wcs.h"
 #include "lsst/afw/geom/Angle.h"
