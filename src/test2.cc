@@ -5,7 +5,6 @@
 #include <utility>
 #include <vector>
 
-//#include "boost/scoped_array.hpp"
 //#include "boost/shared_array.hpp"
 //#include "boost/multi_index_container.hpp"
 //#include "boost/multi_index/sequenced_index.hpp"
