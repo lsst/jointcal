@@ -34,6 +34,14 @@ class Associations {
   RefStarList photRefStarList; // the (e.g) Landolt stars
   FittedStarList fittedStarList; //  the std::list of stars that are going to be fitted
 
+
+  size_t refStarListSize()
+  { return refStarList.size(); }
+  size_t photRefStarListSize()
+  { return photRefStarList.size(); }
+  size_t fittedStarListSize()
+  { return fittedStarList.size(); }
+
     // fit cuts and stuff:
   Point commonTangentPoint;
 
