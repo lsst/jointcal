@@ -10,9 +10,14 @@ import collections
 from lsst.afw import geom, coord, table
 from lsst.meas.astrom import LoadAstrometryNetObjectsTask, LoadAstrometryNetObjectsConfig
 import lsst.utils
+import lsst.pex.exceptions
+from lsst.daf import persistence
 from lsst.jointcal import jointcal
 
-from lsst.daf import persistence
+try:
+    data_dir = lsst.utils.getPackageDir('validation_data_jointcal')
+except lsst.pex.exceptions.NotFoundError:
+    data_dir = None
 
 
 # for MemoryTestCase
@@ -64,7 +69,6 @@ class FakeRef(object):
 
 class JointcalTest(lsst.utils.tests.TestCase):
     def setUp(self):
-        data_dir = lsst.utils.getPackageDir('validation_data_jointcal')
         os.environ['ASTROMETRY_NET_DATA_DIR'] = os.path.join(data_dir, 'twinkles1_and_index')
 
         # position of the Twinkles run 1 catalog
@@ -94,21 +98,26 @@ class JointcalTest(lsst.utils.tests.TestCase):
         self.assertLess(rms_rel, relerr/arcsec_per_radian)
         self.assertLess(rms_abs, absolute_error)
 
+    @unittest.skipIf(data_dir is None, "validation_data_jointcal not setup")
     @unittest.skip('jointcal currently fails if only given one catalog!')
     def testJointCalTask_1_catalog(self):
         self.jointcalTask.run(self.catalogs[:1])
 
+    @unittest.skipIf(data_dir is None, "validation_data_jointcal not setup")
     def testJointCalTask_2_catalog(self):
         self._testJointCalTask(2, 8.4e-3)
 
+    @unittest.skipIf(data_dir is None, "validation_data_jointcal not setup")
     @unittest.skip('Keeping this around for diagnostics on the behavior with n catalogs.')
     def testJointCalTask_4_catalog(self):
         self._testJointCalTask(4, 7.8e-3)
 
+    @unittest.skipIf(data_dir is None, "validation_data_jointcal not setup")
     @unittest.skip('Keeping this around for diagnostics on the behavior with n catalogs.')
     def testJointCalTask_7_catalog(self):
         self._testJointCalTask(7, 7.5e-3)
 
+    @unittest.skipIf(data_dir is None, "validation_data_jointcal not setup")
     def testJointCalTask_10_catalog(self):
         self._testJointCalTask(10, 7.4e-3)
 
