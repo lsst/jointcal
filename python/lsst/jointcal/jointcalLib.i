@@ -109,6 +109,8 @@ namespace jointcal {
 %template(CcdImageRefList) std::list<std::shared_ptr<lsst::jointcal::CcdImage> >;
 %template(TanSipPix2RaDecRef) std::shared_ptr<lsst::jointcal::TanSipPix2RaDec>;
 
+// TODO: SWIG doesn't like boost::intrusive_ptr so we can't wrap these.
+// Once DM-4043 is solved, we should clean this up to better wrap the lists.
 // %shared_ptr(lsst::jointcal::BaseStar);
 // %shared_ptr(lsst::jointcal::RefStar);
 // %shared_ptr(lsst::jointcal::FittedStar);

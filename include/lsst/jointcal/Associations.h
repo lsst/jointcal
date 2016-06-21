@@ -35,6 +35,9 @@ class Associations {
   FittedStarList fittedStarList; //  the std::list of stars that are going to be fitted
 
 
+  // TODO: NOTE: these only exist because those lists can't be swig'd because
+  // swig doesn't like boost::intrusive_ptr (which the lists contain).
+  // Once DM-4043 is solved, delete these.
   size_t refStarListSize()
   { return refStarList.size(); }
   size_t photRefStarListSize()
