@@ -72,7 +72,7 @@ bool Associations::AddImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::S
 	std::cout << "setting commonTangentPoint" << commonTangentPoint << std::endl;
     }
 
-  boost::shared_ptr<CcdImage> ccdImage(new CcdImage(Ri, commonTangentPoint, wcs, meta, bbox, filter, calib, visit, ccd, camera, control->sourceFluxField));
+  std::shared_ptr<CcdImage> ccdImage(new CcdImage(Ri, commonTangentPoint, wcs, meta, bbox, filter, calib, visit, ccd, camera, control->sourceFluxField));
 //  CcdImage *ccdImage = new CcdImage(Ri, commonTangentPoint, wcs, meta, bbox, filter, calib, visit, ccd, camera, control->sourceFluxField);
   ccdImageList.push_back(ccdImage);
   std::cout << " we have " << ccdImage->WholeCatalog().size()

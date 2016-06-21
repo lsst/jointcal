@@ -12,7 +12,6 @@ Python interface to lsst::jointcal classes
 %{
 #include <exception>
 #include <list>
-#include <boost/shared_ptr.hpp>
 #include "lsst/afw/table.h"
 #include "lsst/afw/detection.h"
 #include "lsst/pex/logging.h"
@@ -23,6 +22,10 @@ Python interface to lsst::jointcal classes
 #include "lsst/daf/base/PropertySet.h"
 #include "lsst/jointcal/test.h"
 #include "lsst/jointcal/test2.h"
+#include "lsst/jointcal/BaseStar.h"
+#include "lsst/jointcal/StarList.h"
+#include "lsst/jointcal/FittedStar.h"
+#include "lsst/jointcal/RefStar.h"
 #include "lsst/jointcal/Jointcal.h"
 #include "lsst/jointcal/CcdImage.h"
 #include "lsst/jointcal/AstromFit.h"
@@ -51,9 +54,9 @@ Python interface to lsst::jointcal classes
 %shared_ptr(lsst::jointcal::JointcalControl);
 
 %template(SourceList) std::vector<lsst::afw::table::SortedCatalogT< lsst::afw::table::SourceRecord> >;
-%template(WcsList) std::vector<boost::shared_ptr<lsst::afw::image::TanWcs> >;
-%template(PropertySetList) std::vector<boost::shared_ptr<lsst::daf::base::PropertySet> >;
-%template(CalibList) std::vector<boost::shared_ptr< lsst::afw::image::Calib > >;
+%template(WcsList) std::vector<std::shared_ptr<lsst::afw::image::TanWcs> >;
+%template(PropertySetList) std::vector<std::shared_ptr<lsst::daf::base::PropertySet> >;
+%template(CalibList) std::vector<std::shared_ptr< lsst::afw::image::Calib > >;
 %template(BboxList) std::vector<lsst::afw::geom::Box2I>;
 %template(StringList) std::vector<std::string>;
 %template(IntList) std::vector<int>;
@@ -69,16 +72,16 @@ class CcdImage;
 class CcdImageList;
 class MeasuredStar;
 class FittedStarList;
+class RefStarList;
 class MeasuredStarList;
+class BaseStar;
+class RefStar;
+class StarList;
+class FittedStar;
+class Point;
 }}
 %include "lsst/jointcal/Chi2.h"
 %include "lsst/jointcal/AstromFit.h"
-namespace lsst {
-namespace jointcal {
-class RefStarList;
-class FittedStarList;
-class Point;
-}}
 %include "lsst/jointcal/Associations.h"
 namespace lsst {
 namespace jointcal {
@@ -101,9 +104,21 @@ namespace jointcal {
 }}
 
 %shared_ptr(lsst::jointcal::CcdImage);
-%template(CcdImageRef) boost::shared_ptr<lsst::jointcal::CcdImage>;
-%template(CcdImageRefList) std::list<boost::shared_ptr<lsst::jointcal::CcdImage> >;
-%template(TanSipPix2RaDecRef) boost::shared_ptr<lsst::jointcal::TanSipPix2RaDec>;
+// TODO: NOTE: this may not be needed? Unclear.
+// %template(CcdImageRef) std::shared_ptr<lsst::jointcal::CcdImage>;
+%template(CcdImageRefList) std::list<std::shared_ptr<lsst::jointcal::CcdImage> >;
+%template(TanSipPix2RaDecRef) std::shared_ptr<lsst::jointcal::TanSipPix2RaDec>;
+
+// %shared_ptr(lsst::jointcal::BaseStar);
+// %shared_ptr(lsst::jointcal::RefStar);
+// %shared_ptr(lsst::jointcal::FittedStar);
+// %template(RefStarRef) std::shared_ptr<lsst::jointcal::RefStar>;
+// %intrusive_ptr(lsst::jointcal::RefStar);
+// %template(StarListOfRefStar) std::list<std::intrusive_ptr<lsst::jointcal::RefStar> >;
+%include "lsst/jointcal/StarList.h"
+// %template(StarListMonkey) lsst::jointcal::StarList<lsst::jointcal::RefStar>;
+// typedef StarList std::list<lsst::jointcal::CountedRef>;
+// %template(RefStarRefList) std::list<lsst::jointcal::RefStar>;
 
 %shared_ptr(lsst::jointcal::TanSipPix2RaDec);
 %include "lsst/jointcal/Point.h"
@@ -111,6 +126,9 @@ namespace jointcal {
 %include "lsst/jointcal/Gtransfo.h"
 
 %include "lsst/jointcal/CcdImage.h"
+%include "lsst/jointcal/BaseStar.h"
+%include "lsst/jointcal/FittedStar.h"
+%include "lsst/jointcal/RefStar.h"
 %include "lsst/jointcal/SimplePolyModel.h"
 %include "lsst/jointcal/ConstrainedPolyModel.h"
 

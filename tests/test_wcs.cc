@@ -46,7 +46,7 @@ BOOST_AUTO_TEST_CASE(test_wcs)
   PTR(lsst::daf::base::PropertySet) propSet = afwImg::readMetadata(fileName);
   PTR(afwImg::Wcs) wcs = afwImg::makeWcs(propSet);
 
-  const PTR(afwImg::TanWcs) tanWcs = boost::dynamic_pointer_cast<afwImg::TanWcs>(wcs);
+  const PTR(afwImg::TanWcs) tanWcs = std::dynamic_pointer_cast<afwImg::TanWcs>(wcs);
 
   jointcal::TanSipPix2RaDec gtransfoWcs = jointcal::ConvertTanWcs(tanWcs);
   jointcal::Point where(100.,200.);
@@ -75,7 +75,7 @@ BOOST_AUTO_TEST_CASE(test_polyfit)
   PTR(lsst::daf::base::PropertySet) propSet = afwImg::readMetadata(fileName);
   PTR(afwImg::Wcs) wcs = afwImg::makeWcs(propSet);
 
-  const PTR(afwImg::TanWcs) tanWcs = boost::dynamic_pointer_cast<afwImg::TanWcs>(wcs);
+  const PTR(afwImg::TanWcs) tanWcs = std::dynamic_pointer_cast<afwImg::TanWcs>(wcs);
 
   jointcal::TanSipPix2RaDec gtransfoWcs = jointcal::ConvertTanWcs(tanWcs);
 
@@ -114,7 +114,7 @@ BOOST_AUTO_TEST_CASE(test_wcs_convertions)
   PTR(lsst::daf::base::PropertySet) propSet = afwImg::readMetadata(fileName);
   PTR(afwImg::Wcs) wcs = afwImg::makeWcs(propSet);
 
-  const PTR(afwImg::TanWcs) tanWcs = boost::dynamic_pointer_cast<afwImg::TanWcs>(wcs);
+  const PTR(afwImg::TanWcs) tanWcs = std::dynamic_pointer_cast<afwImg::TanWcs>(wcs);
 
   jointcal::TanSipPix2RaDec gtransfoWcs = jointcal::ConvertTanWcs(tanWcs);
   int naxis1 = propSet->get<int>("NAXIS1");

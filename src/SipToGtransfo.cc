@@ -17,10 +17,10 @@ namespace jointcal {
 static const int lsstToFitsPixels = +1;
 static const int fitsToLsstPixels = -1;
 
-typedef boost::shared_ptr<jointcal::GtransfoPoly> GtPoly_Ptr;
+typedef std::shared_ptr<jointcal::GtransfoPoly> GtPoly_Ptr;
 
 
-jointcal::TanSipPix2RaDec ConvertTanWcs(const boost::shared_ptr<lsst::afw::image::TanWcs> wcs)
+jointcal::TanSipPix2RaDec ConvertTanWcs(const std::shared_ptr<lsst::afw::image::TanWcs> wcs)
 {
   GtPoly_Ptr sipCorr(new jointcal::GtransfoPoly(0));
 
@@ -148,7 +148,7 @@ PTR(afwImg::TanWcs) GtransfoToTanWcs(const jointcal::TanSipPix2RaDec WcsTransfo,
   cdMat(1,1) = linPart.Coeff(0,1,1); // CD2_2
 
   if (!WcsTransfo.Corr()) // the WCS has no distortions
-    return boost::shared_ptr<afwImg::TanWcs>(new afwImg::TanWcs(crval,crpix_lsst,cdMat));
+    return std::shared_ptr<afwImg::TanWcs>(new afwImg::TanWcs(crval,crpix_lsst,cdMat));
 
   /* We are now given:
      - CRPIX
@@ -203,7 +203,7 @@ PTR(afwImg::TanWcs) GtransfoToTanWcs(const jointcal::TanSipPix2RaDec WcsTransfo,
 	sipBp(i,j) = sipPolyInv.Coeff(i,j,1);
       }
 
-  return boost::shared_ptr<afwImg::TanWcs>(new afwImg::TanWcs(crval, crpix_lsst, cdMat, sipA, sipB, sipAp, sipBp));
+  return std::shared_ptr<afwImg::TanWcs>(new afwImg::TanWcs(crval, crpix_lsst, cdMat, sipA, sipB, sipAp, sipBp));
 
 }
 

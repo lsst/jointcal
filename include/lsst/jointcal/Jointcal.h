@@ -50,7 +50,7 @@ public:
 private:
 
     std::vector<lsst::afw::table::SortedCatalogT< lsst::afw::table::SourceRecord> > _sourceList;
-    std::vector <boost::shared_ptr<lsst::daf::base::PropertySet> > _metaList;
+    std::vector <std::shared_ptr<lsst::daf::base::PropertySet> > _metaList;
     std::vector<PTR(lsst::afw::image::TanWcs)> _wcsList;
     std::vector<lsst::afw::geom::Box2I> _bboxList;
     std::vector<std::string> _filterList;

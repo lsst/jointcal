@@ -35,7 +35,7 @@ private:
             lsst::daf::base::PropertySet> sourceTuple;
 //    std::vector <lsst::afw::table::SourceCatalog> _sources;
 //    std::vector <lsst::daf::base::PropertySet> _sources;
-    std::vector <boost::shared_ptr<lsst::daf::base::PropertySet> > _sources;
+    std::vector <std::shared_ptr<lsst::daf::base::PropertySet> > _sources;
 };
 
 }} // end of namespaces

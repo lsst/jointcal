@@ -270,7 +270,7 @@ class CcdImage : public RefCount
 
 //! a  list of CcdImage. Usually produced by Associations
 //class CcdImageList : public std::list<CountedRef<CcdImage> >
-class CcdImageList : public std::list<boost::shared_ptr<CcdImage> >
+class CcdImageList : public std::list<std::shared_ptr<CcdImage> >
 {
   public:
 
