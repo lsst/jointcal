@@ -10,7 +10,7 @@ import collections
 import eups
 
 from lsst.afw import geom, coord, table
-from lsst.meas.astrom import astrometry
+from lsst.meas import astrom
 import lsst.utils
 from lsst.jointcal import jointcal
 
@@ -75,8 +75,9 @@ class JointcalTest(lsst.utils.tests.TestCase):
         # position of the Twinkles run 1 catalog
         center = coord.IcrsCoord(53.00914*geom.degrees, -27.43895*geom.degrees)
         r = geom.Angle(3, geom.degrees)
-        astrometryTask = astrometry.AstrometryTask()
-        reference = astrometryTask.refObjLoader.loadSkyCircle(center, r, filterName='r')
+        config = astrom.LoadAstrometryNetObjectsTask.ConfigClass()
+        refLoader = astrom.LoadAstrometryNetObjectsTask(config=config)
+        reference = refLoader.loadSkyCircle(center, r, filterName='r')
         self.reference = reference.refCat.copy()  # for in-memory contiguity.
 
         # Get a set of source catalogs.
