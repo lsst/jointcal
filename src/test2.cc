@@ -23,12 +23,12 @@ namespace afwTable = lsst::afw::table;
 
 namespace lsst {
 namespace jointcal {
-    
+
     test2::test2()
 {
     std::cout << "test2 constructor called " << std::endl;
 }
-    
+
 void test2::addSourceTable(
     lsst::afw::table::SourceCatalog const &sourceCat,
     lsst::daf::base::PropertySet const &metaData
@@ -41,9 +41,9 @@ void test2::addSourceTable(
 //        _sources.push_back(metaData);
         std::cout << "tuple feeded with a new source table " << std::endl;
     }
-    
+
 void test2::addMetaList(std::vector<PTR(lsst::daf::base::PropertySet)> ll) {
     std::cout << ll[0]->get<double>("LATITUDE") << std::endl;
 }
-    
+
 }} // end of namespaces

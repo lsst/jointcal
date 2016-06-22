@@ -14,13 +14,13 @@
 
 namespace lsst {
 namespace jointcal {
-    
+
 class test2 {
 public:
-    
+
     test2 (
     );
-    
+
     void addSourceTable (
         lsst::afw::table::SourceCatalog const &sourceCat,
         lsst::daf::base::PropertySet const &metaData
@@ -28,16 +28,16 @@ public:
     );
 
     void addMetaList(std::vector<PTR(lsst::daf::base::PropertySet)>);
-    
+
 private:
-    
+
     typedef std::tuple<lsst::afw::table::SourceCatalog,
             lsst::daf::base::PropertySet> sourceTuple;
 //    std::vector <lsst::afw::table::SourceCatalog> _sources;
 //    std::vector <lsst::daf::base::PropertySet> _sources;
-    std::vector <boost::shared_ptr<lsst::daf::base::PropertySet> > _sources;
+    std::vector <std::shared_ptr<lsst::daf::base::PropertySet> > _sources;
 };
-    
+
 }} // end of namespaces
 
 #endif

@@ -140,7 +140,7 @@ PTR(TanSipPix2RaDec) SimplePolyModel::ProduceSipWcs(const CcdImage &Ccd) const
   // wcsPix2TP = cdStuff*sip , so
   GtransfoPoly sip = GtransfoPoly(cdStuff.invert())*wcsPix2Tp;
   Point tangentPoint( proj->TangentPoint());
-  return boost::shared_ptr<TanSipPix2RaDec>(new TanSipPix2RaDec(cdStuff, tangentPoint, &sip));
+  return std::shared_ptr<TanSipPix2RaDec>(new TanSipPix2RaDec(cdStuff, tangentPoint, &sip));
 }
 
 }} // end of namespaces

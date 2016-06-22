@@ -21,7 +21,7 @@ namespace afwTable = lsst::afw::table;
 
 namespace lsst {
 namespace jointcal {
-    
+
     void test(
         lsst::afw::table::SourceCatalog const &sourceCat,
         lsst::daf::base::PropertySet const &metaData

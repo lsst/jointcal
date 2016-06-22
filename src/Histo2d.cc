@@ -48,7 +48,7 @@ bool Histo2d::indices(const double &X, const double &Y, int &ix, int &iy) const
   iy = (int) floor((Y - miny)*scaley);
   return (iy >=0 && iy < ny);
 }
-  
+
 void Histo2d::Fill(float X, float Y, float Weight)
 {
   int ix, iy;

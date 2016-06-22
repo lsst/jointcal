@@ -72,13 +72,13 @@ ConstrainedPolyModel::ConstrainedPolyModel(const CcdImageList &L,
       if ((chipp == _chipMap.end()) && shoot == refShoot )
 	{
 	  const Frame &frame = im.ImageFrame();
-	  
+
 	  _tpFrame += ApplyTransfo(frame, *im.Pix2CommonTangentPlane(), LargeFrame);
 	  GtransfoPoly pol(im.Pix2TangentPlane(),
 			   frame,
 			   degree);
 	  GtransfoLin shiftAndNormalize = NormalizeCoordinatesTransfo(frame);
-	  
+
 	  _chipMap[chip] = std::unique_ptr<SimplePolyMapping>(new SimplePolyMapping(shiftAndNormalize, pol*shiftAndNormalize.invert()));
 	}
     }
@@ -99,7 +99,7 @@ reference exposure, expect troubles" << std::endl;
 										     GtransfoPoly(degree)));
 	}
       _mappings[&im] = std::unique_ptr<TwoTransfoMapping>(new TwoTransfoMapping(_chipMap[chip].get(), _shootMap[shoot].get()));
-    
+
     }
   cout << "INFO: ConstrainedPolyModel : we have " << _chipMap.size() << " chip mappings " << endl;
   cout << "INFO: and " << _shootMap.size() << " shoot mappings " << endl;
@@ -199,7 +199,7 @@ void ConstrainedPolyModel::FreezeErrorScales()
   for (auto i = _chipMap.begin(); i!=_chipMap.end(); ++i)
     i->second->FreezeErrorScales();
 }
-  
+
 
 const Gtransfo& ConstrainedPolyModel::GetChipTransfo(const unsigned Chip) const
 {
@@ -233,24 +233,24 @@ PTR(TanSipPix2RaDec) ConstrainedPolyModel::ProduceSipWcs(const CcdImage &Ccd) co
   mappingMapType::const_iterator i = _mappings.find(&Ccd);
   if  (i==_mappings.end()) return NULL;
   const TwoTransfoMapping *m = i->second.get();
-  
+
   const GtransfoPoly &t1=dynamic_cast<const GtransfoPoly&>(m->T1());
   const GtransfoPoly &t2=dynamic_cast<const GtransfoPoly&>(m->T2());
   const TanRaDec2Pix *proj=dynamic_cast<const TanRaDec2Pix*>(Sky2TP(Ccd));
   if (!(&t1)  || !(&t2) || !proj) return NULL;
-  
+
   GtransfoPoly pix2Tp = t2*t1;
 
   const GtransfoLin &projLinPart = proj->LinPart(); // should be the identity, but who knows? So, let us incorporate it into the pix2TP part.
   GtransfoPoly wcsPix2Tp = GtransfoPoly(projLinPart.invert())*pix2Tp;
-  
+
   // compute a decent approximation, if higher order corrections get ignored
   GtransfoLin cdStuff = wcsPix2Tp.LinearApproximation(Ccd.ImageFrame().Center());
 
   // wcsPix2TP = cdStuff*sip , so
   GtransfoPoly sip = GtransfoPoly(cdStuff.invert())*wcsPix2Tp;
   Point tangentPoint( proj->TangentPoint());
-  return boost::shared_ptr<TanSipPix2RaDec>(new TanSipPix2RaDec(cdStuff, tangentPoint, &sip));
+  return std::shared_ptr<TanSipPix2RaDec>(new TanSipPix2RaDec(cdStuff, tangentPoint, &sip));
 }
 
 

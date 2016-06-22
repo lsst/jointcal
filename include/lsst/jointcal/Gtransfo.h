@@ -43,11 +43,11 @@ class GtransfoLin;
 
 class Gtransfo: public RefCount{
 public:
-  
+
   //!
   virtual void  apply(const double Xin, const double Yin,
 		      double &Xout, double &Yout) const = 0 ;
-  
+
   //! applies the tranfo to Pin and writes into Pout. Is indeed virtual.
   void apply(const Point &Pin, Point &Pout) const
       {apply(Pin.x, Pin.y, Pout.x, Pout.y);}
@@ -132,7 +132,7 @@ public:
   void Write(const std::string &FileName) const;
 
   virtual void Write(std::ostream &stream) const;
-  
+
   virtual ~Gtransfo() {};
 
 
@@ -207,7 +207,7 @@ class GtransfoPoly : public Gtransfo
 {
 public :
   using Gtransfo::apply; // to unhide Gtransfo::apply(const Point &)
-	
+
 private:
   unsigned deg; // the degree
   unsigned nterms; // number of parameters per coordinate
@@ -329,7 +329,7 @@ GtransfoLin NormalizeCoordinatesTransfo(const Frame & F);
 /*=============================================================*/
 //! implements the linear transformations (6 real coefficients).
 class GtransfoLin : public GtransfoPoly {
-  
+
  public:
   using GtransfoPoly::apply; // to unhide Gtransfo::apply(const Point &)
 
@@ -342,35 +342,35 @@ class GtransfoLin : public GtransfoPoly {
 
   //!  enables to combine linear tranformations: T1=T2*T3 is legal.
   GtransfoLin  operator*(const  GtransfoLin &T2) const;
-  
+
   //! returns the inverse: T1 = T2.invert();
   GtransfoLin  invert() const;
-  
-  
+
+
   // useful?    double Jacobian(const double x, const double y) const { return Determinant();}
-  
+
   //!
   void Derivative(const Point &Where, GtransfoLin &Derivative,
 		  const double Step = 0.01) const;
   //!
   GtransfoLin LinearApproximation(const Point &Where,
 				  const double step = 0.01) const;
-  
-  
+
+
   //  void dump(std::ostream &stream = std::cout) const;
-  
+
   // double fit(const StarMatchList &List);
-    
+
   //! the constructor that enables to set all parameters independently. Not very useful.
   GtransfoLin(const double ox, const double oy , const double aa11,
 	      const double aa12, const double aa21, const double aa22);
-  
+
   //! Handy converter:
   GtransfoLin(const GtransfoIdentity &T) : GtransfoPoly(1)
   { if (&T) {} /* avoid a warning */};
-  
+
   Gtransfo* Clone() const { return new GtransfoLin(*this);}
-  
+
   Gtransfo* InverseTransfo(const double Precision,
 			   const Frame& Region) const;
 
@@ -384,7 +384,7 @@ class GtransfoLin : public GtransfoPoly {
 
 protected :
 
-  
+
   double& a11() { return Coeff(1,0,0);}
   double& a12() { return Coeff(0,1,0);}
   double& a21() { return Coeff(1,0,1);}
@@ -399,7 +399,7 @@ protected :
 
 private:
   void SetDegree(const unsigned Deg); // to hide GtransfoPoly::SetDegree
-  
+
 };
 
 
@@ -421,10 +421,10 @@ public:
 /*=============================================================*/
 //! just here to provide a specialized constructor, and fit.
 class GtransfoLinRot : public GtransfoLin {
-  
+
 public:
   using Gtransfo::apply; // to unhide apply(const Point&)
- 
+
     GtransfoLinRot() : GtransfoLin() {};
     GtransfoLinRot(const double AngleRad, const Point *Center=NULL,
 		   const double ScaleFactor=1.0);
@@ -438,7 +438,7 @@ public:
 
 //! just here to provide specialized constructors. GtransfoLin fit routine.
 class GtransfoLinScale :  public GtransfoLin {
-  
+
  public:
   using Gtransfo::apply; // to unhide apply(const Point&)
     //!
@@ -482,7 +482,7 @@ public :
 
   //! the "correction"
   const GtransfoPoly* Corr() const {return corr;}
-  
+
   //!Assign the correction polynomial (what it means is left to derived classes)
   void SetCorrections(const GtransfoPoly *Corrections);
 
@@ -504,7 +504,7 @@ class TanRaDec2Pix; // the inverse of TanPix2RaDec.
 
 //! the transformation that handles pix to sideral transfos (Gnomonic, possibly with polynomial distortions).
 class TanPix2RaDec : public BaseTanWcs {
-  
+
 public:
 
   using Gtransfo::apply; // to unhide apply(const Point&)
@@ -538,9 +538,9 @@ public:
   Gtransfo* InverseTransfo(const double Precision,
 			   const Frame& Region) const;
 
-    
+
   Gtransfo *Clone() const;
-  
+
   void dump(std::ostream &stream) const;
 
   //! Not implemented yet, because we do it otherwise.
@@ -573,9 +573,9 @@ public:
   Gtransfo* InverseTransfo(const double Precision,
 			   const Frame& Region) const;
 
-    
+
   Gtransfo *Clone() const;
-  
+
   void dump(std::ostream &stream) const;
 
   //! Not implemented yet, because we do it otherwise.
@@ -604,7 +604,7 @@ class TanRaDec2Pix : public Gtransfo
 
     //! assume degrees everywhere.
     TanRaDec2Pix(const GtransfoLin &Tan2Pix, const Point &TangentPoint);
-    
+
     //!
     TanRaDec2Pix();
 
@@ -655,7 +655,7 @@ typedef void (GtransfoFun)(const double, const double,
 class UserTransfo : public Gtransfo
 {
   private :
-  
+
   GtransfoFun *userFun;
   const void *userData;
 

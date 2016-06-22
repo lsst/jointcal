@@ -17,13 +17,13 @@ namespace jointcal {
 static const int lsstToFitsPixels = +1;
 static const int fitsToLsstPixels = -1;
 
-typedef boost::shared_ptr<jointcal::GtransfoPoly> GtPoly_Ptr;
-	
+typedef std::shared_ptr<jointcal::GtransfoPoly> GtPoly_Ptr;
 
-jointcal::TanSipPix2RaDec ConvertTanWcs(const boost::shared_ptr<lsst::afw::image::TanWcs> wcs)
+
+jointcal::TanSipPix2RaDec ConvertTanWcs(const std::shared_ptr<lsst::afw::image::TanWcs> wcs)
 {
   GtPoly_Ptr sipCorr(new jointcal::GtransfoPoly(0));
-  
+
   /* beware : Wcs::getPixelOrigin return crpix_fits +
    fitsToLsstPixels, so all the algebra we perform here happens in the
    "Lsst frame", i.e (0,0)-based. this algebra is justified in the
@@ -39,7 +39,7 @@ jointcal::TanSipPix2RaDec ConvertTanWcs(const boost::shared_ptr<lsst::afw::image
       Eigen::MatrixXd sipB;
       lsst::afw::image::TanWcs::decodeSipHeader(*wcsMeta, "A", sipA);
       lsst::afw::image::TanWcs::decodeSipHeader(*wcsMeta, "B", sipB);
-  
+
       int sipOrder = std::max(wcsMeta->get<int>("A_ORDER"), wcsMeta->get<int>("B_ORDER"));
 
       jointcal::GtransfoPoly sipPoly(sipOrder);
@@ -67,7 +67,7 @@ jointcal::TanSipPix2RaDec ConvertTanWcs(const boost::shared_ptr<lsst::afw::image
       GtransfoLin id; // identity is the default constructor.
       // This is what is returned by TanWcs::undistortpixel
       jointcal::GtransfoPoly actualSip = id + sipPoly*s2;
-      	
+
       sipCorr.reset(new jointcal::GtransfoPoly(actualSip));
     }
 
@@ -88,7 +88,7 @@ jointcal::TanSipPix2RaDec ConvertTanWcs(const boost::shared_ptr<lsst::afw::image
   // the above line returns radians ?!
   double ra  = wcsMeta->get<double>("CRVAL1");
   double dec = wcsMeta->get<double>("CRVAL2");
-  
+
   jointcal::Point tangentPoint(ra,dec);
 
   // return jointcal::TanSipPix2RaDec(linPart, tangentPoint, sipCorr->get());
@@ -146,9 +146,9 @@ PTR(afwImg::TanWcs) GtransfoToTanWcs(const jointcal::TanSipPix2RaDec WcsTransfo,
   cdMat(0,1) = linPart.Coeff(0,1,0); // CD1_2
   cdMat(1,0) = linPart.Coeff(1,0,1); // CD2_1
   cdMat(1,1) = linPart.Coeff(0,1,1); // CD2_2
-  
+
   if (!WcsTransfo.Corr()) // the WCS has no distortions
-    return boost::shared_ptr<afwImg::TanWcs>(new afwImg::TanWcs(crval,crpix_lsst,cdMat));
+    return std::shared_ptr<afwImg::TanWcs>(new afwImg::TanWcs(crval,crpix_lsst,cdMat));
 
   /* We are now given:
      - CRPIX
@@ -178,7 +178,7 @@ PTR(afwImg::TanWcs) GtransfoToTanWcs(const jointcal::TanSipPix2RaDec WcsTransfo,
   jointcal::GtransfoPoly invSipStuff = (*tp2Pix)*linPart;
   delete tp2Pix;
   jointcal::GtransfoPoly sipPolyInv =  (invSipStuff -id)*s2.invert();
-  
+
   // now extract sip coefficients. First forward ones:
   int sipOrder = sipPoly.Degree();
   Eigen::MatrixXd sipA(Eigen::MatrixXd::Zero(sipOrder+1,sipOrder+1));
@@ -203,16 +203,16 @@ PTR(afwImg::TanWcs) GtransfoToTanWcs(const jointcal::TanSipPix2RaDec WcsTransfo,
 	sipBp(i,j) = sipPolyInv.Coeff(i,j,1);
       }
 
-  return boost::shared_ptr<afwImg::TanWcs>(new afwImg::TanWcs(crval, crpix_lsst, cdMat, sipA, sipB, sipAp, sipBp));
-  
+  return std::shared_ptr<afwImg::TanWcs>(new afwImg::TanWcs(crval, crpix_lsst, cdMat, sipA, sipB, sipAp, sipBp));
+
 }
 
 }} // end of namespaces
 
-  
-   
 
 
 
-  
+
+
+
 

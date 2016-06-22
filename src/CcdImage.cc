@@ -41,6 +41,8 @@ static double sq(const double &x) { return x*x;}
 
 void CcdImage::LoadCatalog(const lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &Cat,const std::string &fluxField)
 {
+  // TODO: these should use slots, e.g. "slot_Centroid_x", or better:
+  // self.config.centroidName + "_x" in python.
   auto xKey = Cat.getSchema().find<double>("base_SdssCentroid_x").key;
   auto yKey = Cat.getSchema().find<double>("base_SdssCentroid_y").key;
   auto xsKey = Cat.getSchema().find<float>("base_SdssCentroid_xSigma").key;
@@ -195,8 +197,18 @@ CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceReco
         ra = lsst::afw::geom::degToRad(RaStringToDeg(meta->get<std::string>("RA2000")));
         dec = lsst::afw::geom::degToRad(DecStringToDeg(meta->get<std::string>("DEC2000")));
     }
+    // TODO: Massive hack to get my test data to run.
+    // TODO: this all needs to go away once DM-5501 is dealt with.
+    else if (camera == "monkeySim") {
+        airMass = meta->get<double>("AIRMASS");
+        jd = meta->get<double>("MJD");  // Julian date
+        expTime = meta->get<double>("EXPTIME");
+        lst_obs = lsst::afw::geom::degToRad(meta->get<double>("LST"));
+        ra = lsst::afw::geom::degToRad(meta->get<double>("RA2000"));
+        dec = lsst::afw::geom::degToRad(meta->get<double>("DEC2000"));
+    }
     else {
-        throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,"CcdImage, unsupported camera "+camera);
+        throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,"jointcal::CcdImage does not understand your camera "+camera);
     }
     hourAngle = (lst_obs-ra);
     if  (hourAngle>M_PI) hourAngle -= 2*M_PI;

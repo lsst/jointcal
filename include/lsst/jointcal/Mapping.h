@@ -19,7 +19,7 @@ class Mapping
 {
 
     public :
-	
+
     //! Mumber of parameters in total
     virtual unsigned Npar() const = 0;
 
@@ -48,7 +48,7 @@ class Mapping
 
     //!
     virtual ~Mapping() {};
-    
+
 };
 
 // typedef std::list<CountedRef<Mapping> > MappingList;

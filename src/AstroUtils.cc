@@ -2,9 +2,9 @@
 #include <iostream>
 #include <fstream>
 #include <stdio.h>
-// #include <endian.h>
 #include <string.h>
 
+#include "lsst/jointcal/portable_endian.h"
 #include "lsst/jointcal/BaseStar.h"
 #include "lsst/jointcal/AstroUtils.h"
 #include "lsst/jointcal/Frame.h"
@@ -72,8 +72,8 @@ static double sq(const double &x) { return x*x;}
 
 static inline void intswap(unsigned int &a_word)
 {
-  // int tmp = be32toh(a_word);
-  // a_word = tmp;
+  int tmp = be32toh(a_word);
+  a_word = tmp;
 }
 
 
@@ -112,14 +112,14 @@ static void readusno(const std::string &filebase,double minra,double maxra,
   unsigned int  raword,decword,magword;
   unsigned int minraword,maxraword,mindecword,maxdecword;
   double mag;
-  
+
   std::string catname = std::string(filebase) + ".cat";
   std::string accname = std::string(filebase) + ".acc";
 
 
 
   /* Read the accelerator */
-  
+
   if (!(ifp=fopen(accname.c_str(),"r"))) {
     std::cerr << "readusno error: Couldn't open " << accname << std::endl;
     return;
@@ -217,7 +217,7 @@ while (raword<minraword && !feof(ifp)) read_a_star(ifp, raword, decword, magword
         }
     }
 }
-  
+
  fclose(ifp);
 }
 
@@ -231,7 +231,7 @@ while (raword<minraword && !feof(ifp)) read_a_star(ifp, raword, decword, magword
     is mainly used to
     isolate the brightest objects). Sexagesimal coordinates are accepted.
 */
-  
+
 static void read_ascii_astrom_file(const std::string &FileName,
 				  double MinRa,  double MaxRa,
 				  double MinDec, double MaxDec,
@@ -277,12 +277,12 @@ static void actual_usno_read(const std::string &usnodir,
 			     BaseStarList &ApmList)
 {
   int cat0,cat1;
-  
+
   std::cout << " reading usno in window (" << minra << ','
 	    << maxra << ") (" << mindec << ',' << maxdec << ")" << std::endl;
 
   /* Read parameters */
-  
+
 #ifdef DEBUG_READ
   fprintf(stderr,"Going to read USNO from directory %s\n",usnodir.c_str());
   fprintf(stderr,"minra=%lf, maxra=%lf\n",minra,maxra);

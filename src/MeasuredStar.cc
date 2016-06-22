@@ -57,7 +57,7 @@ MeasuredStar::MeasuredStar( const SEStar &S) :
     }
   mag = -1;
   //  InitialStarRef = &S;
-  
+
   // Some (temporary) User values
   usrVals.push_back(S.Mxx());
   usrVals.push_back(S.Myy());
@@ -98,7 +98,7 @@ const BaseStarList* Measured2Base(const MeasuredStarList *This)
   //  string format = BaseStar::WriteHeader_(pr,i);
   std::string format = BaseStar::WriteHeader_(pr,i);
   if(i==NULL) i = "";
-  
+
   pr << "# eflux" << i << " : " << std::endl
      << "# mag" << i << " : " << std::endl
      << "# wmag" << i << " : " << std::endl
@@ -107,7 +107,7 @@ const BaseStarList* Measured2Base(const MeasuredStarList *This)
      << "# airmass"<<i<<" :  "<<std::endl
      << "# band"<<i<< " : ugriz=01234 " << std::endl
      << "# valid" << i << " : 0=outlier 1=ok ?" << std::endl;
-  
+
   format += " MeasuredStar 1 ";
   //  if(i && InitialStarRef)
   //    {
@@ -149,16 +149,16 @@ void MeasuredStar::writen(std::ostream& s) const
   //      bandNumber["i"]=3;
   //      bandNumber["z"]=4;
   //    }
-  
+
   BaseStar::writen(s);
 
   s << eflux << ' '
     << (std::isnan(mag)? -1 : mag) << ' '
     << wmag << ' ';
-  
+
   if(ccdImage)
     std::cout << "ccdImage ! " << ccdImage << std::endl;
-  
+
   if(ccdImage)
     s << ccdImage->Chip() << ' '
       << ccdImage->Shoot() << ' '
@@ -169,7 +169,7 @@ void MeasuredStar::writen(std::ostream& s) const
       << 0 << ' '
       << 0 << ' '
       << -1 << ' ';
-  
+
   s << valid << ' ';
 
 }
@@ -198,7 +198,7 @@ void  MeasuredStarList::SetCcdImage(const CcdImage *C)
   for (MeasuredStarIterator i= begin(); i != end(); ++i)
       (*i)->SetCcdImage(C);
 }
-  
+
 
 
 

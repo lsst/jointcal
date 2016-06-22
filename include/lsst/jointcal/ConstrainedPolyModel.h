@@ -70,7 +70,7 @@ public :
 
   //! Access to array of shoots involved in the solution.
   std::vector<ShootIdType> GetShoots() const;
-   
+
   /*! the mapping of sky coordinates (i.e. the coordinate system
   in which fitted stars are reported) onto the Tangent plane
   (into which the pixel coordinates are transformed) */
@@ -86,7 +86,7 @@ public :
   poloka-core */
   //  bool WriteChipArrangement(const std::string &FileName) const;
 
- 
+
 };
 
 }} // end of namespaces

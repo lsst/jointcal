@@ -111,7 +111,7 @@ void PhotomFit::LSDerivatives(const CcdImage &Ccd,
       const FittedStar *fs = ms.GetFittedStar();
 
       double res = ms.flux - pf * fs->flux;
-            
+
       if (_fittingModel)
 	{
 	  _photomModel->GetIndicesAndDerivatives(ms,
@@ -163,7 +163,7 @@ void PhotomFit::AccumulateStat(ListType &L, Accum &Accu) const
 #ifdef FUTURE
 	  TweakPhotomMeasurementErrors(inPos, ms, _posError);
 #endif
-	  
+
 	  double pf = _photomModel->PhotomFactor(Ccd, ms);
 	  const FittedStar *fs = ms.GetFittedStar();
 	  double res = ms.flux - pf * fs->flux;
@@ -293,7 +293,7 @@ void PhotomFit::FindOutliers(const double &NSigCut,
 	 this one contrains was already discarded. If yes, we keep this one */
       for (auto i=indices.cbegin(); i!= indices.end(); ++i)
 	if (affectedParams(*i) !=0) drop_it = false;
-      
+
       if (drop_it)
 	{
 	  for (auto i=indices.cbegin(); i!= indices.end(); ++i)
@@ -357,7 +357,7 @@ unsigned PhotomFit::RemoveOutliers(const double &NSigCut)
 	 this one contrains was already discarded. If yes, we keep this one */
       for (auto i=indices.cbegin(); i!= indices.end(); ++i)
 	if (affectedParams(*i) !=0) drop_it = false;
-      
+
       if (drop_it)
 	{
 	  FittedStar *fs = i->ms->GetFittedStar();
@@ -366,7 +366,7 @@ unsigned PhotomFit::RemoveOutliers(const double &NSigCut)
 	  /* By making sure that we do not remove all MeasuredStars
 	     pointing to a FittedStar in a single go,
 	     fs->MeasurementCount() should never go to 0.
-	     
+
 	     It seems plausible that the adopted mechanism prevents as
 	     well to end up with under-constrained transfos. */
 	  for (auto i=indices.cbegin(); i!= indices.cend(); ++i)

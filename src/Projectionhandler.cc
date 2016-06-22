@@ -19,7 +19,7 @@ OneTPPerShoot::OneTPPerShoot(const CcdImageList &L)
       if (tMap.find(im.Shoot()) == tMap.end())
 	tMap[im.Shoot()] = im.Sky2TP()->Clone();
     }
-    
+
 }
 
 const Gtransfo* OneTPPerShoot::Sky2TP(const CcdImage &C) const
