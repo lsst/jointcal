@@ -21,7 +21,7 @@ namespace jointcal {
         LSST_CONTROL_FIELD(sourceFluxField, std::string, "name of flux field in source catalog");
 
         JointcalControl() :
-            sourceFluxField("base_CircularApertureFlux_7")
+            sourceFluxField("None")
         {
             validate();
         }
