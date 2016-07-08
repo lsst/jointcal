@@ -88,8 +88,7 @@ class JointcalConfig(pexConfig.Config):
         sourceSelector.setDefaults()
         sourceSelector.sourceFluxType = self.sourceFluxType
         # don't want to lose existing flags, just add to them.
-        sourceSelector.badFlags.extend(["slot_Centroid_flag",
-                                       "slot_Shape_flag"])
+        sourceSelector.badFlags.extend(["slot_Shape_flag"])
 
 
 class JointcalTask(pipeBase.CmdLineTask):
