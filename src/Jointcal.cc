@@ -39,7 +39,6 @@ namespace jointcal {
         if (sourceFluxField.empty()) {
             throw LSST_EXCEPT(pexExcept::InvalidParameterError, "sourceFluxField must be specified");
         }
-        std::cout << sourceFluxField << std::endl;
     }
 
     Jointcal::Jointcal(
@@ -65,7 +64,6 @@ namespace jointcal {
         _cameraList(cameraList)
 {
 
-    std::cout << "sourceFluxField is set to : " << control->sourceFluxField << std::endl;
     if (_wcsList.size() == 0)
       {
 	std::cout << "jointcal::Jointcal : empty image list, we give up" << std::endl;

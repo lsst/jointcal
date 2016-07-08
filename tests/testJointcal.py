@@ -87,14 +87,18 @@ class JointcalTest(lsst.utils.tests.TestCase):
             calexp_md = butler.get('calexp_md', {'visit': visit, 'raft': '2,2', 'sensor': '1,1'})
             self.catalogs.append(FakeRef(src, calexp_md, dataId))
 
-        self.jointcalTask = jointcal.JointcalTask()
+        self.jointcalTask = jointcal.JointcalTask(self.catalogs[0].src.schema)
+        # TODO: Tweaking S/N threshold to help  pass original thresholds.
+        # TODO: Jointcal results are quite sensitive to the particulars of the
+        # sources used for assocaitions, and astrometrySourceSelector does not
+        # exactly match the original bundled StarSelector.
+        self.jointcalTask.config.sourceSelector["astrometry"].minSnr = 13
 
     def _testJointCalTask(self, nCatalogs, relerr):
         """Test jointcal on nCatalogs, requiring < some relative error (arcsec)."""
 
         self.jointcalTask.run(self.catalogs[:nCatalogs])
         rms_rel, rms_abs = compute_rms(self.reference, self.catalogs[:nCatalogs], fluxlimit=100)
-        # NOTE: this number come from an initial jointcal run.
         self.assertLess(rms_rel, relerr/arcsec_per_radian)
         self.assertLess(rms_abs, absolute_error)
 
