@@ -45,9 +45,7 @@ class JointcalRunner(pipeBase.TaskRunner):
         for ref in parsedCmd.id.refList:
             refListDict.setdefault(ref.dataId["tract"], []).append(ref)
         # we call run() once with each tract
-        return [(refListDict[tract],
-                 tract
-                 ) for tract in sorted(refListDict.keys())]
+        return [(refListDict[tract],) for tract in sorted(refListDict.keys())]
 
     def __call__(self, args):
         task = self.TaskClass(config=self.config, log=self.log)
@@ -57,6 +55,11 @@ class JointcalRunner(pipeBase.TaskRunner):
 class JointcalConfig(pexConfig.Config):
     """Config for jointcalTask"""
 
+    coaddName = pexConfig.Field(
+        doc = "Type of coadd",
+        dtype = str,
+        default = "deep"
+    )
     posError = pexConfig.Field(
         doc = "Constant term for error on position (in pixel unit)",
         dtype = float,
@@ -98,10 +101,7 @@ class JointcalTask(pipeBase.CmdLineTask):
     RunnerClass = JointcalRunner
     _DefaultName = "jointcal"
 
-    def __init__(self, schema, *args, **kwargs):
-        """
-        @param schema source catalog schema for all the catalogs we will work with.
-        """
+    def __init__(self, *args, **kwargs):
         pipeBase.CmdLineTask.__init__(self, *args, **kwargs)
         self.makeSubtask("sourceSelector")
 
@@ -124,6 +124,7 @@ class JointcalTask(pipeBase.CmdLineTask):
 
     def _build_ccdImage(self, dataRef, associations, jointcalControl):
         """Extract the necessary things from this dataRef to add a new ccdImage."""
+        ccdId = dataRef.get("calexp").getDetector().getId()
         src = dataRef.get("src", immediate=True)
         md = dataRef.get("calexp_md", immediate=True)
         tanwcs = afwImage.TanWcs.cast(afwImage.makeWcs(md))
@@ -151,14 +152,14 @@ class JointcalTask(pipeBase.CmdLineTask):
         # TODO: NOTE: End of old source selector debugging block.
 
         if len(goodSrc.sourceCat) == 0:
-            print("no stars selected in ", dataRef.dataId["visit"], dataRef.dataId["ccd"])
+            print("no stars selected in ", dataRef.dataId["visit"], ccdId)
             return
         print("%d stars selected in visit %d - ccd %d"%(len(goodSrc.sourceCat),
                                                         dataRef.dataId["visit"],
-                                                        dataRef.dataId["ccd"]))
+                                                        ccdId))
 
         associations.AddImage(goodSrc.sourceCat, tanwcs, md, bbox, filt, calib,
-                              dataRef.dataId['visit'], dataRef.dataId['ccd'],
+                              dataRef.dataId['visit'], ccdId,
                               dataRef.getButler().get("camera").getName(),
                               jointcalControl)
 
@@ -288,9 +289,12 @@ class JointcalTask(pipeBase.CmdLineTask):
 
             name = im.Name()
             visit, ccd = name.split('_')
+            visit = int(visit)
+            ccd = int(ccd)
             for dataRef in dataRefs:
-                if dataRef.dataId["visit"] == int(visit) and dataRef.dataId["ccd"] == int(ccd):
-                    print("Updating WCS for visit: %d, ccd%d"%(int(visit), int(ccd)))
+                ccdId = dataRef.get("calexp").getDetector().getId()
+                if dataRef.dataId["visit"] == visit and ccdId == ccd:
+                    print("Updating WCS for visit: %d, ccd%d"%(visit, ccd))
                     exp = afwImage.ExposureI(0, 0)
                     exp.setWcs(tanWcs)
                     try:
@@ -323,11 +327,6 @@ class StarSelectorConfig(pexConfig.Config):
         doc = "Maximum magnitude for sources to be included in the fit",
         dtype = float,
         default = 22.5,
-    )
-    coaddName = pexConfig.Field(
-        doc = "Type of coadd",
-        dtype = str,
-        default = "deep"
     )
     centroid = pexConfig.Field(
         doc = "Centroid type for position estimation",

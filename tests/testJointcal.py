@@ -38,10 +38,19 @@ class FakeRef(object):
     def __init__(self, src, calexp_md, dataId):
         self.src = src
         self.calexp_md = calexp_md
+
+        # Fake a Calexp and detector for getId
+        class Detector(object):
+            def getId(self):
+                return 1
+
+        class Calexp(object):
+            def getDetector(self):
+                return Detector()
+
+        self.calexp = Calexp()
+
         # info about our "telescope"
-        # self.calexp_md.setDouble("AIRMASS", 1)
-        self.calexp_md.setDouble("MJD", 54321.)
-        # self.calexp_md.setDouble("EXPTIME", 30.)
         self.calexp_md.setDouble("LST", 53.00914)
         self.calexp_md.setDouble("RA2000", 53.00914)
         self.calexp_md.setDouble("DEC2000", -27.43895)
@@ -67,6 +76,18 @@ class FakeRef(object):
         return {'camera': NamedThing('monkeySim')}
 
 
+class JointcalRunnerTest(lsst.utils.tests.TestCase):
+    """Check that JointcalRunner calls jointcal.run() correctly."""
+    def testJointcalRunner(self):
+        input_dir = os.path.join(data_dir, 'twinkles1')
+        try:
+            jointcal.JointcalTask.parseAndRun(args=[input_dir, '--output', '.test',
+                                                    '--clobber-versions', '--doraise',
+                                                    '--id', 'visit=840'])
+        except Exception as e:
+            self.fail('parseAndRun failed with %s: %s'%(type(e).__name__, e))
+
+
 class JointcalTest(lsst.utils.tests.TestCase):
     def setUp(self):
         os.environ['ASTROMETRY_NET_DATA_DIR'] = os.path.join(data_dir, 'twinkles1_and_index')
@@ -87,7 +108,7 @@ class JointcalTest(lsst.utils.tests.TestCase):
             calexp_md = butler.get('calexp_md', {'visit': visit, 'raft': '2,2', 'sensor': '1,1'})
             self.catalogs.append(FakeRef(src, calexp_md, dataId))
 
-        self.jointcalTask = jointcal.JointcalTask(self.catalogs[0].src.schema)
+        self.jointcalTask = jointcal.JointcalTask()
         # TODO: Tweaking S/N threshold to help  pass original thresholds.
         # TODO: Jointcal results are quite sensitive to the particulars of the
         # sources used for assocaitions, and astrometrySourceSelector does not

@@ -199,9 +199,9 @@ CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceReco
     }
     // TODO: Massive hack to get my test data to run.
     // TODO: this all needs to go away once DM-5501 is dealt with.
-    else if (camera == "monkeySim") {
+    else if (camera == "monkeySim" || camera == "LSST") {
         airMass = meta->get<double>("AIRMASS");
-        jd = meta->get<double>("MJD");  // Julian date
+        jd = meta->get<double>("MJD-OBS");  // Julian date
         expTime = meta->get<double>("EXPTIME");
         lst_obs = lsst::afw::geom::degToRad(meta->get<double>("LST"));
         ra = lsst::afw::geom::degToRad(meta->get<double>("RA2000"));
