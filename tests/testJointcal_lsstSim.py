@@ -89,7 +89,7 @@ class JointcalTestLSSTSim(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Te
         self._prep_reference_loader(center, radius)
 
         self.input_dir = os.path.join(data_dir, 'cfht')
-        self.visit_list = range(840, 850)
+        self.all_visits = range(840, 850)
 
         # Get a set of source catalogs.
         self.catalogs = []

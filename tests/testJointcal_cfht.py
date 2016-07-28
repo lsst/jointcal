@@ -5,7 +5,10 @@ from __future__ import division, absolute_import, print_function
 import unittest
 import os
 
-from lsst.afw import geom, coord
+from astropy import units as u
+
+import lsst.afw.geom
+import lsst.afw.coord as afwCoord
 import lsst.utils
 import lsst.pex.exceptions
 
@@ -19,9 +22,11 @@ except lsst.pex.exceptions.NotFoundError:
 
 # We don't want the absolute astrometry to become significantly worse
 # than the single-epoch astrometry (about 0.040").
-absolute_error = 48e-3/jointcalTestBase.arcsec_per_radian
+# This value was empirically determined from the first run of jointcal on
+# this data, and will likely vary from survey to survey.
+absolute_error = 48e-3*u.arcsecond
 # Set to True for a comparison plot and some diagnostic numbers.
-doPlot = False
+do_plot = True
 
 
 # for MemoryTestCase
@@ -32,20 +37,23 @@ def setup_module(module):
 class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCase):
     def setUp(self):
         jointcalTestBase.JointcalTestBase.setUp(self)
-        self.doPlot = doPlot
-        self.matchRadius = 0.1*geom.arcseconds
+        self.do_plot = do_plot
+        self.match_radius = 0.1*lsst.afw.geom.arcseconds
 
         # position of the validation_data_cfht catalog
-        center = coord.IcrsCoord(214.8848320609*geom.degrees, 52.6622198737*geom.degrees)
-        radius = geom.Angle(3, geom.degrees)
+        center = afwCoord.IcrsCoord(214.884832*lsst.afw.geom.degrees, 52.6622199*lsst.afw.geom.degrees)
+        radius = 3*lsst.afw.geom.degrees
         self._prep_reference_loader(center, radius)
 
         self.input_dir = os.path.join(data_dir, 'cfht')
-        self.visitList = [849375, 850587]
+        self.all_visits = [849375, 850587]
 
     @unittest.skipIf(data_dir is None, "validation_data_jointcal not setup")
     def test_jointcalTask_2_visits(self):
-        self._testJointCalTask(2, 25e-3, absolute_error)
+        # NOTE: The relative RMS limit was empirically determined from the
+        # first run of jointcal on this data. We should always do better than
+        # this in the future!
+        self._testJointCalTask(2, 25e-3*u.arcsecond, absolute_error)
 
 
 # TODO: the memory test cases currently fail in jointcal. I'll have to clean that up later.

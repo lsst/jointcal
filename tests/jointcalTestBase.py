@@ -25,7 +25,7 @@ class JointcalTestBase(object):
     def setUp(self):
         self.do_plot = False  # don't make plots unless specifically requested
         self.match_radius = 0.1*lsst.afw.geom.arcseconds  # match sources within 0.1" for RMS statistics
-        self.visit_list = None  # list the available visits to generate the parseAndRun arguments
+        self.all_visits = None  # list of the available visits to generate the parseAndRun arguments
         # Signal/Noise (flux/fluxSigma) for sources to be included in the RMS cross-match.
         # 100 is a balance between good centroids and enough sources.
         self.flux_limit = 100
@@ -58,7 +58,7 @@ class JointcalTestBase(object):
 
         Note: this helper should go away once parseAndRun works with lsstSim data (DM-6625).
         """
-
+        self.visit_list = self.all_visits[:nCatalogs]
         result = self.jointcalTask.run(self.catalogs[:nCatalogs])
         self.dataRefs = result.dataRefs
         self.oldWcsList = result.oldWcsList
@@ -70,7 +70,8 @@ class JointcalTestBase(object):
     def _testJointCalTask(self, nCatalogs, relative_error, absolute_error):
         """Test parseAndRun for jointcal on nCatalogs, requiring less than some error (arcsec)."""
 
-        visits = '^'.join(str(v) for v in self.visit_list[:nCatalogs])
+        self.visit_list = self.all_visits[:nCatalogs]
+        visits = '^'.join(str(v) for v in self.visit_list)
         output_dir = os.path.join('.test', self.__class__.__name__)
         result = jointcal.JointcalTask.parseAndRun(args=[self.input_dir, '--output', output_dir,
                                                          '--clobber-versions', '--clobber-config',
@@ -92,11 +93,11 @@ class JointcalTestBase(object):
 
         @return (geom.Angle, geom.Angle) relative and absolute RMS of stars
         """
-        visit_list = [dataRef.dataId['visit'] for dataRef in dataRefs]
+        visits_per_dataRef = [dataRef.dataId['visit'] for dataRef in dataRefs]
 
         def compute(catalogs):
             """Compute the relative and absolute RMS."""
-            visitCatalogs = self._make_visit_catalogs(catalogs, visit_list)
+            visitCatalogs = self._make_visit_catalogs(catalogs, visits_per_dataRef)
             refCat = visitCatalogs.values()[0]  # use the first catalog as the relative reference catalog
             relative = self._make_match_dict(refCat, visitCatalogs.values()[1:])
             absolute = self._make_match_dict(self.reference, visitCatalogs.values())
