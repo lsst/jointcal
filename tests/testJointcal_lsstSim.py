@@ -5,7 +5,10 @@ from __future__ import division, absolute_import, print_function
 import unittest
 import os
 
-from lsst.afw import geom, coord
+from astropy import units as u
+
+import lsst.afw.geom
+import lsst.afw.coord
 import lsst.utils
 import lsst.pex.exceptions
 from lsst.daf import persistence
@@ -20,9 +23,11 @@ except lsst.pex.exceptions.NotFoundError:
 
 # We don't want the absolute astrometry to become significantly worse
 # than the single-epoch astrometry (about 0.040").
-absolute_error = 42e-3/jointcalTestBase.arcsec_per_radian
+# This value was empirically determined from the first run of jointcal on
+# this data, and will likely vary from survey to survey.
+absolute_error = 42e-3*u.arcsecond
 # Set to True for a comparison plot and some diagnostic numbers.
-doPlot = False
+do_plot = True
 
 
 # for MemoryTestCase
@@ -41,9 +46,7 @@ class FakeRef(object):
         self.src = src
         self.calexp_md = calexp_md
         # info about our "telescope"
-        # self.calexp_md.setDouble("AIRMASS", 1)
         self.calexp_md.setDouble("MJD", 54321.)
-        # self.calexp_md.setDouble("EXPTIME", 30.)
         self.calexp_md.setDouble("LST", 53.00914)
         self.calexp_md.setDouble("RA2000", 53.00914)
         self.calexp_md.setDouble("DEC2000", -27.43895)
@@ -59,6 +62,11 @@ class FakeRef(object):
         setattr(self, name, value)
 
     def getButler(self):
+        """
+        This is just here to make jointcal happy until we properly solve the
+        metadata problem, when it will be able to be deleted. Jointcal doesn't
+        use the butler except to get the camera name, so that's all this does.
+        """
         class NamedThing(object):
             def __init__(self, name):
                 self.name = name
@@ -72,16 +80,16 @@ class FakeRef(object):
 class JointcalTestLSSTSim(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCase):
     def setUp(self):
         jointcalTestBase.JointcalTestBase.setUp(self)
-        self.doPlot = doPlot
-        self.matchRadius = 0.1*geom.arcseconds
+        self.do_plot = do_plot
+        self.match_radius = 0.1*lsst.afw.geom.arcseconds
 
         # position of the Twinkles run 1 catalog
-        center = coord.IcrsCoord(53.00914*geom.degrees, -27.43895*geom.degrees)
-        radius = geom.Angle(3, geom.degrees)
+        center = lsst.afw.coord.IcrsCoord(53.00914*lsst.afw.geom.degrees, -27.43895*lsst.afw.geom.degrees)
+        radius = 3*lsst.afw.geom.degrees
         self._prep_reference_loader(center, radius)
 
         self.input_dir = os.path.join(data_dir, 'cfht')
-        self.visitList = range(840, 850)
+        self.visit_list = range(840, 850)
 
         # Get a set of source catalogs.
         self.catalogs = []
@@ -95,7 +103,7 @@ class JointcalTestLSSTSim(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Te
         self.jointcalTask = jointcal.JointcalTask()
         # NOTE: Tweaking S/N threshold to help pass original thresholds.
         # TODO: Jointcal results are quite sensitive to the particulars of the
-        # sources used for assocaitions, and astrometrySourceSelector does not
+        # sources used for associations, and astrometrySourceSelector does not
         # exactly match the original bundled StarSelector.
         # TODO: Once we make jointcal more robust, we should be able to drop this.
         self.jointcalTask.config.sourceSelector["astrometry"].minSnr = 13
@@ -107,21 +115,24 @@ class JointcalTestLSSTSim(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Te
 
     @unittest.skipIf(data_dir is None, "validation_data_jointcal not setup")
     def testJointCalTask_2_catalog(self):
-        self._testJointCalTask_run(2, 8.4e-3, absolute_error)
+        # NOTE: The relative RMS limits were empirically determined from the
+        # first run of jointcal on this data. We should always do better than
+        # this in the future!
+        self._testJointCalTask_run(2, 8.4e-3*u.arcsecond, absolute_error)
 
     @unittest.skipIf(data_dir is None, "validation_data_jointcal not setup")
     @unittest.skip('Keeping this around for diagnostics on the behavior with n catalogs.')
     def testJointCalTask_4_catalog(self):
-        self._testJointCalTask_run(4, 7.8e-3, absolute_error)
+        self._testJointCalTask_run(4, 7.8e-3*u.arcsecond, absolute_error)
 
     @unittest.skipIf(data_dir is None, "validation_data_jointcal not setup")
     @unittest.skip('Keeping this around for diagnostics on the behavior with n catalogs.')
     def testJointCalTask_7_catalog(self):
-        self._testJointCalTask_run(7, 7.5e-3, absolute_error)
+        self._testJointCalTask_run(7, 7.5e-3*u.arcsecond, absolute_error)
 
     @unittest.skipIf(data_dir is None, "validation_data_jointcal not setup")
     def testJointCalTask_10_catalog(self):
-        self._testJointCalTask_run(10, 7.4e-3, absolute_error)
+        self._testJointCalTask_run(10, 7.4e-3*u.arcsecond, absolute_error)
 
 
 # TODO: the memory test cases currently fail in jointcal. I'll have to clean that up later.

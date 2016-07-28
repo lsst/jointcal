@@ -59,7 +59,7 @@ class JointcalRunner(pipeBase.TaskRunner):
         task = self.TaskClass(config=self.config, log=self.log)
         result = task.run(*args)
         if self.doReturnResults:
-            return pipeBase.Struct(result = result)
+            return pipeBase.Struct(result=result)
 
 
 class JointcalConfig(pexConfig.Config):
@@ -89,12 +89,6 @@ class JointcalConfig(pexConfig.Config):
     sourceSelector = sourceSelectorRegistry.makeField(
         doc = "How to select sources for cross-matching",
         default = "astrometry"
-    )
-    # TODO: CmdLineTask has a profile thing built-in: can we tie in to that?
-    profile = pexConfig.Field(
-        doc = "Profile jointcal, including the catalog creation step.",
-        dtype = bool,
-        default = False
     )
 
     def setDefaults(self):
@@ -135,7 +129,7 @@ class JointcalTask(pipeBase.CmdLineTask):
 
     def _build_ccdImage(self, dataRef, associations, jointcalControl):
         """
-        Extract the necessary things from this dataRef to add a new ccdImage.
+        !Extract the necessary things from this dataRef to add a new ccdImage.
 
         @param dataRef (ButlerDataRef) dataRef to extract info from.
         @param associations (jointcal.Associations) object to add the info to, to
@@ -156,41 +150,41 @@ class JointcalTask(pipeBase.CmdLineTask):
 
         goodSrc = self.sourceSelector.selectSources(src)
 
-        # ------------------
         # TODO: Leaving the old catalog and comparison code in while we
         # sort out the old/new star selector differences.
+        # This block, and the StarSelector at the bottom of this file,
+        # will be removed when DM-6622 is completed (it's a useful check
+        # on the old/new star selector differences until then).
+        useOldStarSelector = False
+        if useOldStarSelector:
+            configSel = StarSelectorConfig()
+            self.oldSS = StarSelector(configSel)
+            stars1 = goodSrc.sourceCat.copy(deep=True)
+            stars2 = self.oldSS.select(src, calib).copy(deep=True)
+            # fluxField = jointcalControl.sourceFluxField
+            # SN = stars1.get(fluxField+"_flux") / stars1.get(fluxField+"_fluxSigma")
+            aa = [x for x in stars1['id'] if x in stars2['id']]
+            print("new, old, shared:", len(stars1), len(stars2), len(aa))
+            # import ipdb; ipdb.set_trace()
+            print("%d stars selected in visit %d - ccd %d"%(len(stars2),
+                                                            dataRef.dataId["visit"],
+                                                            dataRef.dataId["ccd"]))
+            associations.AddImage(stars2, tanwcs, md, bbox, filt, calib,
+                                  dataRef.dataId['visit'], dataRef.dataId['ccd'],
+                                  dataRef.getButler().get("camera").getName(),
+                                  jointcalControl)
+        else:
+            if len(goodSrc.sourceCat) == 0:
+                print("no stars selected in ", dataRef.dataId["visit"], dataRef.dataId["ccd"])
+                return tanwcs
+            print("%d stars selected in visit %d - ccd %d"%(len(goodSrc.sourceCat),
+                                                            dataRef.dataId["visit"],
+                                                            dataRef.dataId["ccd"]))
 
-        # configSel = StarSelectorConfig()
-        # self.oldSS = StarSelector(configSel)
-        # stars1 = goodSrc.sourceCat.copy(deep=True)
-        # stars2 = self.oldSS.select(src, calib).copy(deep=True)
-        # fluxField = jointcalControl.sourceFluxField
-        # SN = stars1.get(fluxField+"_flux") / stars1.get(fluxField+"_fluxSigma")
-        # aa = [x for x in stars1['id'] if x in stars2['id']]
-        # print("new, old, shared:", len(stars1), len(stars2), len(aa))
-        # # import ipdb; ipdb.set_trace()
-
-        # print("%d stars selected in visit %d - ccd %d"%(len(stars2),
-        #                                                 dataRef.dataId["visit"],
-        #                                                 dataRef.dataId["ccd"]))
-        # associations.AddImage(stars2, tanwcs, md, bbox, filt, calib,
-        #                       dataRef.dataId['visit'], dataRef.dataId['ccd'],
-        #                       dataRef.getButler().get("camera").getName(),
-        #                       jointcalControl)
-        # TODO: End of old source selector debugging block.
-        # ------------------
-
-        if len(goodSrc.sourceCat) == 0:
-            print("no stars selected in ", dataRef.dataId["visit"], dataRef.dataId["ccd"])
-            return
-        print("%d stars selected in visit %d - ccd %d"%(len(goodSrc.sourceCat),
-                                                        dataRef.dataId["visit"],
-                                                        dataRef.dataId["ccd"]))
-
-        associations.AddImage(goodSrc.sourceCat, tanwcs, md, bbox, filt, calib,
-                              dataRef.dataId['visit'], dataRef.dataId['ccd'],
-                              dataRef.getButler().get("camera").getName(),
-                              jointcalControl)
+            associations.AddImage(goodSrc.sourceCat, tanwcs, md, bbox, filt, calib,
+                                  dataRef.dataId['visit'], dataRef.dataId['ccd'],
+                                  dataRef.getButler().get("camera").getName(),
+                                  jointcalControl)
         return tanwcs
 
     @pipeBase.timeMethod
@@ -200,7 +194,9 @@ class JointcalTask(pipeBase.CmdLineTask):
 
         @param dataRefs list of data references.
 
-        @return (pipe.base.Struct) dataRefs that were fit (with updated WCSs) and old WCSs.
+        @return (pipe.base.Struct) struct containing:
+            - dataRefs: the provided data references that were fit (with updated WCSs)
+            - oldWcsList: the original WCS from each dataRef
         """
         if len(dataRefs) == 0:
             raise ValueError('Need a list of data references!')
@@ -210,21 +206,8 @@ class JointcalTask(pipeBase.CmdLineTask):
 
         associations = jointcalLib.Associations()
 
-        if self.config.profile:
-            import cProfile
-            import pstats
-            profile = cProfile.Profile()
-            profile.enable()
-            for dataRef in dataRefs:
-                self._build_ccdImage(dataRef, associations, jointcalControl)
-            profile.disable()
-            profile.dump_stats('jointcal_load_catalog.prof')
-            prof = pstats.Stats('jointcal_load_catalog.prof')
-            prof.strip_dirs().sort_stats('cumtime').print_stats(20)
-        else:
-            old_wcss = []
-            for dataRef in dataRefs:
-                old_wcss.append(self._build_ccdImage(dataRef, associations, jointcalControl))
+        with pipeBase.cmdLineTask.profile('jointcal_load_catalog.prof'):
+            oldWcsList = [self._build_ccdImage(ref, associations, jointcalControl) for ref in dataRefs]
 
         matchCut = 3.0
         # TODO: this should not print "trying to invert a singular transformation:"
@@ -309,7 +292,7 @@ class JointcalTask(pipeBase.CmdLineTask):
                 print("unxepected return code from Minimize")
 
         # Fill reference and measurement n-tuples for each tract
-        tupleName = "res_" + str(dataRef.dataId["tract"]) + ".list"
+        tupleName = "res_" + str(dataRefs[0].dataId["tract"]) + ".list"
         fit.MakeResTuple(tupleName)
 
         # Build an updated wcs for each calexp
@@ -333,11 +316,12 @@ class JointcalTask(pipeBase.CmdLineTask):
                         self.log.warn('Failed to write updated Wcs: ' + str(e))
                     break
 
-        return pipeBase.Struct(dataRefs=dataRefs, old_wcss=old_wcss)
+        return pipeBase.Struct(dataRefs=dataRefs, oldWcsList=oldWcsList)
 
 
 # TODO: Leaving StarSelector[Config] here for reference.
 # TODO: We can remove them once we're happy with astrometryStarSelector.
+# TODO: This will be removed once DM-6622 is completed.
 
 class StarSelectorConfig(pexConfig.Config):
 
