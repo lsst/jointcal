@@ -340,26 +340,22 @@ def plot_rms_histogram(plt, old_rms_relative, old_rms_absolute,
     ls_old = 'dotted'
     color_abs = 'blue'
     ls_new = 'dashed'
-    lw = 2
-    range = (0, 0.1)*u.arcsecond
+    plotOptions = {'lw': 2, 'range': (0, 0.1)*u.arcsecond, 'normed': True,
+                   'bins': 30, 'histtype': 'step'}
 
     plt.title('relative vs. absolute: %d vs. %d'%(len(old_rms_relative), len(old_rms_absolute)))
 
-    plt.hist(old_rms_absolute, color=color_abs, ls=ls_old, label='old abs',
-             histtype='step', bins=30, lw=lw, range=range)
-    plt.hist(new_rms_absolute, color=color_abs, ls=ls_new, label='new abs',
-             histtype='step', bins=30, lw=lw, range=range)
+    plt.hist(old_rms_absolute, color=color_abs, ls=ls_old, label='old abs', **plotOptions)
+    plt.hist(new_rms_absolute, color=color_abs, ls=ls_new, label='new abs', **plotOptions)
 
-    plt.hist(old_rms_relative, color=color_rel, ls=ls_old, label='old rel',
-             histtype='step', bins=30, lw=lw, range=range)
-    plt.hist(new_rms_relative, color=color_rel, ls=ls_new, label='new rel',
-             histtype='step', bins=30, lw=lw, range=range)
+    plt.hist(old_rms_relative, color=color_rel, ls=ls_old, label='old rel', **plotOptions)
+    plt.hist(new_rms_relative, color=color_rel, ls=ls_new, label='new rel', **plotOptions)
 
     plt.axvline(x=old_abs_total.value, linewidth=1.5, color=color_abs, ls=ls_old)
     plt.axvline(x=new_abs_total.value, linewidth=1.5, color=color_abs, ls=ls_new)
     plt.axvline(x=old_rel_total.value, linewidth=1.5, color=color_rel, ls=ls_old)
     plt.axvline(x=new_rel_total.value, linewidth=1.5, color=color_rel, ls=ls_new)
 
-    plt.xlim(range)
+    plt.xlim(plotOptions['range'])
     plt.xlabel('arcseconds')
     plt.legend(loc='best')
