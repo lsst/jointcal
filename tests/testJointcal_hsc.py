@@ -48,22 +48,24 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         self.input_dir = os.path.join(data_dir, 'DATA')
         self.all_visits = [903334, 903336, 903338, 903342, 903344, 903346]
 
-    @unittest.skipIf(data_dir is None, "validation_data_jointcal not setup")
+    @unittest.skipIf(data_dir is None, "validation_data_hsc not setup")
     def test_jointcalTask_2_visits(self):
         # NOTE: The relative RMS limit was empirically determined from the
         # first run of jointcal on this data. We should always do better than
         # this in the future!
-        self._testJointCalTask(2, 17e-3*u.arcsecond, absolute_error)
+        relative_error = 17e-3*u.arcsecond
+        self._testJointCalTask(2, relative_error, absolute_error)
 
-    @unittest.skipIf(data_dir is None, "validation_data_jointcal not setup")
+    @unittest.skipIf(data_dir is None, "validation_data_hsc not setup")
     def test_jointcalTask_6_visits(self):
         # NOTE: The relative RMS limit was empirically determined from the
         # first run of jointcal on this data. We should always do better than
         # this in the future!
-        self._testJointCalTask(6, 10e-3*u.arcsecond, absolute_error)
+        relative_error = 10e-3*u.arcsecond
+        self._testJointCalTask(6, relative_error, absolute_error)
 
 
-# TODO: the memory test cases currently fail in jointcal. I'll have to clean that up later.
+# TODO: the memory test cases currently fail in jointcal. Filed as DM-6626.
 # class MyMemoryTestCase(lsst.utils.tests.MemoryTestCase):
 #     pass
 
