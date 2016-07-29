@@ -53,10 +53,11 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
         # NOTE: The relative RMS limit was empirically determined from the
         # first run of jointcal on this data. We should always do better than
         # this in the future!
-        self._testJointCalTask(2, 25e-3*u.arcsecond, absolute_error)
+        relative_error = 25e-3*u.arcsecond
+        self._testJointCalTask(2, relative_error, absolute_error)
 
 
-# TODO: the memory test cases currently fail in jointcal. I'll have to clean that up later.
+# TODO: the memory test cases currently fail in jointcal. Filed as DM-6626.
 # class MyMemoryTestCase(lsst.utils.tests.MemoryTestCase):
 #     pass
 

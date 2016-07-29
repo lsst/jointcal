@@ -118,24 +118,28 @@ class JointcalTestLSSTSim(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Te
         # NOTE: The relative RMS limits were empirically determined from the
         # first run of jointcal on this data. We should always do better than
         # this in the future!
-        self._testJointCalTask_run(2, 8.4e-3*u.arcsecond, absolute_error)
+        relative_error = 8.4e-3*u.arcsecond,
+        self._testJointCalTask_run(2, relative_error, absolute_error)
 
     @unittest.skipIf(data_dir is None, "validation_data_jointcal not setup")
     @unittest.skip('Keeping this around for diagnostics on the behavior with n catalogs.')
     def testJointCalTask_4_catalog(self):
-        self._testJointCalTask_run(4, 7.8e-3*u.arcsecond, absolute_error)
+        relative_error = 7.8e-3*u.arcsecond,
+        self._testJointCalTask_run(4, relative_error, absolute_error)
 
     @unittest.skipIf(data_dir is None, "validation_data_jointcal not setup")
     @unittest.skip('Keeping this around for diagnostics on the behavior with n catalogs.')
     def testJointCalTask_7_catalog(self):
-        self._testJointCalTask_run(7, 7.5e-3*u.arcsecond, absolute_error)
+        relative_error = 7.5e-3*u.arcsecond,
+        self._testJointCalTask_run(7, relative_error, absolute_error)
 
     @unittest.skipIf(data_dir is None, "validation_data_jointcal not setup")
     def testJointCalTask_10_catalog(self):
-        self._testJointCalTask_run(10, 7.4e-3*u.arcsecond, absolute_error)
+        relative_error = 7.4e-3*u.arcsecond,
+        self._testJointCalTask_run(10, relative_error, absolute_error)
 
 
-# TODO: the memory test cases currently fail in jointcal. I'll have to clean that up later.
+# TODO: the memory test cases currently fail in jointcal. Filed as DM-6626.
 # class MyMemoryTestCase(lsst.utils.tests.MemoryTestCase):
 #     pass
 
