@@ -40,12 +40,20 @@ class JointcalRunner(pipeBase.TaskRunner):
 
     @staticmethod
     def getTargetList(parsedCmd, **kwargs):
+        """
+        Return a list tuples per tract: (dataRefs, kwargs).
+
+        Jointcal operates on lists of dataRefs simultaneously.
+        """
+        kwargs['profile_jointcal'] = parsedCmd.profile_jointcal
+
         # organize data IDs by tract
         refListDict = {}
         for ref in parsedCmd.id.refList:
             refListDict.setdefault(ref.dataId["tract"], []).append(ref)
         # we call run() once with each tract
-        return [(refListDict[tract],) for tract in sorted(refListDict.keys())]
+        result = [(refListDict[tract], kwargs) for tract in sorted(refListDict.keys())]
+        return result
 
     def __call__(self, args):
         """
@@ -57,7 +65,8 @@ class JointcalRunner(pipeBase.TaskRunner):
             - dataRef: the provided data references, with update post-fit WCS's.
         """
         task = self.TaskClass(config=self.config, log=self.log)
-        result = task.run(*args)
+        dataRefList, kwargs = args
+        result = task.run(dataRefList, **kwargs)
         if self.doReturnResults:
             return pipeBase.Struct(result=result)
 
@@ -106,8 +115,9 @@ class JointcalTask(pipeBase.CmdLineTask):
     RunnerClass = JointcalRunner
     _DefaultName = "jointcal"
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, profile_jointcal=False, *args, **kwargs):
         pipeBase.CmdLineTask.__init__(self, *args, **kwargs)
+        self.profile_jointcal = profile_jointcal
         self.makeSubtask("sourceSelector")
 
     # We don't need to persist config and metadata at this stage.
@@ -122,7 +132,8 @@ class JointcalTask(pipeBase.CmdLineTask):
     def _makeArgumentParser(cls):
         """Create an argument parser"""
         parser = pipeBase.ArgumentParser(name=cls._DefaultName)
-
+        parser.add_argument("--profile_jointcal", default=False, action="store_true",
+                            help="Profile steps of jointcal separately.")
         parser.add_id_argument("--id", "calexp", help="data ID, e.g. --selectId visit=6789 ccd=0..9",
                                ContainerClass=PerTractCcdDataIdContainer)
         return parser
@@ -188,11 +199,12 @@ class JointcalTask(pipeBase.CmdLineTask):
         return tanwcs
 
     @pipeBase.timeMethod
-    def run(self, dataRefs):
+    def run(self, dataRefs, profile_jointcal=False):
         """
         !Jointly calibrate the astrometry and photometry across a set of images.
 
         @param dataRefs list of data references.
+        @param profile_jointcal (bool) profile the individual steps of jointcal.
 
         @return (pipe.base.Struct) struct containing:
             - dataRefs: the provided data references that were fit (with updated WCSs)
@@ -206,7 +218,8 @@ class JointcalTask(pipeBase.CmdLineTask):
 
         associations = jointcalLib.Associations()
 
-        with pipeBase.cmdLineTask.profile('jointcal_load_catalog.prof'):
+        load_cat_prof_file = 'jointcal_load_catalog.prof' if profile_jointcal else ''
+        with pipeBase.cmdLineTask.profile(load_cat_prof_file):
             oldWcsList = [self._build_ccdImage(ref, associations, jointcalControl) for ref in dataRefs]
 
         matchCut = 3.0
