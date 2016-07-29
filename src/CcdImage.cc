@@ -188,7 +188,7 @@ CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceReco
         ra = lsst::afw::geom::degToRad(meta->get<double>("RA_DEG"));
         dec = lsst::afw::geom::degToRad(meta->get<double>("DEC_DEG"));
     }
-    else if (camera == "hsc") {
+    else if (camera == "HSC") {
         airMass = meta->get<double>("AIRMASS");
         jd = meta->get<double>("MJD");  // Julian date
         expTime = meta->get<double>("EXPTIME");
