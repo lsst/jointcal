@@ -27,7 +27,7 @@ except lsst.pex.exceptions.NotFoundError:
 # this data, and will likely vary from survey to survey.
 absolute_error = 42e-3*u.arcsecond
 # Set to True for a comparison plot and some diagnostic numbers.
-do_plot = True
+do_plot = False
 
 
 # for MemoryTestCase
