@@ -89,12 +89,6 @@ class JointcalConfig(pexConfig.Config):
         dtype = int,
         default = 3,
     )
-    sourceFluxType = pexConfig.Field(
-        doc = "Type of source flux (e.g. Ap, Psf, Calib): passed to sourceSelector "
-              "and used in ccdImage",
-        dtype = str,
-        default = "Calib"
-    )
     sourceSelector = sourceSelectorRegistry.makeField(
         doc = "How to select sources for cross-matching",
         default = "astrometry"
@@ -103,9 +97,10 @@ class JointcalConfig(pexConfig.Config):
     def setDefaults(self):
         sourceSelector = self.sourceSelector["astrometry"]
         sourceSelector.setDefaults()
-        sourceSelector.sourceFluxType = self.sourceFluxType
         # don't want to lose existing flags, just add to them.
         sourceSelector.badFlags.extend(["slot_Shape_flag"])
+        # This should be used to set the FluxField value in jointcal::JointcalControl
+        sourceSelector.sourceFluxType = 'Calib'
 
 
 class JointcalTask(pipeBase.CmdLineTask):
@@ -213,9 +208,7 @@ class JointcalTask(pipeBase.CmdLineTask):
         if len(dataRefs) == 0:
             raise ValueError('Need a list of data references!')
 
-        jointcalControl = jointcalLib.JointcalControl()
-        jointcalControl.sourceFluxField = 'slot_'+self.config.sourceFluxType+'Flux'
-
+        jointcalControl = jointcalLib.JointcalControl(self.sourceSelector.config.sourceFluxType)
         associations = jointcalLib.Associations()
 
         load_cat_prof_file = 'jointcal_load_catalog.prof' if profile_jointcal else ''
@@ -253,7 +246,6 @@ class JointcalTask(pipeBase.CmdLineTask):
         # Determine default filter associated to the catalog
         filt, mfilt = andConfig.magColumnMap.items()[0]
         print("Using", filt, "band for reference flux")
-
         refCat = loader.loadSkyCircle(center, afwGeom.Angle(radius, afwGeom.radians), filt).refCat
 
         # associations.CollectRefStars(False) # To use USNO-A catalog

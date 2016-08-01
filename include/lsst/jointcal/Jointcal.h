@@ -20,8 +20,9 @@ namespace jointcal {
     struct JointcalControl {
         LSST_CONTROL_FIELD(sourceFluxField, std::string, "name of flux field in source catalog");
 
-        JointcalControl() :
-            sourceFluxField("None")
+        JointcalControl(std::string const sourceFluxType) :
+            // Set sourceFluxType to the value used in the source selector.
+            sourceFluxField("slot_"+sourceFluxType+"Flux")
         {
             validate();
         }
