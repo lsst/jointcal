@@ -41,7 +41,7 @@ class JointcalRunner(pipeBase.TaskRunner):
     @staticmethod
     def getTargetList(parsedCmd, **kwargs):
         """
-        Return a list tuples per tract: (dataRefs, kwargs).
+        Return a list of tuples per tract, each containing (dataRefs, kwargs).
 
         Jointcal operates on lists of dataRefs simultaneously.
         """
@@ -75,7 +75,7 @@ class JointcalConfig(pexConfig.Config):
     """Config for jointcalTask"""
 
     coaddName = pexConfig.Field(
-        doc = "Type of coadd",
+        doc = "Type of coadd, typically deep or goodSeeing",
         dtype = str,
         default = "deep"
     )
@@ -110,8 +110,13 @@ class JointcalTask(pipeBase.CmdLineTask):
     RunnerClass = JointcalRunner
     _DefaultName = "jointcal"
 
-    def __init__(self, profile_jointcal=False, *args, **kwargs):
-        pipeBase.CmdLineTask.__init__(self, *args, **kwargs)
+    def __init__(self, profile_jointcal=False, **kwargs):
+        """Instantiate a JointcalTask.
+
+        @param profile_jointcal (bool) set to True to profile different stages
+            of this jointcal run.
+        """
+        pipeBase.CmdLineTask.__init__(self, **kwargs)
         self.profile_jointcal = profile_jointcal
         self.makeSubtask("sourceSelector")
 
@@ -208,7 +213,8 @@ class JointcalTask(pipeBase.CmdLineTask):
         if len(dataRefs) == 0:
             raise ValueError('Need a list of data references!')
 
-        jointcalControl = jointcalLib.JointcalControl(self.sourceSelector.config.sourceFluxType)
+        sourceFluxField = "slot_%sFlux" % (self.sourceSelector.config.sourceFluxType,)
+        jointcalControl = jointcalLib.JointcalControl(sourceFluxField)
         associations = jointcalLib.Associations()
 
         load_cat_prof_file = 'jointcal_load_catalog.prof' if profile_jointcal else ''
