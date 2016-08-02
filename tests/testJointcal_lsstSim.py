@@ -106,7 +106,7 @@ class JointcalTestLSSTSim(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Te
         # sources used for associations, and astrometrySourceSelector does not
         # exactly match the original bundled StarSelector.
         # TODO: Once we make jointcal more robust, we should be able to drop this.
-        self.jointcalTask.config.sourceSelector["astrometry"].minSnr = 13
+        self.jointcalTask.sourceSelector.config.minSnr = 13
 
     @unittest.skipIf(data_dir is None, "validation_data_jointcal not setup")
     @unittest.skip('jointcal currently fails if only given one catalog!')

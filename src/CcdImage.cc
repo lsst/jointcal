@@ -18,38 +18,17 @@ namespace afwImg = lsst::afw::image;
 namespace lsst {
 namespace jointcal {
 
-  /* Interesting fields of the stack catalogs :
- 'base_SdssCentroid_x'
- 'base_SdssCentroid_y'
- 'base_SdssCentroid_xSigma'
- 'base_SdssCentroid_ySigma'
-
-  We miss the xy uncertainty term.
-  We can cook it up from the sdss shape:
-  'base_SdssShape_xx'
-  'base_SdssShape_yy'
-  'base_SdssShape_xy'
-
-  for fluxes, we might use :
-  'base_CircularApertureFlux_2_flux'
-  'base_CircularApertureFlux_2_fluxSigma'
-
-   where the '2' should be read from the environment.
-  */
-
 static double sq(const double &x) { return x*x;}
 
 void CcdImage::LoadCatalog(const lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &Cat,const std::string &fluxField)
 {
-  // TODO: these should use slots, e.g. "slot_Centroid_x", or better:
-  // self.config.centroidName + "_x" in python.
-  auto xKey = Cat.getSchema().find<double>("base_SdssCentroid_x").key;
-  auto yKey = Cat.getSchema().find<double>("base_SdssCentroid_y").key;
-  auto xsKey = Cat.getSchema().find<float>("base_SdssCentroid_xSigma").key;
-  auto ysKey = Cat.getSchema().find<float>("base_SdssCentroid_ySigma").key;
-  auto mxxKey = Cat.getSchema().find<double>("base_SdssShape_xx").key;
-  auto myyKey = Cat.getSchema().find<double>("base_SdssShape_yy").key;
-  auto mxyKey = Cat.getSchema().find<double>("base_SdssShape_xy").key;
+  auto xKey = Cat.getSchema().find<double>("slot_Centroid_x").key;
+  auto yKey = Cat.getSchema().find<double>("slot_Centroid_y").key;
+  auto xsKey = Cat.getSchema().find<float>("slot_Centroid_xSigma").key;
+  auto ysKey = Cat.getSchema().find<float>("slot_Centroid_ySigma").key;
+  auto mxxKey = Cat.getSchema().find<double>("slot_Shape_xx").key;
+  auto myyKey = Cat.getSchema().find<double>("slot_Shape_yy").key;
+  auto mxyKey = Cat.getSchema().find<double>("slot_Shape_xy").key;
   auto fluxKey = Cat.getSchema().find<double>(fluxField + "_flux").key;
   auto efluxKey = Cat.getSchema().find<double>(fluxField  + "_fluxSigma").key;
 
@@ -188,7 +167,7 @@ CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceReco
         ra = lsst::afw::geom::degToRad(meta->get<double>("RA_DEG"));
         dec = lsst::afw::geom::degToRad(meta->get<double>("DEC_DEG"));
     }
-    else if (camera == "hsc") {
+    else if (camera == "HSC") {
         airMass = meta->get<double>("AIRMASS");
         jd = meta->get<double>("MJD");  // Julian date
         expTime = meta->get<double>("EXPTIME");
