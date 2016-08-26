@@ -158,6 +158,7 @@ CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceReco
     double lst_obs;
     double ra;
     double dec;
+    double hourAngle = std::numeric_limits<double>::signaling_NaN();
     if (camera == "megacam" || camera == "CFHT MegaCam") {
         airMass = meta->get<double>("AIRMASS");
         jd = meta->get<double>("MJD-OBS");  // Julian date
@@ -176,6 +177,15 @@ CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceReco
         ra = lsst::afw::geom::degToRad(RaStringToDeg(meta->get<std::string>("RA2000")));
         dec = lsst::afw::geom::degToRad(DecStringToDeg(meta->get<std::string>("DEC2000")));
     }
+    else if (camera == "DECAM" || camera == "decam") {
+        airMass = meta->get<double>("AIRMASS");
+        jd = meta->get<double>("MJD-OBS");  // Julian date
+        expTime = meta->get<double>("EXPTIME");
+        latitude = lsst::afw::geom::degToRad(-30.16606);
+        hourAngle = lsst::afw::geom::degToRad(RaStringToDeg(meta->get<std::string>("HA")));
+        ra = lsst::afw::geom::degToRad(RaStringToDeg(meta->get<std::string>("RA")));
+        dec = lsst::afw::geom::degToRad(DecStringToDeg(meta->get<std::string>("DEC")));
+     }
     // TODO: Massive hack to get my test data to run.
     // TODO: this all needs to go away once DM-5501 is dealt with.
     else if (camera == "monkeySim") {
@@ -189,10 +199,11 @@ CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceReco
     else {
         throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,"jointcal::CcdImage does not understand your camera "+camera);
     }
-    hourAngle = (lst_obs-ra);
-    if  (hourAngle>M_PI) hourAngle -= 2*M_PI;
-    if  (hourAngle<-M_PI) hourAngle += 2*M_PI;
-
+    if (std::isnan(hourAngle) == true) {
+        hourAngle = (lst_obs-ra);
+        if  (hourAngle>M_PI) hourAngle -= 2*M_PI;
+        if  (hourAngle<-M_PI) hourAngle += 2*M_PI;
+    }
     if (airMass==1)
        sineta = coseta = tgz = 0;
     else
