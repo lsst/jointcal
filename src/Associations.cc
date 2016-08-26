@@ -12,6 +12,7 @@
 #include "lsst/jointcal/AstroUtils.h"
 #include "lsst/jointcal/FatPoint.h"
 #include "lsst/afw/image/Image.h"
+#include "lsst/afw/image/VisitInfo.h"
 #include "lsst/daf/base/PropertySet.h"
 
 #include "lsst/pex/exceptions.h"
@@ -49,13 +50,12 @@ Associations::Associations()
 
 bool Associations::AddImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &Ri,
                             const PTR(lsst::afw::image::TanWcs) wcs,
-                            const PTR(lsst::daf::base::PropertySet) meta,
+                            const PTR(lsst::afw::image::VisitInfo) visitInfo,
                             const lsst::afw::geom::Box2I &bbox,
                             const std::string &filter,
                             const PTR(lsst::afw::image::Calib) calib,
                             const int &visit,
                             const int &ccd,
-                            const std::string &camera,
                             const PTR(lsst::jointcal::JointcalControl) control)
 {
 
@@ -72,8 +72,8 @@ bool Associations::AddImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::S
         std::cout << "setting commonTangentPoint" << commonTangentPoint << std::endl;
     }
 
-    std::shared_ptr<CcdImage> ccdImage(new CcdImage(Ri, commonTangentPoint, wcs, meta, bbox, filter, calib, visit, ccd, camera, control->sourceFluxField));
-//  CcdImage *ccdImage = new CcdImage(Ri, commonTangentPoint, wcs, meta, bbox, filter, calib, visit, ccd, camera, control->sourceFluxField);
+    std::shared_ptr<CcdImage> ccdImage(new CcdImage(Ri, commonTangentPoint, wcs, visitInfo, bbox, filter, calib, visit, ccd, control->sourceFluxField));
+//  CcdImage *ccdImage = new CcdImage(Ri, commonTangentPoint, wcs, meta, bbox, filter, calib, visit, ccd, control->sourceFluxField);
     ccdImageList.push_back(ccdImage);
     std::cout << " we have " << ccdImage->WholeCatalog().size()
               << " objects in this catalog " << visit << " " << ccd << std::endl;

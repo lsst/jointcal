@@ -83,13 +83,12 @@ static int getBandIndex(std::string const& band)
 CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &Ri,
                    const Point &CommonTangentPoint,
                    const PTR(lsst::afw::image::TanWcs) wcs,
-                   const PTR(lsst::daf::base::PropertySet) meta,
+                   const PTR(lsst::afw::image::VisitInfo) visitInfo,
                    const lsst::afw::geom::Box2I &bbox,
                    const std::string &filter,
                    const PTR(lsst::afw::image::Calib) calib,
                    const int &visit,
                    const int &ccd,
-                   const std::string &camera,
                    const std::string &fluxField ) :
 
     index(-1), expindex(-1),
@@ -143,61 +142,20 @@ CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceReco
     // this one is needed for matches :
     pix2CommonTangentPlane = GtransfoCompose(&raDec2CTP, tanWcs);
 
-    // In the following we read informations directly from the fits header which is instrument dependent
-    // We rely on the camera name which is not optimal as a camera can be mounted on different telescopes.
-    // We would rather need the telescope name.
-    // This instrument specific part will eventually have to be handled by the camera mapper
+    double latitude = visitInfo->getObservatory().getLatitude();
+    double lst_obs = visitInfo->getEra();
+    double ra = visitInfo->getBoresightRaDec().getRa();
+    double dec = visitInfo->getBoresightRaDec().getDec();
+    double hourAngle = visitInfo->getBoresightHourAngle();
+    airMass = visitInfo->getBoresightAirmass();
+    mjd = visitInfo->getDate().get(lsst::daf::base::DateTime::MJD);
 
-    double latitude;
-    double lst_obs;
-    double ra;
-    double dec;
-    double hourAngle = std::numeric_limits<double>::signaling_NaN();
-    if (camera == "megacam" || camera == "CFHT MegaCam") {
-        airMass = meta->get<double>("AIRMASS");
-        jd = meta->get<double>("MJD-OBS");  // Julian date
-        expTime = meta->get<double>("EXPTIME");
-        latitude = lsst::afw::geom::degToRad(meta->get<double>("LATITUDE"));
-        lst_obs = lsst::afw::geom::degToRad(RaStringToDeg(meta->get<std::string>("LST-OBS")));
-        ra = lsst::afw::geom::degToRad(meta->get<double>("RA_DEG"));
-        dec = lsst::afw::geom::degToRad(meta->get<double>("DEC_DEG"));
-    }
-    else if (camera == "HSC") {
-        airMass = meta->get<double>("AIRMASS");
-        jd = meta->get<double>("MJD");  // Julian date
-        expTime = meta->get<double>("EXPTIME");
-        latitude = lsst::afw::geom::degToRad(19.825252);   // Does not seem to be in the header
-        lst_obs = lsst::afw::geom::degToRad(RaStringToDeg(meta->get<std::string>("LST-STR")));
-        ra = lsst::afw::geom::degToRad(RaStringToDeg(meta->get<std::string>("RA2000")));
-        dec = lsst::afw::geom::degToRad(DecStringToDeg(meta->get<std::string>("DEC2000")));
-    }
-    else if (camera == "DECAM" || camera == "decam") {
-        airMass = meta->get<double>("AIRMASS");
-        jd = meta->get<double>("MJD-OBS");  // Julian date
-        expTime = meta->get<double>("EXPTIME");
-        latitude = lsst::afw::geom::degToRad(-30.16606);
-        hourAngle = lsst::afw::geom::degToRad(RaStringToDeg(meta->get<std::string>("HA")));
-        ra = lsst::afw::geom::degToRad(RaStringToDeg(meta->get<std::string>("RA")));
-        dec = lsst::afw::geom::degToRad(DecStringToDeg(meta->get<std::string>("DEC")));
-    }
-    // TODO: Massive hack to get my test data to run.
-    // TODO: this all needs to go away once DM-5501 is dealt with.
-    else if (camera == "monkeySim") {
-        airMass = meta->get<double>("AIRMASS");
-        jd = meta->get<double>("MJD");  // Julian date
-        expTime = meta->get<double>("EXPTIME");
-        lst_obs = lsst::afw::geom::degToRad(meta->get<double>("LST"));
-        ra = lsst::afw::geom::degToRad(meta->get<double>("RA2000"));
-        dec = lsst::afw::geom::degToRad(meta->get<double>("DEC2000"));
-    }
-    else {
-        throw LSST_EXCEPT(pex::exceptions::InvalidParameterError, "jointcal::CcdImage does not understand your camera " + camera);
-    }
+    // lsstSim doesn't manage ERA (and thus Hour Angle) properly, so it's going to be NaN.
+    // Because we need the refraction vector later, go with 0 HA to prevent crashes on that NaN.
     if (std::isnan(hourAngle) == true) {
-        hourAngle = (lst_obs - ra);
-        if  (hourAngle > M_PI) hourAngle -= 2 * M_PI;
-        if  (hourAngle < -M_PI) hourAngle += 2 * M_PI;
+        hourAngle = 0;
     }
+
     if (airMass == 1)
         sineta = coseta = tgz = 0;
     else

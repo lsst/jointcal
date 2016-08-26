@@ -538,7 +538,7 @@ void PhotomFit::MakeResTuple(const std::string &TupleName) const
 	  TweakPhotomMeasurementErrors(inPos, ms, _posError);
 #endif
 	  double pf = _photomModel->PhotomFactor(im, ms);
-	  double jd = im.JD();
+	  double jd = im.getMjd();
 	  const FittedStar *fs = ms.GetFittedStar();
 	  double res = ms.flux - pf * fs->flux;
 	  double chi2Val = sqr(res/sigma);

@@ -11,6 +11,7 @@
 #include "lsst/afw/table/Source.h"
 #include "lsst/afw/image/TanWcs.h"
 #include "lsst/afw/image/Calib.h"
+#include "lsst/afw/image/VisitInfo.h"
 #include "lsst/daf/base/PropertySet.h"
 #include "lsst/afw/geom/Box.h"
 
@@ -70,13 +71,12 @@ public:
 //  bool AddImage(const ReducedImage &Ri);
     bool AddImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &Ri,
                   const PTR(lsst::afw::image::TanWcs) wcs,
-                  const PTR(lsst::daf::base::PropertySet) meta,
+                  const PTR(lsst::afw::image::VisitInfo) visitInfo,
                   const lsst::afw::geom::Box2I &bbox,
                   const std::string &filter,
                   const PTR(lsst::afw::image::Calib) calib,
                   const int &visit,
                   const int &ccd,
-                  const std::string &camera ,
                   const PTR(lsst::jointcal::JointcalControl) control);
 
     //! incrementaly builds a merged catalog of all image catalogs

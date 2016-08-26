@@ -152,6 +152,10 @@ class JointcalTask(pipeBase.CmdLineTask):
         """
         src = dataRef.get("src", immediate=True)
         md = dataRef.get("calexp_md", immediate=True)
+        calexp = dataRef.get("calexp", immediate=True)
+        visitInfo = calexp.getInfo().getVisitInfo()
+        ccdname = calexp.getDetector().getId()
+
         tanwcs = afwImage.TanWcs.cast(afwImage.makeWcs(md))
         lLeft = afwImage.getImageXY0FromMetadata(afwImage.wcsNameForXY0, md)
         uRight = afwGeom.Point2I(lLeft.getX() + md.get("NAXIS1")-1, lLeft.getY() + md.get("NAXIS2")-1)
@@ -179,23 +183,18 @@ class JointcalTask(pipeBase.CmdLineTask):
             # import ipdb; ipdb.set_trace()
             print("%d stars selected in visit %d - ccd %d"%(len(stars2),
                                                             dataRef.dataId["visit"],
-                                                            dataRef.dataId["ccd"]))
-            associations.AddImage(stars2, tanwcs, md, bbox, filt, calib,
-                                  dataRef.dataId['visit'], dataRef.dataId['ccd'],
-                                  dataRef.getButler().get("camera").getName(),
-                                  jointcalControl)
+                                                            ccdname))
+            associations.AddImage(stars2, tanwcs, visitInfo, bbox, filt, calib,
+                                  dataRef.dataId['visit'], ccdname, jointcalControl)
         else:
             if len(goodSrc.sourceCat) == 0:
-                print("no stars selected in ", dataRef.dataId["visit"], dataRef.dataId["ccd"])
+                print("no stars selected in ", dataRef.dataId["visit"], ccdname)
                 return tanwcs
             print("%d stars selected in visit %d - ccd %d"%(len(goodSrc.sourceCat),
                                                             dataRef.dataId["visit"],
-                                                            dataRef.dataId["ccd"]))
-
-            associations.AddImage(goodSrc.sourceCat, tanwcs, md, bbox, filt, calib,
-                                  dataRef.dataId['visit'], dataRef.dataId['ccd'],
-                                  dataRef.getButler().get("camera").getName(),
-                                  jointcalControl)
+                                                            ccdname))
+            associations.AddImage(goodSrc.sourceCat, tanwcs, visitInfo, bbox, filt, calib,
+                                  dataRef.dataId['visit'], ccdname, jointcalControl)
         return tanwcs
 
     @pipeBase.timeMethod
@@ -317,7 +316,8 @@ class JointcalTask(pipeBase.CmdLineTask):
             name = im.Name()
             visit, ccd = name.split('_')
             for dataRef in dataRefs:
-                if dataRef.dataId["visit"] == int(visit) and dataRef.dataId["ccd"] == int(ccd):
+                ccdname = dataRef.get("calexp").getDetector().getId()
+                if dataRef.dataId["visit"] == int(visit) and ccdname == int(ccd):
                     print("Updating WCS for visit: %d, ccd%d"%(int(visit), int(ccd)))
                     exp = afwImage.ExposureI(0, 0)
                     exp.setWcs(tanWcs)

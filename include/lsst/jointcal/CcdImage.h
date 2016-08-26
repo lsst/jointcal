@@ -8,6 +8,7 @@
 #include "lsst/afw/table/Source.h"
 #include "lsst/afw/image/TanWcs.h"
 #include "lsst/afw/image/Calib.h"
+#include "lsst/afw/image/VisitInfo.h"
 #include "lsst/daf/base/PropertySet.h"
 #include "lsst/afw/geom/Box.h"
 #include "lsst/jointcal/MeasuredStar.h"
@@ -62,7 +63,7 @@ private:
     double expTime; // seconds
     double airMass; // airmass value.
     double fluxCoeff; // coefficient to convert ADUs to ADUs/sec at airmass 1
-    double jd; // julian date
+    double mjd; // julian date
     double toadsZeroPoint;
     double elixirZP;
     double photk;
@@ -96,13 +97,12 @@ public:
     CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &Ri,
              const Point &CommonTangentPoint,
              const PTR(lsst::afw::image::TanWcs) wcs,
-             const PTR(lsst::daf::base::PropertySet) meta,
+             const PTR(lsst::afw::image::VisitInfo) visitInfo,
              const lsst::afw::geom::Box2I &bbox,
              const std::string &filter,
              const PTR(lsst::afw::image::Calib) calib,
              const int &visit,
              const int &ccd,
-             const std::string &ccdImage,
              const std::string &fluxField );
 
 #ifdef TO_BE_FIXED
@@ -176,7 +176,7 @@ public:
     std::string DateObs() const { return dateObs; }
 
     //! Julian Date
-    double JD() const { return jd; }
+    double getMjd() const { return mjd; }
 
 
     //!Elixir ZP (applies to fluxes in ADU/sec at airmass 1).

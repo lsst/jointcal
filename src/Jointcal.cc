@@ -18,6 +18,7 @@
 #include "lsst/pex/exceptions.h"
 #include "lsst/afw/image/Wcs.h"
 #include "lsst/afw/image/TanWcs.h"
+#include "lsst/afw/image/VisitInfo.h"
 #include "lsst/afw/geom/Angle.h"
 #include "lsst/jointcal/Jointcal.h"
 #include "lsst/jointcal/CcdImage.h"
@@ -43,25 +44,23 @@ void JointcalControl::validate() const {
 
 Jointcal::Jointcal(
     std::vector<lsst::afw::table::SortedCatalogT< lsst::afw::table::SourceRecord> > const sourceList,
-    std::vector<PTR(lsst::daf::base::PropertySet)> const metaList,
+    std::vector<PTR(lsst::afw::image::VisitInfo)> const visitInfoList,
     std::vector<PTR(lsst::afw::image::TanWcs)> const wcsList,
     std::vector<lsst::afw::geom::Box2I> const bboxList,
     std::vector<std::string> const filterList,
     std::vector<PTR(lsst::afw::image::Calib)> const calibList,
     std::vector<int> const visitList,
     std::vector<int> const ccdList,
-    std::vector<std::string> const cameraList,
     PTR(lsst::jointcal::JointcalControl) const control
 ):
     _sourceList(sourceList),
-    _metaList(metaList),
+    _visitInfoList(visitInfoList),
     _wcsList(wcsList),
     _bboxList(bboxList),
     _filterList(filterList),
     _calibList(calibList),
     _visitList(visitList),
-    _ccdList(ccdList),
-    _cameraList(cameraList)
+    _ccdList(ccdList)
 {
 
     if (_wcsList.size() == 0)
@@ -91,8 +90,8 @@ Jointcal::Jointcal(
     // Create and load an Association object
     Associations *assoc = new Associations();
     for (unsigned i = 0; i < _sourceList.size(); i++) {
-        assoc->AddImage(_sourceList[i], _wcsList[i], _metaList[i], _bboxList[i], _filterList[i],
-                        _calibList[i], _visitList[i], _ccdList[i], _cameraList[i], control);
+        assoc->AddImage(_sourceList[i], _wcsList[i], _visitInfoList[i], _bboxList[i], _filterList[i],
+                        _calibList[i], _visitList[i], _ccdList[i], control);
     }
 
     // Associates catalog

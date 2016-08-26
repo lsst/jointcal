@@ -9,6 +9,10 @@ Python interface to lsst::jointcal classes
 
 %module(package="lsst.jointcal", docstring=jointcalLib_DOCSTRING) jointcalLib
 
+// Suppress swig complaints; see afw/image/imageLib.i for more
+#pragma SWIG nowarn=314                 // print is a python keyword (--> _print)
+#pragma SWIG nowarn=362                 // operator=  ignored
+
 %{
 #include <exception>
 #include <list>
@@ -18,10 +22,11 @@ Python interface to lsst::jointcal classes
 #include "lsst/afw/cameraGeom.h"
 #include "lsst/afw/math.h"
 #include "lsst/afw/image.h"
+#include "lsst/afw/coord.h"
+#include "lsst/afw/geom.h"
+#include "lsst/afw/image/VisitInfo.h"
 #include "lsst/afw/geom/Box.h"
 #include "lsst/daf/base/PropertySet.h"
-#include "lsst/jointcal/test.h"
-#include "lsst/jointcal/test2.h"
 #include "lsst/jointcal/BaseStar.h"
 #include "lsst/jointcal/StarList.h"
 #include "lsst/jointcal/FittedStar.h"
@@ -45,10 +50,16 @@ Python interface to lsst::jointcal classes
 
 %include "lsst/p_lsstSwig.i"
 %initializeNumPy(jointcal)
+%{
+#include "ndarray/swig.h"
+#include "ndarray/converter/eigen.h"
+%}
 
 %import "lsst/afw/table/tableLib.i"
+%import "lsst/afw/table/io/ioLib.i"
+%import "lsst/afw/image/imageLib.i"
 
-%include "lsst/pex/config.h"
+%import "lsst/pex/config.h"
 
 %shared_ptr(lsst::daf::base::PropertySet);
 %shared_ptr(lsst::jointcal::JointcalControl);
@@ -61,8 +72,6 @@ Python interface to lsst::jointcal classes
 %template(StringList) std::vector<std::string>;
 %template(IntList) std::vector<int>;
 
-%include "lsst/jointcal/test.h"
-%include "lsst/jointcal/test2.h"
 %include "lsst/jointcal/Jointcal.h"
 namespace lsst {
 namespace jointcal {
