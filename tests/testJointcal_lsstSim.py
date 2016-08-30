@@ -2,6 +2,9 @@
 
 from __future__ import division, absolute_import, print_function
 
+import matplotlib
+matplotlib.use('Agg')
+
 import unittest
 import os
 
@@ -27,7 +30,7 @@ except lsst.pex.exceptions.NotFoundError:
 # this data, and will likely vary from survey to survey.
 absolute_error = 42e-3*u.arcsecond
 # Set to True for a comparison plot and some diagnostic numbers.
-do_plot = False
+do_plot = True
 
 
 # for MemoryTestCase

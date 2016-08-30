@@ -2,6 +2,9 @@
 
 from __future__ import division, absolute_import, print_function
 
+import matplotlib
+matplotlib.use('Agg')
+
 import unittest
 import os
 
@@ -26,7 +29,7 @@ except lsst.pex.exceptions.NotFoundError:
 # this data, and will likely vary from survey to survey.
 absolute_error = 52e-3*u.arcsecond
 # Set to True for a comparison plot and some diagnostic numbers.
-do_plot = False
+do_plot = True
 
 
 # for MemoryTestCase
@@ -45,8 +48,9 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         radius = 5*lsst.afw.geom.degrees
         self._prep_reference_loader(center, radius)
 
-        self.input_dir = os.path.join(data_dir, 'DATA')
-        self.all_visits = [903334, 903336, 903338, 903342, 903344, 903346]
+        self.input_dir = os.path.join(data_dir, 'DATA', 'rerun', 'validate_drp')
+        # self.all_visits = [903334, 903336, 903338, 903342, 903344, 903346]
+        self.all_visits = [903982, 904006, 904828, 904846]
 
     @unittest.skipIf(data_dir is None, "validation_data_hsc not setup")
     def test_jointcalTask_2_visits(self):
@@ -57,12 +61,20 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         self._testJointCalTask(2, relative_error, absolute_error)
 
     @unittest.skipIf(data_dir is None, "validation_data_hsc not setup")
-    def test_jointcalTask_6_visits(self):
+    def test_jointcalTask_4_visits(self):
         # NOTE: The relative RMS limit was empirically determined from the
         # first run of jointcal on this data. We should always do better than
         # this in the future!
-        relative_error = 10e-3*u.arcsecond
-        self._testJointCalTask(6, relative_error, absolute_error)
+        relative_error = 17e-3*u.arcsecond
+        self._testJointCalTask(4, relative_error, absolute_error)
+
+    # @unittest.skipIf(data_dir is None, "validation_data_hsc not setup")
+    # def test_jointcalTask_6_visits(self):
+    #     # NOTE: The relative RMS limit was empirically determined from the
+    #     # first run of jointcal on this data. We should always do better than
+    #     # this in the future!
+    #     relative_error = 10e-3*u.arcsecond
+    #     self._testJointCalTask(6, relative_error, absolute_error)
 
 
 # TODO: the memory test cases currently fail in jointcal. Filed as DM-6626.
