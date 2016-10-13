@@ -18,94 +18,88 @@ namespace afwImg = lsst::afw::image;
 namespace lsst {
 namespace jointcal {
 
-static double sq(const double &x) { return x*x;}
+static double sq(const double &x) { return x * x;}
 
-void CcdImage::LoadCatalog(const lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &Cat,const std::string &fluxField)
+void CcdImage::LoadCatalog(const lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &Cat, const std::string &fluxField)
 {
-  auto xKey = Cat.getSchema().find<double>("slot_Centroid_x").key;
-  auto yKey = Cat.getSchema().find<double>("slot_Centroid_y").key;
-  auto xsKey = Cat.getSchema().find<float>("slot_Centroid_xSigma").key;
-  auto ysKey = Cat.getSchema().find<float>("slot_Centroid_ySigma").key;
-  auto mxxKey = Cat.getSchema().find<double>("slot_Shape_xx").key;
-  auto myyKey = Cat.getSchema().find<double>("slot_Shape_yy").key;
-  auto mxyKey = Cat.getSchema().find<double>("slot_Shape_xy").key;
-  auto fluxKey = Cat.getSchema().find<double>(fluxField + "_flux").key;
-  auto efluxKey = Cat.getSchema().find<double>(fluxField  + "_fluxSigma").key;
+    auto xKey = Cat.getSchema().find<double>("slot_Centroid_x").key;
+    auto yKey = Cat.getSchema().find<double>("slot_Centroid_y").key;
+    auto xsKey = Cat.getSchema().find<float>("slot_Centroid_xSigma").key;
+    auto ysKey = Cat.getSchema().find<float>("slot_Centroid_ySigma").key;
+    auto mxxKey = Cat.getSchema().find<double>("slot_Shape_xx").key;
+    auto myyKey = Cat.getSchema().find<double>("slot_Shape_yy").key;
+    auto mxyKey = Cat.getSchema().find<double>("slot_Shape_xy").key;
+    auto fluxKey = Cat.getSchema().find<double>(fluxField + "_flux").key;
+    auto efluxKey = Cat.getSchema().find<double>(fluxField  + "_fluxSigma").key;
 
-  wholeCatalog.clear();
-  for (auto i = Cat.begin(); i !=Cat.end(); ++i)
+    wholeCatalog.clear();
+    for (auto i = Cat.begin(); i != Cat.end(); ++i)
     {
-      MeasuredStar *ms = new MeasuredStar();
-      ms->x = i->get(xKey);
-      ms->y = i->get(yKey);
-      ms->vx = sq(i->get(xsKey));
-      ms->vy = sq(i->get(ysKey));
-      /* the xy covariance is not provided in the input catalog: we
-	 cook it up from the x and y position variance and the shape
-	 measurements: */
-      double mxx= i->get(mxxKey);
-      double myy= i->get(myyKey);
-      double mxy= i->get(mxyKey);
-      ms->vxy = mxy*(ms->vx+ms->vy)/(mxx+myy);
-      if (ms->vx < 0 || ms->vy< 0 || (ms->vxy*ms->vxy)>(ms->vx*ms->vy)) {
-          std::cout << "Bad source detected in LoadCatalog : " << ms->vx << " " << ms->vy << " " <<
-          ms->vxy*ms->vxy << " " << ms->vx*ms->vy << std::endl;
-          continue;
+        MeasuredStar *ms = new MeasuredStar();
+        ms->x = i->get(xKey);
+        ms->y = i->get(yKey);
+        ms->vx = sq(i->get(xsKey));
+        ms->vy = sq(i->get(ysKey));
+        /* the xy covariance is not provided in the input catalog: we
+        cook it up from the x and y position variance and the shape
+         measurements: */
+        double mxx = i->get(mxxKey);
+        double myy = i->get(myyKey);
+        double mxy = i->get(mxyKey);
+        ms->vxy = mxy * (ms->vx + ms->vy) / (mxx + myy);
+        if (ms->vx < 0 || ms->vy < 0 || (ms->vxy * ms->vxy) > (ms->vx * ms->vy)) {
+            std::cout << "Bad source detected in LoadCatalog : " << ms->vx << " " << ms->vy << " " <<
+                      ms->vxy*ms->vxy << " " << ms->vx*ms->vy << std::endl;
+            continue;
         }
-      ms->flux = i->get(fluxKey);
-      ms->eflux = i->get(efluxKey);
-      ms->mag = -2.5*log10(ms->flux) + zp;
-      ms->SetCcdImage(this);
-      wholeCatalog.push_back(ms);
+        ms->flux = i->get(fluxKey);
+        ms->eflux = i->get(efluxKey);
+        ms->mag = -2.5 * log10(ms->flux) + zp;
+        ms->SetCcdImage(this);
+        wholeCatalog.push_back(ms);
     }
-  wholeCatalog.SetCcdImage(this);
+    wholeCatalog.SetCcdImage(this);
 }
 
 
 
 static int getBandIndex(std::string const& band)
 {
-  if(band == "u") return 0;
-  if(band == "g") return 1;
-  if(band == "r") return 2;
-  if(band == "i") return 3;
-  if(band == "z") return 4;
+    if (band == "u") return 0;
+    if (band == "g") return 1;
+    if (band == "r") return 2;
+    if (band == "i") return 3;
+    if (band == "z") return 4;
 
-  if(band == "U") return 5;
-  if(band == "B") return 6;
-  if(band == "V") return 7;
-  if(band == "R") return 8;
-  if(band == "I") return 9;
-  return -1;
+    if (band == "U") return 5;
+    if (band == "B") return 6;
+    if (band == "V") return 7;
+    if (band == "R") return 8;
+    if (band == "I") return 9;
+    return -1;
 }
 
 
 CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &Ri,
-            const Point &CommonTangentPoint,
-            const PTR(lsst::afw::image::TanWcs) wcs,
-            const PTR(lsst::daf::base::PropertySet) meta,
-            const lsst::afw::geom::Box2I &bbox,
-            const std::string &filter,
-            const PTR(lsst::afw::image::Calib) calib,
-            const int &visit,
-            const int &ccd,
-            const std::string &camera,
-            const std::string &fluxField ) :
+                   const Point &CommonTangentPoint,
+                   const PTR(lsst::afw::image::TanWcs) wcs,
+                   const PTR(lsst::daf::base::PropertySet) meta,
+                   const lsst::afw::geom::Box2I &bbox,
+                   const std::string &filter,
+                   const PTR(lsst::afw::image::Calib) calib,
+                   const int &visit,
+                   const int &ccd,
+                   const std::string &camera,
+                   const std::string &fluxField ) :
 
     index(-1), expindex(-1),
     commonTangentPoint(CommonTangentPoint)
 
 {
     // zero point
-    zp = 2.5*log10(calib->getFluxMag0().first);
+    zp = 2.5 * log10(calib->getFluxMag0().first);
 
     LoadCatalog(Ri, fluxField);
-      // Just checking that we get something sensible
-//    std::cout << Ri[10].getRa() << std::endl;
-//    std::cout << wcs->getPixelOrigin() << std::endl;
-//    std::cout << meta->get<double>("LATITUDE") << std::endl;
-//    std::cout << bbox << std::endl;
-//    std::cout << filter << std::endl;
 
     Point lowerLeft(bbox.getMinX(), bbox.getMinY());
     Point upperRight(bbox.getMaxX(), bbox.getMaxY());
@@ -128,9 +122,9 @@ CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceReco
     out << visit << "_" << ccd;
     riName = out.str();
 
-  /* we don't assume here that we know the internals of TanPix2RaDec:
-     to construct pix->TP, we do pix->sky->TP, although pix->sky
-     actually goes through TP */
+    /* we don't assume here that we know the internals of TanPix2RaDec:
+       to construct pix->TP, we do pix->sky->TP, although pix->sky
+       actually goes through TP */
 
     GtransfoLin identity;
     TanRaDec2Pix raDec2TP(identity, tanWcs->TangentPoint());
@@ -146,7 +140,7 @@ CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceReco
     TP2CTP = GtransfoCompose(&raDec2CTP, &TP2RaDec);
     sky2TP = new TanRaDec2Pix(identity, tanWcs->TangentPoint());
 
-      // this one is needed for matches :
+    // this one is needed for matches :
     pix2CommonTangentPlane = GtransfoCompose(&raDec2CTP, tanWcs);
 
     // In the following we read informations directly from the fits header which is instrument dependent
@@ -185,7 +179,7 @@ CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceReco
         hourAngle = lsst::afw::geom::degToRad(RaStringToDeg(meta->get<std::string>("HA")));
         ra = lsst::afw::geom::degToRad(RaStringToDeg(meta->get<std::string>("RA")));
         dec = lsst::afw::geom::degToRad(DecStringToDeg(meta->get<std::string>("DEC")));
-     }
+    }
     // TODO: Massive hack to get my test data to run.
     // TODO: this all needs to go away once DM-5501 is dealt with.
     else if (camera == "monkeySim") {
@@ -197,25 +191,26 @@ CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceReco
         dec = lsst::afw::geom::degToRad(meta->get<double>("DEC2000"));
     }
     else {
-        throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,"jointcal::CcdImage does not understand your camera "+camera);
+        throw LSST_EXCEPT(pex::exceptions::InvalidParameterError, "jointcal::CcdImage does not understand your camera " + camera);
     }
     if (std::isnan(hourAngle) == true) {
-        hourAngle = (lst_obs-ra);
-        if  (hourAngle>M_PI) hourAngle -= 2*M_PI;
-        if  (hourAngle<-M_PI) hourAngle += 2*M_PI;
+        hourAngle = (lst_obs - ra);
+        if  (hourAngle > M_PI) hourAngle -= 2 * M_PI;
+        if  (hourAngle < -M_PI) hourAngle += 2 * M_PI;
     }
-    if (airMass==1)
-       sineta = coseta = tgz = 0;
+    if (airMass == 1)
+        sineta = coseta = tgz = 0;
     else
     {
-      double cosz = 1./airMass;
-      double sinz = sqrt(1-cosz*cosz); //astronomers usually observe above the horizon
-      tgz = sinz/cosz;
-      sineta = cos(latitude)*sin(hourAngle)/sinz;
-      coseta = sqrt(1-sineta*sineta);
-      if (dec > latitude) coseta = -coseta;
+        double cosz = 1. / airMass;
+        double sinz = sqrt(1 - cosz * cosz); //astronomers usually observe above the horizon
+        tgz = sinz / cosz;
+        sineta = cos(latitude) * sin(hourAngle) / sinz;
+        coseta = sqrt(1 - sineta * sineta);
+        if (dec > latitude) coseta = -coseta;
     }
     bandRank = 0; // will be set by Associations if pertinent.
 }
 
-}} // end of namespaces
+}
+} // end of namespaces

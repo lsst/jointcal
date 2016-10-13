@@ -35,40 +35,40 @@ namespace afwTable = lsst::afw::table;
 namespace lsst {
 namespace jointcal {
 
-    void JointcalControl::validate() const {
-        if (sourceFluxField.empty()) {
-            throw LSST_EXCEPT(pexExcept::InvalidParameterError, "sourceFluxField must be specified");
-        }
+void JointcalControl::validate() const {
+    if (sourceFluxField.empty()) {
+        throw LSST_EXCEPT(pexExcept::InvalidParameterError, "sourceFluxField must be specified");
     }
+}
 
-    Jointcal::Jointcal(
-        std::vector<lsst::afw::table::SortedCatalogT< lsst::afw::table::SourceRecord> > const sourceList,
-        std::vector<PTR(lsst::daf::base::PropertySet)> const metaList,
-        std::vector<PTR(lsst::afw::image::TanWcs)> const wcsList,
-        std::vector<lsst::afw::geom::Box2I> const bboxList,
-        std::vector<std::string> const filterList,
-        std::vector<PTR(lsst::afw::image::Calib)> const calibList,
-        std::vector<int> const visitList,
-        std::vector<int> const ccdList,
-        std::vector<std::string> const cameraList,
-        PTR(lsst::jointcal::JointcalControl) const control
-    ):
-        _sourceList(sourceList),
-        _metaList(metaList),
-        _wcsList(wcsList),
-        _bboxList(bboxList),
-        _filterList(filterList),
-        _calibList(calibList),
-        _visitList(visitList),
-        _ccdList(ccdList),
-        _cameraList(cameraList)
+Jointcal::Jointcal(
+    std::vector<lsst::afw::table::SortedCatalogT< lsst::afw::table::SourceRecord> > const sourceList,
+    std::vector<PTR(lsst::daf::base::PropertySet)> const metaList,
+    std::vector<PTR(lsst::afw::image::TanWcs)> const wcsList,
+    std::vector<lsst::afw::geom::Box2I> const bboxList,
+    std::vector<std::string> const filterList,
+    std::vector<PTR(lsst::afw::image::Calib)> const calibList,
+    std::vector<int> const visitList,
+    std::vector<int> const ccdList,
+    std::vector<std::string> const cameraList,
+    PTR(lsst::jointcal::JointcalControl) const control
+):
+    _sourceList(sourceList),
+    _metaList(metaList),
+    _wcsList(wcsList),
+    _bboxList(bboxList),
+    _filterList(filterList),
+    _calibList(calibList),
+    _visitList(visitList),
+    _ccdList(ccdList),
+    _cameraList(cameraList)
 {
 
     if (_wcsList.size() == 0)
-      {
-	std::cout << "jointcal::Jointcal : empty image list, we give up" << std::endl;
-	return;
-      }
+    {
+        std::cout << "jointcal::Jointcal : empty image list, we give up" << std::endl;
+        return;
+    }
 
 
     // Check how to get SIP coefficients from WCS
@@ -90,9 +90,9 @@ namespace jointcal {
 
     // Create and load an Association object
     Associations *assoc = new Associations();
-    for (unsigned i=0; i<_sourceList.size(); i++) {
+    for (unsigned i = 0; i < _sourceList.size(); i++) {
         assoc->AddImage(_sourceList[i], _wcsList[i], _metaList[i], _bboxList[i], _filterList[i],
-        _calibList[i], _visitList[i], _ccdList[i], _cameraList[i], control);
+                        _calibList[i], _visitList[i], _ccdList[i], _cameraList[i], control);
     }
 
     // Associates catalog
@@ -112,20 +112,20 @@ namespace jointcal {
 
     std::string whatToFit = "Distortions";
 
-    for (unsigned iter=0; iter<2;++iter)
-      {
-	std::cout << " Fitting only mappings" << std::endl;
-	std::cout << astromFit.ComputeChi2() << std::endl;
-	astromFit.Minimize(whatToFit);
-      }
+    for (unsigned iter = 0; iter < 2; ++iter)
+    {
+        std::cout << " Fitting only mappings" << std::endl;
+        std::cout << astromFit.ComputeChi2() << std::endl;
+        astromFit.Minimize(whatToFit);
+    }
 
     whatToFit = "Positions";
-    for (unsigned iter=0; iter<2;++iter)
-        {
+    for (unsigned iter = 0; iter < 2; ++iter)
+    {
         std::cout << " Fitting only positions" << std::endl;
         std::cout << astromFit.ComputeChi2() << std::endl;
         astromFit.Minimize(whatToFit);
-        }
+    }
 
     std::cout << astromFit.ComputeChi2() << std::endl;
 
@@ -137,14 +137,15 @@ namespace jointcal {
 
     astromFit.MakeResTuple("res0.list");
 
-    for (unsigned k=0; k<20; ++k)
-        {
-          astromFit.RemoveOutliers(5.,"Meas Ref");
-          std::cout << "After outliers removal" << std::endl;
-          astromFit.Minimize("Positions Distortions");
-          std::cout << astromFit.ComputeChi2() << std::endl;
-        }
+    for (unsigned k = 0; k < 20; ++k)
+    {
+        astromFit.RemoveOutliers(5., "Meas Ref");
+        std::cout << "After outliers removal" << std::endl;
+        astromFit.Minimize("Positions Distortions");
+        std::cout << astromFit.ComputeChi2() << std::endl;
+    }
     astromFit.MakeResTuple("res.list");
 }
 
-}} // end of namespaces
+}
+} // end of namespaces

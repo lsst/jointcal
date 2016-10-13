@@ -17,20 +17,20 @@
 namespace lsst {
 namespace jointcal {
 
-    struct JointcalControl {
-        LSST_CONTROL_FIELD(sourceFluxField, std::string, "name of flux field in source catalog");
+struct JointcalControl {
+    LSST_CONTROL_FIELD(sourceFluxField, std::string, "name of flux field in source catalog");
 
-        JointcalControl(std::string const & sourceFluxField="slot_CalibFlux") :
-            // Set sourceFluxType to the value used in the source selector.
-            sourceFluxField(sourceFluxField)
-        {
-            validate();
-        }
+    JointcalControl(std::string const & sourceFluxField = "slot_CalibFlux") :
+        // Set sourceFluxType to the value used in the source selector.
+        sourceFluxField(sourceFluxField)
+    {
+        validate();
+    }
 
-        void validate() const;
+    void validate() const;
 
-        ~JointcalControl() {};
-    };
+    ~JointcalControl() {};
+};
 
 class Jointcal {
 public:
@@ -61,6 +61,7 @@ private:
     std::vector<std::string> const _cameraList;
 };
 
-}} // end of namespaces
+}
+} // end of namespaces
 
 #endif
