@@ -91,30 +91,31 @@ class JointcalTestLSSTSim(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Te
         radius = 3*lsst.afw.geom.degrees
         self._prep_reference_loader(center, radius)
 
-        self.input_dir = os.path.join(data_dir, 'cfht')
+        self.input_dir = os.path.join(data_dir, 'twinkles1')
         self.all_visits = range(840, 850)
+        self.other_args = ['raft=2,2', 'sensor=1,1', 'filter=r']
 
-        # Get a set of source catalogs.
-        self.catalogs = []
-        butler = persistence.Butler(os.path.join(data_dir, 'twinkles1'))
-        for visit in butler.queryMetadata('src', 'visit'):
-            src = butler.get('src', dataId={'visit': visit})
-            dataId = butler.dataRef('src', visit=visit).dataId
-            calexp_md = butler.get('calexp_md', {'visit': visit, 'raft': '2,2', 'sensor': '1,1'})
-            self.catalogs.append(FakeRef(src, calexp_md, dataId))
+        # # Get a set of source catalogs.
+        # self.catalogs = []
+        # butler = persistence.Butler(os.path.join(data_dir, 'twinkles1'))
+        # for visit in butler.queryMetadata('src', 'visit'):
+        #     src = butler.get('src', dataId={'visit': visit})
+        #     dataId = butler.dataRef('src', visit=visit).dataId
+        #     calexp_md = butler.get('calexp_md', {'visit': visit, 'raft': '2,2', 'sensor': '1,1'})
+        #     self.catalogs.append(FakeRef(src, calexp_md, dataId))
 
-        self.jointcalTask = jointcal.JointcalTask()
+        # self.jointcalTask = jointcal.JointcalTask()
         # NOTE: Tweaking S/N threshold to help pass original thresholds.
         # TODO: Jointcal results are quite sensitive to the particulars of the
         # sources used for associations, and astrometrySourceSelector does not
         # exactly match the original bundled StarSelector.
         # TODO: Once we make jointcal more robust, we should be able to drop this.
-        self.jointcalTask.sourceSelector.config.minSnr = 13
+        # self.jointcalTask.sourceSelector.config.minSnr = 13
 
     @unittest.skipIf(data_dir is None, "validation_data_jointcal not setup")
     @unittest.skip('jointcal currently fails if only given one catalog!')
     def testJointCalTask_1_catalog(self):
-        self.jointcalTask.run(self.catalogs[:1])
+        self._testJointCalTask(2, 0, absolute_error)
 
     @unittest.skipIf(data_dir is None, "validation_data_jointcal not setup")
     def testJointCalTask_2_catalog(self):
@@ -122,24 +123,25 @@ class JointcalTestLSSTSim(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Te
         # first run of jointcal on this data. We should always do better than
         # this in the future!
         relative_error = 8.4e-3*u.arcsecond
-        self._testJointCalTask_run(2, relative_error, absolute_error)
+        self._testJointCalTask(2, relative_error, absolute_error)
 
     @unittest.skipIf(data_dir is None, "validation_data_jointcal not setup")
     @unittest.skip('Keeping this around for diagnostics on the behavior with n catalogs.')
     def testJointCalTask_4_catalog(self):
         relative_error = 7.8e-3*u.arcsecond
-        self._testJointCalTask_run(4, relative_error, absolute_error)
+        self._testJointCalTask(4, relative_error, absolute_error)
 
     @unittest.skipIf(data_dir is None, "validation_data_jointcal not setup")
     @unittest.skip('Keeping this around for diagnostics on the behavior with n catalogs.')
     def testJointCalTask_7_catalog(self):
         relative_error = 7.5e-3*u.arcsecond
-        self._testJointCalTask_run(7, relative_error, absolute_error)
+        self._testJointCalTask(7, relative_error, absolute_error)
 
+    @unittest.skip('TESTINGTESTINGTESTING')
     @unittest.skipIf(data_dir is None, "validation_data_jointcal not setup")
     def testJointCalTask_10_catalog(self):
         relative_error = 7.4e-3*u.arcsecond
-        self._testJointCalTask_run(10, relative_error, absolute_error)
+        self._testJointCalTask(10, relative_error, absolute_error)
 
 
 # TODO: the memory test cases currently fail in jointcal. Filed as DM-6626.

@@ -26,13 +26,16 @@ class JointcalTestBase(object):
         self.do_plot = False  # don't make plots unless specifically requested
         self.match_radius = 0.1*lsst.afw.geom.arcseconds  # match sources within 0.1" for RMS statistics
         self.all_visits = None  # list of the available visits to generate the parseAndRun arguments
+        self.other_args = []  # optional other arguments for the butler dataId
         # Signal/Noise (flux/fluxSigma) for sources to be included in the RMS cross-match.
         # 100 is a balance between good centroids and enough sources.
         self.flux_limit = 100
 
     def tearDown(self):
-        del self.reference
-        del self.oldWcsList
+        if getattr(self, 'reference', None) is not None:
+            del self.reference
+        if getattr(self, 'oldWcsList', None) is not None:
+            del self.oldWcsList
         if getattr(self, 'jointcalTask', None) is not None:
             del self.jointcalTask
         # delete the below after DM-6625 is dealt with and we no longer need self.catalogs
@@ -73,11 +76,13 @@ class JointcalTestBase(object):
         self.visit_list = self.all_visits[:nCatalogs]
         visits = '^'.join(str(v) for v in self.visit_list)
         output_dir = os.path.join('.test', self.__class__.__name__)
-        result = jointcal.JointcalTask.parseAndRun(args=[self.input_dir, '--output', output_dir,
-                                                         '--clobber-versions', '--clobber-config',
-                                                         '--doraise',
-                                                         '--id', 'visit=%s'%visits],
-                                                   doReturnResults=True)
+        args = [self.input_dir, '--output', output_dir,
+                '--clobber-versions', '--clobber-config',
+                '--doraise',
+                '--id', 'visit=%s'%visits]
+        args.extend(self.other_args)
+        result = jointcal.JointcalTask.parseAndRun(args=args, doReturnResults=True)
+        self.assertNotEqual(result.resultList, [], 'resultList should not be empty')
         self.dataRefs = result.resultList[0].result.dataRefs
         self.oldWcsList = result.resultList[0].result.oldWcsList
 
