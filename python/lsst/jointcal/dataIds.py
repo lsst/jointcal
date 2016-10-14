@@ -6,7 +6,7 @@ from __future__ import division, absolute_import, print_function
 
 import collections
 
-import lsst.pex.logging
+import lsst.log
 import lsst.pex.exceptions
 import lsst.afw.table
 import lsst.afw.image
@@ -66,7 +66,7 @@ class PerTractCcdDataIdContainer(CoaddDataIdContainer):
             if "tract" not in dataId:
                 # Discover which tracts the data overlaps
                 if log is None:
-                    log = lsst.pex.logging.Log.getDefaultLog()
+                    log = lsst.log.Log.getLogger("jointcal.logger")
                 log.info("Reading WCS for components of dataId=%s to determine tracts" % (dict(dataId),))
                 if skymap is None:
                     skymap = self.getSkymap(namespace)
