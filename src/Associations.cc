@@ -28,7 +28,7 @@ const int minMeasurementCount = 2;
 
 namespace jointcal = lsst::jointcal;
 
-static double sqr(const double &x) {return x * x;}
+static double sqr(double x) {return x * x;}
 
 namespace lsst {
 namespace jointcal {
@@ -327,7 +327,7 @@ const lsst::afw::geom::Box2D Associations::GetRaDecBBox()
 
 }
 
-void Associations::AssociateRefStars(const double &MatchCutInArcSec,
+void Associations::AssociateRefStars(double MatchCutInArcSec,
                                      const Gtransfo* T)
 {
     //DEBUG
@@ -673,7 +673,7 @@ void Associations::AssociatePhotometricRefStars(double MatchCutInArcSec)
 
 void Associations::SetFittedStarColors(std::string DicStarListName,
                                        std::string Color,
-                                       const double &MatchCutArcSec)
+                                       double MatchCutArcSec)
 {
     // decode color string in case it is x-y
     size_t pos_minus = Color.find('-');

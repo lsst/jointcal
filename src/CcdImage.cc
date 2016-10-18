@@ -18,7 +18,7 @@ namespace afwImg = lsst::afw::image;
 namespace lsst {
 namespace jointcal {
 
-static double sq(const double &x) { return x * x;}
+static double sq(double x) { return x * x;}
 
 void CcdImage::LoadCatalog(const lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &Cat, const std::string &fluxField)
 {

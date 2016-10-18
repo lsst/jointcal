@@ -124,7 +124,7 @@ const BaseStar *FastFinder::SecondClosest(const Point &Where,
 */
 /* Locate the last position (in the sorted array) between Begin and
    End that lies before YVal.*/
-FastFinder::pstar FastFinder::locate_y_start(pstar Begin, pstar End, const double &YVal) const
+FastFinder::pstar FastFinder::locate_y_start(pstar Begin, pstar End, double YVal) const
 {
   if (Begin==stars.end() || Begin == End) return stars.end();
   int span = End - Begin -1;
@@ -147,7 +147,7 @@ FastFinder::pstar FastFinder::locate_y_start(pstar Begin, pstar End, const doubl
 
 /* Locate the first position (in the sorted array) between Begin and
    End that lies beyond YVal.*/
-FastFinder::pstar FastFinder::locate_y_end(pstar Begin, pstar End, const double &YVal) const
+FastFinder::pstar FastFinder::locate_y_end(pstar Begin, pstar End, double YVal) const
 {
   if (Begin==stars.end()) return stars.end();
   int span = End - Begin -1;
@@ -178,7 +178,7 @@ void FastFinder::find_range_in_slice(const int iSlice,
 }
 
 
-FastFinder::Iterator  FastFinder::begin_scan(const Point &Where, const double &MaxDist) const
+FastFinder::Iterator  FastFinder::begin_scan(const Point &Where, double MaxDist) const
 {
   return FastFinder::Iterator(*this,Where, MaxDist);
 }
@@ -187,7 +187,7 @@ using Iterator = FastFinder::Iterator;
 
 
 Iterator::Iterator(const FastFinder &F, const Point &Where,
-		   const double &MaxDist)
+		   double MaxDist)
   : finder(F), null_value(F.stars.end())
 {
   current = pend = null_value;// does not iterate

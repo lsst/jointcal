@@ -119,7 +119,7 @@ public:
 #ifdef TODO
     void SetFittedStarColors(std::string DicStarListName,
                              std::string Color,
-                             const double &MatchCutArcSec);
+                             double MatchCutArcSec);
 #endif
     //    void SetRefPhotFactor(int chip, double photfact);
 
@@ -138,7 +138,7 @@ public:
 
 
 private:
-    void AssociateRefStars(const double &MatchCutInArcSec, const Gtransfo *T);
+    void AssociateRefStars(double MatchCutInArcSec, const Gtransfo *T);
     unsigned int nshoots_;
     unsigned int nb_photref_associations;
 };

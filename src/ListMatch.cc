@@ -37,7 +37,7 @@ static void read_card(DataCards &Cards, const std::string &Key, int &I)
 }
 #endif
 
-static double sqr(const double& x) { return x*x; }
+static double sqr(double x) { return x*x; }
 
 
 MatchConditions::MatchConditions()
@@ -755,8 +755,7 @@ StarMatchList *ListMatchCollect(const BaseStarList &L1, const BaseStarList &L2, 
 
 
 
-static bool is_transfo_ok(const StarMatchList* match,
-			  const double& pixSizeRatio2, const size_t nmin) {
+static bool is_transfo_ok(const StarMatchList* match, double pixSizeRatio2, const size_t nmin) {
 
   if ((fabs(fabs(dynamic_cast<const GtransfoLin*>(match->Transfo())->Determinant())-pixSizeRatio2)/pixSizeRatio2 < 0.2) && (match->size() > nmin))
     return true;

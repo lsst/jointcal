@@ -22,7 +22,7 @@ public:
   Point() : x(0), y(0) {};
 
   //! - contructor
-  Point(const double &xx, const double &yy) : x(xx), y(yy) {};
+  Point(double xx, double yy) : x(xx), y(yy) {};
 
 
   //! -

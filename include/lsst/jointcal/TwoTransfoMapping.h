@@ -66,7 +66,7 @@ class TwoTransfoMapping: public Mapping
 
 
  //! Currently *not* implemented
- void  PosDerivative(const Point &Where, Eigen::Matrix2d &Der, const double & Eps) const;
+ void  PosDerivative(const Point &Where, Eigen::Matrix2d &Der, double  Eps) const;
 
  //! Currently not implemented
  void FreezeErrorScales();

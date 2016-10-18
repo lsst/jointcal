@@ -11,7 +11,7 @@ namespace pexExcept = lsst::pex::exceptions;
 namespace lsst {
 namespace jointcal {
 
-static double sq(const double &x) { return x*x;}
+static double sq(double x) { return x*x;}
 
 
 void BaseStar::read_it(std::istream & rd, const char *format)

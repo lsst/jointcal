@@ -82,7 +82,7 @@ void LSDerivatives(const CcdImage &Ccd,
 			     TripletList &TList,
 			     Eigen::VectorXd &Grad);
 
-  void FindOutliers(const double &NSigCut,
+  void FindOutliers(double NSigCut,
 		    MeasuredStarList &Outliers) const;
 
 
@@ -98,7 +98,7 @@ void LSDerivatives(const CcdImage &Ccd,
 
 
   //! returns how many outliers were removed. No refit done.
-  unsigned RemoveOutliers(const double &NSigCut);
+  unsigned RemoveOutliers(double NSigCut);
 
   //! Produces a tuple containing residuals of measurement terms.
   void MakeMeasResTuple(const std::string &TupleName) const;
@@ -118,8 +118,8 @@ void LSDerivatives(const CcdImage &Ccd,
   Point TransformFittedStar(const FittedStar &F,
 			    const Gtransfo * Sky2TP,
 			    const Point &RefractionVector,
-			    const double &RefractionCoeff,
-			    const double &Jd) const;
+			    double RefractionCoeff,
+			    double Jd) const;
 
   //! only for outlier removal
   void GetMeasuredStarIndices(const MeasuredStar &Ms,

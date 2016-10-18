@@ -79,18 +79,18 @@ public :
     void check() const;
 
   public:
-    Iterator(const FastFinder &f, const Point &Where, const double &MaxDist);
+    Iterator(const FastFinder &f, const Point &Where, double MaxDist);
     void operator++() ;
     stars_element operator*() const;
   };
 
 #ifndef SWIG
-  Iterator begin_scan(const Point &Where, const double &MaxDist) const;
+  Iterator begin_scan(const Point &Where, double MaxDist) const;
 #endif
 
   void find_range_in_slice(const int iSlice, const double YStart, const double YEnd, pstar &Start, pstar &End) const;
-  pstar locate_y_start(pstar Begin, pstar End, const double &YVal) const;
-  pstar locate_y_end(pstar Begin, pstar End, const double &YVal) const;
+  pstar locate_y_start(pstar Begin, pstar End, double YVal) const;
+  pstar locate_y_end(pstar Begin, pstar End, double YVal) const;
 
 };
 

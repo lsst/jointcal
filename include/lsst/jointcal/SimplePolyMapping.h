@@ -84,7 +84,7 @@ class SimpleGtransfoMapping : public Mapping
 
   //!
   void  PosDerivative(const Point &Where, Eigen::Matrix2d &Der,
-		      const double & Eps) const
+		      double  Eps) const
   {
     errorProp->Derivative(Where, *lin, Eps);
     Der(0,0) = lin->Coeff(1,0,0);
@@ -172,7 +172,7 @@ class SimplePolyMapping : public SimpleGtransfoMapping
      _centerAndScale transfo */
 
   void  PosDerivative(const Point &Where, Eigen::Matrix2d &Der,
-		      const double & Eps) const
+		      double  Eps) const
   {
     Point tmp = _centerAndScale.apply(Where);
     errorProp->Derivative(tmp, *lin, Eps);

@@ -16,7 +16,7 @@ typedef Eigen::SparseMatrix<double> SpMat;
 
 using namespace std;
 
-static double sqr(const double &x) {return x*x;}
+static double sqr(double x) {return x*x;}
 
 namespace lsst {
 namespace jointcal {
@@ -212,14 +212,14 @@ struct Chi2Entry
   double chi2;
   MeasuredStar *ms;
 
-  Chi2Entry(const double &c, MeasuredStar *s): chi2(c), ms(s) {}
+  Chi2Entry(double c, MeasuredStar *s): chi2(c), ms(s) {}
   // for sort
   bool operator < (const Chi2Entry &R) const {return (chi2<R.chi2);}
 };
 
 struct Chi2Vect : public vector<Chi2Entry>
 {
-  void AddEntry(const double &Chi2Val, unsigned ndof, MeasuredStar *ms)
+  void AddEntry(double Chi2Val, unsigned ndof, MeasuredStar *ms)
   { push_back(Chi2Entry(Chi2Val,ms));}
 
 };
@@ -249,7 +249,7 @@ void PhotomFit::GetMeasuredStarIndices(const MeasuredStar &Ms,
 
 
 
-void PhotomFit::FindOutliers(const double &NSigCut,
+void PhotomFit::FindOutliers(double NSigCut,
 			     MeasuredStarList &Outliers) const
 {
   /* Aims at providing an outlier list for small-rank update
@@ -310,7 +310,7 @@ void PhotomFit::FindOutliers(const double &NSigCut,
 
 
 #ifdef STORAGE
-unsigned PhotomFit::RemoveOutliers(const double &NSigCut)
+unsigned PhotomFit::RemoveOutliers(double NSigCut)
 {
   /* Some reshuffling would be needed if we wish to use the small-rank
      update trick rather than solving again. Typically We would

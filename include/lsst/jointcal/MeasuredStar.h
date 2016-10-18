@@ -108,7 +108,7 @@ class MeasuredStarList : public StarList<MeasuredStar> {
     MeasuredStarList() {};
 
 
-  void SetZeroPoint(const double &ZP);
+  void SetZeroPoint(double ZP);
 
   void SetCcdImage(const CcdImage *C);
 };

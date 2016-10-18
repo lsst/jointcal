@@ -23,7 +23,7 @@ namespace jointcal {
 bool IsIdentity(const Gtransfo *a_transfo)
 { return (dynamic_cast<const GtransfoIdentity*>(a_transfo) != NULL);}
 
-static double sqr(const double &x) {return x*x;}
+static double sqr(double x) {return x*x;}
 
 bool IsIntegerShift(const Gtransfo *a_transfo)
 {
@@ -557,7 +557,7 @@ GtransfoPoly::GtransfoPoly(const Gtransfo* T,
 
 
 
-void GtransfoPoly::compute_monomials(const double &Xin, const double &Yin,
+void GtransfoPoly::compute_monomials(double Xin, double Yin,
 				     double *Monom) const
 {
   /* The ordering of monomials is implemented here.
@@ -986,7 +986,7 @@ static GtransfoLin shift_and_normalize(const StarMatchList &List)
   return GtransfoLinScale(2./xspan, 2./yspan) * GtransfoLinShift(-xav,-yav);
 }
 
-static double sq(const double &x) { return x*x;}
+static double sq(double x) { return x*x;}
 
 double GtransfoPoly::do_the_fit(const StarMatchList &List,
 				const Gtransfo &ShiftToCenter,
@@ -1497,13 +1497,13 @@ GtransfoLinRot::GtransfoLinRot(const double AngleRad, const Point *Center,
 
 
 
-static double deg2rad(const double &deg)
+static double deg2rad(double deg)
 {
   return deg*M_PI/180.;
 }
 
 
-static double rad2deg(const double &rad)
+static double rad2deg(double rad)
 {
   return rad*180./M_PI;
 }
@@ -1691,7 +1691,7 @@ GtransfoPoly TanPix2RaDec::Pix2TangentPlane() const
   else return linPix2Tan;
 }
 
-void TanPix2RaDec::Pix2TP(const double &Xin, const double &Yin,
+void TanPix2RaDec::Pix2TP(double Xin, double Yin,
 			  double &Xtp, double & Ytp) const
 {
   linPix2Tan.apply(Xin, Yin, Xtp, Ytp); // Xtp, Ytp in degrees.
@@ -1774,7 +1774,7 @@ GtransfoPoly TanSipPix2RaDec::Pix2TangentPlane() const
   else return linPix2Tan;
 }
 
-void TanSipPix2RaDec::Pix2TP(const double &Xin, const double &Yin,
+void TanSipPix2RaDec::Pix2TP(double Xin, double Yin,
 			  double &Xtp, double & Ytp) const
 { // Xtp, Ytp returned in degrees
   if (corr)

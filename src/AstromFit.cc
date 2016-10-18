@@ -135,7 +135,7 @@ class CholmodSimplicialLDLT2 : public Eigen::CholmodBase<_MatrixType, _UpLo, Cho
 
 using namespace std;
 
-static double sqr(const double &x) {return x*x;}
+static double sqr(double x) {return x*x;}
 
 //const double posErrorIncrement=0.02;
 
@@ -189,8 +189,8 @@ the derivatives, when computing the Chi2, when filling a tuple.
 Point AstromFit::TransformFittedStar(const FittedStar &F,
 				     const Gtransfo * Sky2TP,
 				     const Point &RefractionVector,
-				     const double &RefractionCoeff,
-				     const double &Jd) const
+				     double RefractionCoeff,
+				     double Jd) const
 {
   Point fittedStarInTP =  Sky2TP->apply(F);
   if (F.mightMove)
@@ -619,14 +619,14 @@ struct Chi2Entry
   double chi2;
   BaseStar *ps;
 
-  Chi2Entry(const double &c, BaseStar *s): chi2(c), ps(s) {}
+  Chi2Entry(double c, BaseStar *s): chi2(c), ps(s) {}
   // for sort
   bool operator < (const Chi2Entry &R) const {return (chi2<R.chi2);}
 };
 
 struct Chi2Vect : public std::vector<Chi2Entry>
 {
-  void AddEntry(const double &Chi2Val, unsigned ndof, BaseStar *ps)
+  void AddEntry(double Chi2Val, unsigned ndof, BaseStar *ps)
   { this->push_back(Chi2Entry(Chi2Val,ps));}
 
 };
@@ -678,7 +678,7 @@ void AstromFit::OutliersContributions(MeasuredStarList &MOutliers,
 
 
 //! Discards measurements and reference contributions contributing to the chi2 more than a cut, computed as <chi2>+NSigCut+rms(chi2) (statistics over contributions to the chi2). Returns the number of removed outliers. No refit done.
-unsigned AstromFit::RemoveOutliers(const double &NSigCut,
+unsigned AstromFit::RemoveOutliers(double NSigCut,
 				   const std::string &MeasOrRef)
 {
   MeasuredStarList MSOutliers;
@@ -695,7 +695,7 @@ unsigned AstromFit::RemoveOutliers(const double &NSigCut,
 /*! After returning from here, there are still measurements that
   contribute above the cut, but their contribution should be
   evaluated after a refit before discarding them. */
-unsigned AstromFit::FindOutliers(const double &NSigCut,
+unsigned AstromFit::FindOutliers(double NSigCut,
 				 MeasuredStarList &MSOutliers,
 				 FittedStarList &FSOutliers,
 				 const std::string &MeasOrRef) const

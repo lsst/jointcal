@@ -14,7 +14,7 @@ class Histo2d {
   float minx,miny;
   float scalex, scaley;
 
-  bool indices(const double &X, const double &Y, int &ix, int &iy) const;
+  bool indices(double X, double Y, int &ix, int &iy) const;
 
  public:
 
@@ -29,9 +29,9 @@ class Histo2d {
 
   void BinWidth(double &Hdx, double &Hdy) const { Hdx = 1./scalex; Hdy = 1./scaley;}
 
-  double BinContent(const double &X, const double &Y) const;
+  double BinContent(double X, double Y) const;
 
-  void ZeroBin(const double &X, const double &Y);
+  void ZeroBin(double X, double Y);
 
   ~Histo2d() { if (data) delete [] data;}
 

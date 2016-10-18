@@ -119,8 +119,8 @@ class FittedStar : public BaseStar, public PmBlock {
   void  SetMag(double Value) { mag = Value;}
 
   //! this routine will hopefully soon disappear.
-  void AddMagMeasurement(const double &MagValue,
-			 const double &MagWeight);
+  void AddMagMeasurement(double MagValue,
+			 double MagWeight);
 
   //! index is a value that a fit can set and reread....
   void SetIndexInMatrix(const unsigned &Index){ indexInMatrix = Index;};

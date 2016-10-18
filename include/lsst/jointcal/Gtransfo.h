@@ -223,7 +223,7 @@ private:
      then be allocated on the execution stack, which speeds thing
      up. However this uses Variable Length Array (VLA) which is not
      part of C++, but gcc implements it. */
-  void compute_monomials(const double &Xin, const double &Yin,
+  void compute_monomials(double Xin, double Yin,
 			 double *Monom) const;
 
 public :
@@ -239,12 +239,10 @@ public :
   //sets the polynomial degree.
   void SetDegree(const unsigned Deg);
 
-  void apply(const double Xin, const double Yin,
-	     double &Xout, double &Yout) const;
+  void apply(const double Xin, const double Yin, double &Xout, double &Yout) const;
 
   //! specialised analytic routine
-  void Derivative(const Point &Where, GtransfoLin &Der,
-		  const double Step = 0.01) const;
+  void Derivative(const Point &Where, GtransfoLin &Der, const double Step = 0.01) const;
 
   //! a mix of apply and Derivative
   virtual void TransformPosAndErrors(const FatPoint &In, FatPoint &Out) const;
@@ -471,8 +469,7 @@ public :
 
   void operator = (const BaseTanWcs &Original);
 
-  void apply(const double Xin, const double Yin,
-	     double &Xout, double &Yout) const;
+  void apply(const double Xin, const double Yin, double &Xout, double &Yout) const;
 
   //! The tangent point (in degrees)
   Point TangentPoint() const;
@@ -493,7 +490,7 @@ public :
   virtual GtransfoPoly Pix2TangentPlane() const = 0;
 
   //! Transforms from pixel space to tangent plane. deferred to actual implementations
-  virtual void Pix2TP(const double &Xpix, const double &Ypix, double &Xtp, double & Ytp) const = 0;
+  virtual void Pix2TP(double Xpix, double Ypix, double &Xtp, double & Ytp) const = 0;
 
   ~BaseTanWcs();
 
@@ -517,8 +514,7 @@ public:
   GtransfoPoly Pix2TangentPlane() const;
 
   //! transforms from pixel space to tangent plane
-  virtual void Pix2TP(const double &Xpix, const double &Ypix,
-		      double &Xtp, double & Ytp) const;
+  virtual void Pix2TP(double Xpix, double Ypix, double &Xtp, double & Ytp) const;
 
   TanPix2RaDec();
 
@@ -535,8 +531,7 @@ public:
   Gtransfo* RoughInverse(const Frame &Region) const;
 
     //! Inverse transfo: returns a TanRaDec2Pix if there are no corrections, or the iterative solver if there are.
-  Gtransfo* InverseTransfo(const double Precision,
-			   const Frame& Region) const;
+  Gtransfo* InverseTransfo(const double Precision, const Frame& Region) const;
 
 
   Gtransfo *Clone() const;
@@ -563,15 +558,13 @@ public:
   GtransfoPoly Pix2TangentPlane() const;
 
   //! transforms from pixel space to tangent plane
-  virtual void Pix2TP(const double &Xpix, const double &Ypix,
-		      double &Xtp, double & Ytp) const;
+  virtual void Pix2TP(double Xpix, double Ypix, double &Xtp, double & Ytp) const;
 
   TanSipPix2RaDec();
 
 
     //! Inverse transfo: returns a TanRaDec2Pix if there are no corrections, or the iterative solver if there are.
-  Gtransfo* InverseTransfo(const double Precision,
-			   const Frame& Region) const;
+  Gtransfo* InverseTransfo(const double Precision, const Frame& Region) const;
 
 
   Gtransfo *Clone() const;
@@ -621,8 +614,7 @@ class TanRaDec2Pix : public Gtransfo
     void apply(const double Xin, const double Yin, double &Xout, double &Yout) const;
 
     //! transform with analytical derivatives
-    void TransformPosAndErrors(const FatPoint &In,
-			       FatPoint &Out) const;
+    void TransformPosAndErrors(const FatPoint &In, FatPoint &Out) const;
 
 
 
@@ -633,8 +625,7 @@ class TanRaDec2Pix : public Gtransfo
     Gtransfo* RoughInverse(const Frame &Region) const;
 
     //! Inverse transfo: returns a TanPix2RaDec.
-    Gtransfo* InverseTransfo(const double Precision,
-			   const Frame& Region) const;
+    Gtransfo* InverseTransfo(const double Precision, const Frame& Region) const;
 
     void dump(std::ostream &stream) const;
 
@@ -647,8 +638,7 @@ class TanRaDec2Pix : public Gtransfo
 
 
 //! signature of the user-provided routine that actually does the coordinate transfo for UserTransfo.
-typedef void (GtransfoFun)(const double, const double,
-			   double &, double &, const void*);
+typedef void (GtransfoFun)(const double, const double, double &, double &, const void*);
 
 
 //! a run-time transfo that allows users to define a Gtransfo with minimal coding (just the transfo routine).
@@ -665,8 +655,7 @@ class UserTransfo : public Gtransfo
   //! the transfo routine and extra data that it may need.
   UserTransfo(GtransfoFun &Fun, const void *UserData);
 
-  void apply(const double Xin, const double Yin,
-			  double &Xout, double &Yout) const;
+  void apply(const double Xin, const double Yin, double &Xout, double &Yout) const;
 
   void dump(std::ostream &stream = std::cout) const;
 
