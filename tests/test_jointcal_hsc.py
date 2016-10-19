@@ -2,11 +2,6 @@
 
 from __future__ import division, absolute_import, print_function
 
-# Have to specify backend before we import any other lsst code, since some of it
-# still mucks with the backend, and then we wouldn't be able to change it.
-import matplotlib
-matplotlib.use('Agg')
-
 import unittest
 import os
 
@@ -30,8 +25,6 @@ except lsst.pex.exceptions.NotFoundError:
 # This value was empirically determined from the first run of jointcal on
 # this data, and will likely vary from survey to survey.
 absolute_error = 52e-3*u.arcsecond
-# Set to True for a comparison plot and some diagnostic numbers.
-do_plot = True
 
 
 # for MemoryTestCase
@@ -41,18 +34,20 @@ def setup_module(module):
 
 class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCase):
     def setUp(self):
-        jointcalTestBase.JointcalTestBase.setUp(self)
-        self.do_plot = do_plot
-        self.match_radius = 0.1*lsst.afw.geom.arcseconds
+        do_plot = False
 
         # position of this validation_data_hsc catalog
         center = lsst.afw.coord.IcrsCoord(320.367492*lsst.afw.geom.degrees, 0.3131554*lsst.afw.geom.degrees)
         radius = 5*lsst.afw.geom.degrees
-        self._prep_reference_loader(center, radius)
 
-        self.input_dir = os.path.join(data_dir, 'DATA', 'rerun', 'validate_drp')
+        input_dir = os.path.join(data_dir, 'DATA', 'rerun', 'validate_drp')
         # self.all_visits = [903334, 903336, 903338, 903342, 903344, 903346]
-        self.all_visits = [903982, 904006, 904828, 904846]
+        all_visits = [903982, 904006, 904828, 904846]
+
+        self.setUp_base(center, radius,
+                        input_dir=input_dir,
+                        all_visits=all_visits,
+                        do_plot=do_plot)
 
     @unittest.skipIf(data_dir is None, "validation_data_hsc not setup")
     def test_jointcalTask_2_visits(self):

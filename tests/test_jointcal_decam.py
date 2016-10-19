@@ -25,8 +25,6 @@ except lsst.pex.exceptions.NotFoundError:
 # This value was empirically determined from the first run of jointcal on
 # this data, and will likely vary from survey to survey.
 absolute_error = 62e-3*u.arcsecond
-# Set to True for a comparison plot and some diagnostic numbers.
-do_plot = False
 
 
 # for MemoryTestCase
@@ -36,19 +34,22 @@ def setup_module(module):
 
 class JointcalTestDECAM(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCase):
     def setUp(self):
-        jointcalTestBase.JointcalTestBase.setUp(self)
-        self.do_plot = do_plot
-        self.match_radius = 0.1*lsst.afw.geom.arcseconds
+        do_plot = False
 
         # position of the validation_data_decam catalog
         center = lsst.afw.coord.IcrsCoord(150.1191666*lsst.afw.geom.degrees, 2.20583333*lsst.afw.geom.degrees)
         radius = 3*lsst.afw.geom.degrees
-        self._prep_reference_loader(center, radius)
 
-        self.input_dir = os.path.join(data_dir, 'decam')
-        self.all_visits = [176837, 176846]
+        input_dir = os.path.join(data_dir, 'decam')
+        all_visits = [176837, 176846]
         ccdnums = '^'.join(str(x) for x in range(10, 19))
-        self.other_args = ['ccdnum=' + ccdnums, ]
+        other_args = ['ccdnum=' + ccdnums, ]
+
+        self.setUp_base(center, radius,
+                        input_dir=input_dir,
+                        all_visits=all_visits,
+                        other_args=other_args,
+                        do_plot=do_plot)
 
     @unittest.skipIf(data_dir is None, "validation_data_jointcal not setup")
     def test_jointcalTask_2_visits(self):

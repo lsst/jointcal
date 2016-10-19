@@ -2,11 +2,6 @@
 
 from __future__ import division, absolute_import, print_function
 
-import matplotlib
-# Have to import matplotlib at the top level, because it can be imported by
-# something else further in the stack and then I can't reset the backend.
-matplotlib.use('Agg')
-
 import unittest
 import os
 
@@ -29,8 +24,6 @@ except lsst.pex.exceptions.NotFoundError:
 # This value was empirically determined from the first run of jointcal on
 # this data, and will likely vary from survey to survey.
 absolute_error = 42e-3*u.arcsecond
-# Set to True for a comparison plot and some diagnostic numbers.
-do_plot = False
 
 
 # for MemoryTestCase
@@ -40,18 +33,21 @@ def setup_module(module):
 
 class JointcalTestLSSTSim(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCase):
     def setUp(self):
-        jointcalTestBase.JointcalTestBase.setUp(self)
-        self.do_plot = do_plot
-        self.match_radius = 0.1*lsst.afw.geom.arcseconds
+        do_plot = False
 
         # position of the Twinkles run 1 catalog
         center = lsst.afw.coord.IcrsCoord(53.00914*lsst.afw.geom.degrees, -27.43895*lsst.afw.geom.degrees)
         radius = 3*lsst.afw.geom.degrees
-        self._prep_reference_loader(center, radius)
 
-        self.input_dir = os.path.join(data_dir, 'twinkles1')
-        self.all_visits = range(840, 850)
-        self.other_args = ['raft=2,2', 'sensor=1,1', 'filter=r']
+        input_dir = os.path.join(data_dir, 'twinkles1')
+        all_visits = range(840, 850)
+        other_args = ['raft=2,2', 'sensor=1,1', 'filter=r']
+
+        self.setUp_base(center, radius,
+                        input_dir=input_dir,
+                        all_visits=all_visits,
+                        other_args=other_args,
+                        do_plot=do_plot)
 
     @unittest.skipIf(data_dir is None, "validation_data_jointcal not setup")
     @unittest.skip('jointcal currently fails if only given one catalog!')
