@@ -18,7 +18,7 @@ namespace afwImg = lsst::afw::image;
 namespace lsst {
 namespace jointcal {
 
-static double sq(double x) { return x * x;}
+static double sq(double x) { return x*x;}
 
 void CcdImage::LoadCatalog(const lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &Cat, const std::string &fluxField)
 {
@@ -46,15 +46,15 @@ void CcdImage::LoadCatalog(const lsst::afw::table::SortedCatalogT<lsst::afw::tab
         double mxx = i->get(mxxKey);
         double myy = i->get(myyKey);
         double mxy = i->get(mxyKey);
-        ms->vxy = mxy * (ms->vx + ms->vy) / (mxx + myy);
-        if (ms->vx < 0 || ms->vy < 0 || (ms->vxy * ms->vxy) > (ms->vx * ms->vy)) {
+        ms->vxy = mxy*(ms->vx + ms->vy)/(mxx + myy);
+        if (ms->vx < 0 || ms->vy < 0 || (ms->vxy*ms->vxy) > (ms->vx*ms->vy)) {
             std::cout << "Bad source detected in LoadCatalog : " << ms->vx << " " << ms->vy << " " <<
                       ms->vxy*ms->vxy << " " << ms->vx*ms->vy << std::endl;
             continue;
         }
         ms->flux = i->get(fluxKey);
         ms->eflux = i->get(efluxKey);
-        ms->mag = -2.5 * log10(ms->flux) + zp;
+        ms->mag = -2.5*log10(ms->flux) + zp;
         ms->SetCcdImage(this);
         wholeCatalog.push_back(ms);
     }
@@ -96,7 +96,7 @@ CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceReco
 
 {
     // zero point
-    zp = 2.5 * log10(calib->getFluxMag0().first);
+    zp = 2.5*log10(calib->getFluxMag0().first);
 
     LoadCatalog(Ri, fluxField);
 
@@ -160,11 +160,11 @@ CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceReco
         sineta = coseta = tgz = 0;
     else
     {
-        double cosz = 1. / airMass;
-        double sinz = sqrt(1 - cosz * cosz); //astronomers usually observe above the horizon
-        tgz = sinz / cosz;
-        sineta = cos(latitude) * sin(hourAngle) / sinz;
-        coseta = sqrt(1 - sineta * sineta);
+        double cosz = 1./airMass;
+        double sinz = sqrt(1 - cosz*cosz); //astronomers usually observe above the horizon
+        tgz = sinz/cosz;
+        sineta = cos(latitude)*sin(hourAngle)/sinz;
+        coseta = sqrt(1 - sineta*sineta);
         if (dec > latitude) coseta = -coseta;
     }
     bandRank = 0; // will be set by Associations if pertinent.

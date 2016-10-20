@@ -1774,8 +1774,7 @@ GtransfoPoly TanSipPix2RaDec::Pix2TangentPlane() const
   else return linPix2Tan;
 }
 
-void TanSipPix2RaDec::Pix2TP(double Xin, double Yin,
-			  double &Xtp, double & Ytp) const
+void TanSipPix2RaDec::Pix2TP(double Xin, double Yin, double &Xtp, double &Ytp) const
 { // Xtp, Ytp returned in degrees
   if (corr)
     {

@@ -249,8 +249,7 @@ void PhotomFit::GetMeasuredStarIndices(const MeasuredStar &Ms,
 
 
 
-void PhotomFit::FindOutliers(double NSigCut,
-			     MeasuredStarList &Outliers) const
+void PhotomFit::FindOutliers(double NSigCut, MeasuredStarList &Outliers) const
 {
   /* Aims at providing an outlier list for small-rank update
      of the factorization. */

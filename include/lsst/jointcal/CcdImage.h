@@ -60,10 +60,9 @@ private:
     unsigned bandRank; // some incremental band indicator.
 
 
-    double expTime; // seconds
     double airMass; // airmass value.
     double fluxCoeff; // coefficient to convert ADUs to ADUs/sec at airmass 1
-    double mjd; // julian date
+    double mjd; // modified julian date
     double toadsZeroPoint;
     double elixirZP;
     double photk;
@@ -166,9 +165,6 @@ public:
     //! returns shoot ID
     ShootIdType Shoot() const { return shoot;}
 
-    //! Exposure time (s)
-    double ExpTime() const { return expTime;}
-
     //!  Airmass
     double AirMass() const {return airMass;}
 
@@ -207,7 +203,7 @@ public:
     double TanZ() const { return tgz; }
 
     //!
-    Point ParallacticVector() const {return Point(tgz * coseta, tgz * sineta);}
+    Point RefractionVector() const {return Point(tgz*coseta, tgz*sineta);}
 
     //!conversion from ADU to ADU/sec at airmass=1
     double FluxCoeff() const { return fluxCoeff;}

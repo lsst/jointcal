@@ -75,14 +75,14 @@ SimplePolyModel::SimplePolyModel(const CcdImageList &L,
 }
 
 
-const Mapping* SimplePolyModel::GetMapping(const CcdImage &C) const
+const Mapping* SimplePolyModel::getMapping(const CcdImage &C) const
 {
   mapType::const_iterator i = _myMap.find(&C);
   if  (i==_myMap.end()) throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,"SimplePolyModel::GetMapping, never heard of CcdImage "+C.Name());
   return (i->second.get());
 }
 
-unsigned SimplePolyModel::AssignIndices(unsigned FirstIndex, std::string &WhatToFit)
+unsigned SimplePolyModel::assignIndices(unsigned FirstIndex, std::string &WhatToFit)
 {
   if (WhatToFit.find("Distortions") == std::string::npos)
     {
@@ -100,7 +100,7 @@ unsigned SimplePolyModel::AssignIndices(unsigned FirstIndex, std::string &WhatTo
   return index;
 }
 
-void SimplePolyModel::OffsetParams(const Eigen::VectorXd &Delta)
+void SimplePolyModel::offsetParams(const Eigen::VectorXd &Delta)
 {
   for (auto i = _myMap.begin(); i!=_myMap.end(); ++i)
     {
@@ -110,7 +110,7 @@ void SimplePolyModel::OffsetParams(const Eigen::VectorXd &Delta)
     }
 }
 
-void SimplePolyModel::FreezeErrorScales()
+void SimplePolyModel::freezeErrorScales()
 {
   for (auto i = _myMap.begin(); i!=_myMap.end(); ++i)
     i->second->FreezeErrorScales();
@@ -128,7 +128,7 @@ const Gtransfo& SimplePolyModel::GetTransfo(const CcdImage &Ccd) const
 PTR(TanSipPix2RaDec) SimplePolyModel::ProduceSipWcs(const CcdImage &Ccd) const
 {
   const GtransfoPoly &pix2Tp=dynamic_cast<const GtransfoPoly&>(GetTransfo(Ccd));
-  const TanRaDec2Pix *proj=dynamic_cast<const TanRaDec2Pix*>(Sky2TP(Ccd));
+  const TanRaDec2Pix *proj=dynamic_cast<const TanRaDec2Pix*>(sky2TP(Ccd));
   if (!(&pix2Tp)  || ! proj) return NULL;
 
   const GtransfoLin &projLinPart = proj->LinPart(); // should be the identity, but who knows? So, let us incorporate it into the pix2TP part.

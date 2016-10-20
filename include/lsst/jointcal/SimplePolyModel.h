@@ -45,22 +45,22 @@ public :
 
   // The following routines are the interface to AstromFit
   //!
-  const Mapping* GetMapping(const CcdImage &) const;
+  const Mapping* getMapping(const CcdImage &) const;
 
   //! Positions the various parameter sets into the parameter vector, starting at FirstIndex
-  unsigned AssignIndices(unsigned FirstIndex, std::string &WhatToFit);
+  unsigned assignIndices(unsigned FirstIndex, std::string &WhatToFit);
 
   // dispaches the offsets after a fit step into the actual locations of parameters
-  void OffsetParams(const Eigen::VectorXd &Delta);
+  void offsetParams(const Eigen::VectorXd &Delta);
 
   /*! the mapping of sky coordinates (i.e. the coordinate system
   in which fitted stars are reported) onto the Tangent plane
   (into which the pixel coordinates are transformed) */
-  const Gtransfo* Sky2TP(const CcdImage &C) const
+  const Gtransfo* sky2TP(const CcdImage &C) const
   { return _sky2TP->Sky2TP(C);}
 
   //!
-  virtual void FreezeErrorScales();
+  virtual void freezeErrorScales();
 
   //! Access to mappings
   const Gtransfo& GetTransfo(const CcdImage &Ccd) const;

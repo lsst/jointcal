@@ -28,7 +28,7 @@ const int minMeasurementCount = 2;
 
 namespace jointcal = lsst::jointcal;
 
-static double sqr(double x) {return x * x;}
+static double sqr(double x) {return x*x;}
 
 namespace lsst {
 namespace jointcal {
@@ -144,9 +144,9 @@ void Associations::AssociateCatalogs(const double MatchCutInArcSec,
 
         // divide by 3600 because coordinates in CTP are in degrees.
         StarMatchList *smList = ListMatchCollect(Measured2Base(catalog),
-                                Fitted2Base(toMatch),
-                                toCommonTangentPlane,
-                                matchCut / 3600.);
+                                                 Fitted2Base(toMatch),
+                                                 toCommonTangentPlane,
+                                                 matchCut/3600.);
 
         /* should check what this RemoveAmbiguities does... */
 //      if (Preferences().cleanMatches)
@@ -287,8 +287,8 @@ void Associations::CollectLSSTRefStars(lsst::afw::table::SortedCatalogT< lsst::a
 //  }
         BaseStar s(ra, dec, mag);
         // cook up errors: 100 mas per cooordinate
-        s.vx = sqr(0.1 / 3600 / cos(coord.getLatitude()));
-        s.vy = sqr(0.1 / 3600);
+        s.vx = sqr(0.1/3600/cos(coord.getLatitude()));
+        s.vy = sqr(0.1/3600);
         s.vxy = 0.;
         RefStar *r = new RefStar(s, s);
         refStarList.push_back(r);
@@ -327,8 +327,7 @@ const lsst::afw::geom::Box2D Associations::GetRaDecBBox()
 
 }
 
-void Associations::AssociateRefStars(double MatchCutInArcSec,
-                                     const Gtransfo* T)
+void Associations::AssociateRefStars(double MatchCutInArcSec, const Gtransfo* T)
 {
     //DEBUG
     //  std::cout << "****" << std::endl << refStarList << std::endl;
@@ -347,9 +346,9 @@ void Associations::AssociateRefStars(double MatchCutInArcSec,
     // 3600 because coordinates are in degrees (in CTP).
 
     StarMatchList *smList = ListMatchCollect(Ref2Base(refStarList),
-                            Fitted2Base(fittedStarList),
-                            T,
-                            MatchCutInArcSec / 3600.);
+                                             Fitted2Base(fittedStarList),
+                                             T,
+                                             MatchCutInArcSec/3600.);
 
     if (cleanMatches)
     {
@@ -378,6 +377,7 @@ void Associations::AssociateRefStars(double MatchCutInArcSec,
               << " among a list of " << refStarList.size() << std::endl;
     delete smList;
 }
+
 void Associations::SelectFittedStars()
 {
     std::cout << " number of possible fitted star before cutting on # of measurements " << fittedStarList.size() << std::endl;
@@ -551,7 +551,7 @@ static double getflux(DicStar const& ds, string const& tag)
 {
     double rflux = ds.getval(tag);
     if (rflux <= 0.) return -1.;
-    return 1.E10 * pow(10., -0.4 * rflux);
+    return 1.E10 * pow(10., -0.4*rflux);
 }
 
 void Associations::CollectPhotometricRefStars(string const& catalogname)
@@ -629,7 +629,7 @@ void Associations::AssociatePhotometricRefStars(double MatchCutInArcSec)
     StarMatchList* smList = ListMatchCollect(Ref2Base(photRefStarList),
                             Fitted2Base(fittedStarList),
                             &gtransfoIdentity,
-                            MatchCutInArcSec / 3600.);
+                            MatchCutInArcSec/3600.);
 
     if (Preferences().cleanMatches)
     {
@@ -700,7 +700,7 @@ void Associations::SetFittedStarColors(std::string DicStarListName,
     StarMatchList *sm = ListMatchCollect(Fitted2Base(fittedStarList),
                                          (const BaseStarList &) projected_cList,
                                          id_or_proj,
-                                         MatchCutArcSec / 3600);
+                                         MatchCutArcSec/3600);
 
     cout << "INFO : matched " << sm->size() << '/' << fittedStarList.size()
          << " FittedStars to color catalog" << endl;
