@@ -2,6 +2,8 @@
 
 from __future__ import division, absolute_import, print_function
 
+# Have to specify backend before we import any other lsst code, since some of it
+# still mucks with the backend, and then we wouldn't be able to change it.
 import matplotlib
 matplotlib.use('Agg')
 
@@ -10,8 +12,8 @@ import os
 
 from astropy import units as u
 
+import lsst.afw.coord
 import lsst.afw.geom
-import lsst.afw.coord as afwCoord
 import lsst.utils
 import lsst.pex.exceptions
 
@@ -44,7 +46,7 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         self.match_radius = 0.1*lsst.afw.geom.arcseconds
 
         # position of this validation_data_hsc catalog
-        center = afwCoord.IcrsCoord(320.367492*lsst.afw.geom.degrees, 0.3131554*lsst.afw.geom.degrees)
+        center = lsst.afw.coord.IcrsCoord(320.367492*lsst.afw.geom.degrees, 0.3131554*lsst.afw.geom.degrees)
         radius = 5*lsst.afw.geom.degrees
         self._prep_reference_loader(center, radius)
 

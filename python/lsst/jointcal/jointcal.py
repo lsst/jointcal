@@ -3,13 +3,11 @@
 from __future__ import division, absolute_import, print_function
 
 import os
-import numpy as np
 
 import lsst.utils
 import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 import lsst.afw.image as afwImage
-import lsst.afw.table as afwTable
 import lsst.afw.geom as afwGeom
 import lsst.afw.coord as afwCoord
 import lsst.pex.exceptions as pexExceptions
@@ -165,36 +163,14 @@ class JointcalTask(pipeBase.CmdLineTask):
 
         goodSrc = self.sourceSelector.selectSources(src)
 
-        # TODO: Leaving the old catalog and comparison code in while we
-        # sort out the old/new star selector differences.
-        # This block, and the StarSelector at the bottom of this file,
-        # will be removed when DM-6622 is completed (it's a useful check
-        # on the old/new star selector differences until then).
-        useOldStarSelector = False
-        if useOldStarSelector:
-            configSel = StarSelectorConfig()
-            self.oldSS = StarSelector(configSel)
-            stars1 = goodSrc.sourceCat.copy(deep=True)
-            stars2 = self.oldSS.select(src, calib).copy(deep=True)
-            # fluxField = jointcalControl.sourceFluxField
-            # SN = stars1.get(fluxField+"_flux") / stars1.get(fluxField+"_fluxSigma")
-            aa = [x for x in stars1['id'] if x in stars2['id']]
-            print("new, old, shared:", len(stars1), len(stars2), len(aa))
-            # import ipdb; ipdb.set_trace()
-            print("%d stars selected in visit %d - ccd %d"%(len(stars2),
-                                                            dataRef.dataId["visit"],
-                                                            ccdname))
-            associations.AddImage(stars2, tanwcs, visitInfo, bbox, filt, calib,
-                                  dataRef.dataId['visit'], ccdname, jointcalControl)
-        else:
-            if len(goodSrc.sourceCat) == 0:
-                print("no stars selected in ", dataRef.dataId["visit"], ccdname)
-                return tanwcs
-            print("%d stars selected in visit %d - ccd %d"%(len(goodSrc.sourceCat),
-                                                            dataRef.dataId["visit"],
-                                                            ccdname))
-            associations.AddImage(goodSrc.sourceCat, tanwcs, visitInfo, bbox, filt, calib,
-                                  dataRef.dataId['visit'], ccdname, jointcalControl)
+        if len(goodSrc.sourceCat) == 0:
+            print("no stars selected in ", dataRef.dataId["visit"], ccdname)
+            return tanwcs
+        print("%d stars selected in visit %d - ccd %d"%(len(goodSrc.sourceCat),
+                                                        dataRef.dataId["visit"],
+                                                        ccdname))
+        associations.AddImage(goodSrc.sourceCat, tanwcs, visitInfo, bbox, filt, calib,
+                              dataRef.dataId['visit'], ccdname, jointcalControl)
         return tanwcs
 
     @pipeBase.timeMethod
@@ -328,112 +304,3 @@ class JointcalTask(pipeBase.CmdLineTask):
                     break
 
         return pipeBase.Struct(dataRefs=dataRefs, oldWcsList=oldWcsList)
-
-
-# TODO: Leaving StarSelector[Config] here for reference.
-# TODO: We can remove them once we're happy with astrometryStarSelector.
-# TODO: This will be removed once DM-6622 is completed.
-
-class StarSelectorConfig(pexConfig.Config):
-
-    badFlags = pexConfig.ListField(
-        doc = "List of flags which cause a source to be rejected as bad",
-        dtype = str,
-        default = ["base_PixelFlags_flag_saturated",
-                   "base_PixelFlags_flag_cr",
-                   "base_PixelFlags_flag_interpolated",
-                   "base_SdssCentroid_flag",
-                   "base_SdssShape_flag"],
-    )
-    sourceFluxField = pexConfig.Field(
-        doc = "Type of source flux",
-        dtype = str,
-        default = "slot_CalibFlux"
-    )
-    maxMag = pexConfig.Field(
-        doc = "Maximum magnitude for sources to be included in the fit",
-        dtype = float,
-        default = 22.5,
-    )
-    coaddName = pexConfig.Field(
-        doc = "Type of coadd",
-        dtype = str,
-        default = "deep"
-    )
-    centroid = pexConfig.Field(
-        doc = "Centroid type for position estimation",
-        dtype = str,
-        default = "base_SdssCentroid",
-    )
-    shape = pexConfig.Field(
-        doc = "Shape for error estimation",
-        dtype = str,
-        default = "base_SdssShape",
-    )
-
-
-class StarSelector(object):
-
-    ConfigClass = StarSelectorConfig
-
-    def __init__(self, config):
-        """Construct a star selector
-
-        @param[in] config: An instance of StarSelectorConfig
-        """
-        self.config = config
-
-    def select(self, srcCat, calib):
-        """Return a catalog containing only reasonnable stars / galaxies."""
-
-        schema = srcCat.getSchema()
-        newCat = afwTable.SourceCatalog(schema)
-        fluxKey = schema[self.config.sourceFluxField+"_flux"].asKey()
-        fluxErrKey = schema[self.config.sourceFluxField+"_fluxSigma"].asKey()
-        parentKey = schema["parent"].asKey()
-        flagKeys = []
-        for f in self.config.badFlags:
-            key = schema[f].asKey()
-            flagKeys.append(key)
-        fluxFlagKey = schema[self.config.sourceFluxField+"_flag"].asKey()
-        flagKeys.append(fluxFlagKey)
-
-        for src in srcCat:
-            # Do not consider sources with bad flags
-            for f in flagKeys:
-                rej = 0
-                if src.get(f):
-                    rej = 1
-                    break
-            if rej == 1:
-                continue
-            # Reject negative flux
-            flux = src.get(fluxKey)
-            if flux < 0:
-                continue
-            # Reject objects with too large magnitude
-            fluxErr = src.get(fluxErrKey)
-            mag, magErr = calib.getMagnitude(flux, fluxErr)
-            if mag > self.config.maxMag or magErr > 0.1 or flux/fluxErr < 10:
-                continue
-            # Reject blends
-            if src.get(parentKey) != 0:
-                continue
-            footprint = src.getFootprint()
-            if footprint is not None and len(footprint.getPeaks()) > 1:
-                continue
-
-            # Check consistency of variances and second moments
-            vx = np.square(src.get(self.config.centroid + "_xSigma"))
-            vy = np.square(src.get(self.config.centroid + "_ySigma"))
-            mxx = src.get(self.config.shape + "_xx")
-            myy = src.get(self.config.shape + "_yy")
-            mxy = src.get(self.config.shape + "_xy")
-            vxy = mxy*(vx+vy)/(mxx+myy)
-
-            if vxy*vxy > vx*vy or np.isnan(vx) or np.isnan(vy):
-                continue
-
-            newCat.append(src)
-
-        return newCat

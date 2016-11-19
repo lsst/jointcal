@@ -7,8 +7,8 @@ import os
 
 from astropy import units as u
 
+import lsst.afw.coord
 import lsst.afw.geom
-import lsst.afw.coord as afwCoord
 import lsst.utils
 import lsst.pex.exceptions
 
@@ -41,7 +41,7 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
         self.match_radius = 0.1*lsst.afw.geom.arcseconds
 
         # position of the validation_data_cfht catalog
-        center = afwCoord.IcrsCoord(214.884832*lsst.afw.geom.degrees, 52.6622199*lsst.afw.geom.degrees)
+        center = lsst.afw.coord.IcrsCoord(214.884832*lsst.afw.geom.degrees, 52.6622199*lsst.afw.geom.degrees)
         radius = 3*lsst.afw.geom.degrees
         self._prep_reference_loader(center, radius)
 

@@ -3,6 +3,8 @@
 from __future__ import division, absolute_import, print_function
 
 import matplotlib
+# Have to import matplotlib at the top level, because it can be imported by
+# something else further in the stack and then I can't reset the backend.
 matplotlib.use('Agg')
 
 import unittest
@@ -14,8 +16,6 @@ import lsst.afw.geom
 import lsst.afw.coord
 import lsst.utils
 import lsst.pex.exceptions
-from lsst.daf import persistence
-from lsst.jointcal import jointcal
 import jointcalTestBase
 
 try:
@@ -38,48 +38,6 @@ def setup_module(module):
     lsst.utils.tests.init()
 
 
-class FakeRef(object):
-    """
-    A mock data ref object, with minimal functionality.
-
-    This is needed to insert missing metadata while DM-5503 is dealt with.
-    """
-
-    def __init__(self, src, calexp_md, dataId):
-        self.src = src
-        self.calexp_md = calexp_md
-        # info about our "telescope"
-        self.calexp_md.setDouble("MJD", 54321.)
-        self.calexp_md.setDouble("LST", 53.00914)
-        self.calexp_md.setDouble("RA2000", 53.00914)
-        self.calexp_md.setDouble("DEC2000", -27.43895)
-
-        self.dataId = dataId
-        self.dataId['ccd'] = 1
-        self.dataId['tract'] = 1
-
-    def get(self, name, immediate=True):
-        return getattr(self, name)
-
-    def put(self, value, name):
-        setattr(self, name, value)
-
-    def getButler(self):
-        """
-        This is just here to make jointcal happy until we properly solve the
-        metadata problem, when it will be able to be deleted. Jointcal doesn't
-        use the butler except to get the camera name, so that's all this does.
-        """
-        class NamedThing(object):
-            def __init__(self, name):
-                self.name = name
-
-            def getName(self):
-                return self.name
-
-        return {'camera': NamedThing('monkeySim')}
-
-
 class JointcalTestLSSTSim(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCase):
     def setUp(self):
         jointcalTestBase.JointcalTestBase.setUp(self)
@@ -94,23 +52,6 @@ class JointcalTestLSSTSim(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Te
         self.input_dir = os.path.join(data_dir, 'twinkles1')
         self.all_visits = range(840, 850)
         self.other_args = ['raft=2,2', 'sensor=1,1', 'filter=r']
-
-        # # Get a set of source catalogs.
-        # self.catalogs = []
-        # butler = persistence.Butler(os.path.join(data_dir, 'twinkles1'))
-        # for visit in butler.queryMetadata('src', 'visit'):
-        #     src = butler.get('src', dataId={'visit': visit})
-        #     dataId = butler.dataRef('src', visit=visit).dataId
-        #     calexp_md = butler.get('calexp_md', {'visit': visit, 'raft': '2,2', 'sensor': '1,1'})
-        #     self.catalogs.append(FakeRef(src, calexp_md, dataId))
-
-        # self.jointcalTask = jointcal.JointcalTask()
-        # NOTE: Tweaking S/N threshold to help pass original thresholds.
-        # TODO: Jointcal results are quite sensitive to the particulars of the
-        # sources used for associations, and astrometrySourceSelector does not
-        # exactly match the original bundled StarSelector.
-        # TODO: Once we make jointcal more robust, we should be able to drop this.
-        # self.jointcalTask.sourceSelector.config.minSnr = 13
 
     @unittest.skipIf(data_dir is None, "validation_data_jointcal not setup")
     @unittest.skip('jointcal currently fails if only given one catalog!')
@@ -137,7 +78,6 @@ class JointcalTestLSSTSim(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Te
         relative_error = 8.1e-3*u.arcsecond
         self._testJointCalTask(7, relative_error, absolute_error)
 
-    # @unittest.skip('TESTINGTESTINGTESTING')
     @unittest.skipIf(data_dir is None, "validation_data_jointcal not setup")
     def testJointCalTask_10_catalog(self):
         relative_error = 7.9e-3*u.arcsecond

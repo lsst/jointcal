@@ -7,8 +7,8 @@ import os
 
 from astropy import units as u
 
+import lsst.afw.coord
 import lsst.afw.geom
-import lsst.afw.coord as afwCoord
 import lsst.utils
 import lsst.pex.exceptions
 
@@ -41,7 +41,7 @@ class JointcalTestDECAM(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Test
         self.match_radius = 0.1*lsst.afw.geom.arcseconds
 
         # position of the validation_data_decam catalog
-        center = afwCoord.IcrsCoord(150.1191666*lsst.afw.geom.degrees, 2.20583333*lsst.afw.geom.degrees)
+        center = lsst.afw.coord.IcrsCoord(150.1191666*lsst.afw.geom.degrees, 2.20583333*lsst.afw.geom.degrees)
         radius = 3*lsst.afw.geom.degrees
         self._prep_reference_loader(center, radius)
 

@@ -6,6 +6,9 @@ import numpy as np
 import collections
 import os
 
+# NOTE: We use both astropy.units and afw.arcseconds in places because:
+# 1. astropy.units behaves well with matplotlib, while afw.arcseconds does not.
+# 2. afw objects (e.g. Coord) need afw.arcseconds, not astropy.units.
 from astropy import units as u
 
 from lsst.meas.astrom import LoadAstrometryNetObjectsTask, LoadAstrometryNetObjectsConfig
@@ -38,9 +41,6 @@ class JointcalTestBase(object):
             del self.oldWcsList
         if getattr(self, 'jointcalTask', None) is not None:
             del self.jointcalTask
-        # delete the below after DM-6625 is dealt with and we no longer need self.catalogs
-        if getattr(self, 'catalogs', None) is not None:
-            del self.catalogs
 
     def _prep_reference_loader(self, center, radius):
         """
@@ -52,23 +52,6 @@ class JointcalTestBase(object):
         refLoader = LoadAstrometryNetObjectsTask(LoadAstrometryNetObjectsConfig())
         # Make a copy of the reference catalog for in-memory contiguity.
         self.reference = refLoader.loadSkyCircle(center, radius, filterName='r').refCat.copy()
-
-    def _testJointCalTask_run(self, nCatalogs, relative_error, absolute_error):
-        """
-        Test jointcal.run() on self.catalogs[:nCatalogs], requiring less than some error (arcsec).
-
-        Requires self.catalogs to be a sequence of dataRefs or FakeRefs.
-
-        Note: this helper should go away once parseAndRun works with lsstSim data (DM-6625).
-        """
-        self.visit_list = self.all_visits[:nCatalogs]
-        result = self.jointcalTask.run(self.catalogs[:nCatalogs])
-        self.dataRefs = result.dataRefs
-        self.oldWcsList = result.oldWcsList
-
-        rms_rel, rms_abs = self.compute_rms(self.catalogs[:nCatalogs])
-        self.assertLess(rms_rel, relative_error)
-        self.assertLess(rms_abs, absolute_error)
 
     def _testJointCalTask(self, nCatalogs, relative_error, absolute_error):
         """Test parseAndRun for jointcal on nCatalogs, requiring less than some error (arcsec)."""
@@ -189,11 +172,6 @@ class JointcalTestBase(object):
 
         plot_all_wcs_deltas(plt, dataRefs, visitCatalogs, self.oldWcsList, name)
 
-        # So one can muck-about with things after plotting...
-        # plt.show()
-        # import pdb
-        # pdb.set_trace()
-
 
 def rms_per_star(data):
     """
@@ -262,7 +240,6 @@ def plot_all_wcs_quivers(plt, dataRefs, visitCatalogs, oldWcsList, name):
 
     for cat in visitCatalogs:
         fig = plt.figure()
-        # fig.set_tight_layout(True)
         ax = fig.add_subplot(111)
         for old_wcs, ref in zip(oldWcsList, dataRefs):
             if ref.dataId['visit'] != cat:
