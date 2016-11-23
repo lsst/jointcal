@@ -71,8 +71,7 @@ class SimpleGtransfoMapping : public Mapping
   }
 
   //!
-  void TransformPosAndErrors(const FatPoint &Where,
-			     FatPoint &OutPos) const
+  void TransformPosAndErrors(const FatPoint &Where, FatPoint &OutPos) const
   {
     transfo->TransformPosAndErrors(Where,OutPos);
     FatPoint tmp;
@@ -83,8 +82,7 @@ class SimpleGtransfoMapping : public Mapping
   }
 
   //!
-  void  PosDerivative(const Point &Where, Eigen::Matrix2d &Der,
-		      const double & Eps) const
+  void  PosDerivative(const Point &Where, Eigen::Matrix2d &Der, double Eps) const
   {
     errorProp->Derivative(Where, *lin, Eps);
     Der(0,0) = lin->Coeff(1,0,0);
@@ -112,8 +110,8 @@ class SimpleGtransfoMapping : public Mapping
   void  SetIndex(unsigned I) {index=I;}
 
   virtual void ComputeTransformAndDerivatives(const FatPoint &Where,
-					      FatPoint &OutPos,
-					      Eigen::MatrixX2d &H) const
+                                              FatPoint &OutPos,
+                                              Eigen::MatrixX2d &H) const
   {
     TransformPosAndErrors(Where,OutPos);
     transfo->ParamDerivatives(Where, &H(0,0), &H(0,1));
@@ -147,8 +145,7 @@ class SimplePolyMapping : public SimpleGtransfoMapping
   // ! contructor.
   /*! The transformation will be initialized to Transfo, so that the effective transformation
     reads Transfo*CenterAndScale */
- SimplePolyMapping(const GtransfoLin &CenterAndScale ,
-		   const GtransfoPoly& Transfo):
+ SimplePolyMapping(const GtransfoLin& CenterAndScale, const GtransfoPoly& Transfo):
   SimpleGtransfoMapping(Transfo), _centerAndScale(CenterAndScale)
   {
     // We assume that the initialization was done properly, for example that
@@ -172,7 +169,7 @@ class SimplePolyMapping : public SimpleGtransfoMapping
      _centerAndScale transfo */
 
   void  PosDerivative(const Point &Where, Eigen::Matrix2d &Der,
-		      const double & Eps) const
+		      double  Eps) const
   {
     Point tmp = _centerAndScale.apply(Where);
     errorProp->Derivative(tmp, *lin, Eps);
@@ -196,8 +193,8 @@ class SimplePolyMapping : public SimpleGtransfoMapping
      parameter derivatives into the same Gtransfo routine because
      it could be significantly faster */
   virtual void ComputeTransformAndDerivatives(const FatPoint &Where,
-					      FatPoint &OutPos,
-					      Eigen::MatrixX2d &H) const
+                                              FatPoint &OutPos,
+                                              Eigen::MatrixX2d &H) const
     {
       FatPoint mid;
       _centerAndScale.TransformPosAndErrors(Where,mid);
@@ -211,8 +208,7 @@ class SimplePolyMapping : public SimpleGtransfoMapping
     }
 
   //! Implements as well the centering and scaling of coordinates
-  void TransformPosAndErrors(const FatPoint &Where,
-			     FatPoint &OutPos) const
+  void TransformPosAndErrors(const FatPoint &Where, FatPoint &OutPos) const
   {
     FatPoint mid;
     _centerAndScale.TransformPosAndErrors(Where,mid);
@@ -225,7 +221,7 @@ class SimplePolyMapping : public SimpleGtransfoMapping
   }
 
   //! Access to the (fitted) transfo
-  const Gtransfo&  Transfo() const
+  const Gtransfo& Transfo() const
   {
     // Cannot fail given the contructor:
     const GtransfoPoly *fittedPoly = dynamic_cast<const GtransfoPoly*>(&(*transfo));
@@ -246,8 +242,8 @@ class SimpleIdentityMapping : public SimpleGtransfoMapping<GtransfoIdentity>
 
   //! nothing to do.
   virtual void ComputeTransformAndDerivatives(const FatPoint &Where,
-					      FatPoint &OutPos,
-					      Eigen::MatrixX2d &H) const
+                                              FatPoint &OutPos,
+                                              Eigen::MatrixX2d &H) const
   {
     OutPos = Where;
   }

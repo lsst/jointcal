@@ -6,6 +6,9 @@ import numpy as np
 import collections
 import os
 
+# NOTE: We use both astropy.units and afw.arcseconds in places because:
+# 1. astropy.units behaves well with matplotlib, while afw.arcseconds does not.
+# 2. afw objects (e.g. Coord) need afw.arcseconds, not astropy.units.
 from astropy import units as u
 
 from lsst.meas.astrom import LoadAstrometryNetObjectsTask, LoadAstrometryNetObjectsConfig
@@ -26,18 +29,18 @@ class JointcalTestBase(object):
         self.do_plot = False  # don't make plots unless specifically requested
         self.match_radius = 0.1*lsst.afw.geom.arcseconds  # match sources within 0.1" for RMS statistics
         self.all_visits = None  # list of the available visits to generate the parseAndRun arguments
+        self.other_args = []  # optional other arguments for the butler dataId
         # Signal/Noise (flux/fluxSigma) for sources to be included in the RMS cross-match.
         # 100 is a balance between good centroids and enough sources.
         self.flux_limit = 100
 
     def tearDown(self):
-        del self.reference
-        del self.oldWcsList
+        if getattr(self, 'reference', None) is not None:
+            del self.reference
+        if getattr(self, 'oldWcsList', None) is not None:
+            del self.oldWcsList
         if getattr(self, 'jointcalTask', None) is not None:
             del self.jointcalTask
-        # delete the below after DM-6625 is dealt with and we no longer need self.catalogs
-        if getattr(self, 'catalogs', None) is not None:
-            del self.catalogs
 
     def _prep_reference_loader(self, center, radius):
         """
@@ -50,34 +53,19 @@ class JointcalTestBase(object):
         # Make a copy of the reference catalog for in-memory contiguity.
         self.reference = refLoader.loadSkyCircle(center, radius, filterName='r').refCat.copy()
 
-    def _testJointCalTask_run(self, nCatalogs, relative_error, absolute_error):
-        """
-        Test jointcal.run() on self.catalogs[:nCatalogs], requiring less than some error (arcsec).
-
-        Requires self.catalogs to be a sequence of dataRefs or FakeRefs.
-
-        Note: this helper should go away once parseAndRun works with lsstSim data (DM-6625).
-        """
-        self.visit_list = self.all_visits[:nCatalogs]
-        result = self.jointcalTask.run(self.catalogs[:nCatalogs])
-        self.dataRefs = result.dataRefs
-        self.oldWcsList = result.oldWcsList
-
-        rms_rel, rms_abs = self.compute_rms(self.catalogs[:nCatalogs])
-        self.assertLess(rms_rel, relative_error)
-        self.assertLess(rms_abs, absolute_error)
-
     def _testJointCalTask(self, nCatalogs, relative_error, absolute_error):
         """Test parseAndRun for jointcal on nCatalogs, requiring less than some error (arcsec)."""
 
         self.visit_list = self.all_visits[:nCatalogs]
         visits = '^'.join(str(v) for v in self.visit_list)
         output_dir = os.path.join('.test', self.__class__.__name__)
-        result = jointcal.JointcalTask.parseAndRun(args=[self.input_dir, '--output', output_dir,
-                                                         '--clobber-versions', '--clobber-config',
-                                                         '--doraise',
-                                                         '--id', 'visit=%s'%visits],
-                                                   doReturnResults=True)
+        args = [self.input_dir, '--output', output_dir,
+                '--clobber-versions', '--clobber-config',
+                '--doraise',
+                '--id', 'visit=%s'%visits]
+        args.extend(self.other_args)
+        result = jointcal.JointcalTask.parseAndRun(args=args, doReturnResults=True)
+        self.assertNotEqual(result.resultList, [], 'resultList should not be empty')
         self.dataRefs = result.resultList[0].result.dataRefs
         self.oldWcsList = result.resultList[0].result.oldWcsList
 
@@ -171,22 +159,18 @@ class JointcalTestBase(object):
         astropy.visualization.quantity_support()
         plt.ion()
 
-        plot_all_wcs_deltas(plt, dataRefs, visitCatalogs, self.oldWcsList)
-
+        name = self.id().strip('__main__.')
         old_rms_relative = rms_per_star(old_relative)
         old_rms_absolute = rms_per_star(old_absolute)
         new_rms_relative = rms_per_star(new_relative)
         new_rms_absolute = rms_per_star(new_absolute)
-        print(len(dataRefs))
+        print("N dataRefs:", len(dataRefs))
         print("relative RMS (old, new):", old_rel_total, new_rel_total)
         print("absolute RMS (old, new):", old_abs_total, new_abs_total)
         plot_rms_histogram(plt, old_rms_relative, old_rms_absolute, new_rms_relative, new_rms_absolute,
-                           old_rel_total, old_abs_total, new_rel_total, new_abs_total)
+                           old_rel_total, old_abs_total, new_rel_total, new_abs_total, name)
 
-        # So one can muck-about with things after plotting...
-        plt.show()
-        import pdb
-        pdb.set_trace()
+        plot_all_wcs_deltas(plt, dataRefs, visitCatalogs, self.oldWcsList, name)
 
 
 def rms_per_star(data):
@@ -213,11 +197,14 @@ def rms_total(data):
     return (np.sqrt(total/n) * u.radian).to(u.arcsecond)
 
 
-def plot_all_wcs_deltas(plt, dataRefs, visitCatalogs, oldWcsList, perCcdPlots=False):
+def plot_all_wcs_deltas(plt, dataRefs, visitCatalogs, oldWcsList, name,
+                        perCcdPlots=False):
     """Various plots of the difference between old and new Wcs."""
 
-    plot_all_wcs_quivers(plt, dataRefs, visitCatalogs, oldWcsList)
-    plot_wcs_magnitude(plt, dataRefs, visitCatalogs, oldWcsList)
+    print('plotting heat maps')
+    plot_wcs_magnitude(plt, dataRefs, visitCatalogs, oldWcsList, name)
+    print('plotting quivers')
+    plot_all_wcs_quivers(plt, dataRefs, visitCatalogs, oldWcsList, name)
 
     if perCcdPlots:
         for i, ref in enumerate(dataRefs):
@@ -248,12 +235,11 @@ def wcs_convert(xv, yv, wcs):
     return xout, yout
 
 
-def plot_all_wcs_quivers(plt, dataRefs, visitCatalogs, oldWcsList):
+def plot_all_wcs_quivers(plt, dataRefs, visitCatalogs, oldWcsList, name):
     """Make quiver plots of the WCS deltas for each CCD in each visit."""
 
     for cat in visitCatalogs:
         fig = plt.figure()
-        fig.set_tight_layout(True)
         ax = fig.add_subplot(111)
         for old_wcs, ref in zip(oldWcsList, dataRefs):
             if ref.dataId['visit'] != cat:
@@ -268,6 +254,7 @@ def plot_all_wcs_quivers(plt, dataRefs, visitCatalogs, oldWcsList):
         plt.xlabel('RA')
         plt.ylabel('Dec')
         plt.title('visit: {}'.format(cat))
+        plt.savefig('.plots/{}-{}-quivers.pdf'.format(name, cat))
 
 
 def plot_wcs_quivers(ax, wcs1, wcs2, dim):
@@ -279,7 +266,7 @@ def plot_wcs_quivers(ax, wcs1, wcs2, dim):
     return ax.quiver(x1, y1, uu, vv, units='x', pivot='tail', scale=1e-3, width=1e-5)
 
 
-def plot_wcs_magnitude(plt, dataRefs, visitCatalogs, oldWcsList):
+def plot_wcs_magnitude(plt, dataRefs, visitCatalogs, oldWcsList, name):
     for cat in visitCatalogs:
         fig = plt.figure()
         fig.set_tight_layout(True)
@@ -302,8 +289,8 @@ def plot_wcs_magnitude(plt, dataRefs, visitCatalogs, oldWcsList):
             xmax = x1.max() if x1.max() > xmax else xmax
             ymax = y1.max() if y1.max() > ymax else ymax
             magnitude = (np.linalg.norm((uu, vv), axis=0)*u.radian).to(u.arcsecond).value
-            img = ax.imshow(magnitude, vmin=0, vmax=0.2,
-                            aspect='auto', extent=extent, cmap=plt.get_cmap('viridis'))
+            img = ax.imshow(magnitude, vmin=0, vmax=0.3,
+                            aspect='auto', extent=extent, cmap=plt.get_cmap('magma'))
             # TODO: add CCD bounding boxes to the plot once DM-5503 is finished.
             # TODO: add a circle for the full focal plane.
 
@@ -316,6 +303,7 @@ def plot_wcs_magnitude(plt, dataRefs, visitCatalogs, oldWcsList):
         plt.xlabel('RA')
         plt.ylabel('Dec')
         plt.title('visit: {}'.format(cat))
+        plt.savefig('.plots/{}-{}-heatmap.pdf'.format(name, cat))
 
 
 def plot_wcs(plt, wcs1, wcs2, dim, center=(0, 0), name=""):
@@ -332,13 +320,14 @@ def plot_wcs(plt, wcs1, wcs2, dim, center=(0, 0), name=""):
 
 def plot_rms_histogram(plt, old_rms_relative, old_rms_absolute,
                        new_rms_relative, new_rms_absolute,
-                       old_rel_total, old_abs_total, new_rel_total, new_abs_total):
+                       old_rel_total, old_abs_total, new_rel_total, new_abs_total,
+                       name):
     """Plot histograms of the star separations and their RMS values."""
     plt.figure()
 
     color_rel = 'black'
     ls_old = 'dotted'
-    color_abs = 'blue'
+    color_abs = 'green'
     ls_new = 'dashed'
     plotOptions = {'lw': 2, 'range': (0, 0.1)*u.arcsecond, 'normed': True,
                    'bins': 30, 'histtype': 'step'}
@@ -359,3 +348,4 @@ def plot_rms_histogram(plt, old_rms_relative, old_rms_absolute,
     plt.xlim(plotOptions['range'])
     plt.xlabel('arcseconds')
     plt.legend(loc='best')
+    plt.savefig('.plots/%s-histogram.pdf'%name)

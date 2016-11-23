@@ -182,7 +182,7 @@ void MeasuredStar::writen(std::ostream& s) const
 
 
 
-void MeasuredStarList::SetZeroPoint(const double &ZP)
+void MeasuredStarList::SetZeroPoint(double ZP)
 {
   zeroPoint = ZP;
   for (MeasuredStarIterator i= begin(); i != end(); ++i)

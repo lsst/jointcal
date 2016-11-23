@@ -24,8 +24,8 @@ Frame::Frame(const Point &LowerLeft, const Point &UpperRight)
 }
 
 
-Frame::Frame(const double &xmin, const double &ymin,
-	     const double &xmax, const double &ymax)
+Frame::Frame(double xmin, double ymin,
+	     double xmax, double ymax)
 {
   xMin = min(xmin,xmax); xMax = max(xmin,xmax);
   yMin = min(ymin,ymax); yMax = max(ymin,ymax);
@@ -140,7 +140,7 @@ double Frame::Area() const
 }
 
 
-bool Frame::InFrame(const double &x,const double &y) const
+bool Frame::InFrame(double x,double y) const
 {
   return ((x <= xMax) && (y<=yMax) &&
 	  (x>=xMin) && (y>=yMin));

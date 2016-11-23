@@ -41,7 +41,7 @@ Histo2d::Histo2d(const Histo2d &Other)
   memcpy(this->data, Other.data, nx*ny*sizeof(float));
 }
 
-bool Histo2d::indices(const double &X, const double &Y, int &ix, int &iy) const
+bool Histo2d::indices(double X, double Y, int &ix, int &iy) const
 {
   ix = (int) floor(( X - minx)*scalex);
   if (ix <0 || ix >= nx) return false;
@@ -72,14 +72,14 @@ double Histo2d::MaxBin(double &X, double &Y) const
   return valmax;
 }
 
-void Histo2d::ZeroBin(const double &X, const double &Y)
+void Histo2d::ZeroBin(double X, double Y)
 {
   int ix, iy;
   if (indices(X,Y,ix,iy)) data[iy + ny*ix] = 0;
 }
 
 
-double Histo2d::BinContent(const double &X, const double &Y) const
+double Histo2d::BinContent(double X, double Y) const
 {
   int ix, iy;
   if (indices(X,Y,ix,iy)) return data[iy + ny*ix];

@@ -28,8 +28,7 @@ public:
 
   //! this one is dangerous: you may swap the 2 middle arguments.
   //! Prefer next one
-  Frame(const double &xMin, const double &yMin,
-	const double &xMax, const double &yMax);
+  Frame(double xMin, double yMin, double xMax, double yMax);
 
   //! typical use: Frame(Point(xmin,ymin),Point(xmax,ymax))
   Frame(const Point &LowerLeft, const Point &UpperRight);
@@ -80,7 +79,7 @@ public:
   double Area() const;
 
   //! inside?
-  bool InFrame(const double &x, const double &y) const;
+  bool InFrame(double x, double y) const;
 
   //! same as above
   bool InFrame(const Point &pt) const

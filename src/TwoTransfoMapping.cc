@@ -99,7 +99,7 @@ void TwoTransfoMapping::TransformPosAndErrors(const FatPoint &Where,
 
 void  TwoTransfoMapping::PosDerivative(const Point &Where,
 				       Eigen::Matrix2d &Der,
-				       const double & Eps) const
+				       double  Eps) const
 {
   Eigen::Matrix2d d1,d2; // seems that it does not trigger dynamic allocation
   _m1->PosDerivative(Where, d1, 1e-4);

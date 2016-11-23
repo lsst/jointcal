@@ -18,7 +18,7 @@ namespace jointcal {
 
 
 
-static double sq(const double &x) { return x*x;}
+static double sq(double x) { return x*x;}
 
 double StarMatch::Chi2(const Gtransfo &T) const
 {
@@ -107,7 +107,7 @@ int StarMatchList::Dof(const Gtransfo* T) const
      set by the fit) and iterates until stabilization of the number of pairs.
      If the transfo is not assigned, it will be set to a GtransfoLinear. User
      can set an other type/degree using SetTransfo() before call. */
-void StarMatchList::RefineTransfo(const double &NSigmas)
+void StarMatchList::RefineTransfo(double NSigmas)
 {
   double cut;
   unsigned nremoved;

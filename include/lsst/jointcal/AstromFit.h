@@ -58,131 +58,130 @@ would then naturally not have any Kind 2 terms.
 //! Class that handles the astrometric least squares problem.
 
 class AstromFit {
-  private :
+private :
 
-  Associations &_assoc;
-  std::string _WhatToFit;
-  bool _fittingDistortions, _fittingPos, _fittingRefrac, _fittingPM;
-  DistortionModel * _distortionModel;
-  int _LastNTrip; // last triplet count, used to speed up allocation
-  double _referenceColor, _sigCol; // average and r.m.s color
-  unsigned _nRefrac;
-  std::vector<double> _refracCoefficient; // fit parameter
-  unsigned int _refracPosInMatrix; // where it stands
-  double _JDRef; // average Julian date
+    Associations &_assoc;
+    std::string _whatToFit;
+    bool _fittingDistortions, _fittingPos, _fittingRefrac, _fittingPM;
+    DistortionModel * _distortionModel;
+    int _LastNTrip; // last triplet count, used to speed up allocation
+    double _referenceColor, _sigCol; // average and r.m.s color
+    unsigned _nRefrac;
+    std::vector<double> _refracCoefficient; // fit parameter
+    unsigned int _refracPosInMatrix; // where it stands
+    double _JDRef; // average Julian date
 
-  // counts in parameter subsets.
-  unsigned int _nParDistortions;
-  // unsigned int _nParStars; unused presently
-  unsigned int _nParTot;
-  unsigned _nMeasuredStars;
-  double _posError;  // constant term on error on position (in pixel unit)
+    // counts in parameter subsets.
+    unsigned int _nParDistortions;
+    // unsigned int _nParStars; unused presently
+    unsigned int _nParTot;
+    unsigned _nMeasuredStars;
+    double _posError;  // constant term on error on position (in pixel unit)
 
- public :
+public :
 
-  //! this is the only constructor
-  AstromFit (Associations &A, DistortionModel *D, double PosError);
+    //! this is the only constructor
+    AstromFit (Associations &associations, DistortionModel *distortionModel, double posError);
 
-  //! Does a 1 step minimization, assuming a linear model.
-  /*! It calls AssignIndices, LSDerivatives, solves the linear system
-    and calls OffsetParams. No line search. Relies on sparse linear
-    algebra. */
-  unsigned Minimize(const std::string &WhatToFit, const double NSigRejCut=0);
+    //! Does a 1 step minimization, assuming a linear model.
+    /*! It calls AssignIndices, LSDerivatives, solves the linear system
+      and calls OffsetParams. No line search. Relies on sparse linear
+      algebra. */
+    unsigned Minimize(const std::string &whatToFit, const double nSigRejCut = 0);
 
-  //! Compute derivatives of measurement terms for this CcdImage
-  void LSDerivatives1(const CcdImage &Ccd,
-		      TripletList &TList, Eigen::VectorXd &Rhs,
-		      const MeasuredStarList *M=NULL) const;
+    //! Compute derivatives of measurement terms for this CcdImage
+    void LSDerivatives1(const CcdImage &ccdImage,
+                        TripletList &tList, Eigen::VectorXd &rhs,
+                        const MeasuredStarList *msList = NULL) const;
 
-  //! Compute derivatives of reference terms (if any), associated to the FittedStarList
-  void LSDerivatives2(const FittedStarList & Fsl, TripletList &TList, Eigen::VectorXd &Rhs) const;
+    //! Compute derivatives of reference terms (if any), associated to the FittedStarList
+    void LSDerivatives2(const FittedStarList & fsl, TripletList &tList, Eigen::VectorXd &rhs) const;
 
-  //! Evaluates the chI^2 derivatives (Jacobian and gradient) for the current WhatToFit setting.
-  /*! The Jacobian is provided as triplets, the gradient as a dense
-      vector. The parameters which vary are to be set using
-      AssignIndices.  */
-  void LSDerivatives(TripletList &TList, Eigen::VectorXd &Rhs) const;
+    //! Evaluates the chI^2 derivatives (Jacobian and gradient) for the current whatToFit setting.
+    /*! The Jacobian is provided as triplets, the gradient as a dense
+        vector. The parameters which vary are to be set using
+        AssignIndices.  */
+    void LSDerivatives(TripletList &tList, Eigen::VectorXd &rhs) const;
 
-  //! Set parameter groups fixed or variable and assign indices to each parameter in the big matrix (which will be used by OffsetParams(...).
-  void AssignIndices(const std::string &WhatToFit);
+    //! Set parameter groups fixed or variable and assign indices to each parameter in the big matrix (which will be used by OffsetParams(...).
+    void assignIndices(const std::string &whatToFit);
 
-  //!The transformations used to propagate errors are freezed to the current state.
-  /*! The routine can be called when the mappings are roughly in place.
-    After the call, the transformations used to propage errors are no longer
-    affected when updating the mappings. This allows to have an exactly linear
-    fit, which can be useful. */
-  void FreezeErrorScales() {_distortionModel->FreezeErrorScales();}
+    //!The transformations used to propagate errors are freezed to the current state.
+    /*! The routine can be called when the mappings are roughly in place.
+      After the call, the transformations used to propage errors are no longer
+      affected when updating the mappings. This allows to have an exactly linear
+      fit, which can be useful. */
+    void freezeErrorScales() {_distortionModel->freezeErrorScales();}
 
+    //! Offsest the parameters by the requested quantities. The used parameter layout is the one from the last call to AssignIndices or Minimize().
+    /*! There is no easy way to check that the current setting of
+        whatToFit and the provided Delta vector are compatible. We can
+        only test the size. */
+    void offsetParams(const Eigen::VectorXd &delta);
 
-  //! Offsest the parameters by the requested quantities. The used parameter layout is the one from the last call to AssignIndices or Minimize().
-  /*! There is no easy way to check that the current setting of
-      WhatToFit and the provided Delta vector are compatible. We can
-      only test the size. */
-  void OffsetParams(const Eigen::VectorXd &Delta);
+    //! Returns a chi2 for the current state
+    Chi2 ComputeChi2() const;
 
-  //! Returns a chi2 for the current state
-  Chi2 ComputeChi2() const;
+    //! Contributions to derivatives from (presumably) outlier terms. No discarding done.
+    void OutliersContributions(MeasuredStarList &mOutliers,
+                               FittedStarList &fOutLiers,
+                               TripletList &tList,
+                               Eigen::VectorXd &grad);
 
-  //! Contributions to derivatives from (presumably) outlier terms. No discarding done.
-  void OutliersContributions(MeasuredStarList &MOutliers,
-			     FittedStarList &FOutLiers,
-			     TripletList &TList,
-			     Eigen::VectorXd &Grad);
+    //! returns how many outliers were removed. No refit done. MeasOrRef can be "Meas" , "Ref", or "Meas Ref".
+    unsigned RemoveOutliers(double nSigCut, const std::string &measOrRef = "Meas Ref");
 
+    unsigned FindOutliers(double nSigCut,
+                          MeasuredStarList &mSOutliers,
+                          FittedStarList &fSOutliers,
+                          const std::string &measOrRef = "Meas Ref") const;
 
-  //! returns how many outliers were removed. No refit done. MeasOrRef can be "Meas" , "Ref", or "Meas Ref".
-  unsigned RemoveOutliers(const double &NSigCut, const std::string &MeasOrRef = "Meas Ref");
+    //! Just removes outliers from the fit. No Refit done.
+    void RemoveMeasOutliers(MeasuredStarList &outliers);
 
-  unsigned FindOutliers(const double &NSigCut,
-			MeasuredStarList &MSOutliers,
-			FittedStarList &FSOutliers,
-			const std::string &MeasOrRef = "Meas Ref") const;
+    //! Just removes outliers from the fit. No Refit done.
+    void RemoveRefOutliers(FittedStarList &outliers);
 
-  //! Just removes outliers from the fit. No Refit done.
-  void RemoveMeasOutliers(MeasuredStarList &Outliers);
+    //! Produces both ntuples (cook up names from the provided string)
+    void MakeResTuple(const std::string &tupleName) const;
 
-  //! Just removes outliers from the fit. No Refit done.
-  void RemoveRefOutliers(FittedStarList &Outliers);
+    //! Produces a tuple containing residuals of measurement terms.
+    void MakeMeasResTuple(const std::string &tupleName) const;
 
-  //! Produces both ntuples (cook up names from the provided string)
-  void MakeResTuple(const std::string &TupleName) const;
+    //! Produces a tuple containing residuals of reference terms.
+    void MakeRefResTuple(const std::string &tupleName) const;
 
-  //! Produces a tuple containing residuals of measurement terms.
-  void MakeMeasResTuple(const std::string &TupleName) const;
-
-  //! Produces a tuple containing residuals of reference terms.
-  void MakeRefResTuple(const std::string &TupleName) const;
-
-  //! access to the fitted refraction coefficients. Unit depends on scale in the tangentPlane. Degrees for an actual tangent plane.
-  std::vector<double> RefractionCoefficients() const
+    //! access to the fitted refraction coefficients. Unit depends on scale in the tangentPlane. Degrees for an actual tangent plane.
+    std::vector<double> RefractionCoefficients() const
     { return _refracCoefficient;}
 
-  void CheckStuff();
+    void CheckStuff();
 
- private :
+private :
 
-  Point TransformFittedStar(const FittedStar &F,
-			    const Gtransfo * Sky2TP,
-			    const Point &RefractionVector,
-			    const double &RefractionCoeff,
-			    const double &Jd) const;
+    Point TransformFittedStar(const FittedStar &fittedStar,
+                              const Gtransfo * sky2TP,
+                              const Point &refractionVector,
+                              double refractionCoeff,
+                              double mjd) const;
 
-  template <class ListType, class Accum>
-    void AccumulateStatImageList(ListType &L, Accum &A) const;
+    template <class ListType, class Accum>
+    void AccumulateStatImageList(ListType &list, Accum &accum) const;
 
-  template <class ImType, class Accum>
-    void AccumulateStatImage(ImType &I, Accum &A) const;
+    template <class ImType, class Accum>
+    void AccumulateStatImage(ImType &image, Accum &accum) const;
 
-  template <class Accum>
-    void AccumulateStatRefStars(Accum &Accu) const;
+    template <class Accum>
+    void AccumulateStatRefStars(Accum &accum) const;
 
 
-  //! only for outlier removal
-  void GetMeasuredStarIndices(const MeasuredStar &Ms,
-			      std::vector<unsigned> &Indices) const;
+    //! only for outlier removal
+    void GetMeasuredStarIndices(const MeasuredStar &ms,
+                                std::vector<unsigned> &indices) const;
 
 };
 
 
-}}
+}
+}
 #endif /* ASTROMFIT__H */

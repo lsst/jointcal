@@ -31,11 +31,11 @@ void FittedStar::SetRefStar(const RefStar *R)
   else refStar = R;
 }
 
-static double sq(const double &x) {return x*x;}
+static double sq(double x) {return x*x;}
 
 
-void FittedStar::AddMagMeasurement(const double &MagValue,
-				   const double &MagWeight)
+void FittedStar::AddMagMeasurement(double MagValue,
+				   double MagWeight)
 {
   mag = (mag*wmag+MagValue*MagWeight)/(wmag+MagWeight);
   wmag += MagWeight;

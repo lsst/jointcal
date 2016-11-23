@@ -181,7 +181,7 @@ class StarMatchList : public std::list<StarMatch> {
 
   public :
 
-  void RefineTransfo(const double &NSigmas);
+  void RefineTransfo(double NSigmas);
 
 
   //! enables to get a transformed StarMatchList. Only positions are transformed, not attached stars. const routine: "this" remains unchanged.

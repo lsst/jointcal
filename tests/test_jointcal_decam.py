@@ -7,16 +7,16 @@ import os
 
 from astropy import units as u
 
+import lsst.afw.coord
 import lsst.afw.geom
-import lsst.afw.coord as afwCoord
 import lsst.utils
 import lsst.pex.exceptions
 
 import jointcalTestBase
 
 try:
-    data_dir = lsst.utils.getPackageDir('validation_data_jointcal')
-    os.environ['ASTROMETRY_NET_DATA_DIR'] = os.path.join(data_dir, 'cfht_and_index')
+    data_dir = lsst.utils.getPackageDir('validation_data_decam')
+    os.environ['ASTROMETRY_NET_DATA_DIR'] = os.path.join(data_dir, 'astrometry_net_data')
 except lsst.pex.exceptions.NotFoundError:
     data_dir = None
 
@@ -34,21 +34,21 @@ def setup_module(module):
     lsst.utils.tests.init()
 
 
-class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCase):
+class JointcalTestDECAM(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCase):
     def setUp(self):
         jointcalTestBase.JointcalTestBase.setUp(self)
         self.do_plot = do_plot
         self.match_radius = 0.1*lsst.afw.geom.arcseconds
 
-        # position of the validation_data_cfht catalog
-        center = afwCoord.IcrsCoord(214.884832*lsst.afw.geom.degrees, 52.6622199*lsst.afw.geom.degrees)
+        # position of the validation_data_decam catalog
+        center = lsst.afw.coord.IcrsCoord(150.1191666*lsst.afw.geom.degrees, 2.20583333*lsst.afw.geom.degrees)
         radius = 3*lsst.afw.geom.degrees
         self._prep_reference_loader(center, radius)
 
-        self.input_dir = os.path.join(data_dir, 'cfht')
-        self.all_visits = [849375, 850587]
+        self.input_dir = os.path.join(data_dir, 'data')
+        self.all_visits = [176837, 176846]
 
-    @unittest.skipIf(data_dir is None, "validation_data_jointcal not setup")
+    @unittest.skipIf(data_dir is None, "validation_data_decam not setup")
     def test_jointcalTask_2_visits(self):
         # NOTE: The relative RMS limit was empirically determined from the
         # first run of jointcal on this data. We should always do better than

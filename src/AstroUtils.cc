@@ -66,7 +66,7 @@ if (sscanf(RaString.c_str(),"%d:%d:%lf", &hours, &minutes, &seconds) == 3)
 }
 
 
-static double sq(const double &x) { return x*x;}
+static double sq(double x) { return x*x;}
 
 
 
