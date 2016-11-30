@@ -24,7 +24,7 @@ except lsst.pex.exceptions.NotFoundError:
 # than the single-epoch astrometry (about 0.040").
 # This value was empirically determined from the first run of jointcal on
 # this data, and will likely vary from survey to survey.
-absolute_error = 48e-3*u.arcsecond
+absolute_error = 62e-3*u.arcsecond
 # Set to True for a comparison plot and some diagnostic numbers.
 do_plot = False
 
@@ -55,7 +55,7 @@ class JointcalTestDECAM(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Test
         # NOTE: The relative RMS limit was empirically determined from the
         # first run of jointcal on this data. We should always do better than
         # this in the future!
-        relative_error = 25e-3*u.arcsecond
+        relative_error = 32e-3*u.arcsecond
         self._testJointCalTask(2, relative_error, absolute_error)
 
 
