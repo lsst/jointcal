@@ -156,19 +156,19 @@ class JointcalTask(pipeBase.CmdLineTask):
 
         tanwcs = afwImage.TanWcs.cast(afwImage.makeWcs(md))
         lLeft = afwImage.getImageXY0FromMetadata(afwImage.wcsNameForXY0, md)
-        uRight = afwGeom.Point2I(lLeft.getX() + md.get("NAXIS1")-1, lLeft.getY() + md.get("NAXIS2")-1)
+        uRight = afwGeom.Point2I(lLeft.getX() + md.get("NAXIS1") - 1, lLeft.getY() + md.get("NAXIS2") - 1)
         bbox = afwGeom.Box2I(lLeft, uRight)
         calib = afwImage.Calib(md)
-        filt = dataRef.dataId['filter']
+        filt = calexp.getInfo().getFilter().getName()
 
         goodSrc = self.sourceSelector.selectSources(src)
 
         if len(goodSrc.sourceCat) == 0:
             print("no stars selected in ", dataRef.dataId["visit"], ccdname)
             return tanwcs
-        print("%d stars selected in visit %d - ccd %d"%(len(goodSrc.sourceCat),
-                                                        dataRef.dataId["visit"],
-                                                        ccdname))
+        print("%d stars selected in visit %d - ccd %d" % (len(goodSrc.sourceCat),
+                                                          dataRef.dataId["visit"],
+                                                          ccdname))
         associations.AddImage(goodSrc.sourceCat, tanwcs, visitInfo, bbox, filt, calib,
                               dataRef.dataId['visit'], ccdname, jointcalControl)
         return tanwcs
@@ -217,7 +217,7 @@ class JointcalTask(pipeBase.CmdLineTask):
         andConfig = AstrometryNetDataConfig()
         andConfigPath = os.path.join(anDir, "andConfig.py")
         if not os.path.exists(andConfigPath):
-            raise RuntimeError("astrometry_net_data config file \"%s\" required but not found"%andConfigPath)
+            raise RuntimeError("astrometry_net_data config file '%s' required but not found" % andConfigPath)
         andConfig.load(andConfigPath)
 
         task = LoadAstrometryNetObjectsTask.ConfigClass()
@@ -294,7 +294,7 @@ class JointcalTask(pipeBase.CmdLineTask):
             for dataRef in dataRefs:
                 ccdname = dataRef.get("calexp").getDetector().getId()
                 if dataRef.dataId["visit"] == int(visit) and ccdname == int(ccd):
-                    print("Updating WCS for visit: %d, ccd%d"%(int(visit), int(ccd)))
+                    print("Updating WCS for visit: %d, ccd%d" % (int(visit), int(ccd)))
                     exp = afwImage.ExposureI(0, 0)
                     exp.setWcs(tanWcs)
                     try:
