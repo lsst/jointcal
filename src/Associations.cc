@@ -287,6 +287,9 @@ void Associations::CollectLSSTRefStars(lsst::afw::table::SortedCatalogT< lsst::a
 //  }
         BaseStar s(ra, dec, mag);
         // cook up errors: 100 mas per cooordinate
+
+        // TODO: What is this? Why are we making fake errors here?
+
         s.vx = sqr(0.1/3600/cos(coord.getLatitude()));
         s.vy = sqr(0.1/3600);
         s.vxy = 0.;
