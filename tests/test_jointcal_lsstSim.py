@@ -55,11 +55,11 @@ class JointcalTestLSSTSim(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Te
 
     @unittest.skipIf(data_dir is None, "validation_data_jointcal not setup")
     @unittest.skip('jointcal currently fails if only given one catalog!')
-    def testJointCalTask_1_catalog(self):
+    def testJointCalTask_1_visits(self):
         self._testJointCalTask(2, 0, absolute_error)
 
     @unittest.skipIf(data_dir is None, "validation_data_jointcal not setup")
-    def testJointCalTask_2_catalog(self):
+    def testJointCalTask_2_visits(self):
         # NOTE: The relative RMS limits were empirically determined from the
         # first run of jointcal on this data. We should always do better than
         # this in the future!
@@ -68,18 +68,18 @@ class JointcalTestLSSTSim(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Te
 
     @unittest.skipIf(data_dir is None, "validation_data_jointcal not setup")
     @unittest.skip('Keeping this around for diagnostics on the behavior with n catalogs.')
-    def testJointCalTask_4_catalog(self):
+    def testJointCalTask_4_visits(self):
         relative_error = 8.2e-3*u.arcsecond
         self._testJointCalTask(4, relative_error, absolute_error)
 
     @unittest.skipIf(data_dir is None, "validation_data_jointcal not setup")
     @unittest.skip('Keeping this around for diagnostics on the behavior with n catalogs.')
-    def testJointCalTask_7_catalog(self):
+    def testJointCalTask_7_visits(self):
         relative_error = 8.1e-3*u.arcsecond
         self._testJointCalTask(7, relative_error, absolute_error)
 
     @unittest.skipIf(data_dir is None, "validation_data_jointcal not setup")
-    def testJointCalTask_10_catalog(self):
+    def testJointCalTask_10_visits(self):
         relative_error = 7.9e-3*u.arcsecond
         self._testJointCalTask(10, relative_error, absolute_error)
 
