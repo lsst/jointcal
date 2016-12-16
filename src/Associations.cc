@@ -337,7 +337,7 @@ void Associations::AssociateRefStars(double MatchCutInArcSec, const Gtransfo* T)
     // clear previous associations if any :
     for (RefStarIterator i = refStarList.begin(); i != refStarList.end(); ++i)
     {
-        (*i)->SetFittedStar(*(FittedStar *) NULL );
+        (*i)->SetFittedStar((FittedStar *) NULL );
     }
 
     std::cout << " AssociateRefStars : MatchCutInArcSec " << MatchCutInArcSec << std::endl;
