@@ -73,7 +73,7 @@ double flux;
 
   virtual ~BaseStar(){};
 
-  virtual std::string WriteHeader_(std::ostream & stream = std::cout, const char*i = NULL) const ;
+  virtual std::string WriteHeader_(std::ostream & stream = std::cout, const char*i = nullptr) const ;
 
   virtual void WriteHeader(std::ostream & stream = std::cout) const;
 

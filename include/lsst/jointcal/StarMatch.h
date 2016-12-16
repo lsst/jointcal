@@ -187,7 +187,7 @@ class StarMatchList : public std::list<StarMatch> {
   //! enables to get a transformed StarMatchList. Only positions are transformed, not attached stars. const routine: "this" remains unchanged.
   void ApplyTransfo(StarMatchList &Transformed,
 		    const Gtransfo *PriorTransfo,
-		    const Gtransfo *PosteriorTransfo = NULL) const;
+		    const Gtransfo *PosteriorTransfo = nullptr) const;
 
   /* constructor */
   StarMatchList() : order(0), chi2(0){};
@@ -208,7 +208,7 @@ class StarMatchList : public std::list<StarMatch> {
 
 
   //! returns the degree of freedom for the fit in x and y
-  int Dof(const Gtransfo *T=NULL) const;
+  int Dof(const Gtransfo *T=nullptr) const;
 
   //! returns the order of the used transfo
   int TransfoOrder() const {return order;}
@@ -254,12 +254,12 @@ class StarMatchList : public std::list<StarMatch> {
   ~StarMatchList() {/* should delete the transfo.... or use counted refs*/ };
 
   //!: without descriptor for l2tup
-  void write_wnoheader(std::ostream & pr=std::cout, const Gtransfo *T=NULL ) const ;
+  void write_wnoheader(std::ostream & pr=std::cout, const Gtransfo *T=nullptr ) const ;
 
 
   //! write  StarMatchList with a header which  can be read by l2tup
-  void write(const std::string &filename, const Gtransfo *tf=NULL) const;
-  void write(std::ostream &pr, const Gtransfo *tf=NULL) const;
+  void write(const std::string &filename, const Gtransfo *tf=nullptr) const;
+  void write(std::ostream &pr, const Gtransfo *tf=nullptr) const;
 
 
     //! enables to dump a match std::list through : std::cout << List;

@@ -343,7 +343,7 @@ static StarMatchList *ListMatchupRotShift_New(BaseStarList &L1, BaseStarList &L2
   if (L1.size() <= 4 || L2.size() <= 4)
     {
       std::cout << " ListMatchupRotShift_New : (at least) one of the lists is too short " << std::endl;
-      return NULL;
+      return nullptr;
     }
 
   SegmentList sList1(L1, Conditions.NStarsL1, Tin);
@@ -479,7 +479,7 @@ SolList Solutions;
       std::cout << " error In ListMatchup : not a single pair match " << std::endl;
       std::cout << " Probably, the relative scale of lists is not within bounds" << std::endl;
       std::cout << " here : " << minRatio << ' ' << maxRatio << std::endl;
-      return NULL;
+      return nullptr;
     }
 
 
@@ -522,7 +522,7 @@ StarMatchList *MatchSearchRotShiftFlip(BaseStarList &L1, BaseStarList &L2, const
   GtransfoLin flip(0,0,1,0,0,-1);
   StarMatchList *flipped   =  ListMatchupRotShift(L1,L2,flip, Conditions);
   StarMatchList *unflipped =  ListMatchupRotShift(L1,L2, GtransfoIdentity(), Conditions);
-  if (! flipped  || !unflipped) return NULL;
+  if (! flipped  || !unflipped) return nullptr;
   if (Conditions.PrintLevel >=1)
     {
       std::cout << " unflipped  Residual " << unflipped->Residual() << " nused " << unflipped->size() << std::endl;
@@ -553,7 +553,7 @@ StarMatchList *MatchSearchRotShiftFlip(BaseStarList &L1, BaseStarList &L2, const
 GtransfoLin *ListMatchupShift(const BaseStarList &L1, const BaseStarList &L2, const Gtransfo &Tin, double MaxShift)
 {
   int ncomb = L1.size() * L2.size();
-  if (!ncomb) return NULL;
+  if (!ncomb) return nullptr;
   int nx;
   if (ncomb > 10000) nx = 100; else nx = (int) sqrt(ncomb);
 
@@ -587,7 +587,7 @@ GtransfoLin *ListMatchupShift(const BaseStarList &L1, const BaseStarList &L2, co
     {
     int ncomb = L1.size() * L2.size();
     if (ncomb > 10000) nx = 100; else nx = (int) sqrt(double(ncomb));
-    if (!ncomb) return NULL;
+    if (!ncomb) return nullptr;
     }
   else nx = int(2*MaxShift/BinSize+0.5);
 
@@ -700,7 +700,7 @@ StarMatchList *CollectAndFit(const BaseStarList &L1, const BaseStarList &L2,
 			     const Gtransfo *Guess, const double MaxDist)
 {
   const Gtransfo *bestTransfo = Guess;
-  StarMatchList *prevMatch = NULL;
+  StarMatchList *prevMatch = nullptr;
   while (true)
     {
       StarMatchList *m = ListMatchCollect(L1,L2,bestTransfo, MaxDist);

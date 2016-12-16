@@ -47,7 +47,7 @@ class MeasuredStar : public BaseStar
       ccdImage(0),
       valid(true) {}
 
-  MeasuredStar(const BaseStar &B, const FittedStar *F = NULL) :
+  MeasuredStar(const BaseStar &B, const FittedStar *F = nullptr) :
     BaseStar(B),
     mag(0.), wmag(0.), eflux(0.), aperrad(0.),
     ccdImage(0),
@@ -85,7 +85,7 @@ class MeasuredStar : public BaseStar
   // No longer decrement counter of associated fitted star in destructor (P. El-Hage le 10/04/2012)
   // ~MeasuredStar() { if (fittedStar) fittedStar->MeasurementCount()--;}
 
-  std::string WriteHeader_(std::ostream & pr = std::cout, const char* i = NULL) const;
+  std::string WriteHeader_(std::ostream & pr = std::cout, const char* i = nullptr) const;
   void writen(std::ostream& s) const;
 static BaseStar*  read(std::istream &s, const char* format);
 };

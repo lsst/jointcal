@@ -18,7 +18,7 @@ SparseHisto4d::SparseHisto4d(const int N1, double Min1, double Max1,
 			     const int nEntries)
 {
   double indexMax = N1*N2*N3*N4;
-  data = NULL;
+  data = nullptr;
   if (indexMax > double(INT_MAX))
     {
       cerr << " cannot hold a 4D histo with more than " << INT_MAX 	   << " values " <<  endl;

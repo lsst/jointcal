@@ -44,7 +44,7 @@ namespace jointcal {
 MeasuredStar::MeasuredStar( const SEStar &S) :
   BaseStar(S),
   mag(0.), wmag(0.), eflux(0.), aperrad(0.), ccdImage(0),
-  fittedStar((const FittedStar *)NULL),
+  fittedStar(nullptr),
   valid(true)
 {
   eflux = S.EFlux();
@@ -97,7 +97,7 @@ const BaseStarList* Measured2Base(const MeasuredStarList *This)
 {
   //  string format = BaseStar::WriteHeader_(pr,i);
   std::string format = BaseStar::WriteHeader_(pr,i);
-  if(i==NULL) i = "";
+  if(i==nullptr) i = "";
 
   pr << "# eflux" << i << " : " << std::endl
      << "# mag" << i << " : " << std::endl
@@ -319,7 +319,7 @@ CatalogLoader * CatalogLoader::getDefaultCatalogLoader(){
 	   << APER_CATALOG << ',' << SE_CATALOG << std::endl;
       throw(PolokaException(" Unkown catalog type in CatalogLoader::getDefaultCatalogLoader "));
     }
-  return NULL;
+  return nullptr;
 }
 
 #endif /* WE_WILL_USE_SOME_OTHER_MECHANISM */

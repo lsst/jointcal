@@ -337,7 +337,7 @@ void Associations::AssociateRefStars(double MatchCutInArcSec, const Gtransfo* T)
     // clear previous associations if any :
     for (RefStarIterator i = refStarList.begin(); i != refStarList.end(); ++i)
     {
-        (*i)->SetFittedStar((FittedStar *) NULL );
+        (*i)->SetFittedStar(nullptr);
     }
 
     std::cout << " AssociateRefStars : MatchCutInArcSec " << MatchCutInArcSec << std::endl;
@@ -621,7 +621,7 @@ void Associations::AssociatePhotometricRefStars(double MatchCutInArcSec)
     RefStarIterator I;
     for (I = photRefStarList.begin(); I != photRefStarList.end(); I++)
     {
-        (*I)->SetFittedStar( *(FittedStar*)NULL ); // mais c'est horrible (!)
+        (*I)->SetFittedStar(nullptr); // mais c'est horrible (!)
         //      cout << " XTP,YTP=" << (*I)->x << " " << (*I)->y << endl;
     }
 

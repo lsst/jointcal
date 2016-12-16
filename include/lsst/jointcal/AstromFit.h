@@ -92,7 +92,7 @@ public :
     //! Compute derivatives of measurement terms for this CcdImage
     void LSDerivatives1(const CcdImage &ccdImage,
                         TripletList &tList, Eigen::VectorXd &rhs,
-                        const MeasuredStarList *msList = NULL) const;
+                        const MeasuredStarList *msList = nullptr) const;
 
     //! Compute derivatives of reference terms (if any), associated to the FittedStarList
     void LSDerivatives2(const FittedStarList & fsl, TripletList &tList, Eigen::VectorXd &rhs) const;

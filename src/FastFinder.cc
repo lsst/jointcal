@@ -65,12 +65,12 @@ const BaseStar *FastFinder::FindClosest(const Point &Where,
 					const double MaxDist,
 					bool (*SkipIt)(const BaseStar *)) const
 {
-  if (count == 0) return NULL;
+  if (count == 0) return nullptr;
   FastFinder::Iterator it = begin_scan(Where, MaxDist);
-  if (*it == NULL) return NULL;
-  const BaseStar *pbest = NULL;
+  if (*it == nullptr) return nullptr;
+  const BaseStar *pbest = nullptr;
   double minDist2 = MaxDist*MaxDist;
-  for (      ; *it != NULL ; ++it)
+  for (      ; *it != nullptr ; ++it)
     {
       const BaseStar *p = *it;
       if (SkipIt && SkipIt(p)) continue;
@@ -86,15 +86,15 @@ const BaseStar *FastFinder::SecondClosest(const Point &Where,
 					  const BaseStar* &Closest,
 					  bool (*SkipIt)(const BaseStar *)) const
 {
-  Closest=NULL;
-  if (count == 0) return NULL;
+  Closest=nullptr;
+  if (count == 0) return nullptr;
   FastFinder::Iterator it = begin_scan(Where, MaxDist);
-  if (*it == NULL) return NULL;
-  const BaseStar *pbest1 = NULL; // closest
-  const BaseStar *pbest2 = NULL; // second closest
+  if (*it == nullptr) return nullptr;
+  const BaseStar *pbest1 = nullptr; // closest
+  const BaseStar *pbest2 = nullptr; // second closest
   double minDist1_2 = MaxDist*MaxDist;
   double minDist2_2 = MaxDist*MaxDist;
-  for (      ; *it != NULL ; ++it)
+  for (      ; *it != nullptr ; ++it)
     {
       const BaseStar *p = *it;
       if (SkipIt && SkipIt(p)) continue;
@@ -218,7 +218,7 @@ Iterator::Iterator(const FastFinder &F, const Point &Where,
 FastFinder::stars_element  Iterator::operator*() const
 {
   if (current!=null_value) return *current;
-  return NULL;
+  return nullptr;
 }
 
 void Iterator::operator++()

@@ -13,7 +13,7 @@ RefStar::RefStar(const BaseStar &B, const Point &RaDec)
   : BaseStar(B), index(0)
 {
 
-  fittedStar = (FittedStar*) NULL;
+  fittedStar = nullptr;
   raDec = RaDec;
 }
 

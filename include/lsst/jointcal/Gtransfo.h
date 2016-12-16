@@ -424,7 +424,7 @@ public:
   using Gtransfo::apply; // to unhide apply(const Point&)
 
     GtransfoLinRot() : GtransfoLin() {};
-    GtransfoLinRot(const double AngleRad, const Point *Center=NULL,
+    GtransfoLinRot(const double AngleRad, const Point *Center=nullptr,
 		   const double ScaleFactor=1.0);
     double fit(const StarMatchList &List);
 
@@ -463,7 +463,7 @@ public :
   using Gtransfo::apply; // to unhide apply(const Point&)
 
   BaseTanWcs(const GtransfoLin &Pix2Tan, const Point &TangentPoint,
-	     const GtransfoPoly* Corrections = NULL);
+	     const GtransfoPoly* Corrections = nullptr);
 
   BaseTanWcs(const BaseTanWcs &Original);
 
@@ -507,7 +507,7 @@ public:
   using Gtransfo::apply; // to unhide apply(const Point&)
     //! Pix2Tan describes the transfo from pix to tangent plane (in degrees). TangentPoint in degrees. Corrections are applied between Lin and deprojection parts (as in Swarp).
   TanPix2RaDec(const GtransfoLin &Pix2Tan, const Point &TangentPoint,
-	       const GtransfoPoly* Corrections = NULL);
+	       const GtransfoPoly* Corrections = nullptr);
 
 
   //! the transformation from pixels to tangent plane (coordinates in degrees)
@@ -551,7 +551,7 @@ public:
 
     //! Pix2Tan describes the transfo from pix to tangent plane (in degrees). TangentPoint in degrees. Corrections are applied before Lin.
   TanSipPix2RaDec(const GtransfoLin &Pix2Tan, const Point &TangentPoint,
-		  const GtransfoPoly* Corrections = NULL);
+		  const GtransfoPoly* Corrections = nullptr);
 
 
   //! the transformation from pixels to tangent plane (coordinates in degrees)

@@ -51,13 +51,13 @@ public :
 
   //! Find the closest with some rejection capability
   const BaseStar *FindClosest(const Point &Where, const double MaxDist,
-			      bool (*SkipIt)(const BaseStar *) = NULL) const;
+			      bool (*SkipIt)(const BaseStar *) = nullptr) const;
 
   //!
   const BaseStar *SecondClosest(const Point &Where,
 				const double MaxDist,
 				const BaseStar* &Closest,
-  				bool (*SkipIt)(const BaseStar *)= NULL) const;
+  				bool (*SkipIt)(const BaseStar *)= nullptr) const;
 
 
   //! mostly for debugging

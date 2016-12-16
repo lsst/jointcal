@@ -15,7 +15,7 @@ namespace jointcal {
 // cannot be in fittedstar.h, because of "crossed includes"
 FittedStar::FittedStar(const MeasuredStar &M) :
   BaseStar(M), mag(M.Mag()), emag(-1), col(0.), gen(-1), wmag(M.MagWeight()),
-  indexInMatrix(-1), measurementCount(0), refStar(NULL),
+  indexInMatrix(-1), measurementCount(0), refStar(nullptr),
   flux2(-1), fluxErr2(-1)
 {
   fluxErr = M.eflux;
@@ -24,7 +24,7 @@ FittedStar::FittedStar(const MeasuredStar &M) :
 
 void FittedStar::SetRefStar(const RefStar *R)
 {
-  if (refStar != NULL && (R)) // Exception ??
+  if (refStar != nullptr && (R)) // TODO: should we raise an Exception in this case?
     std::cerr << " FittedStar : " << *this
 	      << " is already matched to an other RefStar " << std::endl
 	      << " Clean up your lists " << std::endl;
@@ -151,7 +151,7 @@ template class StarList<FittedStar>;
 std::string FittedStar::WriteHeader_(std::ostream& pr, const char* i) const
 {
  std::string format = BaseStar::WriteHeader_(pr, i);
-  if(i==NULL) i = "";
+  if(i==nullptr) i = "";
 
   pr << "# mag"   << i << " : fitted magnitude" << std::endl;
   pr << "# emag"  << i << " : error on the fitted magnitude" << std::endl;
