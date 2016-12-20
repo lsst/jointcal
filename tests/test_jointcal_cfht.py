@@ -25,8 +25,6 @@ except lsst.pex.exceptions.NotFoundError:
 # This value was empirically determined from the first run of jointcal on
 # this data, and will likely vary from survey to survey.
 absolute_error = 48e-3*u.arcsecond
-# Set to True for a comparison plot and some diagnostic numbers.
-do_plot = False
 
 
 # for MemoryTestCase
@@ -36,17 +34,19 @@ def setup_module(module):
 
 class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCase):
     def setUp(self):
-        jointcalTestBase.JointcalTestBase.setUp(self)
-        self.do_plot = do_plot
-        self.match_radius = 0.1*lsst.afw.geom.arcseconds
+        do_plot = False
 
         # position of the validation_data_cfht catalog
         center = lsst.afw.coord.IcrsCoord(214.884832*lsst.afw.geom.degrees, 52.6622199*lsst.afw.geom.degrees)
         radius = 3*lsst.afw.geom.degrees
-        self._prep_reference_loader(center, radius)
 
-        self.input_dir = os.path.join(data_dir, 'cfht')
-        self.all_visits = [849375, 850587]
+        input_dir = os.path.join(data_dir, 'cfht')
+        all_visits = [849375, 850587]
+
+        self.setUp_base(center, radius,
+                        input_dir=input_dir,
+                        all_visits=all_visits,
+                        do_plot=do_plot)
 
     @unittest.skipIf(data_dir is None, "validation_data_jointcal not setup")
     def test_jointcalTask_2_visits(self):

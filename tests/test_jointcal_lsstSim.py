@@ -2,11 +2,6 @@
 
 from __future__ import division, absolute_import, print_function
 
-import matplotlib
-# Have to import matplotlib at the top level, because it can be imported by
-# something else further in the stack and then I can't reset the backend.
-matplotlib.use('Agg')
-
 import unittest
 import os
 
@@ -29,8 +24,6 @@ except lsst.pex.exceptions.NotFoundError:
 # This value was empirically determined from the first run of jointcal on
 # this data, and will likely vary from survey to survey.
 absolute_error = 42e-3*u.arcsecond
-# Set to True for a comparison plot and some diagnostic numbers.
-do_plot = False
 
 
 # for MemoryTestCase
@@ -40,26 +33,29 @@ def setup_module(module):
 
 class JointcalTestLSSTSim(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCase):
     def setUp(self):
-        jointcalTestBase.JointcalTestBase.setUp(self)
-        self.do_plot = do_plot
-        self.match_radius = 0.1*lsst.afw.geom.arcseconds
+        do_plot = False
 
         # position of the Twinkles run 1 catalog
         center = lsst.afw.coord.IcrsCoord(53.00914*lsst.afw.geom.degrees, -27.43895*lsst.afw.geom.degrees)
         radius = 3*lsst.afw.geom.degrees
-        self._prep_reference_loader(center, radius)
 
-        self.input_dir = os.path.join(data_dir, 'twinkles1')
-        self.all_visits = range(840, 850)
-        self.other_args = ['raft=2,2', 'sensor=1,1', 'filter=r']
+        input_dir = os.path.join(data_dir, 'twinkles1')
+        all_visits = range(840, 850)
+        other_args = ['raft=2,2', 'sensor=1,1', 'filter=r']
+
+        self.setUp_base(center, radius,
+                        input_dir=input_dir,
+                        all_visits=all_visits,
+                        other_args=other_args,
+                        do_plot=do_plot)
 
     @unittest.skipIf(data_dir is None, "validation_data_jointcal not setup")
     @unittest.skip('jointcal currently fails if only given one catalog!')
-    def testJointCalTask_1_catalog(self):
+    def testJointCalTask_1_visits(self):
         self._testJointCalTask(2, 0, absolute_error)
 
     @unittest.skipIf(data_dir is None, "validation_data_jointcal not setup")
-    def testJointCalTask_2_catalog(self):
+    def testJointCalTask_2_visits(self):
         # NOTE: The relative RMS limits were empirically determined from the
         # first run of jointcal on this data. We should always do better than
         # this in the future!
@@ -68,18 +64,18 @@ class JointcalTestLSSTSim(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Te
 
     @unittest.skipIf(data_dir is None, "validation_data_jointcal not setup")
     @unittest.skip('Keeping this around for diagnostics on the behavior with n catalogs.')
-    def testJointCalTask_4_catalog(self):
+    def testJointCalTask_4_visits(self):
         relative_error = 8.2e-3*u.arcsecond
         self._testJointCalTask(4, relative_error, absolute_error)
 
     @unittest.skipIf(data_dir is None, "validation_data_jointcal not setup")
     @unittest.skip('Keeping this around for diagnostics on the behavior with n catalogs.')
-    def testJointCalTask_7_catalog(self):
+    def testJointCalTask_7_visits(self):
         relative_error = 8.1e-3*u.arcsecond
         self._testJointCalTask(7, relative_error, absolute_error)
 
     @unittest.skipIf(data_dir is None, "validation_data_jointcal not setup")
-    def testJointCalTask_10_catalog(self):
+    def testJointCalTask_10_visits(self):
         relative_error = 7.9e-3*u.arcsecond
         self._testJointCalTask(10, relative_error, absolute_error)
 
