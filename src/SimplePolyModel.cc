@@ -129,7 +129,7 @@ PTR(TanSipPix2RaDec) SimplePolyModel::ProduceSipWcs(const CcdImage &Ccd) const
 {
   const GtransfoPoly &pix2Tp=dynamic_cast<const GtransfoPoly&>(GetTransfo(Ccd));
   const TanRaDec2Pix *proj=dynamic_cast<const TanRaDec2Pix*>(sky2TP(Ccd));
-  if (!(&pix2Tp)  || ! proj) return NULL;
+  if (!(&pix2Tp)  || ! proj) return nullptr;
 
   const GtransfoLin &projLinPart = proj->LinPart(); // should be the identity, but who knows? So, let us incorporate it into the pix2TP part.
   GtransfoPoly wcsPix2Tp = GtransfoPoly(projLinPart.invert())*pix2Tp;

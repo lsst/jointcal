@@ -30,7 +30,7 @@ private :
   RefStar(const BaseStar &, const Point &RaDec);
 
   //!
-  void SetFittedStar(FittedStar &F);
+  void SetFittedStar(FittedStar *F);
 
   //!
   double Ra() const { return raDec.x;}

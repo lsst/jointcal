@@ -79,7 +79,7 @@ static unsigned chi2_cleanup(StarMatchList &L,  const double Chi2Cut,
 static double *get_dist2_array(const StarMatchList &L, const Gtransfo &T)
 {
   unsigned npair = L.size();
-  if (npair == 0) return NULL;
+  if (npair == 0) return nullptr;
   double *dist = new double [npair];
 
   unsigned i=0;
@@ -198,7 +198,7 @@ void StarMatchList::SetTransfoOrder(const int Order)
    might shorten the list */
 Gtransfo* StarMatchList::InverseTransfo() /* it is not const although it tries not to change anything  */
 {
-  if (!transfo) return NULL;
+  if (!transfo) return nullptr;
 
   Gtransfo *old_transfo = transfo->Clone();
   double old_chi2 = chi2;

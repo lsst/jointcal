@@ -55,7 +55,7 @@ class PhotomFit {
   //! Compute the derivatives for this CcdImage. The last argument allows to to process a sub-list (used for outlier removal)
 void LSDerivatives(const CcdImage &Ccd,
 		   TripletList &TList, Eigen::VectorXd &Rhs,
-		   const MeasuredStarList *M=NULL) const;
+		   const MeasuredStarList *M=nullptr) const;
 
   //! Set parameter groups fixed or variable and assign indices to each parameter in the big matrix (which will be used by OffsetParams(...).
   void AssignIndices(const std::string &WhatToFit);

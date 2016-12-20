@@ -13,13 +13,12 @@ RefStar::RefStar(const BaseStar &B, const Point &RaDec)
   : BaseStar(B), index(0)
 {
 
-  fittedStar = (FittedStar*) NULL;
+  fittedStar = nullptr;
   raDec = RaDec;
 }
 
-void RefStar::SetFittedStar(FittedStar &F)
+void RefStar::SetFittedStar(FittedStar *fittedStar)
 {
-  fittedStar = &F;
   if (fittedStar) fittedStar->SetRefStar(this);
 }
 

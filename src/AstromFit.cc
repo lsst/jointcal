@@ -49,7 +49,7 @@ public:
         cholmod_sparse *C_cs_perm = cholmod_submatrix(C_cs,
                                     Base::m_cholmodFactor->Perm,
                                     Base::m_cholmodFactor->n,
-                                    NULL, -1, NULL, true, true,
+                                    nullptr, -1, nullptr, true, true,
                                     &this->cholmod());
 
         int ret = cholmod_updown(UpOrDown, &C_cs_perm, Base::m_cholmodFactor, &this->cholmod());
@@ -110,7 +110,7 @@ public:
         cholmod_sparse *C_cs_perm = cholmod_submatrix(&C_cs,
                                     (int *) Base::m_cholmodFactor->Perm,
                                     Base::m_cholmodFactor->n,
-                                    NULL, -1, true, true,
+                                    nullptr, -1, true, true,
                                     &this->cholmod());
         assert(C_cs_perm);
         int ret = cholmod_updown(UpOrDown, C_cs_perm, Base::m_cholmodFactor, &this->cholmod());
@@ -414,7 +414,7 @@ void AstromFit::LSDerivatives2(const FittedStarList &fsl, TripletList &tList, Ei
     {
         const FittedStar &fs = **i;
         const RefStar *rs = fs.GetRefStar();
-        if (rs == NULL) continue;
+        if (rs == nullptr) continue;
         proj.SetTangentPoint(fs);
         // fs projects to (0,0), no need to compute its transform.
         FatPoint rsProj;
@@ -576,7 +576,7 @@ void AstromFit::AccumulateStatRefStars(Accum &accum) const
     {
         FittedStar &fs = **i;
         const RefStar *rs = fs.GetRefStar();
-        if (rs == NULL) continue;
+        if (rs == nullptr) continue;
         proj.SetTangentPoint(fs);
         // fs projects to (0,0), no need to compute its transform.
         FatPoint rsProj;
@@ -749,7 +749,7 @@ unsigned AstromFit::FindOutliers(double nSigCut,
          is; we use for that the type of the star attached to
          the Chi2Entry. */
         MeasuredStar *ms = dynamic_cast<MeasuredStar *>(i->ps);
-        FittedStar *fs = NULL;
+        FittedStar *fs = nullptr;
         if (!ms) // it is reference term.
         {
             fs = dynamic_cast<FittedStar *>(i->ps);
@@ -808,7 +808,7 @@ void AstromFit::RemoveRefOutliers(FittedStarList &outliers)
     for (auto i = outliers.begin(); i != outliers.end() ; ++i)
     {
         FittedStar &fs = **i;
-        fs.SetRefStar(NULL);
+        fs.SetRefStar(nullptr);
     }
 }
 
@@ -1215,7 +1215,7 @@ void AstromFit::MakeRefResTuple(const std::string &tupleName) const
     {
         const FittedStar &fs = **i;
         const RefStar *rs = fs.GetRefStar();
-        if (rs == NULL) continue;
+        if (rs == nullptr) continue;
         proj.SetTangentPoint(fs);
         // fs projects to (0,0), no need to compute its transform.
         FatPoint rsProj;

@@ -651,7 +651,7 @@ void PhotomFit::MakeRefResTuple(const std::string &TupleName) const
     {
       const FittedStar &fs = **i;
       const RefStar *rs = fs.GetRefStar();
-      if (rs == NULL) continue;
+      if (rs == nullptr) continue;
       proj.SetTangentPoint(fs);
       // fs projects to (0,0), no need to compute its transform.
       FatPoint rsProj;

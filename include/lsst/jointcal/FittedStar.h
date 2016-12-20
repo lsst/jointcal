@@ -61,14 +61,14 @@ class FittedStar : public BaseStar, public PmBlock {
  public:
   FittedStar() :
     BaseStar(), mag(-1), emag(-1), col(0.), gen(-1), wmag(0),
-    indexInMatrix(-1), measurementCount(0), refStar(NULL),
+    indexInMatrix(-1), measurementCount(0), refStar(nullptr),
     flux2(-1),
     fluxErr(-1),
     fluxErr2(-1) {}
 
   FittedStar(const BaseStar &B) :
     BaseStar(B), mag(-1), emag(-1), col(0.), gen(-1), wmag(0),
-    indexInMatrix(0), measurementCount(0), refStar(NULL),
+    indexInMatrix(0), measurementCount(0), refStar(nullptr),
     flux2(-1),
     fluxErr(-1),
     fluxErr2(-1) {}
@@ -87,7 +87,7 @@ class FittedStar : public BaseStar, public PmBlock {
   {
     indexInMatrix = -1;
     measurementCount = 0;
-    refStar = NULL;
+    refStar = nullptr;
     wmag = 0;
   }
 
@@ -146,7 +146,7 @@ class FittedStar : public BaseStar, public PmBlock {
   double&        FluxErr2() { return fluxErr2; }
 
   //! write stuff
-  std::string       WriteHeader_(std::ostream& pr=std::cout, const char* i=NULL) const;
+  std::string       WriteHeader_(std::ostream& pr=std::cout, const char* i=nullptr) const;
   virtual void      writen(std::ostream& s) const;
 virtual void      read_it(std::istream& s, const char* format);
 static BaseStar*  read(std::istream& s, const char* format);

@@ -21,14 +21,14 @@ namespace jointcal {
 
 
 bool IsIdentity(const Gtransfo *a_transfo)
-{ return (dynamic_cast<const GtransfoIdentity*>(a_transfo) != NULL);}
+{ return (dynamic_cast<const GtransfoIdentity*>(a_transfo) != nullptr);}
 
 static double sqr(double x) {return x*x;}
 
 bool IsIntegerShift(const Gtransfo *a_transfo)
 {
   const GtransfoPoly* shift = dynamic_cast<const GtransfoPoly*>(a_transfo);
-  if (shift == NULL) return false;
+  if (shift == nullptr) return false;
 
   static const double eps = 1e-5;
 
@@ -50,7 +50,7 @@ bool IsIntegerShift(const Gtransfo *a_transfo)
 Gtransfo* Gtransfo::ReduceCompo(const Gtransfo *Right) const
 {// by default no way to compose
   if (Right) {} // avoid a warning
-  return NULL;
+  return nullptr;
 }
 
 
@@ -194,18 +194,14 @@ void Gtransfo::OffsetParams(const double *Params)
   for (int i=0; i<npar ; ++i) ParamRef(i) += Params[i];
 }
 
-double Gtransfo::ParamRef(const int i) const
+double Gtransfo::ParamRef(const int) const
 {
-  if (i) {} // warning killer;
   throw LSST_EXCEPT(pex::exceptions::InvalidParameterError, std::string("Gtransfo::ParamRef should never be called "));
-  return 0;
 }
 
-double &Gtransfo::ParamRef(const int i)
+double &Gtransfo::ParamRef(const int)
 {
-  if (i) {} // warning killer;
-   throw LSST_EXCEPT(pex::exceptions::InvalidParameterError, "Gtransfo::ParamRef should never be called ");
-  return *(double *)(NULL);
+  throw LSST_EXCEPT(pex::exceptions::InvalidParameterError, "Gtransfo::ParamRef should never be called ");
 }
 
 void Gtransfo::ParamDerivatives(const Point &Where,
@@ -462,7 +458,7 @@ Gtransfo *GtransfoCompose(const Gtransfo *Left, const Gtransfo *Right)
   Gtransfo *composition = Left->ReduceCompo(Right);
   /* composition == NULL means no reduction : just build a Composition
      that pipelines "Left" and "Right" */
-  if (composition == NULL) return new GtransfoComposition(Left,Right);
+  if (composition == nullptr) return new GtransfoComposition(Left,Right);
   else return composition;
 }
 
@@ -1086,7 +1082,7 @@ Gtransfo * GtransfoPoly::ReduceCompo(const Gtransfo *Right) const
       else
 	return new GtransfoPoly((*this)*(*p)); // does the composition
     }
-  else return NULL;
+  else return nullptr;
 }
 
 /*  PolyXY the class used to perform polynomial algebra (and in
@@ -1300,12 +1296,12 @@ GtransfoPoly *InversePolyTransfo(const Gtransfo &Direct, const Frame &F, const d
       {
 	Point in((i+0.5)*stepx, (j+0.5)*stepy);
 	Point out(Direct.apply(in));
-	sm.push_back(StarMatch(out, in , NULL,NULL));
+	sm.push_back(StarMatch(out, in , nullptr, nullptr));
       }
   unsigned npairs = sm.size();
   int maxdeg = 9;
   int degree;
-  GtransfoPoly *poly = NULL;
+  GtransfoPoly *poly = nullptr;
   for (degree=1; degree<=maxdeg; ++degree)
     {
       delete poly;
@@ -1536,7 +1532,7 @@ BaseTanWcs::BaseTanWcs(const GtransfoLin &Pix2Tan, const Point &TangentPoint,
   dec0 = deg2rad(TangentPoint.y);
   cos0 = cos(dec0);
   sin0 = sin(dec0);
-  corr = NULL;
+  corr = nullptr;
   if (Corrections) corr = new GtransfoPoly(*Corrections);
 }
 
@@ -1546,7 +1542,7 @@ BaseTanWcs::BaseTanWcs(const GtransfoLin &Pix2Tan, const Point &TangentPoint,
 // ": Gtransfo" suppresses a warning
 BaseTanWcs::BaseTanWcs(const BaseTanWcs &Original) : Gtransfo()
 {
-  corr = NULL;
+  corr = nullptr;
   *this = Original;
 }
 
@@ -1557,7 +1553,7 @@ void  BaseTanWcs::operator = (const BaseTanWcs &Original)
   dec0 = Original.dec0;
   cos0 = cos(dec0);
   sin0 = sin(dec0);
-  corr = NULL;
+  corr = nullptr;
   if (Original.corr) corr = new GtransfoPoly(*Original.corr);
 }
 
@@ -1604,7 +1600,7 @@ GtransfoLin BaseTanWcs::LinPart() const
 void BaseTanWcs::SetCorrections(const GtransfoPoly *Corrections)
 {
   if (corr) delete corr;
-  corr = NULL;
+  corr = nullptr;
   if (Corrections)
     {
       corr = (GtransfoPoly*) Corrections->Clone();
@@ -1641,7 +1637,7 @@ TanPix2RaDec::TanPix2RaDec(const GtransfoLin &Pix2Tan,
 
 
 // ": Gtransfo" suppresses a warning
-TanPix2RaDec::TanPix2RaDec() : BaseTanWcs(GtransfoLin(), Point(0,0), NULL)
+TanPix2RaDec::TanPix2RaDec() : BaseTanWcs(GtransfoLin(), Point(0,0), nullptr)
 {
 }
 
@@ -1650,7 +1646,7 @@ Gtransfo * TanPix2RaDec::ReduceCompo(const Gtransfo *Right) const
 {
   const GtransfoLin *lin = dynamic_cast<const GtransfoLin *>(Right);
   if (lin && lin->Degree() == 1) return new TanPix2RaDec((*this)*(*lin));
-  return NULL;
+  return nullptr;
 }
 
 
@@ -1663,7 +1659,7 @@ TanPix2RaDec TanPix2RaDec::operator *(const GtransfoLin &Right) const
 
 TanRaDec2Pix TanPix2RaDec::invert() const
 {
-  if (corr != NULL)
+  if (corr != nullptr)
     {
       cerr << " You are inverting a TanPix2RaDec with corrections " << endl;
       cerr << " The inverse you get ignores the corrections !!!!!!" << endl;
@@ -1745,7 +1741,7 @@ TanSipPix2RaDec::TanSipPix2RaDec(const GtransfoLin &Pix2Tan,
 
 
 // ": Gtransfo" suppresses a warning
-TanSipPix2RaDec::TanSipPix2RaDec() : BaseTanWcs(GtransfoLin(), Point(0,0), NULL)
+TanSipPix2RaDec::TanSipPix2RaDec() : BaseTanWcs(GtransfoLin(), Point(0,0), nullptr)
 {
 }
 

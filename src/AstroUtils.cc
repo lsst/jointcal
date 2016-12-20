@@ -108,7 +108,7 @@ static void readusno(const std::string &filebase,double minra,double maxra,
   char line[80];
   int idx[96],len[96],i,raidx0,pos;
   float junk;
-  FILE *ifp=NULL;
+  FILE *ifp=nullptr;
   unsigned int  raword,decword,magword;
   unsigned int minraword,maxraword,mindecword,maxdecword;
   double mag;
@@ -355,7 +355,7 @@ int UsnoRead(double minra, double maxra,
 	     double mindec, double maxdec, UsnoColor Color,
 	     BaseStarList &ApmList)
 {
-  const char *ascii_source = NULL;
+  const char *ascii_source = nullptr;
 
   const char *env_var = getenv("USNOFILE");
   if (env_var) ascii_source = env_var;

@@ -112,7 +112,7 @@ reference exposure, expect troubles" << std::endl;
 const Mapping* ConstrainedPolyModel::GetMapping(const CcdImage &C) const
 {
   mappingMapType::const_iterator i = _mappings.find(&C);
-  if  (i==_mappings.end()) return NULL;
+  if  (i==_mappings.end()) return nullptr;
   return (i->second.get());
 }
 
@@ -204,8 +204,11 @@ void ConstrainedPolyModel::FreezeErrorScales()
 const Gtransfo& ConstrainedPolyModel::GetChipTransfo(const unsigned Chip) const
 {
   auto chipp = _chipMap.find(Chip);
-  if (chipp == _chipMap.end())
-    return *static_cast<const Gtransfo*>(NULL);// return 0, basically
+  if (chipp == _chipMap.end()) {
+    std::stringstream errMsg;
+    errMsg << "No such chipId: '" << Chip << "' found in chipMap of:  " << this;
+    throw pexExcept::InvalidParameterError(errMsg.str());
+  }
   return chipp->second->Transfo();
 }
 
@@ -222,8 +225,11 @@ std::vector<ShootIdType> ConstrainedPolyModel::GetShoots() const
 const Gtransfo& ConstrainedPolyModel::GetShootTransfo(const ShootIdType &Shoot) const
 {
   auto shootp = _shootMap.find(Shoot);
-  if (shootp == _shootMap.end())
-    return *static_cast<const Gtransfo*>(NULL); // return 0, basically
+  if (shootp == _shootMap.end()) {
+    std::stringstream errMsg;
+    errMsg << "No such shootId: '" << Shoot << "' found in shootMap of: " << this;
+    throw pexExcept::InvalidParameterError(errMsg.str());
+  }
   return shootp->second->Transfo();
 }
 
@@ -231,13 +237,13 @@ const Gtransfo& ConstrainedPolyModel::GetShootTransfo(const ShootIdType &Shoot) 
 PTR(TanSipPix2RaDec) ConstrainedPolyModel::ProduceSipWcs(const CcdImage &Ccd) const
 {
   mappingMapType::const_iterator i = _mappings.find(&Ccd);
-  if  (i==_mappings.end()) return NULL;
+  if  (i==_mappings.end()) return nullptr;
   const TwoTransfoMapping *m = i->second.get();
 
   const GtransfoPoly &t1=dynamic_cast<const GtransfoPoly&>(m->T1());
   const GtransfoPoly &t2=dynamic_cast<const GtransfoPoly&>(m->T2());
   const TanRaDec2Pix *proj=dynamic_cast<const TanRaDec2Pix*>(Sky2TP(Ccd));
-  if (!(&t1)  || !(&t2) || !proj) return NULL;
+  if (!(&t1)  || !(&t2) || !proj) return nullptr;
 
   GtransfoPoly pix2Tp = t2*t1;
 

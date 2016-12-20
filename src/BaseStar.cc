@@ -59,7 +59,7 @@ BaseStar* BaseStar::read(std::istream & rd, const char *format)
 
 std::string BaseStar::WriteHeader_(std::ostream & stream, const char*i) const
 {
-  if (i==NULL) i = "";
+  if (i==nullptr) i = "";
   stream << "# x"<< i <<" : x position (pixels)" << std::endl
 	 << "# y"<< i <<" : y position (pixels)" << std::endl
 	 << "# sx"<< i <<" : x position r.m.s " << std::endl
