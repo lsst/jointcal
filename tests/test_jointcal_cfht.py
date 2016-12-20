@@ -15,7 +15,7 @@ import lsst.pex.exceptions
 import jointcalTestBase
 
 try:
-    data_dir = lsst.utils.getPackageDir('validation_data_jointcal')
+    data_dir = lsst.utils.getPackageDir('testdata_jointcal')
     os.environ['ASTROMETRY_NET_DATA_DIR'] = os.path.join(data_dir, 'cfht_and_index')
 except lsst.pex.exceptions.NotFoundError:
     data_dir = None
@@ -37,7 +37,7 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
     def setUp(self):
         do_plot = False
 
-        # position of the validation_data_cfht catalog
+        # center of the cfht validation_data catalog
         center = lsst.afw.coord.IcrsCoord(214.884832*lsst.afw.geom.degrees, 52.6622199*lsst.afw.geom.degrees)
         radius = 3*lsst.afw.geom.degrees
 
@@ -49,7 +49,7 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
                         all_visits=all_visits,
                         do_plot=do_plot)
 
-    @unittest.skipIf(data_dir is None, "validation_data_jointcal not setup")
+    @unittest.skipIf(data_dir is None, "testdata_jointcal not setup")
     def test_jointcalTask_2_visits(self):
         # NOTE: The relative RMS limit was empirically determined from the
         # first run of jointcal on this data. We should always do better than

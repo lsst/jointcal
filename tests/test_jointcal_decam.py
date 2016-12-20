@@ -17,7 +17,7 @@ import lsst.pex.exceptions
 import jointcalTestBase
 
 try:
-    data_dir = lsst.utils.getPackageDir('validation_data_jointcal')
+    data_dir = lsst.utils.getPackageDir('testdata_jointcal')
     os.environ['ASTROMETRY_NET_DATA_DIR'] = os.path.join(data_dir, 'decam_and_index')
 except lsst.pex.exceptions.NotFoundError:
     data_dir = None
@@ -39,7 +39,7 @@ class JointcalTestDECAM(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Test
     def setUp(self):
         do_plot = False
 
-        # position of the validation_data_decam catalog
+        # center of the decam validation_data catalog
         center = lsst.afw.coord.IcrsCoord(150.1191666*lsst.afw.geom.degrees, 2.20583333*lsst.afw.geom.degrees)
         radius = 3*lsst.afw.geom.degrees
 
@@ -54,7 +54,7 @@ class JointcalTestDECAM(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Test
                         other_args=other_args,
                         do_plot=do_plot)
 
-    @unittest.skipIf(data_dir is None, "validation_data_jointcal not setup")
+    @unittest.skipIf(data_dir is None, "testdata_jointcal not setup")
     def test_jointcalTask_2_visits(self):
         # NOTE: The relative RMS limit was empirically determined from the
         # first run of jointcal on this data. We should always do better than

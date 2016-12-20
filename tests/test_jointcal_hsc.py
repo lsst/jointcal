@@ -37,7 +37,7 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
     def setUp(self):
         do_plot = False
 
-        # position of this validation_data_hsc catalog
+        # center of the hsc validation_data catalog
         center = lsst.afw.coord.IcrsCoord(320.367492*lsst.afw.geom.degrees, 0.3131554*lsst.afw.geom.degrees)
         radius = 5*lsst.afw.geom.degrees
 
