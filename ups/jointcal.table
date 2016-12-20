@@ -12,7 +12,7 @@ setupRequired(pipe_tasks)
 setupRequired(jointcal_cholmod)
 
 # for the testing files
-setupOptional(validation_data_jointcal)
+setupOptional(testdata_jointcal)
 setupOptional(validation_data_hsc)
 
 envPrepend(LD_LIBRARY_PATH, ${PRODUCT_DIR}/lib)
