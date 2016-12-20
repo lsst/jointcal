@@ -1,6 +1,8 @@
 # See COPYRIGHT file at the top of the source tree.
 
 from __future__ import division, absolute_import, print_function
+from builtins import str
+from builtins import range
 
 import unittest
 import os
@@ -33,6 +35,7 @@ def setup_module(module):
 
 
 class JointcalTestDECAM(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCase):
+
     def setUp(self):
         do_plot = False
 

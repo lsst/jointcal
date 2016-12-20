@@ -8,6 +8,7 @@ import lsst.afw.image as afwImage
 
 
 class JointcalCoaddTask(MakeCoaddTempExpTask):
+
     def getCalExp(self, dataRef, bgSubtracted):
         """!Return one "calexp" calibrated exposure
 

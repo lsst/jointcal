@@ -1,6 +1,8 @@
 # See COPYRIGHT file at the top of the source tree.
 
 from __future__ import division, absolute_import, print_function
+from builtins import str
+from builtins import object
 
 import os
 
@@ -98,5 +100,3 @@ class JointcalTestBase(object):
         if self.do_plot:
             name = self.id.strip('__main__.')
             self.jointcalStatistics.make_plots(self.dataRefs, self.visitCatalogs, oldWcsList, name=name)
-
-

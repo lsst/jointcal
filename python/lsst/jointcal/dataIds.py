@@ -33,7 +33,7 @@ class PerTractCcdDataIdContainer(CoaddDataIdContainer):
         idKeyTypeDict["tract"] = int
 
         for dataDict in self.idList:
-            for key, strVal in dataDict.iteritems():
+            for key, strVal in dataDict.items():
                 try:
                     keyType = idKeyTypeDict[key]
                 except KeyError:
@@ -102,13 +102,13 @@ class PerTractCcdDataIdContainer(CoaddDataIdContainer):
                     self._addDataRef(namespace, ref.dataId, tract)
 
         # Ensure all components of a visit are kept together by putting them all in the same set of tracts
-        for visit, tractSet in visitTract.iteritems():
+        for visit, tractSet in visitTract.items():
             for ref in visitRefs[visit]:
                 for tract in tractSet:
                     self._addDataRef(namespace, ref.dataId, tract)
         if visitTract:
             tractCounter = collections.Counter()
-            for tractSet in visitTract.itervalues():
+            for tractSet in visitTract.values():
                 tractCounter.update(tractSet)
             log.info("Number of visits for each tract: %s" % (dict(tractCounter),))
 
@@ -127,10 +127,10 @@ def overlapsTract(tract, imageWcs, imageBox):
 
     try:
         imageCorners = [imageWcs.pixelToSky(lsst.afw.geom.Point2D(pix)) for pix in imageBox.getCorners()]
-    except lsst.pex.exceptions.LsstCppException, e:
+    except lsst.pex.exceptions.LsstCppException as e:
         # Protecting ourselves from awful Wcs solutions in input images
         if (not isinstance(e.message, lsst.pex.exceptions.DomainErrorException) and
-            not isinstance(e.message, lsst.pex.exceptions.RuntimeErrorException)):
+                not isinstance(e.message, lsst.pex.exceptions.RuntimeErrorException)):
             raise
         return False
 

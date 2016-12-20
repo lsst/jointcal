@@ -1,6 +1,8 @@
 # See COPYRIGHT file at the top of the source tree.
 
 from __future__ import division, absolute_import, print_function
+from builtins import str
+from builtins import range
 
 import os
 
@@ -73,23 +75,23 @@ class JointcalConfig(pexConfig.Config):
     """Config for jointcalTask"""
 
     coaddName = pexConfig.Field(
-        doc = "Type of coadd, typically deep or goodSeeing",
-        dtype = str,
-        default = "deep"
+        doc="Type of coadd, typically deep or goodSeeing",
+        dtype=str,
+        default="deep"
     )
     posError = pexConfig.Field(
-        doc = "Constant term for error on position (in pixel unit)",
-        dtype = float,
-        default = 0.02,
+        doc="Constant term for error on position (in pixel unit)",
+        dtype=float,
+        default=0.02,
     )
     polyOrder = pexConfig.Field(
-        doc = "Polynomial order for fitting distorsion",
-        dtype = int,
-        default = 3,
+        doc="Polynomial order for fitting distorsion",
+        dtype=int,
+        default=3,
     )
     sourceSelector = sourceSelectorRegistry.makeField(
-        doc = "How to select sources for cross-matching",
-        default = "astrometry"
+        doc="How to select sources for cross-matching",
+        default="astrometry"
     )
 
     def setDefaults(self):
@@ -225,7 +227,7 @@ class JointcalTask(pipeBase.CmdLineTask):
 
         # TODO: I don't think this is the "default" filter...
         # Determine default filter associated to the catalog
-        filt, mfilt = andConfig.magColumnMap.items()[0]
+        filt, mfilt = list(andConfig.magColumnMap.items())[0]
         print("Using", filt, "band for reference flux")
         refCat = loader.loadSkyCircle(center, afwGeom.Angle(radius, afwGeom.radians), filt).refCat
 
