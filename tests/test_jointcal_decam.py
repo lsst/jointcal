@@ -33,6 +33,7 @@ def setup_module(module):
 
 
 class JointcalTestDECAM(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCase):
+
     def setUp(self):
         do_plot = False
 

@@ -98,5 +98,3 @@ class JointcalTestBase(object):
         if self.do_plot:
             name = self.id.strip('__main__.')
             self.jointcalStatistics.make_plots(self.dataRefs, self.visitCatalogs, oldWcsList, name=name)
-
-

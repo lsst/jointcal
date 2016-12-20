@@ -32,6 +32,7 @@ def setup_module(module):
 
 
 class JointcalTestLSSTSim(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCase):
+
     def setUp(self):
         do_plot = False
 
