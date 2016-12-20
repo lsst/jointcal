@@ -1,6 +1,7 @@
 # See COPYRIGHT file at the top of the source tree.
 
 from __future__ import division, absolute_import, print_function
+from builtins import range
 
 import unittest
 import os
@@ -41,7 +42,7 @@ class JointcalTestLSSTSim(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Te
         radius = 3*lsst.afw.geom.degrees
 
         input_dir = os.path.join(data_dir, 'twinkles1')
-        all_visits = range(840, 850)
+        all_visits = list(range(840, 850))
         other_args = ['raft=2,2', 'sensor=1,1', 'filter=r']
 
         self.setUp_base(center, radius,

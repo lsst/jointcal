@@ -1,6 +1,8 @@
 # See COPYRIGHT file at the top of the source tree.
 
 from __future__ import division, absolute_import, print_function
+from builtins import str
+from builtins import range
 
 import os
 
@@ -225,7 +227,7 @@ class JointcalTask(pipeBase.CmdLineTask):
 
         # TODO: I don't think this is the "default" filter...
         # Determine default filter associated to the catalog
-        filt, mfilt = andConfig.magColumnMap.items()[0]
+        filt, mfilt = list(andConfig.magColumnMap.items())[0]
         print("Using", filt, "band for reference flux")
         refCat = loader.loadSkyCircle(center, afwGeom.Angle(radius, afwGeom.radians), filt).refCat
 

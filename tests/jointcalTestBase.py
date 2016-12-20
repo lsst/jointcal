@@ -1,6 +1,8 @@
 # See COPYRIGHT file at the top of the source tree.
 
 from __future__ import division, absolute_import, print_function
+from builtins import str
+from builtins import object
 
 import os
 

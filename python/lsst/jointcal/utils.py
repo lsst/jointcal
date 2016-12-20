@@ -7,6 +7,8 @@ kludges and will no longer be necessary once the following are available:
  * a composite data structure that contains all ccds from a single visit
  * an n-way matching system that preserves the separations between sources
 """
+from builtins import zip
+from builtins import object
 import collections
 import os
 
@@ -60,9 +62,10 @@ class JointcalStatistics(object):
         def compute(catalogs):
             """Compute the relative and absolute RMS."""
             visit_catalogs = self._make_visit_catalogs(catalogs, visits_per_dataRef, visit_list)
-            refcat = visit_catalogs.values()[0]  # use the first catalog as the relative reference catalog
-            relative = self._make_match_dict(refcat, visit_catalogs.values()[1:])
-            absolute = self._make_match_dict(reference, visit_catalogs.values())
+            catalogs = list(visit_catalogs.values())
+            refcat = catalogs[0]  # use the first catalog as the relative reference catalog
+            relative = self._make_match_dict(refcat, catalogs[1:])
+            absolute = self._make_match_dict(reference, catalogs)
             return visit_catalogs, relative, absolute
 
         old_cats = [dataRef.get('src') for dataRef in data_refs]
