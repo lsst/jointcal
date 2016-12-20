@@ -127,7 +127,7 @@ def overlapsTract(tract, imageWcs, imageBox):
 
     try:
         imageCorners = [imageWcs.pixelToSky(lsst.afw.geom.Point2D(pix)) for pix in imageBox.getCorners()]
-    except lsst.pex.exceptions.LsstCppException, e:
+    except lsst.pex.exceptions.LsstCppException as e:
         # Protecting ourselves from awful Wcs solutions in input images
         if (not isinstance(e.message, lsst.pex.exceptions.DomainErrorException) and
                 not isinstance(e.message, lsst.pex.exceptions.RuntimeErrorException)):
