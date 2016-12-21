@@ -17,18 +17,11 @@ namespace jointcal {
 
 class Associations;
 
-/*! Some comments.
-
-
-*/
-
-
 //! Class that handles the photometric least squares problem.
-
 class PhotomFit {
   private :
 
-  Associations &_assoc;
+  Associations &_associations;
   std::string _WhatToFit;
   bool _fittingModel, _fittingFluxes;
   unsigned _nParModel, _nParFluxes, _nParTot;
@@ -41,7 +34,7 @@ class PhotomFit {
  public :
 
   //! this is the only constructor
-  PhotomFit (Associations &A, PhotomModel *M, double PosError);
+  PhotomFit (Associations &associations, PhotomModel *model, double fluxError);
 
   //! Does a 1 step minimization, assuming a linear model.
   /*! It calls AssignIndices, LSDerivatives, solves the linear system

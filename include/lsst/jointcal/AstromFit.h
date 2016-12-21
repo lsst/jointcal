@@ -16,7 +16,6 @@ namespace jointcal {
 
 class Associations;
 
-
 /*! This is the class that actually computes the quantities required
 to carry out a LS astrometric fit wrt distortion mappings and coordinates
 of common objects.  Namely it computes the Jacobian and

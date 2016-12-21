@@ -963,14 +963,10 @@ unsigned AstromFit::Minimize(const std::string &whatToFit, const double nSigRejC
     Eigen::VectorXd grad(_nParTot);  grad.setZero();
 
     //Fill the triplets
-    clock_t tstart = clock();
     LSDerivatives(tList, grad);
-    clock_t tend = clock();
     _LastNTrip = tList.size();
 
-    cout << " INFO: End of triplet filling, ntrip = " << tList.size()
-         << " CPU = " << float(tend - tstart)/float(CLOCKS_PER_SEC)
-         << endl;
+    cout << " INFO: End of triplet filling, ntrip = " << tList.size() << endl;
 
     SpMat hessian;
     {
@@ -979,12 +975,7 @@ unsigned AstromFit::Minimize(const std::string &whatToFit, const double nSigRejC
         jacobian.setFromTriplets(tList.begin(), tList.end());
         // release memory shrink_to_fit is C++11
         tList.clear(); //tList.shrink_to_fit();
-        clock_t tstart = clock();
         hessian = jacobian*jacobian.transpose();
-        clock_t tend = clock();
-        std::cout << "INFO: CPU for J*Jt "
-                  << float(tend - tstart)/float(CLOCKS_PER_SEC) << std::endl;
-
 #else
         SpMat jacobian(tList.NextRank(), _nParTot);
         jacobian.setFromTriplets(tList.begin(), tList.end());
@@ -1001,18 +992,12 @@ unsigned AstromFit::Minimize(const std::string &whatToFit, const double nSigRejC
          << " filling-frac = " << hessian.nonZeros()/sqr(hessian.rows()) << endl;
     cout << "INFO: starting factorization" << endl;
 
-    tstart = clock();
     CholmodSimplicialLDLT2<SpMat> chol(hessian);
     if (chol.info() != Eigen::Success)
     {
         cout << "ERROR: AstromFit::Minimize : factorization failed " << endl;
         return 2;
     }
-
-    tend = clock();
-    std::cout << "INFO: CPU for factorize-solve "
-              << float(tend - tstart)/float(CLOCKS_PER_SEC) << std::endl;
-    tstart = tend;
 
     unsigned tot_outliers = 0;
     double old_chi2 = ComputeChi2().chi2;
@@ -1054,10 +1039,6 @@ unsigned AstromFit::Minimize(const std::string &whatToFit, const double nSigRejC
         of the contribution of all other terms, because they add up
          to 0 */
         grad *= -1;
-        tend = clock();
-        std::cout << "INFO: CPU for chi2-update_factor "
-                  << float(tend - tstart)/float(CLOCKS_PER_SEC) << std::endl;
-        tstart = tend;
     }
 
     cout << "INFO: total number of outliers " << tot_outliers << endl;

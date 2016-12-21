@@ -22,23 +22,17 @@ namespace lsst {
 namespace jointcal {
 
 
-PhotomFit::PhotomFit(Associations &A, PhotomModel *M, double FluxError) :
-  _assoc(A),  _photomModel(M), _fluxError(FluxError)
+PhotomFit::PhotomFit(Associations &associations, PhotomModel *photomModel, double fluxError) :
+  _associations(associations),  _photomModel(photomModel), _fluxError(fluxError)
 {
   _LastNTrip = 0;
-
-  //  _posError = PosError;
 
   //  _nMeasuredStars = 0;
   // The various _npar... are initialized in AssignIndices.
   // Although there is no reason to adress them before one might be tempted by
   // evaluating a Chi2 rightaway, .. which uses these counts, so:
   AssignIndices("");
-
 }
-
-
-
 
 /*! this is the first implementation of an error "model".
   We'll certainly have to upgrade it. MeasuredStar provided
@@ -65,7 +59,7 @@ static void TweakPhotomMeasurementErrors(const MeasuredStar &Ms, double error)
 
 void PhotomFit::LSDerivatives(TripletList &TList, Eigen::VectorXd &Rhs) const
 {
-  auto L = _assoc.TheCcdImageList();
+  auto L = _associations.TheCcdImageList();
   for (auto im=L.cbegin(); im!=L.end() ; ++im)
     {
       LSDerivatives(**im, TList, Rhs);
@@ -177,7 +171,7 @@ void PhotomFit::AccumulateStat(ListType &L, Accum &Accu) const
 Chi2 PhotomFit::ComputeChi2() const
 {
   Chi2 chi2;
-  AccumulateStat(_assoc.TheCcdImageList(), chi2);
+  AccumulateStat(_associations.TheCcdImageList(), chi2);
   // so far, chi2.ndof contains the number of squares.
   // So, subtract here the number of parameters.
   chi2.ndof -= _nParTot;
@@ -257,7 +251,7 @@ void PhotomFit::FindOutliers(double NSigCut, MeasuredStarList &Outliers) const
   // collect chi2 contributions of the measurements.
   Chi2Vect chi2s;
   //  chi2s.reserve(_nMeasuredStars);
-  AccumulateStat(_assoc.ccdImageList, chi2s);
+  AccumulateStat(_associations.ccdImageList, chi2s);
   // do some stat
   unsigned nval = chi2s.size();
   if (nval==0) return;
@@ -316,11 +310,11 @@ unsigned PhotomFit::RemoveOutliers(double NSigCut)
      need to compute the Jacobian and RHS contributions of the
      discarded measurement and update the current factorization and
      solution. */
-  CcdImageList &L=_assoc.ccdImageList;
+  CcdImageList &L=_associations.ccdImageList;
   // collect chi2 contributions
   Chi2Vect chi2s;
   chi2s.reserve(_nMeasuredStars);
-  AccumulateStatImageList(_assoc.ccdImageList, chi2s);
+  AccumulateStatImageList(_associations.ccdImageList, chi2s);
   // do some stat
   unsigned nval = chi2s.size();
   if (nval==0) return 0;
@@ -401,7 +395,7 @@ void PhotomFit::AssignIndices(const std::string &WhatToFit)
 
   if (_fittingFluxes)
     {
-      FittedStarList &fsl = _assoc.fittedStarList;
+      FittedStarList &fsl = _associations.fittedStarList;
       for (FittedStarIterator i= fsl.begin(); i != fsl.end(); ++i)
 	{
 	  FittedStar &fs = **i;
@@ -425,7 +419,7 @@ void PhotomFit::OffsetParams(const Eigen::VectorXd& Delta)
 
   if (_fittingFluxes)
     {
-      FittedStarList &fsl = _assoc.fittedStarList;
+      FittedStarList &fsl = _associations.fittedStarList;
       for (FittedStarIterator i= fsl.begin(); i != fsl.end(); ++i)
 	{
 	  FittedStar &fs = **i;
@@ -467,11 +461,7 @@ bool PhotomFit::Minimize(const std::string &WhatToFit)
     jacobian.setFromTriplets(tList.begin(), tList.end());
     // release memory shrink_to_fit is C++11
     tList.clear(); //tList.shrink_to_fit();
-    clock_t tstart = clock();
     hessian = jacobian*jacobian.transpose();
-    clock_t tend = clock();
-    std::cout << "INFO: CPU for J*Jt "
-	      << float(tend-tstart)/float(CLOCKS_PER_SEC) << std::endl;
   }// release the Jacobian
 
 
@@ -480,7 +470,6 @@ bool PhotomFit::Minimize(const std::string &WhatToFit)
        << " filling-frac = " << hessian.nonZeros()/sqr(hessian.rows()) << endl;
   cout << "INFO: starting factorization" << endl;
 
-  tstart = clock();
   Eigen::SimplicialLDLT<SpMat> chol(hessian);
   if (chol.info() != Eigen::Success)
     {
@@ -492,9 +481,6 @@ bool PhotomFit::Minimize(const std::string &WhatToFit)
 
   //  cout << " offsetting parameters" << endl;
   OffsetParams(delta);
-  tend = clock();
-  std::cout << "INFO: CPU for factor-solve-update "
-  	    << float(tend-tstart)/float(CLOCKS_PER_SEC) << std::endl;
   return true;
 }
 
@@ -523,7 +509,7 @@ void PhotomFit::MakeResTuple(const std::string &TupleName) const
     	<< "#chip: chip number" << endl
     	<< "#shoot: shoot id" << endl
 	<< "#end" << endl;
-  const CcdImageList &L=_assoc.TheCcdImageList();
+  const CcdImageList &L=_associations.TheCcdImageList();
   for (auto i=L.cbegin(); i!=L.end() ; ++i)
     {
       const CcdImage &im = **i;
@@ -645,7 +631,7 @@ void PhotomFit::MakeRefResTuple(const std::string &TupleName) const
 	<< "#nm: number of measurements of this FittedStar" << endl
 	<< "#end" << endl;
   // The following loop is heavily inspired from PhotomFit::ComputeChi2()
-  const FittedStarList &fsl = _assoc.fittedStarList;
+  const FittedStarList &fsl = _associations.fittedStarList;
   TanRaDec2Pix proj(GtransfoLin(), Point(0.,0.));
   for (auto i = fsl.cbegin(); i!= fsl.end(); ++i)
     {
