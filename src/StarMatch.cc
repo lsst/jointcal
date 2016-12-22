@@ -392,7 +392,7 @@ double ComputeDist2(const StarMatchList &S, const Gtransfo &T)
   return dist2;
 }
 
-double ComputeChi2(const StarMatchList &L, const Gtransfo &T)
+double computeChi2(const StarMatchList &L, const Gtransfo &T)
 {
   unsigned s= L.size();
   double *chi2s = chi2_array(L,T);

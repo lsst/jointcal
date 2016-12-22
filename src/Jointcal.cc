@@ -103,8 +103,8 @@ Jointcal::Jointcal(
     TanPix2RaDec ctp2Sky(GtransfoLin(), assoc->CommonTangentPoint());
 
     assoc->fittedStarList.ApplyTransfo(ctp2Sky);
-    OneTPPerShoot sky2TP(assoc->TheCcdImageList());
-    SimplePolyModel spm(assoc->TheCcdImageList(), &sky2TP, true, 0);
+    OneTPPerVisitHandler sky2TP(assoc->getCcdImageList());
+    SimplePolyModel spm(assoc->getCcdImageList(), &sky2TP, true, 0);
 
     double posError = 0.02;
     AstromFit astromFit(*assoc, &spm, posError);
@@ -114,36 +114,36 @@ Jointcal::Jointcal(
     for (unsigned iter = 0; iter < 2; ++iter)
     {
         std::cout << " Fitting only mappings" << std::endl;
-        std::cout << astromFit.ComputeChi2() << std::endl;
-        astromFit.Minimize(whatToFit);
+        std::cout << astromFit.computeChi2() << std::endl;
+        astromFit.minimize(whatToFit);
     }
 
     whatToFit = "Positions";
     for (unsigned iter = 0; iter < 2; ++iter)
     {
         std::cout << " Fitting only positions" << std::endl;
-        std::cout << astromFit.ComputeChi2() << std::endl;
-        astromFit.Minimize(whatToFit);
+        std::cout << astromFit.computeChi2() << std::endl;
+        astromFit.minimize(whatToFit);
     }
 
-    std::cout << astromFit.ComputeChi2() << std::endl;
+    std::cout << astromFit.computeChi2() << std::endl;
 
     std::cout << " fitting positions and mappings" << std::endl;
 
-    astromFit.Minimize("Positions Distortions");
+    astromFit.minimize("Positions Distortions");
 
-    std::cout << astromFit.ComputeChi2() << std::endl;
+    std::cout << astromFit.computeChi2() << std::endl;
 
-    astromFit.MakeResTuple("res0.list");
+    astromFit.makeResTuple("res0.list");
 
     for (unsigned k = 0; k < 20; ++k)
     {
-        astromFit.RemoveOutliers(5., "Meas Ref");
+        astromFit.removeOutliers(5., "Meas Ref");
         std::cout << "After outliers removal" << std::endl;
-        astromFit.Minimize("Positions Distortions");
-        std::cout << astromFit.ComputeChi2() << std::endl;
+        astromFit.minimize("Positions Distortions");
+        std::cout << astromFit.computeChi2() << std::endl;
     }
-    astromFit.MakeResTuple("res.list");
+    astromFit.makeResTuple("res.list");
 }
 
 }

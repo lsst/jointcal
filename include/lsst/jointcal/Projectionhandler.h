@@ -11,9 +11,11 @@ class Mapping;
 class CcdImage;
 class CcdImageList;
 
-//! This is a virtual class that allows a lot of freedom in the choice of the projection from "Sky" (where coodinates are reported) to tangent plane (where they are compared to transformed measurements)
-
-
+/**
+ * This is a virtual class that allows a lot of freedom in the choice of the
+ * projection from "Sky" (where coodinates are reported) to tangent plane
+ * (where they are compared to transformed measurements)
+ */
 struct ProjectionHandler
 {
   virtual const Gtransfo* Sky2TP(const CcdImage &C) const = 0;
@@ -22,8 +24,12 @@ struct ProjectionHandler
 
 };
 
-//! the simplest implementation of ProjectionHandler. Means that coordinates of objects are expressed in the same space as the arrival mapping space. This is useful for fitting transfo rms between images.
-class IdentityProjection : public ProjectionHandler
+/**
+ * The simplest implementation of ProjectionHandler. Means that coordinates of
+ * objects are expressed in the same space as the arrival mapping space. This
+ * is useful for fitting transfo rms between images.
+ */
+class IdentityProjectionHandler : public ProjectionHandler
 {
   GtransfoIdentity id;
  public:
@@ -32,15 +38,20 @@ class IdentityProjection : public ProjectionHandler
 
 };
 
-//! A possible implementation of ProjectionHandler for fitting actual WCS's.
-/* ! We arbitrarily chose that all chips from a same shoot have the same tangent point, but other choices can be made. */
-class OneTPPerShoot : public ProjectionHandler
+/**
+ * A projection handler in which all CCDs from the same visit have the same
+ * tangent point.
+ *
+ * We arbitrarily chose that all chips from a same visit have the same tangent
+ * point.
+ */
+class OneTPPerVisitHandler : public ProjectionHandler
 {
   typedef std::map<const unsigned, CountedRef<const Gtransfo> > TransfoMap;
   TransfoMap tMap;
 
  public:
-  OneTPPerShoot(const CcdImageList &L);
+  OneTPPerVisitHandler(const CcdImageList &L);
 
   const Gtransfo* Sky2TP(const CcdImage &C) const;
 

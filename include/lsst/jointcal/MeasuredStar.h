@@ -75,7 +75,7 @@ class MeasuredStar : public BaseStar
 
   const CcdImage &GetCcdImage()  const { return *ccdImage;};
 
-  void SetCcdImage(const CcdImage *C) { ccdImage = C;};
+  void setCcdImage(const CcdImage *C) { ccdImage = C;};
 
   //! Fits may use that to discard outliers
   bool  IsValid() const { return valid; }
@@ -110,7 +110,7 @@ class MeasuredStarList : public StarList<MeasuredStar> {
 
   void SetZeroPoint(double ZP);
 
-  void SetCcdImage(const CcdImage *C);
+  void setCcdImage(const CcdImage *C);
 };
 
 

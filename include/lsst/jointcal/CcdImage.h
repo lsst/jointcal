@@ -20,27 +20,22 @@
 namespace lsst {
 namespace jointcal {
 
-typedef int ShootIdType;
+typedef int VisitIdType;
+typedef int CcdIdType;
 
-
-//void SetZpKey(const std::string &AKey);
-
-//! handler of an actual image from a single CCD
-/*! requires an in-depth cleanup */
+/**
+ * Handler of an actual image from a single CCD.
+ * NOTE: could possibly be replaced with a subclass of afw.image.Exposure?
+ */
 class CcdImage : public RefCount
 {
 private:
 
     Frame imageFrame; // in pixels
-    // wholeCatalog is just store the catalog of selected sources
-    //  lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> wholeCatalog;
 
     MeasuredStarList wholeCatalog; // the catalog of measured objets
     MeasuredStarList catalogForFit;
 
-    // these 2 transfos are NOT updated when fitting
-//  Gtransfo *readWcs; // i.e. from pix to sky
-//  Gtransfo *inverseReadWcs; // i.e. from sky to pix
     CountedRef<BaseTanWcs> readWcs; // i.e. from pix to sky
     CountedRef<Gtransfo> inverseReadWcs; // i.e. from sky to pix
 
@@ -55,10 +50,8 @@ private:
     std::string riName;
     std::string riDir;
     std::string instrument;
-    int chip; // CCD number
-    ShootIdType shoot; // Same value for all CcdImages from the same exposure
-    unsigned bandRank; // some incremental band indicator.
-
+    CcdIdType _ccdId;
+    VisitIdType _visit;
 
     double airMass; // airmass value.
     double fluxCoeff; // coefficient to convert ADUs to ADUs/sec at airmass 1
@@ -69,21 +62,13 @@ private:
     double photc;
     double zp;
     double psfzp;
-    //  double seeing;
-    //  double gfseeing;
-    //  double sigmaback;
     std::string dateObs;
     // refraction
     double sineta, coseta, tgz, hourAngle; // eta : parallactic angle, z: zenithal angle (X = 1/cos(z))
 
-    std::string band;
-    std::string flatName;
-    //  std::string flat; // full flat name
-    //  std::string baseflat; // full baseflat name
-    std::string cfhtscatter; // full scatter name
+    std::string _filter;
     std::string snlsgrid; // our grid corrections
     std::string flatcvmap; // a multiplicative map to apply to the fluxes
-    int    bandIndex;
     int    index;
     int    expindex;
 
@@ -103,12 +88,6 @@ public:
              const int &visit,
              const int &ccd,
              const std::string &fluxField );
-
-#ifdef TO_BE_FIXED
-    //!
-    CcdImage(const ReducedImage &Ri, const Point &CommonTangentPoint, const CatalogLoader * LoadIt);
-#endif
-
     //!
     std::string Name() const { return riName;}
 
@@ -144,36 +123,23 @@ public:
     const Gtransfo* Sky2TP() const
     { return sky2TP.get();}
 
-    //! returns chip ID
-    int Chip() const { return chip;}
+    //! returns ccd ID
+    int getCcdId() const { return _ccdId;}
 
     //! instrument (TOADINST fits pseudo-key)
     std::string Instrument() const {return instrument;}
 
-    //! some incremental band rank. Is used to incrementally index bands in a sample of input images. Different from BandIndex()
-    unsigned BandRank() const {return bandRank;}
-
-    //! returns seeing
-    //  double Seeing() const { return seeing;}
-
-    //! returns gfseeing
-    //  double GFSeeing() const { return gfseeing;}
-
-    //! returns sigma back
-    //  double SigmaBack() const { return sigmaback;}
-
-    //! returns shoot ID
-    ShootIdType Shoot() const { return shoot;}
+    //! returns visit ID
+    VisitIdType getVisit() const { return _visit;}
 
     //!  Airmass
-    double AirMass() const {return airMass;}
+    double getAirMass() const {return airMass;}
 
     //! Date Obs
-    std::string DateObs() const { return dateObs; }
+    std::string getDateObs() const { return dateObs; }
 
     //! Julian Date
     double getMjd() const { return mjd; }
-
 
     //!Elixir ZP (applies to fluxes in ADU/sec at airmass 1).
     double ElixirZP() const { return elixirZP;}
@@ -208,17 +174,8 @@ public:
     //!conversion from ADU to ADU/sec at airmass=1
     double FluxCoeff() const { return fluxCoeff;}
 
-    //! return the CcdImage band name
-    std::string Band() const { return band;}
-
-    //! return the CcdImage band index. This is a static index that mostly turns a letter (e.g. 'g') into a number (e.g. 2). Different from BandRank()
-    int BandIndex() const { return bandIndex; }
-
-    //! Flat used to flatfield
-    std::string FlatName() const { return flatName;}
-
-    //! Full path of the scatter corrections
-    std::string CFHTScatter() const { return cfhtscatter; }
+    //! return the CcdImage filter name
+    std::string getFilter() const { return _filter;}
 
     //! SNLS grid
     std::string SNLSGrid() const { return snlsgrid; }
@@ -236,17 +193,6 @@ public:
 
     //! Frame in pixels
     const Frame& ImageFrame() const { return imageFrame;}
-
-    //! Frame on sky
-    //Frame RaDecFrame() const;
-
-    //! Fitted Ccd object (contain the refscale parameters)
-    //  void             SetFittedCcd(FittedCcd* ccd) { if(ccd) fittedccd=ccd; }
-    //  FittedCcd*       GetFittedCcd() { return fittedccd; }
-    //  FittedCcd const* GetFittedCcd() const { return fittedccd; }
-
-    //! returns wether "this" overlaps with Other.
-    //  bool Overlaps(const CcdImage &Other) const;
 
     //! CcdImage index
     int     Index() const { return index; }
@@ -269,22 +215,14 @@ private:
 /********* CcdImageList *************/
 
 
-//! a  list of CcdImage. Usually produced by Associations
+/**
+ * A list of CcdImage. Usually produced by Associations.
+ */
 //class CcdImageList : public std::list<CountedRef<CcdImage> >
 class CcdImageList : public std::list<std::shared_ptr<CcdImage> >
 {
 public:
 
-    //!
-    //std::list<std::string> DateObs() const;
-
-    //!
-    //std::list<std::string> Bands() const;
-
-    //!
-    //double       MeanAirmass() const;
-
-    //!
     template<class Accept> CcdImageList SubList(const Accept &OP) const
     {
         CcdImageList out;
@@ -292,9 +230,6 @@ public:
             if (OP(**i)) out.push_back(*i);
         return out;
     }
-
-    // find the matching image. Chip==-1 means any chip
-//  double AirMass(const int Shoot, const int Chip = -1) const;
 };
 
 

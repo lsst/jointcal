@@ -23,10 +23,10 @@ void RefStar::SetFittedStar(FittedStar *fittedStar)
 }
 
 
-double RefStar::Flux(int band) const
+double RefStar::Flux(int filter) const
 {
-  if(band<0 && band>=10) return FP_INFINITE;
-  return refFlux[band];
+  if(filter<0 && filter>=10) return FP_INFINITE;
+  return refFlux[filter];
 }
 
 

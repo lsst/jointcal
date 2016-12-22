@@ -290,7 +290,7 @@ double FitResidual(const StarMatchList &S, const Gtransfo &T);
 double ComputeDist2(const StarMatchList &S, const Gtransfo &T);
 
 //! the actual chi2
-double ComputeChi2(const StarMatchList &L, const Gtransfo &T);
+double computeChi2(const StarMatchList &L, const Gtransfo &T);
 
 }} // end of namespaces
 #endif /* STARMATCH__H */
