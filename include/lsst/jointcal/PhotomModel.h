@@ -17,23 +17,42 @@ class PhotomModel
 {
 public :
 
-  //! Assign indices to parameters involved in mappings, starting at FirstIndex. Returns the highest assigned index.
-  virtual unsigned AssignIndices(const std::string &WhatToFit, unsigned FirstIndex) = 0;
+  /**
+   * Assign indices to parameters involved in mappings, starting at firstIndex.
+   *
+   * @param[in]  whatToFit   String containing parameters to fit.
+   * @param[in]  firstIndex  Index to start assigning at.
+   *
+   * @return     The highest assigned index.
+   */
+  virtual unsigned assignIndices(const std::string &whatToFit, unsigned firstIndex) = 0;
 
-  //! Offset the parameters by the provided amounts.
-  /*! The shifts are applied according to the indices given in
-      AssignIndices. */
-  virtual void OffsetParams(const Eigen::VectorXd &Delta) = 0;
+  /**
+   * Offset the parameters by the provided amounts.
+   *
+   * The shifts are applied according to the indices given in assignIndices.
+   *
+   * @param[in]  delta  vector of offsets to apply
+   */
+  virtual void offsetParams(const Eigen::VectorXd &delta) = 0;
 
-  //! Where is to be expressed in Ccd coordinates.
-  virtual double PhotomFactor(const CcdImage& C, const Point &Where) const =0;
+  /**
+   * Return the "photometric factor" at a given location on a ccdImage.
+   *
+   * Multiply this by a Calib's flux/magnitude zero-point to get the updated fluxMag0.
+   *
+   * @param[in]  ccdImage  The ccdImage to get the photometric factor for.
+   * @param[in]  where     Possition on ccdImage in ccd coordinates.
+   *
+   * @return     The photometric factor at the given location on ccdImage.
+   */
+  virtual double photomFactor(const CcdImage& ccdImage, const Point &where) const =0;
 
-  //! number of parameters to be read in Indices.size()
-  virtual void GetIndicesAndDerivatives(const MeasuredStar &M,
-					const CcdImage &Ccd,
-					std::vector<unsigned> &Indices,
-					Eigen::VectorXd &D) = 0;
-
+  //! number of parameters to be read in indices.size()
+  virtual void getIndicesAndDerivatives(const MeasuredStar &measuredStar,
+                                        const CcdImage &ccdImage,
+                                        std::vector<unsigned> &indices,
+                                        Eigen::VectorXd &D) = 0;
 
   virtual ~PhotomModel() {};
 

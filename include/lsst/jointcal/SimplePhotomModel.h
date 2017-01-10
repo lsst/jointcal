@@ -3,6 +3,7 @@
 
 #include "lsst/jointcal/Eigenstuff.h"
 #include "lsst/jointcal/PhotomModel.h"
+#include "lsst/jointcal/Point.h"
 #include <map>
 
 namespace lsst {
@@ -22,34 +23,54 @@ class Point;
     unsigned index;
     double factor;
     bool fixed;
-  PhotomStuff(const unsigned I=0, const double F=1) : index(I), factor(F), fixed(false) {};
+    PhotomStuff(const unsigned i=0, const double f=1) : index(i), factor(f), fixed(false) {};
   };
 
   typedef std::map<const CcdImage*,PhotomStuff> mapType;
   mapType _myMap;
 
-  PhotomStuff& find(const CcdImage &C);
-  const PhotomStuff& find(const CcdImage &C) const;
+  PhotomStuff& find(const CcdImage &ccdImage);
+  const PhotomStuff& find(const CcdImage &ccdImage) const;
 
 public :
 
-  SimplePhotomModel(const CcdImageList &L);
+  SimplePhotomModel(const CcdImageList &ccdImageList);
 
-  //! Assign indices to parameters involved in mappings, starting at FirstIndex. Returns the highest assigned index.
-  unsigned AssignIndices(const std::string &WhatToFit, unsigned FirstIndex);
+  /**
+   * Assign indices to parameters involved in mappings, starting at firstIndex.
+   *
+   * @param[in]  whatToFit   Ignored.
+   * @param[in]  firstIndex  Index to start assigning at.
+   *
+   * @return     The highest assigned index.
+   */
+  unsigned assignIndices(const std::string &whatToFit, unsigned firstIndex);
 
-  //! Offset the parameters by the provided amounts.
-  /*! The shifts are applied according to the indices given in
-      AssignIndices. */
-  void OffsetParams(const Eigen::VectorXd &Delta);
+  /**
+   * Offset the parameters by the provided amounts.
+   *
+   * The shifts are applied according to the indices given in AssignIndices.a
+   *
+   * @param[in]  delta  vector of offsets to apply
+   */
+  void offsetParams(const Eigen::VectorXd &delta);
 
-  //! This model ignores "Where".
-  double PhotomFactor(const CcdImage& C, const Point &Where) const;
+  /**
+   * Return the "photometric factor" for this ccdImage.
+   *
+   * Multiply this by a Calib's flux/magnitude zero-point to get the updated fluxMag0.
+   *
+   * @param[in]  ccdImage  The ccdImage to get the photometric factor for.
+   * @param[in]  where     Ignored
+   *
+   * @return     The photometric factor at the given location on ccdImage.
+   */
+  double photomFactor(const CcdImage& ccdImage, const Point &where=Point()) const;
 
-  virtual void GetIndicesAndDerivatives(const MeasuredStar &M,
-					const CcdImage &Ccd,
-					std::vector<unsigned> &Indices,
-					Eigen::VectorXd &D);
+  void getIndicesAndDerivatives(const MeasuredStar &measuredStar,
+                                const CcdImage &ccdImage,
+                                std::vector<unsigned> &indices,
+                                Eigen::VectorXd &D);
 
 };
 

@@ -55,6 +55,10 @@ public:
 
 public:
 
+    /**
+     * Source selection is performed in the python, so Associations' constructor
+     * initializes a couple of variables.
+     */
     Associations();
 
     //! Sets a tangent point (reasonably centered for the input image set).
@@ -92,8 +96,6 @@ public:
     void CollectLSSTRefStars(lsst::afw::table::SortedCatalogT< lsst::afw::table::SimpleRecord > &Ref, std::string filter);
 
 
-
-
 #ifdef STORAGE
     //! This is Monte-Carlo stuff -- to remove this from associations
     //! the Association class should provide us w/ iterators and acceptors
@@ -113,7 +115,6 @@ public:
     void DeprojectFittedStars();
 
 
-
     //! Set the color field of FittedStar 's from a colored catalog.
     /* If Color is "g-i", then the color is assigned from columns "g" and "i" of the colored catalog. */
 #ifdef TODO
@@ -126,9 +127,9 @@ public:
     //! apply cuts (mainly number of measurements) on potential FittedStars
     void SelectFittedStars();
 
-    const CcdImageList& TheCcdImageList() const {return ccdImageList;}
+    const CcdImageList& getCcdImageList() const {return ccdImageList;}
 
-    unsigned int NShoots() const { return nshoots_; }
+    unsigned int getNVisits() const { return _nVisits; }
 
     //! Number of different bands in the input image list. Not implemented so far
     unsigned NBands() const {return 1;}
@@ -139,7 +140,7 @@ public:
 
 private:
     void AssociateRefStars(double MatchCutInArcSec, const Gtransfo *T);
-    unsigned int nshoots_;
+    unsigned int _nVisits;
     unsigned int nb_photref_associations;
 };
 

@@ -55,30 +55,11 @@ void CcdImage::LoadCatalog(const lsst::afw::table::SortedCatalogT<lsst::afw::tab
         ms->flux = i->get(fluxKey);
         ms->eflux = i->get(efluxKey);
         ms->mag = -2.5*log10(ms->flux) + zp;
-        ms->SetCcdImage(this);
+        ms->setCcdImage(this);
         wholeCatalog.push_back(ms);
     }
-    wholeCatalog.SetCcdImage(this);
+    wholeCatalog.setCcdImage(this);
 }
-
-
-
-static int getBandIndex(std::string const& band)
-{
-    if (band == "u") return 0;
-    if (band == "g") return 1;
-    if (band == "r") return 2;
-    if (band == "i") return 3;
-    if (band == "z") return 4;
-
-    if (band == "U") return 5;
-    if (band == "B") return 6;
-    if (band == "V") return 7;
-    if (band == "R") return 8;
-    if (band == "I") return 9;
-    return -1;
-}
-
 
 CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &Ri,
                    const Point &CommonTangentPoint,
@@ -88,10 +69,10 @@ CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceReco
                    const std::string &filter,
                    const PTR(lsst::afw::image::Calib) calib,
                    const int &visit,
-                   const int &ccd,
+                   const int &ccdId,
                    const std::string &fluxField ) :
 
-    index(-1), expindex(-1),
+    _filter(filter), _visit(visit), _ccdId(ccdId), index(-1), expindex(-1),
     commonTangentPoint(CommonTangentPoint)
 
 {
@@ -112,13 +93,8 @@ CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceReco
 
     inverseReadWcs = readWcs->InverseTransfo(0.01, imageFrame);
 
-    band = filter;
-    bandIndex = getBandIndex(band);
-    chip = ccd;
-    shoot = visit;
-
     std::stringstream out;
-    out << visit << "_" << ccd;
+    out << visit << "_" << ccdId;
     riName = out.str();
 
     /* we don't assume here that we know the internals of TanPix2RaDec:
@@ -167,7 +143,6 @@ CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceReco
         coseta = sqrt(1 - sineta*sineta);
         if (dec > latitude) coseta = -coseta;
     }
-    bandRank = 0; // will be set by Associations if pertinent.
 }
 
 }

@@ -263,21 +263,17 @@ public:
   GtransfoInverse(const GtransfoInverse&);
 
   //! Overload the "generic routine"
-  Gtransfo* RoughInverse(const Frame &Region) const
+  Gtransfo* RoughInverse(const Frame &) const
   {
-    if (&Region) {} //
     return direct->Clone();
   }
 
   //! Inverse transfo: returns the direct one!
-  Gtransfo* InverseTransfo(const double Precision,
-			   const Frame& Region) const
+  Gtransfo* InverseTransfo(const double,
+			   const Frame &) const
   {
-    if (&Region || Precision ) {} //
     return direct->Clone();
   }
-
-
 
   ~GtransfoInverse();
 
@@ -359,12 +355,10 @@ void GtransfoInverse::dump(ostream &stream) const
 	 << *direct << endl;
 }
 
-double GtransfoInverse::fit(const StarMatchList &List)
+double GtransfoInverse::fit(const StarMatchList &)
 {
-  if (&List) {} // warning killer
-  std::cerr << " Trying to fit a GtransfoInverse... \
-try to use StarMatchList::inverseTransfo instead "
-	    << std::endl;
+  std::cerr << " Trying to fit a GtransfoInverse... try to use StarMatchList::inverseTransfo instead"
+    << std::endl;
   return -1;
 }
 
@@ -464,18 +458,16 @@ Gtransfo *GtransfoCompose(const Gtransfo *Left, const Gtransfo *Right)
 
 
 // just a speed up, to avoid useless numerical derivation.
-void GtransfoIdentity::Derivative(const Point &Where,
+void GtransfoIdentity::Derivative(const Point &,
 				  GtransfoLin &Derivative,
-				  const double Step) const
+				  const double) const
 {
-  if (Step  || &Where) {} // warning killer
   Derivative = GtransfoLin();
 }
 
 
-GtransfoLin GtransfoIdentity::LinearApproximation(const Point &Where, const double Step) const
+GtransfoLin GtransfoIdentity::LinearApproximation(const Point &, const double) const
 {
-  if (Step  || &Where) {} // warning killer
   GtransfoLin result;
   return result; // rely on default Gtransfolin constructor;
 }
@@ -1364,20 +1356,16 @@ GtransfoLin GtransfoLin::operator*(const  GtransfoLin &Right) const
   return result;
 }
 
-void GtransfoLin::Derivative(const Point &Where, GtransfoLin &Derivative,
-			     const double Step) const
+void GtransfoLin::Derivative(const Point &, GtransfoLin &Derivative, const double) const
 {
-  if (Step || &Where) {} // "unused variable" warning killer
   Derivative = *this;
   Derivative.Coeff(0,0,0) = 0;
   Derivative.Coeff(0,0,1) = 0;
 }
 
 
-GtransfoLin GtransfoLin::LinearApproximation(const Point &Where,
-					     const double Step) const
+GtransfoLin GtransfoLin::LinearApproximation(const Point &, const double) const
 {
-  if (Step || &Where) {} // "unused variable" warning killer
   return *this;
 }
 
@@ -1408,14 +1396,12 @@ GtransfoLin GtransfoLin::invert() const
   return result;
 }
 
-Gtransfo* GtransfoLin::InverseTransfo(const double Precision,
-				      const Frame& Region) const
+Gtransfo* GtransfoLin::InverseTransfo(const double, const Frame &) const
 {
-  if (&Region || Precision) {} // warning killer
   return new GtransfoLin(this->invert());
 }
 
-double  GtransfoLinRot::fit(const StarMatchList &List)
+double  GtransfoLinRot::fit(const StarMatchList &)
 {
 
   cout << " GTransfoLinRot::fit : not implemented !!! aborting " << endl;
@@ -1488,9 +1474,6 @@ GtransfoLinRot::GtransfoLinRot(const double AngleRad, const Point *Center,
   GtransfoPoly::apply(a_point.x, a_point.y, dx(), dy()); // compute M*C
   dx() = a_point.x - Dx(); dy() = a_point.y - dy();
 }
-
-
-
 
 
 static double deg2rad(double deg)
@@ -1667,9 +1650,8 @@ TanRaDec2Pix TanPix2RaDec::invert() const
   return TanRaDec2Pix(LinPart().invert(),TangentPoint());
 }
 
-Gtransfo* TanPix2RaDec::RoughInverse(const Frame &Region) const
+Gtransfo* TanPix2RaDec::RoughInverse(const Frame &) const
 {
-  if (&Region) {}
   return new TanRaDec2Pix(LinPart().invert(),TangentPoint());
 }
 
@@ -1716,7 +1698,7 @@ void TanPix2RaDec::dump(ostream &stream) const
 }
 
 
-double  TanPix2RaDec::fit(const StarMatchList &List)
+double  TanPix2RaDec::fit(const StarMatchList &)
 {
   /* OK we could implement this routine, but it is
      probably useless since to do the match, we have to
@@ -1726,7 +1708,6 @@ double  TanPix2RaDec::fit(const StarMatchList &List)
      sphere (and reproject to fit...). Anyway if this
      message shows up, we'll think about it.
   */
-  if (&List) {} // warning killer
     throw LSST_EXCEPT(pex::exceptions::InvalidParameterError, "TanPix2RaDec::fit is NOT implemented (although it is doable)) ");
   return -1;
 }
@@ -1798,7 +1779,7 @@ void TanSipPix2RaDec::dump(ostream &stream) const
 }
 
 
-double  TanSipPix2RaDec::fit(const StarMatchList &List)
+double  TanSipPix2RaDec::fit(const StarMatchList &)
 {
   /* OK we could implement this routine, but it is
      probably useless since to do the match, we have to
@@ -1808,7 +1789,6 @@ double  TanSipPix2RaDec::fit(const StarMatchList &List)
      sphere (and reproject to fit...). Anyway if this
      message shows up, we'll think about it.
   */
-  if (&List) {} // warning killer
     throw LSST_EXCEPT(pex::exceptions::InvalidParameterError, "TanSipPix2RaDec::fit is NOT implemented (although it is doable)) ");
   return -1;
 }
@@ -1941,16 +1921,13 @@ void TanRaDec2Pix::dump(ostream &stream) const
   stream << " tan2pix " << linTan2Pix << " tangent point " << tp.x << ' ' << tp.y << endl;
 }
 
-Gtransfo* TanRaDec2Pix::RoughInverse(const Frame &Region) const
+Gtransfo* TanRaDec2Pix::RoughInverse(const Frame &) const
 {
-  if (&Region) {} //
   return new TanPix2RaDec(LinPart().invert(),TangentPoint());
 }
 
-Gtransfo* TanRaDec2Pix::InverseTransfo(const double Precision,
-					const Frame& Region) const
+Gtransfo* TanRaDec2Pix::InverseTransfo(const double, const Frame &) const
 {
-  if (&Region || Precision) {}
   return new TanPix2RaDec(LinPart().invert(),TangentPoint());
 }
 
@@ -1960,9 +1937,8 @@ Gtransfo *TanRaDec2Pix::Clone() const
   return new TanRaDec2Pix(*this);
 }
 
-double TanRaDec2Pix::fit(const StarMatchList &List)
+double TanRaDec2Pix::fit(const StarMatchList &)
 {
-  if (&List) {} // warning killer
     throw LSST_EXCEPT(pex::exceptions::InvalidParameterError, "TanRaDec2Pix::fit is NOT implemented (although it is doable)) ");
   return -1;
 }
@@ -1986,9 +1962,8 @@ void UserTransfo::dump(ostream &stream) const
 	 << "and userData@ " << userData << endl;
 }
 
-double UserTransfo::fit(const StarMatchList &List)
+double UserTransfo::fit(const StarMatchList &)
 {
-  if (&List) {} // warning killer
     throw LSST_EXCEPT(pex::exceptions::InvalidParameterError, "UserTransfo::fit is NOT implemented (and will never be)) ");
   return -1;
 }

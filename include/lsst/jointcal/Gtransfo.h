@@ -364,8 +364,7 @@ class GtransfoLin : public GtransfoPoly {
 	      const double aa12, const double aa21, const double aa22);
 
   //! Handy converter:
-  GtransfoLin(const GtransfoIdentity &T) : GtransfoPoly(1)
-  { if (&T) {} /* avoid a warning */};
+  GtransfoLin(const GtransfoIdentity &) : GtransfoPoly(1) {};
 
   Gtransfo* Clone() const { return new GtransfoLin(*this);}
 

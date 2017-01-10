@@ -5,6 +5,7 @@ from builtins import str
 from builtins import range
 
 import os
+import collections
 
 import lsst.utils
 import lsst.pex.config as pexConfig
@@ -111,10 +112,13 @@ class JointcalTask(pipeBase.CmdLineTask):
     _DefaultName = "jointcal"
 
     def __init__(self, profile_jointcal=False, **kwargs):
-        """Instantiate a JointcalTask.
+        """
+        Instantiate a JointcalTask.
 
-        @param profile_jointcal (bool) set to True to profile different stages
-            of this jointcal run.
+        Parameters
+        ----------
+        profile_jointcal : bool
+            set to True to profile different stages of this jointcal run.
         """
         pipeBase.CmdLineTask.__init__(self, **kwargs)
         self.profile_jointcal = profile_jointcal
@@ -140,15 +144,21 @@ class JointcalTask(pipeBase.CmdLineTask):
 
     def _build_ccdImage(self, dataRef, associations, jointcalControl):
         """
-        !Extract the necessary things from this dataRef to add a new ccdImage.
+        Extract the necessary things from this dataRef to add a new ccdImage.
 
-        @param dataRef (ButlerDataRef) dataRef to extract info from.
-        @param associations (jointcal.Associations) object to add the info to, to
-            construct a new CcdImage
-        @param jointcalControl (jointcal.JointcalControl) control object for
-            associations management
+        Parameters
+        ----------
+        dataRef : lsst.daf.persistence.ButlerDataRef
+            dataRef to extract info from.
+        associations : lsst.jointcal.Associations
+            object to add the info to, to construct a new CcdImage
+        jointcalControl : jointcal.JointcalControl
+            control object for associations management
 
-        @return (afw.image.TanWcs) the TAN WCS of this image
+        Returns
+        ------
+        afw.image.TanWcs
+            the TAN WCS of this image
         """
         src = dataRef.get("src", immediate=True)
         md = dataRef.get("calexp_md", immediate=True)
@@ -178,14 +188,21 @@ class JointcalTask(pipeBase.CmdLineTask):
     @pipeBase.timeMethod
     def run(self, dataRefs, profile_jointcal=False):
         """
-        !Jointly calibrate the astrometry and photometry across a set of images.
+        Jointly calibrate the astrometry and photometry across a set of images.
 
-        @param dataRefs list of data references.
-        @param profile_jointcal (bool) profile the individual steps of jointcal.
+        Parameters
+        ----------
+        dataRefs : list of lsst.daf.persistence.ButlerDataRef
+            List of data references to the exposures to be fit.
+        profile_jointcal : bool
+            Profile the individual steps of jointcal.
 
-        @return (pipe.base.Struct) struct containing:
-            - dataRefs: the provided data references that were fit (with updated WCSs)
-            - oldWcsList: the original WCS from each dataRef
+        Returns
+        -------
+        pipe.base.Struct
+            struct containing:
+            * dataRefs: the provided data references that were fit (with updated WCSs)
+            * oldWcsList: the original WCS from each dataRef
         """
         if len(dataRefs) == 0:
             raise ValueError('Need a list of data references!')
@@ -236,9 +253,6 @@ class JointcalTask(pipeBase.CmdLineTask):
         associations.CollectLSSTRefStars(refCat, filt)
         associations.SelectFittedStars()
         associations.DeprojectFittedStars()  # required for AstromFit
-        sky2TP = jointcalLib.OneTPPerShoot(associations.TheCcdImageList())
-        spm = jointcalLib.SimplePolyModel(associations.TheCcdImageList(), sky2TP,
-                                          True, 0, self.config.polyOrder)
 
         # TODO: these should be len(blah), but we need this properly wrapped first.
         if associations.refStarListSize() == 0:
@@ -248,27 +262,103 @@ class JointcalTask(pipeBase.CmdLineTask):
         if associations.fittedStarListSize() == 0:
             raise RuntimeError('No stars in the fittedStarList!')
 
-        fit = jointcalLib.AstromFit(associations, spm, self.config.posError)
-        fit.Minimize("Distortions")
-        chi2 = fit.ComputeChi2()
+        astrometry = self._fit_astrometry(associations)
+        photometry = self._fit_photometry(associations)
+
+        # TODO: not clear that this is really needed any longer?
+        # TODO: makeResTuple should at least be renamed, if we do want to keep that big data-dump around.
+        # Fill reference and measurement n-tuples for each tract
+        tupleName = "res_" + str(dataRefs[0].dataId["tract"]) + ".list"
+        astrometry.fit.makeResTuple(tupleName)
+
+        self._write_results(associations, astrometry.model, photometry.model, dataRefs)
+
+        return pipeBase.Struct(dataRefs=dataRefs, oldWcsList=oldWcsList)
+
+    def _fit_photometry(self, associations):
+        """
+        Fit the photometric data.
+
+        Parameters
+        ----------
+        associations : lsst.jointcal.Associations
+            The star/reference star associations to fit.
+
+        Returns
+        -------
+        namedtuple
+            fit : lsst.jointcal.PhotomFit
+                The photometric fitter used to perform the fit.
+            model : lsst.jointcal.PhotomModel
+                The photometric model that was fit.
+        """
+
+        print("====== Starting photometric fitting")
+        model = jointcalLib.SimplePhotomModel(associations.getCcdImageList())
+
+        fit = jointcalLib.PhotomFit(associations, model, self.config.posError)
+        fit.minimize("Model")
+        chi2 = fit.computeChi2()
         print(chi2)
-        fit.Minimize("Positions")
-        chi2 = fit.ComputeChi2()
+        fit.minimize("Fluxes")
+        chi2 = fit.computeChi2()
         print(chi2)
-        fit.Minimize("Distortions Positions")
-        chi2 = fit.ComputeChi2()
+        fit.minimize("Model Fluxes")
+        chi2 = fit.computeChi2()
+        print(chi2)
+
+        Photometry = collections.namedtuple('Photometry', ('fit', 'model'))
+        return Photometry(fit, model)
+
+    def _fit_astrometry(self, associations):
+        """
+        Fit the astrometric data.
+
+        Parameters
+        ----------
+        associations : lsst.jointcal.Associations
+            The star/reference star associations to fit.
+
+        Returns
+        -------
+        namedtuple
+            fit : lsst.jointcal.AstromFit
+                The astrometric fitter used to perform the fit.
+            model : lsst.jointcal.AstromModel
+                The astrometric model that was fit.
+            sky_to_tan_projection : lsst.jointcal.ProjectionHandler
+                The model for the sky to tangent plane projection that was used in the fit.
+        """
+
+        print("====== Starting astrometric fitting")
+        # NOTE: need to return sky_to_tan_projection so that it doesn't get garbage collected.
+        # TODO: could we package sky_to_tan_projection and model together so we don't have to manage
+        # them so carefully?
+        sky_to_tan_projection = jointcalLib.OneTPPerVisitHandler(associations.getCcdImageList())
+        model = jointcalLib.SimplePolyModel(associations.getCcdImageList(), sky_to_tan_projection,
+                                            True, 0, self.config.polyOrder)
+
+        fit = jointcalLib.AstromFit(associations, model, self.config.posError)
+        fit.minimize("Distortions")
+        chi2 = fit.computeChi2()
+        print(chi2)
+        fit.minimize("Positions")
+        chi2 = fit.computeChi2()
+        print(chi2)
+        fit.minimize("Distortions Positions")
+        chi2 = fit.computeChi2()
         print(chi2)
 
         for i in range(20):
-            r = fit.Minimize("Distortions Positions", 5)  # outliers removal at 5 sigma.
-            chi2 = fit.ComputeChi2()
+            r = fit.minimize("Distortions Positions", 5)  # outliers removal at 5 sigma.
+            chi2 = fit.computeChi2()
             print(chi2)
             if r == 0:
                 print("""fit has converged - no more outliers - redo minimixation\
                       one more time in case we have lost accuracy in rank update""")
                 # Redo minimization one more time in case we have lost accuracy in rank update
-                r = fit.Minimize("Distortions Positions", 5)  # outliers removal at 5 sigma.
-                chi2 = fit.ComputeChi2()
+                r = fit.minimize("Distortions Positions", 5)  # outliers removal at 5 sigma.
+                chi2 = fit.computeChi2()
                 print(chi2)
                 break
             elif r == 2:
@@ -277,32 +367,47 @@ class JointcalTask(pipeBase.CmdLineTask):
                 print("still some ouliers but chi2 increases - retry")
             else:
                 break
-                print("unxepected return code from Minimize")
+                print("unxepected return code from minimize")
 
-        # Fill reference and measurement n-tuples for each tract
-        tupleName = "res_" + str(dataRefs[0].dataId["tract"]) + ".list"
-        fit.MakeResTuple(tupleName)
+        Astrometry = collections.namedtuple('Astrometry', ('fit', 'model', 'sky_to_tan_projection'))
+        return Astrometry(fit, model, sky_to_tan_projection)
 
-        # Build an updated wcs for each calexp
-        imList = associations.TheCcdImageList()
+    def _write_results(self, associations, astrom_model, photom_model, dataRefs):
+        """
+        Write the fitted results (photometric and astrometric) to a new 'wcs' dataRef.
 
-        for im in imList:
-            tanSip = spm.ProduceSipWcs(im)
-            frame = im.ImageFrame()
+        Parameters
+        ----------
+        associations : lsst.jointcal.Associations
+            The star/reference star associations to fit.
+        astrom_model : lsst.jointcal.AstromModel
+            The astrometric model that was fit.
+        photom_model : lsst.jointcal.PhotomModel
+            The photometric model that was fit.
+        dataRefs : list of lsst.daf.persistence.ButlerDataRef
+            List of data references to the exposures that were fit.
+        """
+
+        ccdImageList = associations.getCcdImageList()
+        for ccdImage in ccdImageList:
+            tanSip = astrom_model.ProduceSipWcs(ccdImage)
+            frame = ccdImage.ImageFrame()
             tanWcs = afwImage.TanWcs.cast(jointcalLib.GtransfoToTanWcs(tanSip, frame, False))
 
-            name = im.Name()
+            # TODO: there must be a better way to identify this ccdImage?
+            name = ccdImage.Name()
             visit, ccd = name.split('_')
             for dataRef in dataRefs:
-                ccdname = dataRef.get("calexp").getDetector().getId()
+                calexp = dataRef.get("calexp")
+                ccdname = calexp.getDetector().getId()
                 if dataRef.dataId["visit"] == int(visit) and ccdname == int(ccd):
                     print("Updating WCS for visit: %d, ccd%d" % (int(visit), int(ccd)))
-                    exp = afwImage.ExposureI(0, 0)
-                    exp.setWcs(tanWcs)
+                    exp = afwImage.ExposureI(0, 0, tanWcs)
+                    exp.setCalib(calexp.getCalib())  # start with the original calib
+                    fluxMag0, fluxMag0Sigma = calexp.getCalib().getFluxMag0()
+                    exp.getCalib().setFluxMag0(fluxMag0*photom_model.photomFactor(ccdImage), fluxMag0Sigma)
                     try:
                         dataRef.put(exp, 'wcs')
                     except pexExceptions.Exception as e:
                         self.log.warn('Failed to write updated Wcs: ' + str(e))
                     break
-
-        return pipeBase.Struct(dataRefs=dataRefs, oldWcsList=oldWcsList)

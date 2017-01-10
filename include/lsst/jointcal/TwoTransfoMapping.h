@@ -33,7 +33,7 @@ class TwoTransfoMapping: public Mapping
  public :
   //!
   TwoTransfoMapping(SimpleGtransfoMapping *ChipM,
-		   SimpleGtransfoMapping *ShootM);
+		   SimpleGtransfoMapping *VisitM);
   //!
   unsigned Npar() const;
 

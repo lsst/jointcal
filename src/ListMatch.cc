@@ -850,7 +850,7 @@ Gtransfo* ListMatchRefine(const BaseStarList& List1, const BaseStarList& List2, 
 
   StarMatchList *fullMatch = ListMatchCollect(List1, List2, transfo, fullDist);
   StarMatchList *brightMatch = ListMatchCollect(L1, L2, transfo, brightDist);
-  double curChi2 = ComputeChi2(*brightMatch, *transfo) / brightMatch->size();
+  double curChi2 = computeChi2(*brightMatch, *transfo) / brightMatch->size();
 
   std::cout << " ListMatchRefine: start  "
        << " med.resid "  << median_distance(fullMatch, transfo)
@@ -871,7 +871,7 @@ Gtransfo* ListMatchRefine(const BaseStarList& List1, const BaseStarList& List2, 
     } while (brightMatch->size() > nstarmin && transDiff > 0.05 && ++iter < 5);
 
     double prevChi2 = curChi2;
-    curChi2 = ComputeChi2(*brightMatch, *curTransfo) / brightMatch->size();
+    curChi2 = computeChi2(*brightMatch, *curTransfo) / brightMatch->size();
 
     delete fullMatch;
     fullMatch = ListMatchCollect(List1, List2, curTransfo, fullDist);

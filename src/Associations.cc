@@ -33,20 +33,11 @@ static double sqr(double x) {return x*x;}
 namespace lsst {
 namespace jointcal {
 
-// Source selection is performed in the python, so Associations' constructor is just initializing couple of variables
 Associations::Associations()
-    : nshoots_(0), nb_photref_associations(0)
+    : _nVisits(0), nb_photref_associations(0)
 {
     commonTangentPoint = Point(0, 0);
 }
-
-
-//bool Associations::AddImage(const std::string &ReducedImageName)
-//{
-//  ReducedImage ri(ReducedImageName);
-//  return AddImage(ri);
-//}
-
 
 bool Associations::AddImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &Ri,
                             const PTR(lsst::afw::image::TanWcs) wcs,
@@ -169,7 +160,7 @@ void Associations::AssociateCatalogs(const double MatchCutInArcSec,
             matchedCount++;
 
             //      if(  fs->Distance(toCommonTangentPlane->apply(*ms)) > 1.5/3600. )
-            //        cout << " OUTLIER: " << ccdImage.Shoot() << "p" << ccdImage.Chip()
+            //        cout << " OUTLIER: " << ccdImage.getVisit() << "p" << ccdImage.getCcdId()
             //         << ms->x << "," << ms->y
             //         << endl;
 

@@ -39,7 +39,7 @@ private :
   double Dec() const {return raDec.y;}
 
   //! reference flux
-  double Flux(int band) const;
+  double Flux(int filter) const;
 
   //! assign the reference fluxes
   void   AssignRefFluxes(std::vector<double> const& refflux);

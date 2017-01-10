@@ -68,6 +68,8 @@ def main():
                         help="Use interactive matplotlib backend and set ion(), in addition to saving files.")
     parser.add_argument("-o", "--outdir", default=".plots",
                         help="output directory for plots (default: $(default)s)")
+    parser.add_argument("-v", "--verbose", action="store_true",
+                        help="Print extra things during calculations.")
     args = parser.parse_args()
 
     butler = lsst.daf.persistence.Butler(inputs=args.repo)
@@ -86,7 +88,7 @@ def main():
 
     reference = prep_reference_loader(center, args.radius*degrees)
 
-    jointcalStatistics = utils.JointcalStatistics()
+    jointcalStatistics = utils.JointcalStatistics(verbose=args.verbose)
     jointcalStatistics.compute_rms(data_refs, visits, reference)
 
     name = os.path.basename(os.path.normpath(args.repo))

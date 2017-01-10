@@ -19,7 +19,7 @@ routines AstromFit needs to what is needed for this two-transfo model.
 The two-transfo mappings are implemented using two one-transfo
 mappings.*/
 
-// TODO : separate the polynomial degrees for chip and shoot transfos.
+// TODO : separate the polynomial degrees for chip and visit transfos.
 // TODO propagate those into python:
   static int DistortionDegree = 3;
 
@@ -34,26 +34,26 @@ ConstrainedPolyModel::ConstrainedPolyModel(const CcdImageList &L,
   // from datacards (or default)
   unsigned degree = DistortionDegree;
   unsigned count = 0;
-  ShootIdType refShoot;
-  // first loop to initialize all shoot  and chip transfos.
+  VisitIdType refVisit;
+  // first loop to initialize all visit  and chip transfos.
   for (auto i=L.cbegin(); i!= L.end(); ++i, ++count)
     {
       const CcdImage &im = **i;
-      unsigned shoot = im.Shoot();
-      unsigned chip = im.Chip();
-      auto shootp = _shootMap.find(shoot);
-      if (shootp == _shootMap.end())
+      unsigned visit = im.getVisit();
+      unsigned chip = im.getCcdId();
+      auto visitp = _visitMap.find(visit);
+      if (visitp == _visitMap.end())
 	{
-	  if (_shootMap.size() == 0)
+	  if (_visitMap.size() == 0)
 	    {
 	      // if one fits all of them, the model is degenerate.
 #ifdef ROTATE_T2
 # warning : hack in ConstrainedPolyModel::ConstrainedPolyModel : rotated frame
-	      _shootMap[shoot] = new SimpleGtransfoMapping(GtransfoLinRot(3.141927/2.), /* ToFit = */ false);
+	      _visitMap[visit] = new SimpleGtransfoMapping(GtransfoLinRot(3.141927/2.), /* ToFit = */ false);
 #else
-	      _shootMap[shoot] = std::unique_ptr<SimpleGtransfoMapping>(new SimpleGtransfoMapping(GtransfoIdentity()));
+	      _visitMap[visit] = std::unique_ptr<SimpleGtransfoMapping>(new SimpleGtransfoMapping(GtransfoIdentity()));
 #endif
-	      refShoot = shoot;
+	      refVisit = visit;
 	      _instName = im.Instrument();
 	    }
 	    else
@@ -61,15 +61,15 @@ ConstrainedPolyModel::ConstrainedPolyModel(const CcdImageList &L,
 	      {
 		GtransfoPoly poly(degree);
 		poly = GtransfoPoly(GtransfoLinRot(3.141927/2.))*poly;
-		_shootMap[shoot] = new SimplePolyMapping(GtransfoLin(), poly);
+		_visitMap[visit] = new SimplePolyMapping(GtransfoLin(), poly);
 	      }
 #else
-	  _shootMap[shoot] = std::unique_ptr<SimplePolyMapping>(new SimplePolyMapping(GtransfoLin(),
+	  _visitMap[visit] = std::unique_ptr<SimplePolyMapping>(new SimplePolyMapping(GtransfoLin(),
 										      GtransfoPoly(degree)));
 #endif
 	}
       auto chipp = _chipMap.find(chip);
-      if ((chipp == _chipMap.end()) && shoot == refShoot )
+      if ((chipp == _chipMap.end()) && visit == refVisit )
 	{
 	  const Frame &frame = im.ImageFrame();
 
@@ -86,10 +86,10 @@ ConstrainedPolyModel::ConstrainedPolyModel(const CcdImageList &L,
   for (auto i=L.cbegin(); i!= L.end(); ++i, ++count)
     {
       const CcdImage &im = **i;
-      unsigned shoot = im.Shoot();
-      unsigned chip = im.Chip();
+      unsigned visit = im.getVisit();
+      unsigned chip = im.getCcdId();
       // check that the chip_indexed part was indeed assigned
-      // (i.e. the reference shoot was complete)
+      // (i.e. the reference visit was complete)
       if (_chipMap.find(chip) == _chipMap.end())
 	{
 	  std::cout << " WARNING: the chip " << chip << " is missing in the \
@@ -98,13 +98,13 @@ reference exposure, expect troubles" << std::endl;
 	  _chipMap[chip] = std::unique_ptr<SimplePolyMapping>( new SimplePolyMapping(norm,
 										     GtransfoPoly(degree)));
 	}
-      _mappings[&im] = std::unique_ptr<TwoTransfoMapping>(new TwoTransfoMapping(_chipMap[chip].get(), _shootMap[shoot].get()));
+      _mappings[&im] = std::unique_ptr<TwoTransfoMapping>(new TwoTransfoMapping(_chipMap[chip].get(), _visitMap[visit].get()));
 
     }
   cout << "INFO: ConstrainedPolyModel : we have " << _chipMap.size() << " chip mappings " << endl;
-  cout << "INFO: and " << _shootMap.size() << " shoot mappings " << endl;
+  cout << "INFO: and " << _visitMap.size() << " visit mappings " << endl;
   // DEBUG
-  for (auto i=_shootMap.begin(); i != _shootMap.end(); ++i)
+  for (auto i=_visitMap.begin(); i != _visitMap.end(); ++i)
     cout << i-> first << endl;
 
 }
@@ -116,10 +116,10 @@ const Mapping* ConstrainedPolyModel::GetMapping(const CcdImage &C) const
   return (i->second.get());
 }
 
-/*! This routine decodes "DistortionsChip" and "DistortionsShoot" in
+/*! This routine decodes "DistortionsChip" and "DistortionsVisit" in
   WhatToFit. If WhatToFit contains "Distortions" and not
   Distortions<Something>, it is understood as both chips and
-  shoots. */
+  visits. */
 unsigned ConstrainedPolyModel::AssignIndices(unsigned FirstIndex,
 					     std::string &WhatToFit)
 {
@@ -131,10 +131,10 @@ unsigned ConstrainedPolyModel::AssignIndices(unsigned FirstIndex,
     }
   // if we get here "Distortions" is in WhatToFit
   _fittingChips = (WhatToFit.find("DistortionsChip") != std::string::npos);
-  _fittingShoots = (WhatToFit.find("DistortionsShoot") != std::string::npos);
+  _fittingVisits = (WhatToFit.find("DistortionsVisit") != std::string::npos);
   // If nothing more than "Distortions" is specified, it means all:
-  if ((!_fittingChips)&&(!_fittingShoots))
-    {_fittingChips = _fittingShoots = true;}
+  if ((!_fittingChips)&&(!_fittingVisits))
+    {_fittingChips = _fittingVisits = true;}
   if (_fittingChips)
     for (auto i = _chipMap.begin(); i!=_chipMap.end(); ++i)
       {
@@ -145,8 +145,8 @@ mappings should be SimplePolyMappings");
 	p->SetIndex(index);
 	index+= p->Npar();
       }
-  if (_fittingShoots)
-    for (auto i = _shootMap.begin(); i!=_shootMap.end(); ++i)
+  if (_fittingVisits)
+    for (auto i = _visitMap.begin(); i!=_visitMap.end(); ++i)
       {
 	SimplePolyMapping *p = dynamic_cast<SimplePolyMapping *>(&*(i->second));
 	if (!p) continue; // it should be GtransfoIdentity
@@ -156,7 +156,7 @@ mappings should be SimplePolyMappings");
   // Tell the mappings which derivatives they will have to fill:
   for (auto i = _mappings.begin(); i != _mappings.end() ; ++i)
     {
-      i->second->SetWhatToFit(_fittingChips, _fittingShoots);
+      i->second->SetWhatToFit(_fittingChips, _fittingVisits);
     }
   return index;
 }
@@ -170,8 +170,8 @@ void ConstrainedPolyModel::OffsetParams(const Eigen::VectorXd &Delta)
         if (p->Npar()) // probably useless test
 	  p->OffsetParams(&Delta(p->Index()));
       }
-  if (_fittingShoots)
-    for (auto i = _shootMap.begin(); i!=_shootMap.end(); ++i)
+  if (_fittingVisits)
+    for (auto i = _visitMap.begin(); i!=_visitMap.end(); ++i)
       {
         auto *p = (&*(i->second));
         if (p->Npar()) // probably useless test
@@ -182,10 +182,10 @@ void ConstrainedPolyModel::OffsetParams(const Eigen::VectorXd &Delta)
 #if (0)
 void ConstrainedPolyModel::DumpT2Transfos() const
 {
-   for (auto i = _shootMap.begin(); i!=_shootMap.end(); ++i)
+   for (auto i = _visitMap.begin(); i!=_visitMap.end(); ++i)
       {
         auto *p = (&*(i->second));
-	std::cout << "T2 for shoot " << i->first << std::endl
+	std::cout << "T2 for visit " << i->first << std::endl
 		  << p->Transfo() << std::endl;
       }
 }
@@ -194,7 +194,7 @@ void ConstrainedPolyModel::DumpT2Transfos() const
 
 void ConstrainedPolyModel::FreezeErrorScales()
 {
-  for (auto i = _shootMap.begin(); i!=_shootMap.end(); ++i)
+  for (auto i = _visitMap.begin(); i!=_visitMap.end(); ++i)
     i->second->FreezeErrorScales();
   for (auto i = _chipMap.begin(); i!=_chipMap.end(); ++i)
     i->second->FreezeErrorScales();
@@ -212,25 +212,25 @@ const Gtransfo& ConstrainedPolyModel::GetChipTransfo(const unsigned Chip) const
   return chipp->second->Transfo();
 }
 
-// Array of shoots involved in the solution.
-std::vector<ShootIdType> ConstrainedPolyModel::GetShoots() const
+// Array of visits involved in the solution.
+std::vector<VisitIdType> ConstrainedPolyModel::getVisits() const
 {
-  std::vector<ShootIdType> res;
-  res.reserve(_shootMap.size());
-  for (auto i = _shootMap.begin(); i!=_shootMap.end(); ++i)
+  std::vector<VisitIdType> res;
+  res.reserve(_visitMap.size());
+  for (auto i = _visitMap.begin(); i!=_visitMap.end(); ++i)
     res.push_back(i->first);
   return res;
 }
 
-const Gtransfo& ConstrainedPolyModel::GetShootTransfo(const ShootIdType &Shoot) const
+const Gtransfo& ConstrainedPolyModel::getVisitTransfo(const VisitIdType &Visit) const
 {
-  auto shootp = _shootMap.find(Shoot);
-  if (shootp == _shootMap.end()) {
+  auto visitp = _visitMap.find(Visit);
+  if (visitp == _visitMap.end()) {
     std::stringstream errMsg;
-    errMsg << "No such shootId: '" << Shoot << "' found in shootMap of: " << this;
+    errMsg << "No such visitId: '" << Visit << "' found in visitMap of: " << this;
     throw pexExcept::InvalidParameterError(errMsg.str());
   }
-  return shootp->second->Transfo();
+  return visitp->second->Transfo();
 }
 
 
@@ -258,36 +258,5 @@ PTR(TanSipPix2RaDec) ConstrainedPolyModel::ProduceSipWcs(const CcdImage &Ccd) co
   Point tangentPoint( proj->TangentPoint());
   return std::shared_ptr<TanSipPix2RaDec>(new TanSipPix2RaDec(cdStuff, tangentPoint, &sip));
 }
-
-
-
-#ifdef STORAGE
-// in the stack framework, some output method has to be devised.
-// The class ChipArrangement could then be imported into this package
-
-#include <vector>
-bool ConstrainedPolyModel::WriteChipArrangement(const std::string &FileName) const
-{
-  std::vector<const Gtransfo *> transfos(_chipMap.size());
-  for (auto i = _chipMap.begin(); i!=_chipMap.end(); ++i)
-    {
-      unsigned chip = i->first;
-      if (chip+1 > transfos.size())
-	{
-	  std::cout << "ERROR: WriteChipArrangement : some chip transfos are probably undefined"<< std::endl;
-	  return false;
-	  //	  transfos.resize(chip+1, NULL);
-	}
-      transfos[chip] = &(i->second->Transfo());
-    }
-  // _tpFrame is computed in constructor
-  WriteTransfoFile(FileName, transfos, _tpFrame);
-  std::cout << "INFO: Writing chip mappings to " << FileName << std::endl;
-
-  std::cout << "INFO: In order to make it available to matchexposure, you have to copy it as" << std::endl;
-  std::cout << "INFO: $TOADSCARDS/"+ArrangementFileFromInstrumentName(_instName) << std::endl;
-  return true;
-}
-#endif
 
 }} // end of namespaces
