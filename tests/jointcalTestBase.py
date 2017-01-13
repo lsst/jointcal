@@ -5,6 +5,7 @@ from builtins import str
 from builtins import object
 
 import os
+import inspect
 
 import lsst.afw.geom
 from lsst.meas.astrom import LoadAstrometryNetObjectsTask, LoadAstrometryNetObjectsConfig
@@ -26,6 +27,8 @@ class JointcalTestBase(object):
                    other_args=None,
                    do_plot=False):
         """
+        Call from your child classes's setUp() to get the necessary variables built.
+
         Parameters
         ----------
         center : lsst.afw.Coord
@@ -65,21 +68,41 @@ class JointcalTestBase(object):
 
     def _prep_reference_loader(self, center, radius):
         """
-        !Setup an astrometry.net reference loader.
+        Setup an astrometry.net reference loader.
 
-        @param center (afw.coord) The center of the field you're testing on.
-        @param radius (afw.geom.angle) The radius to load objects around center.
+        Parameters
+        ----------
+
+        center : afw.coord
+            The center of the field you're testing on.
+        radius : afw.geom.angle
+            The radius to load objects around center.
         """
         refLoader = LoadAstrometryNetObjectsTask(LoadAstrometryNetObjectsConfig())
         # Make a copy of the reference catalog for in-memory contiguity.
         self.reference = refLoader.loadSkyCircle(center, radius, filterName='r').refCat.copy()
 
-    def _testJointCalTask(self, nCatalogs, relative_error, absolute_error):
-        """Test parseAndRun for jointcal on nCatalogs, requiring less than some error (arcsec)."""
+    def _testJointCalTask(self, nCatalogs, dist_rms_relative, dist_rms_absolute, pa1):
+        """
+        Test parseAndRun for jointcal on nCatalogs.
 
-        visit_list = self.all_visits[:nCatalogs]
-        visits = '^'.join(str(v) for v in visit_list)
-        import inspect
+        Checks relative and absolute astrometric error (arcsec) and photometric
+        repeatability (PA1 from the SRD).
+
+        Parameters
+        ----------
+        nCatalogs : int
+            Number of catalogs to run jointcal on. Used to construct the "id"
+            field for parseAndRun.
+        dist_rms_relative : astropy.Quantity
+            Minimum relative astrometric rms post-jointcal to pass the test.
+        dist_rms_absolute : astropy.Quantity
+            Minimum absolute astrometric rms post-jointcal to pass the test.
+        pa1 : float
+            Minimum PA1 (from Table 14 of the SRD) post-jointcal to pass the test.
+        """
+
+        visits = '^'.join(str(v) for v in self.all_visits[:nCatalogs])
         # the calling method is one step back on the stack: use it to specify the output repo.
         caller = inspect.stack()[1][3]  # NOTE: could be inspect.stack()[1].function in py3.5
         output_dir = os.path.join('.test', self.__class__.__name__, caller)
@@ -90,13 +113,13 @@ class JointcalTestBase(object):
         args.extend(self.other_args)
         result = jointcal.JointcalTask.parseAndRun(args=args, doReturnResults=True)
         self.assertNotEqual(result.resultList, [], 'resultList should not be empty')
-        self.dataRefs = result.resultList[0].result.dataRefs
+        data_refs = result.resultList[0].result.dataRefs
         oldWcsList = result.resultList[0].result.oldWcsList
 
-        rms_rel, rms_abs = self.jointcalStatistics.compute_rms(self.dataRefs, visit_list, self.reference)
-        self.assertLess(rms_rel, relative_error)
-        self.assertLess(rms_abs, absolute_error)
+        rms_result = self.jointcalStatistics.compute_rms(data_refs, self.reference)
+        self.assertLess(rms_result.dist_relative, dist_rms_relative)
+        self.assertLess(rms_result.dist_absolute, dist_rms_absolute)
+        self.assertLess(rms_result.pa1, pa1)
 
         if self.do_plot:
-            name = self.id.strip('__main__.')
-            self.jointcalStatistics.make_plots(self.dataRefs, self.visitCatalogs, oldWcsList, name=name)
+            self.jointcalStatistics.make_plots(data_refs, oldWcsList, name=caller)
