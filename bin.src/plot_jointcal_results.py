@@ -66,17 +66,19 @@ def main():
                         help="Radius (degrees) of sources to load from reference catalog.")
     parser.add_argument("-i", "--interactive", action="store_true",
                         help="Use interactive matplotlib backend and set ion(), in addition to saving files.")
-    parser.add_argument("-o", "--outdir", default=".plots",
+    parser.add_argument("-o", "--outdir", default="plots",
                         help="output directory for plots (default: $(default)s)")
     parser.add_argument("-v", "--verbose", action="store_true",
                         help="Print extra things during calculations.")
     args = parser.parse_args()
 
+    if not os.path.isdir(args.outdir):
+        os.mkdir(args.outdir)
+
     butler = lsst.daf.persistence.Butler(inputs=args.repo)
     dataIds = get_valid_dataIds(butler)
 
     data_refs = [butler.dataRef('wcs', dataId=dataId) for dataId in dataIds]
-    visits = [data_ref.dataId['visit'] for data_ref in data_refs]
     old_wcs_list = get_old_wcs_list(data_refs)
 
     os.environ['ASTROMETRY_NET_DATA_DIR'] = args.refcat
@@ -89,10 +91,10 @@ def main():
     reference = prep_reference_loader(center, args.radius*degrees)
 
     jointcalStatistics = utils.JointcalStatistics(verbose=args.verbose)
-    jointcalStatistics.compute_rms(data_refs, visits, reference)
+    jointcalStatistics.compute_rms(data_refs, reference)
 
     name = os.path.basename(os.path.normpath(args.repo))
-    jointcalStatistics.make_plots(data_refs, visits, old_wcs_list, name=name,
+    jointcalStatistics.make_plots(data_refs, old_wcs_list, name=name,
                                   interactive=args.interactive, outdir=args.outdir)
 
 

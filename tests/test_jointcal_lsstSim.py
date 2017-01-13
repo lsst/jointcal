@@ -24,7 +24,7 @@ except lsst.pex.exceptions.NotFoundError:
 # than the single-epoch astrometry (about 0.040").
 # This value was empirically determined from the first run of jointcal on
 # this data, and will likely vary from survey to survey.
-absolute_error = 42e-3*u.arcsecond
+dist_rms_absolute = 42e-3*u.arcsecond
 
 
 # for MemoryTestCase
@@ -54,32 +54,38 @@ class JointcalTestLSSTSim(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Te
     @unittest.skipIf(data_dir is None, "testdata_jointcal not setup")
     @unittest.skip('jointcal currently fails if only given one catalog!')
     def testJointCalTask_1_visits(self):
-        self._testJointCalTask(2, 0, absolute_error)
+        dist_rms_relative = 0*u.arcsecond  # there is no such thing as a "relative" test for 1 catalog.
+        pa1 = 2.64e-3
+        self._testJointCalTask(1, dist_rms_relative, dist_rms_absolute, pa1)
 
     @unittest.skipIf(data_dir is None, "testdata_jointcal not setup")
     def testJointCalTask_2_visits(self):
         # NOTE: The relative RMS limits were empirically determined from the
         # first run of jointcal on this data. We should always do better than
         # this in the future!
-        relative_error = 9.7e-3*u.arcsecond
-        self._testJointCalTask(2, relative_error, absolute_error)
+        dist_rms_relative = 9.7e-3*u.arcsecond
+        pa1 = 2.64e-3
+        self._testJointCalTask(2, dist_rms_relative, dist_rms_absolute, pa1)
 
     @unittest.skipIf(data_dir is None, "testdata_jointcal not setup")
     @unittest.skip('Keeping this around for diagnostics on the behavior with n catalogs.')
     def testJointCalTask_4_visits(self):
-        relative_error = 8.2e-3*u.arcsecond
-        self._testJointCalTask(4, relative_error, absolute_error)
+        dist_rms_relative = 8.2e-3*u.arcsecond
+        pa1 = 2.64e-3
+        self._testJointCalTask(4, dist_rms_relative, dist_rms_absolute, pa1)
 
     @unittest.skipIf(data_dir is None, "testdata_jointcal not setup")
     @unittest.skip('Keeping this around for diagnostics on the behavior with n catalogs.')
     def testJointCalTask_7_visits(self):
-        relative_error = 8.1e-3*u.arcsecond
-        self._testJointCalTask(7, relative_error, absolute_error)
+        dist_rms_relative = 8.1e-3*u.arcsecond
+        pa1 = 2.64e-3
+        self._testJointCalTask(7, dist_rms_relative, dist_rms_absolute, pa1)
 
     @unittest.skipIf(data_dir is None, "testdata_jointcal not setup")
     def testJointCalTask_10_visits(self):
-        relative_error = 7.9e-3*u.arcsecond
-        self._testJointCalTask(10, relative_error, absolute_error)
+        dist_rms_relative = 7.9e-3*u.arcsecond
+        pa1 = 2.64e-3
+        self._testJointCalTask(10, dist_rms_relative, dist_rms_absolute, pa1)
 
 
 # TODO: the memory test cases currently fail in jointcal. Filed as DM-6626.
