@@ -157,16 +157,20 @@ class JointcalTask(pipeBase.CmdLineTask):
 
         Returns
         ------
-        afw.image.TanWcs
-            the TAN WCS of this image
+        namedtuple
+            wcs : lsst.afw.image.TanWcs
+                the TAN WCS of this image, constructed from the calexp_md
+            key : namedtuple
+                a key to identify this dataRef by its visit and ccd ids
         """
+        visit = dataRef.dataId["visit"]
         src = dataRef.get("src", immediate=True)
         md = dataRef.get("calexp_md", immediate=True)
         calexp = dataRef.get("calexp", immediate=True)
         visitInfo = calexp.getInfo().getVisitInfo()
         ccdname = calexp.getDetector().getId()
 
-        tanwcs = afwImage.TanWcs.cast(afwImage.makeWcs(md))
+        tanWcs = afwImage.TanWcs.cast(afwImage.makeWcs(md))
         lLeft = afwImage.getImageXY0FromMetadata(afwImage.wcsNameForXY0, md)
         uRight = afwGeom.Point2I(lLeft.getX() + md.get("NAXIS1") - 1, lLeft.getY() + md.get("NAXIS2") - 1)
         bbox = afwGeom.Box2I(lLeft, uRight)
@@ -176,14 +180,15 @@ class JointcalTask(pipeBase.CmdLineTask):
         goodSrc = self.sourceSelector.selectSources(src)
 
         if len(goodSrc.sourceCat) == 0:
-            print("no stars selected in ", dataRef.dataId["visit"], ccdname)
-            return tanwcs
-        print("%d stars selected in visit %d - ccd %d" % (len(goodSrc.sourceCat),
-                                                          dataRef.dataId["visit"],
-                                                          ccdname))
-        associations.AddImage(goodSrc.sourceCat, tanwcs, visitInfo, bbox, filt, calib,
-                              dataRef.dataId['visit'], ccdname, jointcalControl)
-        return tanwcs
+            print("no stars selected in ", visit, ccdname)
+            return tanWcs
+        print("%d stars selected in visit %d - ccd %d" % (len(goodSrc.sourceCat), visit, ccdname))
+        associations.AddImage(goodSrc.sourceCat, tanWcs, visitInfo, bbox, filt, calib,
+                              visit, ccdname, jointcalControl)
+
+        Result = collections.namedtuple('Result_from_build_CcdImage', ('wcs', 'key'))
+        Key = collections.namedtuple('Key', ('visit', 'ccd'))
+        return Result(tanWcs, Key(visit, ccdname))
 
     @pipeBase.timeMethod
     def run(self, dataRefs, profile_jointcal=False):
@@ -212,8 +217,13 @@ class JointcalTask(pipeBase.CmdLineTask):
         associations = jointcalLib.Associations()
 
         load_cat_prof_file = 'jointcal_load_catalog.prof' if profile_jointcal else ''
+        visit_ccd_to_dataRef = {}
+        oldWcsList = []
         with pipeBase.cmdLineTask.profile(load_cat_prof_file):
-            oldWcsList = [self._build_ccdImage(ref, associations, jointcalControl) for ref in dataRefs]
+            for ref in dataRefs:
+                result = self._build_ccdImage(ref, associations, jointcalControl)
+                oldWcsList.append(result.wcs)
+                visit_ccd_to_dataRef[result.key] = ref
 
         matchCut = 3.0
         # TODO: this should not print "trying to invert a singular transformation:"
@@ -271,7 +281,7 @@ class JointcalTask(pipeBase.CmdLineTask):
         tupleName = "res_" + str(dataRefs[0].dataId["tract"]) + ".list"
         astrometry.fit.makeResTuple(tupleName)
 
-        self._write_results(associations, astrometry.model, photometry.model, dataRefs)
+        self._write_results(associations, astrometry.model, photometry.model, visit_ccd_to_dataRef)
 
         return pipeBase.Struct(dataRefs=dataRefs, oldWcsList=oldWcsList)
 
@@ -372,7 +382,7 @@ class JointcalTask(pipeBase.CmdLineTask):
         Astrometry = collections.namedtuple('Astrometry', ('fit', 'model', 'sky_to_tan_projection'))
         return Astrometry(fit, model, sky_to_tan_projection)
 
-    def _write_results(self, associations, astrom_model, photom_model, dataRefs):
+    def _write_results(self, associations, astrom_model, photom_model, visit_ccd_to_dataRef):
         """
         Write the fitted results (photometric and astrometric) to a new 'wcs' dataRef.
 
@@ -384,8 +394,8 @@ class JointcalTask(pipeBase.CmdLineTask):
             The astrometric model that was fit.
         photom_model : lsst.jointcal.PhotomModel
             The photometric model that was fit.
-        dataRefs : list of lsst.daf.persistence.ButlerDataRef
-            List of data references to the exposures that were fit.
+        visit_ccd_to_dataRef : dict of Key: lsst.daf.persistence.ButlerDataRef
+            dict of ccdImage identifiers to dataRefs that were fit
         """
 
         ccdImageList = associations.getCcdImageList()
@@ -397,17 +407,16 @@ class JointcalTask(pipeBase.CmdLineTask):
             # TODO: there must be a better way to identify this ccdImage?
             name = ccdImage.Name()
             visit, ccd = name.split('_')
-            for dataRef in dataRefs:
-                calexp = dataRef.get("calexp")
-                ccdname = calexp.getDetector().getId()
-                if dataRef.dataId["visit"] == int(visit) and ccdname == int(ccd):
-                    print("Updating WCS for visit: %d, ccd%d" % (int(visit), int(ccd)))
-                    exp = afwImage.ExposureI(0, 0, tanWcs)
-                    exp.setCalib(calexp.getCalib())  # start with the original calib
-                    fluxMag0, fluxMag0Sigma = calexp.getCalib().getFluxMag0()
-                    exp.getCalib().setFluxMag0(fluxMag0*photom_model.photomFactor(ccdImage), fluxMag0Sigma)
-                    try:
-                        dataRef.put(exp, 'wcs')
-                    except pexExceptions.Exception as e:
-                        self.log.warn('Failed to write updated Wcs: ' + str(e))
-                    break
+            visit = int(visit)
+            ccd = int(ccd)
+            dataRef = visit_ccd_to_dataRef[(visit, ccd)]
+            calexp = dataRef.get("calexp")
+            print("Updating WCS for visit: %d, ccd: %d" % (visit, ccd))
+            exp = afwImage.ExposureI(0, 0, tanWcs)
+            exp.setCalib(calexp.getCalib())  # start with the original calib
+            fluxMag0, fluxMag0Sigma = calexp.getCalib().getFluxMag0()
+            exp.getCalib().setFluxMag0(fluxMag0*photom_model.photomFactor(ccdImage), fluxMag0Sigma)
+            try:
+                dataRef.put(exp, 'wcs')
+            except pexExceptions.Exception as e:
+                self.log.warn('Failed to write updated Wcs and Calib: ' + str(e))
