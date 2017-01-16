@@ -1,11 +1,13 @@
 # See COPYRIGHT file at the top of the source tree.
 
 from __future__ import division, absolute_import, print_function
-from builtins import str
+#from builtins import str
 from builtins import range
 
 import os
 import collections
+
+import numpy as np
 
 import lsst.utils
 import lsst.pex.config as pexConfig
@@ -13,6 +15,7 @@ import lsst.pipe.base as pipeBase
 import lsst.afw.image as afwImage
 import lsst.afw.geom as afwGeom
 import lsst.afw.coord as afwCoord
+import lsst.afw.table as afwTable
 import lsst.pex.exceptions as pexExceptions
 
 from lsst.meas.astrom.loadAstrometryNetObjects import LoadAstrometryNetObjectsTask
@@ -95,13 +98,36 @@ class JointcalConfig(pexConfig.Config):
         default="astrometry"
     )
 
-    def setDefaults(self):
-        sourceSelector = self.sourceSelector["astrometry"]
-        sourceSelector.setDefaults()
-        # don't want to lose existing flags, just add to them.
-        sourceSelector.badFlags.extend(["slot_Shape_flag"])
-        # This should be used to set the FluxField value in jointcal::JointcalControl
-        sourceSelector.sourceFluxType = 'Calib'
+    maxMag = pexConfig.Field(
+        doc = "Maximum magnitude for sources to be included in the fit",
+        dtype = float,
+        default = 22.5,
+    )
+
+    centroid = pexConfig.Field(
+        doc = "Centroid type for position estimation",
+        dtype = str,
+        default = "base_SdssCentroid",
+    )
+    shape = pexConfig.Field(
+        doc = "Shape for error estimation",
+        dtype = str,
+        default = "base_SdssShape",
+    )
+
+    sourceFluxField = pexConfig.Field(
+        doc = "Type of source flux",
+        dtype = str,
+        default = "base_CircularApertureFlux_17_0",   # base_CircularApertureFlux_17_0 in recent stack version
+    )
+
+#    def setDefaults(self):
+#        sourceSelector = self.sourceSelector["astrometry"]
+#        sourceSelector.setDefaults()
+#        # don't want to lose existing flags, just add to them.
+#        sourceSelector.badFlags.extend(["slot_Shape_flag"])
+#        # This should be used to set the FluxField value in jointcal::JointcalControl
+#        sourceSelector.sourceFluxType = 'Calib'
 
 
 class JointcalTask(pipeBase.CmdLineTask):
@@ -142,7 +168,7 @@ class JointcalTask(pipeBase.CmdLineTask):
                                ContainerClass=PerTractCcdDataIdContainer)
         return parser
 
-    def _build_ccdImage(self, dataRef, associations, jointcalControl):
+    def _build_ccdImage(self, dataRef, associations, jointcalControl, ss):
         """
         Extract the necessary things from this dataRef to add a new ccdImage.
 
@@ -166,25 +192,32 @@ class JointcalTask(pipeBase.CmdLineTask):
         visit = dataRef.dataId["visit"]
         src = dataRef.get("src", immediate=True)
         md = dataRef.get("calexp_md", immediate=True)
-        calexp = dataRef.get("calexp", immediate=True)
-        visitInfo = calexp.getInfo().getVisitInfo()
-        ccdname = calexp.getDetector().getId()
+#        calexp = dataRef.get("calexp", immediate=True)
+#        visitInfo = calexp.getInfo().getVisitInfo()
+#        ccdname = calexp.getDetector().getId()
+        ccdname = dataRef.dataId["ccd"]
 
         tanWcs = afwImage.TanWcs.cast(afwImage.makeWcs(md))
         lLeft = afwImage.getImageXY0FromMetadata(afwImage.wcsNameForXY0, md)
         uRight = afwGeom.Point2I(lLeft.getX() + md.get("NAXIS1") - 1, lLeft.getY() + md.get("NAXIS2") - 1)
         bbox = afwGeom.Box2I(lLeft, uRight)
         calib = afwImage.Calib(md)
-        filt = calexp.getInfo().getFilter().getName()
+#        filt = calexp.getInfo().getFilter().getName()
+        filt = dataRef.dataId['filter']
 
-        goodSrc = self.sourceSelector.selectSources(src)
+#        goodSrc = self.sourceSelector.selectSources(src)
+        goodSrc = ss.select(src, calib)
 
-        if len(goodSrc.sourceCat) == 0:
+        if len(goodSrc) == 0:
             print("no stars selected in ", visit, ccdname)
             return tanWcs
-        print("%d stars selected in visit %d - ccd %d" % (len(goodSrc.sourceCat), visit, ccdname))
-        associations.AddImage(goodSrc.sourceCat, tanWcs, visitInfo, bbox, filt, calib,
-                              visit, ccdname, jointcalControl)
+        print("%d stars selected in visit %d - ccd %d" % (len(goodSrc), visit, ccdname))
+
+#        associations.AddImage(goodSrc.sourceCat, tanWcs, visitInfo, bbox, filt, calib,
+#                              visit, ccdname, jointcalControl)
+        associations.AddImage(goodSrc, tanWcs, md, bbox, filt, calib,
+                                      visit, ccdname, jointcalControl)
+
 
         Result = collections.namedtuple('Result_from_build_CcdImage', ('wcs', 'key'))
         Key = collections.namedtuple('Key', ('visit', 'ccd'))
@@ -212,6 +245,9 @@ class JointcalTask(pipeBase.CmdLineTask):
         if len(dataRefs) == 0:
             raise ValueError('Need a list of data references!')
 
+        configSel = StarSelectorConfig()
+        ss = StarSelector(configSel, self.config.sourceFluxField, self.config.maxMag,self.config.centroid,self.config.shape)
+
         sourceFluxField = "slot_%sFlux" % (self.sourceSelector.config.sourceFluxType,)
         jointcalControl = jointcalLib.JointcalControl(sourceFluxField)
         associations = jointcalLib.Associations()
@@ -221,7 +257,7 @@ class JointcalTask(pipeBase.CmdLineTask):
         oldWcsList = []
         with pipeBase.cmdLineTask.profile(load_cat_prof_file):
             for ref in dataRefs:
-                result = self._build_ccdImage(ref, associations, jointcalControl)
+                result = self._build_ccdImage(ref, associations, jointcalControl, ss)
                 oldWcsList.append(result.wcs)
                 visit_ccd_to_dataRef[result.key] = ref
 
@@ -273,7 +309,7 @@ class JointcalTask(pipeBase.CmdLineTask):
             raise RuntimeError('No stars in the fittedStarList!')
 
         astrometry = self._fit_astrometry(associations)
-        photometry = self._fit_photometry(associations)
+#        photometry = self._fit_photometry(associations)
 
         # TODO: not clear that this is really needed any longer?
         # TODO: makeResTuple should at least be renamed, if we do want to keep that big data-dump around.
@@ -281,7 +317,8 @@ class JointcalTask(pipeBase.CmdLineTask):
         tupleName = "res_" + str(dataRefs[0].dataId["tract"]) + ".list"
         astrometry.fit.makeResTuple(tupleName)
 
-        self._write_results(associations, astrometry.model, photometry.model, visit_ccd_to_dataRef)
+#        self._write_results(associations, astrometry.model, photometry.model, visit_ccd_to_dataRef)
+        self._write_results(associations, astrometry.model, visit_ccd_to_dataRef)
 
         return pipeBase.Struct(dataRefs=dataRefs, oldWcsList=oldWcsList)
 
@@ -382,7 +419,8 @@ class JointcalTask(pipeBase.CmdLineTask):
         Astrometry = collections.namedtuple('Astrometry', ('fit', 'model', 'sky_to_tan_projection'))
         return Astrometry(fit, model, sky_to_tan_projection)
 
-    def _write_results(self, associations, astrom_model, photom_model, visit_ccd_to_dataRef):
+#    def _write_results(self, associations, astrom_model, photom_model, visit_ccd_to_dataRef):
+    def _write_results(self, associations, astrom_model, visit_ccd_to_dataRef):
         """
         Write the fitted results (photometric and astrometric) to a new 'wcs' dataRef.
 
@@ -413,10 +451,92 @@ class JointcalTask(pipeBase.CmdLineTask):
             calexp = dataRef.get("calexp")
             print("Updating WCS for visit: %d, ccd: %d" % (visit, ccd))
             exp = afwImage.ExposureI(0, 0, tanWcs)
-            exp.setCalib(calexp.getCalib())  # start with the original calib
-            fluxMag0, fluxMag0Sigma = calexp.getCalib().getFluxMag0()
-            exp.getCalib().setFluxMag0(fluxMag0*photom_model.photomFactor(ccdImage), fluxMag0Sigma)
+#            exp.setCalib(calexp.getCalib())  # start with the original calib
+#            fluxMag0, fluxMag0Sigma = calexp.getCalib().getFluxMag0()
+#            exp.getCalib().setFluxMag0(fluxMag0*photom_model.photomFactor(ccdImage), fluxMag0Sigma)
             try:
                 dataRef.put(exp, 'wcs')
             except pexExceptions.Exception as e:
                 self.log.warn('Failed to write updated Wcs and Calib: ' + str(e))
+
+class StarSelectorConfig(pexConfig.Config):
+
+    badFlags = pexConfig.ListField(
+        doc = "List of flags which cause a source to be rejected as bad",
+        dtype = str,
+        default = [ "base_PixelFlags_flag_saturated",
+                    "base_PixelFlags_flag_cr",
+                    "base_PixelFlags_flag_interpolated",
+                    "base_SdssCentroid_flag",
+                    "base_SdssShape_flag"],
+    )
+
+class StarSelector(object) :
+
+    ConfigClass = StarSelectorConfig
+
+    def __init__(self, config, sourceFluxField, maxMag,centroid,shape):
+        """Construct a star selector
+
+        @param[in] config: An instance of StarSelectorConfig
+        """
+        self.config = config
+        self.sourceFluxField = sourceFluxField
+        self.maxMag = maxMag
+        self.centroid=centroid
+        self.shape=shape
+
+    def select(self, srcCat, calib):
+# Return a catalog containing only reasonnable stars / galaxies
+
+        schema = srcCat.getSchema()
+        #print schema.getOrderedNames()
+        newCat = afwTable.SourceCatalog(schema)
+        fluxKey = schema[self.sourceFluxField+"_flux"].asKey()
+        fluxErrKey = schema[self.sourceFluxField+"_fluxSigma"].asKey()
+        parentKey = schema["parent"].asKey()
+        flagKeys = []
+        for f in self.config.badFlags :
+            key = schema[f].asKey()
+            flagKeys.append(key)
+        fluxFlagKey = schema[self.sourceFluxField+"_flag"].asKey()
+        flagKeys.append(fluxFlagKey)
+
+        for src in srcCat :
+            # Do not consider sources with bad flags
+            for f in flagKeys :
+                rej = 0
+                if src.get(f) :
+                    rej = 1
+                    break
+            if rej == 1 :
+                continue
+            # Reject negative flux
+            flux = src.get(fluxKey)
+            if flux < 0 :
+                continue
+            # Reject objects with too large magnitude
+            fluxErr = src.get(fluxErrKey)
+            mag, magErr = calib.getMagnitude(flux, fluxErr)
+            if mag > self.maxMag or magErr > 0.1 or flux/fluxErr < 10 :
+                continue
+            # Reject blends
+            if src.get(parentKey) != 0 :
+                continue
+            footprint = src.getFootprint()
+            if footprint is not None and len(footprint.getPeaks()) > 1 :
+                continue
+            vx = np.square(src.get(self.centroid + "_xSigma"))
+            vy = np.square(src.get(self.centroid + "_ySigma"))
+            mxx = src.get(self.shape + "_xx")
+            myy = src.get(self.shape + "_yy")
+            mxy = src.get(self.shape + "_xy")
+            vxy = mxy*(vx+vy)/(mxx+myy);
+
+
+            if vx < 0 or vy< 0 or (vxy*vxy)>(vx*vy) or np.isnan(vx) or np.isnan(vy):
+                continue
+
+            newCat.append(src)
+
+        return newCat

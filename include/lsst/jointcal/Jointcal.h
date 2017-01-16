@@ -12,6 +12,7 @@
 #include "lsst/afw/image/Wcs.h"
 #include "lsst/afw/image/Calib.h"
 #include "lsst/afw/image/VisitInfo.h"
+#include "lsst/daf/base/PropertySet.h"
 #include "lsst/afw/geom/Box.h"
 #include "lsst/daf/base/PropertySet.h"
 
@@ -38,7 +39,8 @@ public:
 
     Jointcal (
         std::vector<lsst::afw::table::SortedCatalogT< lsst::afw::table::SourceRecord> > const sourceList,
-        std::vector<PTR(lsst::afw::image::VisitInfo)> const visitInfoList,
+//        std::vector<PTR(lsst::afw::image::VisitInfo)> const visitInfoList,
+        std::vector<PTR(lsst::daf::base::PropertySet)> const metaList,
         std::vector<PTR(lsst::afw::image::TanWcs)> const wcsList,
         std::vector<lsst::afw::geom::Box2I> const bboxList,
         std::vector<std::string> const filterList,
@@ -51,7 +53,8 @@ public:
 private:
 
     std::vector<lsst::afw::table::SortedCatalogT< lsst::afw::table::SourceRecord> > _sourceList;
-    std::vector <std::shared_ptr<lsst::afw::image::VisitInfo> > _visitInfoList;
+//    std::vector <std::shared_ptr<lsst::afw::image::VisitInfo> > _visitInfoList;
+    std::vector <std::shared_ptr<lsst::daf::base::PropertySet> > _metaList;
     std::vector<PTR(lsst::afw::image::TanWcs)> _wcsList;
     std::vector<lsst::afw::geom::Box2I> _bboxList;
     std::vector<std::string> _filterList;

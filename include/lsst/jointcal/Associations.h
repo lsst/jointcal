@@ -75,7 +75,8 @@ public:
 //  bool AddImage(const ReducedImage &Ri);
     bool AddImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &Ri,
                   const PTR(lsst::afw::image::TanWcs) wcs,
-                  const PTR(lsst::afw::image::VisitInfo) visitInfo,
+//                  const PTR(lsst::afw::image::VisitInfo) visitInfo,
+                  const PTR(lsst::daf::base::PropertySet) meta,
                   const lsst::afw::geom::Box2I &bbox,
                   const std::string &filter,
                   const PTR(lsst::afw::image::Calib) calib,

@@ -19,6 +19,7 @@
 #include "lsst/afw/image/Wcs.h"
 #include "lsst/afw/image/TanWcs.h"
 #include "lsst/afw/image/VisitInfo.h"
+#include "lsst/daf/base/PropertySet.h"
 #include "lsst/afw/geom/Angle.h"
 #include "lsst/jointcal/Jointcal.h"
 #include "lsst/jointcal/CcdImage.h"
@@ -44,7 +45,8 @@ void JointcalControl::validate() const {
 
 Jointcal::Jointcal(
     std::vector<lsst::afw::table::SortedCatalogT< lsst::afw::table::SourceRecord> > const sourceList,
-    std::vector<PTR(lsst::afw::image::VisitInfo)> const visitInfoList,
+//    std::vector<PTR(lsst::afw::image::VisitInfo)> const visitInfoList,
+    std::vector<PTR(lsst::daf::base::PropertySet)> const metaList,
     std::vector<PTR(lsst::afw::image::TanWcs)> const wcsList,
     std::vector<lsst::afw::geom::Box2I> const bboxList,
     std::vector<std::string> const filterList,
@@ -54,7 +56,8 @@ Jointcal::Jointcal(
     PTR(lsst::jointcal::JointcalControl) const control
 ):
     _sourceList(sourceList),
-    _visitInfoList(visitInfoList),
+//    _visitInfoList(visitInfoList),
+    _metaList(metaList),
     _wcsList(wcsList),
     _bboxList(bboxList),
     _filterList(filterList),
@@ -90,7 +93,8 @@ Jointcal::Jointcal(
     // Create and load an Association object
     Associations *assoc = new Associations();
     for (unsigned i = 0; i < _sourceList.size(); i++) {
-        assoc->AddImage(_sourceList[i], _wcsList[i], _visitInfoList[i], _bboxList[i], _filterList[i],
+//        assoc->AddImage(_sourceList[i], _wcsList[i], _visitInfoList[i], _bboxList[i], _filterList[i],
+        assoc->AddImage(_sourceList[i], _wcsList[i], _metaList[i], _bboxList[i], _filterList[i],
                         _calibList[i], _visitList[i], _ccdList[i], control);
     }
 

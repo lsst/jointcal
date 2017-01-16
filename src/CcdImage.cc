@@ -64,7 +64,8 @@ void CcdImage::LoadCatalog(const lsst::afw::table::SortedCatalogT<lsst::afw::tab
 CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &Ri,
                    const Point &CommonTangentPoint,
                    const PTR(lsst::afw::image::TanWcs) wcs,
-                   const PTR(lsst::afw::image::VisitInfo) visitInfo,
+                   const PTR(lsst::daf::base::PropertySet) meta,
+//                   const PTR(lsst::afw::image::VisitInfo) visitInfo,
                    const lsst::afw::geom::Box2I &bbox,
                    const std::string &filter,
                    const PTR(lsst::afw::image::Calib) calib,
@@ -118,13 +119,27 @@ CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceReco
     // this one is needed for matches :
     pix2CommonTangentPlane = GtransfoCompose(&raDec2CTP, tanWcs);
 
-    double latitude = visitInfo->getObservatory().getLatitude();
-    double lst_obs = visitInfo->getEra();
-    double ra = visitInfo->getBoresightRaDec().getRa();
-    double dec = visitInfo->getBoresightRaDec().getDec();
-    double hourAngle = visitInfo->getBoresightHourAngle();
-    airMass = visitInfo->getBoresightAirmass();
-    mjd = visitInfo->getDate().get(lsst::daf::base::DateTime::MJD);
+//    double latitude = visitInfo->getObservatory().getLatitude();
+//    double lst_obs = visitInfo->getEra();
+//    double ra = visitInfo->getBoresightRaDec().getRa();
+//    double dec = visitInfo->getBoresightRaDec().getDec();
+//    double hourAngle = visitInfo->getBoresightHourAngle();
+//    airMass = visitInfo->getBoresightAirmass();
+//    mjd = visitInfo->getDate().get(lsst::daf::base::DateTime::MJD);
+
+//    airMass = meta->get<double>("AIRMASS");
+//    mjd = meta->get<double>("MJD-OBS");  // Julian date
+    airMass = meta->get<double>("BORE-AIRMASS");
+    mjd = meta->get<double>("MJDATE");  // Julian date
+//    expTime = meta->get<double>("EXPTIME");
+//    double latitude = lsst::afw::geom::degToRad(meta->get<double>("LATITUDE"));
+    double latitude = lsst::afw::geom::degToRad(meta->get<double>("OBS-LAT"));
+//    double lst_obs = lsst::afw::geom::degToRad(RaStringToDeg(meta->get<std::string>("LST-OBS")));
+    double lst_obs = lsst::afw::geom::degToRad(RaStringToDeg(meta->get<std::string>("LSTEND")));
+//    double ra = lsst::afw::geom::degToRad(meta->get<double>("RA_DEG"));
+//    double dec = lsst::afw::geom::degToRad(meta->get<double>("DEC_DEG"));
+    double ra = lsst::afw::geom::degToRad(RaStringToDeg(meta->get<std::string>("RA")));
+    double dec = lsst::afw::geom::degToRad(DecStringToDeg(meta->get<std::string>("DEC")));
 
     // lsstSim doesn't manage ERA (and thus Hour Angle) properly, so it's going to be NaN.
     // Because we need the refraction vector later, go with 0 HA to prevent crashes on that NaN.
