@@ -135,11 +135,18 @@ CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceReco
 //    double latitude = lsst::afw::geom::degToRad(meta->get<double>("LATITUDE"));
     double latitude = lsst::afw::geom::degToRad(meta->get<double>("OBS-LAT"));
 //    double lst_obs = lsst::afw::geom::degToRad(RaStringToDeg(meta->get<std::string>("LST-OBS")));
-    double lst_obs = lsst::afw::geom::degToRad(RaStringToDeg(meta->get<std::string>("LSTEND")));
+//    double lst_obs = lsst::afw::geom::degToRad(meta->get<double>("AVG-ERA"));
 //    double ra = lsst::afw::geom::degToRad(meta->get<double>("RA_DEG"));
 //    double dec = lsst::afw::geom::degToRad(meta->get<double>("DEC_DEG"));
     double ra = lsst::afw::geom::degToRad(RaStringToDeg(meta->get<std::string>("RA")));
     double dec = lsst::afw::geom::degToRad(DecStringToDeg(meta->get<std::string>("DEC")));
+
+    hourAngle = lsst::afw::geom::degToRad(meta->get<double>("AVG-ERA")+meta->get<double>("OBS-LONG")-meta->get<double>("BORE-RA"));
+
+//    hourAngle = (lst_obs-ra);
+//    std::cout << hourAngle << std::endl;
+//    if  (hourAngle>M_PI) hourAngle -= 2*M_PI;
+//    if  (hourAngle<-M_PI) hourAngle += 2*M_PI;
 
     // lsstSim doesn't manage ERA (and thus Hour Angle) properly, so it's going to be NaN.
     // Because we need the refraction vector later, go with 0 HA to prevent crashes on that NaN.
@@ -158,6 +165,7 @@ CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceReco
         coseta = sqrt(1 - sineta*sineta);
         if (dec > latitude) coseta = -coseta;
     }
+//        std::cout << airMass << " " << ra << " " << dec << " " << sineta << " " << hourAngle << " " << latitude << std::endl;
 }
 
 }

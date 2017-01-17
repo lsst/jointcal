@@ -121,13 +121,13 @@ class JointcalConfig(pexConfig.Config):
         default = "base_CircularApertureFlux_17_0",   # base_CircularApertureFlux_17_0 in recent stack version
     )
 
-#    def setDefaults(self):
-#        sourceSelector = self.sourceSelector["astrometry"]
-#        sourceSelector.setDefaults()
-#        # don't want to lose existing flags, just add to them.
-#        sourceSelector.badFlags.extend(["slot_Shape_flag"])
-#        # This should be used to set the FluxField value in jointcal::JointcalControl
-#        sourceSelector.sourceFluxType = 'Calib'
+    def setDefaults(self):
+        sourceSelector = self.sourceSelector["astrometry"]
+        sourceSelector.setDefaults()
+        # don't want to lose existing flags, just add to them.
+        sourceSelector.badFlags.extend(["slot_Shape_flag"])
+        # This should be used to set the FluxField value in jointcal::JointcalControl
+        sourceSelector.sourceFluxType = 'Calib'
 
 
 class JointcalTask(pipeBase.CmdLineTask):
@@ -205,17 +205,17 @@ class JointcalTask(pipeBase.CmdLineTask):
 #        filt = calexp.getInfo().getFilter().getName()
         filt = dataRef.dataId['filter']
 
-#        goodSrc = self.sourceSelector.selectSources(src)
-        goodSrc = ss.select(src, calib)
+        goodSrc = self.sourceSelector.selectSources(src)
+#        goodSrc = ss.select(src, calib)
 
-        if len(goodSrc) == 0:
+        if len(goodSrc.sourceCat) == 0:
             print("no stars selected in ", visit, ccdname)
             return tanWcs
-        print("%d stars selected in visit %d - ccd %d" % (len(goodSrc), visit, ccdname))
+        print("%d stars selected in visit %d - ccd %d" % (len(goodSrc.sourceCat), visit, ccdname))
 
 #        associations.AddImage(goodSrc.sourceCat, tanWcs, visitInfo, bbox, filt, calib,
 #                              visit, ccdname, jointcalControl)
-        associations.AddImage(goodSrc, tanWcs, md, bbox, filt, calib,
+        associations.AddImage(goodSrc.sourceCat, tanWcs, md, bbox, filt, calib,
                                       visit, ccdname, jointcalControl)
 
 
@@ -464,11 +464,15 @@ class StarSelectorConfig(pexConfig.Config):
     badFlags = pexConfig.ListField(
         doc = "List of flags which cause a source to be rejected as bad",
         dtype = str,
-        default = [ "base_PixelFlags_flag_saturated",
-                    "base_PixelFlags_flag_cr",
+        default = [
+                    "base_PixelFlags_flag_edge",
+                    "base_PixelFlags_flag_interpolatedCenter",
+                    "base_PixelFlags_flag_saturatedCenter",
+                    "base_PixelFlags_flag_crCenter",
+                    "base_PixelFlags_flag_bad",
                     "base_PixelFlags_flag_interpolated",
-                    "base_SdssCentroid_flag",
-                    "base_SdssShape_flag"],
+                    "base_PixelFlags_flag_saturated",
+                    ]
     )
 
 class StarSelector(object) :
