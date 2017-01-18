@@ -7,6 +7,7 @@ kludges and will no longer be necessary once the following are available:
  * a composite data structure that contains all ccds from a single visit
  * an n-way matching system that preserves the separations between sources
 """
+from __future__ import division, print_function, absolute_import
 from builtins import zip
 from builtins import object
 import collections
