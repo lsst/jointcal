@@ -11,9 +11,8 @@ setupRequired(meas_algorithms)
 setupRequired(pipe_tasks)
 setupRequired(jointcal_cholmod)
 
-# for the testing files
+# data files for the unittests
 setupOptional(testdata_jointcal)
-setupOptional(validation_data_hsc)
 
 envPrepend(LD_LIBRARY_PATH, ${PRODUCT_DIR}/lib)
 envPrepend(DYLD_LIBRARY_PATH, ${PRODUCT_DIR}/lib)

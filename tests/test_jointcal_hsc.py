@@ -15,8 +15,8 @@ import lsst.pex.exceptions
 import jointcalTestBase
 
 try:
-    data_dir = lsst.utils.getPackageDir('validation_data_hsc')
-    os.environ['ASTROMETRY_NET_DATA_DIR'] = os.path.join(data_dir, 'sdss-dr9-fink-v5b')
+    data_dir = lsst.utils.getPackageDir('testdata_jointcal')
+    os.environ['ASTROMETRY_NET_DATA_DIR'] = os.path.join(data_dir, 'hsc_and_index')
 except lsst.pex.exceptions.NotFoundError:
     data_dir = None
 
@@ -24,7 +24,7 @@ except lsst.pex.exceptions.NotFoundError:
 # than the single-epoch astrometry (about 0.040").
 # This value was empirically determined from the first run of jointcal on
 # this data, and will likely vary from survey to survey.
-absolute_error = 52e-3*u.arcsecond
+absolute_error = 53e-3*u.arcsecond
 
 
 # for MemoryTestCase
@@ -41,9 +41,8 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         center = lsst.afw.coord.IcrsCoord(320.367492*lsst.afw.geom.degrees, 0.3131554*lsst.afw.geom.degrees)
         radius = 5*lsst.afw.geom.degrees
 
-        input_dir = os.path.join(data_dir, 'DATA', 'rerun', 'validate_drp')
-        # self.all_visits = [903334, 903336, 903338, 903342, 903344, 903346]
-        all_visits = [903982, 904006, 904828, 904846]
+        input_dir = os.path.join(data_dir, 'hsc')
+        all_visits = [903334, 903336, 903338, 903342, 903344, 903346, 903986, 903988, 903990, 904010, 904014]
 
         self.setUp_base(center, radius,
                         input_dir=input_dir,
@@ -56,24 +55,17 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         # first run of jointcal on this data. We should always do better than
         # this in the future!
         relative_error = 17e-3*u.arcsecond
-        self._testJointCalTask(2, relative_error, absolute_error)
+        pa1 = 0.024
+        self._testJointCalTask(2, relative_error, absolute_error, pa1)
 
     @unittest.skipIf(data_dir is None, "validation_data_hsc not setup")
-    def test_jointcalTask_4_visits(self):
+    def test_jointcalTask_11_visits(self):
         # NOTE: The relative RMS limit was empirically determined from the
         # first run of jointcal on this data. We should always do better than
         # this in the future!
         relative_error = 17e-3*u.arcsecond
-        self._testJointCalTask(4, relative_error, absolute_error)
-
-    # @unittest.skipIf(data_dir is None, "validation_data_hsc not setup")
-    # def test_jointcalTask_6_visits(self):
-    #     # NOTE: The relative RMS limit was empirically determined from the
-    #     # first run of jointcal on this data. We should always do better than
-    #     # this in the future!
-    #     relative_error = 10e-3*u.arcsecond
-    #     self._testJointCalTask(6, relative_error, absolute_error)
-
+        pa1 = 0.134
+        self._testJointCalTask(11, relative_error, absolute_error, pa1)
 
 # TODO: the memory test cases currently fail in jointcal. Filed as DM-6626.
 # class MyMemoryTestCase(lsst.utils.tests.MemoryTestCase):

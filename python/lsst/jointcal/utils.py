@@ -7,6 +7,7 @@ kludges and will no longer be necessary once the following are available:
  * a composite data structure that contains all ccds from a single visit
  * an n-way matching system that preserves the separations between sources
 """
+from __future__ import division, print_function, absolute_import
 from builtins import zip
 from builtins import object
 import collections
@@ -286,15 +287,29 @@ class JointcalStatistics(object):
             good &= (cat.get('base_ClassificationExtendedness_value') == 0)
             matches = lsst.afw.table.matchRaDec(reference, cat[good], self.match_radius)
             for m in matches:
+                # NOTE: Protect against negative fluxes: ignore this match if we find one.
+                flux = m[1]['slot_CalibFlux_flux']
+                if flux < 0:
+                    continue
+                else:
+                    # convert to magnitudes and then Janskys, for a useable flux.
+                    flux = fluxFromABMag(calib.getMagnitude(flux))
+
+                # NOTE: Have to protect against negative reference fluxes too.
+                if 'slot' in ref_flux_key:
+                    ref_flux = m[0][ref_flux_key]
+                    if ref_flux < 0:
+                        continue
+                    else:
+                        ref_flux = fluxFromABMag(refcalib.getMagnitude(ref_flux))
+                else:
+                    # a.net fluxes are already in Janskys.
+                    ref_flux = m[0][ref_flux_key.format(filter)]
+                    if ref_flux < 0:
+                        continue
+
                 # Just use the computed separation distance directly.
                 distances[m[0].getId()].append(m[2])
-                # convert to magnitudes and then Janskys, for a useable flux.
-                flux = fluxFromABMag(calib.getMagnitude(m[1]['slot_CalibFlux_flux']))
-                # a.net fluxes are also in Janskys.
-                if 'slot' in ref_flux_key:
-                    ref_flux = fluxFromABMag(refcalib.getMagnitude(m[0][ref_flux_key]))
-                else:
-                    ref_flux = m[0][ref_flux_key.format(filter)]
                 fluxes[m[0].getId()].append(flux)
                 # we can just use assignment here, since the value is always the same.
                 ref_fluxes[m[0].getId()] = ref_flux

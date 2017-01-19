@@ -99,7 +99,8 @@ class JointcalTestBase(object):
         dist_rms_absolute : astropy.Quantity
             Minimum absolute astrometric rms post-jointcal to pass the test.
         pa1 : float
-            Minimum PA1 (from Table 14 of the SRD) post-jointcal to pass the test.
+            Minimum PA1 (from Table 14 of the Science Requirements Document:
+            https://ls.st/LPM-17) post-jointcal to pass the test.
         """
 
         visits = '^'.join(str(v) for v in self.all_visits[:nCatalogs])
@@ -117,9 +118,15 @@ class JointcalTestBase(object):
         oldWcsList = result.resultList[0].result.oldWcsList
 
         rms_result = self.jointcalStatistics.compute_rms(data_refs, self.reference)
+
+        # Make plots before testing, if requested, so we still get plots if tests fail.
+        if self.do_plot:
+            plot_dir = os.path.join('.test', self.__class__.__name__, 'plots')
+            if not os.path.isdir(plot_dir):
+                os.mkdir(plot_dir)
+            self.jointcalStatistics.make_plots(data_refs, oldWcsList, name=caller, outdir=plot_dir)
+            print("Plots saved to: {}".format(plot_dir))
+
         self.assertLess(rms_result.dist_relative, dist_rms_relative)
         self.assertLess(rms_result.dist_absolute, dist_rms_absolute)
         self.assertLess(rms_result.pa1, pa1)
-
-        if self.do_plot:
-            self.jointcalStatistics.make_plots(data_refs, oldWcsList, name=caller)
