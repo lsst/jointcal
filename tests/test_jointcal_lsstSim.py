@@ -68,20 +68,6 @@ class JointcalTestLSSTSim(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Te
         self._testJointCalTask(2, dist_rms_relative, dist_rms_absolute, pa1)
 
     @unittest.skipIf(data_dir is None, "testdata_jointcal not setup")
-    @unittest.skip('Keeping this around for diagnostics on the behavior with n catalogs.')
-    def testJointCalTask_4_visits(self):
-        dist_rms_relative = 8.2e-3*u.arcsecond
-        pa1 = 2.64e-3
-        self._testJointCalTask(4, dist_rms_relative, dist_rms_absolute, pa1)
-
-    @unittest.skipIf(data_dir is None, "testdata_jointcal not setup")
-    @unittest.skip('Keeping this around for diagnostics on the behavior with n catalogs.')
-    def testJointCalTask_7_visits(self):
-        dist_rms_relative = 8.1e-3*u.arcsecond
-        pa1 = 2.64e-3
-        self._testJointCalTask(7, dist_rms_relative, dist_rms_absolute, pa1)
-
-    @unittest.skipIf(data_dir is None, "testdata_jointcal not setup")
     def testJointCalTask_10_visits(self):
         dist_rms_relative = 7.9e-3*u.arcsecond
         pa1 = 2.64e-3
