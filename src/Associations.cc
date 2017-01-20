@@ -166,7 +166,7 @@ void Associations::AssociateCatalogs(const double MatchCutInArcSec,
 
         }
         std::cout << " matched " << matchedCount << " objects"
-                  << " in " << ccdImage.Name() << std::endl;
+                  << " in " << ccdImage.getName() << std::endl;
         // delete the matches
         delete smList;
 

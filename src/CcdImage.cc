@@ -54,7 +54,7 @@ void CcdImage::LoadCatalog(const lsst::afw::table::SortedCatalogT<lsst::afw::tab
         }
         ms->flux = i->get(fluxKey);
         ms->eflux = i->get(efluxKey);
-        ms->mag = -2.5*log10(ms->flux) + zp;
+        ms->mag = _calib->getMagnitude(ms->flux);
         ms->setCcdImage(this);
         wholeCatalog.push_back(ms);
     }
@@ -73,12 +73,9 @@ CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceReco
                    const std::string &fluxField ) :
 
     _filter(filter), _visit(visit), _ccdId(ccdId), index(-1), expindex(-1),
-    commonTangentPoint(CommonTangentPoint)
+    commonTangentPoint(CommonTangentPoint), _calib(calib)
 
 {
-    // zero point
-    zp = 2.5*log10(calib->getFluxMag0().first);
-
     LoadCatalog(Ri, fluxField);
 
     Point lowerLeft(bbox.getMinX(), bbox.getMinY());
@@ -95,7 +92,7 @@ CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceReco
 
     std::stringstream out;
     out << visit << "_" << ccdId;
-    riName = out.str();
+    name = out.str();
 
     /* we don't assume here that we know the internals of TanPix2RaDec:
        to construct pix->TP, we do pix->sky->TP, although pix->sky

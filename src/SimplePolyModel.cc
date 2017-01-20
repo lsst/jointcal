@@ -44,7 +44,7 @@ SimplePolyModel::SimplePolyModel(const CcdImageList &L,
 	  if (nObj == 0)
 	    {
 	      std::cout << "WARNING: empty catalog from image : "
-			<< im.Name() << std::endl;
+			<< im.getName() << std::endl;
 	      continue;
 	    }
 	  GtransfoPoly pol(degree);
@@ -78,7 +78,7 @@ SimplePolyModel::SimplePolyModel(const CcdImageList &L,
 const Mapping* SimplePolyModel::getMapping(const CcdImage &C) const
 {
   mapType::const_iterator i = _myMap.find(&C);
-  if  (i==_myMap.end()) throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,"SimplePolyModel::GetMapping, never heard of CcdImage "+C.Name());
+  if  (i==_myMap.end()) throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,"SimplePolyModel::GetMapping, never heard of CcdImage "+C.getName());
   return (i->second.get());
 }
 
@@ -121,7 +121,7 @@ const Gtransfo& SimplePolyModel::GetTransfo(const CcdImage &Ccd) const
 {
   // return GetMapping(Ccd)->Transfo(); // cannot do that
   auto p = _myMap.find(&Ccd);
-  if  (p==_myMap.end()) throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,"SimplePolyModel::GetTransfo, never heard of CcdImage "+Ccd.Name());
+  if  (p==_myMap.end()) throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,"SimplePolyModel::GetTransfo, never heard of CcdImage "+Ccd.getName());
   return p->second->Transfo();
 }
 

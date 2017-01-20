@@ -47,14 +47,14 @@ unsigned SimplePhotomModel::assignIndices(const std::string &whatToFit,  unsigne
  SimplePhotomModel::PhotomStuff& SimplePhotomModel::find(const CcdImage &ccdImage)
    {
      auto i = _myMap.find(&ccdImage);
-     if  (i==_myMap.end()) throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,"SimplePolyModel::find, cannot find CcdImage "+ccdImage.Name());
+     if  (i==_myMap.end()) throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,"SimplePolyModel::find, cannot find CcdImage "+ccdImage.getName());
      return (i->second);
    }
 
  const SimplePhotomModel::PhotomStuff& SimplePhotomModel::find(const CcdImage &ccdImage)  const
    {
      auto i = _myMap.find(&ccdImage);
-     if  (i==_myMap.end()) throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,"SimplePolyModel::find, cannot find CcdImage "+ccdImage.Name());
+     if  (i==_myMap.end()) throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,"SimplePolyModel::find, cannot find CcdImage "+ccdImage.getName());
      return (i->second);
    }
 

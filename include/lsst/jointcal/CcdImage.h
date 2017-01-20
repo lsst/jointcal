@@ -47,8 +47,7 @@ private:
 
     CountedRef<Gtransfo> sky2TP;
 
-    std::string riName;
-    std::string riDir;
+    std::string name;
     std::string instrument;
     CcdIdType _ccdId;
     VisitIdType _visit;
@@ -56,19 +55,12 @@ private:
     double airMass; // airmass value.
     double fluxCoeff; // coefficient to convert ADUs to ADUs/sec at airmass 1
     double mjd; // modified julian date
-    double toadsZeroPoint;
-    double elixirZP;
-    double photk;
-    double photc;
-    double zp;
-    double psfzp;
+    PTR(lsst::afw::image::Calib) _calib;
     std::string dateObs;
     // refraction
     double sineta, coseta, tgz, hourAngle; // eta : parallactic angle, z: zenithal angle (X = 1/cos(z))
 
     std::string _filter;
-    std::string snlsgrid; // our grid corrections
-    std::string flatcvmap; // a multiplicative map to apply to the fluxes
     int    index;
     int    expindex;
 
@@ -88,11 +80,9 @@ public:
              const int &visit,
              const int &ccd,
              const std::string &fluxField );
-    //!
-    std::string Name() const { return riName;}
 
-    //!
-    std::string Dir() const { return riDir; }
+    //! Return the name that identifies this ccdImage.
+    std::string getName() const { return name;}
 
     //!
     const MeasuredStarList &WholeCatalog() const { return wholeCatalog;}
@@ -141,20 +131,8 @@ public:
     //! Julian Date
     double getMjd() const { return mjd; }
 
-    //!Elixir ZP (applies to fluxes in ADU/sec at airmass 1).
-    double ElixirZP() const { return elixirZP;}
-
-    //!zp from the Fits key set by SetZpKey(std::string)
-    double ZP() const { return zp;}
-
-    //!zp from the psf zp file, returns 0 if not present
-    double PSFZP() const { return psfzp;}
-
-    //! absorption term
-    double PhotK() const { return photk; }
-
-    //! original ZP
-    double PhotC() const { return photc; }
+    //!Return the exposure's photometric calibration
+    PTR(lsst::afw::image::Calib) getCalib() { return _calib; }
 
     //!
     double HourAngle() const { return hourAngle; }
@@ -176,14 +154,6 @@ public:
 
     //! return the CcdImage filter name
     std::string getFilter() const { return _filter;}
-
-    //! SNLS grid
-    std::string SNLSGrid() const { return snlsgrid; }
-
-    //! correction map to convert from one set of fluxes to another
-    std::string FlatCVMap() const { return flatcvmap; }
-
-    //void SetPix2TangentPlane(const Gtransfo *);
 
     //! the wcs read in the header. NOT updated when fitting.
     const Gtransfo *ReadWCS() const {return readWcs.get();}

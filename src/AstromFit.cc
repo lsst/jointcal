@@ -287,7 +287,7 @@ void AstromFit::LSDerivatives1(const CcdImage &ccdImage,
         unsigned ipar = npar_mapping;
         double det = outPos.vx*outPos.vy - sqr(outPos.vxy);
         if (det <= 0 || outPos.vx <= 0 || outPos.vy <= 0) {
-            cout << " WARNING: inconsistent measurement errors :drop measurement at " << Point(ms) << " in image " << ccdImage.Name() << endl;
+            cout << " WARNING: inconsistent measurement errors :drop measurement at " << Point(ms) << " in image " << ccdImage.getName() << endl;
             continue;
         }
         transW(0, 0) = outPos.vy/det;
@@ -525,7 +525,7 @@ void AstromFit::accumulateStatImage(ImType &image, Accum &accu) const
         mapping->TransformPosAndErrors(inPos, outPos);
         double det = outPos.vx*outPos.vy - sqr(outPos.vxy);
         if (det <= 0 || outPos.vx <= 0 || outPos.vy <= 0) {
-            cout << " WARNING: inconsistent measurement errors :drop measurement at " << Point(ms) << " in image " << image.Name() << endl;
+            cout << " WARNING: inconsistent measurement errors :drop measurement at " << Point(ms) << " in image " << image.getName() << endl;
             continue;
         }
         transW(0, 0) = outPos.vy/det;

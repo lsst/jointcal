@@ -14,6 +14,7 @@ import lsst.afw.image as afwImage
 import lsst.afw.geom as afwGeom
 import lsst.afw.coord as afwCoord
 import lsst.pex.exceptions as pexExceptions
+import lsst.afw.table
 
 from lsst.meas.astrom.loadAstrometryNetObjects import LoadAstrometryNetObjectsTask
 from lsst.meas.astrom import AstrometryNetDataConfig
@@ -164,17 +165,15 @@ class JointcalTask(pipeBase.CmdLineTask):
                 a key to identify this dataRef by its visit and ccd ids
         """
         visit = dataRef.dataId["visit"]
-        src = dataRef.get("src", immediate=True)
-        md = dataRef.get("calexp_md", immediate=True)
+        src = dataRef.get("src", flags=lsst.afw.table.SOURCE_IO_NO_FOOTPRINTS, immediate=True)
         calexp = dataRef.get("calexp", immediate=True)
         visitInfo = calexp.getInfo().getVisitInfo()
         ccdname = calexp.getDetector().getId()
 
-        tanWcs = afwImage.TanWcs.cast(afwImage.makeWcs(md))
-        lLeft = afwImage.getImageXY0FromMetadata(afwImage.wcsNameForXY0, md)
-        uRight = afwGeom.Point2I(lLeft.getX() + md.get("NAXIS1") - 1, lLeft.getY() + md.get("NAXIS2") - 1)
-        bbox = afwGeom.Box2I(lLeft, uRight)
-        calib = afwImage.Calib(md)
+        calib = calexp.getCalib()
+        # associations needs a TanWcs specifically, not just a generic Wcs.
+        tanWcs = afwImage.TanWcs.cast(calexp.getWcs())
+        bbox = calexp.getBBox()
         filt = calexp.getInfo().getFilter().getName()
 
         goodSrc = self.sourceSelector.selectSources(src)
@@ -216,9 +215,9 @@ class JointcalTask(pipeBase.CmdLineTask):
         jointcalControl = jointcalLib.JointcalControl(sourceFluxField)
         associations = jointcalLib.Associations()
 
-        load_cat_prof_file = 'jointcal_load_catalog.prof' if profile_jointcal else ''
         visit_ccd_to_dataRef = {}
         oldWcsList = []
+        load_cat_prof_file = 'jointcal_build_ccdImage.prof' if profile_jointcal else ''
         with pipeBase.cmdLineTask.profile(load_cat_prof_file):
             for ref in dataRefs:
                 result = self._build_ccdImage(ref, associations, jointcalControl)
@@ -272,8 +271,12 @@ class JointcalTask(pipeBase.CmdLineTask):
         if associations.fittedStarListSize() == 0:
             raise RuntimeError('No stars in the fittedStarList!')
 
-        astrometry = self._fit_astrometry(associations)
-        photometry = self._fit_photometry(associations)
+        load_cat_prof_file = 'jointcal_fit_astrometry.prof' if profile_jointcal else ''
+        with pipeBase.cmdLineTask.profile(load_cat_prof_file):
+            astrometry = self._fit_astrometry(associations)
+        load_cat_prof_file = 'jointcal_fit_photometry.prof' if profile_jointcal else ''
+        with pipeBase.cmdLineTask.profile(load_cat_prof_file):
+            photometry = self._fit_photometry(associations)
 
         # TODO: not clear that this is really needed any longer?
         # TODO: makeResTuple should at least be renamed, if we do want to keep that big data-dump around.
@@ -281,7 +284,9 @@ class JointcalTask(pipeBase.CmdLineTask):
         tupleName = "res_" + str(dataRefs[0].dataId["tract"]) + ".list"
         astrometry.fit.makeResTuple(tupleName)
 
-        self._write_results(associations, astrometry.model, photometry.model, visit_ccd_to_dataRef)
+        load_cat_prof_file = 'jointcal_write_results.prof' if profile_jointcal else ''
+        with pipeBase.cmdLineTask.profile(load_cat_prof_file):
+            self._write_results(associations, astrometry.model, photometry.model, visit_ccd_to_dataRef)
 
         return pipeBase.Struct(dataRefs=dataRefs, oldWcsList=oldWcsList)
 
@@ -405,16 +410,13 @@ class JointcalTask(pipeBase.CmdLineTask):
             tanWcs = afwImage.TanWcs.cast(jointcalLib.GtransfoToTanWcs(tanSip, frame, False))
 
             # TODO: there must be a better way to identify this ccdImage?
-            name = ccdImage.Name()
-            visit, ccd = name.split('_')
-            visit = int(visit)
-            ccd = int(ccd)
+            ccd = ccdImage.getCcdId()
+            visit = ccdImage.getVisit()
             dataRef = visit_ccd_to_dataRef[(visit, ccd)]
-            calexp = dataRef.get("calexp")
             print("Updating WCS for visit: %d, ccd: %d" % (visit, ccd))
             exp = afwImage.ExposureI(0, 0, tanWcs)
-            exp.setCalib(calexp.getCalib())  # start with the original calib
-            fluxMag0, fluxMag0Sigma = calexp.getCalib().getFluxMag0()
+            # start with the original calib saved to the ccdImage
+            fluxMag0, fluxMag0Sigma = ccdImage.getCalib().getFluxMag0()
             exp.getCalib().setFluxMag0(fluxMag0*photom_model.photomFactor(ccdImage), fluxMag0Sigma)
             try:
                 dataRef.put(exp, 'wcs')
