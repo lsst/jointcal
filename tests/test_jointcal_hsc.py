@@ -56,7 +56,7 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         # this in the future!
         relative_error = 17e-3*u.arcsecond
         pa1 = 0.024
-        self._testJointCalTask(2, relative_error, absolute_error, pa1)
+        self._testJointcalTask(2, relative_error, absolute_error, pa1)
 
     @unittest.skipIf(data_dir is None, "validation_data_hsc not setup")
     def test_jointcalTask_11_visits(self):
@@ -65,7 +65,7 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         # this in the future!
         relative_error = 17e-3*u.arcsecond
         pa1 = 0.134
-        self._testJointCalTask(11, relative_error, absolute_error, pa1)
+        self._testJointcalTask(11, relative_error, absolute_error, pa1)
 
 # TODO: the memory test cases currently fail in jointcal. Filed as DM-6626.
 # class MyMemoryTestCase(lsst.utils.tests.MemoryTestCase):

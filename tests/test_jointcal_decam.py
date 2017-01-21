@@ -61,7 +61,7 @@ class JointcalTestDECAM(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Test
         # this in the future!
         relative_error = 32e-3*u.arcsecond
         pa1 = 0.0383
-        self._testJointCalTask(2, relative_error, absolute_error, pa1)
+        self._testJointcalTask(2, relative_error, absolute_error, pa1)
 
 
 # TODO: the memory test cases currently fail in jointcal. Filed as DM-6626.

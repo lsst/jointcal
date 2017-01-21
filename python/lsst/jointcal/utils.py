@@ -35,7 +35,9 @@ class JointcalStatistics(object):
     diagnostic plots.
     """
 
-    def __init__(self, match_radius=0.1*arcseconds, flux_limit=100.0, verbose=False):
+    def __init__(self, match_radius=0.1*arcseconds, flux_limit=100.0,
+                 do_photometry=True, do_astrometry=True,
+                 verbose=False):
         """
         Parameters
         ----------
@@ -44,11 +46,17 @@ class JointcalStatistics(object):
         flux_limit : float
             Signal/Noise (flux/fluxSigma) for sources to be included in the RMS cross-match.
             100 is a balance between good centroids and enough sources.
-        verbose : bool
+        do_photometry : bool, optional
+            Perform calculations/make plots for photometric metrics.
+        do_astrometry : bool, optional
+            Perform calculations/make plots for astrometric metrics.
+        verbose : bool, optional
             Print extra things
         """
         self.match_radius = match_radius
         self.flux_limit = flux_limit
+        self.do_photometry = do_photometry
+        self.do_astrometry = do_astrometry
         self.verbose = verbose
         self.log = lsst.log.Log.getLogger('JointcalStatistics')
 
@@ -109,18 +117,21 @@ class JointcalStatistics(object):
         new_cats = [ref.get('src') for ref in data_refs]
         new_wcss = [ref.get('wcs') for ref in data_refs]
         new_calibs = [wcs.getCalib() for wcs in new_wcss]
-        for wcs, cat in zip(new_wcss, new_cats):
-            # update in-place the object coordinates based on the new wcs
-            lsst.afw.table.utils.updateSourceCoords(wcs.getWcs(), cat)
+        if self.do_astrometry:
+            for wcs, cat in zip(new_wcss, new_cats):
+                # update in-place the object coordinates based on the new wcs
+                lsst.afw.table.utils.updateSourceCoords(wcs.getWcs(), cat)
 
         self.new_dist, self.new_flux, self.new_ref_flux, self.new_source = compute(new_cats, new_calibs)
 
-        self._photometric_rms()
-
-        if self.verbose:
-            print('"photometric factor" for each data ref:')
-            for ref, old, new in zip(data_refs, old_calibs, new_calibs):
-                print(tuple(ref.dataId.values()), new.getFluxMag0()[0]/old.getFluxMag0()[0])
+        if self.do_photometry:
+            self._photometric_rms()
+            if self.verbose:
+                print('"photometric factor" for each data ref:')
+                for ref, old, new in zip(data_refs, old_calibs, new_calibs):
+                    print(tuple(ref.dataId.values()), new.getFluxMag0()[0]/old.getFluxMag0()[0])
+        else:
+            self.new_PA1 = None
 
         def rms_total(data):
             """Compute the total rms across all sources."""
@@ -128,8 +139,12 @@ class JointcalStatistics(object):
             n = sum(len(dd) for dd in data.values())
             return np.sqrt(total/n)
 
-        self.old_dist_total = MatchDict(*(tuple(map(rms_total, self.old_dist))*u.radian).to(u.arcsecond))
-        self.new_dist_total = MatchDict(*(tuple(map(rms_total, self.new_dist))*u.radian).to(u.arcsecond))
+        if self.do_astrometry:
+            self.old_dist_total = MatchDict(*(tuple(map(rms_total, self.old_dist))*u.radian).to(u.arcsecond))
+            self.new_dist_total = MatchDict(*(tuple(map(rms_total, self.new_dist))*u.radian).to(u.arcsecond))
+        else:
+            self.old_dist_total = MatchDict(None, None)
+            self.new_dist_total = MatchDict(None, None)
 
         Rms_result = collections.namedtuple("Rms_result", ["dist_relative", "dist_absolute", "pa1"])
         return Rms_result(self.new_dist_total.relative, self.new_dist_total.absolute, self.new_PA1)
@@ -169,32 +184,35 @@ class JointcalStatistics(object):
         if interactive:
             plt.ion()
 
-        plot_flux_distributions(plt, self.old_mag, self.new_mag,
-                                self.old_weighted_rms, self.new_weighted_rms,
-                                self.faint, self.bright, self.old_PA1, self.new_PA1,
-                                name=name, outdir=outdir)
+        self.log.info("N data_refs: %d", len(data_refs))
+
+        if self.do_photometry:
+            plot_flux_distributions(plt, self.old_mag, self.new_mag,
+                                    self.old_weighted_rms, self.new_weighted_rms,
+                                    self.faint, self.bright, self.old_PA1, self.new_PA1,
+                                    name=name, outdir=outdir)
 
         def rms_per_source(data):
             """Each element of data must already be the "delta" of whatever measurement."""
             return (np.sqrt([np.mean(dd**2) for dd in data.values()])*u.radian).to(u.arcsecond)
 
-        old_dist_rms = MatchDict(*(tuple(map(rms_per_source, self.old_dist))))
-        new_dist_rms = MatchDict(*(tuple(map(rms_per_source, self.new_dist))))
+        if self.do_astrometry:
+            old_dist_rms = MatchDict(*(tuple(map(rms_per_source, self.old_dist))))
+            new_dist_rms = MatchDict(*(tuple(map(rms_per_source, self.new_dist))))
 
-        self.log.info("N data_refs: %d", len(data_refs))
-        self.log.info("relative RMS (old, new): {:.2e} {:.2e}".format(self.old_dist_total.relative,
-                                                                      self.new_dist_total.relative))
-        self.log.info("absolute RMS (old, new): {:.2e} {:.2e}".format(self.old_dist_total.absolute,
-                                                                      self.new_dist_total.absolute))
-        plot_rms_histogram(plt, old_dist_rms.relative, old_dist_rms.absolute,
-                           new_dist_rms.relative, new_dist_rms.absolute,
-                           self.old_dist_total.relative, self.old_dist_total.absolute,
-                           self.new_dist_total.relative, self.new_dist_total.absolute,
-                           name=name, outdir=outdir)
+            self.log.info("relative RMS (old, new): {:.2e} {:.2e}".format(self.old_dist_total.relative,
+                                                                          self.new_dist_total.relative))
+            self.log.info("absolute RMS (old, new): {:.2e} {:.2e}".format(self.old_dist_total.absolute,
+                                                                          self.new_dist_total.absolute))
+            plot_rms_histogram(plt, old_dist_rms.relative, old_dist_rms.absolute,
+                               new_dist_rms.relative, new_dist_rms.absolute,
+                               self.old_dist_total.relative, self.old_dist_total.absolute,
+                               self.new_dist_total.relative, self.new_dist_total.absolute,
+                               name=name, outdir=outdir)
 
-        plot_all_wcs_deltas(plt, data_refs, self.visits_per_dataRef, old_wcs_list,
-                            per_ccd_plot=per_ccd_plot,
-                            name=name, outdir=outdir)
+            plot_all_wcs_deltas(plt, data_refs, self.visits_per_dataRef, old_wcs_list,
+                                per_ccd_plot=per_ccd_plot,
+                                name=name, outdir=outdir)
 
         if interactive:
             plt.show()
@@ -281,42 +299,56 @@ class JointcalStatistics(object):
         else:
             ref_flux_key = '{}_flux'
 
-        for cat, calib, filter in zip(visit_catalogs, calibs, self.filters):
+        def get_fluxes(match):
+            """Return (flux, ref_flux) or None if either is invalid."""
+            # NOTE: Protect against negative fluxes: ignore this match if we find one.
+            flux = match[1]['slot_CalibFlux_flux']
+            if flux < 0:
+                return None
+            else:
+                # convert to magnitudes and then Janskys, for a useable flux.
+                flux = fluxFromABMag(calib.getMagnitude(flux))
+
+            # NOTE: Have to protect against negative reference fluxes too.
+            if 'slot' in ref_flux_key:
+                ref_flux = match[0][ref_flux_key]
+                if ref_flux < 0:
+                    return None
+                else:
+                    ref_flux = fluxFromABMag(refcalib.getMagnitude(ref_flux))
+            else:
+                # a.net fluxes are already in Janskys.
+                ref_flux = match[0][ref_flux_key.format(filt)]
+                if ref_flux < 0:
+                    return None
+
+            Flux = collections.namedtuple('Flux', ('flux', 'ref_flux'))
+            return Flux(flux, ref_flux)
+
+        for cat, calib, filt in zip(visit_catalogs, calibs, self.filters):
             good = (cat.get('base_PsfFlux_flux')/cat.get('base_PsfFlux_fluxSigma')) > self.flux_limit
             # things the classifier called sources are not extended.
             good &= (cat.get('base_ClassificationExtendedness_value') == 0)
             matches = lsst.afw.table.matchRaDec(reference, cat[good], self.match_radius)
             for m in matches:
-                # NOTE: Protect against negative fluxes: ignore this match if we find one.
-                flux = m[1]['slot_CalibFlux_flux']
-                if flux < 0:
-                    continue
-                else:
-                    # convert to magnitudes and then Janskys, for a useable flux.
-                    flux = fluxFromABMag(calib.getMagnitude(flux))
-
-                # NOTE: Have to protect against negative reference fluxes too.
-                if 'slot' in ref_flux_key:
-                    ref_flux = m[0][ref_flux_key]
-                    if ref_flux < 0:
+                if self.do_photometry:
+                    flux = get_fluxes(m)
+                    if flux is None:
                         continue
                     else:
-                        ref_flux = fluxFromABMag(refcalib.getMagnitude(ref_flux))
-                else:
-                    # a.net fluxes are already in Janskys.
-                    ref_flux = m[0][ref_flux_key.format(filter)]
-                    if ref_flux < 0:
-                        continue
+                        fluxes[m[0].getId()].append(flux.flux)
+                        # we can just use assignment here, since the value is always the same.
+                        ref_fluxes[m[0].getId()] = flux.ref_flux
 
-                # Just use the computed separation distance directly.
-                distances[m[0].getId()].append(m[2])
-                fluxes[m[0].getId()].append(flux)
-                # we can just use assignment here, since the value is always the same.
-                ref_fluxes[m[0].getId()] = ref_flux
+                if self.do_astrometry:
+                    # Just use the computed separation distance directly.
+                    distances[m[0].getId()].append(m[2])
+
                 sources[m[0].getId()].append(m[1])
         # Convert to numpy array for easier math
         for source in distances:
             distances[source] = np.array(distances[source])
+        for source in fluxes:
             fluxes[source] = np.array(fluxes[source])
 
         return distances, fluxes, ref_fluxes, sources

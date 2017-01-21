@@ -26,6 +26,9 @@ from . import jointcalLib
 
 __all__ = ["JointcalConfig", "JointcalTask"]
 
+Photometry = collections.namedtuple('Photometry', ('fit', 'model'))
+Astrometry = collections.namedtuple('Astrometry', ('fit', 'model', 'sky_to_tan_projection'))
+
 
 class JointcalRunner(pipeBase.TaskRunner):
     """Subclass of TaskRunner for jointcalTask (copied from the HSC MosaicRunner)
@@ -76,6 +79,16 @@ class JointcalRunner(pipeBase.TaskRunner):
 class JointcalConfig(pexConfig.Config):
     """Config for jointcalTask"""
 
+    doAstrometry = pexConfig.Field(
+        doc="Fit astrometry and write the fitted result.",
+        dtype=bool,
+        default=True
+    )
+    doPhotometry = pexConfig.Field(
+        doc="Fit photometry and write the fitted result.",
+        dtype=bool,
+        default=True
+    )
     coaddName = pexConfig.Field(
         doc="Type of coadd, typically deep or goodSeeing",
         dtype=str,
@@ -139,7 +152,7 @@ class JointcalTask(pipeBase.CmdLineTask):
         parser = pipeBase.ArgumentParser(name=cls._DefaultName)
         parser.add_argument("--profile_jointcal", default=False, action="store_true",
                             help="Profile steps of jointcal separately.")
-        parser.add_id_argument("--id", "calexp", help="data ID, e.g. --selectId visit=6789 ccd=0..9",
+        parser.add_id_argument("--id", "calexp", help="data ID, e.g. --id visit=6789 ccd=0..9",
                                ContainerClass=PerTractCcdDataIdContainer)
         return parser
 
@@ -257,8 +270,6 @@ class JointcalTask(pipeBase.CmdLineTask):
         print("Using", filt, "band for reference flux")
         refCat = loader.loadSkyCircle(center, afwGeom.Angle(radius, afwGeom.radians), filt).refCat
 
-        # associations.CollectRefStars(False) # To use USNO-A catalog
-
         associations.CollectLSSTRefStars(refCat, filt)
         associations.SelectFittedStars()
         associations.DeprojectFittedStars()  # required for AstromFit
@@ -271,18 +282,24 @@ class JointcalTask(pipeBase.CmdLineTask):
         if associations.fittedStarListSize() == 0:
             raise RuntimeError('No stars in the fittedStarList!')
 
-        load_cat_prof_file = 'jointcal_fit_astrometry.prof' if profile_jointcal else ''
-        with pipeBase.cmdLineTask.profile(load_cat_prof_file):
-            astrometry = self._fit_astrometry(associations)
-        load_cat_prof_file = 'jointcal_fit_photometry.prof' if profile_jointcal else ''
-        with pipeBase.cmdLineTask.profile(load_cat_prof_file):
-            photometry = self._fit_photometry(associations)
+        if self.config.doAstrometry:
+            load_cat_prof_file = 'jointcal_fit_astrometry.prof' if profile_jointcal else ''
+            with pipeBase.cmdLineTask.profile(load_cat_prof_file):
+                astrometry = self._fit_astrometry(associations)
+            # TODO: not clear that this is really needed any longer?
+            # TODO: makeResTuple should at least be renamed, if we do want to keep that big data-dump around.
+            # Fill reference and measurement n-tuples for each tract
+            tupleName = "res_" + str(dataRefs[0].dataId["tract"]) + ".list"
+            astrometry.fit.makeResTuple(tupleName)
+        else:
+            astrometry = Astrometry(None, None, None)
 
-        # TODO: not clear that this is really needed any longer?
-        # TODO: makeResTuple should at least be renamed, if we do want to keep that big data-dump around.
-        # Fill reference and measurement n-tuples for each tract
-        tupleName = "res_" + str(dataRefs[0].dataId["tract"]) + ".list"
-        astrometry.fit.makeResTuple(tupleName)
+        if self.config.doPhotometry:
+            load_cat_prof_file = 'jointcal_fit_photometry.prof' if profile_jointcal else ''
+            with pipeBase.cmdLineTask.profile(load_cat_prof_file):
+                photometry = self._fit_photometry(associations)
+        else:
+            photometry = Photometry(None, None)
 
         load_cat_prof_file = 'jointcal_write_results.prof' if profile_jointcal else ''
         with pipeBase.cmdLineTask.profile(load_cat_prof_file):
@@ -322,7 +339,6 @@ class JointcalTask(pipeBase.CmdLineTask):
         chi2 = fit.computeChi2()
         print(chi2)
 
-        Photometry = collections.namedtuple('Photometry', ('fit', 'model'))
         return Photometry(fit, model)
 
     def _fit_astrometry(self, associations):
@@ -384,7 +400,6 @@ class JointcalTask(pipeBase.CmdLineTask):
                 break
                 print("unxepected return code from minimize")
 
-        Astrometry = collections.namedtuple('Astrometry', ('fit', 'model', 'sky_to_tan_projection'))
         return Astrometry(fit, model, sky_to_tan_projection)
 
     def _write_results(self, associations, astrom_model, photom_model, visit_ccd_to_dataRef):
@@ -405,19 +420,22 @@ class JointcalTask(pipeBase.CmdLineTask):
 
         ccdImageList = associations.getCcdImageList()
         for ccdImage in ccdImageList:
-            tanSip = astrom_model.ProduceSipWcs(ccdImage)
-            frame = ccdImage.ImageFrame()
-            tanWcs = afwImage.TanWcs.cast(jointcalLib.GtransfoToTanWcs(tanSip, frame, False))
-
-            # TODO: there must be a better way to identify this ccdImage?
+            # TODO: there must be a better way to identify this ccdImage than a visit,ccd pair?
             ccd = ccdImage.getCcdId()
             visit = ccdImage.getVisit()
             dataRef = visit_ccd_to_dataRef[(visit, ccd)]
-            print("Updating WCS for visit: %d, ccd: %d" % (visit, ccd))
-            exp = afwImage.ExposureI(0, 0, tanWcs)
-            # start with the original calib saved to the ccdImage
-            fluxMag0, fluxMag0Sigma = ccdImage.getCalib().getFluxMag0()
-            exp.getCalib().setFluxMag0(fluxMag0*photom_model.photomFactor(ccdImage), fluxMag0Sigma)
+            exp = afwImage.ExposureI(0, 0)
+            if self.config.doAstrometry:
+                print("Updating WCS for visit: %d, ccd: %d" % (visit, ccd))
+                tanSip = astrom_model.ProduceSipWcs(ccdImage)
+                frame = ccdImage.ImageFrame()
+                tanWcs = afwImage.TanWcs.cast(jointcalLib.GtransfoToTanWcs(tanSip, frame, False))
+                exp.setWcs(tanWcs)
+            if self.config.doPhotometry:
+                print("Updating Calib for visit: %d, ccd: %d" % (visit, ccd))
+                # start with the original calib saved to the ccdImage
+                fluxMag0, fluxMag0Sigma = ccdImage.getCalib().getFluxMag0()
+                exp.getCalib().setFluxMag0(fluxMag0*photom_model.photomFactor(ccdImage), fluxMag0Sigma)
             try:
                 dataRef.put(exp, 'wcs')
             except pexExceptions.Exception as e:

@@ -56,7 +56,7 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
         # this in the future!
         relative_error = 25e-3*u.arcsecond
         pa1 = 0.019
-        self._testJointCalTask(2, relative_error, absolute_error, pa1)
+        self._testJointcalTask(2, relative_error, absolute_error, pa1)
 
 
 # TODO: the memory test cases currently fail in jointcal. Filed as DM-6626.
