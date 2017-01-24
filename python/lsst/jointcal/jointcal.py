@@ -4,7 +4,6 @@ from __future__ import division, absolute_import, print_function
 from builtins import str
 from builtins import range
 
-import os
 import collections
 
 import lsst.utils
@@ -17,7 +16,6 @@ import lsst.pex.exceptions as pexExceptions
 import lsst.afw.table
 
 from lsst.meas.astrom.loadAstrometryNetObjects import LoadAstrometryNetObjectsTask
-from lsst.meas.astrom import AstrometryNetDataConfig
 from lsst.meas.algorithms.sourceSelector import sourceSelectorRegistry
 
 from .dataIds import PerTractCcdDataIdContainer
@@ -30,7 +28,7 @@ Photometry = collections.namedtuple('Photometry', ('fit', 'model'))
 Astrometry = collections.namedtuple('Astrometry', ('fit', 'model', 'sky_to_tan_projection'))
 
 
-class JointcalRunner(pipeBase.TaskRunner):
+class JointcalRunner(pipeBase.ButlerInitializedTaskRunner):
     """Subclass of TaskRunner for jointcalTask (copied from the HSC MosaicRunner)
 
     jointcalTask.run() takes a number of arguments, one of which is a list of dataRefs
@@ -104,6 +102,14 @@ class JointcalConfig(pexConfig.Config):
         dtype=int,
         default=3,
     )
+    astrometryRefObjLoader = pexConfig.ConfigurableField(
+        target=LoadAstrometryNetObjectsTask,
+        doc="Reference object loader for astrometric fit",
+    )
+    photometryRefObjLoader = pexConfig.ConfigurableField(
+        target=LoadAstrometryNetObjectsTask,
+        doc="Reference object loader for photometric fit",
+    )
     sourceSelector = sourceSelectorRegistry.makeField(
         doc="How to select sources for cross-matching",
         default="astrometry"
@@ -125,18 +131,24 @@ class JointcalTask(pipeBase.CmdLineTask):
     RunnerClass = JointcalRunner
     _DefaultName = "jointcal"
 
-    def __init__(self, profile_jointcal=False, **kwargs):
+    def __init__(self, butler=None, profile_jointcal=False, **kwargs):
         """
         Instantiate a JointcalTask.
 
         Parameters
         ----------
+        butler : lsst.daf.persistence.Butler
+            The butler is passed to the refObjLoader constructor in case it is
+            needed. Ignored if the refObjLoader argument provides a loader directly.
+            Used to initialized the astrometry and photometry refObjLoaders.
         profile_jointcal : bool
             set to True to profile different stages of this jointcal run.
         """
         pipeBase.CmdLineTask.__init__(self, **kwargs)
         self.profile_jointcal = profile_jointcal
         self.makeSubtask("sourceSelector")
+        self.makeSubtask('astrometryRefObjLoader', butler=butler)
+        self.makeSubtask('photometryRefObjLoader', butler=butler)
 
     # We don't need to persist config and metadata at this stage.
     # In this way, we don't need to put a specific entry in the camera mapper policy file
@@ -198,9 +210,9 @@ class JointcalTask(pipeBase.CmdLineTask):
         associations.AddImage(goodSrc.sourceCat, tanWcs, visitInfo, bbox, filt, calib,
                               visit, ccdname, jointcalControl)
 
-        Result = collections.namedtuple('Result_from_build_CcdImage', ('wcs', 'key'))
+        Result = collections.namedtuple('Result_from_build_CcdImage', ('wcs', 'key', 'filter'))
         Key = collections.namedtuple('Key', ('visit', 'ccd'))
-        return Result(tanWcs, Key(visit, ccdname))
+        return Result(tanWcs, Key(visit, ccdname), filt)
 
     @pipeBase.timeMethod
     def run(self, dataRefs, profile_jointcal=False):
@@ -230,12 +242,15 @@ class JointcalTask(pipeBase.CmdLineTask):
 
         visit_ccd_to_dataRef = {}
         oldWcsList = []
+        filters = []
         load_cat_prof_file = 'jointcal_build_ccdImage.prof' if profile_jointcal else ''
         with pipeBase.cmdLineTask.profile(load_cat_prof_file):
             for ref in dataRefs:
                 result = self._build_ccdImage(ref, associations, jointcalControl)
                 oldWcsList.append(result.wcs)
                 visit_ccd_to_dataRef[result.key] = ref
+                filters.append(result.filter)
+        filters = collections.Counter(filters)
 
         matchCut = 3.0
         # TODO: this should not print "trying to invert a singular transformation:"
@@ -255,22 +270,14 @@ class JointcalTask(pipeBase.CmdLineTask):
         if anDir is None:
             raise RuntimeError("astrometry_net_data is not setup")
 
-        andConfig = AstrometryNetDataConfig()
-        andConfigPath = os.path.join(anDir, "andConfig.py")
-        if not os.path.exists(andConfigPath):
-            raise RuntimeError("astrometry_net_data config file '%s' required but not found" % andConfigPath)
-        andConfig.load(andConfigPath)
+        # Determine a default filter associated with the catalog. See DM-9093
+        defaultFilter = filters.most_common(1)[0][0]
+        print("Using", defaultFilter, "band for reference flux")
+        skyCircle = self.astrometryRefObjLoader.loadSkyCircle(center,
+                                                              afwGeom.Angle(radius, afwGeom.radians),
+                                                              defaultFilter)
 
-        task = LoadAstrometryNetObjectsTask.ConfigClass()
-        loader = LoadAstrometryNetObjectsTask(task)
-
-        # TODO: I don't think this is the "default" filter...
-        # Determine default filter associated to the catalog
-        filt, mfilt = list(andConfig.magColumnMap.items())[0]
-        print("Using", filt, "band for reference flux")
-        refCat = loader.loadSkyCircle(center, afwGeom.Angle(radius, afwGeom.radians), filt).refCat
-
-        associations.CollectLSSTRefStars(refCat, filt)
+        associations.CollectLSSTRefStars(skyCircle.refCat, skyCircle.fluxField)
         associations.SelectFittedStars()
         associations.DeprojectFittedStars()  # required for AstromFit
 

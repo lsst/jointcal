@@ -251,7 +251,8 @@ void Associations::CollectRefStars(const bool ProjectOnTP)
     }
 }
 
-void Associations::CollectLSSTRefStars(lsst::afw::table::SortedCatalogT< lsst::afw::table::SimpleRecord > &Ref, std::string filter)
+void Associations::CollectLSSTRefStars(lsst::afw::table::SortedCatalogT< lsst::afw::table::SimpleRecord > &Ref,
+                                       std::string fluxField)
 {
     if (Ref.size() == 0)
     {
@@ -261,21 +262,15 @@ void Associations::CollectLSSTRefStars(lsst::afw::table::SortedCatalogT< lsst::a
 //  auto coordKey = Ref.getSchema().find<lsst::afw::coord::Coord>("coord").key;
 // Same syntax as the following line but with auto :  auto coordKey = afwTable::CoordKey(Ref.getSchema()["coord"]);
     afw::table::CoordKey coordKey = Ref.getSchema()["coord"];
-    auto fluxKey = Ref.getSchema().find<double>(filter + "_flux").key;
-//  auto fluxSigmaKey = Ref.getSchema().find<double>(filter + "_fluxSigma").key;
+    auto fluxKey = Ref.getSchema().find<double>(fluxField).key;
 
     for (auto i = Ref.begin(); i != Ref.end(); i++)
     {
         lsst::afw::coord::Coord coord = i->get(coordKey);
         double flux = i->get(fluxKey);
-//  double fluxErr = i->get(fluxSigmaKey);
         double mag = lsst::afw::image::abMagFromFlux(flux);
         double ra = lsst::afw::geom::radToDeg(coord.getLongitude());
         double dec = lsst::afw::geom::radToDeg(coord.getLatitude());
-//  std::cout << flux/fluxErr << " " << mag << std::endl;
-//  if (flux/fluxErr < 10.0 || mag > 20. || mag < 16.) {
-//      continue;
-//  }
         BaseStar s(ra, dec, mag);
         // cook up errors: 100 mas per cooordinate
 

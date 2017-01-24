@@ -93,7 +93,8 @@ public:
     void CollectRefStars(const bool ProjectOnTP = true);
 
     //! Collect stars from an external reference catalog using the LSST stack mechanism
-    void CollectLSSTRefStars(lsst::afw::table::SortedCatalogT< lsst::afw::table::SimpleRecord > &Ref, std::string filter);
+    void CollectLSSTRefStars(lsst::afw::table::SortedCatalogT< lsst::afw::table::SimpleRecord > &Ref,
+                             std::string fluxField);
 
 
 #ifdef STORAGE
