@@ -190,7 +190,7 @@ class JointcalTask(pipeBase.CmdLineTask):
                 a key to identify this dataRef by its visit and ccd ids
         """
         visit = dataRef.dataId["visit"]
-        src = dataRef.get("src", immediate=True)
+        src = dataRef.get("src", immediate=True, flags=lsst.afw.table.SOURCE_IO_NO_FOOTPRINTS)
         md = dataRef.get("calexp_md", immediate=True)
 #        calexp = dataRef.get("calexp", immediate=True)
 #        visitInfo = calexp.getInfo().getVisitInfo()
