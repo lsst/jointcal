@@ -35,7 +35,7 @@ def setup_module(module):
 class JointcalTestLSSTSim(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCase):
 
     def setUp(self):
-        do_plot = False
+        do_plot = True
 
         # position of the Twinkles run 1 catalog
         center = lsst.afw.coord.IcrsCoord(53.00914*lsst.afw.geom.degrees, -27.43895*lsst.afw.geom.degrees)

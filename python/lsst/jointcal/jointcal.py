@@ -208,6 +208,8 @@ class JointcalTask(pipeBase.CmdLineTask):
             struct containing:
             * dataRefs: the provided data references that were fit (with updated WCSs)
             * oldWcsList: the original WCS from each dataRef
+            * associations: an object containing the matches across visits/ccds
+              and between source catalogs and reference catalogs.
         """
         if len(dataRefs) == 0:
             raise ValueError('Need a list of data references!')
@@ -283,7 +285,7 @@ class JointcalTask(pipeBase.CmdLineTask):
 
         self._write_results(associations, astrometry.model, photometry.model, visit_ccd_to_dataRef)
 
-        return pipeBase.Struct(dataRefs=dataRefs, oldWcsList=oldWcsList)
+        return pipeBase.Struct(dataRefs=dataRefs, oldWcsList=oldWcsList, associations=associations)
 
     def _fit_photometry(self, associations):
         """

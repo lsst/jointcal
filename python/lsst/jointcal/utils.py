@@ -134,7 +134,7 @@ class JointcalStatistics(object):
         Rms_result = collections.namedtuple("Rms_result", ["dist_relative", "dist_absolute", "pa1"])
         return Rms_result(self.new_dist_total.relative, self.new_dist_total.absolute, self.new_PA1)
 
-    def make_plots(self, data_refs, old_wcs_list,
+    def make_plots(self, data_refs, old_wcs_list, associations=None,
                    name='', interactive=False, per_ccd_plot=False, outdir='.plots'):
         """
         Make plots of various quantites to help with debugging.
@@ -169,6 +169,9 @@ class JointcalStatistics(object):
         if interactive:
             plt.ion()
 
+        # TODO: get astro/photo refstars from associations here, and pass them into
+        # plotting code below.
+
         plot_flux_distributions(plt, self.old_mag, self.new_mag,
                                 self.old_weighted_rms, self.new_weighted_rms,
                                 self.faint, self.bright, self.old_PA1, self.new_PA1,
@@ -186,6 +189,7 @@ class JointcalStatistics(object):
                                                                       self.new_dist_total.relative))
         self.log.info("absolute RMS (old, new): {:.2e} {:.2e}".format(self.old_dist_total.absolute,
                                                                       self.new_dist_total.absolute))
+
         plot_rms_histogram(plt, old_dist_rms.relative, old_dist_rms.absolute,
                            new_dist_rms.relative, new_dist_rms.absolute,
                            self.old_dist_total.relative, self.old_dist_total.absolute,

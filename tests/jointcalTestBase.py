@@ -121,10 +121,12 @@ class JointcalTestBase(object):
 
         # Make plots before testing, if requested, so we still get plots if tests fail.
         if self.do_plot:
+            associations = result.resultList[0].result.associations
             plot_dir = os.path.join('.test', self.__class__.__name__, 'plots')
             if not os.path.isdir(plot_dir):
                 os.mkdir(plot_dir)
-            self.jointcalStatistics.make_plots(data_refs, oldWcsList, name=caller, outdir=plot_dir)
+            self.jointcalStatistics.make_plots(data_refs, oldWcsList, name=caller,
+                                               outdir=plot_dir, associations=associations)
             print("Plots saved to: {}".format(plot_dir))
 
         self.assertLess(rms_result.dist_relative, dist_rms_relative)
