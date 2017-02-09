@@ -40,7 +40,7 @@ SimplePolyModel::SimplePolyModel(const CcdImageList &L,
 	{
 		/* first check that there are enough measurements for the
 	  requested polynomial degree */
-	  unsigned nObj = im.CatalogForFit().size();
+	  unsigned nObj = im.getCatalogForFit().size();
 	  if (nObj == 0)
 	    {
 	      std::cout << "WARNING: empty catalog from image : "

@@ -9,19 +9,18 @@ namespace lsst {
 namespace jointcal {
 
 
-RefStar::RefStar(const BaseStar &B, const Point &RaDec)
-  : BaseStar(B), index(0)
+RefStar::RefStar(const BaseStar &baseStar)
+  : BaseStar(baseStar), index(0)
 {
 
-  fittedStar = nullptr;
-  raDec = RaDec;
+  _fittedStar = nullptr;
 }
 
-void RefStar::SetFittedStar(FittedStar *fittedStar)
+void RefStar::setFittedStar(FittedStar *fittedStar)
 {
-  if (fittedStar) fittedStar->SetRefStar(this);
+  _fittedStar = fittedStar;
+  if (_fittedStar) _fittedStar->setRefStar(this);
 }
-
 
 double RefStar::Flux(int filter) const
 {
@@ -35,12 +34,6 @@ void RefStar::AssignRefFluxes(std::vector<double> const& reffluxes)
   refFlux.clear();
   copy(reffluxes.begin(), reffluxes.end(), back_inserter(refFlux));
 }
-
-
-//#include <starlist.cc>
-/** RefStarList ***/
-//template class StarList<RefStar>; /* to force instanciation */
-
 
 
 BaseStarList& Ref2Base(RefStarList &This)
@@ -89,9 +82,7 @@ void RefStarTuple::AddEntry(const RefStar &R, const FittedStar &F)
 {
   std::ios::fmtflags  old_flags =  stream.flags();
   stream << std::setprecision(10);
-  stream << R.Ra() << ' '
-	 << R.Dec() << ' '
-	 << R.x << ' '
+  stream << R.x << ' '
 	 << R.y << ' '
 	 << F.x << ' '
 	 << F.y << ' '

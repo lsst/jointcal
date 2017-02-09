@@ -72,7 +72,7 @@ CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceReco
                    const int &ccdId,
                    const std::string &fluxField ) :
 
-    _filter(filter), _visit(visit), _ccdId(ccdId), index(-1), expindex(-1),
+    _filter(filter), _visit(visit), _ccdId(ccdId),
     commonTangentPoint(CommonTangentPoint), _calib(calib)
 
 {

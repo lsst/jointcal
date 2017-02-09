@@ -26,10 +26,7 @@ class MeasuredStar : public BaseStar
   double eflux;
   double aperrad;
   double chi2;
-
-
   const CcdImage *ccdImage;
-  std::vector<double> usrVals;
 
   private :
 

@@ -268,7 +268,7 @@ void AstromFit::LSDerivatives1(const CcdImage &ccdImage,
     Eigen::VectorXd grad(npar_tot);
     // current position in the Jacobian
     unsigned kTriplets = tList.NextFreeIndex();
-    const MeasuredStarList &catalog = (msList) ? *msList : ccdImage.CatalogForFit();
+    const MeasuredStarList &catalog = (msList) ? *msList : ccdImage.getCatalogForFit();
 
     for (auto i = catalog.begin(); i != catalog.end(); ++i)
     {
@@ -405,7 +405,7 @@ void AstromFit::LSDerivatives2(const FittedStarList &fsl, TripletList &tList, Ei
     for (auto i = fsl.cbegin(); i != fsl.end(); ++i)
     {
         const FittedStar &fs = **i;
-        const RefStar *rs = fs.GetRefStar();
+        const RefStar *rs = fs.getRefStar();
         if (rs == nullptr) continue;
         proj.SetTangentPoint(fs);
         // fs projects to (0,0), no need to compute its transform.
@@ -511,7 +511,7 @@ void AstromFit::accumulateStatImage(ImType &image, Accum &accu) const
     // reserve matrix once for all measurements
     Eigen::Matrix2Xd transW(2, 2);
 
-    auto &catalog = image.CatalogForFit();
+    auto &catalog = image.getCatalogForFit();
     for (auto i = catalog.begin(); i != catalog.end(); ++i)
     {
         auto &ms = **i;
@@ -566,7 +566,7 @@ void AstromFit::accumulateStatRefStars(Accum &accum) const
     for (auto i = fsl.begin(); i != fsl.end(); ++i)
     {
         FittedStar &fs = **i;
-        const RefStar *rs = fs.GetRefStar();
+        const RefStar *rs = fs.getRefStar();
         if (rs == nullptr) continue;
         proj.SetTangentPoint(fs);
         // fs projects to (0,0), no need to compute its transform.
@@ -796,7 +796,7 @@ void AstromFit::removeRefOutliers(FittedStarList &outliers)
     for (auto i = outliers.begin(); i != outliers.end() ; ++i)
     {
         FittedStar &fs = **i;
-        fs.SetRefStar(nullptr);
+        fs.setRefStar(nullptr);
     }
 }
 
@@ -1094,7 +1094,7 @@ void AstromFit::makeMeasResTuple(const std::string &tupleName) const
     for (auto i = L.cbegin(); i != L.end() ; ++i)
     {
         const CcdImage &im = **i;
-        const MeasuredStarList &cat = im.CatalogForFit();
+        const MeasuredStarList &cat = im.getCatalogForFit();
         const Mapping *mapping = _distortionModel->getMapping(im);
         const Point &refractionVector = im.RefractionVector();
         double mjd = im.getMjd() - _JDRef;
@@ -1159,7 +1159,7 @@ void AstromFit::makeRefResTuple(const std::string &tupleName) const
     for (auto i = fsl.cbegin(); i != fsl.end(); ++i)
     {
         const FittedStar &fs = **i;
-        const RefStar *rs = fs.GetRefStar();
+        const RefStar *rs = fs.getRefStar();
         if (rs == nullptr) continue;
         proj.SetTangentPoint(fs);
         // fs projects to (0,0), no need to compute its transform.

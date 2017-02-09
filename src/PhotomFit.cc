@@ -31,29 +31,6 @@ PhotomFit::PhotomFit(Associations &associations, PhotomModel *photomModel, doubl
   assignIndices("");
 }
 
-/*! this is the first implementation of an error "model".
-  We'll certainly have to upgrade it. MeasuredStar provided
-in case we need the mag.  */
-
-//  static double posErrorIncrement = 0.02; // pixels
-//  static double posErrorIncrement = 0.00; // pixels
-
-#ifdef STORAGE
-static void tweakPhotomMeasurementErrors(const MeasuredStar &measuredStar, double error)
-{
-  static bool called=false;
-  static double increment = 0;
-  if (!called)
-    {
-      increment = sqr(error); // was in Preferences
-      called = true;
-    }
-  P.vx += increment;
-  P.vy += increment;
-}
-#endif
-
-
 void PhotomFit::LSDerivatives(TripletList &tList, Eigen::VectorXd &rhs) const
 {
   auto L = _associations.getCcdImageList();
@@ -83,7 +60,7 @@ void PhotomFit::LSDerivatives(const CcdImage &ccdImage,
   Eigen::VectorXd grad(npar_max);
   // current position in the Jacobian
   unsigned kTriplets = tList.NextFreeIndex();
-  const MeasuredStarList &catalog = (measuredStarList) ? *measuredStarList : ccdImage.CatalogForFit();
+  const MeasuredStarList &catalog = (measuredStarList) ? *measuredStarList : ccdImage.getCatalogForFit();
 
   for (auto i = catalog.begin(); i!= catalog.end(); ++i)
     {
@@ -140,7 +117,7 @@ void PhotomFit::accumulateStat(ListType &listType, Accum &accum) const
   /**  Changes in this routine should be reflected into LSDerivatives  */
   /**********************************************************************/
       auto &ccdIMage = **im;
-      auto &catalog = ccdIMage.CatalogForFit();
+      auto &catalog = ccdIMage.getCatalogForFit();
 
       for (auto i = catalog.begin(); i!= catalog.end(); ++i)
 	{
@@ -290,76 +267,6 @@ void PhotomFit::findOutliers(double nSigCut, MeasuredStarList &outliers) const
        << outliers.size() << " outliers" << endl;
 }
 
-#ifdef STORAGE
-unsigned PhotomFit::removeOutliers(double nSigCut)
-{
-  /* Some reshuffling would be needed if we wish to use the small-rank
-     update trick rather than solving again. Typically We would
-     need to compute the Jacobian and rhs contributions of the
-     discarded measurement and update the current factorization and
-     solution. */
-  CcdImageList &L=_associations.ccdImageList;
-  // collect chi2 contributions
-  Chi2Vect chi2s;
-  chi2s.reserve(_nMeasuredStars);
-  accumulateStatImageList(_associations.ccdImageList, chi2s);
-  // do some stat
-  unsigned nval = chi2s.size();
-  if (nval==0) return 0;
-  sort(chi2s.begin(), chi2s.end());
-  double median = (nval & 1)? chi2s[nval/2].chi2 :
-    0.5*(chi2s[nval/2-1].chi2 + chi2s[nval/2].chi2);
-  // some more stats. should go into the class if recycled anywhere else
-  double sum=0; double sum2 = 0;
-  for (auto i=chi2s.begin(); i!=chi2s.end(); ++i)
-    {sum+= i->chi2;sum2+= sqr(i->chi2);}
-  double average = sum/nval;
-  double sigma = sqrt(sum2/nval - sqr(average));
-  cout << "INFO : removeOutliers chi2 stat: mean/median/sigma "
-       << average << '/'<< median << '/' << sigma << endl;
-  double cut = average+nSigCut*sigma;
-  /* For each of the parameters, we will not remove more than 1
-     measurement that contributes to constraining it. Keep track using
-     of what we are touching using an integer vector. This is the
-     trick that Marc Betoule came up to for outlier removals in "star
-     flats" fits. */
-  Eigen::VectorXi affectedParams(_nParTot);
-  affectedParams.setZero();
-
-  unsigned removed = 0; // returned to the caller
-  // start from the strongest outliers.
-  for (auto i = chi2s.rbegin(); i != chi2s.rend(); ++i)
-    {
-      if (i->chi2 < cut) break; // because the array is sorted.
-      vector<unsigned> indices;
-      GetMeasuredStarIndices(*(i->ms), indices);
-      bool drop_it = true;
-      /* find out if a stronger outlier constraining one of the parameters
-	 this one contrains was already discarded. If yes, we keep this one */
-      for (auto i=indices.cbegin(); i!= indices.end(); ++i)
-	if (affectedParams(*i) !=0) drop_it = false;
-
-      if (drop_it)
-	{
-	  FittedStar *fs = i->ms->GetFittedStar();
-	  i->ms->SetValid(false); removed++;
-	  fs->MeasurementCount()--; // could be put in SetValid
-	  /* By making sure that we do not remove all MeasuredStars
-	     pointing to a FittedStar in a single go,
-	     fs->MeasurementCount() should never go to 0.
-
-	     It seems plausible that the adopted mechanism prevents as
-	     well to end up with under-constrained transfos. */
-	  for (auto i=indices.cbegin(); i!= indices.cend(); ++i)
-	    affectedParams(*i)++;
-	}
-    } // end loop on measurements
-  cout << "INFO : removeOutliers : found and removed "
-       << removed << " outliers" << endl;
-  return removed;
-}
-#endif
-
 void PhotomFit::assignIndices(const std::string &whatToFit)
 {
   _whatToFit = whatToFit;
@@ -480,7 +387,7 @@ void PhotomFit::makeResTuple(const std::string &tupleName) const
   for (auto i=L.cbegin(); i!=L.end() ; ++i)
     {
       const CcdImage &im = **i;
-      const MeasuredStarList &cat = im.CatalogForFit();
+      const MeasuredStarList &cat = im.getCatalogForFit();
       for (auto is=cat.cbegin(); is!=cat.end(); ++is)
 	{
 	  const MeasuredStar &ms = **is;

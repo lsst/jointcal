@@ -54,7 +54,6 @@ ConstrainedPolyModel::ConstrainedPolyModel(const CcdImageList &L,
 	      _visitMap[visit] = std::unique_ptr<SimpleGtransfoMapping>(new SimpleGtransfoMapping(GtransfoIdentity()));
 #endif
 	      refVisit = visit;
-	      _instName = im.Instrument();
 	    }
 	    else
 #ifdef ROTATE_T2

@@ -15,24 +15,22 @@ namespace jointcal {
 // cannot be in fittedstar.h, because of "crossed includes"
 FittedStar::FittedStar(const MeasuredStar &M) :
   BaseStar(M), mag(M.Mag()), emag(-1), col(0.), gen(-1), wmag(M.MagWeight()),
-  indexInMatrix(-1), measurementCount(0), refStar(nullptr),
+  indexInMatrix(-1), measurementCount(0), _refStar(nullptr),
   flux2(-1), fluxErr2(-1)
 {
   fluxErr = M.eflux;
 }
 
 
-void FittedStar::SetRefStar(const RefStar *R)
+void FittedStar::setRefStar(const RefStar *refStar)
 {
-  if (refStar != nullptr && (R)) // TODO: should we raise an Exception in this case?
+  if ((_refStar != nullptr) && (refStar != nullptr)) // TODO: should we raise an Exception in this case?
     std::cerr << " FittedStar : " << *this
-	      << " is already matched to an other RefStar " << std::endl
-	      << " Clean up your lists " << std::endl;
-  else refStar = R;
+	      << " is already matched to another RefStar. Clean up your lists" << std::endl
+          << "old: " << *_refStar << std::endl
+          << "new: " << *refStar << std::endl;
+  else _refStar = refStar;
 }
-
-static double sq(double x) {return x*x;}
-
 
 void FittedStar::AddMagMeasurement(double MagValue,
 				   double MagWeight)

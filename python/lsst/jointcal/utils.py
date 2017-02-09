@@ -124,6 +124,16 @@ class JointcalStatistics(object):
 
         self.new_dist, self.new_flux, self.new_ref_flux, self.new_source = compute(new_cats, new_calibs)
 
+        if self.verbose:
+            print('old, new relative distance matches:',
+                  len(self.old_dist.relative), len(self.new_dist.relative))
+            print('old, new absolute distance matches:',
+                  len(self.old_dist.absolute), len(self.new_dist.absolute))
+            print('old, new relative flux matches:',
+                  len(self.old_flux.relative), len(self.new_flux.relative))
+            print('old, new absolute flux matches:',
+                  len(self.old_flux.absolute), len(self.new_flux.absolute))
+
         if self.do_photometry:
             self._photometric_rms()
             if self.verbose:

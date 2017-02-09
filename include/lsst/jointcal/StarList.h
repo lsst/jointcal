@@ -10,7 +10,6 @@
 //#include "countedref.h"
 #include "lsst/jointcal/Point.h"
 #include "lsst/jointcal/CountedRef.h"
-//#include "lsst/jointcal/GlobalVal.h"
 
 namespace lsst {
 namespace jointcal {
@@ -48,7 +47,6 @@ and the code is stuffed with such loops.
 
 
   template<class Star> class StarList : public std::list <CountedRef<Star> > {
-    //  GlobalVal glob;
 
 public:
   typedef CountedRef<Star> Element;
@@ -79,14 +77,6 @@ public:
 
   //! obvious meaning
   int read(const std::string &FileName);
-
-#if (0)
-  //! enables to access global values (lines starting with '@' in ascii files)
-  GlobalVal &GlobVal() { return glob;}
-
-  //! enables to access global values (lines starting with '@' in ascii files)
-  const GlobalVal &GlobVal() const { return glob;}
-#endif
 
 /* destructor */
   virtual ~StarList() {};

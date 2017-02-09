@@ -48,7 +48,6 @@ private:
     CountedRef<Gtransfo> sky2TP;
 
     std::string name;
-    std::string instrument;
     CcdIdType _ccdId;
     VisitIdType _visit;
 
@@ -61,8 +60,6 @@ private:
     double sineta, coseta, tgz, hourAngle; // eta : parallactic angle, z: zenithal angle (X = 1/cos(z))
 
     std::string _filter;
-    int    index;
-    int    expindex;
 
     Point  commonTangentPoint;
 
@@ -84,14 +81,22 @@ public:
     //! Return the name that identifies this ccdImage.
     std::string getName() const { return name;}
 
-    //!
-    const MeasuredStarList &WholeCatalog() const { return wholeCatalog;}
+    /**
+     * @brief      Gets the as-read catalog.
+     *
+     * @return     The whole catalog.
+     */
+    const MeasuredStarList &getWholeCatalog() const { return wholeCatalog;}
 
-    //!
-    const MeasuredStarList & CatalogForFit() const { return catalogForFit;}
-
-    //!
-    MeasuredStarList & CatalogForFit()  { return catalogForFit;}
+    //@{
+    /**
+     * @brief      Gets the catalog to be used for fitting, which may have been cleaned-up.
+     *
+     * @return     The catalog for fitting.
+     */
+    const MeasuredStarList & getCatalogForFit() const { return catalogForFit;}
+    MeasuredStarList & getCatalogForFit()  { return catalogForFit;}
+    //@}
 
     //!
     const Gtransfo* Pix2CommonTangentPlane() const
@@ -115,9 +120,6 @@ public:
 
     //! returns ccd ID
     int getCcdId() const { return _ccdId;}
-
-    //! instrument (TOADINST fits pseudo-key)
-    std::string Instrument() const {return instrument;}
 
     //! returns visit ID
     VisitIdType getVisit() const { return _visit;}
@@ -164,21 +166,11 @@ public:
     //! Frame in pixels
     const Frame& ImageFrame() const { return imageFrame;}
 
-    //! CcdImage index
-    int     Index() const { return index; }
-    void    SetIndex(int idx) { index = idx; }
-
-    //! Exposure Index
-    int     ExpIndex() const { return expindex; }
-    void    SetExpIndex(int idx) { expindex = idx; }
-
     //! Common Tangent Point
     Point const&       CommonTangentPoint() const { return commonTangentPoint; }
 
 private:
     CcdImage(const CcdImage &); // forbid copies
-
-
 };
 
 
@@ -199,6 +191,20 @@ public:
         for (const_iterator i = begin(); i != end() ; ++i)
             if (OP(**i)) out.push_back(*i);
         return out;
+    }
+
+    /**
+     * @brief      Return the number of ccdImages with a populated catalogForFit list.
+     */
+    int sizeValidForFit() const
+    {
+        int size = 0;
+        for(auto const &item: *this)
+        {
+            if (item->getCatalogForFit().size() > 0)
+                size++;
+        }
+        return size;
     }
 };
 
