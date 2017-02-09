@@ -61,7 +61,24 @@ class JointcalTestDECAM(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Test
         # this in the future!
         relative_error = 32e-3*u.arcsecond
         pa1 = 0.0383
-        self._testJointcalTask(2, relative_error, absolute_error, pa1)
+        # NOTE: decam fits are currently not converging; the chi2 jumps around, so skip that test.
+        metrics = {'collectedAstrometryRefStars': 8195,
+                   'collectedPhotometryRefStars': 8195,
+                   'selectedAstrometryRefStars': 8195,
+                   'selectedPhotometryRefStars': 8195,
+                   'associatedAstrometryFittedStars': 8241,
+                   'associatedPhotometryFittedStars': 8241,
+                   'selectedAstrometryFittedStars': 2261,
+                   'selectedPhotometryFittedStars': 2261,
+                   'selectedAstrometryCcdImageList': 17,
+                   'selectedPhotometryCcdImageList': 17,
+                   'astrometryFinalChi2': None,
+                   'astrometryFinalNdof': 4306,
+                   'photometryFinalChi2': None,
+                   'photometryFinalNdof': 1626,
+                   }
+
+        self._testJointcalTask(2, relative_error, absolute_error, pa1, metrics=metrics)
 
 
 # TODO: the memory test cases currently fail in jointcal. Filed as DM-6626.

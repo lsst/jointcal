@@ -47,7 +47,7 @@ class JointcalTestBase(object):
             Set to True for a comparison plot and some diagnostic numbers.
         """
         self._prep_reference_loader(center, radius)
-        self.jointcalStatistics = utils.JointcalStatistics(match_radius)
+        self.jointcalStatistics = utils.JointcalStatistics(match_radius, verbose=True)
         self.input_dir = input_dir
         self.all_visits = all_visits
         if other_args is None:
@@ -85,7 +85,8 @@ class JointcalTestBase(object):
         # Make a copy of the reference catalog for in-memory contiguity.
         self.reference = refLoader.loadSkyCircle(center, radius, filterName='r').refCat.copy()
 
-    def _testJointcalTask(self, nCatalogs, dist_rms_relative, dist_rms_absolute, pa1):
+    def _testJointcalTask(self, nCatalogs, dist_rms_relative, dist_rms_absolute, pa1,
+                          metrics=None):
         """
         Test parseAndRun for jointcal on nCatalogs.
 
@@ -104,6 +105,9 @@ class JointcalTestBase(object):
         pa1 : float
             Minimum PA1 (from Table 14 of the Science Requirements Document:
             https://ls.st/LPM-17) post-jointcal to pass the test.
+        metrics : dict, optional
+            Dictionary of 'metricName': value to test jointcal's result.metrics
+            against.
 
         Returns
         -------
@@ -114,11 +118,11 @@ class JointcalTestBase(object):
         # the calling method is one step back on the stack: use it to specify the output repo.
         caller = inspect.stack()[1][3]  # NOTE: could be inspect.stack()[1].function in py3.5
 
-        result = self._runJointcalTask(nCatalogs, caller)
+        result = self._runJointcalTask(nCatalogs, caller, metrics=metrics)
+
         data_refs = result.resultList[0].result.dataRefs
         oldWcsList = result.resultList[0].result.oldWcsList
         rms_result = self.jointcalStatistics.compute_rms(data_refs, self.reference)
-
         # Make plots before testing, if requested, so we still get plots if tests fail.
         if self.do_plot:
             self._plotJointcalTask(data_refs, oldWcsList, caller)
@@ -129,9 +133,10 @@ class JointcalTestBase(object):
 
         return data_refs
 
-    def _runJointcalTask(self, nCatalogs, caller):
+    def _runJointcalTask(self, nCatalogs, caller, metrics=None):
         """
-        Run jointcalTask on nCatalogs, only testing that the return is non-empty.
+        Run jointcalTask on nCatalogs, with the most basic tests.
+        Tests for non-empty result list, and that the basic metrics are correct.
 
         Parameters
         ----------
@@ -139,6 +144,9 @@ class JointcalTestBase(object):
             Number of catalogs to test on.
         caller : str
             Name of the calling function (to determine output directory).
+        metrics : dict, optional
+            Dictionary of 'metricName': value to test jointcal's result.metrics
+            against.
 
         Returns
         -------
@@ -154,6 +162,9 @@ class JointcalTestBase(object):
         args.extend(self.other_args)
         result = jointcal.JointcalTask.parseAndRun(args=args, doReturnResults=True, config=self.config)
         self.assertNotEqual(result.resultList, [], 'resultList should not be empty')
+
+        self._test_metrics(result.resultList[0].result.metrics, metrics)
+
         return result
 
     def _plotJointcalTask(self, data_refs, oldWcsList, caller):
@@ -175,3 +186,19 @@ class JointcalTestBase(object):
         self.jointcalStatistics.make_plots(data_refs, oldWcsList, name=caller, outdir=plot_dir)
         print("Plots saved to: {}".format(plot_dir))
 
+    def _test_metrics(self, result, expect):
+        """Test a dictionary of "metrics" against those returned by jointcal.py
+
+        Parameters
+        ----------
+        result : dict
+            Result metric dictionary from jointcal.py
+        expect : dict
+            Expected metric dictionary; set a value to None to not test it.
+        """
+        for key in result:
+            if expect[key] is not None:
+                if type(result[key]) == float:
+                    self.assertFloatsAlmostEqual(result[key], expect[key], msg=key, rtol=1e-5)
+                else:
+                    self.assertEqual(result[key], expect[key], msg=key)

@@ -69,28 +69,67 @@ class JointcalTestLSSTSim(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Te
         # this in the future!
         dist_rms_relative = 9.7e-3*u.arcsecond
         pa1 = 2.64e-3
-        self._testJointcalTask(2, dist_rms_relative, dist_rms_absolute, pa1)
+        metrics = {'collectedAstrometryRefStars': 1686,
+                   'collectedPhotometryRefStars': 1686,
+                   'selectedAstrometryRefStars': 1686,
+                   'selectedPhotometryRefStars': 1686,
+                   'associatedAstrometryFittedStars': 1365,
+                   'associatedPhotometryFittedStars': 1365,
+                   'selectedAstrometryFittedStars': 789,
+                   'selectedPhotometryFittedStars': 789,
+                   'selectedAstrometryCcdImageList': 2,
+                   'selectedPhotometryCcdImageList': 2,
+                   'astrometryFinalChi2': 742.4992,
+                   'astrometryFinalNdof': 1698,
+                   'photometryFinalChi2': 2310.628,
+                   'photometryFinalNdof': 728
+                   }
+        self._testJointcalTask(2, dist_rms_relative, dist_rms_absolute, pa1, metrics=metrics)
 
     @unittest.skipIf(data_dir is None, "testdata_jointcal not setup")
     def testJointcalTask_10_visits(self):
         dist_rms_relative = 7.9e-3*u.arcsecond
         pa1 = 2.64e-3
-        self._testJointcalTask(10, dist_rms_relative, dist_rms_absolute, pa1)
+        metrics = {'collectedAstrometryRefStars': 1686,
+                   'collectedPhotometryRefStars': 1686,
+                   'selectedAstrometryRefStars': 1686,
+                   'selectedPhotometryRefStars': 1686,
+                   'associatedAstrometryFittedStars': 1823,
+                   'associatedPhotometryFittedStars': 1823,
+                   'selectedAstrometryFittedStars': 1507,
+                   'selectedPhotometryFittedStars': 1507,
+                   'selectedAstrometryCcdImageList': 10,
+                   'selectedPhotometryCcdImageList': 10,
+                   'astrometryFinalChi2': 7263.221,
+                   'astrometryFinalNdof': 18262,
+                   'photometryFinalChi2': 35321.947,
+                   'photometryFinalNdof': 9141
+                   }
+        self._testJointcalTask(10, dist_rms_relative, dist_rms_absolute, pa1, metrics=metrics)
 
     @unittest.skipIf(data_dir is None, "testdata_jointcal not setup")
     def testJointcalTask_2_visits_no_astrometry(self):
         """Test turning off fitting astrometry."""
         pa1 = 2.64e-3
+        metrics = {'collectedPhotometryRefStars': 1686,
+                   'selectedPhotometryRefStars': 1686,
+                   'associatedPhotometryFittedStars': 1365,
+                   'selectedPhotometryFittedStars': 789,
+                   'selectedPhotometryCcdImageList': 2,
+                   'photometryFinalChi2': 2310.6280,
+                   'photometryFinalNdof': 728
+                   }
+
         self.config = lsst.jointcal.jointcal.JointcalConfig()
         self.config.doAstrometry = False
         self.jointcalStatistics.do_astrometry = False
 
         caller = inspect.stack()[0][3]  # NOTE: could be inspect.stack()[0].function in py3.5
-        result = self._runJointcalTask(2, caller)
+        result = self._runJointcalTask(2, caller, metrics=metrics)
+
         data_refs = result.resultList[0].result.dataRefs
         oldWcsList = result.resultList[0].result.oldWcsList
         rms_result = self.jointcalStatistics.compute_rms(data_refs, self.reference)
-
         if self.do_plot:
             self._plotJointcalTask(data_refs, oldWcsList, caller)
 
@@ -106,12 +145,21 @@ class JointcalTestLSSTSim(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Te
     def testJointcalTask_2_visits_no_photometry(self):
         """Test turning off fitting photometry."""
         dist_rms_relative = 9.7e-3*u.arcsecond
+        metrics = {'collectedAstrometryRefStars': 1686,
+                   'selectedAstrometryRefStars': 1686,
+                   'associatedAstrometryFittedStars': 1365,
+                   'selectedAstrometryFittedStars': 789,
+                   'selectedAstrometryCcdImageList': 2,
+                   'astrometryFinalChi2': 742.4992,
+                   'astrometryFinalNdof': 1698
+                   }
+
         self.config = lsst.jointcal.jointcal.JointcalConfig()
         self.config.doPhotometry = False
         self.jointcalStatistics.do_photometry = False
 
         caller = inspect.stack()[0][3]  # NOTE: could be inspect.stack()[0].function in py3.5
-        result = self._runJointcalTask(2, caller)
+        result = self._runJointcalTask(2, caller, metrics=metrics)
         data_refs = result.resultList[0].result.dataRefs
         oldWcsList = result.resultList[0].result.oldWcsList
         rms_result = self.jointcalStatistics.compute_rms(data_refs, self.reference)

@@ -2,6 +2,7 @@
 
 from __future__ import division, absolute_import, print_function
 
+import inspect
 import unittest
 import os
 
@@ -11,6 +12,7 @@ import lsst.afw.coord
 import lsst.afw.geom
 import lsst.utils
 import lsst.pex.exceptions
+from lsst.meas.algorithms import LoadIndexedReferenceObjectsTask
 
 import jointcalTestBase
 
@@ -24,7 +26,7 @@ except lsst.pex.exceptions.NotFoundError:
 # than the single-epoch astrometry (about 0.040").
 # This value was empirically determined from the first run of jointcal on
 # this data, and will likely vary from survey to survey.
-absolute_error = 53e-3*u.arcsecond
+dist_rms_absolute = 53e-3*u.arcsecond
 
 
 # for MemoryTestCase
@@ -49,23 +51,154 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
                         all_visits=all_visits,
                         do_plot=do_plot)
 
-    @unittest.skipIf(data_dir is None, "validation_data_hsc not setup")
+    @unittest.skipIf(data_dir is None, "testdata_jointcal not setup")
     def test_jointcalTask_2_visits(self):
         # NOTE: The relative RMS limit was empirically determined from the
         # first run of jointcal on this data. We should always do better than
         # this in the future!
-        relative_error = 17e-3*u.arcsecond
+        dist_rms_relative = 17e-3*u.arcsecond
         pa1 = 0.024
-        self._testJointcalTask(2, relative_error, absolute_error, pa1)
+        metrics = {'collectedAstrometryRefStars': 2187,
+                   'collectedPhotometryRefStars': 2187,
+                   'selectedAstrometryRefStars': 2187,
+                   'selectedPhotometryRefStars': 2187,
+                   'associatedAstrometryFittedStars': 1151,
+                   'associatedPhotometryFittedStars': 1151,
+                   'selectedAstrometryFittedStars': 770,
+                   'selectedPhotometryFittedStars': 770,
+                   'selectedAstrometryCcdImageList': 6,
+                   'selectedPhotometryCcdImageList': 6,
+                   'astrometryFinalChi2': 691.12,
+                   'astrometryFinalNdof': 1858,
+                   'photometryFinalChi2': 3753.82,
+                   'photometryFinalNdof': 502
+                   }
+        self._testJointcalTask(2, dist_rms_relative, dist_rms_absolute, pa1, metrics=metrics)
 
-    @unittest.skipIf(data_dir is None, "validation_data_hsc not setup")
+    @unittest.skipIf(data_dir is None, "testdata_jointcal not setup")
     def test_jointcalTask_11_visits(self):
         # NOTE: The relative RMS limit was empirically determined from the
         # first run of jointcal on this data. We should always do better than
         # this in the future!
-        relative_error = 17e-3*u.arcsecond
+        dist_rms_relative = 17e-3*u.arcsecond
         pa1 = 0.134
-        self._testJointcalTask(11, relative_error, absolute_error, pa1)
+        metrics = {'collectedAstrometryRefStars': 3649,
+                   'collectedPhotometryRefStars': 3649,
+                   'selectedAstrometryRefStars': 3649,
+                   'selectedPhotometryRefStars': 3649,
+                   'associatedAstrometryFittedStars': 2908,
+                   'associatedPhotometryFittedStars': 2908,
+                   'selectedAstrometryFittedStars': 2203,
+                   'selectedPhotometryFittedStars': 2203,
+                   'selectedAstrometryCcdImageList': 33,
+                   'selectedPhotometryCcdImageList': 33,
+                   'astrometryFinalChi2': 7929.656,
+                   'astrometryFinalNdof': 14262,
+                   'photometryFinalChi2': 16773556.5,
+                   'photometryFinalNdof': 6568
+                   }
+        self._testJointcalTask(11, dist_rms_relative, dist_rms_absolute, pa1, metrics=metrics)
+
+    @unittest.skipIf(data_dir is None, "testdata_jointcal not setup")
+    def testJointcalTask_2_visits_no_astrometry(self):
+        """Test turning off fitting astrometry."""
+        pa1 = 0.024
+        metrics = {'collectedPhotometryRefStars': 2187,
+                   'selectedPhotometryRefStars': 2187,
+                   'associatedPhotometryFittedStars': 1151,
+                   'selectedPhotometryFittedStars': 770,
+                   'selectedPhotometryCcdImageList': 6,
+                   'photometryFinalChi2': 3753.82,
+                   'photometryFinalNdof': 502
+                   }
+
+        self.config = lsst.jointcal.jointcal.JointcalConfig()
+        self.config.doAstrometry = False
+        self.jointcalStatistics.do_astrometry = False
+
+        caller = inspect.stack()[0][3]  # NOTE: could be inspect.stack()[0].function in py3.5
+        result = self._runJointcalTask(2, caller, metrics=metrics)
+        data_refs = result.resultList[0].result.dataRefs
+        oldWcsList = result.resultList[0].result.oldWcsList
+        rms_result = self.jointcalStatistics.compute_rms(data_refs, self.reference)
+
+        if self.do_plot:
+            self._plotJointcalTask(data_refs, oldWcsList, caller)
+
+        self.assertIsNone(rms_result.dist_relative)
+        self.assertIsNone(rms_result.dist_absolute)
+        self.assertLess(rms_result.pa1, pa1)
+
+        for data_ref in data_refs:
+            wcs = data_ref.get('wcs').getWcs()
+            self.assertIsNone(wcs)
+
+    @unittest.skipIf(data_dir is None, "testdata_jointcal not setup")
+    def testJointcalTask_2_visits_no_photometry(self):
+        """Test turning off fitting photometry."""
+        dist_rms_relative = 17e-3*u.arcsecond
+        metrics = {'collectedAstrometryRefStars': 2187,
+                   'selectedAstrometryRefStars': 2187,
+                   'associatedAstrometryFittedStars': 1151,
+                   'selectedAstrometryFittedStars': 770,
+                   'selectedAstrometryCcdImageList': 6,
+                   'astrometryFinalChi2': 691.1210,
+                   'astrometryFinalNdof': 1858,
+                   }
+
+        self.config = lsst.jointcal.jointcal.JointcalConfig()
+        self.config.doPhotometry = False
+        self.jointcalStatistics.do_photometry = False
+
+        caller = inspect.stack()[0][3]  # NOTE: could be inspect.stack()[0].function in py3.5
+        result = self._runJointcalTask(2, caller, metrics=metrics)
+        data_refs = result.resultList[0].result.dataRefs
+        oldWcsList = result.resultList[0].result.oldWcsList
+        rms_result = self.jointcalStatistics.compute_rms(data_refs, self.reference)
+
+        if self.do_plot:
+            self._plotJointcalTask(data_refs, oldWcsList, caller)
+
+        self.assertLess(rms_result.dist_relative, dist_rms_relative)
+        self.assertLess(rms_result.dist_absolute, dist_rms_absolute)
+        self.assertIsNone(rms_result.pa1)
+
+        for data_ref in data_refs:
+            calib = data_ref.get('wcs').getCalib()
+            blank_calib = lsst.afw.image.Calib()
+            self.assertEqual(calib, blank_calib)
+
+    @unittest.skipIf(data_dir is None, "testdata_jointcal not setup")
+    def test_jointcalTask_2_visits_gaia_refcat(self):
+        self.config = lsst.jointcal.jointcal.JointcalConfig()
+        self.config.astrometryRefObjLoader.retarget(LoadIndexedReferenceObjectsTask)
+
+        test_config = os.path.join(lsst.utils.getPackageDir('jointcal'), 'tests/config/hsc-config.py')
+        self.other_args.extend(['--configfile', test_config])
+        dist_rms_relative = 17e-3*u.arcsecond
+        # NOTE: PA1 is slightly different here, because the number of SDSS
+        # cross-matches within 0.1" goes down after we apply the GAIA-fit WCS.
+        pa1 = 0.02405
+        metrics = {'collectedAstrometryRefStars': 1425,
+                   'collectedPhotometryRefStars': 2187,
+                   'selectedAstrometryRefStars': 1425,
+                   'selectedPhotometryRefStars': 2187,
+                   'associatedAstrometryFittedStars': 1151,
+                   'associatedPhotometryFittedStars': 1151,
+                   'selectedAstrometryFittedStars': 645,
+                   'selectedPhotometryFittedStars': 770,
+                   'selectedAstrometryCcdImageList': 6,
+                   'selectedPhotometryCcdImageList': 6,
+                   'astrometryFinalChi2': 435.01995,
+                   'astrometryFinalNdof': 1412,
+                   'photometryFinalChi2': 3753.82,
+                   'photometryFinalNdof': 502
+                   }
+        # NOTE: The astrometry/photometry tests are computed using the a.net SDSS refcat,
+        # so the absolute astrometry RMS will be larger (because GAIA is better, so
+        # comparing against SDSS will look "worse").
+        dist_rms_absolute = 56e-3*u.arcsecond
+        self._testJointcalTask(2, dist_rms_relative, dist_rms_absolute, pa1, metrics=metrics)
 
 # TODO: the memory test cases currently fail in jointcal. Filed as DM-6626.
 # class MyMemoryTestCase(lsst.utils.tests.MemoryTestCase):
