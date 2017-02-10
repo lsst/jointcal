@@ -96,12 +96,12 @@ class JointcalTestLSSTSim(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Te
                    'selectedPhotometryRefStars': 1686,
                    'associatedAstrometryFittedStars': 1823,
                    'associatedPhotometryFittedStars': 1823,
-                   'selectedAstrometryFittedStars': 1507,
-                   'selectedPhotometryFittedStars': 1507,
+                   'selectedAstrometryFittedStars': 1506,
+                   'selectedPhotometryFittedStars': 1506,
                    'selectedAstrometryCcdImageList': 10,
                    'selectedPhotometryCcdImageList': 10,
-                   'astrometryFinalChi2': 7263.221,
-                   'astrometryFinalNdof': 18262,
+                   'astrometryFinalChi2': 7262.2075,
+                   'astrometryFinalNdof': 18260,
                    'photometryFinalChi2': 35321.947,
                    'photometryFinalNdof': 9141
                    }
