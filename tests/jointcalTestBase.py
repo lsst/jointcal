@@ -61,6 +61,9 @@ class JointcalTestBase(object):
         # Individual tests may want to tweak the config that is passed to parseAndRun().
         self.config = None
 
+        # Append `msg` arguments to assert failures.
+        self.longMessage = True
+
     def tearDown(self):
         if getattr(self, 'reference', None) is not None:
             del self.reference
