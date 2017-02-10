@@ -25,7 +25,7 @@ SimplePolyModel::SimplePolyModel(const CcdImageList &L,
 //  unsigned degree = distortionDegree;
   unsigned count = 0;
 
-  for (auto i=L.cbegin(); i!= L.end(); ++i, ++count)
+  for (auto i=L.cbegin(); i!= L.cend(); ++i, ++count)
     {
       const CcdImage &im = **i;
       if (count < NNotFit)
@@ -40,7 +40,7 @@ SimplePolyModel::SimplePolyModel(const CcdImageList &L,
 	{
 		/* first check that there are enough measurements for the
 	  requested polynomial degree */
-	  unsigned nObj = im.getCatalogForFit().size();
+	  size_t nObj = im.getCatalogForFit().size();
 	  if (nObj == 0)
 	    {
 	      std::cout << "WARNING: empty catalog from image : "
@@ -78,7 +78,7 @@ SimplePolyModel::SimplePolyModel(const CcdImageList &L,
 const Mapping* SimplePolyModel::getMapping(const CcdImage &C) const
 {
   mapType::const_iterator i = _myMap.find(&C);
-  if  (i==_myMap.end()) throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,"SimplePolyModel::GetMapping, never heard of CcdImage "+C.getName());
+  if  (i==_myMap.cend()) throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,"SimplePolyModel::GetMapping, never heard of CcdImage "+C.getName());
   return (i->second.get());
 }
 

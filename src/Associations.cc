@@ -38,15 +38,15 @@ Associations::Associations()
     _commonTangentPoint = Point(0, 0);
 }
 
-bool Associations::addImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &Ri,
-                            const PTR(lsst::afw::image::TanWcs) wcs,
-                            const PTR(lsst::afw::image::VisitInfo) visitInfo,
-                            const lsst::afw::geom::Box2I &bbox,
-                            const std::string &filter,
-                            const PTR(lsst::afw::image::Calib) calib,
-                            const int &visit,
-                            const int &ccd,
-                            const PTR(lsst::jointcal::JointcalControl) control)
+bool Associations::addImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &catalog,
+                            std::shared_ptr<lsst::afw::image::TanWcs> wcs,
+                            std::shared_ptr<lsst::afw::image::VisitInfo> visitInfo,
+                            lsst::afw::geom::Box2I const &bbox,
+                            std::string const &filter,
+                            std::shared_ptr<lsst::afw::image::Calib> calib,
+                            int visit,
+                            int ccd,
+                            std::shared_ptr<lsst::jointcal::JointcalControl> control)
 {
     // TODO: I don't like the commonTangentPoint stuff here:
     // 1. should create ccdImage first, and extract ra/dec from it
@@ -63,8 +63,7 @@ bool Associations::addImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::S
         std::cout << "setting common TangentPoint" << _commonTangentPoint << std::endl;
     }
 
-    std::shared_ptr<CcdImage> ccdImage(new CcdImage(Ri, _commonTangentPoint, wcs, visitInfo, bbox, filter, calib, visit, ccd, control->sourceFluxField));
-//  CcdImage *ccdImage = new CcdImage(Ri, _commonTangentPoint, wcs, meta, bbox, filter, calib, visit, ccd, control->sourceFluxField);
+    std::shared_ptr<CcdImage> ccdImage(new CcdImage(catalog, _commonTangentPoint, wcs, visitInfo, bbox, filter, calib, visit, ccd, control->sourceFluxField));
     ccdImageList.push_back(ccdImage);
     std::cout << " we have " << ccdImage->getWholeCatalog().size()
               << " objects in this catalog " << visit << " " << ccd << std::endl;
@@ -117,12 +116,11 @@ void Associations::associateCatalogs(const double matchCutInArcSec,
          the StarMatch to refer to fittedStarList elements. */
         FittedStarList toMatch;
 
-        for (FittedStarCIterator i = fittedStarList.begin();
-                i != fittedStarList.end(); ++i)
+        for (auto const &fittedStar: fittedStarList)
         {
-            if (ccdImageFrameCPT.InFrame(**i))
+            if (ccdImageFrameCPT.InFrame(*fittedStar))
             {
-                toMatch.push_back(*i);
+                toMatch.push_back(fittedStar);
             }
         }
 
@@ -181,7 +179,7 @@ void Associations::associateCatalogs(const double matchCutInArcSec,
 }
 
 void Associations::collectRefStars(lsst::afw::table::SortedCatalogT< lsst::afw::table::SimpleRecord > &refCat,
-                                   std::string fluxField)
+                                   std::string const &fluxField)
 {
     if (refCat.size() == 0)
     {
@@ -193,10 +191,10 @@ void Associations::collectRefStars(lsst::afw::table::SortedCatalogT< lsst::afw::
     afw::table::CoordKey coordKey = refCat.getSchema()["coord"];
     auto fluxKey = refCat.getSchema().find<double>(fluxField).key;
 
-    for (auto i = refCat.begin(); i != refCat.end(); i++)
+    for (auto const &i: refCat)
     {
-        lsst::afw::coord::Coord coord = i->get(coordKey);
-        double flux = i->get(fluxKey);
+        lsst::afw::coord::Coord coord = i.get(coordKey);
+        double flux = i.get(fluxKey);
         double mag = lsst::afw::image::abMagFromFlux(flux);
         double ra = lsst::afw::geom::radToDeg(coord.getLongitude());
         double dec = lsst::afw::geom::radToDeg(coord.getLatitude());
@@ -224,10 +222,9 @@ const lsst::afw::geom::Box2D Associations::getRaDecBBox()
     // compute the frame on the CTP that contains all input images
     Frame tangentPlaneFrame;
 
-    for (CcdImageIterator i = ccdImageList.begin(); i != ccdImageList.end(); ++i)
+    for (auto const &ccdImage: ccdImageList)
     {
-        CcdImage &ccdImage = **i;
-        Frame CTPFrame = ApplyTransfo(ccdImage.ImageFrame(), *ccdImage.Pix2CommonTangentPlane(), LargeFrame);
+        Frame CTPFrame = ApplyTransfo(ccdImage->ImageFrame(), *(ccdImage->Pix2CommonTangentPlane()), LargeFrame);
         if (tangentPlaneFrame.Area() == 0) tangentPlaneFrame = CTPFrame;
         else tangentPlaneFrame += CTPFrame;
     }
@@ -264,9 +261,8 @@ void Associations::associateRefStars(double matchCutInArcSec, const Gtransfo* gt
     }
 
     // actually associate things
-    for (StarMatchIterator i = smList->begin(); i != smList->end(); ++i)
+    for (auto const &starMatch: *smList)
     {
-        StarMatch &starMatch = *i;
         const BaseStar &bs = *starMatch.s1;
         const RefStar &rs_const = dynamic_cast<const RefStar &>(bs);
         RefStar &rs = const_cast<RefStar &>(rs_const);
@@ -289,10 +285,9 @@ void Associations::selectFittedStars()
     /* first pass : remove objects that have less than a
        certain number of measurements.
     */
-    for (CcdImageIterator i = ccdImageList.begin(); i != ccdImageList.end(); ++i)
+    for (auto const &ccdImage: ccdImageList)
     {
-        CcdImage &ccdImage = **i;
-        MeasuredStarList &catalog = ccdImage.getCatalogForFit();
+        MeasuredStarList &catalog = ccdImage->getCatalogForFit();
         for (MeasuredStarIterator mi = catalog.begin(); mi != catalog.end(); )
         {
             MeasuredStar &mstar = **mi;
@@ -336,18 +331,15 @@ void Associations::selectFittedStars()
 
 void Associations::assignMags()
 {
-    for (CcdImageIterator i = ccdImageList.begin(); i != ccdImageList.end(); ++i)
+    for (auto const &ccdImage: ccdImageList)
     {
-        CcdImage &ccdImage = **i;
-        MeasuredStarList &catalog = ccdImage.getCatalogForFit();
-        for (MeasuredStarIterator mi = catalog.begin();
-                mi != catalog.end(); ++mi)
+        MeasuredStarList &catalog = ccdImage->getCatalogForFit();
+        for (auto const &mstar: catalog)
         {
-            MeasuredStar &mstar = **mi;
-            const FittedStar *fstar = mstar.GetFittedStar();
+            const FittedStar *fstar = mstar->GetFittedStar();
             if (!fstar) continue;
             FittedStar *f = const_cast<FittedStar *>(fstar);
-            f->AddMagMeasurement(mstar.Mag(), mstar.MagWeight());
+            f->AddMagMeasurement(mstar->Mag(), mstar->MagWeight());
         }
     }
 }

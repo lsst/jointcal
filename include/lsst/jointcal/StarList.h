@@ -84,8 +84,8 @@ public:
 
   //! invokes dump(stream) for all Stars in the std::list.
  void dump(std::ostream &stream = std::cout ) const {
-    for (auto p = this->begin();
-	 p !=this->end(); ++p) (*p)->dump(stream);}
+    for (auto &p: *this)
+        p->dump(stream);}
 
   //!a model routine to sort the std::list
   /*! see DecreasingFlux() to see what it is, if you
@@ -114,7 +114,7 @@ public:
   /*! could be extended to other type of transformations. */
 
   template<class Operator> void ApplyTransfo(const Operator &Op)
-  {for (auto p = this->begin(); p != this->end(); ++p) Op.TransformStar(*(*p));}
+  {for (auto &p: *this) Op.TransformStar(*(p));}
 
 
 protected :

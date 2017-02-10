@@ -20,45 +20,46 @@ namespace jointcal {
 
 static double sq(double x) { return x*x;}
 
-void CcdImage::LoadCatalog(const lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &Cat, const std::string &fluxField)
+void CcdImage::LoadCatalog(const lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &catalog,
+                           const std::string &fluxField)
 {
-    auto xKey = Cat.getSchema().find<double>("slot_Centroid_x").key;
-    auto yKey = Cat.getSchema().find<double>("slot_Centroid_y").key;
-    auto xsKey = Cat.getSchema().find<float>("slot_Centroid_xSigma").key;
-    auto ysKey = Cat.getSchema().find<float>("slot_Centroid_ySigma").key;
-    auto mxxKey = Cat.getSchema().find<double>("slot_Shape_xx").key;
-    auto myyKey = Cat.getSchema().find<double>("slot_Shape_yy").key;
-    auto mxyKey = Cat.getSchema().find<double>("slot_Shape_xy").key;
-    auto fluxKey = Cat.getSchema().find<double>(fluxField + "_flux").key;
-    auto efluxKey = Cat.getSchema().find<double>(fluxField  + "_fluxSigma").key;
+    auto xKey = catalog.getSchema().find<double>("slot_Centroid_x").key;
+    auto yKey = catalog.getSchema().find<double>("slot_Centroid_y").key;
+    auto xsKey = catalog.getSchema().find<float>("slot_Centroid_xSigma").key;
+    auto ysKey = catalog.getSchema().find<float>("slot_Centroid_ySigma").key;
+    auto mxxKey = catalog.getSchema().find<double>("slot_Shape_xx").key;
+    auto myyKey = catalog.getSchema().find<double>("slot_Shape_yy").key;
+    auto mxyKey = catalog.getSchema().find<double>("slot_Shape_xy").key;
+    auto fluxKey = catalog.getSchema().find<double>(fluxField + "_flux").key;
+    auto efluxKey = catalog.getSchema().find<double>(fluxField  + "_fluxSigma").key;
 
-    wholeCatalog.clear();
-    for (auto i = Cat.begin(); i != Cat.end(); ++i)
+    _wholeCatalog.clear();
+    for (auto const &i: catalog)
     {
         MeasuredStar *ms = new MeasuredStar();
-        ms->x = i->get(xKey);
-        ms->y = i->get(yKey);
-        ms->vx = sq(i->get(xsKey));
-        ms->vy = sq(i->get(ysKey));
+        ms->x = i.get(xKey);
+        ms->y = i.get(yKey);
+        ms->vx = sq(i.get(xsKey));
+        ms->vy = sq(i.get(ysKey));
         /* the xy covariance is not provided in the input catalog: we
         cook it up from the x and y position variance and the shape
          measurements: */
-        double mxx = i->get(mxxKey);
-        double myy = i->get(myyKey);
-        double mxy = i->get(mxyKey);
+        double mxx = i.get(mxxKey);
+        double myy = i.get(myyKey);
+        double mxy = i.get(mxyKey);
         ms->vxy = mxy*(ms->vx + ms->vy)/(mxx + myy);
         if (ms->vx < 0 || ms->vy < 0 || (ms->vxy*ms->vxy) > (ms->vx*ms->vy)) {
             std::cout << "Bad source detected in LoadCatalog : " << ms->vx << " " << ms->vy << " " <<
                       ms->vxy*ms->vxy << " " << ms->vx*ms->vy << std::endl;
             continue;
         }
-        ms->flux = i->get(fluxKey);
-        ms->eflux = i->get(efluxKey);
+        ms->flux = i.get(fluxKey);
+        ms->eflux = i.get(efluxKey);
         ms->mag = _calib->getMagnitude(ms->flux);
         ms->setCcdImage(this);
-        wholeCatalog.push_back(ms);
+        _wholeCatalog.push_back(ms);
     }
-    wholeCatalog.setCcdImage(this);
+    _wholeCatalog.setCcdImage(this);
 }
 
 CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &Ri,

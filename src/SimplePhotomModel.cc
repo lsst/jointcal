@@ -10,14 +10,13 @@ namespace jointcal {
 SimplePhotomModel::SimplePhotomModel(const CcdImageList &ccdImageList)
 {
   unsigned refVisit = -1;
-  for (auto i = ccdImageList.begin(); i !=ccdImageList.end(); ++i)
+  for (auto const &ccdImage: ccdImageList)
     {
-      const CcdImage &im = **i;
-      unsigned visit = im.getVisit();
+      unsigned visit = ccdImage->getVisit();
       if (refVisit == -1) refVisit = visit;
       if (visit==refVisit)
-	  _myMap[&im].fixed=true;
-      else _myMap[&im].fixed=false;
+	  _myMap[ccdImage.get()].fixed=true;
+      else _myMap[ccdImage.get()].fixed=false;
     }
   std::cout << "INFO: SimplePhotomModel : using exposure " << refVisit << " as photometric reference " << std::endl;
 }
@@ -25,9 +24,9 @@ SimplePhotomModel::SimplePhotomModel(const CcdImageList &ccdImageList)
 unsigned SimplePhotomModel::assignIndices(const std::string &whatToFit,  unsigned firstIndex)
 {
   unsigned ipar = firstIndex;
-  for (auto i = _myMap.begin(); i!= _myMap.end(); ++i)
+  for (auto const &i: _myMap)
     {
-      PhotomStuff& pf=i->second;
+      PhotomStuff pf=i.second;
       if (pf.fixed) continue;
       pf.index=ipar;
       ipar++;
@@ -37,9 +36,9 @@ unsigned SimplePhotomModel::assignIndices(const std::string &whatToFit,  unsigne
 
  void SimplePhotomModel::offsetParams(const Eigen::VectorXd &delta)
  {
-   for (auto i = _myMap.begin(); i!= _myMap.end(); ++i)
+   for (auto const &i: _myMap)
      {
-       PhotomStuff& pf=i->second;
+       PhotomStuff pf=i.second;
        if (!pf.fixed) pf.factor += delta[pf.index];
      }
  }

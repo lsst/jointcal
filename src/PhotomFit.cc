@@ -34,9 +34,9 @@ PhotomFit::PhotomFit(Associations &associations, PhotomModel *photomModel, doubl
 void PhotomFit::LSDerivatives(TripletList &tList, Eigen::VectorXd &rhs) const
 {
   auto L = _associations.getCcdImageList();
-  for (auto im=L.cbegin(); im!=L.end() ; ++im)
+  for (auto const &im: L)
     {
-      LSDerivatives(**im, tList, rhs);
+      LSDerivatives(*im, tList, rhs);
     }
 }
 
@@ -62,9 +62,9 @@ void PhotomFit::LSDerivatives(const CcdImage &ccdImage,
   unsigned kTriplets = tList.NextFreeIndex();
   const MeasuredStarList &catalog = (measuredStarList) ? *measuredStarList : ccdImage.getCatalogForFit();
 
-  for (auto i = catalog.begin(); i!= catalog.end(); ++i)
+  for (auto const &i: catalog)
     {
-      const MeasuredStar& measuredStar = **i;
+      const MeasuredStar& measuredStar = *i;
       if (!measuredStar.IsValid()) continue;
       // tweak the measurement errors
       double sigma=measuredStar.eflux;
@@ -111,17 +111,17 @@ automagically set by declaring them as "auto" */
 template <class ListType, class Accum>
 void PhotomFit::accumulateStat(ListType &listType, Accum &accum) const
 {
-  for (auto im=listType.begin(); im!=listType.end() ; ++im)
+  for (auto &im: listType)
     {
   /**********************************************************************/
   /**  Changes in this routine should be reflected into LSDerivatives  */
   /**********************************************************************/
-      auto &ccdIMage = **im;
+      auto &ccdIMage = *im;
       auto &catalog = ccdIMage.getCatalogForFit();
 
-      for (auto i = catalog.begin(); i!= catalog.end(); ++i)
+      for (auto const &i: catalog)
 	{
-	  auto &measuredStar = **i;
+	  auto &measuredStar = *i;
 	  if (!measuredStar.IsValid()) continue;
 	  // tweak the measurement errors
 	  double sigma=measuredStar.eflux;
@@ -153,9 +153,9 @@ void PhotomFit::outliersContributions(MeasuredStarList &outliers,
                                       TripletList &tList,
                                       Eigen::VectorXd &grad)
 {
-  for (auto i= outliers.begin(); i!= outliers.end(); ++i)
+  for (auto &i: outliers)
     {
-      MeasuredStar &out = **i;
+      MeasuredStar &out = *i;
       MeasuredStarList tmp;
       tmp.push_back(&out);
       const CcdImage &ccdImage = *(out.ccdImage);
@@ -229,8 +229,11 @@ void PhotomFit::findOutliers(double nSigCut, MeasuredStarList &outliers) const
     0.5*(chi2s[nval/2-1].chi2 + chi2s[nval/2].chi2);
   // some more stats. should go into the class if recycled anywhere else
   double sum=0; double sum2 = 0;
-  for (auto i=chi2s.begin(); i!=chi2s.end(); ++i)
-    {sum+= i->chi2;sum2+= sqr(i->chi2);}
+  for (auto const &i: chi2s)
+  {
+    sum += i.chi2;
+    sum2 += sqr(i.chi2);
+  }
   double average = sum/nval;
   double sigma = sqrt(sum2/nval - sqr(average));
   cout << "INFO : findOutliers chi2 stat: mean/median/sigma "
@@ -253,13 +256,13 @@ void PhotomFit::findOutliers(double nSigCut, MeasuredStarList &outliers) const
       bool drop_it = true;
       /* find out if a stronger outlier constraining one of the parameters
 	 this one contrains was already discarded. If yes, we keep this one */
-      for (auto i=indices.cbegin(); i!= indices.end(); ++i)
-	if (affectedParams(*i) !=0) drop_it = false;
+      for (auto const &i: indices)
+	if (affectedParams(i) !=0) drop_it = false;
 
       if (drop_it)
 	{
-	  for (auto i=indices.cbegin(); i!= indices.end(); ++i)
-	    affectedParams(*i)++;
+	  for (auto const &i: indices)
+	    affectedParams(i)++;
 	  outliers.push_back(i->measuredStar);
 	}
     } // end loop on measurements
@@ -281,9 +284,9 @@ void PhotomFit::assignIndices(const std::string &whatToFit)
   if (_fittingFluxes)
     {
       FittedStarList &fsl = _associations.fittedStarList;
-      for (FittedStarIterator i= fsl.begin(); i != fsl.end(); ++i)
+      for (auto &i: fsl)
 	{
-	  FittedStar &fs = **i;
+	  FittedStar &fs = *i;
 	  // the parameter layout here is used also
 	  // - when filling the derivatives
 	  // - when updating (OffsetParams())
@@ -305,9 +308,9 @@ void PhotomFit::offsetParams(const Eigen::VectorXd& delta)
   if (_fittingFluxes)
     {
       FittedStarList &fsl = _associations.fittedStarList;
-      for (FittedStarIterator i= fsl.begin(); i != fsl.end(); ++i)
+      for (auto &i: fsl)
 	{
-	  FittedStar &fs = **i;
+	  FittedStar &fs = *i;
 	  // the parameter layout here is used also
 	  // - when filling the derivatives
 	  // - when assigning indices (assignIndices())
@@ -384,13 +387,13 @@ void PhotomFit::makeResTuple(const std::string &tupleName) const
     	<< "#visit: visit id" << endl
 	<< "#end" << endl;
   const CcdImageList &L=_associations.getCcdImageList();
-  for (auto i=L.cbegin(); i!=L.end() ; ++i)
+  for (auto const &i: L)
     {
-      const CcdImage &im = **i;
+      const CcdImage &im = *i;
       const MeasuredStarList &cat = im.getCatalogForFit();
-      for (auto is=cat.cbegin(); is!=cat.end(); ++is)
+      for (auto const &is: cat)
 	{
-	  const MeasuredStar &ms = **is;
+	  const MeasuredStar &ms = *is;
 	  if (!ms.IsValid()) continue;
 	  double sigma = ms.eflux;
 #ifdef FUTURE

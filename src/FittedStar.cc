@@ -25,6 +25,7 @@ FittedStar::FittedStar(const MeasuredStar &M) :
 void FittedStar::setRefStar(const RefStar *refStar)
 {
   if ((_refStar != nullptr) && (refStar != nullptr)) // TODO: should we raise an Exception in this case?
+    // TODO: This message should be log.warn()
     std::cerr << " FittedStar : " << *this
 	      << " is already matched to another RefStar. Clean up your lists" << std::endl
           << "old: " << *_refStar << std::endl
@@ -44,32 +45,6 @@ void FittedStar::AddMagMeasurement(double MagValue,
 
 
 /************* FittedStarList ************************/
-
-
-
-#ifdef DO_WE_NEED_IT
-/* I am not sure that reading using the DicStar mechanism is a good idea.
-   If we need persistence of FittedStarLists, we'll devise the I/O's.
-   Pierre Astier (July 15)
-*/
-#include "dicstar.h"
-//! read a list from a previous run
-FittedStarList::FittedStarList(const std::string &FileName)
-{
-  DicStarList dl(FileName);
-  for (DicStarIterator i = dl.begin(); i != dl.end(); ++i)
-    {
-      DicStar &ds = **i;
-      // The file contains in principle a mag, and BaseStar expects
-      FittedStar *fs = new FittedStar(ds);
-      fs->SetMag(ds.flux);
-      push_back(fs);
-    }
-}
-
-#endif /* DO_WE_NEED_IT */
-
-
 
 
 BaseStarList& Fitted2Base(FittedStarList &This)
@@ -99,12 +74,11 @@ void FittedStarList::WriteTuple(const std::string &FileName,
 			  const bool OnlyGoodStars)
 {
   FittedStarTuple tuple(FileName);
-  for (FittedStarCIterator i = begin(); i != end(); ++i)
+  for (auto const &fittedStar: *this)
     {
-      const FittedStar &f = **i;
-      if (OnlyGoodStars && f.flux < 0) continue;
-      Point raDec = T.apply(f);
-      tuple.AddEntry(f, raDec);
+      if (OnlyGoodStars && fittedStar->flux < 0) continue;
+      Point raDec = T.apply(*fittedStar);
+      tuple.AddEntry(*fittedStar, raDec);
     }
 }
 

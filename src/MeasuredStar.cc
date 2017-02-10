@@ -128,10 +128,10 @@ void MeasuredStar::writen(std::ostream& s) const
 
 /******* MeasuredStarList *********/
 
-void  MeasuredStarList::setCcdImage(const CcdImage *C)
+void  MeasuredStarList::setCcdImage(const CcdImage *ccdImage)
 {
-  for (MeasuredStarIterator i= begin(); i != end(); ++i)
-      (*i)->setCcdImage(C);
+  for (auto &i: *this)
+      i->setCcdImage(ccdImage);
 }
 
 template class StarList<MeasuredStar>; // to force instanciation

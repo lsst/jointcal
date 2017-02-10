@@ -56,22 +56,22 @@ public:
     Associations();
 
     //! Sets a tangent point (reasonably centered for the input image set).
-    void setCommonTangentPoint(const Point &commonTangentPoint)
+    void setCommonTangentPoint(Point const &commonTangentPoint)
     { _commonTangentPoint = commonTangentPoint;};
 
     //! can be used to project sidereal coordinates related to the image set on a plane.
     Point getCommonTangentPoint() const { return _commonTangentPoint;}
 
     //! same as above
-    bool addImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &Ri,
-                  const PTR(lsst::afw::image::TanWcs) wcs,
-                  const PTR(lsst::afw::image::VisitInfo) visitInfo,
-                  const lsst::afw::geom::Box2I &bbox,
-                  const std::string &filter,
-                  const PTR(lsst::afw::image::Calib) calib,
-                  const int &visit,
-                  const int &ccd,
-                  const PTR(lsst::jointcal::JointcalControl) control);
+    bool addImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &catalog,
+                  std::shared_ptr<lsst::afw::image::TanWcs> wcs,
+                  std::shared_ptr<lsst::afw::image::VisitInfo> visitInfo,
+                  lsst::afw::geom::Box2I const &bbox,
+                  std::string const &filter,
+                  std::shared_ptr<lsst::afw::image::Calib> calib,
+                  int visit,
+                  int ccd,
+                  std::shared_ptr<lsst::jointcal::JointcalControl> control);
 
     //! incrementaly builds a merged catalog of all image catalogs
     void associateCatalogs(const double matchCutInArcsec = 0,
@@ -80,7 +80,7 @@ public:
 
     //! Collect stars from an external reference catalog
     void collectRefStars(lsst::afw::table::SortedCatalogT< lsst::afw::table::SimpleRecord > &Ref,
-                         std::string fluxField);
+                         std::string const &fluxField);
 
     //! Sends back the fitted stars coordinates on the sky FittedStarsList::inTangentPlaneCoordinates keeps track of that.
     void deprojectFittedStars();
@@ -89,8 +89,8 @@ public:
     //! Set the color field of FittedStar 's from a colored catalog.
     /* If Color is "g-i", then the color is assigned from columns "g" and "i" of the colored catalog. */
 #ifdef TODO
-    void setFittedStarColors(std::string DicStarListName,
-                             std::string Color,
+    void setFittedStarColors(std::string const &DicStarListName,
+                             std::string const &Color,
                              double MatchCutArcSec);
 #endif
 

@@ -120,16 +120,15 @@ template<class Star> int StarList<Star>::write(std::ostream & pr) const
     pr << '@' << globs[k] << std::endl;
 #endif
 
-  // cannot use front() to detect emptyness
-  if (this->begin() == this->end()) // empty std::list, and faster than (size() == 0)
+  if (this->empty())
     {
       Star dummy;
       dummy.WriteHeader(pr);
     }
   else this->front()->WriteHeader(pr);
-  for (auto it= this->begin(); it!=this->end() ; it++ )
+  for (auto &it: *this)
     {
-      (*it)->write(pr);
+      (it)->write(pr);
     }
   pr.flags(old_flags);
   pr << std::setprecision(oldprec);
@@ -151,14 +150,6 @@ for (auto s= this->begin(); s!= this->end() && (count < NHead); ++s, count++)
   }
 }
 
-#if 0
-template<class Star>
-bool DecreasingFlux(const Star *S1, const Star *S2)
-{
-  return (S1->flux > S2->flux);
-}
-#endif
-
 template<class Star>void StarList<Star>::FluxSort()
 {
   typedef StarList<Star>::Element E;
@@ -176,27 +167,13 @@ template<class Star>void StarList<Star>::CutTail(const int NKeep)
 
 template<class Star>void StarList<Star>::ExtractInFrame(StarList<Star> &Out, const Frame &aFrame) const
 {
-  for (auto s= this->begin(); s!= this->end(); ++s)
+  for (auto const &star: *this)
     {
-      auto &st  = *s;
-      if (aFrame.InFrame(*st))
+      if (aFrame.InFrame(*star))
 	{
-	  Star *copy = new Star(*st);
+	  Star *copy = new Star(*star);
 	  Out.push_back(copy);
 	}
-    }
-}
-
-template<class Star>void StarList<Star>::CutEdges(const Frame &aFrame, float mindist)
-{
-  for (auto si= this->begin(); si!= this->end();)
-    {
-      if (aFrame.MinDistToEdges(**si) < mindist)
-	{
-	  si = this->erase(si);
-	}
-      else
-	si++;
     }
 }
 
@@ -204,8 +181,8 @@ template<class Star>void StarList<Star>::CopyTo(StarList<Star> &Copy) const
 {
   Copy.ClearList();
   //  Copy.GlobVal() = this->GlobVal();
-  for (auto si = this->begin(); si != this->end(); ++si)
-    Copy.push_back(new Star(*(*si)));
+  for (auto const &si: *this)
+    Copy.push_back(new Star(*si));
 }
 
 

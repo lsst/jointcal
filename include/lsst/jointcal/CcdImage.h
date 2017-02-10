@@ -33,8 +33,8 @@ private:
 
     Frame imageFrame; // in pixels
 
-    MeasuredStarList wholeCatalog; // the catalog of measured objets
-    MeasuredStarList catalogForFit;
+    MeasuredStarList _wholeCatalog; // the catalog of measured objets
+    MeasuredStarList _catalogForFit;
 
     CountedRef<BaseTanWcs> readWcs; // i.e. from pix to sky
     CountedRef<Gtransfo> inverseReadWcs; // i.e. from sky to pix
@@ -86,7 +86,7 @@ public:
      *
      * @return     The whole catalog.
      */
-    const MeasuredStarList &getWholeCatalog() const { return wholeCatalog;}
+    const MeasuredStarList &getWholeCatalog() const { return _wholeCatalog;}
 
     //@{
     /**
@@ -94,8 +94,8 @@ public:
      *
      * @return     The catalog for fitting.
      */
-    const MeasuredStarList & getCatalogForFit() const { return catalogForFit;}
-    MeasuredStarList & getCatalogForFit()  { return catalogForFit;}
+    const MeasuredStarList & getCatalogForFit() const { return _catalogForFit;}
+    MeasuredStarList & getCatalogForFit()  { return _catalogForFit;}
     //@}
 
     //!
@@ -188,8 +188,8 @@ public:
     template<class Accept> CcdImageList SubList(const Accept &OP) const
     {
         CcdImageList out;
-        for (const_iterator i = begin(); i != end() ; ++i)
-            if (OP(**i)) out.push_back(*i);
+        for (auto const &i: *this)
+            if (OP(*i)) out.push_back(i);
         return out;
     }
 
@@ -198,13 +198,9 @@ public:
      */
     int sizeValidForFit() const
     {
-        int size = 0;
-        for(auto const &item: *this)
-        {
-            if (item->getCatalogForFit().size() > 0)
-                size++;
-        }
-        return size;
+        return std::count_if(this->begin(), this->end(),
+                             [](std::shared_ptr<CcdImage> const &item)
+                             {return item->getCatalogForFit().size() > 0;});
     }
 };
 

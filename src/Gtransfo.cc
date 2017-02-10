@@ -1301,8 +1301,8 @@ GtransfoPoly *InversePolyTransfo(const Gtransfo &Direct, const Frame &F, const d
       poly->fit(sm);
       // compute the chi2 ignoring errors:
       double chi2 = 0;
-      for (auto i=sm.cbegin(); i!= sm.end(); ++i)
-	chi2 +=  i->point2.Dist2(poly->apply((i->point1)));
+      for (auto const &i: sm)
+        chi2 +=  i.point2.Dist2(poly->apply((i.point1)));
       if (chi2/npairs< Prec*Prec) break;
     }
   if (degree>maxdeg)
@@ -1424,10 +1424,10 @@ double  GtransfoLinShift::fit(const StarMatchList &List)
   Eigen::VectorXd B(2);   B.setZero();
   Eigen::MatrixXd A(2,2);   A.setZero();
 
-  for (auto it = List.begin(); it != List.end(); it++)
+  for (auto const &it: List)
     {
-      const FatPoint &point1 = it->point1;
-      const FatPoint &point2 = it->point2;
+      const FatPoint &point1 = it.point1;
+      const FatPoint &point2 = it.point2;
       double deltax = point2.x - point1.x;
       double deltay = point2.y - point1.y;
       double vxx = point1.vx+point2.vx;
