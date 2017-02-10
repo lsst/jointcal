@@ -34,6 +34,8 @@ public:
     RefStarList refStarList; // e.g. GAIA or SDSS reference stars
     FittedStarList fittedStarList; // stars that are going to be fitted
 
+    Point _commonTangentPoint;
+public:
     // TODO: NOTE: these only exist because those lists can't be swig'd because
     // swig doesn't like boost::intrusive_ptr (which the lists contain).
     // Once DM-4043 is solved, delete these.
@@ -42,12 +44,6 @@ public:
     size_t fittedStarListSize()
     { return fittedStarList.size(); }
 
-    // fit cuts and stuff:
-    Point _commonTangentPoint;
-
-    void assignMags();
-
-public:
 
     /**
      * Source selection is performed in python, so Associations' constructor
@@ -55,15 +51,30 @@ public:
      */
     Associations();
 
-    //! Sets a tangent point (reasonably centered for the input image set).
-    void setCommonTangentPoint(Point const &commonTangentPoint)
-    { _commonTangentPoint = commonTangentPoint;};
+    /**
+     * @brief      Sets a shared tangent point for all ccdImages.
+     *
+     * @param      commonTangentPoint  The common tangent point of all input images (decimal degrees).
+     */
+    void setCommonTangentPoint(lsst::afw::geom::Point2D const &commonTangentPoint);
 
     //! can be used to project sidereal coordinates related to the image set on a plane.
     Point getCommonTangentPoint() const { return _commonTangentPoint;}
 
-    //! same as above
-    bool addImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &catalog,
+    /**
+     * @brief      Create a ccdImage from an exposure catalog and metadata, and add it to the list.
+     *
+     * @param      catalog    The extracted source catalog, selected for good astrometric sources.
+     * @param[in]  wcs        The exposure's original wcs
+     * @param[in]  visitInfo  The exposure's visitInfo object
+     * @param      bbox       The bounding box of the exposure
+     * @param      filter     The exposure's filter
+     * @param[in]  calib      The exposure's photometric calibration
+     * @param[in]  visit      The visit identifier
+     * @param[in]  ccd        The ccd identifier
+     * @param[in]  control    The JointcalControl object
+     */
+    void addImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &catalog,
                   std::shared_ptr<lsst::afw::image::TanWcs> wcs,
                   std::shared_ptr<lsst::afw::image::VisitInfo> visitInfo,
                   lsst::afw::geom::Box2I const &bbox,
@@ -109,6 +120,7 @@ public:
 private:
     void associateRefStars(double matchCutInArcsec, const Gtransfo* gtransfo);
 
+    void assignMags();
 };
 
 #endif /* ASSOCIATIONS__H */

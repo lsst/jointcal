@@ -62,10 +62,10 @@ class JointcalTestDECAM(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Test
         relative_error = 32e-3*u.arcsecond
         pa1 = 0.0383
         # NOTE: decam fits are currently not converging; the chi2 jumps around, so skip that test.
-        metrics = {'collectedAstrometryRefStars': 8195,
-                   'collectedPhotometryRefStars': 8195,
-                   'selectedAstrometryRefStars': 8195,
-                   'selectedPhotometryRefStars': 8195,
+        metrics = {'collectedAstrometryRefStars': 8194,
+                   'collectedPhotometryRefStars': 8194,
+                   'selectedAstrometryRefStars': 8194,
+                   'selectedPhotometryRefStars': 8194,
                    'associatedAstrometryFittedStars': 8241,
                    'associatedPhotometryFittedStars': 8241,
                    'selectedAstrometryFittedStars': 2261,

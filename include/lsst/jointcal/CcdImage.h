@@ -9,13 +9,12 @@
 #include "lsst/afw/image/TanWcs.h"
 #include "lsst/afw/image/Calib.h"
 #include "lsst/afw/image/VisitInfo.h"
+#include "lsst/afw/coord/Coord.h"
 #include "lsst/daf/base/PropertySet.h"
 #include "lsst/afw/geom/Box.h"
 #include "lsst/jointcal/MeasuredStar.h"
 #include "lsst/jointcal/Gtransfo.h"
 #include "lsst/jointcal/Frame.h"
-//#include "lsst/jointcal/Jointcal.h"
-
 
 namespace lsst {
 namespace jointcal {
@@ -51,6 +50,7 @@ private:
     CcdIdType _ccdId;
     VisitIdType _visit;
 
+    lsst::afw::coord::IcrsCoord boresightRaDec;
     double airMass; // airmass value.
     double fluxCoeff; // coefficient to convert ADUs to ADUs/sec at airmass 1
     double mjd; // modified julian date
@@ -61,14 +61,13 @@ private:
 
     std::string _filter;
 
-    Point  commonTangentPoint;
+    Point  _commonTangentPoint;
 
     void LoadCatalog(const lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &Cat, const std::string &fluxField);
 
 public:
 
     CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &Ri,
-             const Point &CommonTangentPoint,
              const PTR(lsst::afw::image::TanWcs) wcs,
              const PTR(lsst::afw::image::VisitInfo) visitInfo,
              const lsst::afw::geom::Box2I &bbox,
@@ -97,6 +96,20 @@ public:
     const MeasuredStarList & getCatalogForFit() const { return _catalogForFit;}
     MeasuredStarList & getCatalogForFit()  { return _catalogForFit;}
     //@}
+
+    /**
+     * @brief      Sets the common tangent point and computes necessary transforms.
+     *
+     * @param[in]  commonTangentPoint  The common tangent point of all ccdImages (decimal degrees).
+     */
+    void setCommonTangentPoint(const Point &commonTangentPoint);
+
+    /**
+     * @brief      Gets the common tangent point, shared between all ccdImages.
+     *
+     * @return     The common tangent point of all ccdImages (decimal degrees).
+     */
+    Point const& getCommonTangentPoint() const { return _commonTangentPoint; }
 
     //!
     const Gtransfo* Pix2CommonTangentPlane() const
@@ -136,6 +149,11 @@ public:
     //!Return the exposure's photometric calibration
     PTR(lsst::afw::image::Calib) getCalib() { return _calib; }
 
+    /**
+     * @brief      Gets the boresight RA/Dec.
+     */
+    lsst::afw::coord::IcrsCoord getBoresightRaDec() { return boresightRaDec; }
+
     //!
     double HourAngle() const { return hourAngle; }
 
@@ -165,9 +183,6 @@ public:
 
     //! Frame in pixels
     const Frame& ImageFrame() const { return imageFrame;}
-
-    //! Common Tangent Point
-    Point const&       CommonTangentPoint() const { return commonTangentPoint; }
 
 private:
     CcdImage(const CcdImage &); // forbid copies

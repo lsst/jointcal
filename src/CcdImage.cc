@@ -63,7 +63,6 @@ void CcdImage::LoadCatalog(const lsst::afw::table::SortedCatalogT<lsst::afw::tab
 }
 
 CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &Ri,
-                   const Point &CommonTangentPoint,
                    const PTR(lsst::afw::image::TanWcs) wcs,
                    const PTR(lsst::afw::image::VisitInfo) visitInfo,
                    const lsst::afw::geom::Box2I &bbox,
@@ -73,8 +72,7 @@ CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceReco
                    const int &ccdId,
                    const std::string &fluxField ) :
 
-    _filter(filter), _visit(visit), _ccdId(ccdId),
-    commonTangentPoint(CommonTangentPoint), _calib(calib)
+    _filter(filter), _visit(visit), _ccdId(ccdId), _calib(calib)
 
 {
     LoadCatalog(Ri, fluxField);
@@ -84,45 +82,18 @@ CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceReco
     imageFrame = Frame(lowerLeft, upperRight);
 
     readWcs = new jointcal::TanSipPix2RaDec(jointcal::ConvertTanWcs(wcs));
-
-    // use some other variable in case we later have to actually convert the
-    // read wcs:
-    const BaseTanWcs* tanWcs = readWcs.get();
-
     inverseReadWcs = readWcs->InverseTransfo(0.01, imageFrame);
 
     std::stringstream out;
     out << visit << "_" << ccdId;
     name = out.str();
 
-    /* we don't assume here that we know the internals of TanPix2RaDec:
-       to construct pix->TP, we do pix->sky->TP, although pix->sky
-       actually goes through TP */
-
-    GtransfoLin identity;
-    TanRaDec2Pix raDec2TP(identity, tanWcs->TangentPoint());
-    pix2TP = GtransfoCompose(&raDec2TP, tanWcs);
-    TanPix2RaDec CTP2RaDec(identity, CommonTangentPoint);
-    CTP2TP = GtransfoCompose(&raDec2TP, &CTP2RaDec);
-
-    // jump from one TP to an other:
-    TanRaDec2Pix raDec2CTP(identity, CommonTangentPoint);
-    //  TanPix2RaDec TP2RaDec(identity, tanWcs->TangentPoint());
-    //  TP2CTP = GtransfoCompose(&raDec2CTP, &TP2RaDec);
-    TanPix2RaDec TP2RaDec(identity, tanWcs->TangentPoint());
-    TP2CTP = GtransfoCompose(&raDec2CTP, &TP2RaDec);
-    sky2TP = new TanRaDec2Pix(identity, tanWcs->TangentPoint());
-
-    // this one is needed for matches :
-    pix2CommonTangentPlane = GtransfoCompose(&raDec2CTP, tanWcs);
-
-    double latitude = visitInfo->getObservatory().getLatitude();
-    double lst_obs = visitInfo->getEra();
-    double ra = visitInfo->getBoresightRaDec().getRa();
-    double dec = visitInfo->getBoresightRaDec().getDec();
-    double hourAngle = visitInfo->getBoresightHourAngle();
+    boresightRaDec = visitInfo->getBoresightRaDec();
     airMass = visitInfo->getBoresightAirmass();
     mjd = visitInfo->getDate().get(lsst::daf::base::DateTime::MJD);
+    double latitude = visitInfo->getObservatory().getLatitude();
+    double lst_obs = visitInfo->getEra();
+    double hourAngle = visitInfo->getBoresightHourAngle();
 
     // lsstSim doesn't manage ERA (and thus Hour Angle) properly, so it's going to be NaN.
     // Because we need the refraction vector later, go with 0 HA to prevent crashes on that NaN.
@@ -139,8 +110,35 @@ CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceReco
         tgz = sinz/cosz;
         sineta = cos(latitude)*sin(hourAngle)/sinz;
         coseta = sqrt(1 - sineta*sineta);
-        if (dec > latitude) coseta = -coseta;
+        if (boresightRaDec.getDec() > latitude) coseta = -coseta;
     }
+}
+
+void CcdImage::setCommonTangentPoint(const Point &commonTangentPoint)
+{
+    _commonTangentPoint = commonTangentPoint;
+
+    // use some other variable in case we later have to actually convert the
+    // as-read wcs:
+    const BaseTanWcs* tanWcs = readWcs.get();
+
+    /* we don't assume here that we know the internals of TanPix2RaDec:
+       to construct pix->TP, we do pix->sky->TP, although pix->sky
+       actually goes through TP */
+    GtransfoLin identity;
+    TanRaDec2Pix raDec2TP(identity, tanWcs->TangentPoint());
+    pix2TP = GtransfoCompose(&raDec2TP, tanWcs);
+    TanPix2RaDec CTP2RaDec(identity, commonTangentPoint);
+    CTP2TP = GtransfoCompose(&raDec2TP, &CTP2RaDec);
+
+    // jump from one TP to an other:
+    TanRaDec2Pix raDec2CTP(identity, commonTangentPoint);
+    TanPix2RaDec TP2RaDec(identity, tanWcs->TangentPoint());
+    TP2CTP = GtransfoCompose(&raDec2CTP, &TP2RaDec);
+    sky2TP = new TanRaDec2Pix(identity, tanWcs->TangentPoint());
+
+    // this one is needed for matches :
+    pix2CommonTangentPlane = GtransfoCompose(&raDec2CTP, tanWcs);
 }
 
 }

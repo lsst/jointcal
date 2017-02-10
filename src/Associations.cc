@@ -38,7 +38,7 @@ Associations::Associations()
     _commonTangentPoint = Point(0, 0);
 }
 
-bool Associations::addImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &catalog,
+void Associations::addImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &catalog,
                             std::shared_ptr<lsst::afw::image::TanWcs> wcs,
                             std::shared_ptr<lsst::afw::image::VisitInfo> visitInfo,
                             lsst::afw::geom::Box2I const &bbox,
@@ -48,26 +48,17 @@ bool Associations::addImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::S
                             int ccd,
                             std::shared_ptr<lsst::jointcal::JointcalControl> control)
 {
-    // TODO: I don't like the commonTangentPoint stuff here:
-    // 1. should create ccdImage first, and extract ra/dec from it
-    // 2. why take the common point from the first image only? Shouldn't we update it as new images come in?
-
-    /* if commonTangentPoint was never initialized
-       take the one from this image */
-    if (_commonTangentPoint.x  == 0. && _commonTangentPoint.y == 0.)
-    {
-        lsst::daf::base::PropertyList::Ptr wcsMeta = wcs->getFitsMetadata();
-        double crval1 = wcsMeta->get<double>("CRVAL1");
-        double crval2 = wcsMeta->get<double>("CRVAL2");
-        _commonTangentPoint = Point(crval1, crval2);
-        std::cout << "setting common TangentPoint" << _commonTangentPoint << std::endl;
-    }
-
-    std::shared_ptr<CcdImage> ccdImage(new CcdImage(catalog, _commonTangentPoint, wcs, visitInfo, bbox, filter, calib, visit, ccd, control->sourceFluxField));
+    std::shared_ptr<CcdImage> ccdImage(new CcdImage(catalog, wcs, visitInfo, bbox, filter, calib, visit, ccd, control->sourceFluxField));
     ccdImageList.push_back(ccdImage);
     std::cout << " we have " << ccdImage->getWholeCatalog().size()
               << " objects in this catalog " << visit << " " << ccd << std::endl;
-    return true;
+}
+
+void Associations::setCommonTangentPoint(lsst::afw::geom::Point2D const &commonTangentPoint)
+{
+    _commonTangentPoint = Point(commonTangentPoint.getX(), commonTangentPoint.getY()); // a jointcal::Point
+    for (auto &ccdImage: ccdImageList)
+        ccdImage->setCommonTangentPoint(_commonTangentPoint);
 }
 
 void Associations::associateCatalogs(const double matchCutInArcSec,

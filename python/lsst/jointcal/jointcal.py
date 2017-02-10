@@ -260,6 +260,11 @@ class JointcalTask(pipeBase.CmdLineTask):
                 filters.append(result.filter)
         filters = collections.Counter(filters)
 
+        centers = [ccdImage.getBoresightRaDec() for ccdImage in associations.getCcdImageList()]
+        commonTangentPoint = lsst.afw.coord.averageCoord(centers)
+        print("Using common tangent point: ", commonTangentPoint.getPosition())
+        associations.setCommonTangentPoint(commonTangentPoint.getPosition())
+
         # Use external reference catalogs handled by LSST stack mechanism
         # Get the bounding box overlapping all associated images
         # ==> This is probably a bad idea to do it this way <== To be improved

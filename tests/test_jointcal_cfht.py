@@ -56,10 +56,10 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
         # this in the future!
         relative_error = 25e-3*u.arcsecond
         pa1 = 0.019
-        metrics = {'collectedAstrometryRefStars': 829,
-                   'collectedPhotometryRefStars': 829,
-                   'selectedAstrometryRefStars': 829,
-                   'selectedPhotometryRefStars': 829,
+        metrics = {'collectedAstrometryRefStars': 825,
+                   'collectedPhotometryRefStars': 825,
+                   'selectedAstrometryRefStars': 825,
+                   'selectedPhotometryRefStars': 825,
                    'associatedAstrometryFittedStars': 2269,
                    'associatedPhotometryFittedStars': 2269,
                    'selectedAstrometryFittedStars': 1239,
@@ -68,7 +68,7 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
                    'selectedPhotometryCcdImageList': 12,
                    'astrometryFinalChi2': 1150.62,
                    'astrometryFinalNdof': 2550,
-                   'photometryFinalChi2': 13363.5,
+                   'photometryFinalChi2': 13363.6,
                    'photometryFinalNdof': 1089
                    }
 
