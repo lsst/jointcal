@@ -211,9 +211,9 @@ class JointcalTask(pipeBase.CmdLineTask):
         goodSrc = self.sourceSelector.selectSources(src)
 
         if len(goodSrc.sourceCat) == 0:
-            print("no stars selected in ", visit, ccdname)
+            self.log.warn("no stars selected in ", visit, ccdname)
             return tanWcs
-        print("%d stars selected in visit %d - ccd %d" % (len(goodSrc.sourceCat), visit, ccdname))
+        self.log.info("%d stars selected in visit %d ccd %d", len(goodSrc.sourceCat), visit, ccdname)
         associations.addImage(goodSrc.sourceCat, tanWcs, visitInfo, bbox, filt, calib,
                               visit, ccdname, jointcalControl)
 
@@ -262,7 +262,7 @@ class JointcalTask(pipeBase.CmdLineTask):
 
         centers = [ccdImage.getBoresightRaDec() for ccdImage in associations.getCcdImageList()]
         commonTangentPoint = lsst.afw.coord.averageCoord(centers)
-        print("Using common tangent point: ", commonTangentPoint.getPosition())
+        self.log.debug("Using common tangent point: ", commonTangentPoint.getPosition())
         associations.setCommonTangentPoint(commonTangentPoint.getPosition())
 
         # Use external reference catalogs handled by LSST stack mechanism
@@ -280,7 +280,7 @@ class JointcalTask(pipeBase.CmdLineTask):
 
         # Determine a default filter associated with the catalog. See DM-9093
         defaultFilter = filters.most_common(1)[0][0]
-        print("Using", defaultFilter, "band for reference flux")
+        self.log.debug("Using %s band for reference flux", defaultFilter)
 
         # TODO: need a better way to get the tract.
         tract = dataRefs[0].dataId['tract']
@@ -344,6 +344,7 @@ class JointcalTask(pipeBase.CmdLineTask):
         -------
         Result of `fit_function()`
         """
+        self.log.info("====== Now processing %s...", name)
         # TODO: this should not print "trying to invert a singular transformation:"
         # if it does that, something's not right about the WCS...
         associations.associateCatalogs(match_cut)
@@ -399,19 +400,19 @@ class JointcalTask(pipeBase.CmdLineTask):
                 The photometric model that was fit.
         """
 
-        print("====== Starting photometric fitting")
+        self.log.info("=== Starting photometric fitting...")
         model = jointcalLib.SimplePhotomModel(associations.getCcdImageList())
 
         fit = jointcalLib.PhotomFit(associations, model, self.config.posError)
         fit.minimize("Model")
         chi2 = fit.computeChi2()
-        print(chi2)
+        self.log.info(str(chi2))
         fit.minimize("Fluxes")
         chi2 = fit.computeChi2()
-        print(chi2)
+        self.log.info(str(chi2))
         fit.minimize("Model Fluxes")
         chi2 = fit.computeChi2()
-        print(chi2)
+        self.log.info("Fit completed with %s", str(chi2))
 
         self.metrics['photometryFinalChi2'] = chi2.chi2
         self.metrics['photometryFinalNdof'] = chi2.ndof
@@ -437,7 +438,7 @@ class JointcalTask(pipeBase.CmdLineTask):
                 The model for the sky to tangent plane projection that was used in the fit.
         """
 
-        print("====== Starting astrometric fitting")
+        self.log.info("=== Starting astrometric fitting...")
 
         associations.deprojectFittedStars()
 
@@ -451,33 +452,36 @@ class JointcalTask(pipeBase.CmdLineTask):
         fit = jointcalLib.AstromFit(associations, model, self.config.posError)
         fit.minimize("Distortions")
         chi2 = fit.computeChi2()
-        print(chi2)
+        self.log.info(str(chi2))
         fit.minimize("Positions")
         chi2 = fit.computeChi2()
-        print(chi2)
+        self.log.info(str(chi2))
         fit.minimize("Distortions Positions")
         chi2 = fit.computeChi2()
-        print(chi2)
+        self.log.info(str(chi2))
 
-        for i in range(20):
+        max_steps = 20
+        for i in range(max_steps):
             r = fit.minimize("Distortions Positions", 5)  # outliers removal at 5 sigma.
             chi2 = fit.computeChi2()
-            print(chi2)
+            self.log.info(str(chi2))
             if r == 0:
-                print("""fit has converged - no more outliers - redo minimixation\
-                      one more time in case we have lost accuracy in rank update""")
+                self.log.debug("""fit has converged - no more outliers - redo minimixation\
+                               one more time in case we have lost accuracy in rank update""")
                 # Redo minimization one more time in case we have lost accuracy in rank update
                 r = fit.minimize("Distortions Positions", 5)  # outliers removal at 5 sigma.
                 chi2 = fit.computeChi2()
-                print(chi2)
+                self.log.info("Fit completed with: %s", str(chi2))
                 break
             elif r == 2:
-                print("minimization failed")
+                self.log.warn("minimization failed")
             elif r == 1:
-                print("still some ouliers but chi2 increases - retry")
+                self.log.warn("still some ouliers but chi2 increases - retry")
             else:
                 break
-                print("unxepected return code from minimize")
+                self.log.error("unxepected return code from minimize")
+        else:
+            self.log.error("astrometry failed to converge after %d steps", max_steps)
 
         self.metrics['astrometryFinalChi2'] = chi2.chi2
         self.metrics['astrometryFinalNdof'] = chi2.ndof
@@ -508,17 +512,18 @@ class JointcalTask(pipeBase.CmdLineTask):
             dataRef = visit_ccd_to_dataRef[(visit, ccd)]
             exp = afwImage.ExposureI(0, 0)
             if self.config.doAstrometry:
-                print("Updating WCS for visit: %d, ccd: %d" % (visit, ccd))
+                self.log.info("Updating WCS for visit: %d, ccd: %d", visit, ccd)
                 tanSip = astrom_model.ProduceSipWcs(ccdImage)
                 frame = ccdImage.ImageFrame()
                 tanWcs = afwImage.TanWcs.cast(jointcalLib.GtransfoToTanWcs(tanSip, frame, False))
                 exp.setWcs(tanWcs)
             if self.config.doPhotometry:
-                print("Updating Calib for visit: %d, ccd: %d" % (visit, ccd))
+                self.log.info("Updating Calib for visit: %d, ccd: %d", visit, ccd)
                 # start with the original calib saved to the ccdImage
                 fluxMag0, fluxMag0Sigma = ccdImage.getCalib().getFluxMag0()
                 exp.getCalib().setFluxMag0(fluxMag0*photom_model.photomFactor(ccdImage), fluxMag0Sigma)
             try:
                 dataRef.put(exp, 'wcs')
             except pexExceptions.Exception as e:
-                self.log.warn('Failed to write updated Wcs and Calib: ' + str(e))
+                self.log.fatal('Failed to write updated Wcs and Calib: %s', str(e))
+                raise e
