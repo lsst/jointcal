@@ -49,13 +49,6 @@ double flux;
   //!
   double Y() const { return y;}
 
-  static BaseStar* read(std::istream & rd, const char *format);
-
-  void  read_it(std::istream & rd, const char *format);
-
-  virtual void write(std::ostream &s = std::cout)const ;
-  virtual void writen(std::ostream &s = std::cout)const ;
-
 #ifndef SWIG
   //! allows std::cout << aBaseStar;
   friend std::ostream& operator << (std::ostream &stream, const BaseStar &s)
@@ -72,28 +65,16 @@ double flux;
   static const char *TypeName() { return "BaseStar";}
 
   virtual ~BaseStar(){};
-
-  virtual std::string WriteHeader_(std::ostream & stream = std::cout, const char*i = nullptr) const ;
-
-  virtual void WriteHeader(std::ostream & stream = std::cout) const;
-
 };
-
-//! Number of values read for this format
-unsigned NValsBaseStar(const char *Format);
 
 
 //! enables to sort easily a starList (of anything that derives from BaseStar)
 bool DecreasingFlux(const BaseStar *S1, const BaseStar *S2);
 
-
-
 int DecodeFormat(const char *FormatLine, const char *StarName);
 
 
-/* what concerns the BaseStarList's : */
-
-
+/* BaseStarList */
 typedef StarList<BaseStar> BaseStarList;
 
 typedef BaseStarList::const_iterator BaseStarCIterator;

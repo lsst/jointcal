@@ -33,12 +33,6 @@ public:
   //! typical use: Frame(Point(xmin,ymin),Point(xmax,ymax))
   Frame(const Point &LowerLeft, const Point &UpperRight);
 
-#ifdef TO_BE_FIXED
-  //! 2 kinds of bounds in headers, the chip size and some
-  //! that may be added by hand. See WriteInHeader().
-  Frame(const FitsHeader &header, WhichFrame which=ClippedSizeFrame);
-#endif
-
   //! size along x axis
   double Width() const {return xMax-xMin;}
 

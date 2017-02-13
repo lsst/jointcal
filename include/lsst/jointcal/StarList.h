@@ -58,25 +58,7 @@ public:
 //! : default constructor (empty std::list).
   StarList() {};
 
- //! reads a StarList from a file,
-  /*!
-     using the read method from the Star class.
-     See BaseStar for an example of implementation. */
-  StarList(const std::string &FileName);
-  //! writes to a file
-  /*!  calls iteratively the write method of the Star
-	class. It is unusable if the Star class does not
-	provide this functionnality.
-	see BaseStar to see a possible implementation.
-  */
-
-
   Star *EmptyStar() const { return new Star();}
-
-  int  write(const std::string &FileName) const;
-
-  //! obvious meaning
-  int read(const std::string &FileName);
 
 /* destructor */
   virtual ~StarList() {};
@@ -115,22 +97,6 @@ public:
 
   template<class Operator> void ApplyTransfo(const Operator &Op)
   {for (auto &p: *this) Op.TransformStar(*(p));}
-
-
-protected :
-  int ascii_read(const std::string &FileName);
-
-private :
-
-  int read(std::istream & rd);
-
-
-public :
-
-  //!: with descriptor for l2tup
-  int  write(std::ostream & pr) const;
-
-
 };
 
   //! enables \verbatim  std::cout << my_list; \endverbatim

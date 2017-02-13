@@ -21,24 +21,7 @@ namespace jointcal {
 
 // cuts.. limits, etc for combinatorial match
 
-#ifdef DO_WE_NEED_THAT
-#include "datacards.h"
-
-
-
-static void read_card(DataCards &Cards, const std::string &Key, double &D)
-{
-  if (Cards.HasKey(Key)) D= Cards.DParam(Key);
-}
-
-static void read_card(DataCards &Cards, const std::string &Key, int &I)
-{
-  if (Cards.HasKey(Key)) I = Cards.IParam(Key);
-}
-#endif
-
 static double sqr(double x) { return x*x; }
-
 
 MatchConditions::MatchConditions()
 {  /* default values */
@@ -50,29 +33,6 @@ MatchConditions::MatchConditions()
   MinMatchRatio = 1./3.;
   PrintLevel = 0;
   Algorithm = 2;
-  /*
-  if (DatacardsName != "")
-    {
-      if (!FileExists(DatacardsName))
-	{
-	  cerr << " cannot find file " << DatacardsName << " to read MatchConditions " << endl;
-	  return;
-	}
-      DataCards cards(DatacardsName);
-      read_card(cards,"DATMATCH_NL1", NStarsL1);
-      read_card(cards,"DATMATCH_NL2", NStarsL2);
-      read_card(cards,"DATMATCH_MAXTRIAL", MaxTrialCount);
-      read_card(cards,"DATMATCH_NSIG_CUT", NSigmas);
-      read_card(cards,"DATMATCH_MAXSHIFTX", MaxShiftX);
-      read_card(cards,"DATMATCH_MAXSHIFTY", MaxShiftY);
-      read_card(cards,"DATMATCH_SIZERATIO", SizeRatio);
-      read_card(cards,"DATMATCH_DELTA_SIZERATIO", DeltaSizeRatio);
-      read_card(cards,"DATMATCH_MINMATCHRATIO", MinMatchRatio);
-      read_card(cards,"DATMATCH_PRINTLEVEL", PrintLevel);
-      read_card(cards,"DATMATCH_ALGO", Algorithm);
-    }
-  if (getenv("MATCH_PRINT")) PrintLevel = atoi(getenv("MATCH_PRINT"));
-  */
 }
 
 /* a Segment is a pair of stars form the same image. it is used for matching starlists */
@@ -192,17 +152,6 @@ public :
 typedef SolList::iterator SolIterator;
   ~SolList() {  for (SolIterator s = begin(); s !=end(); ++s) delete *s;}
 };
-
-
-static void dump_input_list(const BaseStarList &L, const int NStars,
-			      const Gtransfo &Tin, const std::string FileName)
-{
-  BaseStarList list;
-  L.ExtractHead(list,NStars);
-  list.ApplyTransfo(Tin);
-  list.write(FileName);
-}
-
 
 
 
@@ -348,14 +297,6 @@ static StarMatchList *ListMatchupRotShift_New(BaseStarList &L1, BaseStarList &L2
 
   SegmentList sList1(L1, Conditions.NStarsL1, Tin);
   SegmentList sList2(L2, Conditions.NStarsL2, GtransfoIdentity());
-
- if (getenv("DUMP_INPUT_LISTS"))
-   {
-     dump_input_list(L1, Conditions.NStarsL1, Tin, "input1.list");
-     dump_input_list(L2, Conditions.NStarsL2, GtransfoIdentity(), "input2.list");
-   }
-
-
 
   /* choose the binning of the histogram so that
      1: ratio = 1 and rotation angle = n * (pi/2) are bin centers. since

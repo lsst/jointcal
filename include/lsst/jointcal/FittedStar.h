@@ -138,12 +138,6 @@ class FittedStar : public BaseStar, public PmBlock {
   double&        Flux2() { return flux2; }
   double         FluxErr2() const { return fluxErr2; }
   double&        FluxErr2() { return fluxErr2; }
-
-  //! write stuff
-  std::string       WriteHeader_(std::ostream& pr=std::cout, const char* i=nullptr) const;
-  virtual void      writen(std::ostream& s) const;
-virtual void      read_it(std::istream& s, const char* format);
-static BaseStar*  read(std::istream& s, const char* format);
 };
 
 
@@ -161,21 +155,6 @@ class FittedStarList : public  StarList<FittedStar>
 
   //!
   FittedStarList() {inTangentPlaneCoordinates=true;}
-
-#ifdef DO_WE_NEED_IT
-  //! In the uncommon case case they are read from disk (written from a previous run)
-    FittedStarList(const std::string &FileName);
-#endif /* DO_WE_NEED_IT */
-
-    /*! the routine that writes the output. TP2RaDec should convert Tp
-      coordinates to sideral ones. GoodStars refer to those that are
-      connected to ref Ccds and hence have a magnitude.
-     */
-    void WriteTuple(const std::string &FileName,
-		    const Gtransfo &TP2RaDec,
-		    const bool OnlyGoodStars = true);
-
-
 };
 
 typedef FittedStarList::const_iterator FittedStarCIterator;
@@ -186,24 +165,6 @@ BaseStarList& Fitted2Base(FittedStarList &This);
 BaseStarList* Fitted2Base(FittedStarList *This);
 const BaseStarList& Fitted2Base(const FittedStarList &This);
 const BaseStarList* Fitted2Base(const FittedStarList *This);
-
-
-
-
-
-class FittedStarTuple {
-  private :
-  std::ofstream stream;
-
-  public :
-    FittedStarTuple( const std::string &FileName);
-
-  //! out put some stuff for control plots.
-  /*! F provides coordinates in tangent plane, RaDec the position on the sky */
-  void AddEntry(const FittedStar &F, const Point &RaDec);
-
-  ~FittedStarTuple() { stream.close();}
-};
 
 }} // end of namespaces
 
