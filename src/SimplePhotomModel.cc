@@ -1,8 +1,13 @@
 #include <iostream>
 
+#include "lsst/log/Log.h"
 #include "lsst/jointcal/SimplePhotomModel.h"
 #include "lsst/jointcal/CcdImage.h"
 #include "lsst/jointcal/MeasuredStar.h"
+
+namespace {
+    LOG_LOGGER _log = LOG_GET("jointcal.SimplePhotomModel");
+}
 
 namespace lsst {
 namespace jointcal {
@@ -18,7 +23,7 @@ SimplePhotomModel::SimplePhotomModel(const CcdImageList &ccdImageList)
 	  _myMap[ccdImage.get()].fixed=true;
       else _myMap[ccdImage.get()].fixed=false;
     }
-  std::cout << "INFO: SimplePhotomModel : using exposure " << refVisit << " as photometric reference " << std::endl;
+    LOGLS_INFO(_log, "SimplePhotomModel: using exposure " << refVisit << " as photometric reference ");
 }
 
 unsigned SimplePhotomModel::assignIndices(const std::string &whatToFit,  unsigned firstIndex)

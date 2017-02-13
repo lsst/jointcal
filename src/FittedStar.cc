@@ -1,16 +1,19 @@
 #include <iostream>
 #include <iomanip>
 
+#include "lsst/log/Log.h"
 #include "lsst/jointcal/FittedStar.h"
 #include "lsst/jointcal/RefStar.h"
 #include "lsst/jointcal/MeasuredStar.h"
 #include "lsst/jointcal/Gtransfo.h"
 #include "lsst/jointcal/StarList.h"
 
+namespace {
+    LOG_LOGGER _log = LOG_GET("jointcal.FastFinder");
+}
 
 namespace lsst {
 namespace jointcal {
-
 
 // cannot be in fittedstar.h, because of "crossed includes"
 FittedStar::FittedStar(const MeasuredStar &M) :
@@ -24,12 +27,13 @@ FittedStar::FittedStar(const MeasuredStar &M) :
 
 void FittedStar::setRefStar(const RefStar *refStar)
 {
-  if ((_refStar != nullptr) && (refStar != nullptr)) // TODO: should we raise an Exception in this case?
-    // TODO: This message should be log.warn()
-    std::cerr << " FittedStar : " << *this
-	      << " is already matched to another RefStar. Clean up your lists" << std::endl
-          << "old: " << *_refStar << std::endl
-          << "new: " << *refStar << std::endl;
+  if ((_refStar != nullptr) && (refStar != nullptr))
+  {
+    // TODO: should we raise an Exception in this case?
+    LOGLS_WARN(_log, "FittedStar: " << *this << " is already matched to another RefStar. Clean up your lists.");
+    LOGLS_WARN(_log, "old refStar: " << *_refStar);
+    LOGLS_WARN(_log, "new refStar: " << *refStar);
+  }
   else _refStar = refStar;
 }
 

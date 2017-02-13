@@ -1,14 +1,19 @@
+#include <string>
+
+#include "lsst/log/Log.h"
 #include "lsst/jointcal/Eigenstuff.h"
 #include "lsst/jointcal/SimplePolyModel.h"
 #include "lsst/jointcal/SimplePolyMapping.h"
 #include "lsst/jointcal/CcdImage.h"
 #include "lsst/jointcal/Projectionhandler.h"
 #include "lsst/pex/exceptions.h"
-#include <string>
-
 #include "lsst/jointcal/Gtransfo.h"
 
 //const int distortionDegree=3;
+
+namespace {
+    LOG_LOGGER _log = LOG_GET("jointcal.SimplePolyModel");
+}
 
 namespace lsst {
 namespace jointcal {
@@ -43,9 +48,8 @@ SimplePolyModel::SimplePolyModel(const CcdImageList &L,
 	  size_t nObj = im.getCatalogForFit().size();
 	  if (nObj == 0)
 	    {
-	      std::cout << "WARNING: empty catalog from image : "
-			<< im.getName() << std::endl;
-	      continue;
+            LOGLS_WARN(_log, "Empty catalog from image: " << im.getName());
+            continue;
 	    }
 	  GtransfoPoly pol(degree);
 		if (pol.Degree() > 0) // if not, it cannot be decreased
@@ -86,8 +90,8 @@ unsigned SimplePolyModel::assignIndices(unsigned FirstIndex, std::string &WhatTo
 {
   if (WhatToFit.find("Distortions") == std::string::npos)
     {
-      std::cout << "SimplePolyModel::AssignIndices is called and Distortions is *not*  in WhatToFit" << std::endl;
-      return 0;
+        LOGLS_ERROR(_log, "AssignIndices was called and Distortions is *not* in WhatToFit.");
+        return 0;
     }
   unsigned index = FirstIndex;
   for (auto i = _myMap.begin(); i!=_myMap.end(); ++i)

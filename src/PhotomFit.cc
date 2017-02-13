@@ -1,9 +1,10 @@
 #include <iostream>
 #include <iomanip>
 #include <algorithm>
+
+#include "lsst/log/Log.h"
 #include "lsst/jointcal/PhotomFit.h"
 #include "lsst/jointcal/Associations.h"
-
 #include "lsst/jointcal/Gtransfo.h"
 #include "Eigen/Sparse"
 //#include "Eigen/CholmodSupport" // to switch to cholmod
@@ -17,9 +18,12 @@ using namespace std;
 
 static double sqr(double x) {return x*x;}
 
+namespace {
+    LOG_LOGGER _log = LOG_GET("jointcal.PhotomFit");
+}
+
 namespace lsst {
 namespace jointcal {
-
 
 PhotomFit::PhotomFit(Associations &associations, PhotomModel *photomModel, double fluxError) :
   _associations(associations),  _photomModel(photomModel), _fluxError(fluxError),
@@ -236,8 +240,7 @@ void PhotomFit::findOutliers(double nSigCut, MeasuredStarList &outliers) const
   }
   double average = sum/nval;
   double sigma = sqrt(sum2/nval - sqr(average));
-  cout << "INFO : findOutliers chi2 stat: mean/median/sigma "
-       << average << '/'<< median << '/' << sigma << endl;
+  LOGLS_INFO(_log, "findOutliers chi2 stat: mean/median/sigma " << average << '/'<< median << '/' << sigma);
   double cut = average+nSigCut*sigma;
   /* For each of the parameters, we will not remove more than 1
      measurement that contributes to constraining it. Keep track
@@ -266,14 +269,13 @@ void PhotomFit::findOutliers(double nSigCut, MeasuredStarList &outliers) const
 	  outliers.push_back(i->measuredStar);
 	}
     } // end loop on measurements
-  cout << "INFO : findMeasOutliers : found "
-       << outliers.size() << " outliers" << endl;
+    LOGLS_INFO(_log, "findMeasOutliers: found " << outliers.size() << " outliers");
 }
 
 void PhotomFit::assignIndices(const std::string &whatToFit)
 {
   _whatToFit = whatToFit;
-  cout << "INFO: we are going to fit : " << whatToFit << endl;
+  LOGLS_INFO(_log, "assignIndices: now fitting: " << whatToFit);
   _fittingModel = (_whatToFit.find("Model") != string::npos);
   _fittingFluxes = (_whatToFit.find("Fluxes") != string::npos);
 // When entering here, we assume that whatToFit has already been interpreted.
@@ -342,16 +344,14 @@ bool PhotomFit::minimize(const std::string &whatToFit)
     hessian = jacobian*jacobian.transpose();
   }// release the Jacobian
 
-
-  cout << "INFO: hessian : dim=" << hessian.rows()
-       << " nnz=" << hessian.nonZeros()
-       << " filling-frac = " << hessian.nonZeros()/sqr(hessian.rows()) << endl;
-  cout << "INFO: starting factorization" << endl;
+  LOGLS_DEBUG(_log, "Starting factorization, hessian: dim=" << hessian.rows()
+              << " nnz=" << hessian.nonZeros()
+              << " filling-frac = " << hessian.nonZeros()/sqr(hessian.rows()));
 
   Eigen::SimplicialLDLT<SpMat> chol(hessian);
   if (chol.info() != Eigen::Success)
     {
-      cout << "ERROR: PhotomFit::minimize : factorization failed " << endl;
+      LOGLS_ERROR(_log, "minimize: factorization failed ");
       return false;
     }
 

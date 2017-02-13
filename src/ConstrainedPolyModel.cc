@@ -1,3 +1,4 @@
+#include "lsst/log/Log.h"
 #include "lsst/jointcal/Eigenstuff.h"
 #include "lsst/jointcal/SimplePolyModel.h"
 #include "lsst/jointcal/ConstrainedPolyModel.h"
@@ -10,6 +11,10 @@ namespace pexExcept = lsst::pex::exceptions;
 
 #include <string>
 #include <iostream>
+
+namespace {
+    LOG_LOGGER _log = LOG_GET("jointcal.ConstrainedPolyModel");
+}
 
 namespace lsst {
 namespace jointcal {
@@ -91,8 +96,7 @@ ConstrainedPolyModel::ConstrainedPolyModel(const CcdImageList &L,
       // (i.e. the reference visit was complete)
       if (_chipMap.find(chip) == _chipMap.end())
 	{
-	  std::cout << " WARNING: the chip " << chip << " is missing in the \
-reference exposure, expect troubles" << std::endl;
+        LOGLS_WARN(_log, "Chip " << chip << " is missing in the reference exposure, expect troubles.");
 	  GtransfoLin norm = NormalizeCoordinatesTransfo(im.ImageFrame());
 	  _chipMap[chip] = std::unique_ptr<SimplePolyMapping>( new SimplePolyMapping(norm,
 										     GtransfoPoly(degree)));
@@ -100,12 +104,11 @@ reference exposure, expect troubles" << std::endl;
       _mappings[&im] = std::unique_ptr<TwoTransfoMapping>(new TwoTransfoMapping(_chipMap[chip].get(), _visitMap[visit].get()));
 
     }
-  cout << "INFO: ConstrainedPolyModel : we have " << _chipMap.size() << " chip mappings " << endl;
-  cout << "INFO: and " << _visitMap.size() << " visit mappings " << endl;
+  LOGLS_INFO(_log, "Constructor got " << _chipMap.size() << " chip mappings and "
+             << _visitMap.size() << " visit mappings.");
   // DEBUG
   for (auto i=_visitMap.begin(); i != _visitMap.end(); ++i)
-    cout << i-> first << endl;
-
+    LOGLS_DEBUG(_log, i->first);
 }
 
 const Mapping* ConstrainedPolyModel::GetMapping(const CcdImage &C) const
@@ -125,8 +128,8 @@ unsigned ConstrainedPolyModel::AssignIndices(unsigned FirstIndex,
   unsigned index=FirstIndex;
   if (WhatToFit.find("Distortions") == std::string::npos)
     {
-      std::cout << "SimplePolyModel::AssignIndices is called and Distortions is *not*  in WhatToFit" << std::endl;
-      return 0;
+        LOGLS_ERROR(_log, "AssignIndices was called and Distortions is *not* in WhatToFit");
+        return 0;
     }
   // if we get here "Distortions" is in WhatToFit
   _fittingChips = (WhatToFit.find("DistortionsChip") != std::string::npos);
@@ -184,8 +187,7 @@ void ConstrainedPolyModel::DumpT2Transfos() const
    for (auto i = _visitMap.begin(); i!=_visitMap.end(); ++i)
       {
         auto *p = (&*(i->second));
-	std::cout << "T2 for visit " << i->first << std::endl
-		  << p->Transfo() << std::endl;
+        LOGLS_DEBUG(_log, "T2 for visit " << i->first << p->Transfo());
       }
 }
 #endif

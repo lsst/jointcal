@@ -11,10 +11,11 @@
 #include <string>
 #include <vector>
 
-
-
+#include "lsst/pex/exceptions.h"
 #include "lsst/jointcal/FatPoint.h"
 #include "lsst/jointcal/CountedRef.h"
+
+namespace pexExcept = lsst::pex::exceptions;
 
 namespace lsst {
 namespace jointcal {
@@ -167,10 +168,7 @@ public:
       {Xout = Xin; Yout = Yin;}; // to speed up
 
     double fit(const StarMatchList &List)
-      {std:: cerr << "GtransfoIdentity cannot be fitted for std::list : "
-		  << &List << std::endl;
-      return -1;
-      }
+      {throw pexExcept::TypeError("GtransfoIdentity is the identity transformation: it cannot be fit to anything.");}
 
     Gtransfo* ReduceCompo(const Gtransfo *Right) const { return Right->Clone();}
     void dump(std::ostream &stream = std::cout) const

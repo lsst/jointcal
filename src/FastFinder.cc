@@ -1,12 +1,15 @@
 #include <algorithm>
 
+#include "lsst/log/Log.h"
 #include "lsst/jointcal/BaseStar.h"
 #include "lsst/jointcal/FastFinder.h"
 
+namespace {
+    LOG_LOGGER _log = LOG_GET("jointcal.FastFinder");
+}
+
 namespace lsst {
 namespace jointcal {
-
-
 
 FastFinder::FastFinder(const BaseStarList &List, const unsigned NXslice) : baselist(List), count(List.size()), stars(count), nslice(NXslice), index(nslice+1)
 {
@@ -77,7 +80,6 @@ const BaseStar *FastFinder::FindClosest(const Point &Where,
       double dist2 = Where.Dist2(*p);
       if (dist2 < minDist2) { pbest = p; minDist2 = dist2; }
     }
-  //  cout << "Distance " << minDist2 << " " << dist  << endl;
   return pbest;
 }
 
@@ -113,7 +115,6 @@ const BaseStar *FastFinder::SecondClosest(const Point &Where,
 	}
     }
   Closest = pbest1;
-  //  cout << "Distance " << minDist2 << " " << dist  << endl;
   return pbest2;
 }
 
@@ -239,7 +240,8 @@ void FastFinder::Iterator::check() const
 {
   if (current != null_value && (current < finder.stars.begin() || current >= finder.stars.begin()+finder.count))
     {
-      std::cout << "ERROR in FastFinder " << *current << " " << *(finder.stars.begin()) << ' ' << *(finder.stars.begin()+finder.count) << std::endl;
+      LOGLS_ERROR(_log, "Error in FastFinder " << *current << " " << *(finder.stars.begin())
+                  << ' ' << *(finder.stars.begin()+finder.count));
     }
 }
 
