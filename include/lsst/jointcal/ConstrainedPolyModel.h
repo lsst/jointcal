@@ -44,7 +44,6 @@ class ConstrainedPolyModel : public DistortionModel
   bool _fittingChips, _fittingVisits;
 
   Frame _tpFrame; // just for output of the chip transfos
-  std::string _instName;
 
 public :
   ConstrainedPolyModel(const CcdImageList &L,

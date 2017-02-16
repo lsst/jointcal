@@ -36,7 +36,7 @@ ConstrainedPolyModel::ConstrainedPolyModel(const CcdImageList &L,
   unsigned count = 0;
   VisitIdType refVisit;
   // first loop to initialize all visit  and chip transfos.
-  for (auto i=L.cbegin(); i!= L.end(); ++i, ++count)
+  for (auto i=L.cbegin(); i!= L.cend(); ++i, ++count)
     {
       const CcdImage &im = **i;
       unsigned visit = im.getVisit();
@@ -54,7 +54,6 @@ ConstrainedPolyModel::ConstrainedPolyModel(const CcdImageList &L,
 	      _visitMap[visit] = std::unique_ptr<SimpleGtransfoMapping>(new SimpleGtransfoMapping(GtransfoIdentity()));
 #endif
 	      refVisit = visit;
-	      _instName = im.Instrument();
 	    }
 	    else
 #ifdef ROTATE_T2
@@ -83,7 +82,7 @@ ConstrainedPolyModel::ConstrainedPolyModel(const CcdImageList &L,
 	}
     }
   // now, second loop to set the mappings of the CCdImages
-  for (auto i=L.cbegin(); i!= L.end(); ++i, ++count)
+  for (auto i=L.cbegin(); i!= L.cend(); ++i, ++count)
     {
       const CcdImage &im = **i;
       unsigned visit = im.getVisit();

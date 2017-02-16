@@ -52,7 +52,7 @@ class FittedStar : public BaseStar, public PmBlock {
   double wmag;
   unsigned indexInMatrix;
   int measurementCount;
-  const RefStar *refStar;
+  const RefStar *_refStar;
 
   double flux2;
   double fluxErr;
@@ -61,33 +61,27 @@ class FittedStar : public BaseStar, public PmBlock {
  public:
   FittedStar() :
     BaseStar(), mag(-1), emag(-1), col(0.), gen(-1), wmag(0),
-    indexInMatrix(-1), measurementCount(0), refStar(nullptr),
-    flux2(-1),
+    indexInMatrix(-1), measurementCount(0), _refStar(nullptr),
     fluxErr(-1),
     fluxErr2(-1) {}
 
   FittedStar(const BaseStar &B) :
     BaseStar(B), mag(-1), emag(-1), col(0.), gen(-1), wmag(0),
-    indexInMatrix(0), measurementCount(0), refStar(nullptr),
+    indexInMatrix(0), measurementCount(0), _refStar(nullptr),
     flux2(-1),
     fluxErr(-1),
     fluxErr2(-1) {}
-
-  //  FittedStar(const FittedStar& F)
-  //    : BaseStar(F), mag(F.mag), emag(F.emag), col(F.col), gen(F.gen), wmag(F.wmag),
-  //      index(F.index), measurementCount(F.measurementCount), refStar(F.refStar),
-  //      flux2(F.flux2), fluxErr(F.fluxErr), fluxErr2(F.fluxErr2) {}
 
   //!
   FittedStar(const MeasuredStar &M);
 
 
   //!
-  void ClearBeforeAssoc()
+  void clearBeforeAssoc()
   {
     indexInMatrix = -1;
     measurementCount = 0;
-    refStar = nullptr;
+    _refStar = nullptr;
     wmag = 0;
   }
 
@@ -128,11 +122,11 @@ class FittedStar : public BaseStar, public PmBlock {
   //!
   int  IndexInMatrix() const { return indexInMatrix;}
 
-  //!
-  void SetRefStar(const RefStar*);
+  //! Set the astrometric reference star associated with this star.
+  void setRefStar(const RefStar* _refStar);
 
-  //!
-  const RefStar *GetRefStar() const { return refStar;};
+  //! Get the astrometric reference star associated with this star.
+  const RefStar *getRefStar() const { return _refStar;};
 
   //! getters
   double         Flux() const { return flux; }

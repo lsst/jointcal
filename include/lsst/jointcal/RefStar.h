@@ -19,24 +19,15 @@ class RefStar : public BaseStar
 {
 private :
   unsigned int index;
-  FittedStarRef fittedStar;
-  Point raDec;
+  FittedStarRef _fittedStar;
   std::vector<double> refFlux;
 
   public :
-
+  //!
+  RefStar(const BaseStar &baseStar);
 
   //!
-  RefStar(const BaseStar &, const Point &RaDec);
-
-  //!
-  void SetFittedStar(FittedStar *F);
-
-  //!
-  double Ra() const { return raDec.x;}
-
-  //!
-  double Dec() const {return raDec.y;}
+  void setFittedStar(FittedStar *F);
 
   //! reference flux
   double Flux(int filter) const;
@@ -49,9 +40,6 @@ private :
   unsigned int    Index() const { return index; }
 
 };
-
-
-
 
 /****** RefStarList ***********/
 

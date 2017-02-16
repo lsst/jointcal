@@ -33,33 +33,6 @@ struct JointcalControl {
     ~JointcalControl() {};
 };
 
-class Jointcal {
-public:
-
-    Jointcal (
-        std::vector<lsst::afw::table::SortedCatalogT< lsst::afw::table::SourceRecord> > const sourceList,
-        std::vector<PTR(lsst::afw::image::VisitInfo)> const visitInfoList,
-        std::vector<PTR(lsst::afw::image::TanWcs)> const wcsList,
-        std::vector<lsst::afw::geom::Box2I> const bboxList,
-        std::vector<std::string> const filterList,
-        std::vector<PTR(lsst::afw::image::Calib)> const calibList,
-        std::vector<int> const visitList,
-        std::vector<int> const ccdList,
-        PTR(lsst::jointcal::JointcalControl) const control
-    );
-
-private:
-
-    std::vector<lsst::afw::table::SortedCatalogT< lsst::afw::table::SourceRecord> > _sourceList;
-    std::vector <std::shared_ptr<lsst::afw::image::VisitInfo> > _visitInfoList;
-    std::vector<PTR(lsst::afw::image::TanWcs)> _wcsList;
-    std::vector<lsst::afw::geom::Box2I> _bboxList;
-    std::vector<std::string> _filterList;
-    std::vector<PTR(lsst::afw::image::Calib)> _calibList;
-    std::vector<int> const _visitList;
-    std::vector<int> const _ccdList;
-};
-
 }
 } // end of namespaces
 

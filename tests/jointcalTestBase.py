@@ -47,7 +47,7 @@ class JointcalTestBase(object):
             Set to True for a comparison plot and some diagnostic numbers.
         """
         self._prep_reference_loader(center, radius)
-        self.jointcalStatistics = utils.JointcalStatistics(match_radius)
+        self.jointcalStatistics = utils.JointcalStatistics(match_radius, verbose=True)
         self.input_dir = input_dir
         self.all_visits = all_visits
         if other_args is None:
@@ -57,6 +57,12 @@ class JointcalTestBase(object):
         # Signal/Noise (flux/fluxSigma) for sources to be included in the RMS cross-match.
         # 100 is a balance between good centroids and enough sources.
         self.flux_limit = 100
+
+        # Individual tests may want to tweak the config that is passed to parseAndRun().
+        self.config = None
+
+        # Append `msg` arguments to assert failures.
+        self.longMessage = True
 
     def tearDown(self):
         if getattr(self, 'reference', None) is not None:
@@ -82,7 +88,8 @@ class JointcalTestBase(object):
         # Make a copy of the reference catalog for in-memory contiguity.
         self.reference = refLoader.loadSkyCircle(center, radius, filterName='r').refCat.copy()
 
-    def _testJointCalTask(self, nCatalogs, dist_rms_relative, dist_rms_absolute, pa1):
+    def _testJointcalTask(self, nCatalogs, dist_rms_relative, dist_rms_absolute, pa1,
+                          metrics=None):
         """
         Test parseAndRun for jointcal on nCatalogs.
 
@@ -101,32 +108,100 @@ class JointcalTestBase(object):
         pa1 : float
             Minimum PA1 (from Table 14 of the Science Requirements Document:
             https://ls.st/LPM-17) post-jointcal to pass the test.
+        metrics : dict, optional
+            Dictionary of 'metricName': value to test jointcal's result.metrics
+            against.
+
+        Returns
+        -------
+        list of lsst.daf.persistence.ButlerDataRef
+            The dataRefs that were processed.
         """
 
-        visits = '^'.join(str(v) for v in self.all_visits[:nCatalogs])
         # the calling method is one step back on the stack: use it to specify the output repo.
         caller = inspect.stack()[1][3]  # NOTE: could be inspect.stack()[1].function in py3.5
+
+        result = self._runJointcalTask(nCatalogs, caller, metrics=metrics)
+
+        data_refs = result.resultList[0].result.dataRefs
+        oldWcsList = result.resultList[0].result.oldWcsList
+        rms_result = self.jointcalStatistics.compute_rms(data_refs, self.reference)
+        # Make plots before testing, if requested, so we still get plots if tests fail.
+        if self.do_plot:
+            self._plotJointcalTask(data_refs, oldWcsList, caller)
+
+        self.assertLess(rms_result.dist_relative, dist_rms_relative)
+        self.assertLess(rms_result.dist_absolute, dist_rms_absolute)
+        self.assertLess(rms_result.pa1, pa1)
+
+        return data_refs
+
+    def _runJointcalTask(self, nCatalogs, caller, metrics=None):
+        """
+        Run jointcalTask on nCatalogs, with the most basic tests.
+        Tests for non-empty result list, and that the basic metrics are correct.
+
+        Parameters
+        ----------
+        nCatalogs : int
+            Number of catalogs to test on.
+        caller : str
+            Name of the calling function (to determine output directory).
+        metrics : dict, optional
+            Dictionary of 'metricName': value to test jointcal's result.metrics
+            against.
+
+        Returns
+        -------
+        pipe.base.Struct
+            The structure returned by jointcalTask.run()
+        """
+        visits = '^'.join(str(v) for v in self.all_visits[:nCatalogs])
         output_dir = os.path.join('.test', self.__class__.__name__, caller)
         args = [self.input_dir, '--output', output_dir,
                 '--clobber-versions', '--clobber-config',
                 '--doraise',
                 '--id', 'visit=%s'%visits]
         args.extend(self.other_args)
-        result = jointcal.JointcalTask.parseAndRun(args=args, doReturnResults=True)
+        result = jointcal.JointcalTask.parseAndRun(args=args, doReturnResults=True, config=self.config)
         self.assertNotEqual(result.resultList, [], 'resultList should not be empty')
-        data_refs = result.resultList[0].result.dataRefs
-        oldWcsList = result.resultList[0].result.oldWcsList
 
-        rms_result = self.jointcalStatistics.compute_rms(data_refs, self.reference)
+        self._test_metrics(result.resultList[0].result.metrics, metrics)
 
-        # Make plots before testing, if requested, so we still get plots if tests fail.
-        if self.do_plot:
-            plot_dir = os.path.join('.test', self.__class__.__name__, 'plots')
-            if not os.path.isdir(plot_dir):
-                os.mkdir(plot_dir)
-            self.jointcalStatistics.make_plots(data_refs, oldWcsList, name=caller, outdir=plot_dir)
-            print("Plots saved to: {}".format(plot_dir))
+        return result
 
-        self.assertLess(rms_result.dist_relative, dist_rms_relative)
-        self.assertLess(rms_result.dist_absolute, dist_rms_absolute)
-        self.assertLess(rms_result.pa1, pa1)
+    def _plotJointcalTask(self, data_refs, oldWcsList, caller):
+        """
+        Plot the results of a jointcal run.
+
+        Parameters
+        ----------
+        data_refs : list of lsst.daf.persistence.ButlerDataRef
+            The dataRefs that were processed.
+        oldWcsList : list of lsst.afw.image.Wcs
+            The original WCS from each dataRef.
+        caller : str
+            Name of the calling function (to determine output directory).
+        """
+        plot_dir = os.path.join('.test', self.__class__.__name__, 'plots')
+        if not os.path.isdir(plot_dir):
+            os.mkdir(plot_dir)
+        self.jointcalStatistics.make_plots(data_refs, oldWcsList, name=caller, outdir=plot_dir)
+        print("Plots saved to: {}".format(plot_dir))
+
+    def _test_metrics(self, result, expect):
+        """Test a dictionary of "metrics" against those returned by jointcal.py
+
+        Parameters
+        ----------
+        result : dict
+            Result metric dictionary from jointcal.py
+        expect : dict
+            Expected metric dictionary; set a value to None to not test it.
+        """
+        for key in result:
+            if expect[key] is not None:
+                if type(result[key]) == float:
+                    self.assertFloatsAlmostEqual(result[key], expect[key], msg=key, rtol=1e-5)
+                else:
+                    self.assertEqual(result[key], expect[key], msg=key)

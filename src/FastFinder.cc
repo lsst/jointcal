@@ -14,9 +14,9 @@ FastFinder::FastFinder(const BaseStarList &List, const unsigned NXslice) : basel
 
   // fill "stars"
   unsigned j=0;
-  for (BaseStarCIterator ci = List.begin(); ci != List.end(); ++ci)
+  for (auto const &ci: List)
     {
-      stars[j] = ci->get();
+      stars[j] = ci.get();
       ++j;
     }
 

@@ -52,8 +52,8 @@ static double* chi2_array(const StarMatchList &L,const Gtransfo &T)
   unsigned s = L.size();
   double *res = new double[s];
   unsigned count = 0;
-  for (auto it= L.begin(); it!= L.end(); ++it)
-    res[count++] = it->Chi2(T);
+  for (auto const &it: L)
+    res[count++] = it.Chi2(T);
   return res;
 }
 
@@ -133,8 +133,9 @@ void StarMatchList::RefineTransfo(double NSigmas)
       // compute some chi2 statistics
       double *chi2_array = new double[npair];
       unsigned count = 0;
-      for (auto it= begin(); it!= end(); ++it)
-	chi2_array[count++] = it->chi2 = it->Chi2(*transfo);
+      for (auto &starMatch: *this)
+         chi2_array[count++] = starMatch.chi2 = starMatch.Chi2(*transfo);
+
       std::sort(chi2_array, chi2_array+npair);
       double median =  (npair&1)? chi2_array[npair/2] :
 	(chi2_array[npair/2-1] + chi2_array[npair/2])*0.5;
@@ -160,7 +161,8 @@ double StarMatchList::Residual() const
 
 void StarMatchList::SetDistance(const Gtransfo &Transfo)
 {
-  for (auto smi = begin(); smi != end(); smi++) (*smi).SetDistance(Transfo); // c'est compact
+  for (auto &smi: *this)
+    smi.SetDistance(Transfo); // c'est compact
 }
 
 
@@ -240,14 +242,12 @@ void StarMatchList::write_wnoheader(std::ostream & pr,
   pr  << std::setiosflags(std::ios::fixed) ;
   int oldprec = pr.precision();
   pr<< std::setprecision(10);
-  for (auto it= begin(); it!= end(); it++ )
+  for (auto const &starMatch: *this)
     {
-      StarMatch starm = *it ;
-
-      (starm.s1)->writen(pr);
+      (starMatch.s1)->writen(pr);
       pr << " " ;
       // transformed coordinates
-      FatPoint p1 = *starm.s1;
+      FatPoint p1 = *starMatch.s1;
       if (Transfo)
 	{
 	  Transfo->TransformPosAndErrors(p1,p1);
@@ -256,17 +256,17 @@ void StarMatchList::write_wnoheader(std::ostream & pr,
 	  double sy = sqrt(p1.vy);
 	  pr << sx << ' ' << sy << ' ' << p1.vxy/(sx*sy) << ' ';
 	}
-      (starm.s2)->writen(pr);
+      (starMatch.s2)->writen(pr);
 
       // compute offsets here  because they can be rounded off by paw.
-      double dx = p1.x - starm.s2->x;
-      double dy = p1.y - starm.s2->y;
+      double dx = p1.x - starMatch.s2->x;
+      double dy = p1.y - starMatch.s2->y;
       pr << dx << ' '  << dy << ' ' << sqrt(dx*dx+dy*dy) << ' ';
       // chi2 assoc
       if (Transfo)
-	pr << it->Chi2(*Transfo) << ' ';
+	pr << starMatch.Chi2(*Transfo) << ' ';
       else
-	pr << it->Chi2(GtransfoIdentity()) << ' ';
+	pr << starMatch.Chi2(GtransfoIdentity()) << ' ';
       pr << std::endl ;
     }
   pr.flags(old_flags);
@@ -314,9 +314,9 @@ StarMatchList::write(const std::string &filename, const Gtransfo *tf) const
 
 void StarMatchList::Swap()
 {
-  for (auto it= begin(); it!= end(); ++it )
+  for (auto &starMatch: *this)
     {
-      it->Swap() ;
+      starMatch.Swap() ;
     }
 }
 
@@ -324,10 +324,10 @@ int StarMatchList::RecoveredNumber(double mindist) const
 {
   int n = 0 ;
   GtransfoIdentity identity;
-  for (auto it= begin(); it!= end(); ++it )
+  for (auto const &starMatch: *this)
     {
-      if ((*it).Distance(identity) < mindist)
-	n++ ;
+      if (starMatch.Distance(identity) < mindist)
+       n++ ;
     }
   return(n);
 }
@@ -342,23 +342,23 @@ void StarMatchList::ApplyTransfo(StarMatchList &Transformed,
   const Gtransfo &T1 = (PriorTransfo)? *PriorTransfo : id;
   const Gtransfo &T2 = (PosteriorTransfo)? *PosteriorTransfo : id;
 
-  for (auto it= begin(); it!= end(); ++it )
+  for (auto const &starMatch: *this)
     {
       FatPoint p1;
-      T1.TransformPosAndErrors(it->point1,p1);
+      T1.TransformPosAndErrors(starMatch.point1,p1);
       FatPoint p2;
-      T2.TransformPosAndErrors(it->point2, p2);
-      Transformed.push_back(StarMatch(p1, p2, &*(it->s1), &*(it->s2)));
+      T2.TransformPosAndErrors(starMatch.point2, p2);
+      Transformed.push_back(StarMatch(p1, p2, &*(starMatch.s1), &*(starMatch.s2)));
     }
 }
 
 void StarMatchList::SetChi2()
 {
   chi2 = 0;
-  for (auto  i= begin(); i != end(); ++i)
+  for (auto &starMatch: *this)
     {
-      i->chi2 = i->Chi2(*transfo);
-      chi2 += i->chi2;
+      starMatch.chi2 = starMatch.Chi2(*transfo);
+      chi2 += starMatch.chi2;
     }
 }
 
@@ -387,8 +387,8 @@ double FitResidual(const StarMatchList &S, const Gtransfo &T)
 double ComputeDist2(const StarMatchList &S, const Gtransfo &T)
 {
   double dist2 = 0;
-  for (auto i = S.begin(); i != S.end(); ++i)
-    dist2 += T.apply(i->point1).Dist2(i->point2);
+  for (auto const &starMatch: S)
+    dist2 += T.apply(starMatch.point1).Dist2(starMatch.point2);
   return dist2;
 }
 

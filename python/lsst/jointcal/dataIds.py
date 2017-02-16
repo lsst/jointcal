@@ -102,9 +102,11 @@ class PerTractCcdDataIdContainer(CoaddDataIdContainer):
                     self._addDataRef(namespace, ref.dataId, tract)
 
         # Ensure all components of a visit are kept together by putting them all in the same set of tracts
-        for visit, tractSet in visitTract.items():
+        # NOTE: sorted() here is to keep py2 and py3 dataRefs in the same order.
+        # NOTE: see DM-9393 for details.
+        for visit, tractSet in sorted(visitTract.items()):
             for ref in visitRefs[visit]:
-                for tract in tractSet:
+                for tract in sorted(tractSet):
                     self._addDataRef(namespace, ref.dataId, tract)
         if visitTract:
             tractCounter = collections.Counter()

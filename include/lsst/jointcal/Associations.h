@@ -31,117 +31,96 @@ class Associations {
 public:
 
     CcdImageList ccdImageList; // the catalog handlers
-    RefStarList refStarList;// the (e.g.) USNO stars
-    RefStarList photRefStarList; // the (e.g) Landolt stars
-    FittedStarList fittedStarList; //  the std::list of stars that are going to be fitted
+    RefStarList refStarList; // e.g. GAIA or SDSS reference stars
+    FittedStarList fittedStarList; // stars that are going to be fitted
 
-
+    Point _commonTangentPoint;
+public:
     // TODO: NOTE: these only exist because those lists can't be swig'd because
     // swig doesn't like boost::intrusive_ptr (which the lists contain).
     // Once DM-4043 is solved, delete these.
     size_t refStarListSize()
     { return refStarList.size(); }
-    size_t photRefStarListSize()
-    { return photRefStarList.size(); }
     size_t fittedStarListSize()
     { return fittedStarList.size(); }
 
-    // fit cuts and stuff:
-    Point commonTangentPoint;
-
-//  const CatalogLoader * load_it;
-
-    void AssignMags();
-
-public:
 
     /**
-     * Source selection is performed in the python, so Associations' constructor
-     * initializes a couple of variables.
+     * Source selection is performed in python, so Associations' constructor
+     * only initializes a couple of variables.
      */
     Associations();
 
-    //! Sets a tangent point (reasonably centered for the input image set).
-    void SetCommonTangentPoint(const Point &CommonTangentPoint)
-    { commonTangentPoint = CommonTangentPoint;};
+    /**
+     * @brief      Sets a shared tangent point for all ccdImages.
+     *
+     * @param      commonTangentPoint  The common tangent point of all input images (decimal degrees).
+     */
+    void setCommonTangentPoint(lsst::afw::geom::Point2D const &commonTangentPoint);
 
     //! can be used to project sidereal coordinates related to the image set on a plane.
-    Point CommonTangentPoint() const { return commonTangentPoint;}
+    Point getCommonTangentPoint() const { return _commonTangentPoint;}
 
-    //! actually imports the catalog and turns it into a MeasuredStarList using the provided "loader".
-//  bool AddImage(const std::string &ReducedImageName);
-
-    //! same as above
-//  bool AddImage(const ReducedImage &Ri);
-    bool AddImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &Ri,
-                  const PTR(lsst::afw::image::TanWcs) wcs,
-                  const PTR(lsst::afw::image::VisitInfo) visitInfo,
-                  const lsst::afw::geom::Box2I &bbox,
-                  const std::string &filter,
-                  const PTR(lsst::afw::image::Calib) calib,
-                  const int &visit,
-                  const int &ccd,
-                  const PTR(lsst::jointcal::JointcalControl) control);
+    /**
+     * @brief      Create a ccdImage from an exposure catalog and metadata, and add it to the list.
+     *
+     * @param      catalog    The extracted source catalog, selected for good astrometric sources.
+     * @param[in]  wcs        The exposure's original wcs
+     * @param[in]  visitInfo  The exposure's visitInfo object
+     * @param      bbox       The bounding box of the exposure
+     * @param      filter     The exposure's filter
+     * @param[in]  calib      The exposure's photometric calibration
+     * @param[in]  visit      The visit identifier
+     * @param[in]  ccd        The ccd identifier
+     * @param[in]  control    The JointcalControl object
+     */
+    void addImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &catalog,
+                  std::shared_ptr<lsst::afw::image::TanWcs> wcs,
+                  std::shared_ptr<lsst::afw::image::VisitInfo> visitInfo,
+                  lsst::afw::geom::Box2I const &bbox,
+                  std::string const &filter,
+                  std::shared_ptr<lsst::afw::image::Calib> calib,
+                  int visit,
+                  int ccd,
+                  std::shared_ptr<lsst::jointcal::JointcalControl> control);
 
     //! incrementaly builds a merged catalog of all image catalogs
-    void AssociateCatalogs(const double MatchCutInArcSec = 0,
+    void associateCatalogs(const double matchCutInArcsec = 0,
                            const bool UseFittedList = false,
                            const bool EnlargeFittedList = true);
 
+    //! Collect stars from an external reference catalog
+    void collectRefStars(lsst::afw::table::SortedCatalogT< lsst::afw::table::SimpleRecord > &Ref,
+                         std::string const &fluxField);
 
-    //! Collect stars form an external reference catalog (USNO-A by default) that match the FittedStarList. Optionally project these RefStar s on the tangent plane defined by the CommonTangentPoint().
-    void CollectRefStars(const bool ProjectOnTP = true);
-
-    //! Collect stars from an external reference catalog using the LSST stack mechanism
-    void CollectLSSTRefStars(lsst::afw::table::SortedCatalogT< lsst::afw::table::SimpleRecord > &Ref, std::string filter);
-
-
-#ifdef STORAGE
-    //! This is Monte-Carlo stuff -- to remove this from associations
-    //! the Association class should provide us w/ iterators and acceptors
-    //! that way, all the MC stuff could be removed
-    void CollectMCStars(int realization = -1);
-    //    void CheckMCStars(); // DELETE THIS METHOD
-
-
-    //! This method associates the catalogs with an external
-    //! catalog of photometric ref stars
-    void CollectPhotometricRefStars(std::string const& catalogname);
-    void AssociatePhotometricRefStars(double MatchCutInArcSec);
-    unsigned int GetNbAssociatedPhotometricRefStars() const { return nb_photref_associations; }
-
-#endif
     //! Sends back the fitted stars coordinates on the sky FittedStarsList::inTangentPlaneCoordinates keeps track of that.
-    void DeprojectFittedStars();
+    void deprojectFittedStars();
 
 
     //! Set the color field of FittedStar 's from a colored catalog.
     /* If Color is "g-i", then the color is assigned from columns "g" and "i" of the colored catalog. */
 #ifdef TODO
-    void SetFittedStarColors(std::string DicStarListName,
-                             std::string Color,
+    void setFittedStarColors(std::string const &DicStarListName,
+                             std::string const &Color,
                              double MatchCutArcSec);
 #endif
-    //    void SetRefPhotFactor(int chip, double photfact);
 
     //! apply cuts (mainly number of measurements) on potential FittedStars
-    void SelectFittedStars();
+    void selectFittedStars();
 
     const CcdImageList& getCcdImageList() const {return ccdImageList;}
-
-    unsigned int getNVisits() const { return _nVisits; }
 
     //! Number of different bands in the input image list. Not implemented so far
     unsigned NBands() const {return 1;}
 
     // Return the bounding box in (ra, dec) coordinates containing the whole catalog
-    const lsst::afw::geom::Box2D GetRaDecBBox();
+    const lsst::afw::geom::Box2D getRaDecBBox();
 
 
 private:
-    void AssociateRefStars(double MatchCutInArcSec, const Gtransfo *T);
-    unsigned int _nVisits;
-    unsigned int nb_photref_associations;
+    void associateRefStars(double matchCutInArcsec, const Gtransfo* gtransfo);
+
+    void assignMags();
 };
 
 #endif /* ASSOCIATIONS__H */

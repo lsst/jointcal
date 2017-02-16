@@ -13,9 +13,9 @@ class Mapping;
 
 OneTPPerVisitHandler::OneTPPerVisitHandler(const CcdImageList &ccdImageList)
 {
-  for (auto i=ccdImageList.cbegin(); i!= ccdImageList.end(); ++i)
+  for (auto const &i: ccdImageList)
     {
-      const CcdImage &im = **i;
+      const CcdImage &im = *i;
       if (tMap.find(im.getVisit()) == tMap.end())
 	tMap[im.getVisit()] = im.Sky2TP()->Clone();
     }
