@@ -74,7 +74,6 @@ bool DecreasingFlux(const BaseStar *S1, const BaseStar *S2);
 int DecodeFormat(const char *FormatLine, const char *StarName);
 
 
-/* BaseStarList */
 typedef StarList<BaseStar> BaseStarList;
 
 typedef BaseStarList::const_iterator BaseStarCIterator;

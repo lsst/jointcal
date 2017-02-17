@@ -5,7 +5,7 @@
 #include "lsst/jointcal/RefStar.h"
 #include "lsst/jointcal/MeasuredStar.h"
 #include "lsst/jointcal/Gtransfo.h"
-#include "lsst/jointcal/StarList.cc"
+#include "lsst/jointcal/StarList.h"
 
 
 namespace lsst {
@@ -63,7 +63,5 @@ const BaseStarList* Fitted2Base(const FittedStarList *This)
 {
   return (BaseStarList*) This;
 }
-
-template class StarList<FittedStar>;
 
 }} // end of namespaces

@@ -1,16 +1,13 @@
 #ifndef STARLIST__CC
 #define STARLIST__CC
-#include <iostream>
-#include <iomanip>
-#include <istream>
-#include <string>
-#include <cstdio>
-#include <string.h> // for strstr
 
-
-#include "lsst/jointcal/StarList.h"
-#include "lsst/jointcal/Frame.h"
 #include "lsst/pex/exceptions.h"
+
+#include "lsst/jointcal/Frame.h"
+#include "lsst/jointcal/StarList.h"
+#include "lsst/jointcal/BaseStar.h"
+#include "lsst/jointcal/FittedStar.h"
+#include "lsst/jointcal/MeasuredStar.h"
 
 namespace pexExcept = lsst::pex::exceptions;
 
@@ -32,7 +29,6 @@ template<class Star>void StarList<Star>::CutTail(const int NKeep)
   while (si != this->end() ) {si = this->erase(si);}
 }
 
-
 template<class Star>void StarList<Star>::ExtractInFrame(StarList<Star> &Out, const Frame &aFrame) const
 {
   for (auto const &star: *this)
@@ -53,6 +49,10 @@ template<class Star>void StarList<Star>::CopyTo(StarList<Star> &Copy) const
     Copy.push_back(new Star(*si));
 }
 
+// Explicit instantiations
+template class StarList<BaseStar>;
+template class StarList<FittedStar>;
+template class StarList<MeasuredStar>;
 
 }} // end of namespaces
 

@@ -1,4 +1,6 @@
-// This may look like C code, but it is really -*- C++ -*-
+// -*- LSST-C++ -*-
+#ifndef LSST_ASTRO_UTILS_H
+#define LSST_ASTRO_UTILS_H
 
 #include "lsst/jointcal/BaseStar.h"
 #include "lsst/jointcal/Frame.h"
@@ -13,3 +15,5 @@ namespace jointcal {
 		     const WhichTransformed W);
 
 }} // end of namespaces
+
+#endif

@@ -3,7 +3,7 @@
 #include <vector>
 
 #include "lsst/jointcal/MeasuredStar.h"
-#include "lsst/jointcal/StarList.cc"
+#include "lsst/jointcal/StarList.h"
 #include "lsst/jointcal/CcdImage.h"
 
 //#include "preferences.h"
@@ -60,8 +60,6 @@ void  MeasuredStarList::setCcdImage(const CcdImage *ccdImage)
   for (auto &i: *this)
       i->setCcdImage(ccdImage);
 }
-
-template class StarList<MeasuredStar>; // to force instanciation
 
 }} // end of namespaces
 
