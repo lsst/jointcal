@@ -253,20 +253,6 @@ class StarMatchList : public std::list<StarMatch> {
 
   ~StarMatchList() {/* should delete the transfo.... or use counted refs*/ };
 
-  //!: without descriptor for l2tup
-  void write_wnoheader(std::ostream & pr=std::cout, const Gtransfo *T=nullptr ) const ;
-
-
-  //! write  StarMatchList with a header which  can be read by l2tup
-  void write(const std::string &filename, const Gtransfo *tf=nullptr) const;
-  void write(std::ostream &pr, const Gtransfo *tf=nullptr) const;
-
-
-    //! enables to dump a match std::list through : std::cout << List;
-  void dump(std::ostream & stream = std::cout) const { stream << *this; }
-
-  //  ClassDef(StarMatchList,1)
-
     private:
 
   //! computes the chi2 even when there is no fit.

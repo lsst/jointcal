@@ -6,7 +6,6 @@
 #include "lsst/jointcal/StarMatch.h"
 #include "lsst/jointcal/BaseStar.h"
 #include "algorithm" // for copy
-//#include "vutils.h" /* for DArrayMedian */
 
 /* TO DO:
    think about imposing a maximum number of matches that may
@@ -225,92 +224,6 @@ int count=0;
 for (si = begin(); si != end() && count < NKeep; ++count, ++si);
 erase(si, end());
 }
-
-
-void StarMatchList::write_wnoheader(std::ostream & pr,
-    const Gtransfo* Transfo) const
-{
-
-  if ( empty() )
-    {
-      std::cerr << " Can't write an empty StarMatchList " << std::endl ;
-      return ;
-    }
-
-  std::ios::fmtflags  old_flags =  pr.flags();
-  pr  << std::resetiosflags(std::ios::scientific) ;
-  pr  << std::setiosflags(std::ios::fixed) ;
-  int oldprec = pr.precision();
-  pr<< std::setprecision(10);
-  for (auto const &starMatch: *this)
-    {
-      (starMatch.s1)->writen(pr);
-      pr << " " ;
-      // transformed coordinates
-      FatPoint p1 = *starMatch.s1;
-      if (Transfo)
-	{
-	  Transfo->TransformPosAndErrors(p1,p1);
-	  pr << p1.x << ' ' << p1.y << ' ';
-	  double sx = sqrt(p1.vx);
-	  double sy = sqrt(p1.vy);
-	  pr << sx << ' ' << sy << ' ' << p1.vxy/(sx*sy) << ' ';
-	}
-      (starMatch.s2)->writen(pr);
-
-      // compute offsets here  because they can be rounded off by paw.
-      double dx = p1.x - starMatch.s2->x;
-      double dy = p1.y - starMatch.s2->y;
-      pr << dx << ' '  << dy << ' ' << sqrt(dx*dx+dy*dy) << ' ';
-      // chi2 assoc
-      if (Transfo)
-	pr << starMatch.Chi2(*Transfo) << ' ';
-      else
-	pr << starMatch.Chi2(GtransfoIdentity()) << ' ';
-      pr << std::endl ;
-    }
-  pr.flags(old_flags);
-  pr << std::setprecision(oldprec);
-}
-
-
-void StarMatchList::write(std::ostream &pr, const Gtransfo *tf) const
-{
-  if ( empty() )
-    {
-      std::cerr << " Can't write empty StarMatchList " << std::endl ;
-      return ;
-    }
-
-  const StarMatch &starm = front();
-  (starm.s1)->WriteHeader_(pr, "1");
-  if (tf)
-    {
-      pr << "# x1tf: transformed x1 coordinate "  << std::endl ;
-      pr << "# y1tf: transformed y1 coordinate "  << std::endl ;
-      pr << "# sx1tf: transformed sx1 "  << std::endl ;
-      pr << "# sy1tf: transformed sy1 "  << std::endl ;
-      pr << "# rxy1tf: transformed rhoxy1 "  << std::endl ;
-    }
-  (starm.s2)->WriteHeader_(pr, "2");
-  pr << "# dx : diff in x" << std::endl;
-  pr << "# dy : diff in y" << std::endl;
-  pr << "# dass : association distance"  << std::endl ;
-  pr << "# chi2ass : assoc chi2"  << std::endl ;
-  pr << "# end " << std::endl ;
-
-  write_wnoheader(pr, tf);
-}
-
-void
-StarMatchList::write(const std::string &filename, const Gtransfo *tf) const
-{
-  std::ofstream pr(filename.c_str()) ;
-  write(pr, tf);
-  pr.close();
-}
-
-
 
 void StarMatchList::Swap()
 {

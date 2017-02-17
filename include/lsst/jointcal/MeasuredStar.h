@@ -70,13 +70,6 @@ class MeasuredStar : public BaseStar
   bool  IsValid() const { return valid; }
   //! Fits may use that to discard outliers
   void  SetValid(bool v) { valid=v; }
-
-  // No longer decrement counter of associated fitted star in destructor (P. El-Hage le 10/04/2012)
-  // ~MeasuredStar() { if (fittedStar) fittedStar->MeasurementCount()--;}
-
-  std::string WriteHeader_(std::ostream & pr = std::cout, const char* i = nullptr) const;
-  void writen(std::ostream& s) const;
-static BaseStar*  read(std::istream &s, const char* format);
 };
 
 

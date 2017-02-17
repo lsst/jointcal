@@ -5,7 +5,7 @@
 #include "lsst/jointcal/RefStar.h"
 #include "lsst/jointcal/MeasuredStar.h"
 #include "lsst/jointcal/Gtransfo.h"
-#include "lsst/jointcal/StarList.cc"
+#include "lsst/jointcal/StarList.h"
 
 
 namespace lsst {
@@ -41,9 +41,6 @@ void FittedStar::AddMagMeasurement(double MagValue,
 }
 
 
-
-
-
 /************* FittedStarList ************************/
 
 
@@ -66,123 +63,5 @@ const BaseStarList* Fitted2Base(const FittedStarList *This)
 {
   return (BaseStarList*) This;
 }
-
-
-
-void FittedStarList::WriteTuple(const std::string &FileName,
-			  const Gtransfo &T,
-			  const bool OnlyGoodStars)
-{
-  FittedStarTuple tuple(FileName);
-  for (auto const &fittedStar: *this)
-    {
-      if (OnlyGoodStars && fittedStar->flux < 0) continue;
-      Point raDec = T.apply(*fittedStar);
-      tuple.AddEntry(*fittedStar, raDec);
-    }
-}
-
-
-/****************/
-
-FittedStarTuple::FittedStarTuple(const std::string &FileName)
-  : stream(FileName.c_str())
-{
-  stream << "# ra : " << std::endl
-	 << "# dec : " << std::endl
-	 << "# mag : " << std::endl
-	 << "# nm : number of measurements" << std::endl
-	 << "# end " << std::endl;
-    ;
-
-}
-
-
-
-
-
-void FittedStarTuple::AddEntry(const FittedStar &F, const Point &RaDec)
-{
-  std::ios::fmtflags  old_flags =  stream.flags();
-  stream << std::setprecision(10);
-  stream << RaDec.x << ' '
-	 << RaDec.y << ' '
-    ;
-  stream << std::setprecision(5);
-  stream << F.Mag() << ' '
-	 << F.MeasurementCount() << ' '
-	 << std::endl;
-
-  stream.flags(old_flags);
-}
-
-
-
-template class StarList<FittedStar>;
-
-std::string FittedStar::WriteHeader_(std::ostream& pr, const char* i) const
-{
- std::string format = BaseStar::WriteHeader_(pr, i);
-  if(i==nullptr) i = "";
-
-  pr << "# mag"   << i << " : fitted magnitude" << std::endl;
-  pr << "# emag"  << i << " : error on the fitted magnitude" << std::endl;
-  pr << "# col"   << i << " : star color" << std::endl;
-  pr << "# gen"   << i << " : star generation (very grid specific)" << std::endl;
-  pr << "# wmag"  << i << " : some other field" << std::endl;
-  pr << "# index" << i << " : star index" << std::endl;
-  pr << "# measc" << i << " : measurement count" << std::endl;
-  pr << "# flux2" << i << " : flux in some other band ()" << std::endl;
-  pr << "# fluxErr" << i << " : flux error" << std::endl;
-  pr << "# fluxErr2" << i << " : flux2 error" << std::endl;
-
-  format += "FittedStar 1";
-  return format;
-}
-
-
-
- void FittedStar::writen(std::ostream& s) const
-{
-  s.setf(std::ios::scientific);
-  s << std::setprecision(12);
-
-  BaseStar::writen(s);
-  s << mag     << " "
-    << emag    << " "
-    << col     << " "
-    << gen     << " "
-    << wmag    << " "
-    << indexInMatrix   << " "
-    << measurementCount << " "
-    << flux2   << " "
-    << fluxErr << " "
-    << fluxErr2;
-}
-
-
-void FittedStar::read_it(std::istream& s, const char* format)
-{
-  BaseStar::read_it(s, format);
-  s >> mag
-    >> emag
-    >> col
-    >> gen
-    >> wmag
-    >> indexInMatrix
-    >> measurementCount
-    >> flux2
-    >> fluxErr
-    >> fluxErr2;
-}
-
-
-BaseStar* FittedStar::read(std::istream& s, const char* format)
-{
-  FittedStar* ret = new FittedStar();
-  ret->read_it(s, format);
-  return ret;
-}
-
 
 }} // end of namespaces

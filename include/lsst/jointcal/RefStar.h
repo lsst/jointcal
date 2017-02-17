@@ -60,23 +60,6 @@ BaseStarList* Ref2Base(RefStarList *This);
 const BaseStarList& Ref2Base(const RefStarList &This);
 const BaseStarList* Ref2Base(const RefStarList *This);
 
-
-
-
-/********* RefStarTuple ****************/
-
-class RefStarTuple {
-  private :
-  std::ofstream stream;
-
-  public :
-   RefStarTuple( const std::string &FileName);
-
-  void AddEntry(const RefStar &R, const FittedStar &F);
-
-  ~RefStarTuple() { stream.close();}
-};
-
 }} // end of namespaces
 
 #endif /* REFSTAR__H */
