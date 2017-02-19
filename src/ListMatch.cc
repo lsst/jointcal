@@ -7,6 +7,7 @@
 #define     M_PI            3.14159265358979323846  /* pi */
 #endif
 
+#include "lsst/log/Log.h"
 #include "lsst/jointcal/BaseStar.h"
 #include "lsst/jointcal/StarMatch.h"
 #include "lsst/jointcal/Gtransfo.h"
@@ -15,9 +16,12 @@
 #include "lsst/jointcal/FastFinder.h"
 #include "lsst/jointcal/ListMatch.h"
 
+namespace {
+    LOG_LOGGER _log = LOG_GET("jointcal.ListMatch");
+}
+
 namespace lsst {
 namespace jointcal {
-
 
 // cuts.. limits, etc for combinatorial match
 
@@ -84,7 +88,6 @@ SegmentList::SegmentList(const BaseStarList &L, const int NStars, const Gtransfo
 /* find the fence */
   siStop = L.begin();
   int limit = std::min(NStars, int(L.size())) - 1; // -1 because test happens after incrementation
-//cout << " DEBUG NStars " << NStars << " L.Size() " << L.size() << std::endl;
   for (int count = 0; count < limit ; count++) ++siStop;
 
 
@@ -98,7 +101,6 @@ SegmentList::SegmentList(const BaseStarList &L, const int NStars, const Gtransfo
          push_back(Segment(&s1,&s2, rank, Tin));
       }
   this->sort(DecreasingLength); /* allows a break in loops */
-  // cout << " DEBUG : size " << size() << std::endl;
 }
 
 
@@ -134,7 +136,6 @@ for (SegmentPairListCIterator spi = PairList.begin(); spi != PairList.end(); spi
   matchList->push_back(StarMatch(Tin.apply(*(a_pair.first->s2)), *(a_pair.second->s2),
                             a_pair.first->s2, a_pair.second->s2));
   }
-// cout << " matchList size " << matchList->size() << std::endl;
 return matchList;
 }
 
@@ -214,12 +215,10 @@ for (int i = 0; i<Conditions.MaxTrialCount; ++i)
   double ratioMax, angleMax;
   double maxContent = histo.MaxBin(ratioMax,angleMax);
   histo.Fill(ratioMax,angleMax, - maxContent);
+
   if (Conditions.PrintLevel >= 1)
-    {
-      std::cout << " valMax " << maxContent
-		<< " ratio " << ratioMax
-		<< " angle " << angleMax << std::endl;
-    }
+      LOGLS_DEBUG(_log, " valMax " << maxContent << " ratio " << ratioMax << " angle " << angleMax);
+
   minRatio = ratioMax - binr/2; maxRatio = ratioMax+binr/2;
   double minAngle = angleMax - bina/2; double maxAngle = angleMax+bina/2;
   SegmentPairList pairList;
@@ -250,10 +249,8 @@ for (int i = 0; i<Conditions.MaxTrialCount; ++i)
     double maxval = historank.MaxBin(dr1,dr2);
     /* set this bin to zero so that next iteration will find next maximum */
     historank.Fill(dr1,dr2,-maxval);
-    // cout << maxval << ' ' ; cout << dr1 << ' ' << dr2 << std::endl;
     StarMatchList *a_list = MatchListExtract(pairList, int(dr1), int(dr2), GtransfoIdentity());
     a_list->RefineTransfo(Conditions.NSigmas); // mandatory for the sorting fields to be filled
-    // cout << " list size after Refine " << a_list->size() << std::endl;
     Solutions.push_back(a_list);
     }
   }/* end of loop on (r,theta) bins */
@@ -263,11 +260,9 @@ for (int i = 0; i<Conditions.MaxTrialCount; ++i)
   Solutions.pop_front();
   if (Conditions.PrintLevel >=1)
     {
-      std::cout << " best solution " << best->Residual()
-		<< " npairs " << best->size() << std::endl
-		<< *(best->Transfo());
-      std::cout << " Chi2 " << best->Chi2() << ','
-		<< " Number of solutions " << Solutions.size() << std::endl;
+      LOGLS_DEBUG(_log, "Best solution " << best->Residual() << " npairs " << best->size());
+      LOGLS_DEBUG(_log, *(best->Transfo()));
+      LOGLS_DEBUG(_log, "Chi2 " << best->Chi2() << ',' << " Number of solutions " << Solutions.size());
     }
   return best;
 }
@@ -291,8 +286,8 @@ static StarMatchList *ListMatchupRotShift_New(BaseStarList &L1, BaseStarList &L2
 {
   if (L1.size() <= 4 || L2.size() <= 4)
     {
-      std::cout << " ListMatchupRotShift_New : (at least) one of the lists is too short " << std::endl;
-      return nullptr;
+        LOGL_FATAL(_log, "ListMatchupRotShift_New : (at least) one of the lists is too short.");
+        return nullptr;
     }
 
   SegmentList sList1(L1, Conditions.NStarsL1, Tin);
@@ -354,8 +349,7 @@ SolList Solutions;
      if (maxContent == 0) break;
      if (Conditions.PrintLevel >=1)
        {
-	 std::cout << " ValMax " << maxContent
-	      <<" ratio " << pars[0] << " angle " << pars[1] << std::endl;
+        LOGLS_DEBUG(_log, "ValMax " << maxContent << " ratio " << pars[0] << " angle " << pars[1]);
        }
      histo.ZeroBin(pars);
      if (i>0)
@@ -406,10 +400,9 @@ SolList Solutions;
 
      if (int(a_list->size() ) != maxContent+1 )
        {
-	 std::cerr << " There is an internal inconsistency in ListMatchupRotShift " << std::endl
-	      << " maxContent  = " << maxContent << std::endl
-	      << " matches->size() = " << a_list->size() << std::endl;
-	 std::cerr << "please store the involved images and contact the developpers" << std::endl;
+          LOGLS_ERROR(_log, "There is an internal inconsistency in ListMatchupRotShift.");
+          LOGLS_ERROR(_log, "maxContent  = " << maxContent);
+          LOGLS_ERROR(_log, "matches->size() = " << a_list->size());
        }
      a_list->RefineTransfo(Conditions.NSigmas);
      Solutions.push_back(a_list);
@@ -417,12 +410,11 @@ SolList Solutions;
 
   if (Solutions.size() == 0)
     {
-      std::cout << " error In ListMatchup : not a single pair match " << std::endl;
-      std::cout << " Probably, the relative scale of lists is not within bounds" << std::endl;
-      std::cout << " here : " << minRatio << ' ' << maxRatio << std::endl;
+      LOGLS_ERROR(_log, "Error In ListMatchup : not a single pair match.");
+      LOGLS_ERROR(_log, "Probably, the relative scale of lists is not within bounds.");
+      LOGLS_ERROR(_log, "min/max ratios: " << minRatio << ' ' << maxRatio);
       return nullptr;
     }
-
 
   Solutions.sort(DecreasingQuality);
   StarMatchList *best = *Solutions.begin();
@@ -430,9 +422,9 @@ SolList Solutions;
   Solutions.pop_front();
   if (Conditions.PrintLevel >=1)
     {
-      std::cout << " best solution " << best->Residual() << " npairs " << best->size() << std::endl << *(best->Transfo());
-      std::cout << " Chi2 " << best->Chi2() << ','
-	   << " Number of solutions " << Solutions.size() << std::endl;
+      LOGLS_INFO(_log, "Best solution " << best->Residual() << " npairs " << best->size());
+      LOGLS_INFO(_log, *(best->Transfo()));
+      LOGLS_INFO(_log, "Chi2 " << best->Chi2() << ", Number of solutions " << Solutions.size());
     }
   return best;
 }
@@ -466,13 +458,13 @@ StarMatchList *MatchSearchRotShiftFlip(BaseStarList &L1, BaseStarList &L2, const
   if (! flipped  || !unflipped) return nullptr;
   if (Conditions.PrintLevel >=1)
     {
-      std::cout << " unflipped  Residual " << unflipped->Residual() << " nused " << unflipped->size() << std::endl;
-      std::cout << "   flipped  Residual " << flipped->Residual() << " nused " << flipped->size() << std::endl;
+      LOGLS_DEBUG(_log, "unflipped Residual " << unflipped->Residual() << " nused " << unflipped->size());
+      LOGLS_DEBUG(_log, "flipped Residual " << flipped->Residual() << " nused " << flipped->size());
     }
   if (DecreasingQuality(flipped,unflipped))
     {
       if (Conditions.PrintLevel >=1)
-	std::cout << " keeping flipped solution" << std::endl;
+        LOGL_DEBUG(_log, "Keeping flipped solution.");
       delete unflipped;
       // One should NOT apply the flip to the result because the matchlist
       // (even the flipped one) contains the actual coordinates of stars.
@@ -482,7 +474,7 @@ StarMatchList *MatchSearchRotShiftFlip(BaseStarList &L1, BaseStarList &L2, const
   else
     {
       if (Conditions.PrintLevel >=1)
-	std::cout << " keeping unflipped solution" << std::endl;
+        LOGL_DEBUG(_log, "Keeping unflipped solution.");
       delete flipped;
       return unflipped;
     }
@@ -567,12 +559,10 @@ GtransfoLin *ListMatchupShift(const BaseStarList &L1, const BaseStarList &L2, co
       delete raw_matches;
       matches->SetTransfoOrder(1);
       matches->RefineTransfo(3.);
-      //      std::cout << *matches->Transfo() << std::endl;
       Solutions.push_back(matches);
     }
   Solutions.sort(DecreasingQuality);
   GtransfoLin *best = new GtransfoLin(* const_cast<GtransfoLin*>(dynamic_cast<const GtransfoLin*> (Solutions.front()->Transfo())));
-  //  std::cout << " best \"shift\" found " << std::endl << *best;
   return best;
 }
 
@@ -647,8 +637,7 @@ StarMatchList *CollectAndFit(const BaseStarList &L1, const BaseStarList &L2,
       StarMatchList *m = ListMatchCollect(L1,L2,bestTransfo, MaxDist);
       m->SetTransfo(bestTransfo);
       m->RefineTransfo(3.);
-      std::cout << " iterating : resid " << m->Residual()
-	   << ' ' << " size " << m->size() << std::endl;
+      LOGLS_INFO(_log, "Iterating: resid " << m->Residual() << " size " << m->size());
       if (!prevMatch ||
 	  (prevMatch
 	   && m->Residual() < prevMatch->Residual()*0.999
@@ -700,7 +689,7 @@ static bool is_transfo_ok(const StarMatchList* match, double pixSizeRatio2, cons
 
   if ((fabs(fabs(dynamic_cast<const GtransfoLin*>(match->Transfo())->Determinant())-pixSizeRatio2)/pixSizeRatio2 < 0.2) && (match->size() > nmin))
     return true;
-  std::cout << " is_transfo_ok: no\n";
+  LOGL_ERROR(_log, "transfo is not ok!");
   match->DumpTransfo();
   return false;
 }
@@ -741,7 +730,7 @@ Gtransfo* ListMatchCombinatorial(const BaseStarList &List1, const BaseStarList &
   List1.CopyTo(L1); L1.FluxSort();
   List2.CopyTo(L2); L2.FluxSort();
 
-  std::cout << " ListMatchCombinatorial: find match between " << L1.size() << " and " << L2.size() << " stars...";
+  LOGLS_INFO(_log, "ListMatchCombinatorial: find match between " << L1.size() << " and " << L2.size() << " stars...");
   StarMatchList *match = MatchSearchRotShiftFlip(L1, L2, Conditions);
   Gtransfo *transfo = 0;
   double pixSizeRatio2 = sqr(Conditions.SizeRatio);
@@ -751,24 +740,27 @@ Gtransfo* ListMatchCombinatorial(const BaseStarList &List1, const BaseStarList &
     transfo = match->Transfo()->Clone();
   else {
     delete match;
-    std::cout << "FAILED\n ListMatchCombinatorial: direct transfo failed, trying reverse";
+    LOGL_ERROR(_log, "ListMatchCombinatorial: direct transfo failed, trying reverse");
     match = MatchSearchRotShiftFlip(L2, L1, Conditions);
     if (is_transfo_ok(match, pixSizeRatio2, nmin))
       transfo = match->InverseTransfo();
     else {
-      std::cout << "FAILED\n";
+      LOGL_FATAL(_log, "FAILED");
       if (transfo) delete transfo;
     }
   }
   delete match;
 
   if (transfo) {
-    std::cout << "FOUND\n";
+    LOGL_INFO(_log, "FOUND");
     if (Conditions.PrintLevel >= 1)
-      std::cout << " ListMatchCombinatorial: found the following transfo\n"
-	   << *transfo << std::endl;
-  } else
-    std::cerr << "FAILED\n. Error: ListMatchCombinatorial: failed to find a transfo\n";
+    {
+      LOGL_DEBUG(_log, " ListMatchCombinatorial: found the following transfo.");
+      LOGLS_DEBUG(_log, *transfo);
+    }
+  }
+  else
+    LOGL_ERROR(_log, "ListMatchCombinatorial: failed to find a transfo");
   return transfo;
 }
 
@@ -793,10 +785,8 @@ Gtransfo* ListMatchRefine(const BaseStarList& List1, const BaseStarList& List2, 
   StarMatchList *brightMatch = ListMatchCollect(L1, L2, transfo, brightDist);
   double curChi2 = computeChi2(*brightMatch, *transfo) / brightMatch->size();
 
-  std::cout << " ListMatchRefine: start  "
-       << " med.resid "  << median_distance(fullMatch, transfo)
-       << " #match " << fullMatch->size()
-       << std::endl;
+  LOGLS_INFO(_log, "ListMatchRefine: start: med.resid " << median_distance(fullMatch, transfo)
+             << " #match " << fullMatch->size());
 
   do { // loop on transfo order on full list of stars
     Gtransfo* curTransfo = brightMatch->Transfo()->Clone();
@@ -816,12 +806,10 @@ Gtransfo* ListMatchRefine(const BaseStarList& List1, const BaseStarList& List2, 
 
     delete fullMatch;
     fullMatch = ListMatchCollect(List1, List2, curTransfo, fullDist);
-    std::cout << " ListMatchRefine: order " << order
-	 << " med.resid "  << median_distance(fullMatch, curTransfo)
-	 << " #match " << fullMatch->size()
-	 << std::endl;
+    LOGLS_INFO(_log, "ListMatchRefine: order " << order << " med.resid "
+               << median_distance(fullMatch, curTransfo) << " #match " << fullMatch->size());
     if (((prevChi2 - curChi2) > 0.01*curChi2) && curChi2 > 0) {
-      std::cout << " ListMatchRefine: order " << order << " was a better guess\n";
+      LOGLS_INFO(_log, " ListMatchRefine: order " << order << " was a better guess.");
       delete transfo;
       transfo = brightMatch->Transfo()->Clone();
     }

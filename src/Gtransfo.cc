@@ -6,19 +6,23 @@
 #include "assert.h"
 #include <sstream>
 
+#include "lsst/log/Log.h"
 #include "lsst/jointcal/Gtransfo.h"
 #include "lsst/jointcal/Frame.h"
 #include "lsst/jointcal/StarMatch.h"
 #include "lsst/pex/exceptions.h"
 #include "Eigen/Cholesky"
 
-namespace pexExcept = lsst::pex::exceptions; //?
+namespace pexExcept = lsst::pex::exceptions;
 
 using namespace std;
 
+namespace {
+    LOG_LOGGER _log = LOG_GET("jointcal.Gtransfo");
+}
+
 namespace lsst {
 namespace jointcal {
-
 
 bool IsIdentity(const Gtransfo *a_transfo)
 { return (dynamic_cast<const GtransfoIdentity*>(a_transfo) != nullptr);}
@@ -342,9 +346,7 @@ void GtransfoInverse::apply(const double Xin, const double Yin,
       move2 = xShift*xShift+yShift*yShift;
     } while (( move2 > precision2) && (loop < maxloop));
   if (loop == maxloop)
-    {
-      cerr << " troubles with Gtransfo inversion at " << in << endl;
-    }
+    LOGLS_WARN(_log, "Problems applying GtransfoInverse at " << in);
   Xout = outGuess.x;
   Yout = outGuess.y;
 }
@@ -357,9 +359,7 @@ void GtransfoInverse::dump(ostream &stream) const
 
 double GtransfoInverse::fit(const StarMatchList &)
 {
-  std::cerr << " Trying to fit a GtransfoInverse... try to use StarMatchList::inverseTransfo instead"
-    << std::endl;
-  return -1;
+  throw pexExcept::RuntimeError("Cannot fit a GtransfoInverse. Use StarMatchList::inverseTransfo instead.");
 }
 
 Gtransfo *GtransfoInverse::Clone() const
@@ -1033,7 +1033,7 @@ double GtransfoPoly::do_the_fit(const StarMatchList &List,
   // should probably throw
   if (factor.info() != Eigen::Success)
     {
-      cout << "GtransfoPoly::fit : could not factorize " << endl;
+      LOGL_ERROR(_log, "GtransfoPoly::fit could not factorize");
       return -1;
     }
 
@@ -1048,7 +1048,7 @@ double  GtransfoPoly::fit(const StarMatchList &List)
 {
   if (List.size()< nterms)
     {
-      cerr << " GtransfoPoly::fit : trying to fit a polynomial transfo of degree " << deg << " with only " << List.size() << " matches " << endl;
+      LOGLS_FATAL(_log, "GtransfoPoly::fit trying to fit a polynomial transfo of degree " << deg << " with only " << List.size() << " matches.");
       return -1;
     }
 
@@ -1306,7 +1306,7 @@ GtransfoPoly *InversePolyTransfo(const Gtransfo &Direct, const Frame &F, const d
       if (chi2/npairs< Prec*Prec) break;
     }
   if (degree>maxdeg)
-    cout << " InversePolyTransfo : Reached  max degree without reaching  requested precision = " << Prec << endl;
+    LOGLS_WARN(_log, "InversePolyTransfo: Reached max degree without reaching requested precision: " << Prec);
   return poly;
 }
 
@@ -1332,10 +1332,7 @@ GtransfoLin::GtransfoLin(const double Dx, const double Dy ,
 GtransfoLin::GtransfoLin(const GtransfoPoly &P) : GtransfoPoly(1)
 {
   if (P.Degree() !=  1)
-    {
-      cout << " Trying to build a GtransfoLin from a higher order transfo. aborting " << endl;
-      abort(); // should throw
-    }
+      throw pexExcept::InvalidParameterError("Trying to build a GtransfoLin from a higher order transfo. Aborting. ");
   (GtransfoPoly &) (*this) = P;
 }
 
@@ -1384,7 +1381,7 @@ GtransfoLin GtransfoLin::invert() const
   double d = (a11*a22 - a12*a21);
   if (d == 0)
     {
-      cerr << " trying to invert a singular transformation: a (nice) crash follows" << endl;
+      LOGL_FATAL(_log, "GtransfoLin::invert singular transformation: transfo contents will be dumped to stderr.");
       dump(cerr);
     }
 
@@ -1403,10 +1400,7 @@ Gtransfo* GtransfoLin::InverseTransfo(const double, const Frame &) const
 
 double  GtransfoLinRot::fit(const StarMatchList &)
 {
-
-  cout << " GTransfoLinRot::fit : not implemented !!! aborting " << endl;
-  abort();
-  return -1;
+  throw pexExcept::NotFoundError("GTransfoLinRot::fit not implemented! aborting");
 }
 
 
@@ -1415,7 +1409,8 @@ double  GtransfoLinShift::fit(const StarMatchList &List)
   int npairs = List.size();
   if (npairs < 3)
     {
-      // cerr << " GtransfoLinShift::fit  : trying to fit a linear transfo with only " << npairs << " matches " << endl;
+      LOGLS_FATAL(_log, "GtransfoLinShift::fit trying to fit a linear transfo with only "
+                  << npairs << " matches.");
       return -1;
     }
 
@@ -1555,7 +1550,7 @@ void BaseTanWcs::apply(const double Xin, const double Yin,
   double dect = cos0 - m * sin0;
   if (dect == 0)
     {
-      cerr << " no sideral coordinates at pole ! " << endl;
+      LOGL_WARN(_log, "No sidereal coordinates at pole!");
       Xout = 0;
       Yout = 0;
       return;
@@ -1644,8 +1639,8 @@ TanRaDec2Pix TanPix2RaDec::invert() const
 {
   if (corr != nullptr)
     {
-      cerr << " You are inverting a TanPix2RaDec with corrections " << endl;
-      cerr << " The inverse you get ignores the corrections !!!!!!" << endl;
+      LOGL_WARN(_log, "You are inverting a TanPix2RaDec with corrections.");
+      LOGL_WARN(_log, "The inverse you get ignores the corrections!");
     }
   return TanRaDec2Pix(LinPart().invert(),TangentPoint());
 }

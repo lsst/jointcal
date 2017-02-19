@@ -188,8 +188,6 @@ PTR(afwImg::TanWcs) GtransfoToTanWcs(const jointcal::TanSipPix2RaDec WcsTransfo,
       {
 	sipA(i,j) = sipPoly.Coeff(i,j,0);
 	sipB(i,j) = sipPoly.Coeff(i,j,1);
-	// DEBUG
-	//	std::cout << "sipAB " << i << ' ' << j << ' ' << sipA(i,j) << ' ' << sipB(i,j)  << std::endl;
       }
 
   // now backwards coefficients

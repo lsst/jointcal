@@ -4,12 +4,15 @@
 #include <algorithm> /* for sort */
 #include <limits.h>
 
+#include "lsst/log/Log.h"
 #include "lsst/jointcal/Histo4d.h"
+
+namespace {
+    LOG_LOGGER _log = LOG_GET("jointcal.Histo4d");
+}
 
 namespace lsst {
 namespace jointcal {
-
-using namespace std;
 
 SparseHisto4d::SparseHisto4d(const int N1, double Min1, double Max1,
 			     const int N2, double Min2, double Max2,
@@ -20,9 +23,7 @@ SparseHisto4d::SparseHisto4d(const int N1, double Min1, double Max1,
   double indexMax = N1*N2*N3*N4;
   data = nullptr;
   if (indexMax > double(INT_MAX))
-    {
-      cerr << " cannot hold a 4D histo with more than " << INT_MAX 	   << " values " <<  endl;
-    }
+      LOGLS_WARN(_log, "Cannot hold a 4D histo with more than " << INT_MAX << " values.");
   n[0] = N1;
   n[1] = N2;
   n[2] = N3;
@@ -132,7 +133,7 @@ void SparseHisto4d::ZeroBin(double X[4])
   int start = 0;
   while ((data[start] < code) && start < ndata) start++;
   // find how many identical entries we have
-  int end = min(start+1,ndata);
+  int end = std::min(start+1,ndata);
   while (end < ndata && data[start] == data[end]) end++;
   int shift = end-start;
   int lastShift = ndata - (end-start);

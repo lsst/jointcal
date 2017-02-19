@@ -3,6 +3,7 @@
 #include <sstream>
 #include <math.h>
 
+#include "lsst/log/Log.h"
 #include "lsst/jointcal/CcdImage.h"
 #include "lsst/jointcal/SipToGtransfo.h"
 #include "lsst/jointcal/AstroUtils.h"
@@ -14,6 +15,10 @@
 
 namespace jointcal = lsst::jointcal;
 namespace afwImg = lsst::afw::image;
+
+namespace {
+    LOG_LOGGER _log = LOG_GET("jointcal.CcdImage");
+}
 
 namespace lsst {
 namespace jointcal {
@@ -49,8 +54,8 @@ void CcdImage::LoadCatalog(const lsst::afw::table::SortedCatalogT<lsst::afw::tab
         double mxy = i.get(mxyKey);
         ms->vxy = mxy*(ms->vx + ms->vy)/(mxx + myy);
         if (ms->vx < 0 || ms->vy < 0 || (ms->vxy*ms->vxy) > (ms->vx*ms->vy)) {
-            std::cout << "Bad source detected in LoadCatalog : " << ms->vx << " " << ms->vy << " " <<
-                      ms->vxy*ms->vxy << " " << ms->vx*ms->vy << std::endl;
+            LOGLS_WARN(_log, "Bad source detected in LoadCatalog : " << ms->vx << " " << ms->vy << " "
+                       << ms->vxy*ms->vxy << " " << ms->vx*ms->vy);
             continue;
         }
         ms->flux = i.get(fluxKey);

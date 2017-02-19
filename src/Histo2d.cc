@@ -2,13 +2,15 @@
 #include <math.h> /* for floor */
 #include <string.h> /* for memset*/
 
+#include "lsst/log/Log.h"
 #include "lsst/jointcal/Histo2d.h"
+
+namespace {
+    LOG_LOGGER _log = LOG_GET("jointcal.Histo2d");
+}
 
 namespace lsst {
 namespace jointcal {
-
-
-  //using namespace std;
 
 Histo2d::Histo2d(int nnx, float mminx, float mmaxx, int nny, float mminy,float mmaxy)
 {
@@ -20,14 +22,14 @@ Histo2d::Histo2d(int nnx, float mminx, float mmaxx, int nny, float mminy,float m
     scalex = nx/(mmaxx-mminx);
   else
     {
-      std::cerr << " Histo2d: minx = maxx requested" << std::endl;
+        LOGL_WARN(_log, "Histo2d: minx = maxx requested");
       scalex = 1.0;
     }
   if (mmaxy != mminy)
     scaley = ny/(mmaxy-mminy);
   else
     {
-      std::cerr << " Histo2d : maxy = miny requested" << std::endl;
+      LOGL_WARN(_log, "Histo2d: maxy = miny requested");
       scaley = 1.0;
     }
   data = new float[nx*ny];
@@ -83,7 +85,7 @@ double Histo2d::BinContent(double X, double Y) const
 {
   int ix, iy;
   if (indices(X,Y,ix,iy)) return data[iy + ny*ix];
-  std::cout << " Histo2D::BinContent outside limits requested " << std::endl;
+  LOGL_WARN(_log, "Histo2D::BinContent outside limits requested");
   return -1e30;
 }
 

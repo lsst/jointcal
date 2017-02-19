@@ -59,22 +59,19 @@ class PerTractCcdDataIdContainer(CoaddDataIdContainer):
         if self.datasetType is None:
             raise RuntimeError("Must call setDatasetType first")
         skymap = None
-        log = None
+        log = lsst.log.Log.getLogger("jointcal.dataIds")
         visitTract = {}  # Set of tracts for each visit
         visitRefs = {}  # List of data references for each visit
         for dataId in self.idList:
             if "tract" not in dataId:
                 # Discover which tracts the data overlaps
-                if log is None:
-                    log = lsst.log.Log.getLogger("jointcal.logger")
-                log.info("Reading WCS for components of dataId=%s to determine tracts" % (dict(dataId),))
+                log.infof("Reading WCS to determine tracts for components of dataId={}", dict(dataId))
                 if skymap is None:
                     skymap = self.getSkymap(namespace)
-                    print(skymap)
 
                 for ref in namespace.butler.subset("calexp", dataId=dataId):
                     if not ref.datasetExists("calexp"):
-                        print("Not found")
+                        log.warnf("calexp with dataId: {} not found.", dict(dataId))
                         continue
 
                     # XXX fancier mechanism to select an individual exposure than just pulling out "visit"?
@@ -90,7 +87,6 @@ class PerTractCcdDataIdContainer(CoaddDataIdContainer):
                     # Going with just the nearest tract.  Since we're throwing all tracts for the visit
                     # together, this shouldn't be a problem unless the tracts are much smaller than a CCD.
                     tract = skymap.findTract(wcs.pixelToSky(box.getCenter()))
-                    print("tract = ", tract)
                     if overlapsTract(tract, wcs, box):
                         if visit not in visitTract:
                             visitTract[visit] = set()
@@ -112,7 +108,7 @@ class PerTractCcdDataIdContainer(CoaddDataIdContainer):
             tractCounter = collections.Counter()
             for tractSet in visitTract.values():
                 tractCounter.update(tractSet)
-            log.info("Number of visits for each tract: %s" % (dict(tractCounter),))
+            log.infof("Number of visits per tract: {}", dict(tractCounter))
 
 
 def overlapsTract(tract, imageWcs, imageBox):

@@ -1,6 +1,8 @@
 #include <iostream>
 #include <iomanip>
 #include <algorithm>
+
+#include "lsst/log/Log.h"
 #include "lsst/jointcal/AstromFit.h"
 #include "lsst/jointcal/Associations.h"
 #include "lsst/jointcal/Mapping.h"
@@ -138,9 +140,12 @@ static double sqr(double x) {return x*x;}
 
 //const double posErrorIncrement=0.02;
 
+namespace {
+    LOG_LOGGER _log = LOG_GET("jointcal.AstromFit");
+}
+
 namespace lsst {
 namespace jointcal {
-
 
 AstromFit::AstromFit(Associations &associations, DistortionModel *distortionModel, double posError) :
     _assoc(associations),  _distortionModel(distortionModel), _posError(posError)
@@ -164,7 +169,7 @@ AstromFit::AstromFit(Associations &associations, DistortionModel *distortionMode
         _referenceColor /= double(count);
         if (_sigCol > 0) _sigCol = sqrt(_sigCol/count - sqr(_referenceColor));
     }
-    cout << "INFO: reference Color : " << _referenceColor << " sig " << _sigCol << endl;
+    LOGLS_INFO(_log, "Reference Color: " << _referenceColor << " sig " << _sigCol);
 
     _nRefrac = _assoc.NBands();
     _refractionCoefficient = 0;
@@ -286,7 +291,8 @@ void AstromFit::LSDerivatives1(const CcdImage &ccdImage,
         unsigned ipar = npar_mapping;
         double det = outPos.vx*outPos.vy - sqr(outPos.vxy);
         if (det <= 0 || outPos.vx <= 0 || outPos.vy <= 0) {
-            cout << " WARNING: inconsistent measurement errors :drop measurement at " << Point(ms) << " in image " << ccdImage.getName() << endl;
+            LOGLS_WARN(_log, "Inconsistent measurement errors: drop measurement at " << Point(ms)
+                       << " in image " << ccdImage.getName());
             continue;
         }
         transW(0, 0) = outPos.vy/det;
@@ -420,8 +426,7 @@ void AstromFit::LSDerivatives2(const FittedStarList &fsl, TripletList &tList, Ei
         double det = rsProj.vx*rsProj.vy - sqr(rsProj.vxy);
         if (rsProj.vx <= 0 || rsProj.vy <= 0 || det <= 0)
         {
-            cout << " WARNING: Ref star error matrix not posdef:  " << endl
-                 << *rs << endl;
+            LOGLS_WARN(_log, "RefStar error matrix not positive definite for:  " << *rs);
             continue;
         }
         w(0, 0) = rsProj.vy/det;
@@ -524,7 +529,8 @@ void AstromFit::accumulateStatImage(ImType &image, Accum &accu) const
         mapping->TransformPosAndErrors(inPos, outPos);
         double det = outPos.vx*outPos.vy - sqr(outPos.vxy);
         if (det <= 0 || outPos.vx <= 0 || outPos.vy <= 0) {
-            cout << " WARNING: inconsistent measurement errors :drop measurement at " << Point(ms) << " in image " << image.getName() << endl;
+            LOGLS_WARN(_log, " Inconsistent measurement errors :drop measurement at " << Point(ms)
+                       << " in image " << image.getName());
             continue;
         }
         transW(0, 0) = outPos.vy/det;
@@ -713,8 +719,8 @@ unsigned AstromFit::findOutliers(double nSigCut,
     {sum += i->chi2; sum2 += sqr(i->chi2);}
     double average = sum/nval;
     double sigma = sqrt(sum2/nval - sqr(average));
-    cout << "INFO : removeOutliers chi2 stat: mean/median/sigma "
-         << average << '/' << median << '/' << sigma << endl;
+    LOGLS_DEBUG(_log, "RemoveOutliers chi2 stat: mean/median/sigma "
+               << average << '/' << median << '/' << sigma);
     double cut = average + nSigCut*sigma;
     /* For each of the parameters, we will not remove more than 1
        measurement that contributes to constraining it. Keep track using
@@ -770,9 +776,9 @@ unsigned AstromFit::findOutliers(double nSigCut,
             nOutliers++;
         }
     } // end loop on measurements/references
-    cout << "INFO : findOutliers : found "
-         << msOutliers.size() << " meas outliers and "
-         << fsOutliers.size () << " ref outliers " << endl;
+    LOGLS_INFO(_log, "findOutliers: found "
+               << msOutliers.size() << " meas outliers and "
+               << fsOutliers.size () << " ref outliers ");
 
     return nOutliers;
 }
@@ -802,13 +808,13 @@ void AstromFit::removeRefOutliers(FittedStarList &outliers)
 void AstromFit::assignIndices(const std::string &whatToFit)
 {
     _whatToFit = whatToFit;
-    cout << "INFO: we are going to fit : " << whatToFit << endl;
+    LOGLS_INFO(_log, "assignIndices: Now fitting " << whatToFit);
     _fittingDistortions = (_whatToFit.find("Distortions") != string::npos);
     _fittingPos = (_whatToFit.find("Positions") != string::npos);
     _fittingRefrac = (_whatToFit.find("Refrac") != string::npos);
     if (_sigCol == 0 && _fittingRefrac)
     {
-        cout << "WARNING: We cannot fit refraction coefficients without a color lever arm. Ignoring refraction" << endl;
+        LOGLS_WARN(_log, "Cannot fit refraction coefficients without a color lever arm. Ignoring refraction.");
         _fittingRefrac = false;
     }
     _fittingPM = (_whatToFit.find("PM") != string::npos);
@@ -842,17 +848,6 @@ void AstromFit::assignIndices(const std::string &whatToFit)
         ipar += _nRefrac;
     }
     _nParTot = ipar;
-
-#if (0)
-    //DEBUG
-    cout << " INFO: np(d,p, total) = "
-         <<  _nParDistortions << ' '
-         << _nParPositions << ' '
-         << _nParTot << ' '
-         << whatToFit << endl;
-    const FittedStar &ffs = (**(_assoc.fittedStarList.begin()));
-    cout << " INFO : first Star Index : " <<  ffs.IndexInMatrix() << ' ' << Point(ffs) << endl;
-#endif
 }
 
 
@@ -895,7 +890,7 @@ static void write_sparse_matrix_in_fits(const SpMat &mat, const string &fitsName
 {
     if (mat.rows()*mat.cols() > 2e8)
     {
-        cout << "WARNING :  write_sparse_matrix_in_fits : yout matrix is too large. " << fitsName << " not generated" << endl;
+        LOGLS_WARN(_log, "write_sparse_matrix_in_fits: yout matrix is too large. " << fitsName << " not generated");
         return;
     }
     Mat m(mat.rows(), mat.cols());
@@ -936,7 +931,7 @@ unsigned AstromFit::minimize(const std::string &whatToFit, const double nSigRejC
     LSDerivatives(tList, grad);
     _LastNTrip = tList.size();
 
-    cout << " INFO: End of triplet filling, ntrip = " << tList.size() << endl;
+    LOGLS_DEBUG(_log, "End of triplet filling, ntrip = " << tList.size());
 
     SpMat hessian;
     {
@@ -951,21 +946,20 @@ unsigned AstromFit::minimize(const std::string &whatToFit, const double nSigRejC
         jacobian.setFromTriplets(tList.begin(), tList.end());
         // release memory shrink_to_fit is C++11
         tList.clear(); //tList.shrink_to_fit();
-        cout << " starting H=JtJ " << endl;
+        LOGLS_DEBUG(_log, " starting H=JtJ ");
         hessian = jacobian.transpose()*jacobian;
 #endif
     }// release the Jacobian
 
 
-    cout << "INFO: hessian : dim=" << hessian.rows()
-         << " nnz=" << hessian.nonZeros()
-         << " filling-frac = " << hessian.nonZeros()/sqr(hessian.rows()) << endl;
-    cout << "INFO: starting factorization" << endl;
+    LOGLS_DEBUG(_log, "Starting factorization, hessian: dim=" << hessian.rows()
+               << " nnz=" << hessian.nonZeros()
+               << " filling-frac = " << hessian.nonZeros()/sqr(hessian.rows()));
 
     CholmodSimplicialLDLT2<SpMat> chol(hessian);
     if (chol.info() != Eigen::Success)
     {
-        cout << "ERROR: AstromFit::minimize : factorization failed " << endl;
+        LOGLS_ERROR(_log, "minimize: factorization failed ");
         return 2;
     }
 
@@ -975,13 +969,12 @@ unsigned AstromFit::minimize(const std::string &whatToFit, const double nSigRejC
     while (true)
     {
         Eigen::VectorXd delta = chol.solve(grad);
-        //  cout << " offsetting parameters" << endl;
         offsetParams(delta);
         Chi2 current_chi2(computeChi2());
-        cout << current_chi2 << endl;
+        LOGLS_DEBUG(_log, current_chi2);
         if (current_chi2.chi2 > old_chi2)
         {
-            cout << "WARNING: chi2 went up, exiting outlier rejection loop" << endl;
+            LOGL_WARN(_log, "chi2 went up, exiting outlier rejection loop");
             returnCode = 1;
             break;
         }
@@ -1004,14 +997,14 @@ unsigned AstromFit::minimize(const std::string &whatToFit, const double nSigRejC
         SpMat h(_nParTot, tList.NextFreeIndex());
         h.setFromTriplets(tList.begin(), tList.end());
         int update_status = chol.update(h, false /* means downdate */);
-        cout << "INFO: cholmod  update_status " << update_status << endl;
+        LOGLS_DEBUG(_log, "cholmod update_status " << update_status);
         /* The contribution of outliers to the gradient is the opposite
         of the contribution of all other terms, because they add up
          to 0 */
         grad *= -1;
     }
 
-    cout << "INFO: total number of outliers " << tot_outliers << endl;
+    LOGLS_INFO(_log, "Total number of outliers " << tot_outliers);
 
     return returnCode;
 }
@@ -1045,8 +1038,7 @@ void AstromFit::checkStuff()
         sprintf(name, "g%d.fits", k);
         write_vect_in_fits(rhs, name);
 #endif
-        cout << "npar : " << _nParTot << ' ' << _nParDistortions << ' ' << endl;
-
+        LOGLS_DEBUG(_log, "npar : " << _nParTot << ' ' << _nParDistortions);
     }
 }
 

@@ -3,6 +3,7 @@
 #include <iostream>
 #include <sstream>
 
+#include "lsst/log/Log.h"
 #include "lsst/jointcal/Associations.h"
 #include "lsst/jointcal/CcdImage.h"
 #include "lsst/jointcal/SipToGtransfo.h"
@@ -30,6 +31,10 @@ namespace jointcal = lsst::jointcal;
 
 static double sqr(double x) {return x*x;}
 
+namespace {
+    LOG_LOGGER _log = LOG_GET("jointcal.Associations");
+}
+
 namespace lsst {
 namespace jointcal {
 
@@ -50,8 +55,7 @@ void Associations::addImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::S
 {
     std::shared_ptr<CcdImage> ccdImage(new CcdImage(catalog, wcs, visitInfo, bbox, filter, calib, visit, ccd, control->sourceFluxField));
     ccdImageList.push_back(ccdImage);
-    std::cout << " we have " << ccdImage->getWholeCatalog().size()
-              << " objects in this catalog " << visit << " " << ccd << std::endl;
+    LOGLS_DEBUG(_log, "Catalog " << ccdImage->getName() << " has " << ccdImage->getWholeCatalog().size() << " objects.");
 }
 
 void Associations::setCommonTangentPoint(lsst::afw::geom::Point2D const &commonTangentPoint)
@@ -65,8 +69,6 @@ void Associations::associateCatalogs(const double matchCutInArcSec,
                                      const bool UseFittedList,
                                      const bool EnlargeFittedList)
 {
-    std::cout << " associating using a cut of " << matchCutInArcSec << " arcsec" << std::endl;
-
     // clear reference stars
     for (auto &item: refStarList)
     {
@@ -140,8 +142,7 @@ void Associations::associateCatalogs(const double matchCutInArcSec,
             ms.SetFittedStar(&fs);
             matchedCount++;
         }
-        std::cout << " matched " << matchedCount << " objects"
-                  << " in " << ccdImage->getName() << std::endl;
+        LOGLS_INFO(_log, "Matched " << matchedCount << " objects in " << ccdImage->getName());
         // delete the matches
         delete smList;
 
@@ -162,9 +163,8 @@ void Associations::associateCatalogs(const double matchCutInArcSec,
             }
             unMatchedCount++;
         }
-        std::cout << " unmatched objects :" << unMatchedCount << std::endl;
-        std::cout << " ************" << std::endl;
-    } // end of loop on CcdImage's
+        LOGLS_INFO(_log, "Unmatched objects: " << unMatchedCount);
+    } // end of loop on CcdImages
 
     assignMags();
 }
@@ -244,11 +244,9 @@ void Associations::associateRefStars(double matchCutInArcSec, const Gtransfo* gt
 
     if (cleanMatches)
     {
-        std::cout << " number of refcat matches before removing ambiguities "
-                  << smList->size() << std::endl;
+        LOGLS_INFO(_log, "Refcat matches before removing ambiguities " << smList->size());
         smList->RemoveAmbiguities(*gtransfo);
-        std::cout << " number of refcat matches after removing ambiguities "
-                  << smList->size() << std::endl;
+        LOGLS_INFO(_log, "Refcat matches after removing ambiguities " << smList->size());
     }
 
     // actually associate things
@@ -264,15 +262,14 @@ void Associations::associateRefStars(double matchCutInArcSec, const Gtransfo* gt
         fs.setRefStar(&rs);
     }
 
-    std::cout << " associated " << smList->size() << " reference stars "
-              << " among a list of " << refStarList.size() << std::endl;
+    LOGLS_INFO(_log, "Associated " << smList->size() << " reference stars among " << refStarList.size());
     delete smList;
 }
 
 void Associations::selectFittedStars()
 {
-    std::cout << " number of possible fitted star before cutting on # of measurements " << fittedStarList.size() << std::endl;
-    std::cout << " INFO: min # of measurements " <<  minMeasurementCount << std::endl;
+    LOGLS_INFO(_log, "Fitted stars before measurement # cut: " << fittedStarList.size());
+    LOGLS_DEBUG(_log, "Minimum # of measurements: " <<  minMeasurementCount);
     /* first pass : remove objects that have less than a
        certain number of measurements.
     */
@@ -285,7 +282,6 @@ void Associations::selectFittedStars()
 
             const FittedStar *fstar = mstar.GetFittedStar();
             if (!fstar) {++mi; continue;}
-            int nmes = fstar->MeasurementCount(); // DEBUG
 
             /*  keep FittedStar's which either have a minimum number of
                 measurements, or are matched to a RefStar
@@ -295,11 +291,6 @@ void Associations::selectFittedStars()
                 FittedStar *f = const_cast<FittedStar *>(fstar);
                 f->MeasurementCount()--;
                 mi = catalog.erase(mi);
-                // DEBUG
-                if (fstar && fstar->MeasurementCount() != nmes - 1)
-                {
-                    std::cout << " ca craint " << std::endl;
-                }
             }
             else ++mi;
         }// end loop on objects in catalog
@@ -315,9 +306,7 @@ void Associations::selectFittedStars()
         else ++fi;
     }
 
-    std::cout
-            << " number of possible fitted star after cutting on # of measurements "
-            << fittedStarList.size() << std::endl;
+    LOGLS_INFO(_log, "Fitted stars before measurement # cut: " << fittedStarList.size());
 }
 
 void Associations::assignMags()
@@ -342,7 +331,7 @@ void Associations::deprojectFittedStars()
        the sky */
     if (!fittedStarList.inTangentPlaneCoordinates)
     {
-        std::cout << "WARNING: Associations::DeprojectFittedStars : Fitted stars are already in sidereal coordinates, nothing done " << std::endl;
+        LOGLS_WARN(_log, "DeprojectFittedStars: Fitted stars are already in sidereal coordinates, nothing done ");
         return;
     }
 
@@ -354,7 +343,6 @@ void Associations::deprojectFittedStars()
 #ifdef STORAGE
 void Associations::collectMCStars(int realization)
 {
-    cout << "[Associations::CollectMCStars]" << endl;
     CcdImageIterator I;
     StarMatchIterator smI;
 
@@ -396,7 +384,7 @@ void Associations::collectMCStars(int realization)
                 */
             }
         else
-            cout << "[Associations::CollectMCStars] Unable to match MCTruth w/ catalog !" << endl;
+            LOGLS_FATAL(_log, "CollectMCStars Unable to match MCTruth w/ catalog!");
         delete smList;
     }
 }
@@ -439,8 +427,8 @@ void Associations::setFittedStarColors(std::string DicStarListName,
                                          id_or_proj,
                                          MatchCutArcSec/3600);
 
-    cout << "INFO : matched " << sm->size() << '/' << fittedStarList.size()
-         << " FittedStars to color catalog" << endl;
+    LOGLS_INFO(_log, "Matched " << sm->size() << '/' << fittedStarList.size()
+               << " FittedStars to color catalog");
     // Evaluate and assign colors.
     for (auto i = sm->begin(); i != sm->end(); ++i)
     {
