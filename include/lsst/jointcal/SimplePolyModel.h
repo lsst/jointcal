@@ -61,7 +61,7 @@ public :
   virtual void freezeErrorScales();
 
   //! Access to mappings
-  const Gtransfo& GetTransfo(const CcdImage &ccdImage) const;
+  const Gtransfo& getTransfo(const CcdImage &ccdImage) const;
 
   std::shared_ptr<TanSipPix2RaDec> produceSipWcs(const CcdImage &ccdImage) const;
 
