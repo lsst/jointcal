@@ -39,7 +39,6 @@ ConstrainedPolyModel::ConstrainedPolyModel(const CcdImageList &ccdImageList,
 {
   // from datacards (or default)
   unsigned degree = DistortionDegree;
-  VisitIdType refVisit;
   // first loop to initialize all visit  and chip transfos.
   for (auto &ccdImage: ccdImageList)
     {
@@ -51,36 +50,18 @@ ConstrainedPolyModel::ConstrainedPolyModel(const CcdImageList &ccdImageList,
 	{
 	  if (_visitMap.size() == 0)
 	    {
-	      // if one fits all of them, the model is degenerate.
-#ifdef ROTATE_T2
-# warning : hack in ConstrainedPolyModel::ConstrainedPolyModel : rotated frame
-	      _visitMap[visit] = std::unique_ptr<SimpleTransfoMapping>(new SimpleGtransfoMapping(GtransfoLinRot(3.141927/2.), /* ToFit = */ false));
-#else
-	      _visitMap[visit] = std::unique_ptr<SimpleGtransfoMapping>(new SimpleGtransfoMapping(GtransfoIdentity()));
-#endif
-	      refVisit = visit;
+          _visitMap[visit] = std::unique_ptr<SimpleGtransfoMapping>(new SimpleGtransfoMapping(GtransfoLinScale()));
 	    }
-	    else
-#ifdef ROTATE_T2
-	      {
-		GtransfoPoly poly(degree);
-		poly = GtransfoPoly(GtransfoLinRot(3.141927/2.))*poly;
-		_visitMap[visit] = std::unique_ptr<SimplePolyMapping>(new SimplePolyMapping(GtransfoLin(), poly));
-	      }
-#else
-	  _visitMap[visit] = std::unique_ptr<SimplePolyMapping>(new SimplePolyMapping(GtransfoLin(),
-										      GtransfoPoly(degree)));
-#endif
+	    else _visitMap[visit] = std::unique_ptr<SimplePolyMapping>(new SimplePolyMapping(GtransfoLin(),
+                                                                                  GtransfoPoly(degree)));
 	}
       auto chipp = _chipMap.find(chip);
-      if ((chipp == _chipMap.end()) && visit == refVisit )
+      if (chipp == _chipMap.end())
 	{
 	  const Frame &frame = im.getImageFrame();
 
 	  _tpFrame += ApplyTransfo(frame, *im.Pix2CommonTangentPlane(), LargeFrame);
-	  GtransfoPoly pol(im.Pix2TangentPlane(),
-			   frame,
-			   degree);
+	  GtransfoPoly pol(im.Pix2TangentPlane(), frame, degree);
 	  GtransfoLin shiftAndNormalize = NormalizeCoordinatesTransfo(frame);
 
 	  _chipMap[chip] = std::unique_ptr<SimplePolyMapping>(new SimplePolyMapping(shiftAndNormalize, pol*shiftAndNormalize.invert()));
