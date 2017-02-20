@@ -115,6 +115,13 @@ class JointcalConfig(pexConfig.Config):
         dtype=int,
         default=3,
     )
+    astrometryModel = pexConfig.ChoiceField(
+        doc="Type of model to fit to astrometry",
+        dtype=str,
+        default="simplePoly",
+        allowed={"simplePoly": "One polynomial per ccd",
+                 "constrainedPoly": "One polynomial per ccd, and one polynomial per visit"}
+    )
     astrometryRefObjLoader = pexConfig.ConfigurableField(
         target=LoadAstrometryNetObjectsTask,
         doc="Reference object loader for astrometric fit",
@@ -458,8 +465,14 @@ class JointcalTask(pipeBase.CmdLineTask):
         # TODO: could we package sky_to_tan_projection and model together so we don't have to manage
         # them so carefully?
         sky_to_tan_projection = lsst.jointcal.OneTPPerVisitHandler(associations.getCcdImageList())
-        model = lsst.jointcal.SimplePolyModel(associations.getCcdImageList(), sky_to_tan_projection,
-                                              True, 0, self.config.polyOrder)
+
+        if self.config.astrometryModel == "constrainedPoly":
+            model = lsst.jointcal.ConstrainedPolyModel(associations.getCcdImageList(),
+                                                       sky_to_tan_projection, True, 0)
+        elif self.config.astrometryModel == "simplePoly":
+            model = lsst.jointcal.SimplePolyModel(associations.getCcdImageList(),
+                                                  sky_to_tan_projection,
+                                                  True, 0, self.config.polyOrder)
 
         fit = lsst.jointcal.AstrometryFit(associations, model, self.config.posError)
         fit.minimize("Distortions")
