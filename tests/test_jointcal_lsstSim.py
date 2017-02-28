@@ -155,13 +155,13 @@ class JointcalTestLSSTSim(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Te
     def testJointcalTask_2_visits_no_photometry(self):
         """Test turning off fitting photometry."""
         dist_rms_relative = 9.7e-3*u.arcsecond
-        metrics = {'collectedAstrometryRefStars': 1686,
-                   'selectedAstrometryRefStars': 1686,
-                   'associatedAstrometryFittedStars': 1365,
-                   'selectedAstrometryFittedStars': 789,
-                   'selectedAstrometryCcdImageList': 2,
-                   'astrometryFinalChi2': 742.4992,
-                   'astrometryFinalNdof': 1698
+        metrics = {'collected_astrometry_refStars': 1686,
+                   'selected_astrometry_refStars': 1686,
+                   'associated_astrometry_fittedStars': 1365,
+                   'selected_astrometry_fittedStars': 789,
+                   'selected_astrometry_ccdImages': 2,
+                   'astrometry_chisq': 742.4992,
+                   'astrometry_ndof': 1698
                    }
 
         self.config = lsst.jointcal.jointcal.JointcalConfig()

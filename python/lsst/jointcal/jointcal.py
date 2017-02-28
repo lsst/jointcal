@@ -15,6 +15,11 @@ import lsst.afw.coord as afwCoord
 import lsst.pex.exceptions as pexExceptions
 import lsst.afw.table
 import lsst.meas.algorithms
+try:
+    # NOTE: Until DM-8477 is merged, this import will fail
+    import lsst.validate.base as validation
+except:
+    validation = None
 
 from lsst.meas.extensions.astrometryNet import LoadAstrometryNetObjectsTask
 from lsst.meas.algorithms.sourceSelector import sourceSelectorRegistry
@@ -318,7 +323,7 @@ class JointcalTask(pipeBase.CmdLineTask):
 
         if self.config.doAstrometry:
             astrometry = self._do_load_refcat_and_fit(associations, defaultFilter, center, radius,
-                                                      name="Astrometry",
+                                                      name="astrometry",
                                                       refObjLoader=self.astrometryRefObjLoader,
                                                       fit_function=self._fit_astrometry,
                                                       profile_jointcal=profile_jointcal,
@@ -328,7 +333,7 @@ class JointcalTask(pipeBase.CmdLineTask):
 
         if self.config.doPhotometry:
             photometry = self._do_load_refcat_and_fit(associations, defaultFilter, center, radius,
-                                                      name="Photometry",
+                                                      name="photometry",
                                                       refObjLoader=self.photometryRefObjLoader,
                                                       fit_function=self._fit_photometry,
                                                       profile_jointcal=profile_jointcal,
@@ -340,6 +345,9 @@ class JointcalTask(pipeBase.CmdLineTask):
         load_cat_prof_file = 'jointcal_write_results.prof' if profile_jointcal else ''
         with pipeBase.cmdLineTask.profile(load_cat_prof_file):
             self._write_results(associations, astrometry.model, photometry.model, visit_ccd_to_dataRef)
+
+        if validation is not None:
+            validation.output_measurements("jointcal", self.metrics)
 
         return pipeBase.Struct(dataRefs=dataRefs, oldWcsList=oldWcsList, metrics=self.metrics)
 
@@ -382,7 +390,7 @@ class JointcalTask(pipeBase.CmdLineTask):
         # TODO: this should not print "trying to invert a singular transformation:"
         # if it does that, something's not right about the WCS...
         associations.associateCatalogs(match_cut)
-        self.metrics['associated%sFittedStars' % name] = associations.fittedStarListSize()
+        self.metrics['associated_%s_fittedStars' % name] = associations.fittedStarListSize()
 
         skyCircle = refObjLoader.loadSkyCircle(center,
                                                afwGeom.Angle(radius, afwGeom.radians),
@@ -409,9 +417,9 @@ class JointcalTask(pipeBase.CmdLineTask):
 
         associations.selectFittedStars(self.config.minMeasurements)
         self._check_star_lists(associations, name)
-        self.metrics['selected%sRefStars' % name] = associations.refStarListSize()
-        self.metrics['selected%sFittedStars' % name] = associations.fittedStarListSize()
-        self.metrics['selected%sCcdImageList' % name] = associations.nCcdImagesValidForFit()
+        self.metrics['selected_%s_refStars' % name] = associations.refStarListSize()
+        self.metrics['selected_%s_fittedStars' % name] = associations.fittedStarListSize()
+        self.metrics['selected_%s_ccdImages' % name] = associations.nCcdImagesValidForFit()
 
         load_cat_prof_file = 'jointcal_fit_%s.prof'%name if profile_jointcal else ''
         with pipeBase.cmdLineTask.profile(load_cat_prof_file):
@@ -472,8 +480,8 @@ class JointcalTask(pipeBase.CmdLineTask):
 
         chi2 = self._iterate_fit(fit, 20, "photometry", "Model Fluxes")
 
-        self.metrics['photometryFinalChi2'] = chi2.chi2
-        self.metrics['photometryFinalNdof'] = chi2.ndof
+        self.metrics['photometry_chisq'] = chi2.chi2
+        self.metrics['photometry_ndof'] = chi2.ndof
         return Photometry(fit, model)
 
     def _fit_astrometry(self, associations):
@@ -558,6 +566,9 @@ class JointcalTask(pipeBase.CmdLineTask):
                 break
         else:
             self.log.error("%s failed to converge after %d steps"%(name, max_steps))
+
+        self.metrics['astrometry_chisq'] = chi2.chi2
+        self.metrics['astrometry_ndof'] = chi2.ndof
 
         return chi2
 
