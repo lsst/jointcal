@@ -1,6 +1,6 @@
 // -*- lsst-c++ -*-
-#if !defined(LSST_JOINTCAL_JOINTCAL_H)
-#define LSST_JOINTCAL_JOINTCAL_H
+#if !defined(LSST_JOINTCAL_JointcalControl_H)
+#define LSST_JOINTCAL_JointcalControl_H
 
 #include <cmath>
 #include <string>
@@ -21,16 +21,20 @@ namespace jointcal {
 struct JointcalControl {
     LSST_CONTROL_FIELD(sourceFluxField, std::string, "name of flux field in source catalog");
 
-    JointcalControl(std::string const & sourceFluxField = "slot_CalibFlux") :
+    explicit JointcalControl(std::string const& sourceFluxField = "slot_CalibFlux") :
         // Set sourceFluxType to the value used in the source selector.
         sourceFluxField(sourceFluxField)
     {
         validate();
     }
 
-    void validate() const;
-
     ~JointcalControl() {};
+
+    void validate() const {
+        if (sourceFluxField.empty()) {
+            throw LSST_EXCEPT(pexExcept::InvalidParameterError, "sourceFluxField must be specified");
+        }
+    }
 };
 
 }

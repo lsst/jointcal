@@ -19,7 +19,7 @@
 #include "lsst/jointcal/FittedStar.h"
 #include "lsst/jointcal/CcdImage.h"
 #include "lsst/jointcal/Point.h"
-#include "lsst/jointcal/Jointcal.h"
+#include "lsst/jointcal/JointcalControl.h"
 
 #include "lsst/afw/table/SortedCatalog.h"
 
@@ -86,8 +86,8 @@ public:
 
     //! incrementaly builds a merged catalog of all image catalogs
     void associateCatalogs(const double matchCutInArcsec = 0,
-                           const bool UseFittedList = false,
-                           const bool EnlargeFittedList = true);
+                           const bool useFittedList = false,
+                           const bool enlargeFittedList = true);
 
     //! Collect stars from an external reference catalog
     void collectRefStars(lsst::afw::table::SortedCatalogT< lsst::afw::table::SimpleRecord > &Ref,

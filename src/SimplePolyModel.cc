@@ -5,7 +5,7 @@
 #include "lsst/jointcal/SimplePolyModel.h"
 #include "lsst/jointcal/SimplePolyMapping.h"
 #include "lsst/jointcal/CcdImage.h"
-#include "lsst/jointcal/Projectionhandler.h"
+#include "lsst/jointcal/ProjectionHandler.h"
 #include "lsst/pex/exceptions.h"
 #include "lsst/jointcal/Gtransfo.h"
 
@@ -19,21 +19,21 @@ namespace lsst {
 namespace jointcal {
 
 // need a way to propagate the requested degree !
-SimplePolyModel::SimplePolyModel(const CcdImageList &L,
-				 const ProjectionHandler* ProjH,
-				 bool InitFromWCS,
-				 unsigned NNotFit,
-				 unsigned degree) : _sky2TP(ProjH)
+SimplePolyModel::SimplePolyModel(const CcdImageList &ccdImageList,
+				 const ProjectionHandler* projectionHandler,
+				 bool initFromWcs,
+				 unsigned nNotFit,
+				 unsigned degree) : _sky2TP(projectionHandler)
 
 {
   // from datacards (or default)
 //  unsigned degree = distortionDegree;
   unsigned count = 0;
 
-  for (auto i=L.cbegin(); i!= L.cend(); ++i, ++count)
+  for (auto i=ccdImageList.cbegin(); i!= ccdImageList.cend(); ++i, ++count)
     {
       const CcdImage &im = **i;
-      if (count < NNotFit)
+      if (count < nNotFit)
 	{
 	  SimpleGtransfoMapping * id = new SimpleGtransfoMapping(GtransfoIdentity());
 	  id->SetIndex(-1); // non sense, because it has no parameters
@@ -41,7 +41,7 @@ SimplePolyModel::SimplePolyModel(const CcdImageList &L,
 	}
       else
 	// Given how AssignIndices works, only the SimplePolyMapping's
-	// will actually be fitted, as NNotFit requests.
+	// will actually be fitted, as nNotFit requests.
 	{
 		/* first check that there are enough measurements for the
 	  requested polynomial degree */
@@ -65,7 +65,7 @@ SimplePolyModel::SimplePolyModel(const CcdImageList &L,
 	   */
 	  const Frame &frame  = im.ImageFrame();
 	  GtransfoLin shiftAndNormalize = NormalizeCoordinatesTransfo(frame);
-	  if (InitFromWCS)
+	  if (initFromWcs)
 	    {
 	      pol = GtransfoPoly(im.Pix2TangentPlane(),
 				 frame,
@@ -79,21 +79,21 @@ SimplePolyModel::SimplePolyModel(const CcdImageList &L,
 }
 
 
-const Mapping* SimplePolyModel::getMapping(const CcdImage &C) const
+const Mapping* SimplePolyModel::getMapping(const CcdImage &ccdImageList) const
 {
-  mapType::const_iterator i = _myMap.find(&C);
-  if  (i==_myMap.cend()) throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,"SimplePolyModel::GetMapping, never heard of CcdImage "+C.getName());
+  mapType::const_iterator i = _myMap.find(&ccdImageList);
+  if  (i==_myMap.cend()) throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,"SimplePolyModel::GetMapping, never heard of CcdImage "+ccdImageList.getName());
   return (i->second.get());
 }
 
-unsigned SimplePolyModel::assignIndices(unsigned FirstIndex, std::string &WhatToFit)
+unsigned SimplePolyModel::assignIndices(unsigned firstIndex, std::string &whatToFit)
 {
-  if (WhatToFit.find("Distortions") == std::string::npos)
+  if (whatToFit.find("Distortions") == std::string::npos)
     {
-        LOGLS_ERROR(_log, "AssignIndices was called and Distortions is *not* in WhatToFit.");
+        LOGLS_ERROR(_log, "AssignIndices was called and Distortions is *not* in whatToFit.");
         return 0;
     }
-  unsigned index = FirstIndex;
+  unsigned index = firstIndex;
   for (auto i = _myMap.begin(); i!=_myMap.end(); ++i)
     {
       SimplePolyMapping *p = dynamic_cast<SimplePolyMapping *>(&*(i->second));
@@ -104,13 +104,13 @@ unsigned SimplePolyModel::assignIndices(unsigned FirstIndex, std::string &WhatTo
   return index;
 }
 
-void SimplePolyModel::offsetParams(const Eigen::VectorXd &Delta)
+void SimplePolyModel::offsetParams(const Eigen::VectorXd &delta)
 {
   for (auto i = _myMap.begin(); i!=_myMap.end(); ++i)
     {
       SimplePolyMapping *p = dynamic_cast<SimplePolyMapping *>(&*(i->second));
       if (!p) continue; // it should be GtransfoIdentity
-      p->OffsetParams(&Delta(p->Index()));
+      p->OffsetParams(&delta(p->Index()));
     }
 }
 
@@ -121,25 +121,25 @@ void SimplePolyModel::freezeErrorScales()
 }
 
 
-const Gtransfo& SimplePolyModel::GetTransfo(const CcdImage &Ccd) const
+const Gtransfo& SimplePolyModel::GetTransfo(const CcdImage &ccdImage) const
 {
-  // return GetMapping(Ccd)->Transfo(); // cannot do that
-  auto p = _myMap.find(&Ccd);
-  if  (p==_myMap.end()) throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,"SimplePolyModel::GetTransfo, never heard of CcdImage "+Ccd.getName());
+  // return GetMapping(ccdImage)->Transfo(); // cannot do that
+  auto p = _myMap.find(&ccdImage);
+  if  (p==_myMap.end()) throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,"SimplePolyModel::GetTransfo, never heard of CcdImage "+ccdImage.getName());
   return p->second->Transfo();
 }
 
-PTR(TanSipPix2RaDec) SimplePolyModel::ProduceSipWcs(const CcdImage &Ccd) const
+PTR(TanSipPix2RaDec) SimplePolyModel::ProduceSipWcs(const CcdImage &ccdImage) const
 {
-  const GtransfoPoly &pix2Tp=dynamic_cast<const GtransfoPoly&>(GetTransfo(Ccd));
-  const TanRaDec2Pix *proj=dynamic_cast<const TanRaDec2Pix*>(sky2TP(Ccd));
+  const GtransfoPoly &pix2Tp=dynamic_cast<const GtransfoPoly&>(GetTransfo(ccdImage));
+  const TanRaDec2Pix *proj=dynamic_cast<const TanRaDec2Pix*>(sky2TP(ccdImage));
   if (!(&pix2Tp)  || ! proj) return nullptr;
 
   const GtransfoLin &projLinPart = proj->LinPart(); // should be the identity, but who knows? So, let us incorporate it into the pix2TP part.
   GtransfoPoly wcsPix2Tp = GtransfoPoly(projLinPart.invert())*pix2Tp;
 
   // compute a decent approximation, if higher order corrections get ignored
-  GtransfoLin cdStuff = wcsPix2Tp.LinearApproximation(Ccd.ImageFrame().Center());
+  GtransfoLin cdStuff = wcsPix2Tp.LinearApproximation(ccdImage.ImageFrame().Center());
 
   // wcsPix2TP = cdStuff*sip , so
   GtransfoPoly sip = GtransfoPoly(cdStuff.invert())*wcsPix2Tp;

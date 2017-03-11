@@ -66,8 +66,8 @@ void Associations::setCommonTangentPoint(lsst::afw::geom::Point2D const &commonT
 }
 
 void Associations::associateCatalogs(const double matchCutInArcSec,
-                                     const bool UseFittedList,
-                                     const bool EnlargeFittedList)
+                                     const bool useFittedList,
+                                     const bool enlargeFittedList)
 {
     // clear reference stars
     for (auto &item: refStarList)
@@ -82,7 +82,7 @@ void Associations::associateCatalogs(const double matchCutInArcSec,
         item->clearBeforeAssoc();
     }
     // clear fitted stars
-    if (!UseFittedList)
+    if (!useFittedList)
         fittedStarList.clear();
 
     for (auto &ccdImage: ccdImageList)
@@ -153,7 +153,7 @@ void Associations::associateCatalogs(const double matchCutInArcSec,
             // to check if it was matched, just check if it has
             // a fittedStar Pointer assigned
             if (mstar->GetFittedStar()) continue;
-            if (EnlargeFittedList)
+            if (enlargeFittedList)
             {
                 FittedStar *fs = new FittedStar(*mstar);
                 // transform coordinates to CommonTangentPlane

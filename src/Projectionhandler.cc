@@ -1,4 +1,4 @@
-#include "lsst/jointcal/Projectionhandler.h"
+#include "lsst/jointcal/ProjectionHandler.h"
 #include "lsst/jointcal/Gtransfo.h"
 #include "lsst/jointcal/CcdImage.h"
 
