@@ -20,7 +20,7 @@ from lsst.meas.algorithms.sourceSelector import sourceSelectorRegistry
 
 from .dataIds import PerTractCcdDataIdContainer
 
-from . import jointcalLib
+import lsst.jointcal
 
 __all__ = ["JointcalConfig", "JointcalTask"]
 
@@ -203,8 +203,7 @@ class JointcalTask(pipeBase.CmdLineTask):
         ccdname = calexp.getDetector().getId()
 
         calib = calexp.getCalib()
-        # associations needs a TanWcs specifically, not just a generic Wcs.
-        tanWcs = afwImage.TanWcs.cast(calexp.getWcs())
+        tanWcs = calexp.getWcs()
         bbox = calexp.getBBox()
         filt = calexp.getInfo().getFilter().getName()
 
@@ -245,8 +244,8 @@ class JointcalTask(pipeBase.CmdLineTask):
             raise ValueError('Need a list of data references!')
 
         sourceFluxField = "slot_%sFlux" % (self.sourceSelector.config.sourceFluxType,)
-        jointcalControl = jointcalLib.JointcalControl(sourceFluxField)
-        associations = jointcalLib.Associations()
+        jointcalControl = lsst.jointcal.JointcalControl(sourceFluxField)
+        associations = lsst.jointcal.Associations()
 
         visit_ccd_to_dataRef = {}
         oldWcsList = []
@@ -401,9 +400,9 @@ class JointcalTask(pipeBase.CmdLineTask):
         """
 
         self.log.info("=== Starting photometric fitting...")
-        model = jointcalLib.SimplePhotomModel(associations.getCcdImageList())
+        model = lsst.jointcal.SimplePhotomModel(associations.getCcdImageList())
 
-        fit = jointcalLib.PhotomFit(associations, model, self.config.posError)
+        fit = lsst.jointcal.PhotomFit(associations, model, self.config.posError)
         fit.minimize("Model")
         chi2 = fit.computeChi2()
         self.log.info(str(chi2))
@@ -445,11 +444,11 @@ class JointcalTask(pipeBase.CmdLineTask):
         # NOTE: need to return sky_to_tan_projection so that it doesn't get garbage collected.
         # TODO: could we package sky_to_tan_projection and model together so we don't have to manage
         # them so carefully?
-        sky_to_tan_projection = jointcalLib.OneTPPerVisitHandler(associations.getCcdImageList())
-        model = jointcalLib.SimplePolyModel(associations.getCcdImageList(), sky_to_tan_projection,
-                                            True, 0, self.config.polyOrder)
+        sky_to_tan_projection = lsst.jointcal.OneTPPerVisitHandler(associations.getCcdImageList())
+        model = lsst.jointcal.SimplePolyModel(associations.getCcdImageList(), sky_to_tan_projection,
+                                              True, 0, self.config.polyOrder)
 
-        fit = jointcalLib.AstromFit(associations, model, self.config.posError)
+        fit = lsst.jointcal.AstromFit(associations, model, self.config.posError)
         fit.minimize("Distortions")
         chi2 = fit.computeChi2()
         self.log.info(str(chi2))
@@ -507,15 +506,14 @@ class JointcalTask(pipeBase.CmdLineTask):
         ccdImageList = associations.getCcdImageList()
         for ccdImage in ccdImageList:
             # TODO: there must be a better way to identify this ccdImage than a visit,ccd pair?
-            ccd = ccdImage.getCcdId()
-            visit = ccdImage.getVisit()
+            ccd = ccdImage.ccdId
+            visit = ccdImage.visit
             dataRef = visit_ccd_to_dataRef[(visit, ccd)]
             exp = afwImage.ExposureI(0, 0)
             if self.config.doAstrometry:
                 self.log.info("Updating WCS for visit: %d, ccd: %d", visit, ccd)
-                tanSip = astrom_model.ProduceSipWcs(ccdImage)
-                frame = ccdImage.ImageFrame()
-                tanWcs = afwImage.TanWcs.cast(jointcalLib.GtransfoToTanWcs(tanSip, frame, False))
+                tanSip = astrom_model.produceSipWcs(ccdImage)
+                tanWcs = lsst.jointcal.gtransfoToTanWcs(tanSip, ccdImage.imageFrame, False)
                 exp.setWcs(tanWcs)
             if self.config.doPhotometry:
                 self.log.info("Updating Calib for visit: %d, ccd: %d", visit, ccd)

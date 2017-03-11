@@ -1,3 +1,18 @@
 # -*- python -*-
 from lsst.sconsUtils import scripts
-scripts.BasicSConscript.pybind11()
+scripts.BasicSConscript.pybind11(
+    ['associations',
+     'astromFit',
+     'astrometryModels',
+     'ccdImage',
+     'chi2',
+     'frame',
+     'gtransfo',
+     'jointcalControl',
+     'photomFit',
+     'photometryModels',
+     'point',
+     'projectionHandler',
+    ],
+    addUnderscore=False,
+)
