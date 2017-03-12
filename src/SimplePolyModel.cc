@@ -63,7 +63,7 @@ SimplePolyModel::SimplePolyModel(const CcdImageList &ccdImageList,
 	     fitted transformation is returned, so that the trick
 	     remains hidden
 	   */
-	  const Frame &frame  = im.ImageFrame();
+	  const Frame &frame  = im.getImageFrame();
 	  GtransfoLin shiftAndNormalize = NormalizeCoordinatesTransfo(frame);
 	  if (initFromWcs)
 	    {
@@ -129,7 +129,7 @@ const Gtransfo& SimplePolyModel::GetTransfo(const CcdImage &ccdImage) const
   return p->second->Transfo();
 }
 
-PTR(TanSipPix2RaDec) SimplePolyModel::ProduceSipWcs(const CcdImage &ccdImage) const
+std::shared_ptr<TanSipPix2RaDec> SimplePolyModel::produceSipWcs(const CcdImage &ccdImage) const
 {
   const GtransfoPoly &pix2Tp=dynamic_cast<const GtransfoPoly&>(GetTransfo(ccdImage));
   const TanRaDec2Pix *proj=dynamic_cast<const TanRaDec2Pix*>(sky2TP(ccdImage));
@@ -139,7 +139,7 @@ PTR(TanSipPix2RaDec) SimplePolyModel::ProduceSipWcs(const CcdImage &ccdImage) co
   GtransfoPoly wcsPix2Tp = GtransfoPoly(projLinPart.invert())*pix2Tp;
 
   // compute a decent approximation, if higher order corrections get ignored
-  GtransfoLin cdStuff = wcsPix2Tp.LinearApproximation(ccdImage.ImageFrame().Center());
+  GtransfoLin cdStuff = wcsPix2Tp.LinearApproximation(ccdImage.getImageFrame().Center());
 
   // wcsPix2TP = cdStuff*sip , so
   GtransfoPoly sip = GtransfoPoly(cdStuff.invert())*wcsPix2Tp;

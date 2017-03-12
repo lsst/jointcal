@@ -11,6 +11,7 @@ class CcdImage;
 #include "lsst/jointcal/Gtransfo.h"
 #include "lsst/jointcal/Frame.h"
 #include "lsst/jointcal/SimplePolyMapping.h"
+#include "lsst/jointcal/ProjectionHandler.h"
 #include "lsst/jointcal/TwoTransfoMapping.h"
 #include "lsst/jointcal/CcdImage.h" // for VisitIdType;
 
@@ -46,35 +47,35 @@ class ConstrainedPolyModel : public DistortionModel
   Frame _tpFrame; // just for output of the chip transfos
 
 public :
-  ConstrainedPolyModel(const CcdImageList &L,
-		       const ProjectionHandler* ProjH,
-		       bool InitFromWCS,
-		       unsigned NNotFit=0);
+  ConstrainedPolyModel(const CcdImageList &ccdImageList,
+                       const ProjectionHandler* projectionHandler,
+                       bool initFromWCS,
+                       unsigned nNotFit=0);
 
   // The following routines are the interface to AstromFit
   //!
-  const Mapping* GetMapping(const CcdImage &) const;
+  const Mapping* getMapping(const CcdImage &) const;
 
   /**
    * Positions the various parameter sets into the parameter vector, starting at
    * FirstIndex.
    */
-  unsigned AssignIndices(unsigned FirstIndex, std::string &WhatToFit);
+  unsigned assignIndices(unsigned FirstIndex, std::string &WhatToFit);
 
   /**
    * Dispaches the offsets after a fit step into the actual locations of
    * parameters.
    */
-  void OffsetParams(const Eigen::VectorXd &Delta);
+  void offsetParams(const Eigen::VectorXd &Delta);
 
   /**
    * From there on, measurement errors are propagated using the current
    * transfos (and no longer evolve).
    */
-  void FreezeErrorScales();
+  void freezeErrorScales();
 
   //! Access to mappings
-  const Gtransfo& GetChipTransfo(const unsigned Chip) const;
+  const Gtransfo& getChipTransfo(const unsigned Chip) const;
 
   //! Access to mappings
   const Gtransfo& getVisitTransfo(const VisitIdType &Visit) const;
@@ -87,11 +88,10 @@ public :
    * stars are reported) onto the Tangent plane (into which the pixel coordinates
    * are transformed).
    */
-  const Gtransfo* Sky2TP(const CcdImage &ccdImage) const
+  const Gtransfo* sky2TP(const CcdImage &ccdImage) const
   { return _sky2TP->Sky2TP(ccdImage);}
 
- //! Cook up a SIP WCS.
-  PTR(TanSipPix2RaDec) ProduceSipWcs(const CcdImage &Ccd) const;
+  std::shared_ptr<TanSipPix2RaDec> produceSipWcs(const CcdImage &ccdImage) const;
 };
 
 }} // end of namespaces

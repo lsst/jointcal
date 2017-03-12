@@ -86,7 +86,7 @@ CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceReco
     Point upperRight(bbox.getMaxX(), bbox.getMaxY());
     imageFrame = Frame(lowerLeft, upperRight);
 
-    readWcs = new jointcal::TanSipPix2RaDec(jointcal::ConvertTanWcs(wcs));
+    readWcs = new jointcal::TanSipPix2RaDec(jointcal::convertTanWcs(wcs));
     inverseReadWcs = readWcs->InverseTransfo(0.01, imageFrame);
 
     std::stringstream out;

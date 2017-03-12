@@ -1,6 +1,9 @@
 #ifndef DISTORTIONSMODEL__H
 #define DISTORTIONSMODEL__H
 
+#include "memory"
+
+#include "lsst/jointcal/Gtransfo.h"
 #include "lsst/jointcal/Eigenstuff.h"
 #include "lsst/jointcal/Mapping.h"
 
@@ -33,6 +36,8 @@ public :
       this Ccdimage maps the pixel coordinates. */
   virtual const Gtransfo* sky2TP(const CcdImage &ccdImage) const = 0;
 
+  //! Cook up a SIP WCS.
+  virtual std::shared_ptr<TanSipPix2RaDec> produceSipWcs(const CcdImage &ccdImage) const = 0;
 
   //!
   virtual void freezeErrorScales() = 0;

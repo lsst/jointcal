@@ -182,7 +182,7 @@ public:
     const Gtransfo *InverseReadWCS() const {return inverseReadWcs.get();}
 
     //! Frame in pixels
-    const Frame& ImageFrame() const { return imageFrame;}
+    const Frame& getImageFrame() const { return imageFrame;}
 
 private:
     CcdImage(const CcdImage &); // forbid copies

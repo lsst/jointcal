@@ -102,7 +102,7 @@ void Associations::associateCatalogs(const double matchCutInArcSec,
          are within reach of the current ccdImage
             */
         Frame ccdImageFrameCPT =
-            ApplyTransfo(ccdImage->ImageFrame(), *toCommonTangentPlane, LargeFrame);
+            ApplyTransfo(ccdImage->getImageFrame(), *toCommonTangentPlane, LargeFrame);
         ccdImageFrameCPT = ccdImageFrameCPT.Rescale(1.10); // add 10 % margin.
         /* we cannot use FittedStarList::ExtractInFrame, because it does an
         actual copy, which we don't want here: we want the pointers in
@@ -215,7 +215,7 @@ const lsst::afw::geom::Box2D Associations::getRaDecBBox()
 
     for (auto const &ccdImage: ccdImageList)
     {
-        Frame CTPFrame = ApplyTransfo(ccdImage->ImageFrame(), *(ccdImage->Pix2CommonTangentPlane()), LargeFrame);
+        Frame CTPFrame = ApplyTransfo(ccdImage->getImageFrame(), *(ccdImage->Pix2CommonTangentPlane()), LargeFrame);
         if (tangentPlaneFrame.Area() == 0) tangentPlaneFrame = CTPFrame;
         else tangentPlaneFrame += CTPFrame;
     }

@@ -48,7 +48,7 @@ BOOST_AUTO_TEST_CASE(test_wcs)
 
   const PTR(afwImg::TanWcs) tanWcs = std::dynamic_pointer_cast<afwImg::TanWcs>(wcs);
 
-  jointcal::TanSipPix2RaDec gtransfoWcs = jointcal::ConvertTanWcs(tanWcs);
+  jointcal::TanSipPix2RaDec gtransfoWcs = jointcal::convertTanWcs(tanWcs);
   jointcal::Point where(100.,200.);
   jointcal::Point outPol = gtransfoWcs.apply(where);
   std::cout << std::setprecision(12) << "Poloka : " << outPol.x << ' ' << outPol.y << std::endl;
@@ -77,7 +77,7 @@ BOOST_AUTO_TEST_CASE(test_polyfit)
 
   const PTR(afwImg::TanWcs) tanWcs = std::dynamic_pointer_cast<afwImg::TanWcs>(wcs);
 
-  jointcal::TanSipPix2RaDec gtransfoWcs = jointcal::ConvertTanWcs(tanWcs);
+  jointcal::TanSipPix2RaDec gtransfoWcs = jointcal::convertTanWcs(tanWcs);
 
   jointcal::StarMatchList sml;
   jointcal::BaseStarList bsl1, bsl2;
@@ -116,7 +116,7 @@ BOOST_AUTO_TEST_CASE(test_wcs_convertions)
 
   const PTR(afwImg::TanWcs) tanWcs = std::dynamic_pointer_cast<afwImg::TanWcs>(wcs);
 
-  jointcal::TanSipPix2RaDec gtransfoWcs = jointcal::ConvertTanWcs(tanWcs);
+  jointcal::TanSipPix2RaDec gtransfoWcs = jointcal::convertTanWcs(tanWcs);
   int naxis1 = propSet->get<int>("NAXIS1");
   int naxis2 = propSet->get<int>("NAXIS2");
   jointcal::Frame imageFrame(0,0,naxis1,naxis2);
@@ -125,7 +125,7 @@ BOOST_AUTO_TEST_CASE(test_wcs_convertions)
 
   // test the back conversion, in two cases
   for (int noLowOrderSipTerm  = 0; noLowOrderSipTerm <=1; noLowOrderSipTerm++) {
-    PTR(afwImg::TanWcs) tanWcs2 = GtransfoToTanWcs(gtransfoWcs,
+    PTR(afwImg::TanWcs) tanWcs2 = gtransfoToTanWcs(gtransfoWcs,
 						   imageFrame,
 						   noLowOrderSipTerm);
     lsst::afw::geom::Point2D where(1000.,200.);

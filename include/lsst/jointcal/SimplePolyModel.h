@@ -65,12 +65,9 @@ public :
   //! Access to mappings
   const Gtransfo& GetTransfo(const CcdImage &ccdImage) const;
 
-
-  //! Cook up a SIP WCS.
-  PTR(TanSipPix2RaDec) ProduceSipWcs(const CcdImage &ccdImage) const;
+  std::shared_ptr<TanSipPix2RaDec> produceSipWcs(const CcdImage &ccdImage) const;
 
   ~SimplePolyModel() {};
-
 };
 
 }} // end of namespaces
