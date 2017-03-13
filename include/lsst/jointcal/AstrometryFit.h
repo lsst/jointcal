@@ -8,7 +8,7 @@
 #include "lsst/jointcal/CcdImage.h"
 #include "lsst/jointcal/Eigenstuff.h"
 #include "lsst/jointcal/Tripletlist.h"
-#include "lsst/jointcal/DistortionModel.h"
+#include "lsst/jointcal/AstrometryModel.h"
 #include "lsst/jointcal/Chi2.h"
 
 namespace lsst {
@@ -23,10 +23,10 @@ class Associations;
  * a LS astrometric fit wrt distortion mappings and coordinates of common
  * objects. Namely it computes the Jacobian and gradient of the chi2 (w.r.t.
  * parameters), and the Chi2 itself. It interfaces with the actual modelling of
- * distortions via a mimimum virtual interface DistortionModel, and the actual
+ * distortions via a mimimum virtual interface AstrometryModel, and the actual
  * mappings via an other virtual interface : Mapping.
  *
- * In short AstromFit aims at computing derivatives of least quares. The terms
+ * In short AstrometryFit aims at computing derivatives of least quares. The terms
  * of the chi2 are of two kinds:
  *
  * kind 1 ->   (T(X_M) - p(F))^T W (T(X_M) - p(F))
@@ -51,13 +51,13 @@ class Associations;
  * CcdImage's. One does not need reference object and would then naturally not
  * have any Kind 2 terms.
  */
-class AstromFit {
+class AstrometryFit {
 private :
 
     Associations &_assoc;
     std::string _whatToFit;
     bool _fittingDistortions, _fittingPos, _fittingRefrac, _fittingPM;
-    DistortionModel * _distortionModel;
+    AstrometryModel * _astrometryModel;
     int _LastNTrip; // last triplet count, used to speed up allocation
     double _referenceColor, _sigCol; // average and r.m.s color
     unsigned _nRefrac;
@@ -74,7 +74,7 @@ private :
 public :
 
     //! this is the only constructor
-    AstromFit (Associations &associations, DistortionModel *distortionModel, double posError);
+    AstrometryFit (Associations &associations, AstrometryModel *astrometryModel, double posError);
 
     /**
      * Does a 1 step minimization, assuming a linear model.
@@ -96,9 +96,9 @@ public :
      *                         and/or refraction parameters have already been
      *                         set, then they are accounted for when computing
      *                         residuals.  The string is forwarded to the
-     *                         DistortionModel, and it can then be used to turn
+     *                         AstrometryModel, and it can then be used to turn
      *                         subsets of distortion parameter on or off, if the
-     *                         DistortionModel implements such a thing.
+     *                         AstrometryModel implements such a thing.
      * @param[in]  nSigRejCut  How many sigma to reject outliers at. Outlier
      *                         rejection ignored for nSigRejCut=0
      *
@@ -141,7 +141,7 @@ public :
      * affected when updating the mappings. This allows to have an exactly linear
      * fit, which can be useful.
      */
-    void freezeErrorScales() {_distortionModel->freezeErrorScales();}
+    void freezeErrorScales() {_astrometryModel->freezeErrorScales();}
 
     /**
      * Offset the parameters by the requested quantities. The used parameter

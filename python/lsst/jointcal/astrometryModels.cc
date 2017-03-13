@@ -23,7 +23,7 @@
 #include "pybind11/pybind11.h"
 
 #include "lsst/jointcal/CcdImage.h"
-#include "lsst/jointcal/DistortionModel.h"
+#include "lsst/jointcal/AstrometryModel.h"
 #include "lsst/jointcal/SimplePolyModel.h"
 #include "lsst/jointcal/ConstrainedPolyModel.h"
 
@@ -34,21 +34,21 @@ namespace lsst {
 namespace jointcal {
 namespace {
 
-void declareDistortionModel(py::module &mod) {
-    py::class_<DistortionModel, std::shared_ptr<DistortionModel>> cls(mod, "DistortionModel");
+void declareAstrometryModel(py::module &mod) {
+    py::class_<AstrometryModel, std::shared_ptr<AstrometryModel>> cls(mod, "AstrometryModel");
 
     cls.def("produceSipWcs", &SimplePolyModel::produceSipWcs);
 }
 
 void declareSimplePolyModel(py::module &mod) {
-    py::class_<SimplePolyModel, std::shared_ptr<SimplePolyModel>, DistortionModel> cls(mod, "SimplePolyModel");
+    py::class_<SimplePolyModel, std::shared_ptr<SimplePolyModel>, AstrometryModel> cls(mod, "SimplePolyModel");
 
     cls.def(py::init<CcdImageList const&, const ProjectionHandler *, bool, unsigned, unsigned>(),
             "ccdImageList"_a, "projectionHandler"_a, "initFromWcs"_a, "nNotFit"_a=0, "degree"_a=3);
 }
 
 void declareConstrainedPolyModel(py::module &mod) {
-    py::class_<ConstrainedPolyModel, std::shared_ptr<ConstrainedPolyModel>, DistortionModel> cls(mod, "ConstrainedPolyModel");
+    py::class_<ConstrainedPolyModel, std::shared_ptr<ConstrainedPolyModel>, AstrometryModel> cls(mod, "ConstrainedPolyModel");
 
     cls.def(py::init<CcdImageList const&, const ProjectionHandler *, bool, unsigned>(),
             "ccdImageList"_a, "projectionHandler"_a, "initFromWcs"_a, "nNotFit"_a=0);
@@ -58,7 +58,7 @@ PYBIND11_PLUGIN(astrometryModels) {
     py::module::import("lsst.jointcal.gtransfo"); // for produceSipWcs return value
     py::module mod("astrometryModels");
 
-    declareDistortionModel(mod);
+    declareAstrometryModel(mod);
     declareSimplePolyModel(mod);
     declareConstrainedPolyModel(mod);
 

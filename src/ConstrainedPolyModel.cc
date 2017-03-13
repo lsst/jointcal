@@ -2,7 +2,7 @@
 #include "lsst/jointcal/Eigenstuff.h"
 #include "lsst/jointcal/ConstrainedPolyModel.h"
 #include "lsst/jointcal/CcdImage.h"
-#include "lsst/jointcal/DistortionModel.h"
+#include "lsst/jointcal/AstrometryModel.h"
 #include "lsst/jointcal/Gtransfo.h"
 #include "lsst/jointcal/ProjectionHandler.h"
 #include "lsst/jointcal/AstroUtils.h" // ApplyTransfo(Frame)
@@ -21,7 +21,7 @@ namespace lsst {
 namespace jointcal {
 
 /* This code does not contain anything involved. It just maps the
-routines AstromFit needs to what is needed for this two-transfo model.
+routines AstrometryFit needs to what is needed for this two-transfo model.
 The two-transfo mappings are implemented using two one-transfo
 mappings.*/
 

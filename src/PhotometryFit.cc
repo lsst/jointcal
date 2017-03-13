@@ -3,7 +3,7 @@
 #include <algorithm>
 
 #include "lsst/log/Log.h"
-#include "lsst/jointcal/PhotomFit.h"
+#include "lsst/jointcal/PhotometryFit.h"
 #include "lsst/jointcal/Associations.h"
 #include "lsst/jointcal/Gtransfo.h"
 #include "Eigen/Sparse"
@@ -19,14 +19,14 @@ using namespace std;
 static double sqr(double x) {return x*x;}
 
 namespace {
-    LOG_LOGGER _log = LOG_GET("jointcal.PhotomFit");
+    LOG_LOGGER _log = LOG_GET("jointcal.PhotometryFit");
 }
 
 namespace lsst {
 namespace jointcal {
 
-PhotomFit::PhotomFit(Associations &associations, PhotomModel *photomModel, double fluxError) :
-  _associations(associations),  _photomModel(photomModel), _fluxError(fluxError),
+PhotometryFit::PhotometryFit(Associations &associations, PhotometryModel *photometryModel, double fluxError) :
+  _associations(associations),  _photometryModel(photometryModel), _fluxError(fluxError),
   _lastNTrip(0)
 {
   // The various _npar... are initialized in assignIndices.
@@ -35,7 +35,7 @@ PhotomFit::PhotomFit(Associations &associations, PhotomModel *photomModel, doubl
   assignIndices("");
 }
 
-void PhotomFit::LSDerivatives(TripletList &tList, Eigen::VectorXd &rhs) const
+void PhotometryFit::LSDerivatives(TripletList &tList, Eigen::VectorXd &rhs) const
 {
   auto L = _associations.getCcdImageList();
   for (auto const &im: L)
@@ -44,7 +44,7 @@ void PhotomFit::LSDerivatives(TripletList &tList, Eigen::VectorXd &rhs) const
     }
 }
 
-void PhotomFit::LSDerivatives(const CcdImage &ccdImage,
+void PhotometryFit::LSDerivatives(const CcdImage &ccdImage,
                               TripletList &tList, Eigen::VectorXd &rhs,
                               const MeasuredStarList *measuredStarList) const
 {
@@ -77,14 +77,14 @@ void PhotomFit::LSDerivatives(const CcdImage &ccdImage,
 #endif
       h.setZero(); // we cannot be sure that all entries will be overwritten.
 
-      double pf = _photomModel->photomFactor(ccdImage, measuredStar);
+      double pf = _photometryModel->photomFactor(ccdImage, measuredStar);
       const FittedStar *fs = measuredStar.GetFittedStar();
 
       double res = measuredStar.flux - pf * fs->flux;
 
       if (_fittingModel)
 	{
-	  _photomModel->getIndicesAndDerivatives(measuredStar,
+	  _photometryModel->getIndicesAndDerivatives(measuredStar,
                                              ccdImage,
                                              indices,
                                              h);
@@ -113,7 +113,7 @@ and I did not want to replicate it.  The constness of the iterators is
 automagically set by declaring them as "auto" */
 
 template <class ListType, class Accum>
-void PhotomFit::accumulateStat(ListType &listType, Accum &accum) const
+void PhotometryFit::accumulateStat(ListType &listType, Accum &accum) const
 {
   for (auto &im: listType)
     {
@@ -133,7 +133,7 @@ void PhotomFit::accumulateStat(ListType &listType, Accum &accum) const
 	  TweakPhotomMeasurementErrors(inPos, measuredStar, _posError);
 #endif
 
-	  double pf = _photomModel->photomFactor(ccdIMage, measuredStar);
+	  double pf = _photometryModel->photomFactor(ccdIMage, measuredStar);
 	  const FittedStar *fs = measuredStar.GetFittedStar();
 	  double res = measuredStar.flux - pf * fs->flux;
 	  double chi2Val = sqr(res/sigma);
@@ -143,7 +143,7 @@ void PhotomFit::accumulateStat(ListType &listType, Accum &accum) const
 }
 
 //! for the list of images in the provided  association and the reference stars, if any
-Chi2 PhotomFit::computeChi2() const
+Chi2 PhotometryFit::computeChi2() const
 {
   Chi2 chi2;
   accumulateStat(_associations.getCcdImageList(), chi2);
@@ -153,7 +153,7 @@ Chi2 PhotomFit::computeChi2() const
   return chi2;
 }
 
-void PhotomFit::outliersContributions(MeasuredStarList &outliers,
+void PhotometryFit::outliersContributions(MeasuredStarList &outliers,
                                       TripletList &tList,
                                       Eigen::VectorXd &grad)
 {
@@ -196,14 +196,14 @@ struct Chi2Vect : public vector<Chi2Entry>
 //! this routine is to be used only in the framework of outlier removal
 /*! it fills the array of indices of parameters that a Measured star
     constrains. Not really all of them if you check. */
-void PhotomFit::getMeasuredStarIndices(const MeasuredStar &measuredStar,
+void PhotometryFit::getMeasuredStarIndices(const MeasuredStar &measuredStar,
                                        std::vector<unsigned> &indices) const
 {
   indices.clear();
   if (_fittingModel)
     {
       Eigen::VectorXd h(100);
-      _photomModel->getIndicesAndDerivatives(measuredStar,
+      _photometryModel->getIndicesAndDerivatives(measuredStar,
                                              *measuredStar.ccdImage,
                                              indices,
                                              h);
@@ -216,7 +216,7 @@ void PhotomFit::getMeasuredStarIndices(const MeasuredStar &measuredStar,
     }
 }
 
-void PhotomFit::findOutliers(double nSigCut, MeasuredStarList &outliers) const
+void PhotometryFit::findOutliers(double nSigCut, MeasuredStarList &outliers) const
 {
   /* Aims at providing an outlier list for small-rank update
      of the factorization. */
@@ -272,7 +272,7 @@ void PhotomFit::findOutliers(double nSigCut, MeasuredStarList &outliers) const
     LOGLS_INFO(_log, "findMeasOutliers: found " << outliers.size() << " outliers");
 }
 
-void PhotomFit::assignIndices(const std::string &whatToFit)
+void PhotometryFit::assignIndices(const std::string &whatToFit)
 {
   _whatToFit = whatToFit;
   LOGLS_INFO(_log, "assignIndices: now fitting: " << whatToFit);
@@ -280,7 +280,7 @@ void PhotomFit::assignIndices(const std::string &whatToFit)
   _fittingFluxes = (_whatToFit.find("Fluxes") != string::npos);
 // When entering here, we assume that whatToFit has already been interpreted.
 
-  _nParModel =   (_fittingModel) ? _photomModel->assignIndices(whatToFit,0) : 0;
+  _nParModel =   (_fittingModel) ? _photometryModel->assignIndices(whatToFit,0) : 0;
   unsigned ipar = _nParModel;
 
   if (_fittingFluxes)
@@ -300,12 +300,12 @@ void PhotomFit::assignIndices(const std::string &whatToFit)
   _nParTot = ipar;
 }
 
-void PhotomFit::offsetParams(const Eigen::VectorXd& delta)
+void PhotometryFit::offsetParams(const Eigen::VectorXd& delta)
 {
   if (delta.size() != _nParTot)
-    throw LSST_EXCEPT(pex::exceptions::InvalidParameterError, "PhotomFit::OffsetParams : the provided vector length is not compatible with the current whatToFit setting");
+    throw LSST_EXCEPT(pex::exceptions::InvalidParameterError, "PhotometryFit::OffsetParams : the provided vector length is not compatible with the current whatToFit setting");
   if (_fittingModel)
-    _photomModel->offsetParams(delta);
+    _photometryModel->offsetParams(delta);
 
   if (_fittingFluxes)
     {
@@ -322,7 +322,7 @@ void PhotomFit::offsetParams(const Eigen::VectorXd& delta)
     }
 }
 
-bool PhotomFit::minimize(const std::string &whatToFit)
+bool PhotometryFit::minimize(const std::string &whatToFit)
 {
   assignIndices(whatToFit);
 
@@ -362,7 +362,7 @@ bool PhotomFit::minimize(const std::string &whatToFit)
 }
 
 
-void PhotomFit::makeResTuple(const std::string &tupleName) const
+void PhotometryFit::makeResTuple(const std::string &tupleName) const
 {
   std::ofstream tuple(tupleName.c_str());
   /* If we think the some coordinate on the focal plane is relevant in
@@ -399,7 +399,7 @@ void PhotomFit::makeResTuple(const std::string &tupleName) const
 #ifdef FUTURE
 	  tweakPhotomMeasurementErrors(inPos, ms, _posError);
 #endif
-	  double pf = _photomModel->photomFactor(im, ms);
+	  double pf = _photometryModel->photomFactor(im, ms);
 	  double jd = im.getMjd();
 	  const FittedStar *fs = ms.GetFittedStar();
 	  double res = ms.flux - pf * fs->flux;

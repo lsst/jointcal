@@ -13,10 +13,10 @@ namespace jointcal {
 class CcdImage;
 class Gtransfo;
 
-//! Interface class between AstromFit and an actual model for the Mapping (s) from pixels to some tangent plane (aka distortions).
+//! Interface class between AstrometryFit and an actual model for the Mapping (s) from pixels to some tangent plane (aka distortions).
 /* For an implementation example, see SimplePolyModel, and the comments at
 the top of simplepolymodel.h */
-class DistortionModel
+class AstrometryModel
 {
 public :
 
@@ -42,7 +42,7 @@ public :
   //!
   virtual void freezeErrorScales() = 0;
 
-  virtual ~DistortionModel() {};
+  virtual ~AstrometryModel() {};
 
 };
 

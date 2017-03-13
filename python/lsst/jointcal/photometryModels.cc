@@ -23,9 +23,9 @@
 #include "pybind11/pybind11.h"
 
 #include "lsst/jointcal/CcdImage.h"
-#include "lsst/jointcal/PhotomModel.h"
+#include "lsst/jointcal/PhotometryModel.h"
 #include "lsst/jointcal/Point.h"
-#include "lsst/jointcal/SimplePhotomModel.h"
+#include "lsst/jointcal/SimplePhotometryModel.h"
 
 namespace py = pybind11;
 using namespace pybind11::literals;
@@ -34,15 +34,15 @@ namespace lsst {
 namespace jointcal {
 namespace {
 
-void declarePhotomModel(py::module &mod) {
-    py::class_<PhotomModel, std::shared_ptr<PhotomModel>> cls(mod, "PhotomModel");
+void declarePhotometryModel(py::module &mod) {
+    py::class_<PhotometryModel, std::shared_ptr<PhotometryModel>> cls(mod, "PhotometryModel");
 
-    cls.def("photomFactor", &SimplePhotomModel::photomFactor, "ccdImage"_a, "where"_a=Point());
+    cls.def("photomFactor", &SimplePhotometryModel::photomFactor, "ccdImage"_a, "where"_a=Point());
 }
 
-void declareSimplePhotomModel(py::module &mod) {
-    py::class_<SimplePhotomModel, std::shared_ptr<SimplePhotomModel>, PhotomModel> cls(mod,
-                                                                                       "SimplePhotomModel");
+void declareSimplePhotometryModel(py::module &mod) {
+    py::class_<SimplePhotometryModel, std::shared_ptr<SimplePhotometryModel>, PhotometryModel> cls(mod,
+                                                                                       "SimplePhotometryModel");
     cls.def(py::init<CcdImageList const&>(), "ccdImageList"_a);
 }
 
@@ -50,8 +50,8 @@ PYBIND11_PLUGIN(photometryModels) {
     py::module::import("lsst.jointcal.point"); // needed for photomFactor's default "where"
     py::module mod("photometryModels");
 
-    declarePhotomModel(mod);
-    declareSimplePhotomModel(mod);
+    declarePhotometryModel(mod);
+    declareSimplePhotometryModel(mod);
 
     return mod.ptr();
 }

@@ -24,8 +24,8 @@
 
 #include "lsst/jointcal/Chi2.h"
 #include "lsst/jointcal/Associations.h"
-#include "lsst/jointcal/AstromFit.h"
-#include "lsst/jointcal/DistortionModel.h"
+#include "lsst/jointcal/PhotometryFit.h"
+#include "lsst/jointcal/PhotometryModel.h"
 
 namespace py = pybind11;
 using namespace pybind11::literals;
@@ -34,22 +34,22 @@ namespace lsst {
 namespace jointcal {
 namespace {
 
-void declareAstromFit(py::module &mod) {
-    py::class_<AstromFit, std::shared_ptr<AstromFit>> cls(mod, "AstromFit");
+void declarePhotometryFit(py::module &mod) {
+    py::class_<PhotometryFit, std::shared_ptr<PhotometryFit>> cls(mod, "PhotometryFit");
 
-    cls.def(py::init<Associations &, DistortionModel *, double>(),
-            "associations"_a, "distortionModel"_a, "posError"_a);
+    cls.def(py::init<Associations &, PhotometryModel *, double>(),
+            "associations"_a, "photometryModel"_a, "fluxError"_a);
 
-    cls.def("minimize", &AstromFit::minimize, "whatToFit"_a, "nSigRejCut"_a=0);
-    cls.def("computeChi2", &AstromFit::computeChi2);
-    cls.def("makeResTuple", &AstromFit::makeResTuple);
+    cls.def("minimize", &PhotometryFit::minimize, "whatToFit"_a);
+    cls.def("computeChi2", &PhotometryFit::computeChi2);
+    cls.def("makeResTuple", &PhotometryFit::makeResTuple);
 }
 
-PYBIND11_PLUGIN(astromFit) {
+PYBIND11_PLUGIN(photometryFit) {
     py::module::import("lsst.jointcal.chi2"); // need this for computeChi2's return value
-    py::module mod("astromFit");
+    py::module mod("photometryFit");
 
-    declareAstromFit(mod);
+    declarePhotometryFit(mod);
 
     return mod.ptr();
 }

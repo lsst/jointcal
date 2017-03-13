@@ -9,7 +9,7 @@ namespace jointcal {
 class Mapping;
 
 
-/**********   Stuff for providing Sk22TP gtransfos to a DistortionModel ***/
+/**********   Stuff for providing Sk22TP gtransfos to a AstrometryModel ***/
 
 OneTPPerVisitHandler::OneTPPerVisitHandler(const CcdImageList &ccdImageList)
 {

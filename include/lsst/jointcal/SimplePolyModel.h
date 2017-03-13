@@ -5,7 +5,7 @@
 
 #include "lsst/jointcal/Eigenstuff.h"
 
-#include "lsst/jointcal/DistortionModel.h"
+#include "lsst/jointcal/AstrometryModel.h"
 #include "lsst/jointcal/Gtransfo.h"
 #include "lsst/jointcal/SimplePolyMapping.h"
 #include "lsst/jointcal/ProjectionHandler.h"
@@ -18,7 +18,7 @@ class CcdImage;
 class CcdImageList;
 
 /* We deal here with coordinate transforms which are fitted
-   and/or necessary to AstromFit. The classes SimplePolyModel
+   and/or necessary to AstrometryFit. The classes SimplePolyModel
 and SimplePolyMapping implement a model where  there is one
 separate transfrom per CcdImage. One could chose other setups.
 
@@ -26,7 +26,7 @@ separate transfrom per CcdImage. One could chose other setups.
 
 //! this is the model used to fit independent CCDs, meaning that there is no instrument model.
 /* This modeling of distortions can even accommodate images set mixing instruments */
-class SimplePolyModel : public DistortionModel
+class SimplePolyModel : public AstrometryModel
 {
   /* using ref counts here allows us to not write a destructor nor a copy
      constructor. I could *not* get it to work using std::auto_ptr. */
@@ -43,7 +43,7 @@ public :
 		  unsigned nNotFit=0,
           unsigned degree=3);
 
-  // The following routines are the interface to AstromFit
+  // The following routines are the interface to AstrometryFit
   //!
   const Mapping* getMapping(const CcdImage &) const;
 

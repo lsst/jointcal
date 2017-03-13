@@ -9,7 +9,7 @@
 #include "lsst/jointcal/CcdImage.h"
 #include "lsst/jointcal/Eigenstuff.h"
 #include "lsst/jointcal/Tripletlist.h"
-#include "lsst/jointcal/PhotomModel.h"
+#include "lsst/jointcal/PhotometryModel.h"
 #include "lsst/jointcal/Chi2.h"
 
 namespace lsst {
@@ -18,21 +18,21 @@ namespace jointcal {
 class Associations;
 
 //! Class that handles the photometric least squares problem.
-class PhotomFit {
+class PhotometryFit {
   private :
 
   Associations &_associations;
   std::string _whatToFit;
   bool _fittingModel, _fittingFluxes;
   unsigned _nParModel, _nParFluxes, _nParTot;
-  PhotomModel * _photomModel;
+  PhotometryModel * _photometryModel;
   double _fluxError;
   int _lastNTrip; // last triplet count, used to speed up allocation
 
  public :
 
   //! this is the only constructor
-  PhotomFit (Associations &associations, PhotomModel *model, double fluxError);
+  PhotometryFit (Associations &associations, PhotometryModel *model, double fluxError);
 
   /**
    * Does a 1 step minimization, assuming a linear model.
@@ -48,9 +48,9 @@ class PhotomFit {
    *                        whatToFit="Model Fluxes"  will set both parameter
    *                        sets variable when computing derivatives. Provided
    *                        it contains "Model", whatToFit is passed over to the
-   *                        PhotomModel, and can hence be used to control more
+   *                        PhotometryModel, and can hence be used to control more
    *                        finely which subsets of the photometric model are
-   *                        being fitted, if the the actual PhotomModel
+   *                        being fitted, if the the actual PhotometryModel
    *                        implements such a possibility.
    *
    * @return     false if factorization failed, true otherwise.
@@ -75,9 +75,9 @@ class PhotomFit {
    *                        whatToFit="Model Fluxes"  will set both parameter
    *                        sets variable when computing derivatives. Provided
    *                        it contains "Model", whatToFit is passed over to the
-   *                        PhotomModel, and can hence be used to control more
+   *                        PhotometryModel, and can hence be used to control more
    *                        finely which subsets of the photometric model are
-   *                        being fitted, if the the actual PhotomModel
+   *                        being fitted, if the the actual PhotometryModel
    *                        implements such a possibility.
    */
   void assignIndices(const std::string &whatToFit);

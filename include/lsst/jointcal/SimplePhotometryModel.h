@@ -2,7 +2,7 @@
 #define SIMPLEPHOTOMMODEL__H
 
 #include "lsst/jointcal/Eigenstuff.h"
-#include "lsst/jointcal/PhotomModel.h"
+#include "lsst/jointcal/PhotometryModel.h"
 #include "lsst/jointcal/Point.h"
 #include <map>
 
@@ -15,7 +15,7 @@ class Point;
 
 //! Photometric response model which has a single photometric factor per CcdImage.
 /*! It considers a full exposure as reference. */
- class SimplePhotomModel : public PhotomModel
+ class SimplePhotometryModel : public PhotometryModel
 {
 
   struct PhotomStuff
@@ -34,7 +34,7 @@ class Point;
 
 public :
 
-  SimplePhotomModel(const CcdImageList &ccdImageList);
+  SimplePhotometryModel(const CcdImageList &ccdImageList);
 
   /**
    * Assign indices to parameters involved in mappings, starting at firstIndex.

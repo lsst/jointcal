@@ -327,7 +327,7 @@ void Associations::assignMags()
 void Associations::deprojectFittedStars()
 {
     /* by default, Associations::fittedStarList is expressed on the
-       Associations::commonTangentPlane. For AstromFit, we need it on
+       Associations::commonTangentPlane. For AstrometryFit, we need it on
        the sky */
     if (!fittedStarList.inTangentPlaneCoordinates)
     {

@@ -7,7 +7,7 @@
 
 class CcdImage;
 
-#include "lsst/jointcal/DistortionModel.h"
+#include "lsst/jointcal/AstrometryModel.h"
 #include "lsst/jointcal/Gtransfo.h"
 #include "lsst/jointcal/Frame.h"
 #include "lsst/jointcal/SimplePolyMapping.h"
@@ -31,7 +31,7 @@ class CcdImageList;
  * required for this model is TwoTransfoMapping. This modeling of distortions
  * is meant for set of images from a single mosaic imager.
  */
-class ConstrainedPolyModel : public DistortionModel
+class ConstrainedPolyModel : public AstrometryModel
 {
   // NOTE: Using ref counts here allows us to not write a destructor nor a copy
   // constructor. I could *not* get it to work using std::auto_ptr.
@@ -52,7 +52,7 @@ public :
                        bool initFromWCS,
                        unsigned nNotFit=0);
 
-  // The following routines are the interface to AstromFit
+  // The following routines are the interface to AstrometryFit
   //!
   const Mapping* getMapping(const CcdImage &) const;
 

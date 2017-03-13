@@ -393,16 +393,16 @@ class JointcalTask(pipeBase.CmdLineTask):
         Returns
         -------
         namedtuple
-            fit : lsst.jointcal.PhotomFit
+            fit : lsst.jointcal.PhotometryFit
                 The photometric fitter used to perform the fit.
-            model : lsst.jointcal.PhotomModel
+            model : lsst.jointcal.PhotometryModel
                 The photometric model that was fit.
         """
 
         self.log.info("=== Starting photometric fitting...")
-        model = lsst.jointcal.SimplePhotomModel(associations.getCcdImageList())
+        model = lsst.jointcal.SimplePhotometryModel(associations.getCcdImageList())
 
-        fit = lsst.jointcal.PhotomFit(associations, model, self.config.posError)
+        fit = lsst.jointcal.PhotometryFit(associations, model, self.config.posError)
         fit.minimize("Model")
         chi2 = fit.computeChi2()
         self.log.info(str(chi2))
@@ -429,9 +429,9 @@ class JointcalTask(pipeBase.CmdLineTask):
         Returns
         -------
         namedtuple
-            fit : lsst.jointcal.AstromFit
+            fit : lsst.jointcal.AstrometryFit
                 The astrometric fitter used to perform the fit.
-            model : lsst.jointcal.DistortionModel
+            model : lsst.jointcal.AstrometryModel
                 The astrometric model that was fit.
             sky_to_tan_projection : lsst.jointcal.ProjectionHandler
                 The model for the sky to tangent plane projection that was used in the fit.
@@ -448,7 +448,7 @@ class JointcalTask(pipeBase.CmdLineTask):
         model = lsst.jointcal.SimplePolyModel(associations.getCcdImageList(), sky_to_tan_projection,
                                               True, 0, self.config.polyOrder)
 
-        fit = lsst.jointcal.AstromFit(associations, model, self.config.posError)
+        fit = lsst.jointcal.AstrometryFit(associations, model, self.config.posError)
         fit.minimize("Distortions")
         chi2 = fit.computeChi2()
         self.log.info(str(chi2))
@@ -495,9 +495,9 @@ class JointcalTask(pipeBase.CmdLineTask):
         ----------
         associations : lsst.jointcal.Associations
             The star/reference star associations to fit.
-        astrom_model : lsst.jointcal.DistortionModel
+        astrom_model : lsst.jointcal.AstrometryModel
             The astrometric model that was fit.
-        photom_model : lsst.jointcal.PhotomModel
+        photom_model : lsst.jointcal.PhotometryModel
             The photometric model that was fit.
         visit_ccd_to_dataRef : dict of Key: lsst.daf.persistence.ButlerDataRef
             dict of ccdImage identifiers to dataRefs that were fit
