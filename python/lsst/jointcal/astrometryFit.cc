@@ -22,10 +22,10 @@
 
 #include "pybind11/pybind11.h"
 
-#include "lsst/jointcal/Chi2.h"
 #include "lsst/jointcal/Associations.h"
 #include "lsst/jointcal/AstrometryFit.h"
 #include "lsst/jointcal/AstrometryModel.h"
+#include "lsst/jointcal/Chi2.h"
 
 namespace py = pybind11;
 using namespace pybind11::literals;
@@ -46,7 +46,9 @@ void declareAstrometryFit(py::module &mod) {
 }
 
 PYBIND11_PLUGIN(astrometryFit) {
-    py::module::import("lsst.jointcal.chi2"); // need this for computeChi2's return value
+    py::module::import("lsst.jointcal.associations");
+    py::module::import("lsst.jointcal.astrometryModels");
+    py::module::import("lsst.jointcal.chi2");
     py::module mod("astrometryFit");
 
     declareAstrometryFit(mod);

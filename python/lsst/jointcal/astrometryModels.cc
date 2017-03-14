@@ -26,6 +26,8 @@
 #include "lsst/jointcal/AstrometryModel.h"
 #include "lsst/jointcal/SimplePolyModel.h"
 #include "lsst/jointcal/ConstrainedPolyModel.h"
+#include "lsst/jointcal/Gtransfo.h"
+
 
 namespace py = pybind11;
 using namespace pybind11::literals;
@@ -55,7 +57,8 @@ void declareConstrainedPolyModel(py::module &mod) {
 }
 
 PYBIND11_PLUGIN(astrometryModels) {
-    py::module::import("lsst.jointcal.gtransfo"); // for produceSipWcs return value
+    py::module::import("lsst.jointcal.ccdImage");
+    py::module::import("lsst.jointcal.gtransfo");
     py::module mod("astrometryModels");
 
     declareAstrometryModel(mod);

@@ -46,7 +46,9 @@ void declarePhotometryFit(py::module &mod) {
 }
 
 PYBIND11_PLUGIN(photometryFit) {
-    py::module::import("lsst.jointcal.chi2"); // need this for computeChi2's return value
+    py::module::import("lsst.jointcal.associations");
+    py::module::import("lsst.jointcal.chi2");
+    py::module::import("lsst.jointcal.photometryModels");
     py::module mod("photometryFit");
 
     declarePhotometryFit(mod);

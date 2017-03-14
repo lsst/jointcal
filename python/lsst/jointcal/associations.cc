@@ -23,6 +23,7 @@
 #include "pybind11/pybind11.h"
 
 #include "lsst/jointcal/Associations.h"
+#include "lsst/jointcal/CcdImage.h"
 
 namespace py = pybind11;
 using namespace pybind11::literals;
@@ -58,6 +59,7 @@ void declareAssociations(py::module &mod) {
 }
 
 PYBIND11_PLUGIN(associations) {
+    py::module::import("lsst.jointcal.ccdImage");
     py::module mod("associations");
 
     declareAssociations(mod);

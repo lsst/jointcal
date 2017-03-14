@@ -59,7 +59,7 @@ PYBIND11_PLUGIN(gtransfo) {
     declareTanSipPix2RaDec(mod);
 
     // utility functions
-    mod.def("gtransfoToTanWcs", &gtransfoToTanWcs);
+    mod.def("gtransfoToTanWcs", &gtransfoToTanWcs); // from SipToGtransfo.h
 
     return mod.ptr();
 }

@@ -43,6 +43,7 @@ void declareOneTPPerVisitHandler(py::module &mod) {
 }
 
 PYBIND11_PLUGIN(projectionHandler) {
+    py::module::import("lsst.jointcal.ccdImage");
     py::module mod("projectionHandler");
 
     declareProjectionHandler(mod);
