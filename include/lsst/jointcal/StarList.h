@@ -100,10 +100,8 @@ public:
 };
 
   //! enables \verbatim  std::cout << my_list; \endverbatim
-#ifndef SWIG
 template <class Star>  std::ostream & operator <<(std::ostream &stream, const StarList<Star> &List)
     {List.dump(stream); return stream; }
-#endif
 
 }} // end of namespaces
 

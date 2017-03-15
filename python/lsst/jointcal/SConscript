@@ -11,8 +11,8 @@ scripts.BasicSConscript.pybind11(
      'jointcalControl',
      'photometryFit',
      'photometryModels',
-     'point',
      'projectionHandler',
+     'star'
     ],
     addUnderscore=False,
 )

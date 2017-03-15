@@ -67,19 +67,15 @@ public :
 
   void Swap() { std::swap(point1, point2) ; std::swap(s1,s2) ; }
 
-#ifndef SWIG
   friend bool DecFlux(const StarMatch & S1, const StarMatch & S2);
   friend bool IncreasingDistances(const StarMatch &one, const StarMatch &two);
   friend bool DecreasingDistances(const StarMatch &one, const StarMatch &two);
   friend bool DecPhoRatio(const StarMatch &S1, const StarMatch &S2);
-#endif
 
   /* comparison that ensures that after a sort, duplicates are next one another */
   explicit StarMatch() {};
 
-#ifndef SWIG
   friend std::ostream& operator << (std::ostream &stream, const StarMatch &Match);
-#endif
 
   ~StarMatch() {}
 
@@ -146,9 +142,7 @@ inline bool SameS2(const StarMatch &one, const StarMatch &two)
 
 /* =================================== StarMatchList ============================================================ */
 
-#ifndef SWIG
 std::ostream& operator << (std::ostream &stream, const StarMatch &Match);
-#endif
 
 //#ifdef TO_BE_FIXED
   typedef ::std::list<StarMatch>::iterator StarMatchIterator;
@@ -165,9 +159,7 @@ utilities such as ListMatchCollect. StarMatchList's have write
 capabilities.  NStarMatchList is a generalization of this 2-match to n-matches.
 */
 
-#ifndef SWIG
 std::ostream& operator << (std::ostream &stream, const StarMatchList &List);
-#endif
 
 class StarMatchList : public std::list<StarMatch> {
 

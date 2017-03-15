@@ -48,7 +48,7 @@ void declareSimplePhotometryModel(py::module &mod) {
 
 PYBIND11_PLUGIN(photometryModels) {
     py::module::import("lsst.jointcal.ccdImage");
-    py::module::import("lsst.jointcal.point");
+    py::module::import("lsst.jointcal.star");
     py::module mod("photometryModels");
 
     declarePhotometryModel(mod);

@@ -88,9 +88,8 @@ class FittedStar : public BaseStar, public PmBlock {
 
   //!
   void dump(std::ostream & stream = std::cout) const
-    { BaseStar::dumpn(stream);
-    stream << " mcount "
-	   << measurementCount << std::endl;
+    { BaseStar::dump(stream);
+    stream << " mcount: " << measurementCount;
     }
 
   //!

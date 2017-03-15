@@ -26,6 +26,16 @@ private :
   //!
   RefStar(const BaseStar &baseStar);
 
+  void dump(std::ostream & stream = std::cout) const
+    {
+        BaseStar::dump(stream);
+        stream << " refFlux: [";
+        for (auto x: refFlux) {
+            stream << x << ", ";
+        }
+        stream << "] index: " << index;
+    }
+
   //!
   void setFittedStar(FittedStar *F);
 

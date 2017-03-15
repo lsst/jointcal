@@ -9,6 +9,7 @@
 #include <iostream>
 #include <cstdio>
 #include <string>
+#include <sstream>
 
 #include "lsst/jointcal/FatPoint.h"
 #include "lsst/jointcal/CountedRef.h"
@@ -49,18 +50,15 @@ double flux;
   //!
   double Y() const { return y;}
 
-#ifndef SWIG
   //! allows std::cout << aBaseStar;
   friend std::ostream& operator << (std::ostream &stream, const BaseStar &s)
   { s.dump(stream); return stream;}
-#endif
 
-  virtual void dump(std::ostream & stream = std::cout) const { stream << "x "<< x << " y " << y << " flux " << flux << std::endl;}
-  virtual void dumpn(std::ostream & stream = std::cout) const { stream << "x "<< x << " y " << y << " flux " << flux << " ";}
+  virtual std::string __str__() const {std::stringstream s; dump(s); return s.str();}
 
-#ifndef SWIG
+  virtual void dump(std::ostream & stream = std::cout) const { stream << "x: "<< x << " y: " << y << " flux: " << flux;}
+
   BaseStar& operator=(const Point &P) {this->x = P.x; this->y = P.y; return (*this);};
-#endif
 
   static const char *TypeName() { return "BaseStar";}
 

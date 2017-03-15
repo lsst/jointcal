@@ -52,6 +52,12 @@ class MeasuredStar : public BaseStar
       { if (F)  F->MeasurementCount()++; fittedStar = F;
       }
 
+  void dump(std::ostream & stream = std::cout) const
+    {
+        BaseStar::dump(stream);
+        stream << " ccdImage: " << ccdImage << " valid: " << valid;
+    }
+
   double FluxSig() const { return eflux;}
 
   double Mag() const { return mag;}
