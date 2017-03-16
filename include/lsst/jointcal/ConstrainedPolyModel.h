@@ -60,7 +60,7 @@ public :
    * Positions the various parameter sets into the parameter vector, starting at
    * FirstIndex.
    */
-  unsigned assignIndices(unsigned FirstIndex, std::string &WhatToFit);
+  unsigned assignIndices(unsigned FirstIndex, const std::string &WhatToFit);
 
   /**
    * Dispaches the offsets after a fit step into the actual locations of

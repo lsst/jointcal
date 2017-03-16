@@ -24,7 +24,7 @@ public :
   virtual const Mapping* getMapping(const CcdImage &) const = 0;
 
   //! Assign indices to parameters involved in mappings, starting at FirstIndex. Returns the highest assigned index.
-  virtual unsigned assignIndices(unsigned firstIndex, std::string &whatToFit) = 0;
+  virtual unsigned assignIndices(unsigned firstIndex, const std::string &whatToFit) = 0;
 
   //! Offset the parameters by the provided amounts.
   /*! The shifts are applied according to the indices given in

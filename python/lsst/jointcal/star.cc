@@ -52,7 +52,8 @@ void declareBaseStar(py::module &mod) {
     cls.def(py::init<>());
     cls.def(py::init<double, double, double>(), "x"_a, "y"_a, "flux"_a);
 
-    // these three are actually declared in FatPoint, but we don't need that in Python
+    // these three are actually declared in FatPoint, but we don't need that in Python.
+    // NOTE: see DM-9814 about the necessity of the pointer cast below.
     cls.def_readonly("vx", (double BaseStar::*) &BaseStar::vx);
     cls.def_readonly("vy", (double BaseStar::*) &BaseStar::vy);
     cls.def_readonly("vxy", (double BaseStar::*) &BaseStar::vxy);

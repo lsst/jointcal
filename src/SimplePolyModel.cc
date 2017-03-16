@@ -86,7 +86,7 @@ const Mapping* SimplePolyModel::getMapping(const CcdImage &ccdImageList) const
   return (i->second.get());
 }
 
-unsigned SimplePolyModel::assignIndices(unsigned firstIndex, std::string &whatToFit)
+unsigned SimplePolyModel::assignIndices(unsigned firstIndex, const std::string &whatToFit)
 {
   if (whatToFit.find("Distortions") == std::string::npos)
     {

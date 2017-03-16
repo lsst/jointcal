@@ -123,8 +123,7 @@ const Mapping* ConstrainedPolyModel::getMapping(const CcdImage &C) const
   WhatToFit. If WhatToFit contains "Distortions" and not
   Distortions<Something>, it is understood as both chips and
   visits. */
-unsigned ConstrainedPolyModel::assignIndices(unsigned FirstIndex,
-					     std::string &WhatToFit)
+unsigned ConstrainedPolyModel::assignIndices(unsigned FirstIndex, const std::string &WhatToFit)
 {
   unsigned index=FirstIndex;
   if (WhatToFit.find("Distortions") == std::string::npos)

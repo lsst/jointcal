@@ -48,7 +48,7 @@ public :
   const Mapping* getMapping(const CcdImage &) const;
 
   //! Positions the various parameter sets into the parameter vector, starting at FirstIndex
-  unsigned assignIndices(unsigned firstIndex, std::string &whatToFit);
+  unsigned assignIndices(unsigned firstIndex, const std::string &whatToFit);
 
   // dispaches the offsets after a fit step into the actual locations of parameters
   void offsetParams(const Eigen::VectorXd &delta);
