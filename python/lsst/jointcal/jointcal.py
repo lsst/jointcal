@@ -359,7 +359,7 @@ class JointcalTask(pipeBase.CmdLineTask):
         self._check_star_lists(associations, name)
         self.metrics['selected%sRefStars' % name] = associations.refStarListSize()
         self.metrics['selected%sFittedStars' % name] = associations.fittedStarListSize()
-        self.metrics['selected%sCcdImageList' % name] = associations.ccdImageList.sizeValidForFit()
+        self.metrics['selected%sCcdImageList' % name] = associations.nCcdImagesValidForFit()
 
         load_cat_prof_file = 'jointcal_fit_%s.prof'%name if profile_jointcal else ''
         with pipeBase.cmdLineTask.profile(load_cat_prof_file):
@@ -374,7 +374,7 @@ class JointcalTask(pipeBase.CmdLineTask):
 
     def _check_star_lists(self, associations, name):
         # TODO: these should be len(blah), but we need this properly wrapped first.
-        if associations.ccdImageList.sizeValidForFit() == 0:
+        if associations.nCcdImagesValidForFit() == 0:
             raise RuntimeError('No images in the ccdImageList!')
         if associations.fittedStarListSize() == 0:
             raise RuntimeError('No stars in the {} fittedStarList!'.format(name))

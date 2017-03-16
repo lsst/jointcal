@@ -1,6 +1,7 @@
 #ifndef SIMPLEPHOTOMMODEL__H
 #define SIMPLEPHOTOMMODEL__H
 
+#include "lsst/jointcal/CcdImage.h"
 #include "lsst/jointcal/Eigenstuff.h"
 #include "lsst/jointcal/PhotometryModel.h"
 #include "lsst/jointcal/Point.h"
@@ -9,7 +10,6 @@
 namespace lsst {
 namespace jointcal {
 
-class CcdImageList;
 class CcdImage;
 class Point;
 

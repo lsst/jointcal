@@ -39,12 +39,11 @@ ConstrainedPolyModel::ConstrainedPolyModel(const CcdImageList &ccdImageList,
 {
   // from datacards (or default)
   unsigned degree = DistortionDegree;
-  unsigned count = 0;
   VisitIdType refVisit;
   // first loop to initialize all visit  and chip transfos.
-  for (auto i=ccdImageList.cbegin(); i!= ccdImageList.cend(); ++i, ++count)
+  for (auto &ccdImage: ccdImageList)
     {
-      const CcdImage &im = **i;
+      const CcdImage &im = *ccdImage;
       unsigned visit = im.getVisit();
       unsigned chip = im.getCcdId();
       auto visitp = _visitMap.find(visit);
@@ -88,9 +87,9 @@ ConstrainedPolyModel::ConstrainedPolyModel(const CcdImageList &ccdImageList,
 	}
     }
   // now, second loop to set the mappings of the CCdImages
-  for (auto i=ccdImageList.cbegin(); i!= ccdImageList.cend(); ++i, ++count)
+  for (auto &ccdImage: ccdImageList)
     {
-      const CcdImage &im = **i;
+      const CcdImage &im = *ccdImage;
       unsigned visit = im.getVisit();
       unsigned chip = im.getCcdId();
       // check that the chip_indexed part was indeed assigned

@@ -5,8 +5,7 @@
 
 #include <string>
 #include <iostream>
-
-//#include "stringlist.h"
+#include <list>
 
 #include "lsst/afw/table/Source.h"
 #include "lsst/afw/image/TanWcs.h"
@@ -116,6 +115,16 @@ public:
     // Return the bounding box in (ra, dec) coordinates containing the whole catalog
     const lsst::afw::geom::Box2D getRaDecBBox();
 
+
+    /**
+     * @brief      return the number of CcdImages with non-empty catalogs to-be-fit.
+     */
+    int nCcdImagesValidForFit() const
+    {
+        return std::count_if(ccdImageList.begin(), ccdImageList.end(),
+                             [](std::shared_ptr<CcdImage> const &item)
+                             {return item->getCatalogForFit().size() > 0;});
+    }
 
 private:
     void associateRefStars(double matchCutInArcsec, const Gtransfo* gtransfo);

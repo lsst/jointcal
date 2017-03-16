@@ -23,8 +23,6 @@
 #include "pybind11/pybind11.h"
 #include "pybind11/stl.h"
 
-#include <list>
-
 #include "lsst/jointcal/CcdImage.h"
 
 namespace py = pybind11;
@@ -60,23 +58,10 @@ void declareCcdImage(py::module &mod) {
 
 }
 
-void declareCcdImageList(py::module &mod) {
-    py::class_<CcdImageList, std::shared_ptr<CcdImageList>> cls(mod, "CcdImageList");
-
-    cls.def("sizeValidForFit", &CcdImageList::sizeValidForFit);
-
-    // Make this behave like a std::list (which it is but we can't wrap std::list subclasses trivially)
-    cls.def("__len__", &CcdImageList::size);
-    cls.def("__iter__", [](const CcdImageList &self) {
-        return py::make_iterator(self.begin(), self.end());
-    }, py::keep_alive<0, 1>()); /* Essential: keep object alive while iterator exists */
-}
-
 PYBIND11_PLUGIN(ccdImage) {
     py::module mod("ccdImage");
 
     declareCcdImage(mod);
-    declareCcdImageList(mod);
 
     return mod.ptr();
 }

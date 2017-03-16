@@ -13,7 +13,7 @@ class CcdImage;
 #include "lsst/jointcal/SimplePolyMapping.h"
 #include "lsst/jointcal/ProjectionHandler.h"
 #include "lsst/jointcal/TwoTransfoMapping.h"
-#include "lsst/jointcal/CcdImage.h" // for VisitIdType;
+#include "lsst/jointcal/CcdImage.h"
 
 
 #include <map>
@@ -21,8 +21,6 @@ class CcdImage;
 
 namespace lsst {
 namespace jointcal {
-
-class CcdImageList;
 
 /**
  * This is the model used to fit mappings as the combination of a

@@ -1,6 +1,7 @@
 #ifndef PROJECTIONHANDLER__H
 #define PROJECTIONHANDLER__H
 
+#include "lsst/jointcal/CcdImage.h"
 #include "lsst/jointcal/Gtransfo.h"
 #include "map"
 
@@ -9,7 +10,6 @@ namespace jointcal {
 
 class Mapping;
 class CcdImage;
-class CcdImageList;
 
 /**
  * This is a virtual class that allows a lot of freedom in the choice of the

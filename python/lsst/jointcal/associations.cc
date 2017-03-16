@@ -21,6 +21,7 @@
  */
 
 #include "pybind11/pybind11.h"
+#include "pybind11/stl.h"
 
 #include "lsst/jointcal/Associations.h"
 #include "lsst/jointcal/CcdImage.h"
@@ -43,6 +44,7 @@ void declareAssociations(py::module &mod) {
             "matchCutInArcsec"_a=0, "useFittedList"_a=false, "enlargeFittedList"_a=true);
     cls.def("collectRefStars", &Associations::collectRefStars);
     cls.def("deprojectFittedStars", &Associations::deprojectFittedStars);
+    cls.def("nCcdImagesValidForFit", &Associations::nCcdImagesValidForFit);
 
     cls.def("addImage", &Associations::addImage);
     cls.def("selectFittedStars", &Associations::selectFittedStars);

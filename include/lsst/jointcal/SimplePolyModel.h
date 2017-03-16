@@ -15,7 +15,6 @@ namespace lsst {
 namespace jointcal {
 
 class CcdImage;
-class CcdImageList;
 
 /* We deal here with coordinate transforms which are fitted
    and/or necessary to AstrometryFit. The classes SimplePolyModel
