@@ -20,7 +20,7 @@ static const int fitsToLsstPixels = -1;
 typedef std::shared_ptr<jointcal::GtransfoPoly> GtPoly_Ptr;
 
 
-jointcal::TanSipPix2RaDec ConvertTanWcs(const std::shared_ptr<lsst::afw::image::TanWcs> wcs)
+jointcal::TanSipPix2RaDec convertTanWcs(const std::shared_ptr<lsst::afw::image::TanWcs> wcs)
 {
   GtPoly_Ptr sipCorr(new jointcal::GtransfoPoly(0));
 
@@ -100,7 +100,7 @@ jointcal::TanSipPix2RaDec ConvertTanWcs(const std::shared_ptr<lsst::afw::image::
 
 /* The inverse transformation i.e. convert from the fit result to the SIP
    convention. */
-PTR(afwImg::TanWcs) GtransfoToTanWcs(const jointcal::TanSipPix2RaDec WcsTransfo,
+PTR(afwImg::TanWcs) gtransfoToTanWcs(const jointcal::TanSipPix2RaDec WcsTransfo,
 				     const jointcal::Frame &CcdFrame,
 				     const bool NoLowOrderSipTerms)
 {

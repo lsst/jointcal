@@ -12,8 +12,8 @@ class CcdImage;
 class Point;
 class MeasuredStar;
 
-//! Interface class for PhotomFit
-class PhotomModel
+//! Interface class for PhotometryFit
+class PhotometryModel
 {
 public :
 
@@ -54,7 +54,7 @@ public :
                                         std::vector<unsigned> &indices,
                                         Eigen::VectorXd &D) = 0;
 
-  virtual ~PhotomModel() {};
+  virtual ~PhotometryModel() {};
 
 };
 

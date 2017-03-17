@@ -1,5 +1,6 @@
 setupRequired(scons)
 setupRequired(sconsUtils)
+setupRequired(pybind11)
 setupRequired(eigen)
 setupRequired(boost)
 setupRequired(afw)

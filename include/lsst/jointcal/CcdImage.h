@@ -1,9 +1,8 @@
 #ifndef CCDIMAGE__H
 #define CCDIMAGE__H
 
-#include <string>
 #include <list>
-#include <vector>
+#include <string>
 
 #include "lsst/afw/table/Source.h"
 #include "lsst/afw/image/TanWcs.h"
@@ -18,6 +17,8 @@
 
 namespace lsst {
 namespace jointcal {
+
+typedef std::list<std::shared_ptr<CcdImage> > CcdImageList;
 
 typedef int VisitIdType;
 typedef int CcdIdType;
@@ -182,48 +183,12 @@ public:
     const Gtransfo *InverseReadWCS() const {return inverseReadWcs.get();}
 
     //! Frame in pixels
-    const Frame& ImageFrame() const { return imageFrame;}
+    const Frame& getImageFrame() const { return imageFrame;}
 
 private:
     CcdImage(const CcdImage &); // forbid copies
 };
 
-
-/********* CcdImageList *************/
-
-
-/**
- * A list of CcdImage. Usually produced by Associations.
- */
-//class CcdImageList : public std::list<CountedRef<CcdImage> >
-class CcdImageList : public std::list<std::shared_ptr<CcdImage> >
-{
-public:
-
-    template<class Accept> CcdImageList SubList(const Accept &OP) const
-    {
-        CcdImageList out;
-        for (auto const &i: *this)
-            if (OP(*i)) out.push_back(i);
-        return out;
-    }
-
-    /**
-     * @brief      Return the number of ccdImages with a populated catalogForFit list.
-     */
-    int sizeValidForFit() const
-    {
-        return std::count_if(this->begin(), this->end(),
-                             [](std::shared_ptr<CcdImage> const &item)
-                             {return item->getCatalogForFit().size() > 0;});
-    }
-};
-
-
-typedef CcdImageList::iterator CcdImageIterator;
-typedef CcdImageList::const_iterator CcdImageCIterator;
-
-}
-} // end of namespaces
+}} // end of namespaces
 
 #endif /* CCDIMAGE__H */

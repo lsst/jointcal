@@ -394,10 +394,6 @@ class GtransfoComposition : public Gtransfo {
 
     Gtransfo *Clone() const;
     ~GtransfoComposition();
-
-    //#ifndef SWIG
-    //  ClassDef(GtransfoComposition,1);
-    //#endif /*SWIG */
 };
 
 

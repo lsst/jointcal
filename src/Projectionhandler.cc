@@ -1,4 +1,4 @@
-#include "lsst/jointcal/Projectionhandler.h"
+#include "lsst/jointcal/ProjectionHandler.h"
 #include "lsst/jointcal/Gtransfo.h"
 #include "lsst/jointcal/CcdImage.h"
 
@@ -9,7 +9,7 @@ namespace jointcal {
 class Mapping;
 
 
-/**********   Stuff for providing Sk22TP gtransfos to a DistortionModel ***/
+/**********   Stuff for providing Sk22TP gtransfos to a AstrometryModel ***/
 
 OneTPPerVisitHandler::OneTPPerVisitHandler(const CcdImageList &ccdImageList)
 {

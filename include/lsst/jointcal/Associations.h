@@ -5,8 +5,7 @@
 
 #include <string>
 #include <iostream>
-
-//#include "stringlist.h"
+#include <list>
 
 #include "lsst/afw/table/Source.h"
 #include "lsst/afw/image/TanWcs.h"
@@ -19,7 +18,7 @@
 #include "lsst/jointcal/FittedStar.h"
 #include "lsst/jointcal/CcdImage.h"
 #include "lsst/jointcal/Point.h"
-#include "lsst/jointcal/Jointcal.h"
+#include "lsst/jointcal/JointcalControl.h"
 
 #include "lsst/afw/table/SortedCatalog.h"
 
@@ -86,8 +85,8 @@ public:
 
     //! incrementaly builds a merged catalog of all image catalogs
     void associateCatalogs(const double matchCutInArcsec = 0,
-                           const bool UseFittedList = false,
-                           const bool EnlargeFittedList = true);
+                           const bool useFittedList = false,
+                           const bool enlargeFittedList = true);
 
     //! Collect stars from an external reference catalog
     void collectRefStars(lsst::afw::table::SortedCatalogT< lsst::afw::table::SimpleRecord > &Ref,
@@ -116,6 +115,16 @@ public:
     // Return the bounding box in (ra, dec) coordinates containing the whole catalog
     const lsst::afw::geom::Box2D getRaDecBBox();
 
+
+    /**
+     * @brief      return the number of CcdImages with non-empty catalogs to-be-fit.
+     */
+    int nCcdImagesValidForFit() const
+    {
+        return std::count_if(ccdImageList.begin(), ccdImageList.end(),
+                             [](std::shared_ptr<CcdImage> const &item)
+                             {return item->getCatalogForFit().size() > 0;});
+    }
 
 private:
     void associateRefStars(double matchCutInArcsec, const Gtransfo* gtransfo);

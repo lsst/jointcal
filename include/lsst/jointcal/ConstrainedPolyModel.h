@@ -7,12 +7,13 @@
 
 class CcdImage;
 
-#include "lsst/jointcal/DistortionModel.h"
+#include "lsst/jointcal/AstrometryModel.h"
 #include "lsst/jointcal/Gtransfo.h"
 #include "lsst/jointcal/Frame.h"
 #include "lsst/jointcal/SimplePolyMapping.h"
+#include "lsst/jointcal/ProjectionHandler.h"
 #include "lsst/jointcal/TwoTransfoMapping.h"
-#include "lsst/jointcal/CcdImage.h" // for VisitIdType;
+#include "lsst/jointcal/CcdImage.h"
 
 
 #include <map>
@@ -21,8 +22,6 @@ class CcdImage;
 namespace lsst {
 namespace jointcal {
 
-class CcdImageList;
-
 /**
  * This is the model used to fit mappings as the combination of a
  * transformation depending on the chip number (instrument model) and a
@@ -30,7 +29,7 @@ class CcdImageList;
  * required for this model is TwoTransfoMapping. This modeling of distortions
  * is meant for set of images from a single mosaic imager.
  */
-class ConstrainedPolyModel : public DistortionModel
+class ConstrainedPolyModel : public AstrometryModel
 {
   // NOTE: Using ref counts here allows us to not write a destructor nor a copy
   // constructor. I could *not* get it to work using std::auto_ptr.
@@ -46,35 +45,35 @@ class ConstrainedPolyModel : public DistortionModel
   Frame _tpFrame; // just for output of the chip transfos
 
 public :
-  ConstrainedPolyModel(const CcdImageList &L,
-		       const ProjectionHandler* ProjH,
-		       bool InitFromWCS,
-		       unsigned NNotFit=0);
+  ConstrainedPolyModel(const CcdImageList &ccdImageList,
+                       const ProjectionHandler* projectionHandler,
+                       bool initFromWCS,
+                       unsigned nNotFit=0);
 
-  // The following routines are the interface to AstromFit
+  // The following routines are the interface to AstrometryFit
   //!
-  const Mapping* GetMapping(const CcdImage &) const;
+  const Mapping* getMapping(const CcdImage &) const;
 
   /**
    * Positions the various parameter sets into the parameter vector, starting at
    * FirstIndex.
    */
-  unsigned AssignIndices(unsigned FirstIndex, std::string &WhatToFit);
+  unsigned assignIndices(unsigned FirstIndex, const std::string &WhatToFit);
 
   /**
    * Dispaches the offsets after a fit step into the actual locations of
    * parameters.
    */
-  void OffsetParams(const Eigen::VectorXd &Delta);
+  void offsetParams(const Eigen::VectorXd &Delta);
 
   /**
    * From there on, measurement errors are propagated using the current
    * transfos (and no longer evolve).
    */
-  void FreezeErrorScales();
+  void freezeErrorScales();
 
   //! Access to mappings
-  const Gtransfo& GetChipTransfo(const unsigned Chip) const;
+  const Gtransfo& getChipTransfo(const unsigned Chip) const;
 
   //! Access to mappings
   const Gtransfo& getVisitTransfo(const VisitIdType &Visit) const;
@@ -87,11 +86,10 @@ public :
    * stars are reported) onto the Tangent plane (into which the pixel coordinates
    * are transformed).
    */
-  const Gtransfo* Sky2TP(const CcdImage &ccdImage) const
+  const Gtransfo* sky2TP(const CcdImage &ccdImage) const
   { return _sky2TP->Sky2TP(ccdImage);}
 
- //! Cook up a SIP WCS.
-  PTR(TanSipPix2RaDec) ProduceSipWcs(const CcdImage &Ccd) const;
+  std::shared_ptr<TanSipPix2RaDec> produceSipWcs(const CcdImage &ccdImage) const;
 };
 
 }} // end of namespaces

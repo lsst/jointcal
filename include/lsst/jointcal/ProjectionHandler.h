@@ -1,6 +1,7 @@
 #ifndef PROJECTIONHANDLER__H
 #define PROJECTIONHANDLER__H
 
+#include "lsst/jointcal/CcdImage.h"
 #include "lsst/jointcal/Gtransfo.h"
 #include "map"
 
@@ -9,7 +10,6 @@ namespace jointcal {
 
 class Mapping;
 class CcdImage;
-class CcdImageList;
 
 /**
  * This is a virtual class that allows a lot of freedom in the choice of the
@@ -18,7 +18,7 @@ class CcdImageList;
  */
 struct ProjectionHandler
 {
-  virtual const Gtransfo* Sky2TP(const CcdImage &C) const = 0;
+  virtual const Gtransfo* Sky2TP(const CcdImage &ccdImage) const = 0;
 
   virtual ~ProjectionHandler() {};
 
@@ -33,7 +33,7 @@ class IdentityProjectionHandler : public ProjectionHandler
 {
   GtransfoIdentity id;
  public:
-  const Gtransfo* Sky2TP(const CcdImage &C) const
+  const Gtransfo* Sky2TP(const CcdImage &ccdImage) const
   { return &id;};
 
 };
@@ -51,11 +51,9 @@ class OneTPPerVisitHandler : public ProjectionHandler
   TransfoMap tMap;
 
  public:
-  OneTPPerVisitHandler(const CcdImageList &L);
+  OneTPPerVisitHandler(const CcdImageList &ccdImageList);
 
-  const Gtransfo* Sky2TP(const CcdImage &C) const;
-
-
+  const Gtransfo* Sky2TP(const CcdImage &ccdImage) const;
 };
 
 }} // end of namespaces

@@ -39,8 +39,8 @@ struct PmBlock
 //! The objects which have been measured several times. The MeasuredStar s measuring the same object in differenr CcdImage s point to the same FittedStar.
 class FittedStar : public BaseStar, public PmBlock {
 
-  friend class PhotomFit;
-  friend class PhotomFit2;
+  friend class PhotometryFit;
+  friend class PhotometryFit2;
 
 
   private:
@@ -88,9 +88,8 @@ class FittedStar : public BaseStar, public PmBlock {
 
   //!
   void dump(std::ostream & stream = std::cout) const
-    { BaseStar::dumpn(stream);
-    stream << " mcount "
-	   << measurementCount << std::endl;
+    { BaseStar::dump(stream);
+    stream << " mcount: " << measurementCount;
     }
 
   //!

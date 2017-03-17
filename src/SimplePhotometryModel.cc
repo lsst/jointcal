@@ -1,18 +1,18 @@
 #include <iostream>
 
 #include "lsst/log/Log.h"
-#include "lsst/jointcal/SimplePhotomModel.h"
+#include "lsst/jointcal/SimplePhotometryModel.h"
 #include "lsst/jointcal/CcdImage.h"
 #include "lsst/jointcal/MeasuredStar.h"
 
 namespace {
-    LOG_LOGGER _log = LOG_GET("jointcal.SimplePhotomModel");
+    LOG_LOGGER _log = LOG_GET("jointcal.SimplePhotometryModel");
 }
 
 namespace lsst {
 namespace jointcal {
 
-SimplePhotomModel::SimplePhotomModel(const CcdImageList &ccdImageList)
+SimplePhotometryModel::SimplePhotometryModel(const CcdImageList &ccdImageList)
 {
   unsigned refVisit = -1;
   for (auto const &ccdImage: ccdImageList)
@@ -23,10 +23,10 @@ SimplePhotomModel::SimplePhotomModel(const CcdImageList &ccdImageList)
 	  _myMap[ccdImage.get()].fixed=true;
       else _myMap[ccdImage.get()].fixed=false;
     }
-    LOGLS_INFO(_log, "SimplePhotomModel: using exposure " << refVisit << " as photometric reference ");
+    LOGLS_INFO(_log, "SimplePhotometryModel: using exposure " << refVisit << " as photometric reference ");
 }
 
-unsigned SimplePhotomModel::assignIndices(const std::string &whatToFit,  unsigned firstIndex)
+unsigned SimplePhotometryModel::assignIndices(const std::string &whatToFit,  unsigned firstIndex)
 {
   unsigned ipar = firstIndex;
   for (auto const &i: _myMap)
@@ -39,7 +39,7 @@ unsigned SimplePhotomModel::assignIndices(const std::string &whatToFit,  unsigne
   return ipar;
 }
 
- void SimplePhotomModel::offsetParams(const Eigen::VectorXd &delta)
+ void SimplePhotometryModel::offsetParams(const Eigen::VectorXd &delta)
  {
    for (auto const &i: _myMap)
      {
@@ -48,14 +48,14 @@ unsigned SimplePhotomModel::assignIndices(const std::string &whatToFit,  unsigne
      }
  }
 
- SimplePhotomModel::PhotomStuff& SimplePhotomModel::find(const CcdImage &ccdImage)
+ SimplePhotometryModel::PhotomStuff& SimplePhotometryModel::find(const CcdImage &ccdImage)
    {
      auto i = _myMap.find(&ccdImage);
      if  (i==_myMap.end()) throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,"SimplePolyModel::find, cannot find CcdImage "+ccdImage.getName());
      return (i->second);
    }
 
- const SimplePhotomModel::PhotomStuff& SimplePhotomModel::find(const CcdImage &ccdImage)  const
+ const SimplePhotometryModel::PhotomStuff& SimplePhotometryModel::find(const CcdImage &ccdImage)  const
    {
      auto i = _myMap.find(&ccdImage);
      if  (i==_myMap.end()) throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,"SimplePolyModel::find, cannot find CcdImage "+ccdImage.getName());
@@ -63,13 +63,13 @@ unsigned SimplePhotomModel::assignIndices(const std::string &whatToFit,  unsigne
    }
 
 
-  double SimplePhotomModel::photomFactor(const CcdImage &ccdImage, const Point &where) const
+  double SimplePhotometryModel::photomFactor(const CcdImage &ccdImage, const Point &where) const
  {
    const PhotomStuff &pf = find(ccdImage);
    return pf.factor;
  }
 
- void SimplePhotomModel::getIndicesAndDerivatives(const MeasuredStar &measuredStar,
+ void SimplePhotometryModel::getIndicesAndDerivatives(const MeasuredStar &measuredStar,
                                                   const CcdImage &ccdImage,
                                                   std::vector<unsigned> &indices,
                                                   Eigen::VectorXd &D)

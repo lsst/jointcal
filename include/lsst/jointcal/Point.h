@@ -41,18 +41,12 @@ public:
   //! utility
   virtual void dump(std::ostream& s = std::cout) const { s <<" x " << x << " y " << y;}
 
-#ifndef SWIG
   //! -
   friend std::ostream& operator << (std::ostream& stream, const Point &point)
   { point.dump(stream); return stream;}
-#endif
 };
 
-#ifndef SWIG
-//#ifdef __CINT__ /* rootcint  does not recognise friend inline functions */
 std::ostream& operator << (std::ostream& stream, const Point &point);
-//#endif
-#endif
 
 }} // end of namespaces
 

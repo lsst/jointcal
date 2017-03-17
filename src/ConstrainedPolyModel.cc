@@ -1,9 +1,10 @@
 #include "lsst/log/Log.h"
 #include "lsst/jointcal/Eigenstuff.h"
-#include "lsst/jointcal/SimplePolyModel.h"
 #include "lsst/jointcal/ConstrainedPolyModel.h"
 #include "lsst/jointcal/CcdImage.h"
+#include "lsst/jointcal/AstrometryModel.h"
 #include "lsst/jointcal/Gtransfo.h"
+#include "lsst/jointcal/ProjectionHandler.h"
 #include "lsst/jointcal/AstroUtils.h" // ApplyTransfo(Frame)
 
 #include "lsst/pex/exceptions.h"
@@ -20,7 +21,7 @@ namespace lsst {
 namespace jointcal {
 
 /* This code does not contain anything involved. It just maps the
-routines AstromFit needs to what is needed for this two-transfo model.
+routines AstrometryFit needs to what is needed for this two-transfo model.
 The two-transfo mappings are implemented using two one-transfo
 mappings.*/
 
@@ -30,20 +31,19 @@ mappings.*/
 
 using namespace std;
 
-ConstrainedPolyModel::ConstrainedPolyModel(const CcdImageList &L,
-					   const ProjectionHandler* ProjH,
-					   bool InitFromWCS,
-					   unsigned NNotFit) : _sky2TP(ProjH)
+ConstrainedPolyModel::ConstrainedPolyModel(const CcdImageList &ccdImageList,
+                                           const ProjectionHandler* projectionHandler,
+                                           bool initFromWCS,
+                                           unsigned nNotFit) : _sky2TP(projectionHandler)
 
 {
   // from datacards (or default)
   unsigned degree = DistortionDegree;
-  unsigned count = 0;
   VisitIdType refVisit;
   // first loop to initialize all visit  and chip transfos.
-  for (auto i=L.cbegin(); i!= L.cend(); ++i, ++count)
+  for (auto &ccdImage: ccdImageList)
     {
-      const CcdImage &im = **i;
+      const CcdImage &im = *ccdImage;
       unsigned visit = im.getVisit();
       unsigned chip = im.getCcdId();
       auto visitp = _visitMap.find(visit);
@@ -75,7 +75,7 @@ ConstrainedPolyModel::ConstrainedPolyModel(const CcdImageList &L,
       auto chipp = _chipMap.find(chip);
       if ((chipp == _chipMap.end()) && visit == refVisit )
 	{
-	  const Frame &frame = im.ImageFrame();
+	  const Frame &frame = im.getImageFrame();
 
 	  _tpFrame += ApplyTransfo(frame, *im.Pix2CommonTangentPlane(), LargeFrame);
 	  GtransfoPoly pol(im.Pix2TangentPlane(),
@@ -87,9 +87,9 @@ ConstrainedPolyModel::ConstrainedPolyModel(const CcdImageList &L,
 	}
     }
   // now, second loop to set the mappings of the CCdImages
-  for (auto i=L.cbegin(); i!= L.cend(); ++i, ++count)
+  for (auto &ccdImage: ccdImageList)
     {
-      const CcdImage &im = **i;
+      const CcdImage &im = *ccdImage;
       unsigned visit = im.getVisit();
       unsigned chip = im.getCcdId();
       // check that the chip_indexed part was indeed assigned
@@ -97,7 +97,7 @@ ConstrainedPolyModel::ConstrainedPolyModel(const CcdImageList &L,
       if (_chipMap.find(chip) == _chipMap.end())
 	{
         LOGLS_WARN(_log, "Chip " << chip << " is missing in the reference exposure, expect troubles.");
-	  GtransfoLin norm = NormalizeCoordinatesTransfo(im.ImageFrame());
+	  GtransfoLin norm = NormalizeCoordinatesTransfo(im.getImageFrame());
 	  _chipMap[chip] = std::unique_ptr<SimplePolyMapping>( new SimplePolyMapping(norm,
 										     GtransfoPoly(degree)));
 	}
@@ -111,7 +111,7 @@ ConstrainedPolyModel::ConstrainedPolyModel(const CcdImageList &L,
     LOGLS_DEBUG(_log, i->first);
 }
 
-const Mapping* ConstrainedPolyModel::GetMapping(const CcdImage &C) const
+const Mapping* ConstrainedPolyModel::getMapping(const CcdImage &C) const
 {
   mappingMapType::const_iterator i = _mappings.find(&C);
   if  (i==_mappings.end()) return nullptr;
@@ -122,13 +122,12 @@ const Mapping* ConstrainedPolyModel::GetMapping(const CcdImage &C) const
   WhatToFit. If WhatToFit contains "Distortions" and not
   Distortions<Something>, it is understood as both chips and
   visits. */
-unsigned ConstrainedPolyModel::AssignIndices(unsigned FirstIndex,
-					     std::string &WhatToFit)
+unsigned ConstrainedPolyModel::assignIndices(unsigned FirstIndex, const std::string &WhatToFit)
 {
   unsigned index=FirstIndex;
   if (WhatToFit.find("Distortions") == std::string::npos)
     {
-        LOGLS_ERROR(_log, "AssignIndices was called and Distortions is *not* in WhatToFit");
+        LOGLS_ERROR(_log, "assignIndices was called and Distortions is *not* in WhatToFit");
         return 0;
     }
   // if we get here "Distortions" is in WhatToFit
@@ -163,7 +162,7 @@ mappings should be SimplePolyMappings");
   return index;
 }
 
-void ConstrainedPolyModel::OffsetParams(const Eigen::VectorXd &Delta)
+void ConstrainedPolyModel::offsetParams(const Eigen::VectorXd &Delta)
 {
   if (_fittingChips)
     for (auto i = _chipMap.begin(); i!=_chipMap.end(); ++i)
@@ -181,19 +180,7 @@ void ConstrainedPolyModel::OffsetParams(const Eigen::VectorXd &Delta)
       }
 }
 
-#if (0)
-void ConstrainedPolyModel::DumpT2Transfos() const
-{
-   for (auto i = _visitMap.begin(); i!=_visitMap.end(); ++i)
-      {
-        auto *p = (&*(i->second));
-        LOGLS_DEBUG(_log, "T2 for visit " << i->first << p->Transfo());
-      }
-}
-#endif
-
-
-void ConstrainedPolyModel::FreezeErrorScales()
+void ConstrainedPolyModel::freezeErrorScales()
 {
   for (auto i = _visitMap.begin(); i!=_visitMap.end(); ++i)
     i->second->FreezeErrorScales();
@@ -202,7 +189,7 @@ void ConstrainedPolyModel::FreezeErrorScales()
 }
 
 
-const Gtransfo& ConstrainedPolyModel::GetChipTransfo(const unsigned Chip) const
+const Gtransfo& ConstrainedPolyModel::getChipTransfo(const unsigned Chip) const
 {
   auto chipp = _chipMap.find(Chip);
   if (chipp == _chipMap.end()) {
@@ -235,15 +222,15 @@ const Gtransfo& ConstrainedPolyModel::getVisitTransfo(const VisitIdType &Visit) 
 }
 
 
-PTR(TanSipPix2RaDec) ConstrainedPolyModel::ProduceSipWcs(const CcdImage &Ccd) const
+std::shared_ptr<TanSipPix2RaDec> ConstrainedPolyModel::produceSipWcs(const CcdImage &ccdImage) const
 {
-  mappingMapType::const_iterator i = _mappings.find(&Ccd);
+  mappingMapType::const_iterator i = _mappings.find(&ccdImage);
   if  (i==_mappings.end()) return nullptr;
   const TwoTransfoMapping *m = i->second.get();
 
   const GtransfoPoly &t1=dynamic_cast<const GtransfoPoly&>(m->T1());
   const GtransfoPoly &t2=dynamic_cast<const GtransfoPoly&>(m->T2());
-  const TanRaDec2Pix *proj=dynamic_cast<const TanRaDec2Pix*>(Sky2TP(Ccd));
+  const TanRaDec2Pix *proj=dynamic_cast<const TanRaDec2Pix*>(sky2TP(ccdImage));
   if (!(&t1)  || !(&t2) || !proj) return nullptr;
 
   GtransfoPoly pix2Tp = t2*t1;
@@ -252,7 +239,7 @@ PTR(TanSipPix2RaDec) ConstrainedPolyModel::ProduceSipWcs(const CcdImage &Ccd) co
   GtransfoPoly wcsPix2Tp = GtransfoPoly(projLinPart.invert())*pix2Tp;
 
   // compute a decent approximation, if higher order corrections get ignored
-  GtransfoLin cdStuff = wcsPix2Tp.LinearApproximation(Ccd.ImageFrame().Center());
+  GtransfoLin cdStuff = wcsPix2Tp.LinearApproximation(ccdImage.getImageFrame().Center());
 
   // wcsPix2TP = cdStuff*sip , so
   GtransfoPoly sip = GtransfoPoly(cdStuff.invert())*wcsPix2Tp;

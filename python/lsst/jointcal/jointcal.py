@@ -20,7 +20,7 @@ from lsst.meas.algorithms.sourceSelector import sourceSelectorRegistry
 
 from .dataIds import PerTractCcdDataIdContainer
 
-from . import jointcalLib
+import lsst.jointcal
 
 __all__ = ["JointcalConfig", "JointcalTask"]
 
@@ -203,8 +203,7 @@ class JointcalTask(pipeBase.CmdLineTask):
         ccdname = calexp.getDetector().getId()
 
         calib = calexp.getCalib()
-        # associations needs a TanWcs specifically, not just a generic Wcs.
-        tanWcs = afwImage.TanWcs.cast(calexp.getWcs())
+        tanWcs = calexp.getWcs()
         bbox = calexp.getBBox()
         filt = calexp.getInfo().getFilter().getName()
 
@@ -245,8 +244,8 @@ class JointcalTask(pipeBase.CmdLineTask):
             raise ValueError('Need a list of data references!')
 
         sourceFluxField = "slot_%sFlux" % (self.sourceSelector.config.sourceFluxType,)
-        jointcalControl = jointcalLib.JointcalControl(sourceFluxField)
-        associations = jointcalLib.Associations()
+        jointcalControl = lsst.jointcal.JointcalControl(sourceFluxField)
+        associations = lsst.jointcal.Associations()
 
         visit_ccd_to_dataRef = {}
         oldWcsList = []
@@ -360,7 +359,7 @@ class JointcalTask(pipeBase.CmdLineTask):
         self._check_star_lists(associations, name)
         self.metrics['selected%sRefStars' % name] = associations.refStarListSize()
         self.metrics['selected%sFittedStars' % name] = associations.fittedStarListSize()
-        self.metrics['selected%sCcdImageList' % name] = associations.ccdImageList.sizeValidForFit()
+        self.metrics['selected%sCcdImageList' % name] = associations.nCcdImagesValidForFit()
 
         load_cat_prof_file = 'jointcal_fit_%s.prof'%name if profile_jointcal else ''
         with pipeBase.cmdLineTask.profile(load_cat_prof_file):
@@ -375,7 +374,7 @@ class JointcalTask(pipeBase.CmdLineTask):
 
     def _check_star_lists(self, associations, name):
         # TODO: these should be len(blah), but we need this properly wrapped first.
-        if associations.ccdImageList.sizeValidForFit() == 0:
+        if associations.nCcdImagesValidForFit() == 0:
             raise RuntimeError('No images in the ccdImageList!')
         if associations.fittedStarListSize() == 0:
             raise RuntimeError('No stars in the {} fittedStarList!'.format(name))
@@ -394,16 +393,16 @@ class JointcalTask(pipeBase.CmdLineTask):
         Returns
         -------
         namedtuple
-            fit : lsst.jointcal.PhotomFit
+            fit : lsst.jointcal.PhotometryFit
                 The photometric fitter used to perform the fit.
-            model : lsst.jointcal.PhotomModel
+            model : lsst.jointcal.PhotometryModel
                 The photometric model that was fit.
         """
 
         self.log.info("=== Starting photometric fitting...")
-        model = jointcalLib.SimplePhotomModel(associations.getCcdImageList())
+        model = lsst.jointcal.SimplePhotometryModel(associations.getCcdImageList())
 
-        fit = jointcalLib.PhotomFit(associations, model, self.config.posError)
+        fit = lsst.jointcal.PhotometryFit(associations, model, self.config.posError)
         fit.minimize("Model")
         chi2 = fit.computeChi2()
         self.log.info(str(chi2))
@@ -430,9 +429,9 @@ class JointcalTask(pipeBase.CmdLineTask):
         Returns
         -------
         namedtuple
-            fit : lsst.jointcal.AstromFit
+            fit : lsst.jointcal.AstrometryFit
                 The astrometric fitter used to perform the fit.
-            model : lsst.jointcal.DistortionModel
+            model : lsst.jointcal.AstrometryModel
                 The astrometric model that was fit.
             sky_to_tan_projection : lsst.jointcal.ProjectionHandler
                 The model for the sky to tangent plane projection that was used in the fit.
@@ -445,11 +444,11 @@ class JointcalTask(pipeBase.CmdLineTask):
         # NOTE: need to return sky_to_tan_projection so that it doesn't get garbage collected.
         # TODO: could we package sky_to_tan_projection and model together so we don't have to manage
         # them so carefully?
-        sky_to_tan_projection = jointcalLib.OneTPPerVisitHandler(associations.getCcdImageList())
-        model = jointcalLib.SimplePolyModel(associations.getCcdImageList(), sky_to_tan_projection,
-                                            True, 0, self.config.polyOrder)
+        sky_to_tan_projection = lsst.jointcal.OneTPPerVisitHandler(associations.getCcdImageList())
+        model = lsst.jointcal.SimplePolyModel(associations.getCcdImageList(), sky_to_tan_projection,
+                                              True, 0, self.config.polyOrder)
 
-        fit = jointcalLib.AstromFit(associations, model, self.config.posError)
+        fit = lsst.jointcal.AstrometryFit(associations, model, self.config.posError)
         fit.minimize("Distortions")
         chi2 = fit.computeChi2()
         self.log.info(str(chi2))
@@ -496,9 +495,9 @@ class JointcalTask(pipeBase.CmdLineTask):
         ----------
         associations : lsst.jointcal.Associations
             The star/reference star associations to fit.
-        astrom_model : lsst.jointcal.DistortionModel
+        astrom_model : lsst.jointcal.AstrometryModel
             The astrometric model that was fit.
-        photom_model : lsst.jointcal.PhotomModel
+        photom_model : lsst.jointcal.PhotometryModel
             The photometric model that was fit.
         visit_ccd_to_dataRef : dict of Key: lsst.daf.persistence.ButlerDataRef
             dict of ccdImage identifiers to dataRefs that were fit
@@ -507,15 +506,14 @@ class JointcalTask(pipeBase.CmdLineTask):
         ccdImageList = associations.getCcdImageList()
         for ccdImage in ccdImageList:
             # TODO: there must be a better way to identify this ccdImage than a visit,ccd pair?
-            ccd = ccdImage.getCcdId()
-            visit = ccdImage.getVisit()
+            ccd = ccdImage.ccdId
+            visit = ccdImage.visit
             dataRef = visit_ccd_to_dataRef[(visit, ccd)]
             exp = afwImage.ExposureI(0, 0)
             if self.config.doAstrometry:
                 self.log.info("Updating WCS for visit: %d, ccd: %d", visit, ccd)
-                tanSip = astrom_model.ProduceSipWcs(ccdImage)
-                frame = ccdImage.ImageFrame()
-                tanWcs = afwImage.TanWcs.cast(jointcalLib.GtransfoToTanWcs(tanSip, frame, False))
+                tanSip = astrom_model.produceSipWcs(ccdImage)
+                tanWcs = lsst.jointcal.gtransfoToTanWcs(tanSip, ccdImage.imageFrame, False)
                 exp.setWcs(tanWcs)
             if self.config.doPhotometry:
                 self.log.info("Updating Calib for visit: %d, ccd: %d", visit, ccd)

@@ -66,8 +66,8 @@ void Associations::setCommonTangentPoint(lsst::afw::geom::Point2D const &commonT
 }
 
 void Associations::associateCatalogs(const double matchCutInArcSec,
-                                     const bool UseFittedList,
-                                     const bool EnlargeFittedList)
+                                     const bool useFittedList,
+                                     const bool enlargeFittedList)
 {
     // clear reference stars
     for (auto &item: refStarList)
@@ -82,7 +82,7 @@ void Associations::associateCatalogs(const double matchCutInArcSec,
         item->clearBeforeAssoc();
     }
     // clear fitted stars
-    if (!UseFittedList)
+    if (!useFittedList)
         fittedStarList.clear();
 
     for (auto &ccdImage: ccdImageList)
@@ -102,7 +102,7 @@ void Associations::associateCatalogs(const double matchCutInArcSec,
          are within reach of the current ccdImage
             */
         Frame ccdImageFrameCPT =
-            ApplyTransfo(ccdImage->ImageFrame(), *toCommonTangentPlane, LargeFrame);
+            ApplyTransfo(ccdImage->getImageFrame(), *toCommonTangentPlane, LargeFrame);
         ccdImageFrameCPT = ccdImageFrameCPT.Rescale(1.10); // add 10 % margin.
         /* we cannot use FittedStarList::ExtractInFrame, because it does an
         actual copy, which we don't want here: we want the pointers in
@@ -153,7 +153,7 @@ void Associations::associateCatalogs(const double matchCutInArcSec,
             // to check if it was matched, just check if it has
             // a fittedStar Pointer assigned
             if (mstar->GetFittedStar()) continue;
-            if (EnlargeFittedList)
+            if (enlargeFittedList)
             {
                 FittedStar *fs = new FittedStar(*mstar);
                 // transform coordinates to CommonTangentPlane
@@ -215,7 +215,7 @@ const lsst::afw::geom::Box2D Associations::getRaDecBBox()
 
     for (auto const &ccdImage: ccdImageList)
     {
-        Frame CTPFrame = ApplyTransfo(ccdImage->ImageFrame(), *(ccdImage->Pix2CommonTangentPlane()), LargeFrame);
+        Frame CTPFrame = ApplyTransfo(ccdImage->getImageFrame(), *(ccdImage->Pix2CommonTangentPlane()), LargeFrame);
         if (tangentPlaneFrame.Area() == 0) tangentPlaneFrame = CTPFrame;
         else tangentPlaneFrame += CTPFrame;
     }
@@ -327,7 +327,7 @@ void Associations::assignMags()
 void Associations::deprojectFittedStars()
 {
     /* by default, Associations::fittedStarList is expressed on the
-       Associations::commonTangentPlane. For AstromFit, we need it on
+       Associations::commonTangentPlane. For AstrometryFit, we need it on
        the sky */
     if (!fittedStarList.inTangentPlaneCoordinates)
     {
