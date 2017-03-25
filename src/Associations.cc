@@ -22,11 +22,6 @@
 #include "lsst/afw/coord/Coord.h"
 #include "lsst/afw/image/Calib.h"
 
-// TODO: propagate those into python:
-const double usnoMatchCut = 3;
-const bool cleanMatches = true;
-const int minMeasurementCount = 2;
-
 namespace jointcal = lsst::jointcal;
 
 static double sqr(double x) {return x*x;}
@@ -124,8 +119,9 @@ void Associations::associateCatalogs(const double matchCutInArcSec,
                                                  matchCutInArcSec/3600.);
 
         /* should check what this RemoveAmbiguities does... */
-//      if (Preferences().cleanMatches)
+        LOGLS_DEBUG(_log, "Measured-to-Fitted matches before removing ambiguities " << smList->size());
         smList->RemoveAmbiguities(*toCommonTangentPlane);
+        LOGLS_DEBUG(_log, "Measured-to-Fitted matches after removing ambiguities " << smList->size());
 
         /* associate MeasuredStar -> FittedStar using the
         surviving matches */
@@ -170,6 +166,7 @@ void Associations::associateCatalogs(const double matchCutInArcSec,
 }
 
 void Associations::collectRefStars(lsst::afw::table::SortedCatalogT< lsst::afw::table::SimpleRecord > &refCat,
+                                   afw::geom::Angle matchCut,
                                    std::string const &fluxField)
 {
     if (refCat.size() == 0)
@@ -205,7 +202,7 @@ void Associations::collectRefStars(lsst::afw::table::SortedCatalogT< lsst::afw::
     GtransfoLin identity;
     TanRaDec2Pix raDec2CTP(identity, _commonTangentPoint);
 
-    associateRefStars(usnoMatchCut, &raDec2CTP);
+    associateRefStars(matchCut.asArcseconds(), &raDec2CTP);
 }
 
 const lsst::afw::geom::Box2D Associations::getRaDecBBox()
@@ -242,12 +239,9 @@ void Associations::associateRefStars(double matchCutInArcSec, const Gtransfo* gt
                                              gtransfo,
                                              matchCutInArcSec/3600.);
 
-    if (cleanMatches)
-    {
-        LOGLS_INFO(_log, "Refcat matches before removing ambiguities " << smList->size());
-        smList->RemoveAmbiguities(*gtransfo);
-        LOGLS_INFO(_log, "Refcat matches after removing ambiguities " << smList->size());
-    }
+    LOGLS_DEBUG(_log, "Refcat matches before removing ambiguities " << smList->size());
+    smList->RemoveAmbiguities(*gtransfo);
+    LOGLS_DEBUG(_log, "Refcat matches after removing ambiguities " << smList->size());
 
     // actually associate things
     for (auto const &starMatch: *smList)
@@ -266,10 +260,9 @@ void Associations::associateRefStars(double matchCutInArcSec, const Gtransfo* gt
     delete smList;
 }
 
-void Associations::selectFittedStars()
+void Associations::selectFittedStars(int minMeasurements)
 {
     LOGLS_INFO(_log, "Fitted stars before measurement # cut: " << fittedStarList.size());
-    LOGLS_DEBUG(_log, "Minimum # of measurements: " <<  minMeasurementCount);
     /* first pass : remove objects that have less than a
        certain number of measurements.
     */
@@ -286,7 +279,7 @@ void Associations::selectFittedStars()
             /*  keep FittedStar's which either have a minimum number of
                 measurements, or are matched to a RefStar
             */
-            if (!fstar->getRefStar() &&  fstar->MeasurementCount() < minMeasurementCount)
+            if (!fstar->getRefStar() &&  fstar->MeasurementCount() < minMeasurements)
             {
                 FittedStar *f = const_cast<FittedStar *>(fstar);
                 f->MeasurementCount()--;
@@ -296,7 +289,7 @@ void Associations::selectFittedStars()
         }// end loop on objects in catalog
     } // end loop on catalogs
 
-    /* now FittedStars with less than minMeasurementCount should have
+    /* now FittedStars with less than minMeasurements should have
        zero MeasurementCount(); */
 
     for (FittedStarIterator fi = fittedStarList.begin();
@@ -340,7 +333,7 @@ void Associations::deprojectFittedStars()
     fittedStarList.inTangentPlaneCoordinates = false;
 }
 
-#ifdef STORAGE
+#ifdef TODO
 void Associations::collectMCStars(int realization)
 {
     CcdImageIterator I;

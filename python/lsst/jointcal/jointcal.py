@@ -99,6 +99,17 @@ class JointcalConfig(pexConfig.Config):
         dtype=float,
         default=0.02,
     )
+    # TODO: DM-6885 matchCut should be an afw.geom.Angle
+    matchCut = pexConfig.Field(
+        doc="Matching radius between fitted and reference stars (arcseconds)",
+        dtype=float,
+        default=3.0,
+    )
+    minMeasurements = pexConfig.Field(
+        doc="Minimum number of associated measured stars for a fitted star to be included in the fit",
+        dtype=int,
+        default=2,
+    )
     polyOrder = pexConfig.Field(
         doc="Polynomial order for fitting distorsion",
         dtype=int,
@@ -352,10 +363,12 @@ class JointcalTask(pipeBase.CmdLineTask):
         skyCircle = refObjLoader.loadSkyCircle(center,
                                                afwGeom.Angle(radius, afwGeom.radians),
                                                defaultFilter)
-        associations.collectRefStars(skyCircle.refCat, skyCircle.fluxField)
+        associations.collectRefStars(skyCircle.refCat,
+                                     self.config.matchCut*afwGeom.arcseconds,
+                                     skyCircle.fluxField)
         self.metrics['collected%sRefStars' % name] = associations.refStarListSize()
 
-        associations.selectFittedStars()
+        associations.selectFittedStars(self.config.minMeasurements)
         self._check_star_lists(associations, name)
         self.metrics['selected%sRefStars' % name] = associations.refStarListSize()
         self.metrics['selected%sFittedStars' % name] = associations.fittedStarListSize()

@@ -130,9 +130,11 @@ class JointcalTestBase(object):
         if self.do_plot:
             self._plotJointcalTask(data_refs, oldWcsList, caller)
 
-        self.assertLess(rms_result.dist_relative, dist_rms_relative)
-        self.assertLess(rms_result.dist_absolute, dist_rms_absolute)
-        self.assertLess(rms_result.pa1, pa1)
+        if dist_rms_relative is not None and dist_rms_absolute is not None:
+            self.assertLess(rms_result.dist_relative, dist_rms_relative)
+            self.assertLess(rms_result.dist_absolute, dist_rms_absolute)
+        if pa1 is not None:
+            self.assertLess(rms_result.pa1, pa1)
 
         return data_refs
 
