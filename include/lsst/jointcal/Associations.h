@@ -88,8 +88,15 @@ public:
                            const bool useFittedList = false,
                            const bool enlargeFittedList = true);
 
-    //! Collect stars from an external reference catalog
-    void collectRefStars(lsst::afw::table::SortedCatalogT< lsst::afw::table::SimpleRecord > &Ref,
+    /**
+     * @brief      Collect stars from an external reference catalog and associate them with fittedStars.
+     *
+     * @param      refCat     The catalog of reference sources
+     * @param[in]  matchCut   Separation radius to match fitted and reference stars.
+     * @param      fluxField  The field name in refCat to get the flux from.
+     */
+    void collectRefStars(lsst::afw::table::SortedCatalogT< lsst::afw::table::SimpleRecord > &refCat,
+                         afw::geom::Angle matchCut,
                          std::string const &fluxField);
 
     //! Sends back the fitted stars coordinates on the sky FittedStarsList::inTangentPlaneCoordinates keeps track of that.
@@ -104,8 +111,12 @@ public:
                              double MatchCutArcSec);
 #endif
 
-    //! apply cuts (mainly number of measurements) on potential FittedStars
-    void selectFittedStars();
+    /**
+     * @brief      Apply quality cuts on potential FittedStars
+     *
+     * @param[in]  minMeasurements  The minimum number of measuredStars for a FittedStar to be included.
+     */
+    void selectFittedStars(int minMeasurements);
 
     const CcdImageList& getCcdImageList() const {return ccdImageList;}
 
