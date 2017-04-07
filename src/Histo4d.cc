@@ -21,7 +21,7 @@ SparseHisto4d::SparseHisto4d(const int N1, double Min1, double Max1,
 			     const int nEntries)
 {
   double indexMax = N1*N2*N3*N4;
-  data = nullptr;
+  data.reset();
   if (indexMax > double(INT_MAX))
       LOGLS_WARN(_log, "Cannot hold a 4D histo with more than " << INT_MAX << " values.");
   n[0] = N1;
@@ -39,7 +39,7 @@ SparseHisto4d::SparseHisto4d(const int N1, double Min1, double Max1,
 
   for (int i =0; i < 4; ++i)
     scale[i] = n[i]/(maxVal[i]-minVal[i]);
-  data = new int[nEntries];
+  data.reset(new int[nEntries]);
   dataSize = nEntries;
   ndata = 0;
   sorted = false;
@@ -73,7 +73,7 @@ void SparseHisto4d::sort()
 {
   if (!sorted)
     {
-      std::sort(data, data+ndata);
+      std::sort(data.get(), data.get()+ndata);
       sorted = true;
     }
 }
@@ -86,10 +86,9 @@ void SparseHisto4d::Fill(const double X[4])
   if (code <0) return;
   if (ndata == dataSize)
     {
-      int* newData = new int[dataSize*2];
-      memcpy(newData, data, dataSize*sizeof(data[0]));
-      delete [] data;
-      data = newData;
+      std::unique_ptr<int[]> newData(new int[dataSize*2]);
+      memcpy(newData.get(), data.get(), dataSize*sizeof(data[0]));
+      data.swap(newData);
       dataSize *= 2;
     }
   data[ndata++] = code;

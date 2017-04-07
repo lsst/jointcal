@@ -47,7 +47,7 @@ class IdentityProjectionHandler : public ProjectionHandler
  */
 class OneTPPerVisitHandler : public ProjectionHandler
 {
-  typedef std::map<const unsigned, CountedRef<const Gtransfo> > TransfoMap;
+  typedef std::map<const unsigned, std::shared_ptr<const Gtransfo>> TransfoMap;
   TransfoMap tMap;
 
  public:

@@ -9,7 +9,6 @@
 #include <list>
 
 #include "lsst/jointcal/Point.h"
-#include "lsst/jointcal/CountedRef.h"
 #include "lsst/jointcal/BaseStar.h" // class definition used in inlined functions
 #include "lsst/jointcal/Gtransfo.h" // inlined function calls Gtransfo::apply()
 
@@ -40,7 +39,7 @@ class StarMatch {
 public: /* if one sets that private, then fitting routines will be a nightmare. we could set all the Transfo classes friend... */
 
   FatPoint point1, point2; //!< 2 points
-  CountedRef<const BaseStar> s1, s2; //!< the Star pointers (the pointer is in fact generic, pointed data is never used).
+  std::shared_ptr<const BaseStar> s1, s2; //!< the Star pointers (the pointer is in fact generic, pointed data is never used).
   double distance;
   double chi2;
 
@@ -48,8 +47,8 @@ public :
   //! constructor.
   /*! gives 2 points (that contain the geometry), plus pointers to the Star objects
     (which are there for user convenience). */
-  StarMatch(const FatPoint &p1, const FatPoint &p2, const BaseStar *S1, const BaseStar *S2) :
-    point1(p1), point2(p2), s1(S1), s2(S2), distance(0.) {};
+  StarMatch(const FatPoint &p1, const FatPoint &p2, std::shared_ptr<const BaseStar> S1, std::shared_ptr<const BaseStar> S2) :
+    point1(p1), point2(p2), s1(std::move(S1)), s2(std::move(S2)), distance(0.) {};
 
   // the next one would require that StarMatch knows BaseStar which is not mandatory for StarMatch to work
   // StarMatch(BaseStar *S1, BaseStar *S2) : point1(*S1), point2(*S2), s1(S1), s2(S2) {};
@@ -167,7 +166,7 @@ class StarMatchList : public std::list<StarMatch> {
   int order;
   double chi2;
   double dist2;
-  CountedRef<Gtransfo> transfo;
+  std::shared_ptr<Gtransfo> transfo;
 
 
 
@@ -188,8 +187,7 @@ class StarMatchList : public std::list<StarMatch> {
 
 
   //! enables to access the fitted transformation.
-  /*! Clone it if you want to store it permanently */
-  const Gtransfo *Transfo() const { return &*(transfo);}
+  std::shared_ptr<const Gtransfo> Transfo() const { return transfo; }
 
   //! access to the sum of squared residuals of the last call to RefineTransfo.
   double Dist2() const { return dist2;}
@@ -222,13 +220,14 @@ class StarMatchList : public std::list<StarMatch> {
   void SetTransfo(const Gtransfo *Transfo) { transfo = Transfo->Clone();}
   //!
   void SetTransfo(const Gtransfo &Transfo) { transfo = Transfo.Clone();}
+  void SetTransfo(std::shared_ptr<Gtransfo> Transfo) { transfo = std::move(Transfo); }
 
   //! set transfo according to the given order.
   void SetTransfoOrder(const int Order);
 
   /*! returns the inverse transfo (Swap, fit(RefineTransfo) , and Swap).
          The caller should delete the returned pointer. */
-  Gtransfo *InverseTransfo();
+  std::unique_ptr<Gtransfo> InverseTransfo();
 
 
   //! Sets the distance (residual) field of all std::list elements. Mandatory before sorting on distances

@@ -51,7 +51,7 @@ class SimpleGtransfoMapping : public Mapping
   virtual void FreezeErrorScales()
   {
     // from there on, updating the transfo does not change the errors.
-    errorProp.reset(transfo->Clone());
+    errorProp = transfo->Clone();
   }
 
   // interface Mapping functions:
@@ -131,14 +131,12 @@ class SimplePolyMapping : public SimpleGtransfoMapping
   GtransfoLin _centerAndScale;
   Eigen::Matrix2d preDer;
 
-  /* Where we store the combination. We use a pointer for
-  constness. Could not get it to work with smart pointers.
-  */
-  GtransfoPoly* actualResult;
+  /* Where we store the combination. */
+  mutable GtransfoPoly actualResult;
 
  public:
 
-  ~SimplePolyMapping() { delete actualResult;}
+  ~SimplePolyMapping() { }
 
 
 
@@ -156,9 +154,6 @@ class SimplePolyMapping : public SimpleGtransfoMapping
     preDer(1,0) = _centerAndScale.Coeff(0,1,0);
     preDer(0,1) = _centerAndScale.Coeff(1,0,1);
     preDer(1,1) = _centerAndScale.Coeff(0,1,1);
-
-    // reserve space for the result
-    actualResult = new GtransfoPoly();
 
     // check of matrix indexing (once for all)
     MatrixX2d H(3,2);
@@ -225,8 +220,8 @@ class SimplePolyMapping : public SimpleGtransfoMapping
   {
     // Cannot fail given the contructor:
     const GtransfoPoly *fittedPoly = dynamic_cast<const GtransfoPoly*>(&(*transfo));
-    *actualResult = (*fittedPoly)*_centerAndScale;
-    return *actualResult;
+    actualResult = (*fittedPoly)*_centerAndScale;
+    return actualResult;
   }
 
 

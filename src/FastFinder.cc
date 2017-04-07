@@ -19,7 +19,7 @@ FastFinder::FastFinder(const BaseStarList &List, const unsigned NXslice) : basel
   unsigned j=0;
   for (auto const &ci: List)
     {
-      stars[j] = ci.get();
+      stars[j] = ci;
       ++j;
     }
 
@@ -64,53 +64,51 @@ void FastFinder::dump() const
     }
 }
 
-const BaseStar *FastFinder::FindClosest(const Point &Where,
+std::shared_ptr<const BaseStar> FastFinder::FindClosest(const Point &Where,
 					const double MaxDist,
-					bool (*SkipIt)(const BaseStar *)) const
+					bool (*SkipIt)(const BaseStar&)) const
 {
   if (count == 0) return nullptr;
   FastFinder::Iterator it = begin_scan(Where, MaxDist);
   if (*it == nullptr) return nullptr;
-  const BaseStar *pbest = nullptr;
+  std::shared_ptr<const BaseStar> pbest;
   double minDist2 = MaxDist*MaxDist;
   for (      ; *it != nullptr ; ++it)
     {
-      const BaseStar *p = *it;
-      if (SkipIt && SkipIt(p)) continue;
-      double dist2 = Where.Dist2(*p);
-      if (dist2 < minDist2) { pbest = p; minDist2 = dist2; }
+      if (SkipIt && SkipIt(**it)) continue;
+      double dist2 = Where.Dist2(**it);
+      if (dist2 < minDist2) { pbest = *it; minDist2 = dist2; }
     }
   return pbest;
 }
 
-const BaseStar *FastFinder::SecondClosest(const Point &Where,
+std::shared_ptr<const BaseStar> FastFinder::SecondClosest(const Point &Where,
 					  const double MaxDist,
-					  const BaseStar* &Closest,
-					  bool (*SkipIt)(const BaseStar *)) const
+					  std::shared_ptr<const BaseStar> &Closest,
+					  bool (*SkipIt)(const BaseStar&)) const
 {
   Closest=nullptr;
   if (count == 0) return nullptr;
   FastFinder::Iterator it = begin_scan(Where, MaxDist);
   if (*it == nullptr) return nullptr;
-  const BaseStar *pbest1 = nullptr; // closest
-  const BaseStar *pbest2 = nullptr; // second closest
+  std::shared_ptr<const BaseStar> pbest1; // closest
+  std::shared_ptr<const BaseStar> pbest2; // second closest
   double minDist1_2 = MaxDist*MaxDist;
   double minDist2_2 = MaxDist*MaxDist;
   for (      ; *it != nullptr ; ++it)
     {
-      const BaseStar *p = *it;
-      if (SkipIt && SkipIt(p)) continue;
-      double dist2 = Where.Dist2(*p);
+      if (SkipIt && SkipIt(**it)) continue;
+      double dist2 = Where.Dist2(**it);
       if (dist2 < minDist1_2)
 	{
 	  pbest2= pbest1;
 	  minDist2_2 = minDist1_2;
-	  pbest1 = p;
+	  pbest1 = *it;
 	  minDist1_2 = dist2;
 	}
       else if (dist2< minDist2_2)
 	{
-	  pbest2 = p;
+	  pbest2 = *it;
 	  minDist2_2 = dist2;
 	}
     }

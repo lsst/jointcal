@@ -308,7 +308,7 @@ void AstrometryFit::LSDerivatives1(const CcdImage &ccdImage,
         alpha(1, 1) = 1./sqrt(det*transW(0, 0));
         alpha(0, 1) = 0;
 
-        const FittedStar *fs = ms.GetFittedStar();
+        auto fs = ms.GetFittedStar();
 
         Point fittedStarInTP = transformFittedStar(*fs, sky2TP,
                                refractionVector,
@@ -516,20 +516,19 @@ void AstrometryFit::accumulateStatImage(ImType &image, Accum &accu) const
     Eigen::Matrix2Xd transW(2, 2);
 
     auto &catalog = image.getCatalogForFit();
-    for (auto const &i: catalog)
+    for (auto const &ms: catalog)
     {
-        auto &ms = *i;
-        if (!ms.IsValid()) continue;
+        if (!ms->IsValid()) continue;
         // tweak the measurement errors
-        FatPoint inPos = ms;
-        tweakAstromMeasurementErrors(inPos, ms, _posError);
+        FatPoint inPos = *ms;
+        tweakAstromMeasurementErrors(inPos, *ms, _posError);
 
         FatPoint outPos;
         // should *not* fill h if whatToFit excludes mapping parameters.
         mapping->TransformPosAndErrors(inPos, outPos);
         double det = outPos.vx*outPos.vy - sqr(outPos.vxy);
         if (det <= 0 || outPos.vx <= 0 || outPos.vy <= 0) {
-            LOGLS_WARN(_log, " Inconsistent measurement errors :drop measurement at " << Point(ms)
+            LOGLS_WARN(_log, " Inconsistent measurement errors :drop measurement at " << Point(*ms)
                        << " in image " << image.getName());
             continue;
         }
@@ -537,7 +536,7 @@ void AstrometryFit::accumulateStatImage(ImType &image, Accum &accu) const
         transW(1, 1) = outPos.vx/det;
         transW(0, 1) = transW(1, 0) = -outPos.vxy/det;
 
-        const FittedStar *fs = ms.GetFittedStar();
+        auto fs = ms->GetFittedStar();
         Point fittedStarInTP = transformFittedStar(*fs, sky2TP,
                                refractionVector,
                                _refractionCoefficient,
@@ -546,7 +545,7 @@ void AstrometryFit::accumulateStatImage(ImType &image, Accum &accu) const
         Eigen::Vector2d res(fittedStarInTP.x - outPos.x, fittedStarInTP.y - outPos.y);
         double chi2Val = res.transpose()*transW*res;
 
-        accu.AddEntry(chi2Val, 2, &ms);
+        accu.AddEntry(chi2Val, 2, ms);
     }// end of loop on measurements
 }
 
@@ -568,12 +567,11 @@ void AstrometryFit::accumulateStatRefStars(Accum &accum) const
        AstrometryFit::LSDerivatives2(TripletList &TList, Eigen::VectorXd &Rhs) */
     FittedStarList &fsl = _assoc.fittedStarList;
     TanRaDec2Pix proj(GtransfoLin(), Point(0., 0.));
-    for (auto const &i: fsl)
+    for (auto const &fs: fsl)
     {
-        FittedStar &fs = *i;
-        const RefStar *rs = fs.getRefStar();
+        const RefStar *rs = fs->getRefStar();
         if (rs == nullptr) continue;
-        proj.SetTangentPoint(fs);
+        proj.SetTangentPoint(*fs);
         // fs projects to (0,0), no need to compute its transform.
         FatPoint rsProj;
         proj.TransformPosAndErrors(*rs, rsProj);
@@ -587,7 +585,7 @@ void AstrometryFit::accumulateStatRefStars(Accum &accum) const
         wxx *= HACK_REF_ERRORS;
         wyy *= HACK_REF_ERRORS;
         wxy *= HACK_REF_ERRORS;
-        accum.AddEntry(wxx*sqr(rx) + 2*wxy*rx*ry + wyy*sqr(ry), 2, &fs);
+        accum.AddEntry(wxx*sqr(rx) + 2*wxy*rx*ry + wyy*sqr(ry), 2, fs);
     }
 }
 
@@ -611,17 +609,17 @@ Chi2 AstrometryFit::computeChi2() const
 struct Chi2Entry
 {
     double chi2;
-    BaseStar *ps;
+    std::shared_ptr<BaseStar> ps;
 
-    Chi2Entry(double c, BaseStar *s): chi2(c), ps(s) {}
+    Chi2Entry(double c, std::shared_ptr<BaseStar> s): chi2(c), ps(std::move(s)) {}
     // for sort
     bool operator < (const Chi2Entry &R) const {return (chi2 < R.chi2);}
 };
 
 struct Chi2Vect : public std::vector<Chi2Entry>
 {
-    void AddEntry(double Chi2Val, unsigned ndof, BaseStar *ps)
-    { this->push_back(Chi2Entry(Chi2Val, ps));}
+    void AddEntry(double Chi2Val, unsigned ndof, std::shared_ptr<BaseStar> ps)
+    { this->push_back(Chi2Entry(Chi2Val, std::move(ps)));}
 
 };
 
@@ -636,7 +634,7 @@ void AstrometryFit::getMeasuredStarIndices(const MeasuredStar &ms,
         const Mapping *mapping = _astrometryModel->getMapping(*ms.ccdImage);
         mapping->GetMappingIndices(indices);
     }
-    const FittedStar *fs = ms.GetFittedStar();
+    auto fs = ms.GetFittedStar();
     unsigned fsIndex = fs->IndexInMatrix();
     if (_fittingPos)
     {
@@ -661,10 +659,9 @@ void AstrometryFit::outliersContributions(MeasuredStarList &msOutliers,
     // contributions from measurement terms:
     for (auto const &i: msOutliers)
     {
-        MeasuredStar &out = *i;
         MeasuredStarList tmp;
-        tmp.push_back(&out);
-        const CcdImage &ccd = *(out.ccdImage);
+        tmp.push_back(i);
+        const CcdImage &ccd = *(i->ccdImage);
         LSDerivatives1(ccd, tList, grad, &tmp);
     }
     LSDerivatives2(fOutliers, tList, grad);
@@ -741,11 +738,11 @@ unsigned AstrometryFit::findOutliers(double nSigCut,
         term depends on. We have to figure out which kind of term it
          is; we use for that the type of the star attached to
          the Chi2Entry. */
-        MeasuredStar *ms = dynamic_cast<MeasuredStar *>(i->ps);
-        FittedStar *fs = nullptr;
+        auto ms = std::dynamic_pointer_cast<MeasuredStar>(i->ps);
+        std::shared_ptr<FittedStar> fs;
         if (!ms) // it is reference term.
         {
-            fs = dynamic_cast<FittedStar *>(i->ps);
+            fs = std::dynamic_pointer_cast<FittedStar>(i->ps);
             indices.push_back(fs->IndexInMatrix());
             indices.push_back(fs->IndexInMatrix() + 1); // probably useless
             /* One might think it would be useful to account for PM
@@ -789,7 +786,7 @@ void AstrometryFit::removeMeasOutliers(MeasuredStarList &outliers)
     for (auto &i: outliers)
     {
         MeasuredStar &ms = *i;
-        FittedStar *fs = const_cast<FittedStar *>(ms.GetFittedStar());
+        auto fs = std::const_pointer_cast<FittedStar>(ms.GetFittedStar());
         ms.SetValid(false);
         fs->MeasurementCount()--; // could be put in SetValid
     }
@@ -1098,7 +1095,7 @@ void AstrometryFit::makeMeasResTuple(const std::string &tupleName) const
             tweakAstromMeasurementErrors(inPos, ms, _posError);
             mapping->TransformPosAndErrors(inPos, tpPos);
             const Gtransfo* sky2TP = _astrometryModel->sky2TP(im);
-            const FittedStar *fs = ms.GetFittedStar();
+            auto fs = ms.GetFittedStar();
 
             Point fittedStarInTP = transformFittedStar(*fs, sky2TP,
                                    refractionVector,

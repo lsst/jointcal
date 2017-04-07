@@ -9,7 +9,7 @@ namespace jointcal {
 class Histo2d {
 
  private:
-  float *data;
+  std::unique_ptr<float[]> data;
   int nx,ny;
   float minx,miny;
   float scalex, scaley;
@@ -18,7 +18,7 @@ class Histo2d {
 
  public:
 
-  Histo2d() {data=0;}
+  Histo2d() : data() { }
   Histo2d(int nx, float minx, float maxx, int ny, float miny,float maxy);
 
   Histo2d(const Histo2d &Other);
@@ -33,7 +33,7 @@ class Histo2d {
 
   void ZeroBin(double X, double Y);
 
-  ~Histo2d() { if (data) delete [] data;}
+  ~Histo2d() { }
 
  private:
   void operator = (const Histo2d &Right);

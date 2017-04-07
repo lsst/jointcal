@@ -54,7 +54,7 @@ ConstrainedPolyModel::ConstrainedPolyModel(const CcdImageList &ccdImageList,
 	      // if one fits all of them, the model is degenerate.
 #ifdef ROTATE_T2
 # warning : hack in ConstrainedPolyModel::ConstrainedPolyModel : rotated frame
-	      _visitMap[visit] = new SimpleGtransfoMapping(GtransfoLinRot(3.141927/2.), /* ToFit = */ false);
+	      _visitMap[visit] = std::unique_ptr<SimpleTransfoMapping>(new SimpleGtransfoMapping(GtransfoLinRot(3.141927/2.), /* ToFit = */ false));
 #else
 	      _visitMap[visit] = std::unique_ptr<SimpleGtransfoMapping>(new SimpleGtransfoMapping(GtransfoIdentity()));
 #endif
@@ -65,7 +65,7 @@ ConstrainedPolyModel::ConstrainedPolyModel(const CcdImageList &ccdImageList,
 	      {
 		GtransfoPoly poly(degree);
 		poly = GtransfoPoly(GtransfoLinRot(3.141927/2.))*poly;
-		_visitMap[visit] = new SimplePolyMapping(GtransfoLin(), poly);
+		_visitMap[visit] = std::unique_ptr<SimplePolyMapping>(new SimplePolyMapping(GtransfoLin(), poly));
 	      }
 #else
 	  _visitMap[visit] = std::unique_ptr<SimplePolyMapping>(new SimplePolyMapping(GtransfoLin(),
@@ -244,7 +244,7 @@ std::shared_ptr<TanSipPix2RaDec> ConstrainedPolyModel::produceSipWcs(const CcdIm
   // wcsPix2TP = cdStuff*sip , so
   GtransfoPoly sip = GtransfoPoly(cdStuff.invert())*wcsPix2Tp;
   Point tangentPoint( proj->TangentPoint());
-  return std::shared_ptr<TanSipPix2RaDec>(new TanSipPix2RaDec(cdStuff, tangentPoint, &sip));
+  return std::make_shared<TanSipPix2RaDec>(cdStuff, tangentPoint, &sip);
 }
 
 }} // end of namespaces

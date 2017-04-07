@@ -28,7 +28,7 @@ class MeasuredStar : public BaseStar
 
   private :
 
-    CountedRef<const FittedStar> fittedStar;
+    std::shared_ptr<const FittedStar> fittedStar;
     bool   valid;
 
 
@@ -42,14 +42,15 @@ class MeasuredStar : public BaseStar
       ccdImage(0),
       valid(true) {}
 
+  // TODO: note F argument seems unused!
   MeasuredStar(const BaseStar &B, const FittedStar *F = nullptr) :
     BaseStar(B),
     mag(0.), wmag(0.), eflux(0.), aperrad(0.),
     ccdImage(0),
     valid(true) {}
 
-  void SetFittedStar(FittedStar *F)
-      { if (F)  F->MeasurementCount()++; fittedStar = F;
+  void SetFittedStar(std::shared_ptr<FittedStar> F)
+      { if (F)  F->MeasurementCount()++; fittedStar = std::move(F);
       }
 
   void dump(std::ostream & stream = std::cout) const
@@ -66,7 +67,7 @@ class MeasuredStar : public BaseStar
   //! the inverse of the mag variance
   double MagWeight() const { return (flux*flux/(eflux*eflux));}
 
-  const FittedStar* GetFittedStar() const { return fittedStar.get();};
+  std::shared_ptr<const FittedStar> GetFittedStar() const { return fittedStar;};
 
   const CcdImage &GetCcdImage()  const { return *ccdImage;};
 
@@ -77,9 +78,6 @@ class MeasuredStar : public BaseStar
   //! Fits may use that to discard outliers
   void  SetValid(bool v) { valid=v; }
 };
-
-
-typedef CountedRef<MeasuredStar> MeasuredStarRef;
 
 
 /****** MeasuredStarList */
@@ -95,7 +93,6 @@ class MeasuredStarList : public StarList<MeasuredStar> {
 
 typedef MeasuredStarList::const_iterator MeasuredStarCIterator;
 typedef MeasuredStarList::iterator MeasuredStarIterator;
-typedef CountedRef<MeasuredStar> MeasuredStarRef;
 
 BaseStarList& Measured2Base(MeasuredStarList &This);
 BaseStarList* Measured2Base(MeasuredStarList *This);

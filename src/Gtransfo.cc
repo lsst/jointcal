@@ -51,10 +51,10 @@ bool IsIntegerShift(const Gtransfo *a_transfo)
 
 /********* Gtransfo ***********************/
 
-Gtransfo* Gtransfo::ReduceCompo(const Gtransfo *Right) const
+std::unique_ptr<Gtransfo> Gtransfo::ReduceCompo(const Gtransfo *Right) const
 {// by default no way to compose
   if (Right) {} // avoid a warning
-  return nullptr;
+  return std::unique_ptr<Gtransfo>(nullptr);
 }
 
 
@@ -159,7 +159,7 @@ void Gtransfo::TransformErrors(const Point &Where,
   VOut[yy] = b21 * a21 + b22 * a22;
 }
 
-Gtransfo* Gtransfo::RoughInverse(const Frame &Region) const
+std::unique_ptr<Gtransfo> Gtransfo::RoughInverse(const Frame &Region) const
 {
   // "in" and "out" refer to the inverse direction.
   Point centerOut = Region.Center();
@@ -170,7 +170,7 @@ Gtransfo* Gtransfo::RoughInverse(const Frame &Region) const
   der = GtransfoLinShift(centerOut.x, centerOut.y)
     *der
     *GtransfoLinShift(-centerIn.x, -centerIn.y);
-  return new GtransfoLin(der);
+  return std::unique_ptr<Gtransfo>(new GtransfoLin(der));
 }
 
 
@@ -244,8 +244,8 @@ void Gtransfo::Write(ostream &stream) const
 class GtransfoInverse : public Gtransfo {
 
 private:
-  Gtransfo *direct;
-  Gtransfo *roughInverse;
+  std::unique_ptr<Gtransfo> direct;
+  std::unique_ptr<Gtransfo> roughInverse;
   double precision2;
 
 
@@ -262,18 +262,18 @@ public:
 
   double fit(const StarMatchList &List);
 
-  virtual Gtransfo *Clone() const;
+  virtual std::unique_ptr<Gtransfo> Clone() const;
 
   GtransfoInverse(const GtransfoInverse&);
 
   //! Overload the "generic routine"
-  Gtransfo* RoughInverse(const Frame &) const
+  std::unique_ptr<Gtransfo> RoughInverse(const Frame &) const
   {
     return direct->Clone();
   }
 
   //! Inverse transfo: returns the direct one!
-  Gtransfo* InverseTransfo(const double,
+  std::unique_ptr<Gtransfo> InverseTransfo(const double,
 			   const Frame &) const
   {
     return direct->Clone();
@@ -286,10 +286,10 @@ private:
 
 };
 
-Gtransfo* Gtransfo::InverseTransfo(const double Precision,
+std::unique_ptr<Gtransfo> Gtransfo::InverseTransfo(const double Precision,
 				   const Frame& Region) const
 {
-  return new GtransfoInverse(this,Precision,Region);
+  return std::unique_ptr<Gtransfo>(new GtransfoInverse(this,Precision,Region));
 }
 
 
@@ -310,16 +310,11 @@ GtransfoInverse::GtransfoInverse(const GtransfoInverse& Model) : Gtransfo()
   precision2 = Model.precision2;
 }
 
-GtransfoInverse::~GtransfoInverse()
-{
-  delete direct;
-  delete roughInverse;
-}
+GtransfoInverse::~GtransfoInverse() { }
 
 void GtransfoInverse::operator = (const GtransfoInverse & Model)
 {
-  if (direct) delete direct; direct = Model.direct->Clone();
-  if (roughInverse) delete roughInverse;
+  direct = Model.direct->Clone();
   roughInverse = Model.roughInverse->Clone();
   precision2 = Model.precision2;
 }
@@ -362,9 +357,9 @@ double GtransfoInverse::fit(const StarMatchList &)
   throw pexExcept::RuntimeError("Cannot fit a GtransfoInverse. Use StarMatchList::inverseTransfo instead.");
 }
 
-Gtransfo *GtransfoInverse::Clone() const
+std::unique_ptr<Gtransfo> GtransfoInverse::Clone() const
 {
-  return new GtransfoInverse(*this);
+  return std::unique_ptr<Gtransfo>(new GtransfoInverse(*this));
 }
 
 
@@ -373,14 +368,13 @@ Gtransfo *GtransfoInverse::Clone() const
 
 // This class was done to allow composition of Gtransfo's, without specifications of their types.
 // does not need to be public. Invoked  by GtransfoCompose(Left,Right)
-// TODO : use CountedRefs instead of pointers
 
 
 
 //! Private class to handle Gtransfo compositions (i.e. piping). Use the routine GtransfoCompose if you need this functionnality.
 class GtransfoComposition : public Gtransfo {
   private :
-    Gtransfo* first, *second;
+      std::unique_ptr<Gtransfo> first, second;
   public :
     //! will pipe transfos
     GtransfoComposition(const Gtransfo *Second, const Gtransfo *First);
@@ -392,7 +386,7 @@ class GtransfoComposition : public Gtransfo {
     //!
     double fit(const StarMatchList &List);
 
-    Gtransfo *Clone() const;
+    std::unique_ptr<Gtransfo> Clone() const;
     ~GtransfoComposition();
 };
 
@@ -421,21 +415,18 @@ double GtransfoComposition::fit(const StarMatchList &List)
   return first->fit(List);
 }
 
-Gtransfo *GtransfoComposition::Clone() const
+std::unique_ptr<Gtransfo> GtransfoComposition::Clone() const
 {
-return new GtransfoComposition(second,first);
+return std::unique_ptr<Gtransfo>(new GtransfoComposition(second.get(),first.get()));
 }
 
-GtransfoComposition::~GtransfoComposition()
-{
-delete first; delete second;
-}
+GtransfoComposition::~GtransfoComposition() { }
 
 /*!  This routine implements "run-time" compositions. When
  there is a possible "reduction" (e.g. compositions of polynomials),
  GtransfoCompose detects it and returns a genuine Gtransfo.
  */
-Gtransfo *GtransfoCompose(const Gtransfo *Left, const Gtransfo *Right)
+std::unique_ptr<Gtransfo> GtransfoCompose(const Gtransfo *Left, const Gtransfo *Right)
 {
   /* is Right Identity ? if Left is Identity , GtransfoIdentity::ReduceCompo does the right job */
   if (IsIdentity(Right))
@@ -445,10 +436,10 @@ Gtransfo *GtransfoCompose(const Gtransfo *Left, const Gtransfo *Right)
   /* Try to use the ReduceCompo method from Left. If absent,
      Gtransfo::ReduceCompo return NULL. ReduceCompo is non trivial for
      polynomials */
-  Gtransfo *composition = Left->ReduceCompo(Right);
+  std::unique_ptr<Gtransfo> composition(Left->ReduceCompo(Right));
   /* composition == NULL means no reduction : just build a Composition
      that pipelines "Left" and "Right" */
-  if (composition == nullptr) return new GtransfoComposition(Left,Right);
+  if (composition == nullptr) return std::unique_ptr<Gtransfo>(new GtransfoComposition(Left,Right));
   else return composition;
 }
 
@@ -515,20 +506,18 @@ GtransfoPoly::GtransfoPoly(const Gtransfo* T,
 			   unsigned NPoint)
 {
   StarMatchList sm;
-  BaseStarList toDelete; // just here to handle stuff that should be deleted
 
   double step = sqrt(fabs(F.Area())/double(NPoint));
   for (double x=F.xMin+step/2; x<=F.xMax; x+=step)
   for (double y=F.yMin+step/2; y<=F.yMax; y+=step)
     {
-      BaseStar *pix = new BaseStar(x,y,0);
+      auto pix = std::make_shared<BaseStar>(x,y,0);
       double xtr, ytr;
       T->apply(x,y,xtr,ytr);
-      BaseStar *tp = new BaseStar(xtr,ytr,0);
+      auto tp = std::make_shared<BaseStar>(xtr,ytr,0);
       /* These are fake stars so no need to transform fake errors.
 	 all errors (and weights) will be equal : */
       sm.push_back(StarMatch(*pix,*tp,pix,tp));
-      toDelete.push_back(pix); toDelete.push_back(tp);
     }
   GtransfoPoly ret(Degree);
   ret.fit(sm);
@@ -1060,17 +1049,17 @@ double  GtransfoPoly::fit(const StarMatchList &List)
 }
 
 
-Gtransfo * GtransfoPoly::ReduceCompo(const Gtransfo *Right) const
+std::unique_ptr<Gtransfo> GtransfoPoly::ReduceCompo(const Gtransfo *Right) const
 {
   const GtransfoPoly *p = dynamic_cast<const GtransfoPoly *>(Right);
   if (p)
     {
       if (Degree() == 1 && p->Degree() == 1)
-	return new GtransfoLin((*this)*(*p)); // does the composition
+	return std::unique_ptr<Gtransfo>(new GtransfoLin((*this)*(*p))); // does the composition
       else
-	return new GtransfoPoly((*this)*(*p)); // does the composition
+	return std::unique_ptr<Gtransfo>(new GtransfoPoly((*this)*(*p))); // does the composition
     }
-  else return nullptr;
+  else return std::unique_ptr<Gtransfo>(nullptr);
 }
 
 /*  PolyXY the class used to perform polynomial algebra (and in
@@ -1272,7 +1261,7 @@ void GtransfoPoly::Read(istream &s)
 }
 
 
-GtransfoPoly *InversePolyTransfo(const Gtransfo &Direct, const Frame &F, const double Prec)
+std::unique_ptr<GtransfoPoly> InversePolyTransfo(const Gtransfo &Direct, const Frame &F, const double Prec)
 {
   StarMatchList sm;
   unsigned nx = 50;
@@ -1289,11 +1278,10 @@ GtransfoPoly *InversePolyTransfo(const Gtransfo &Direct, const Frame &F, const d
   unsigned npairs = sm.size();
   int maxdeg = 9;
   int degree;
-  GtransfoPoly *poly = nullptr;
+  std::unique_ptr<GtransfoPoly> poly;
   for (degree=1; degree<=maxdeg; ++degree)
     {
-      delete poly;
-      poly = new GtransfoPoly(degree);
+      poly.reset(new GtransfoPoly(degree));
       poly->fit(sm);
       // compute the chi2 ignoring errors:
       double chi2 = 0;
@@ -1389,9 +1377,9 @@ GtransfoLin GtransfoLin::invert() const
   return result;
 }
 
-Gtransfo* GtransfoLin::InverseTransfo(const double, const Frame &) const
+std::unique_ptr<Gtransfo> GtransfoLin::InverseTransfo(const double, const Frame &) const
 {
-  return new GtransfoLin(this->invert());
+  return std::unique_ptr<Gtransfo>(new GtransfoLin(this->invert()));
 }
 
 double  GtransfoLinRot::fit(const StarMatchList &)
@@ -1497,7 +1485,7 @@ static double rad2deg(double rad)
    This is a minor concern though....
 */
 BaseTanWcs::BaseTanWcs(const GtransfoLin &Pix2Tan, const Point &TangentPoint,
-			const GtransfoPoly* Corrections)
+			const GtransfoPoly *Corrections)
 {
   /* the angles returned by linPix2Tan should be in
      degrees. */
@@ -1507,7 +1495,7 @@ BaseTanWcs::BaseTanWcs(const GtransfoLin &Pix2Tan, const Point &TangentPoint,
   cos0 = cos(dec0);
   sin0 = sin(dec0);
   corr = nullptr;
-  if (Corrections) corr = new GtransfoPoly(*Corrections);
+  if (Corrections) corr.reset(new GtransfoPoly(*Corrections));
 }
 
 /* with some sort of smart pointer ro handle "corr", we could remove the
@@ -1528,7 +1516,7 @@ void  BaseTanWcs::operator = (const BaseTanWcs &Original)
   cos0 = cos(dec0);
   sin0 = sin(dec0);
   corr = nullptr;
-  if (Original.corr) corr = new GtransfoPoly(*Original.corr);
+  if (Original.corr) corr.reset(new GtransfoPoly(*Original.corr));
 }
 
 
@@ -1571,14 +1559,9 @@ GtransfoLin BaseTanWcs::LinPart() const
   return linPix2Tan;
 }
 
-void BaseTanWcs::SetCorrections(const GtransfoPoly *Corrections)
+void BaseTanWcs::SetCorrections(std::unique_ptr<GtransfoPoly> corrections)
 {
-  if (corr) delete corr;
-  corr = nullptr;
-  if (Corrections)
-    {
-      corr = (GtransfoPoly*) Corrections->Clone();
-    }
+    corr = std::move(corrections);
 }
 
 Point BaseTanWcs::CrPix() const
@@ -1596,10 +1579,7 @@ Point BaseTanWcs::CrPix() const
 
 
 
-BaseTanWcs::~BaseTanWcs()
-{
-  delete corr;
-}
+BaseTanWcs::~BaseTanWcs() { }
 
 /*************************** TanPix2RaDec ***************/
 
@@ -1616,11 +1596,11 @@ TanPix2RaDec::TanPix2RaDec() : BaseTanWcs(GtransfoLin(), Point(0,0), nullptr)
 }
 
 
-Gtransfo * TanPix2RaDec::ReduceCompo(const Gtransfo *Right) const
+std::unique_ptr<Gtransfo> TanPix2RaDec::ReduceCompo(const Gtransfo *Right) const
 {
   const GtransfoLin *lin = dynamic_cast<const GtransfoLin *>(Right);
-  if (lin && lin->Degree() == 1) return new TanPix2RaDec((*this)*(*lin));
-  return nullptr;
+  if (lin && lin->Degree() == 1) return std::unique_ptr<Gtransfo>(new TanPix2RaDec((*this)*(*lin)));
+  return std::unique_ptr<Gtransfo>(nullptr);
 }
 
 
@@ -1641,16 +1621,16 @@ TanRaDec2Pix TanPix2RaDec::invert() const
   return TanRaDec2Pix(LinPart().invert(),TangentPoint());
 }
 
-Gtransfo* TanPix2RaDec::RoughInverse(const Frame &) const
+std::unique_ptr<Gtransfo> TanPix2RaDec::RoughInverse(const Frame &) const
 {
-  return new TanRaDec2Pix(LinPart().invert(),TangentPoint());
+  return std::unique_ptr<Gtransfo>(new TanRaDec2Pix(LinPart().invert(),TangentPoint()));
 }
 
-Gtransfo*  TanPix2RaDec::InverseTransfo(const double Precision,
+std::unique_ptr<Gtransfo> TanPix2RaDec::InverseTransfo(const double Precision,
 					const Frame& Region) const
 {
-  if (!corr) return new TanRaDec2Pix(LinPart().invert(),TangentPoint());
-  else return new GtransfoInverse(this, Precision, Region);
+  if (!corr) return std::unique_ptr<Gtransfo>(new TanRaDec2Pix(LinPart().invert(),TangentPoint()));
+  else return std::unique_ptr<Gtransfo>(new GtransfoInverse(this, Precision, Region));
 }
 
 
@@ -1673,9 +1653,9 @@ void TanPix2RaDec::Pix2TP(double Xin, double Yin,
 }
 
 
-Gtransfo *TanPix2RaDec::Clone() const
+std::unique_ptr<Gtransfo> TanPix2RaDec::Clone() const
 {
-  return new TanPix2RaDec(LinPart(), TangentPoint(), corr);
+  return std::unique_ptr<Gtransfo>(new TanPix2RaDec(LinPart(), TangentPoint(), corr.get()));
 }
 
 void TanPix2RaDec::dump(ostream &stream) const
@@ -1722,17 +1702,17 @@ TanSipPix2RaDec::TanSipPix2RaDec() : BaseTanWcs(GtransfoLin(), Point(0,0), nullp
 /* Would require some checks before cooking up something more efficient
    than just a linear approximation */
 #if 0
-Gtransfo* TanPix2RaDec::RoughInverse(const Frame &Region) const
+std::unique_ptr<Gtransfo> TanPix2RaDec::RoughInverse(const Frame &Region) const
 {
   if (&Region) {}
-  return new TanRaDec2Pix(LinPart().invert(),TangentPoint());
+  return std::unique_ptr<Gtransfo>(new TanRaDec2Pix(LinPart().invert(),TangentPoint()));
 }
 #endif
 
-Gtransfo*  TanSipPix2RaDec::InverseTransfo(const double Precision,
+std::unique_ptr<Gtransfo> TanSipPix2RaDec::InverseTransfo(const double Precision,
 					const Frame& Region) const
 {/* We have not implemented (yet) the reverse corrections available in SIP */
-   return new GtransfoInverse(this, Precision, Region);
+   return std::unique_ptr<Gtransfo>(new GtransfoInverse(this, Precision, Region));
 }
 
 
@@ -1754,9 +1734,9 @@ void TanSipPix2RaDec::Pix2TP(double Xin, double Yin, double &Xtp, double &Ytp) c
 }
 
 
-Gtransfo *TanSipPix2RaDec::Clone() const
+std::unique_ptr<Gtransfo> TanSipPix2RaDec::Clone() const
 {
-  return new TanSipPix2RaDec(LinPart(), TangentPoint(), corr);
+  return std::unique_ptr<Gtransfo>(new TanSipPix2RaDec(LinPart(), TangentPoint(), corr.get()));
 }
 
 void TanSipPix2RaDec::dump(ostream &stream) const
@@ -1912,20 +1892,20 @@ void TanRaDec2Pix::dump(ostream &stream) const
   stream << " tan2pix " << linTan2Pix << " tangent point " << tp.x << ' ' << tp.y << endl;
 }
 
-Gtransfo* TanRaDec2Pix::RoughInverse(const Frame &) const
+std::unique_ptr<Gtransfo> TanRaDec2Pix::RoughInverse(const Frame &) const
 {
-  return new TanPix2RaDec(LinPart().invert(),TangentPoint());
+  return std::unique_ptr<Gtransfo>(new TanPix2RaDec(LinPart().invert(),TangentPoint()));
 }
 
-Gtransfo* TanRaDec2Pix::InverseTransfo(const double, const Frame &) const
+std::unique_ptr<Gtransfo> TanRaDec2Pix::InverseTransfo(const double, const Frame &) const
 {
-  return new TanPix2RaDec(LinPart().invert(),TangentPoint());
+  return std::unique_ptr<Gtransfo>(new TanPix2RaDec(LinPart().invert(),TangentPoint()));
 }
 
 
-Gtransfo *TanRaDec2Pix::Clone() const
+std::unique_ptr<Gtransfo> TanRaDec2Pix::Clone() const
 {
-  return new TanRaDec2Pix(*this);
+  return std::unique_ptr<Gtransfo>(new TanRaDec2Pix(*this));
 }
 
 double TanRaDec2Pix::fit(const StarMatchList &)
@@ -1959,23 +1939,23 @@ double UserTransfo::fit(const StarMatchList &)
   return -1;
 }
 
-Gtransfo *UserTransfo::Clone() const
+std::unique_ptr<Gtransfo> UserTransfo::Clone() const
 {
-  return new UserTransfo(*this);
+  return std::unique_ptr<Gtransfo>(new UserTransfo(*this));
 }
 
 
 /*************************************************************/
 
 
-Gtransfo* GtransfoRead(const std::string &FileName)
+std::unique_ptr<Gtransfo> GtransfoRead(const std::string &FileName)
 {
   ifstream s(FileName.c_str());
   if (!s)
     throw LSST_EXCEPT(pex::exceptions::InvalidParameterError, " GtransfoRead : cannot open " + FileName);
   try
     {
-      Gtransfo *res = GtransfoRead(s);
+        std::unique_ptr<Gtransfo> res(GtransfoRead(s));
       s.close();
       return res;
     }
@@ -1986,16 +1966,16 @@ Gtransfo* GtransfoRead(const std::string &FileName)
     }
 }
 
-Gtransfo* GtransfoRead(istream &s)
+std::unique_ptr<Gtransfo> GtransfoRead(istream &s)
 {
   std::string type;
   s >> type;
   if (s.fail())
     throw LSST_EXCEPT(pex::exceptions::InvalidParameterError, "GtransfoRead : could not find a Gtransfotype");
   if (type == "GtransfoIdentity")
-    {GtransfoIdentity* res = new GtransfoIdentity(); res->Read(s); return res;}
+    {std::unique_ptr<GtransfoIdentity> res(new GtransfoIdentity()); res->Read(s); return std::move(res);}
   else if (type == "GtransfoPoly")
-    {GtransfoPoly* res = new GtransfoPoly(); res->Read(s); return res;}
+    {std::unique_ptr<GtransfoPoly> res(new GtransfoPoly()); res->Read(s); return std::move(res);}
   else
     throw LSST_EXCEPT(pex::exceptions::InvalidParameterError, " GtransfoRead : No reader for Gtransfo type "+ type);
 }

@@ -12,7 +12,6 @@
 #include <sstream>
 
 #include "lsst/jointcal/FatPoint.h"
-#include "lsst/jointcal/CountedRef.h"
 #include "lsst/jointcal/StarList.h"
 
 namespace lsst {
@@ -30,7 +29,7 @@ namespace jointcal {
 #define BASESTAR_HAS_POSITION_ERRORS
 
 //! The base class for handling stars. Used by all matching routines.
-class BaseStar : public FatPoint, public RefCount
+class BaseStar : public FatPoint
 {
 
   public :
@@ -76,7 +75,6 @@ typedef StarList<BaseStar> BaseStarList;
 
 typedef BaseStarList::const_iterator BaseStarCIterator;
  typedef BaseStarList::iterator BaseStarIterator;
- typedef CountedRef<BaseStar> BaseStarRef;
 
 
 }}

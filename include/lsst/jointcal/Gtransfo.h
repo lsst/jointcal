@@ -13,7 +13,6 @@
 
 #include "lsst/pex/exceptions.h"
 #include "lsst/jointcal/FatPoint.h"
-#include "lsst/jointcal/CountedRef.h"
 
 namespace pexExcept = lsst::pex::exceptions;
 
@@ -42,7 +41,7 @@ class GtransfoLin;
 
 
 
-class Gtransfo: public RefCount{
+class Gtransfo {
 public:
 
   //!
@@ -76,10 +75,10 @@ public:
   virtual double Jacobian(const Point &P) const {return Jacobian(P.x, P.y);}
 
   //! returns a copy (allocated by new) of the transformation.
-  virtual Gtransfo *Clone() const = 0;
+  virtual std::unique_ptr<Gtransfo> Clone() const = 0;
 
   //! to be overloaded by derived classes if they can really "reduce" the composition (e.g. composition of Polynomial can be reduced)
-  virtual Gtransfo *ReduceCompo(const Gtransfo *Right) const;
+  virtual std::unique_ptr<Gtransfo> ReduceCompo(const Gtransfo *Right) const;
 
 
   //! returns the local jacobian.
@@ -103,7 +102,7 @@ public:
   //! returns an inverse transfo. Numerical if not overloaded.
   /*! Precision and Region refer to the "input" side of this,
     and hence to the output side of the returned Gtransfo. */
-  virtual Gtransfo* InverseTransfo(const double Precision,
+  virtual std::unique_ptr<Gtransfo> InverseTransfo(const double Precision,
 				   const Frame& Region) const;
 
 
@@ -125,7 +124,7 @@ public:
   //! Rough inverse.
   /*! Stored by the numerical inverter to guess starting point
      for the trials. Just here to enable overloading. */
-  virtual Gtransfo* RoughInverse(const Frame &Region) const;
+  virtual std::unique_ptr<Gtransfo> RoughInverse(const Frame &Region) const;
 
   //! returns the number of parameters (to compute chi2's)
   virtual int Npar() const {return 0;}
@@ -141,7 +140,6 @@ public:
 
 
 
-typedef CountedRef<Gtransfo> GtransfoRef;
 
 //! allows 'stream << Transfo;' (by calling T.dump(stream)).
 std::ostream & operator << (std::ostream &stream, const Gtransfo & T);
@@ -149,7 +147,7 @@ std::ostream & operator << (std::ostream &stream, const Gtransfo & T);
 
 //! Returns a pointer to a composition. if Left->ReduceCompo(Right) return NULL, builds a GtransfoComposition and returns it. deletion of returned value to be done by caller
 
-Gtransfo *GtransfoCompose(const Gtransfo *Left, const Gtransfo *Right);
+std::unique_ptr<Gtransfo> GtransfoCompose(const Gtransfo *Left, const Gtransfo *Right);
 
 
 /*=============================================================*/
@@ -170,12 +168,12 @@ public:
     double fit(const StarMatchList &List)
       {throw pexExcept::TypeError("GtransfoIdentity is the identity transformation: it cannot be fit to anything.");}
 
-    Gtransfo* ReduceCompo(const Gtransfo *Right) const { return Right->Clone();}
+    std::unique_ptr<Gtransfo> ReduceCompo(const Gtransfo *Right) const { return Right->Clone();}
     void dump(std::ostream &stream = std::cout) const
          { stream << "x' = x\ny' = y"<< std::endl;}
 
     int Npar() const {return 0;}
-    Gtransfo *Clone() const { return new GtransfoIdentity;}
+    std::unique_ptr<Gtransfo> Clone() const { return std::unique_ptr<Gtransfo>(new GtransfoIdentity);}
 
     void Derivative(const Point &Where, GtransfoLin &Derivative,
 		    const double Step = 0.01) const;
@@ -267,9 +265,9 @@ public :
   //!Subtraction
   GtransfoPoly operator-(const GtransfoPoly &Right) const;
 
-  Gtransfo *ReduceCompo(const Gtransfo *Right) const;
+  std::unique_ptr<Gtransfo> ReduceCompo(const Gtransfo *Right) const;
 
-  Gtransfo *Clone() const {return new GtransfoPoly(*this);}
+  std::unique_ptr<Gtransfo> Clone() const {return std::unique_ptr<Gtransfo>(new GtransfoPoly(*this));}
 
 
   //! access to coefficients (read only)
@@ -318,7 +316,7 @@ private :
 };
 
 //! approximates the inverse by a polynomial, up to required precision.
-GtransfoPoly *InversePolyTransfo(const Gtransfo &Direct, const Frame &F, const double Prec);
+std::unique_ptr<GtransfoPoly> InversePolyTransfo(const Gtransfo &Direct, const Frame &F, const double Prec);
 
 GtransfoLin NormalizeCoordinatesTransfo(const Frame & F);
 
@@ -364,9 +362,9 @@ class GtransfoLin : public GtransfoPoly {
   //! Handy converter:
   GtransfoLin(const GtransfoIdentity &) : GtransfoPoly(1) {};
 
-  Gtransfo* Clone() const { return new GtransfoLin(*this);}
+  std::unique_ptr<Gtransfo> Clone() const { return std::unique_ptr<Gtransfo>(new GtransfoLin(*this));}
 
-  Gtransfo* InverseTransfo(const double Precision,
+  std::unique_ptr<Gtransfo> InverseTransfo(const double Precision,
 			   const Frame& Region) const;
 
   double A11() const { return Coeff(1,0,0);}
@@ -452,7 +450,7 @@ class BaseTanWcs: public Gtransfo
 {
 protected :
   GtransfoLin linPix2Tan; // pixels to tangent plane (internally in radians)
-  GtransfoPoly *corr;
+  std::unique_ptr<GtransfoPoly> corr;
   double ra0, dec0; // in radians
   double cos0, sin0; // cos(dec0), sin(dec0)
 
@@ -474,11 +472,11 @@ public :
   //! The Linear part (corresponding to CD's and CRPIX's)
   GtransfoLin LinPart() const;
 
-  //! the "correction"
-  const GtransfoPoly* Corr() const {return corr;}
+  //! the "correction" (non-owning pointer)
+  const GtransfoPoly* Corr() const {return corr.get();}
 
   //!Assign the correction polynomial (what it means is left to derived classes)
-  void SetCorrections(const GtransfoPoly *Corrections);
+  void SetCorrections(std::unique_ptr<GtransfoPoly> corrections);
 
   //! the CRPIX values (this is WCS jargon), in 0-based coordinates
   Point CrPix() const;
@@ -518,20 +516,20 @@ public:
     //! composition with GtransfoLin
   TanPix2RaDec operator *(const GtransfoLin &Right) const;
 
-  Gtransfo *ReduceCompo(const Gtransfo *Right) const;
+  std::unique_ptr<Gtransfo> ReduceCompo(const Gtransfo *Right) const;
 
 
   //! approximate inverse : it ignores corrections;
   TanRaDec2Pix invert() const;
 
   //! Overload the "generic routine" (available for all Gtransfo types
-  Gtransfo* RoughInverse(const Frame &Region) const;
+  std::unique_ptr<Gtransfo> RoughInverse(const Frame &Region) const;
 
     //! Inverse transfo: returns a TanRaDec2Pix if there are no corrections, or the iterative solver if there are.
-  Gtransfo* InverseTransfo(const double Precision, const Frame& Region) const;
+  std::unique_ptr<Gtransfo> InverseTransfo(const double Precision, const Frame& Region) const;
 
 
-  Gtransfo *Clone() const;
+  std::unique_ptr<Gtransfo> Clone() const;
 
   void dump(std::ostream &stream) const;
 
@@ -561,10 +559,10 @@ public:
 
 
     //! Inverse transfo: returns a TanRaDec2Pix if there are no corrections, or the iterative solver if there are.
-  Gtransfo* InverseTransfo(const double Precision, const Frame& Region) const;
+  std::unique_ptr<Gtransfo> InverseTransfo(const double Precision, const Frame& Region) const;
 
 
-  Gtransfo *Clone() const;
+  std::unique_ptr<Gtransfo> Clone() const;
 
   void dump(std::ostream &stream) const;
 
@@ -619,14 +617,14 @@ class TanRaDec2Pix : public Gtransfo
     TanPix2RaDec invert() const;
 
     //! Overload the "generic routine" (available for all Gtransfo types
-    Gtransfo* RoughInverse(const Frame &Region) const;
+    std::unique_ptr<Gtransfo> RoughInverse(const Frame &Region) const;
 
     //! Inverse transfo: returns a TanPix2RaDec.
-    Gtransfo* InverseTransfo(const double Precision, const Frame& Region) const;
+    std::unique_ptr<Gtransfo> InverseTransfo(const double Precision, const Frame& Region) const;
 
     void dump(std::ostream &stream) const;
 
-    Gtransfo * Clone() const;
+    std::unique_ptr<Gtransfo> Clone() const;
 
     double fit(const StarMatchList &List);
 
@@ -658,15 +656,15 @@ class UserTransfo : public Gtransfo
 
   double fit(const StarMatchList &List);
 
-  Gtransfo *Clone() const;
+  std::unique_ptr<Gtransfo> Clone() const;
 
 };
 
 
 //! The virtual constructor from a file
-Gtransfo* GtransfoRead(const std::string &FileName);
+std::unique_ptr<Gtransfo> GtransfoRead(const std::string &FileName);
 //! The virtual constructor from a file
-Gtransfo* GtransfoRead(std::istream &s);
+std::unique_ptr<Gtransfo> GtransfoRead(std::istream &s);
 
 
 

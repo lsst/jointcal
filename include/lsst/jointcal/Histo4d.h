@@ -9,7 +9,7 @@ namespace jointcal {
 class SparseHisto4d {
 
  private:
-  int *data;
+  std::unique_ptr<int[]> data;
   int ndata; int dataSize;
   int n[4];
   double minVal[4],maxVal[4];
@@ -40,7 +40,7 @@ class SparseHisto4d {
   //!
   int NEntries() const { return ndata;}
 
-  ~SparseHisto4d() { delete [] data;}
+  ~SparseHisto4d() { }
 
   // private:
   int code_value(const double X[4]) const;

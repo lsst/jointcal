@@ -31,8 +31,6 @@ namespace jointcal {
  */
 class ConstrainedPolyModel : public AstrometryModel
 {
-  // NOTE: Using ref counts here allows us to not write a destructor nor a copy
-  // constructor. I could *not* get it to work using std::auto_ptr.
   typedef std::map<const CcdImage*, std::unique_ptr<TwoTransfoMapping> > mappingMapType;
   mappingMapType _mappings;
   typedef std::map<unsigned, std::unique_ptr<SimpleGtransfoMapping> > chipMapType;
