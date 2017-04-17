@@ -1,3 +1,4 @@
+_build.*
 *~
 .sconsign.dblite
 config.log
@@ -5,11 +6,14 @@ config.log
 *.o
 *.os
 *.so
+*.dylib
 *.cfgc
 *.pyc
 *_wrap.cc
 *Lib.py
+bin/*.py
 doc/html
+doc/xml
 doc/*.tag
 doc/*.inc
 doc/doxygen.conf
@@ -17,3 +21,6 @@ tests/.tests
 version.py
 tests/.test
 .test
+Astrometry_res*.list
+Photometry_res*.list
+tests/test_wcs
