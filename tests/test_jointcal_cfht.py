@@ -14,18 +14,6 @@ import lsst.pex.exceptions
 
 import jointcalTestBase
 
-try:
-    data_dir = lsst.utils.getPackageDir('testdata_jointcal')
-    os.environ['ASTROMETRY_NET_DATA_DIR'] = os.path.join(data_dir, 'cfht_and_index')
-except lsst.pex.exceptions.NotFoundError:
-    data_dir = None
-
-# We don't want the absolute astrometry to become significantly worse
-# than the single-epoch astrometry (about 0.040").
-# This value was empirically determined from the first run of jointcal on
-# this data, and will likely vary from survey to survey.
-absolute_error = 48e-3*u.arcsecond
-
 
 # for MemoryTestCase
 def setup_module(module):
@@ -34,14 +22,28 @@ def setup_module(module):
 
 class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCase):
 
+    @classmethod
+    def setUpClass(cls):
+        try:
+            cls.data_dir = lsst.utils.getPackageDir('testdata_jointcal')
+            os.environ['ASTROMETRY_NET_DATA_DIR'] = os.path.join(cls.data_dir, 'cfht_and_index')
+        except lsst.pex.exceptions.NotFoundError:
+            raise unittest.SkipTest("testdata_jointcal not setup")
+
     def setUp(self):
+        # We don't want the absolute astrometry to become significantly worse
+        # than the single-epoch astrometry (about 0.040").
+        # This value was empirically determined from the first run of jointcal on
+        # this data, and will likely vary from survey to survey.
+        self.dist_rms_absolute = 48e-3*u.arcsecond
+
         do_plot = False
 
         # center of the cfht validation_data catalog
         center = lsst.afw.coord.IcrsCoord(214.884832*lsst.afw.geom.degrees, 52.6622199*lsst.afw.geom.degrees)
         radius = 3*lsst.afw.geom.degrees
 
-        input_dir = os.path.join(data_dir, 'cfht')
+        input_dir = os.path.join(self.data_dir, 'cfht')
         all_visits = [849375, 850587]
 
         self.setUp_base(center, radius,
@@ -49,12 +51,11 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
                         all_visits=all_visits,
                         do_plot=do_plot)
 
-    @unittest.skipIf(data_dir is None, "testdata_jointcal not setup")
     def test_jointcalTask_2_visits(self):
         # NOTE: The relative RMS limit was empirically determined from the
         # first run of jointcal on this data. We should always do better than
         # this in the future!
-        relative_error = 25e-3*u.arcsecond
+        dist_rms_relative = 25e-3*u.arcsecond
         pa1 = 0.019
         metrics = {'collectedAstrometryRefStars': 825,
                    'collectedPhotometryRefStars': 825,
@@ -72,7 +73,7 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
                    'photometryFinalNdof': 1089
                    }
 
-        self._testJointcalTask(2, relative_error, absolute_error, pa1, metrics=metrics)
+        self._testJointcalTask(2, dist_rms_relative, self.dist_rms_absolute, pa1, metrics=metrics)
 
 
 # TODO: the memory test cases currently fail in jointcal. Filed as DM-6626.
