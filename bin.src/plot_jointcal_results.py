@@ -10,7 +10,7 @@ produces a new "wcs" component of the repository.
 import os
 
 import lsst.daf.persistence
-from lsst.meas.astrom import LoadAstrometryNetObjectsTask, LoadAstrometryNetObjectsConfig
+from lsst.meas.extensions.astrometryNet import LoadAstrometryNetObjectsTask, LoadAstrometryNetObjectsConfig
 import lsst.afw.image
 from lsst.afw.geom import degrees
 

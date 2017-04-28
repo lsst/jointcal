@@ -8,7 +8,7 @@ import os
 import inspect
 
 import lsst.afw.geom
-from lsst.meas.astrom import LoadAstrometryNetObjectsTask, LoadAstrometryNetObjectsConfig
+from lsst.meas.extensions.astrometryNet import LoadAstrometryNetObjectsTask, LoadAstrometryNetObjectsConfig
 
 from lsst.jointcal import jointcal, utils
 

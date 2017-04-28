@@ -15,7 +15,7 @@ import lsst.afw.coord as afwCoord
 import lsst.pex.exceptions as pexExceptions
 import lsst.afw.table
 
-from lsst.meas.astrom.loadAstrometryNetObjects import LoadAstrometryNetObjectsTask
+from lsst.meas.extensions.astrometryNet import LoadAstrometryNetObjectsTask
 from lsst.meas.algorithms.sourceSelector import sourceSelectorRegistry
 
 from .dataIds import PerTractCcdDataIdContainer
