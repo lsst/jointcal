@@ -71,6 +71,10 @@ class JointcalTestBase(object):
             del self.oldWcsList
         if getattr(self, 'jointcalTask', None) is not None:
             del self.jointcalTask
+        if getattr(self, 'jointcalStatistics', None) is not None:
+            del self.jointcalStatistics
+        if getattr(self, 'config', None) is not None:
+            del self.config
 
     def _prep_reference_loader(self, center, radius):
         """
