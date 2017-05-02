@@ -16,18 +16,6 @@ from lsst.meas.algorithms import LoadIndexedReferenceObjectsTask
 
 import jointcalTestBase
 
-try:
-    data_dir = lsst.utils.getPackageDir('testdata_jointcal')
-    os.environ['ASTROMETRY_NET_DATA_DIR'] = os.path.join(data_dir, 'hsc_and_index')
-except lsst.pex.exceptions.NotFoundError:
-    data_dir = None
-
-# We don't want the absolute astrometry to become significantly worse
-# than the single-epoch astrometry (about 0.040").
-# This value was empirically determined from the first run of jointcal on
-# this data, and will likely vary from survey to survey.
-dist_rms_absolute = 53e-3*u.arcsecond
-
 
 # for MemoryTestCase
 def setup_module(module):
@@ -36,14 +24,26 @@ def setup_module(module):
 
 class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCase):
 
+    @classmethod
+    def setUpClass(cls):
+        try:
+            cls.data_dir = lsst.utils.getPackageDir('testdata_jointcal')
+            os.environ['ASTROMETRY_NET_DATA_DIR'] = os.path.join(cls.data_dir, 'hsc_and_index')
+        except lsst.pex.exceptions.NotFoundError:
+            raise unittest.SkipTest("testdata_jointcal not setup")
+
     def setUp(self):
+        # This value was empirically determined from the first run of jointcal on
+        # this data, and will likely vary from survey to survey.
+        self.dist_rms_absolute = 53e-3*u.arcsecond
+
         do_plot = False
 
         # center of the hsc validation_data catalog
         center = lsst.afw.coord.IcrsCoord(320.367492*lsst.afw.geom.degrees, 0.3131554*lsst.afw.geom.degrees)
         radius = 5*lsst.afw.geom.degrees
 
-        input_dir = os.path.join(data_dir, 'hsc')
+        input_dir = os.path.join(self.data_dir, 'hsc')
         all_visits = [903334, 903336, 903338, 903342, 903344, 903346, 903986, 903988, 903990, 904010, 904014]
 
         self.setUp_base(center, radius,
@@ -51,7 +51,6 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
                         all_visits=all_visits,
                         do_plot=do_plot)
 
-    @unittest.skipIf(data_dir is None, "testdata_jointcal not setup")
     def test_jointcalTask_2_visits(self):
         # NOTE: The relative RMS limit was empirically determined from the
         # first run of jointcal on this data. We should always do better than
@@ -73,9 +72,8 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
                    'photometryFinalChi2': 3753.82,
                    'photometryFinalNdof': 504
                    }
-        self._testJointcalTask(2, dist_rms_relative, dist_rms_absolute, pa1, metrics=metrics)
+        self._testJointcalTask(2, dist_rms_relative, self.dist_rms_absolute, pa1, metrics=metrics)
 
-    @unittest.skipIf(data_dir is None, "testdata_jointcal not setup")
     def test_jointcalTask_11_visits(self):
         # NOTE: The relative RMS limit was empirically determined from the
         # first run of jointcal on this data. We should always do better than
@@ -97,9 +95,8 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
                    'photometryFinalChi2': 16773556.5,
                    'photometryFinalNdof': 6569
                    }
-        self._testJointcalTask(11, dist_rms_relative, dist_rms_absolute, pa1, metrics=metrics)
+        self._testJointcalTask(11, dist_rms_relative, self.dist_rms_absolute, pa1, metrics=metrics)
 
-    @unittest.skipIf(data_dir is None, "testdata_jointcal not setup")
     def testJointcalTask_2_visits_no_astrometry(self):
         """Test turning off fitting astrometry."""
         pa1 = 0.024
@@ -133,7 +130,6 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
             wcs = data_ref.get('wcs').getWcs()
             self.assertIsNone(wcs)
 
-    @unittest.skipIf(data_dir is None, "testdata_jointcal not setup")
     def testJointcalTask_2_visits_no_photometry(self):
         """Test turning off fitting photometry."""
         dist_rms_relative = 17e-3*u.arcsecond
@@ -160,7 +156,7 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
             self._plotJointcalTask(data_refs, oldWcsList, caller)
 
         self.assertLess(rms_result.dist_relative, dist_rms_relative)
-        self.assertLess(rms_result.dist_absolute, dist_rms_absolute)
+        self.assertLess(rms_result.dist_absolute, self.dist_rms_absolute)
         self.assertIsNone(rms_result.pa1)
 
         for data_ref in data_refs:
@@ -168,7 +164,6 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
             blank_calib = lsst.afw.image.Calib()
             self.assertEqual(calib, blank_calib)
 
-    @unittest.skipIf(data_dir is None, "testdata_jointcal not setup")
     def test_jointcalTask_2_visits_gaia_refcat(self):
         self.config = lsst.jointcal.jointcal.JointcalConfig()
         self.config.astrometryRefObjLoader.retarget(LoadIndexedReferenceObjectsTask)
@@ -200,7 +195,6 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         dist_rms_absolute = 56e-3*u.arcsecond
         self._testJointcalTask(2, dist_rms_relative, dist_rms_absolute, pa1, metrics=metrics)
 
-    @unittest.skipIf(data_dir is None, "testdata_jointcal not setup")
     def test_jointcalTask_2_visits_no_photometry_match_cut_10(self):
         self.config = lsst.jointcal.jointcal.JointcalConfig()
         self.config.matchCut = 10.0  # TODO: once DM-6885 is fixed, we need to put `*lsst.afw.geom.arcseconds`
@@ -217,9 +211,8 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
                    'astrometryFinalNdof': 1856,
                    }
         pa1 = None
-        self._testJointcalTask(2, dist_rms_relative, dist_rms_absolute, pa1, metrics=metrics)
+        self._testJointcalTask(2, dist_rms_relative, self.dist_rms_absolute, pa1, metrics=metrics)
 
-    @unittest.skipIf(data_dir is None, "testdata_jointcal not setup")
     def test_jointcalTask_3_visits_no_photometry(self):
         """3 visit, default config to compare with min_measurements_3 test."""
         self.config = lsst.jointcal.jointcal.JointcalConfig()
@@ -237,9 +230,8 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
                    'astrometryFinalNdof': 3008,
                    }
         pa1 = None
-        self._testJointcalTask(3, dist_rms_relative, dist_rms_absolute, pa1, metrics=metrics)
+        self._testJointcalTask(3, dist_rms_relative, self.dist_rms_absolute, pa1, metrics=metrics)
 
-    @unittest.skipIf(data_dir is None, "testdata_jointcal not setup")
     def test_jointcalTask_3_visits_no_photometry_min_measurements_3(self):
         """Raising min_measurements to 3 will reduce the number of selected
         fitted stars (and thus the chisq and Ndof), but should not change the
@@ -259,7 +251,7 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
                    'astrometryFinalNdof': 2526,
                    }
         pa1 = None
-        self._testJointcalTask(3, dist_rms_relative, dist_rms_absolute, pa1, metrics=metrics)
+        self._testJointcalTask(3, dist_rms_relative, self.dist_rms_absolute, pa1, metrics=metrics)
 
 
 # TODO: the memory test cases currently fail in jointcal. Filed as DM-6626.

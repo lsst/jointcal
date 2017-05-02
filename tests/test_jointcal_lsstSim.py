@@ -18,18 +18,6 @@ import lsst.pex.exceptions
 import jointcalTestBase
 import lsst.jointcal.jointcal
 
-try:
-    data_dir = lsst.utils.getPackageDir('testdata_jointcal')
-    os.environ['ASTROMETRY_NET_DATA_DIR'] = os.path.join(data_dir, 'twinkles1_and_index')
-except lsst.pex.exceptions.NotFoundError:
-    data_dir = None
-
-# We don't want the absolute astrometry to become significantly worse
-# than the single-epoch astrometry (about 0.040").
-# This value was empirically determined from the first run of jointcal on
-# this data, and will likely vary from survey to survey.
-dist_rms_absolute = 42e-3*u.arcsecond
-
 
 # for MemoryTestCase
 def setup_module(module):
@@ -38,14 +26,28 @@ def setup_module(module):
 
 class JointcalTestLSSTSim(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCase):
 
+    @classmethod
+    def setUpClass(cls):
+        try:
+            cls.data_dir = lsst.utils.getPackageDir('testdata_jointcal')
+            os.environ['ASTROMETRY_NET_DATA_DIR'] = os.path.join(cls.data_dir, 'twinkles1_and_index')
+        except lsst.pex.exceptions.NotFoundError:
+            raise unittest.SkipTest("testdata_jointcal not setup")
+
     def setUp(self):
+        # We don't want the absolute astrometry to become significantly worse
+        # than the single-epoch astrometry (about 0.040").
+        # This value was empirically determined from the first run of jointcal on
+        # this data, and will likely vary from survey to survey.
+        self.dist_rms_absolute = 42e-3*u.arcsecond
+
         do_plot = False
 
         # position of the Twinkles run 1 catalog
         center = lsst.afw.coord.IcrsCoord(53.00914*lsst.afw.geom.degrees, -27.43895*lsst.afw.geom.degrees)
         radius = 3*lsst.afw.geom.degrees
 
-        input_dir = os.path.join(data_dir, 'twinkles1')
+        input_dir = os.path.join(self.data_dir, 'twinkles1')
         all_visits = list(range(840, 850))
         other_args = ['raft=2,2', 'sensor=1,1', 'filter=r']
 
@@ -55,14 +57,12 @@ class JointcalTestLSSTSim(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Te
                         other_args=other_args,
                         do_plot=do_plot)
 
-    @unittest.skipIf(data_dir is None, "testdata_jointcal not setup")
     @unittest.skip('jointcal currently fails (may segfault) if only given one catalog!')
     def testJointcalTask_1_visits(self):
         dist_rms_relative = 0*u.arcsecond  # there is no such thing as a "relative" test for 1 catalog.
         pa1 = 2.64e-3
-        self._testJointcalTask(1, dist_rms_relative, dist_rms_absolute, pa1)
+        self._testJointcalTask(1, dist_rms_relative, self.dist_rms_absolute, pa1)
 
-    @unittest.skipIf(data_dir is None, "testdata_jointcal not setup")
     def testJointcalTask_2_visits(self):
         # NOTE: The relative RMS limits were empirically determined from the
         # first run of jointcal on this data. We should always do better than
@@ -84,9 +84,8 @@ class JointcalTestLSSTSim(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Te
                    'photometryFinalChi2': 2310.628,
                    'photometryFinalNdof': 728
                    }
-        self._testJointcalTask(2, dist_rms_relative, dist_rms_absolute, pa1, metrics=metrics)
+        self._testJointcalTask(2, dist_rms_relative, self.dist_rms_absolute, pa1, metrics=metrics)
 
-    @unittest.skipIf(data_dir is None, "testdata_jointcal not setup")
     def testJointcalTask_10_visits(self):
         dist_rms_relative = 7.9e-3*u.arcsecond
         pa1 = 2.64e-3
@@ -105,9 +104,8 @@ class JointcalTestLSSTSim(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Te
                    'photometryFinalChi2': 35321.947,
                    'photometryFinalNdof': 9141
                    }
-        self._testJointcalTask(10, dist_rms_relative, dist_rms_absolute, pa1, metrics=metrics)
+        self._testJointcalTask(10, dist_rms_relative, self.dist_rms_absolute, pa1, metrics=metrics)
 
-    @unittest.skipIf(data_dir is None, "testdata_jointcal not setup")
     def testJointcalTask_2_visits_no_astrometry(self):
         """Test turning off fitting astrometry."""
         pa1 = 2.64e-3
@@ -141,7 +139,6 @@ class JointcalTestLSSTSim(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Te
             wcs = data_ref.get('wcs').getWcs()
             self.assertIsNone(wcs)
 
-    @unittest.skipIf(data_dir is None, "testdata_jointcal not setup")
     def testJointcalTask_2_visits_no_photometry(self):
         """Test turning off fitting photometry."""
         dist_rms_relative = 9.7e-3*u.arcsecond
@@ -168,7 +165,7 @@ class JointcalTestLSSTSim(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Te
             self._plotJointcalTask(data_refs, oldWcsList, caller)
 
         self.assertLess(rms_result.dist_relative, dist_rms_relative)
-        self.assertLess(rms_result.dist_absolute, dist_rms_absolute)
+        self.assertLess(rms_result.dist_absolute, self.dist_rms_absolute)
         self.assertIsNone(rms_result.pa1)
 
         for data_ref in data_refs:
