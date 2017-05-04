@@ -1,5 +1,6 @@
-#ifndef CCDIMAGE__H
-#define CCDIMAGE__H
+// -*- LSST-C++ -*-
+#ifndef LSST_JOINTCAL_CCD_IMAGE_H
+#define LSST_JOINTCAL_CCD_IMAGE_H
 
 #include <list>
 #include <string>
@@ -191,4 +192,4 @@ private:
 
 }} // end of namespaces
 
-#endif /* CCDIMAGE__H */
+#endif // LSST_JOINTCAL_CCD_IMAGE_H

@@ -1,5 +1,6 @@
-#ifndef HISTO2D__H
-#define HISTO2D__H
+// -*- LSST-C++ -*-
+#ifndef LSST_JOINTCAL_HISTO2D_H
+#define LSST_JOINTCAL_HISTO2D_H
 
 
 namespace lsst {
@@ -41,4 +42,4 @@ class Histo2d {
 
 }} // end of namespaces
 
-#endif /* HISTO2D__H */
+#endif // LSST_JOINTCAL_HISTO2D_H

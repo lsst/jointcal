@@ -1,5 +1,6 @@
-#ifndef LISTMATCH__H
-#define LISTMATCH__H
+// -*- LSST-C++ -*-
+#ifndef LSST_JOINTCAL_LIST_MATCH_H
+#define LSST_JOINTCAL_LIST_MATCH_H
 
 #include <string>
 
@@ -93,4 +94,4 @@ inline Gtransfo* ListMatch(const BaseStarList& List1, const BaseStarList& List2,
 
 }} // end of namespaces
 
-#endif /* LISTMATCH__H */
+#endif // LSST_JOINTCAL_LIST_MATCH_H

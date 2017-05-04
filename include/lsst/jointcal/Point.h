@@ -1,6 +1,6 @@
-// This may look like C code, but it is really -*- C++ -*-
-#ifndef JOINTCAL_POINT__H
-#define JOINTCAL_POINT__H
+// -*- LSST-C++ -*-
+#ifndef LSST_JOINTCAL_POINT_H
+#define LSST_JOINTCAL_POINT_H
 #include <iostream>
 #include <cmath>
 
@@ -50,6 +50,5 @@ std::ostream& operator << (std::ostream& stream, const Point &point);
 
 }} // end of namespaces
 
-#endif /* POINT__H */
-
+#endif // LSST_JOINTCAL_POINT_H
 

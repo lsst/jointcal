@@ -1,5 +1,5 @@
-#ifndef PHOTOMFIT__H
-#define PHOTOMFIT__H
+#ifndef LSST_JOINTCAL_PHOTOMETRY_FIT_H
+#define LSST_JOINTCAL_PHOTOMETRY_FIT_H
 
 #include <string>
 #include <iostream>
@@ -150,4 +150,4 @@ class PhotometryFit {
 
 
 }} // end of namespaces
-#endif /* PHOTOMFIT__H */
+#endif // LSST_JOINTCAL_PHOTOMETRY_FIT_H

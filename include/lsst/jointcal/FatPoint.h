@@ -1,5 +1,6 @@
-#ifndef FATPOINT__H
-#define FATPOINT__H
+// -*- LSST-C++ -*-
+#ifndef LSST_JOINTCAL_FAT_POINT_H
+#define LSST_JOINTCAL_FAT_POINT_H
 
 #include "lsst/jointcal/Point.h"
 
@@ -29,4 +30,4 @@ class FatPoint : public Point
 
 }}
 
-#endif
+#endif // LSST_JOINTCAL_FAT_POINT_H

@@ -1,5 +1,6 @@
-#ifndef SIMPLEPOLYMAPPING__H
-#define SIMPLEPOLYMAPPING__H
+// -*- LSST-C++ -*-
+#ifndef LSST_JOINTCAL_SIMPLE_POLY_MAPPING_H
+#define LSST_JOINTCAL_SIMPLE_POLY_MAPPING_H
 
 #include <memory> // for unique_ptr
 
@@ -247,4 +248,5 @@ class SimpleIdentityMapping : public SimpleGtransfoMapping<GtransfoIdentity>
 #endif
 
 }} // end of namespaces
-#endif
+
+#endif // LSST_JOINTCAL_SIMPLE_POLY_MAPPING_H

@@ -1,5 +1,6 @@
-#ifndef DISTORTIONSMODEL__H
-#define DISTORTIONSMODEL__H
+// -*- LSST-C++ -*-
+#ifndef LSST_JOINTCAL_ASTROMETRY_MODEL_H
+#define LSST_JOINTCAL_ASTROMETRY_MODEL_H
 
 #include "memory"
 
@@ -49,4 +50,4 @@ public :
 
 }}
 
-#endif /*DISTORTIONSMODEL__H */
+#endif // LSST_JOINTCAL_ASTROMETRY_MODEL_H

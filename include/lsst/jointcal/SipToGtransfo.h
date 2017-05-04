@@ -1,5 +1,6 @@
-#ifndef SIPTOGTRANSFO__H
-#define SIPTOGTRANSFO__H
+// -*- LSST-C++ -*-
+#ifndef LSST_JOINTCAL_SIP_TO_GTRANSFO_H
+#define LSST_JOINTCAL_SIP_TO_GTRANSFO_H
 
 #include "lsst/afw/image/TanWcs.h"
 #include "lsst/jointcal/Gtransfo.h"
@@ -22,4 +23,4 @@ TanSipPix2RaDec convertTanWcs(const std::shared_ptr<lsst::afw::image::TanWcs>  w
 
 }} // end of namespaces
 
-#endif /* SIPTOGTRANSFO__H */
+#endif // LSST_JOINTCAL_SIP_TO_GTRANSFO_H

@@ -1,5 +1,6 @@
-#ifndef PHOTOMMODEL__H
-#define PHOTOMMODEL__H
+// -*- LSST-C++ -*-
+#ifndef LSST_JOINTCAL_PHOTOMETRY_MODEL_H
+#define LSST_JOINTCAL_PHOTOMETRY_MODEL_H
 
 #include "lsst/jointcal/Eigenstuff.h"
 #include <string>
@@ -61,4 +62,4 @@ public :
 
 }} // end of namespaces
 
-#endif /*DISTORTIONSMODEL__H */
+#endif // LSST_JOINTCAL_PHOTOMETRY_MODEL_H

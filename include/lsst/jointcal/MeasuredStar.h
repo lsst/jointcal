@@ -1,6 +1,6 @@
-// -*- C++ -*-
-#ifndef MEASUREDSTAR__H
-#define MEASUREDSTAR__H
+// -*- LSST-C++ -*-
+#ifndef LSST_JOINTCAL_MEASURED_STAR_H
+#define LSST_JOINTCAL_MEASURED_STAR_H
 
 #include <iostream>
 
@@ -30,8 +30,6 @@ class MeasuredStar : public BaseStar
 
     std::shared_ptr<const FittedStar> fittedStar;
     bool   valid;
-
-
 
   public :
 
@@ -101,5 +99,5 @@ const BaseStarList* Measured2Base(const MeasuredStarList *This);
 
 }}  // end of namespaces
 
-#endif /* MEASUREDSTAR__H */
+#endif // LSST_JOINTCAL_MEASURED_STAR_H
 

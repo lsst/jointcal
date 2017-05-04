@@ -1,6 +1,6 @@
 // -*- LSST-C++ -*-
-#ifndef LSST_ASTRO_UTILS_H
-#define LSST_ASTRO_UTILS_H
+#ifndef LSST_JOINTCAL_ASTRO_UTILS_H
+#define LSST_JOINTCAL_ASTRO_UTILS_H
 
 #include "lsst/jointcal/BaseStar.h"
 #include "lsst/jointcal/Frame.h"
@@ -16,4 +16,4 @@ namespace jointcal {
 
 }} // end of namespaces
 
-#endif
+#endif // LSST_JOINTCAL_ASTRO_UTILS_H
