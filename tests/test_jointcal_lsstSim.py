@@ -174,9 +174,8 @@ class JointcalTestLSSTSim(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Te
             self.assertEqual(calib, blank_calib)
 
 
-# TODO: the memory test cases currently fail in jointcal. Filed as DM-6626.
-# class MyMemoryTestCase(lsst.utils.tests.MemoryTestCase):
-#     pass
+class MemoryTester(lsst.utils.tests.MemoryTestCase):
+    pass
 
 
 if __name__ == "__main__":

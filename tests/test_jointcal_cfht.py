@@ -76,9 +76,8 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
         self._testJointcalTask(2, dist_rms_relative, self.dist_rms_absolute, pa1, metrics=metrics)
 
 
-# TODO: the memory test cases currently fail in jointcal. Filed as DM-6626.
-# class MyMemoryTestCase(lsst.utils.tests.MemoryTestCase):
-#     pass
+class MemoryTester(lsst.utils.tests.MemoryTestCase):
+    pass
 
 if __name__ == "__main__":
     lsst.utils.tests.init()

@@ -80,9 +80,8 @@ class JointcalTestDECAM(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Test
         self._testJointcalTask(2, relative_error, self.absolute_error, pa1, metrics=metrics)
 
 
-# TODO: the memory test cases currently fail in jointcal. Filed as DM-6626.
-# class MyMemoryTestCase(lsst.utils.tests.MemoryTestCase):
-#     pass
+class MemoryTester(lsst.utils.tests.MemoryTestCase):
+    pass
 
 if __name__ == "__main__":
     lsst.utils.tests.init()
