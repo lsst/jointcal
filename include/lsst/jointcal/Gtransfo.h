@@ -8,6 +8,7 @@
 
 #include <iostream>
 #include <string>
+#include <sstream>
 #include <vector>
 
 #include "lsst/pex/exceptions.h"
@@ -59,6 +60,7 @@ public:
   //! dumps the transfo coefficients to stream.
   virtual void dump(std::ostream &stream = std::cout) const = 0;
 
+  std::string __str__() { std::stringstream s; dump(s); return s.str(); }
 
   //! fits a transfo to a std::list of Point pairs (p1,p2, the Point fields in StarMatch).
   /*! After the fit this(p1) yields approximately p2.

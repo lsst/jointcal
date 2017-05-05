@@ -35,10 +35,40 @@ namespace {
 
 void declareGtransfo(py::module &mod) {
     py::class_<Gtransfo, std::shared_ptr<Gtransfo>> cls(mod, "Gtransfo");
+
+    cls.def("__str__", &Gtransfo::__str__);
+}
+
+void declareGtransfoIdentity(py::module &mod) {
+    py::class_<GtransfoIdentity, std::shared_ptr<GtransfoIdentity>, Gtransfo> cls(mod, "GtransfoIdentity");
+}
+
+void declareGtransfoPoly(py::module &mod) {
+    py::class_<GtransfoPoly, std::shared_ptr<GtransfoPoly>, Gtransfo> cls(mod, "GtransfoPoly");
+}
+
+void declareGtransfoLin(py::module &mod) {
+    py::class_<GtransfoLin, std::shared_ptr<GtransfoLin>, GtransfoPoly> cls(mod, "GtransfoLin");
+}
+
+void declareGtransfoLinShift(py::module &mod) {
+    py::class_<GtransfoLinShift, std::shared_ptr<GtransfoLinShift>, GtransfoLin> cls(mod, "GtransfoLinShift");
+}
+
+void declareGtransfoLinRot(py::module &mod) {
+    py::class_<GtransfoLinRot, std::shared_ptr<GtransfoLinRot>, GtransfoLin> cls(mod, "GtransfoLinRot");
+}
+
+void declareGtransfoLinScale(py::module &mod) {
+    py::class_<GtransfoLinScale, std::shared_ptr<GtransfoLinScale>, GtransfoLin> cls(mod, "GtransfoLinScale");
 }
 
 void declareBaseTanWcs(py::module &mod) {
     py::class_<BaseTanWcs, std::shared_ptr<BaseTanWcs>, Gtransfo> cls(mod, "BaseTanWcs");
+}
+
+void declareTanPix2RaDec(py::module &mod) {
+    py::class_<TanPix2RaDec, std::shared_ptr<TanPix2RaDec>, Gtransfo> cls(mod, "TanPix2RaDec");
 }
 
 void declareTanRaDec2Pix(py::module &mod) {
@@ -54,7 +84,14 @@ PYBIND11_PLUGIN(gtransfo) {
     py::module mod("gtransfo");
 
     declareGtransfo(mod);
+    declareGtransfoIdentity(mod);
+    declareGtransfoPoly(mod);
+    declareGtransfoLin(mod);
+    declareGtransfoLinShift(mod);
+    declareGtransfoLinRot(mod);
+    declareGtransfoLinScale(mod);
     declareBaseTanWcs(mod);
+    declareTanPix2RaDec(mod);
     declareTanRaDec2Pix(mod);
     declareTanSipPix2RaDec(mod);
 

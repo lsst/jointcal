@@ -40,18 +40,21 @@ namespace {
 void declareAstrometryModel(py::module &mod) {
     py::class_<AstrometryModel, std::shared_ptr<AstrometryModel>> cls(mod, "AstrometryModel");
 
-    cls.def("produceSipWcs", &SimplePolyModel::produceSipWcs);
+    cls.def("produceSipWcs", &AstrometryModel::produceSipWcs);
+    cls.def("getMapping", &AstrometryModel::getMapping, py::return_value_policy::reference_internal);
 }
 
 void declareSimplePolyModel(py::module &mod) {
-    py::class_<SimplePolyModel, std::shared_ptr<SimplePolyModel>, AstrometryModel> cls(mod, "SimplePolyModel");
+    py::class_<SimplePolyModel, std::shared_ptr<SimplePolyModel>, AstrometryModel>
+    cls(mod, "SimplePolyModel");
 
     cls.def(py::init<CcdImageList const&, const ProjectionHandler *, bool, unsigned, unsigned>(),
             "ccdImageList"_a, "projectionHandler"_a, "initFromWcs"_a, "nNotFit"_a=0, "degree"_a=3);
 }
 
 void declareConstrainedPolyModel(py::module &mod) {
-    py::class_<ConstrainedPolyModel, std::shared_ptr<ConstrainedPolyModel>, AstrometryModel> cls(mod, "ConstrainedPolyModel");
+    py::class_<ConstrainedPolyModel, std::shared_ptr<ConstrainedPolyModel>, AstrometryModel>
+    cls(mod, "ConstrainedPolyModel");
 
     cls.def(py::init<CcdImageList const&, const ProjectionHandler *, bool, unsigned>(),
             "ccdImageList"_a, "projectionHandler"_a, "initFromWcs"_a, "nNotFit"_a=0);
@@ -60,6 +63,7 @@ void declareConstrainedPolyModel(py::module &mod) {
 PYBIND11_PLUGIN(astrometryModels) {
     py::module::import("lsst.jointcal.ccdImage");
     py::module::import("lsst.jointcal.gtransfo");
+    py::module::import("lsst.jointcal.mappings");
     py::module mod("astrometryModels");
 
     declareAstrometryModel(mod);
