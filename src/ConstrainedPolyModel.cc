@@ -79,8 +79,7 @@ ConstrainedPolyModel::ConstrainedPolyModel(const CcdImageList &ccdImageList,
 	{
         LOGLS_WARN(_log, "Chip " << chip << " is missing in the reference exposure, expect troubles.");
 	  GtransfoLin norm = NormalizeCoordinatesTransfo(im.getImageFrame());
-	  _chipMap[chip] = std::unique_ptr<SimplePolyMapping>( new SimplePolyMapping(norm,
-										     GtransfoPoly(degree)));
+	  _chipMap[chip] = std::unique_ptr<SimplePolyMapping>( new SimplePolyMapping(norm, GtransfoPoly(degree)));
 	}
       _mappings[&im] = std::unique_ptr<TwoTransfoMapping>(new TwoTransfoMapping(_chipMap[chip].get(), _visitMap[visit].get()));
 
@@ -205,14 +204,28 @@ const Gtransfo& ConstrainedPolyModel::getVisitTransfo(const VisitIdType &Visit) 
 
 std::shared_ptr<TanSipPix2RaDec> ConstrainedPolyModel::produceSipWcs(const CcdImage &ccdImage) const
 {
-  mappingMapType::const_iterator i = _mappings.find(&ccdImage);
-  if  (i==_mappings.end()) return nullptr;
-  const TwoTransfoMapping *m = i->second.get();
+  const TwoTransfoMapping * mapping;
+  try {
+    mapping = _mappings.at(&ccdImage).get();
+  }
+  catch (std::out_of_range) {
+    LOGLS_ERROR(_log, "CcdImage with ccd/visit " << ccdImage.getCcdId() << "/" << ccdImage.getVisit()
+                << " not found in constrainedPolyModel mapping list.");
+    std::ostringstream os;
+    for (auto const& i: _mappings) os << i.first << ",";
+    LOGLS_ERROR(_log, "Available CcdImages: " << os.str());
+    return nullptr;
+  }
 
-  const GtransfoPoly &t1=dynamic_cast<const GtransfoPoly&>(m->T1());
-  const GtransfoPoly &t2=dynamic_cast<const GtransfoPoly&>(m->T2());
+  const GtransfoPoly &t1=dynamic_cast<const GtransfoPoly&>(mapping->T1());
+  const GtransfoPoly &t2=dynamic_cast<const GtransfoPoly&>(mapping->T2());
   const TanRaDec2Pix *proj=dynamic_cast<const TanRaDec2Pix*>(sky2TP(ccdImage));
-  if (!(&t1)  || !(&t2) || !proj) return nullptr;
+  if (!(&t1)  || !(&t2) || !proj) {
+    LOGLS_ERROR(_log, "Problem with transforms of ccd/visit "
+                << ccdImage.getCcdId() << "/" << ccdImage.getVisit()
+                << ": T1 " << t1 << ", T2 " << t2 << ", projection " << proj);
+    return nullptr;
+  }
 
   GtransfoPoly pix2Tp = t2*t1;
 
