@@ -48,8 +48,5 @@ class Mapping
 
 };
 
-// typedef MappingList::iterator MappingIterator;
-// typedef MappingList::const_iterator MappingCIterator;
-
 }} // end of namespaces
 #endif // LSST_JOINTCAL_MAPPING_H
