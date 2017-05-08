@@ -32,7 +32,8 @@ struct Chi2
 
   // Addentry has a third argument in order to make it compatible with an
   //other stat accumulator.
-  void AddEntry(double Inc, unsigned Dof, const void *M)
+  template <typename T>
+  void AddEntry(double Inc, unsigned Dof, T)
   {chi2+= Inc; ndof += Dof;}
 
   void operator += (const Chi2 &R)

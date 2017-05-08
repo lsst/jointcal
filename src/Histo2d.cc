@@ -32,15 +32,15 @@ Histo2d::Histo2d(int nnx, float mminx, float mmaxx, int nny, float mminy,float m
       LOGL_WARN(_log, "Histo2d: maxy = miny requested");
       scaley = 1.0;
     }
-  data = new float[nx*ny];
-  memset(data, 0, nx*ny*sizeof(float));
+  data.reset(new float[nx*ny]);
+  memset(data.get(), 0, nx*ny*sizeof(float));
 }
 
 Histo2d::Histo2d(const Histo2d &Other)
 {
   memcpy(this, &Other, sizeof(Histo2d));
-  data = new float[nx*ny];
-  memcpy(this->data, Other.data, nx*ny*sizeof(float));
+  data.reset(new float[nx*ny]);
+  memcpy((this->data).get(), Other.data.get(), nx*ny*sizeof(float));
 }
 
 bool Histo2d::indices(double X, double Y, int &ix, int &iy) const
@@ -63,9 +63,9 @@ double Histo2d::MaxBin(double &X, double &Y) const
   int imax=0;
   float valmax = -1e30;
 
-  for (p = data, pend = p + nx*ny; pend-p ; p++ )
+  for (p = data.get(), pend = p + nx*ny; pend-p ; p++ )
     {
-      if (*p > valmax) {valmax = *p; imax = p-data;}
+      if (*p > valmax) {valmax = *p; imax = p-(data.get());}
     }
   int ix = imax/ny;
   int iy = imax - ix * ny;

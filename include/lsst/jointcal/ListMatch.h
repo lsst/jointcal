@@ -50,38 +50,38 @@ not values.
 The various cuts are contained in Conditions (see listmatch.h) for its contents.
 This routine searches a transformation that involves a shift and a rotation. */
 
-StarMatchList* MatchSearchRotShift(BaseStarList &L1, BaseStarList &L2, const MatchConditions &Conditions);
+std::unique_ptr<StarMatchList> MatchSearchRotShift(BaseStarList &L1, BaseStarList &L2, const MatchConditions &Conditions);
 
 //!same as above but searches also a flipped solution.
 
-StarMatchList* MatchSearchRotShiftFlip(BaseStarList &L1, BaseStarList &L2, const MatchConditions &Conditions);
+std::unique_ptr<StarMatchList> MatchSearchRotShiftFlip(BaseStarList &L1, BaseStarList &L2, const MatchConditions &Conditions);
 
 //! assembles star matches.
 /*! It picks stars in L1, transforms them through Guess, and collects
 closest star in L2, and builds a match if closer than MaxDist). */
 
-StarMatchList *ListMatchCollect(const BaseStarList &L1, const BaseStarList &L2,const Gtransfo *Guess, const double MaxDist);
+std::unique_ptr<StarMatchList> ListMatchCollect(const BaseStarList &L1, const BaseStarList &L2,const Gtransfo *Guess, const double MaxDist);
 
 //! same as before except that the transfo is the identity
 
-StarMatchList *ListMatchCollect(const BaseStarList &L1, const BaseStarList &L2, const double MaxDist);
+std::unique_ptr<StarMatchList> ListMatchCollect(const BaseStarList &L1, const BaseStarList &L2, const double MaxDist);
 
 //! searches for a 2 dimensional shift using a very crude histogram method.
 
 
 
-GtransfoLin *ListMatchupShift(const BaseStarList &L1,
+std::unique_ptr<GtransfoLin> ListMatchupShift(const BaseStarList &L1,
 			      const BaseStarList &L2,
 			      const Gtransfo &Tin,
 			      double MaxShift, double BinSize = 0);
 
 
-Gtransfo* ListMatchCombinatorial(const BaseStarList &List1,
+std::unique_ptr<Gtransfo> ListMatchCombinatorial(const BaseStarList &List1,
 				 const BaseStarList &List2,
 				 const MatchConditions& Conditions=MatchConditions());
-Gtransfo* ListMatchRefine(const BaseStarList& List1,
+std::unique_ptr<Gtransfo> ListMatchRefine(const BaseStarList& List1,
 			    const BaseStarList& List2,
-			    Gtransfo* transfo, const int maxOrder=3);
+			    std::unique_ptr<Gtransfo> transfo, const int maxOrder=3);
 
 #ifdef DO_WE_NEED_THAT
 inline Gtransfo* ListMatch(const BaseStarList& List1, const BaseStarList& List2, const int maxOrder=3) {

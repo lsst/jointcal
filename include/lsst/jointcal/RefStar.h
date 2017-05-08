@@ -19,7 +19,6 @@ class RefStar : public BaseStar
 {
 private :
   unsigned int index;
-  FittedStarRef _fittedStar;
   std::vector<double> refFlux;
 
   public :
@@ -35,9 +34,6 @@ private :
         }
         stream << "] index: " << index;
     }
-
-  //!
-  void setFittedStar(FittedStar *F);
 
   //! reference flux
   double Flux(int filter) const;
@@ -62,7 +58,6 @@ class RefStarList : public StarList<RefStar> { };
 
 typedef RefStarList::const_iterator RefStarCIterator;
 typedef RefStarList::iterator RefStarIterator;
-typedef CountedRef<RefStar> RefStarRef;
 
 
 BaseStarList& Ref2Base(RefStarList &This);

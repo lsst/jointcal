@@ -35,9 +35,9 @@ SimplePolyModel::SimplePolyModel(const CcdImageList &ccdImageList,
       const CcdImage &im = **i;
       if (count < nNotFit)
 	{
-	  SimpleGtransfoMapping * id = new SimpleGtransfoMapping(GtransfoIdentity());
+      std::unique_ptr<SimpleGtransfoMapping> id(new SimpleGtransfoMapping(GtransfoIdentity()));
 	  id->SetIndex(-1); // non sense, because it has no parameters
-	  _myMap[&im] = std::unique_ptr<SimpleGtransfoMapping>(id);
+	  _myMap[&im] = std::move(id);
 	}
       else
 	// Given how AssignIndices works, only the SimplePolyMapping's
@@ -144,7 +144,7 @@ std::shared_ptr<TanSipPix2RaDec> SimplePolyModel::produceSipWcs(const CcdImage &
   // wcsPix2TP = cdStuff*sip , so
   GtransfoPoly sip = GtransfoPoly(cdStuff.invert())*wcsPix2Tp;
   Point tangentPoint( proj->TangentPoint());
-  return std::shared_ptr<TanSipPix2RaDec>(new TanSipPix2RaDec(cdStuff, tangentPoint, &sip));
+  return std::make_shared<TanSipPix2RaDec>(cdStuff, tangentPoint, &sip);
 }
 
 }} // end of namespaces

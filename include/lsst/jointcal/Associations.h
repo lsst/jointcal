@@ -35,9 +35,8 @@ public:
 
     Point _commonTangentPoint;
 public:
-    // TODO: NOTE: these only exist because those lists can't be swig'd because
-    // swig doesn't like boost::intrusive_ptr (which the lists contain).
-    // Once DM-4043 is solved, delete these.
+    // These are strictly speaking not needed anymore (after DM-4043),
+    // but keeping them seems cleaner then exposing the lists themselves.
     size_t refStarListSize()
     { return refStarList.size(); }
     size_t fittedStarListSize()

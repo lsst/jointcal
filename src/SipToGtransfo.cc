@@ -123,10 +123,9 @@ PTR(afwImg::TanWcs) gtransfoToTanWcs(const jointcal::TanSipPix2RaDec WcsTransfo,
     Point ctmp = Point(crpix_lsst[0], crpix_lsst[1]);
     // cookup a large Frame
     jointcal::Frame f(ctmp.x-10000, ctmp.y-10000, ctmp.x+10000, ctmp.y +10000);
-    jointcal::Gtransfo *r =pix2TP.InverseTransfo(1e-6, f);
+    auto r = pix2TP.InverseTransfo(1e-6, f);
     // overwrite crpix ...
     r->apply(0,0, crpix_lsst[0], crpix_lsst[1]);
-    delete r;
     // and the "linpart"
     linPart = pix2TP.LinearApproximation(Point(crpix_lsst[0], crpix_lsst[1]));
   }
@@ -148,7 +147,7 @@ PTR(afwImg::TanWcs) gtransfoToTanWcs(const jointcal::TanSipPix2RaDec WcsTransfo,
   cdMat(1,1) = linPart.Coeff(0,1,1); // CD2_2
 
   if (!WcsTransfo.Corr()) // the WCS has no distortions
-    return std::shared_ptr<afwImg::TanWcs>(new afwImg::TanWcs(crval,crpix_lsst,cdMat));
+    return std::make_shared<afwImg::TanWcs>(crval,crpix_lsst,cdMat);
 
   /* We are now given:
      - CRPIX
@@ -170,13 +169,12 @@ PTR(afwImg::TanWcs) gtransfoToTanWcs(const jointcal::TanSipPix2RaDec WcsTransfo,
 
   // coockup the inverse sip polynomials
   // last argument : precision in pixels.
-  jointcal::GtransfoPoly *tp2Pix = InversePolyTransfo(pix2TP, CcdFrame, 1e-4);
+  auto tp2Pix = InversePolyTransfo(pix2TP, CcdFrame, 1e-4);
   if (!tp2Pix)
     {
       throw LSST_EXCEPT(pex::exceptions::InvalidParameterError, "GtransfoToSip: could not invert the input wcs ");
     }
   jointcal::GtransfoPoly invSipStuff = (*tp2Pix)*linPart;
-  delete tp2Pix;
   jointcal::GtransfoPoly sipPolyInv =  (invSipStuff -id)*s2.invert();
 
   // now extract sip coefficients. First forward ones:
@@ -201,16 +199,8 @@ PTR(afwImg::TanWcs) gtransfoToTanWcs(const jointcal::TanSipPix2RaDec WcsTransfo,
 	sipBp(i,j) = sipPolyInv.Coeff(i,j,1);
       }
 
-  return std::shared_ptr<afwImg::TanWcs>(new afwImg::TanWcs(crval, crpix_lsst, cdMat, sipA, sipB, sipAp, sipBp));
+  return std::make_shared<afwImg::TanWcs>(crval, crpix_lsst, cdMat, sipA, sipB, sipAp, sipBp);
 
 }
 
 }} // end of namespaces
-
-
-
-
-
-
-
-

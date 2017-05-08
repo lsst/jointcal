@@ -41,7 +41,7 @@ void CcdImage::LoadCatalog(const lsst::afw::table::SortedCatalogT<lsst::afw::tab
     _wholeCatalog.clear();
     for (auto const &i: catalog)
     {
-        MeasuredStar *ms = new MeasuredStar();
+        auto ms = std::make_shared<MeasuredStar>();
         ms->x = i.get(xKey);
         ms->y = i.get(yKey);
         ms->vx = sq(i.get(xsKey));
@@ -62,7 +62,7 @@ void CcdImage::LoadCatalog(const lsst::afw::table::SortedCatalogT<lsst::afw::tab
         ms->eflux = i.get(efluxKey);
         ms->mag = _calib->getMagnitude(ms->flux);
         ms->setCcdImage(this);
-        _wholeCatalog.push_back(ms);
+        _wholeCatalog.push_back(std::move(ms));
     }
     _wholeCatalog.setCcdImage(this);
 }
@@ -86,7 +86,7 @@ CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceReco
     Point upperRight(bbox.getMaxX(), bbox.getMaxY());
     imageFrame = Frame(lowerLeft, upperRight);
 
-    readWcs = new jointcal::TanSipPix2RaDec(jointcal::convertTanWcs(wcs));
+    readWcs.reset(new jointcal::TanSipPix2RaDec(jointcal::convertTanWcs(wcs)));
     inverseReadWcs = readWcs->InverseTransfo(0.01, imageFrame);
 
     std::stringstream out;
@@ -140,7 +140,7 @@ void CcdImage::setCommonTangentPoint(const Point &commonTangentPoint)
     TanRaDec2Pix raDec2CTP(identity, commonTangentPoint);
     TanPix2RaDec TP2RaDec(identity, tanWcs->TangentPoint());
     TP2CTP = GtransfoCompose(&raDec2CTP, &TP2RaDec);
-    sky2TP = new TanRaDec2Pix(identity, tanWcs->TangentPoint());
+    sky2TP.reset(new TanRaDec2Pix(identity, tanWcs->TangentPoint()));
 
     // this one is needed for matches :
     pix2CommonTangentPlane = GtransfoCompose(&raDec2CTP, tanWcs);

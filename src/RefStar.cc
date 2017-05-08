@@ -12,15 +12,8 @@ namespace jointcal {
 RefStar::RefStar(const BaseStar &baseStar)
   : BaseStar(baseStar), index(0)
 {
-
-  _fittedStar = nullptr;
 }
 
-void RefStar::setFittedStar(FittedStar *fittedStar)
-{
-  _fittedStar = fittedStar;
-  if (_fittedStar) _fittedStar->setRefStar(this);
-}
 
 double RefStar::Flux(int filter) const
 {
@@ -57,4 +50,3 @@ const BaseStarList* Ref2Base(const RefStarList *This)
 }
 
 }} // end of namespaces
-

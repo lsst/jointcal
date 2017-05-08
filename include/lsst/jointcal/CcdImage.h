@@ -27,7 +27,7 @@ typedef int CcdIdType;
  * Handler of an actual image from a single CCD.
  * NOTE: could possibly be replaced with a subclass of afw.image.Exposure?
  */
-class CcdImage : public RefCount
+class CcdImage
 {
 private:
 
@@ -36,16 +36,16 @@ private:
     MeasuredStarList _wholeCatalog; // the catalog of measured objets
     MeasuredStarList _catalogForFit;
 
-    CountedRef<BaseTanWcs> readWcs; // i.e. from pix to sky
-    CountedRef<Gtransfo> inverseReadWcs; // i.e. from sky to pix
+    std::shared_ptr<BaseTanWcs> readWcs; // i.e. from pix to sky
+    std::shared_ptr<Gtransfo> inverseReadWcs; // i.e. from sky to pix
 
     // The following ones should probably be mostly removed.
-    CountedRef<Gtransfo> CTP2TP; // go from CommonTangentPlane to this tangent plane.
-    CountedRef<Gtransfo> TP2CTP; // reverse one
-    CountedRef<Gtransfo> pix2CommonTangentPlane;// pixels -> CTP
-    CountedRef<Gtransfo> pix2TP;
+    std::shared_ptr<Gtransfo> CTP2TP; // go from CommonTangentPlane to this tangent plane.
+    std::shared_ptr<Gtransfo> TP2CTP; // reverse one
+    std::shared_ptr<Gtransfo> pix2CommonTangentPlane;// pixels -> CTP
+    std::shared_ptr<Gtransfo> pix2TP;
 
-    CountedRef<Gtransfo> sky2TP;
+    std::shared_ptr<Gtransfo> sky2TP;
 
     std::string name;
     CcdIdType _ccdId;

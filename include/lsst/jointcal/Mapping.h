@@ -4,7 +4,6 @@
 
 #include <vector>
 #include "lsst/jointcal/Eigenstuff.h"
-//#include "lsst/jointcal/CountedRef.h"
 
 
 
@@ -51,7 +50,6 @@ class Mapping
 
 };
 
-// typedef std::list<CountedRef<Mapping> > MappingList;
 // typedef MappingList::iterator MappingIterator;
 // typedef MappingList::const_iterator MappingCIterator;
 

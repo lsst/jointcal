@@ -27,8 +27,6 @@ separate transfrom per CcdImage. One could chose other setups.
 /* This modeling of distortions can even accommodate images set mixing instruments */
 class SimplePolyModel : public AstrometryModel
 {
-  /* using ref counts here allows us to not write a destructor nor a copy
-     constructor. I could *not* get it to work using std::auto_ptr. */
   typedef std::map<const CcdImage*, std::unique_ptr<SimpleGtransfoMapping> > mapType;
   mapType _myMap;
   const ProjectionHandler* _sky2TP;

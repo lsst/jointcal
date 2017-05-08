@@ -35,8 +35,7 @@ template<class Star>void StarList<Star>::ExtractInFrame(StarList<Star> &Out, con
     {
       if (aFrame.InFrame(*star))
 	{
-	  Star *copy = new Star(*star);
-	  Out.push_back(copy);
+	  Out.push_back(std::make_shared<Star>(*star));
 	}
     }
 }
@@ -46,7 +45,7 @@ template<class Star>void StarList<Star>::CopyTo(StarList<Star> &Copy) const
   Copy.ClearList();
   //  Copy.GlobVal() = this->GlobVal();
   for (auto const &si: *this)
-    Copy.push_back(new Star(*si));
+    Copy.push_back(std::make_shared<Star>(*si));
 }
 
 // Explicit instantiations

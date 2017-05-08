@@ -9,7 +9,6 @@
 
 //#include "countedref.h"
 #include "lsst/jointcal/Point.h"
-#include "lsst/jointcal/CountedRef.h"
 
 namespace lsst {
 namespace jointcal {
@@ -34,22 +33,11 @@ NOT Star's. This implies
 that Stars being inserted in the std::list have to be
 obtained using 'new'.  */
 
-/* CountedRef is very similar to std::shared_ptr, but with the latter
-the following code does not work:
-StarList<BaseStar> L;
-for (auto i = L.begin(); i!= L.end(); ++i)
-  {
-    const BaseStar *s = *i;
-    ...
-  }
-and the code is stuffed with such loops.
-*/
 
-
-  template<class Star> class StarList : public std::list <CountedRef<Star> > {
+  template<class Star> class StarList : public std::list<std::shared_ptr<Star>> {
 
 public:
-  typedef CountedRef<Star> Element;
+  typedef std::shared_ptr<Star> Element;
   typedef typename std::list<Element>::const_iterator StarCIterator;
   typedef typename std::list<Element>::iterator StarIterator;
 
@@ -58,7 +46,7 @@ public:
 //! : default constructor (empty std::list).
   StarList() {};
 
-  Star *EmptyStar() const { return new Star();}
+  std::shared_ptr<Star> EmptyStar() const { return std::make_shared<Star>(); }
 
 /* destructor */
   virtual ~StarList() {};

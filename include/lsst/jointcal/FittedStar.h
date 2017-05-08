@@ -158,7 +158,6 @@ class FittedStarList : public  StarList<FittedStar>
 
 typedef FittedStarList::const_iterator FittedStarCIterator;
 typedef FittedStarList::iterator FittedStarIterator;
-typedef CountedRef<FittedStar> FittedStarRef;
 
 BaseStarList& Fitted2Base(FittedStarList &This);
 BaseStarList* Fitted2Base(FittedStarList *This);

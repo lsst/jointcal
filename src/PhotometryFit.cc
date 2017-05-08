@@ -78,7 +78,7 @@ void PhotometryFit::LSDerivatives(const CcdImage &ccdImage,
       h.setZero(); // we cannot be sure that all entries will be overwritten.
 
       double pf = _photometryModel->photomFactor(ccdImage, measuredStar);
-      const FittedStar *fs = measuredStar.GetFittedStar();
+      auto fs = measuredStar.GetFittedStar();
 
       double res = measuredStar.flux - pf * fs->flux;
 
@@ -123,21 +123,20 @@ void PhotometryFit::accumulateStat(ListType &listType, Accum &accum) const
       auto &ccdIMage = *im;
       auto &catalog = ccdIMage.getCatalogForFit();
 
-      for (auto const &i: catalog)
+      for (auto const &measuredStar: catalog)
 	{
-	  auto &measuredStar = *i;
-	  if (!measuredStar.IsValid()) continue;
+	  if (!measuredStar->IsValid()) continue;
 	  // tweak the measurement errors
-	  double sigma=measuredStar.eflux;
+	  double sigma=measuredStar->eflux;
 #ifdef FUTURE
 	  TweakPhotomMeasurementErrors(inPos, measuredStar, _posError);
 #endif
 
-	  double pf = _photometryModel->photomFactor(ccdIMage, measuredStar);
-	  const FittedStar *fs = measuredStar.GetFittedStar();
-	  double res = measuredStar.flux - pf * fs->flux;
+	  double pf = _photometryModel->photomFactor(ccdIMage, *measuredStar);
+	  auto fs = measuredStar->GetFittedStar();
+	  double res = measuredStar->flux - pf * fs->flux;
 	  double chi2Val = sqr(res/sigma);
-	  accum.AddEntry(chi2Val, 1, &measuredStar);
+	  accum.AddEntry(chi2Val, 1, measuredStar);
 	} // end loop on measurements
     }
 }
@@ -157,15 +156,14 @@ void PhotometryFit::outliersContributions(MeasuredStarList &outliers,
                                       TripletList &tList,
                                       Eigen::VectorXd &grad)
 {
-  for (auto &i: outliers)
+  for (auto &out: outliers)
     {
-      MeasuredStar &out = *i;
       MeasuredStarList tmp;
-      tmp.push_back(&out);
-      const CcdImage &ccdImage = *(out.ccdImage);
+      tmp.push_back(out);
+      const CcdImage &ccdImage = *(out->ccdImage);
       LSDerivatives(ccdImage, tList, grad, &tmp);
-      out.SetValid(false);
-      FittedStar *fs = const_cast<FittedStar *>(out.GetFittedStar());
+      out->SetValid(false);
+      auto fs = std::const_pointer_cast<FittedStar>(out->GetFittedStar());
       fs->MeasurementCount()--;
     }
 }
@@ -179,17 +177,17 @@ void PhotometryFit::outliersContributions(MeasuredStarList &outliers,
 struct Chi2Entry
 {
   double chi2;
-  MeasuredStar *measuredStar;
+  std::shared_ptr<MeasuredStar> measuredStar;
 
-  Chi2Entry(double c, MeasuredStar *s): chi2(c), measuredStar(s) {}
+  Chi2Entry(double c, std::shared_ptr<MeasuredStar> s): chi2(c), measuredStar(std::move(s)) {}
   // for sort
   bool operator < (const Chi2Entry &R) const {return (chi2<R.chi2);}
 };
 
 struct Chi2Vect : public vector<Chi2Entry>
 {
-  void AddEntry(double Chi2Val, unsigned ndof, MeasuredStar *measuredStar)
-  { push_back(Chi2Entry(Chi2Val, measuredStar));}
+  void AddEntry(double Chi2Val, unsigned ndof, std::shared_ptr<MeasuredStar> measuredStar)
+  { push_back(Chi2Entry(Chi2Val, std::move(measuredStar)));}
 
 };
 
@@ -210,7 +208,7 @@ void PhotometryFit::getMeasuredStarIndices(const MeasuredStar &measuredStar,
     }
   if (_fittingFluxes)
     {
-      const FittedStar *fs= measuredStar.GetFittedStar();
+      auto fs = measuredStar.GetFittedStar();
       unsigned fsIndex = fs->IndexInMatrix();
       indices.push_back(fsIndex);
     }
@@ -401,7 +399,7 @@ void PhotometryFit::makeResTuple(const std::string &tupleName) const
 #endif
 	  double pf = _photometryModel->photomFactor(im, ms);
 	  double jd = im.getMjd();
-	  const FittedStar *fs = ms.GetFittedStar();
+	  auto fs = ms.GetFittedStar();
 	  double res = ms.flux - pf * fs->flux;
 	  double chi2Val = sqr(res/sigma);
 	  tuple << ms.x << ' ' << ms.y << ' '

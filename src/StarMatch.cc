@@ -46,10 +46,10 @@ std::ostream& operator << (std::ostream &stream, const StarMatch &Match)
   return stream;
 }
 
-static double* chi2_array(const StarMatchList &L,const Gtransfo &T)
+static std::unique_ptr<double[]> chi2_array(const StarMatchList &L,const Gtransfo &T)
 {
   unsigned s = L.size();
-  double *res = new double[s];
+  auto res = std::unique_ptr<double[]>(new double[s]);
   unsigned count = 0;
   for (auto const &it: L)
     res[count++] = it.Chi2(T);
@@ -79,7 +79,7 @@ static double *get_dist2_array(const StarMatchList &L, const Gtransfo &T)
 {
   unsigned npair = L.size();
   if (npair == 0) return nullptr;
-  double *dist = new double [npair];
+  std::unique_ptr<double[]> dist(new double [npair]);
 
   unsigned i=0;
   for (auto smi = L.begin(); smi != L.end(); ++smi, ++i)
@@ -110,7 +110,7 @@ void StarMatchList::RefineTransfo(double NSigmas)
 {
   double cut;
   unsigned nremoved;
-  if (!transfo) transfo = new GtransfoLin;
+  if (!transfo) transfo.reset(new GtransfoLin);
   do
     {
       int nused = size();
@@ -130,16 +130,14 @@ void StarMatchList::RefineTransfo(double NSigmas)
       if (npair == 0) break; // should never happen
 
       // compute some chi2 statistics
-      double *chi2_array = new double[npair];
+      std::unique_ptr<double[]> chi2_array(new double[npair]);
       unsigned count = 0;
       for (auto &starMatch: *this)
          chi2_array[count++] = starMatch.chi2 = starMatch.Chi2(*transfo);
 
-      std::sort(chi2_array, chi2_array+npair);
+      std::sort(chi2_array.get(), chi2_array.get()+npair);
       double median =  (npair&1)? chi2_array[npair/2] :
 	(chi2_array[npair/2-1] + chi2_array[npair/2])*0.5;
-
-      delete [] chi2_array;
 
       // discard outliers : the cut is understood as a "distance" cut
       cut = sq(NSigmas)*median;
@@ -186,8 +184,8 @@ unsigned StarMatchList::RemoveAmbiguities(const Gtransfo &Transfo,
 
 void StarMatchList::SetTransfoOrder(const int Order)
 {
-  if (Order==0) SetTransfo(new GtransfoLinShift());
-  else if (Order==1) SetTransfo(new GtransfoLin());
+  if (Order==0) SetTransfo(std::make_shared<GtransfoLinShift>());
+  else if (Order==1) SetTransfo(std::make_shared<GtransfoLin>());
   else SetTransfo(GtransfoPoly(Order));
   // might consider throwing if order does not make sense (e.g. >10)
   order = Order;
@@ -197,19 +195,18 @@ void StarMatchList::SetTransfoOrder(const int Order)
 
 /* This routine should operate on a copy : RefineTransfo
    might shorten the list */
-Gtransfo* StarMatchList::InverseTransfo() /* it is not const although it tries not to change anything  */
+std::unique_ptr<Gtransfo> StarMatchList::InverseTransfo() /* it is not const although it tries not to change anything  */
 {
   if (!transfo) return nullptr;
 
-  Gtransfo *old_transfo = transfo->Clone();
+  auto old_transfo = transfo->Clone();
   double old_chi2 = chi2;
 
   Swap();
   SetTransfoOrder(order);
   RefineTransfo(3.);// keep same order
-  Gtransfo *inverted_transfo = transfo->Clone();
-  SetTransfo(old_transfo);
-  delete old_transfo;
+  auto inverted_transfo = transfo->Clone();
+  SetTransfo(old_transfo.get());
   Swap();
   chi2 = old_chi2;
 
@@ -261,7 +258,7 @@ void StarMatchList::ApplyTransfo(StarMatchList &Transformed,
       T1.TransformPosAndErrors(starMatch.point1,p1);
       FatPoint p2;
       T2.TransformPosAndErrors(starMatch.point2, p2);
-      Transformed.push_back(StarMatch(p1, p2, &*(starMatch.s1), &*(starMatch.s2)));
+      Transformed.push_back(StarMatch(p1, p2, starMatch.s1, starMatch.s2));
     }
 }
 
@@ -308,10 +305,9 @@ double ComputeDist2(const StarMatchList &S, const Gtransfo &T)
 double computeChi2(const StarMatchList &L, const Gtransfo &T)
 {
   unsigned s= L.size();
-  double *chi2s = chi2_array(L,T);
+  std::unique_ptr<double[]> chi2s(chi2_array(L,T));
   double chi2 = 0;
   for (unsigned k=0; k<s; ++k) chi2 += chi2s[k];
-  delete [] chi2s;
   return chi2;
 }
 

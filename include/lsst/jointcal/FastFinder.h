@@ -37,7 +37,8 @@ class FastFinder
   /* the sorted pointer array: It does not seem very wise to use smart
      pointers here because reference counts will uselessly jump around
      during sorting */
-  std::vector<const BaseStar*>  stars;
+  // Unfortunately we *must* use shared_ptr here because the return value of FindClosest is used to pass ownership
+  std::vector<std::shared_ptr<const BaseStar>>  stars;
   unsigned nslice; // number of (X) slices
   std::vector<unsigned> index;// index in "stars" of first object of each slice.
   double xmin,xmax, xstep; // x bounds, slice size
@@ -50,14 +51,14 @@ public :
   FastFinder(const BaseStarList &List, const unsigned NXslice = 100);
 
   //! Find the closest with some rejection capability
-  const BaseStar *FindClosest(const Point &Where, const double MaxDist,
-			      bool (*SkipIt)(const BaseStar *) = nullptr) const;
+  std::shared_ptr<const BaseStar> FindClosest(const Point &Where, const double MaxDist,
+			      bool (*SkipIt)(const BaseStar &) = nullptr) const;
 
   //!
-  const BaseStar *SecondClosest(const Point &Where,
+  std::shared_ptr<const BaseStar> SecondClosest(const Point &Where,
 				const double MaxDist,
-				const BaseStar* &Closest,
-  				bool (*SkipIt)(const BaseStar *)= nullptr) const;
+				std::shared_ptr<const BaseStar> &Closest,
+  				bool (*SkipIt)(const BaseStar &)= nullptr) const;
 
 
   //! mostly for debugging

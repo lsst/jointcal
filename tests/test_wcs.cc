@@ -85,11 +85,11 @@ BOOST_AUTO_TEST_CASE(test_polyfit)
   for (double x=10; x<2000; x+= 120)
     for (double y=20; y<4000; y+=160)
       {
-	jointcal::BaseStar *s1 = new jointcal::BaseStar(x,y,1);
+	auto s1 = std::make_shared<jointcal::BaseStar>(x,y,1);
 	s1->vx = 0.1;
 	s1->vy = 0.2;
 	s1->vxy = 0.05;
-	jointcal::BaseStar *s2 = new jointcal::BaseStar();
+	auto s2 = std::make_shared<jointcal::BaseStar>();
 	gtransfoWcs.TransformPosAndErrors(*s1, *s2);
 	bsl1.push_back(s1);
 	bsl2.push_back(s2);
