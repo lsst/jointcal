@@ -1,6 +1,7 @@
-// -*- lsst-c++ -*-
-#if !defined(LSST_JOINTCAL_JointcalControl_H)
-#define LSST_JOINTCAL_JointcalControl_H
+// -*- LSST-C++ -*-
+// -*- LSST-C++ -*-
+#ifndef LSST_JOINTCAL_JOINTCAL_CONTROL_H
+#define LSST_JOINTCAL_JOINTCAL_CONTROL_H
 
 #include <cmath>
 #include <string>
@@ -40,4 +41,4 @@ struct JointcalControl {
 }
 } // end of namespaces
 
-#endif
+#endif // LSST_JOINTCAL_JOINTCAL_CONTROL_H

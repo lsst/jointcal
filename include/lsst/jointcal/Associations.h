@@ -1,7 +1,6 @@
-// -*- C++ -*-
-//
-#ifndef ASSOCIATIONS__H
-#define ASSOCIATIONS__H
+// -*- LSST-C++ -*-
+#ifndef LSST_JOINTCAL_ASSOCIATIONS_H
+#define LSST_JOINTCAL_ASSOCIATIONS_H
 
 #include <string>
 #include <iostream>
@@ -142,7 +141,7 @@ private:
     void assignMags();
 };
 
-#endif /* ASSOCIATIONS__H */
+#endif // LSST_JOINTCAL_ASSOCIATIONS_H
 
 }
 } // end of namespaces

@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "lsst/jointcal/portable_endian.h"
 #include "lsst/jointcal/BaseStar.h"
 #include "lsst/jointcal/AstroUtils.h"
 #include "lsst/jointcal/Frame.h"

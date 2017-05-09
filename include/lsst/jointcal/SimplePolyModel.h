@@ -1,5 +1,6 @@
-#ifndef SIMPLEPOLYMODEL__H
-#define SIMPLEPOLYMODEL__H
+// -*- LSST-C++ -*-
+#ifndef LSST_JOINTCAL_SIMPLE_POLY_MODEL_H
+#define LSST_JOINTCAL_SIMPLE_POLY_MODEL_H
 
 #include "memory"
 
@@ -69,4 +70,4 @@ public :
 
 }} // end of namespaces
 
-#endif /* SIMPLEPOLYMODEL__H */
+#endif // LSST_JOINTCAL_SIMPLE_POLY_MODEL_H

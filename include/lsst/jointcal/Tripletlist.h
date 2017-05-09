@@ -1,5 +1,6 @@
-#ifndef TRIPLETLIST__H
-#define TRIPLETLIST__H
+// -*- LSST-C++ -*-
+#ifndef LSST_JOINTCAL_TRIPLETLIST_H
+#define LSST_JOINTCAL_TRIPLETLIST_H
 
 #include "Eigen/Sparse"
 
@@ -39,4 +40,4 @@ class TripletList : public std::vector<Trip>
 }} // end of namespaces
 
 
-#endif /* SPARSEALGEBRA__H */
+#endif // LSST_JOINTCAL_TRIPLETLIST_H

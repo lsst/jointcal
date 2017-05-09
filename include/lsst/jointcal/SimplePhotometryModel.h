@@ -1,5 +1,6 @@
-#ifndef SIMPLEPHOTOMMODEL__H
-#define SIMPLEPHOTOMMODEL__H
+// -*- LSST-C++ -*-
+#ifndef LSST_JOINTCAL_SIMPLE_PHOTOMETRY_MODEL_H
+#define LSST_JOINTCAL_SIMPLE_PHOTOMETRY_MODEL_H
 
 #include "lsst/jointcal/CcdImage.h"
 #include "lsst/jointcal/Eigenstuff.h"
@@ -77,4 +78,4 @@ public :
 
 }} // end of namespaces
 
-#endif /*SIMPLEPHOTOMMODEL__H */
+#endif // LSST_JOINTCAL_SIMPLE_PHOTOMETRY_MODEL_H

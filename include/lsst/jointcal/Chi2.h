@@ -1,5 +1,6 @@
-#ifndef ASTROMFITCHI2__H
-#define ASTROMFITCHI2__H
+// -*- LSST-C++ -*-
+#ifndef LSST_JOINTCAL_CHI2_H
+#define LSST_JOINTCAL_CHI2_H
 
 #include <string>
 #include <iostream>
@@ -45,4 +46,4 @@ struct Chi2
 
 
 }}
-#endif /* ASTROMFIT__H */
+#endif // LSST_JOINTCAL_CHI2_H

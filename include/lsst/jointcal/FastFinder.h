@@ -1,5 +1,6 @@
-#ifndef FASTFINDER__H
-#define FASTFINDER__H
+// -*- LSST-C++ -*-
+#ifndef LSST_JOINTCAL_FAST_FINDER_H
+#define LSST_JOINTCAL_FAST_FINDER_H
 
 #include <vector>
 #include "lsst/jointcal/BaseStar.h"
@@ -94,4 +95,4 @@ public :
 };
 
 }}
-#endif /* FASTFINDER__H */
+#endif // LSST_JOINTCAL_FAST_FINDER_H

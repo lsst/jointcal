@@ -1,11 +1,10 @@
-// -*- C++ -*-
-//
-// \file gtransfo.h
-// \brief Geometrical transformations (of 2D points)
-//
-//
-#ifndef GTRANSFO_H
-#define GTRANSFO_H
+// -*- LSST-C++ -*-
+
+/// \file gtransfo.h
+/// \brief Geometrical transformations (of 2D points)
+
+#ifndef LSST_JOINTCAL_GTRANSFO_H
+#define LSST_JOINTCAL_GTRANSFO_H
 
 #include <iostream>
 #include <string>
@@ -670,4 +669,4 @@ std::unique_ptr<Gtransfo> GtransfoRead(std::istream &s);
 
 }} // end of namespaces
 
-#endif /* GTRANSFO__H */
+#endif // LSST_JOINTCAL_GTRANSFO_H

@@ -1,5 +1,6 @@
-#ifndef HISTO4D__H
-#define HISTO4D__H
+// -*- LSST-C++ -*-
+#ifndef LSST_JOINTCAL_HISTO4D_H
+#define LSST_JOINTCAL_HISTO4D_H
 
 namespace lsst {
 namespace jointcal {
@@ -52,4 +53,4 @@ class SparseHisto4d {
 
 }} // end of namespaces
 
-#endif /* HISTO2D__H */
+#endif // LSST_JOINTCAL_HISTO4D_H

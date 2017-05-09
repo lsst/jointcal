@@ -1,6 +1,6 @@
-// -*- C++ -*-
-#ifndef REFSTAR__H
-#define REFSTAR__H
+// -*- LSST-C++ -*-
+#ifndef LSST_JOINTCAL_REF_STAR_H
+#define LSST_JOINTCAL_REF_STAR_H
 
 #include <vector>
 #include <fstream>
@@ -10,9 +10,6 @@
 
 namespace lsst {
 namespace jointcal {
-
-
-/*! \file */
 
 //! Objects used as position anchors, typically USNO stars. Coordinate system defined by user. The Common Tangent Plane seems a good idea.
 class RefStar : public BaseStar
@@ -67,4 +64,4 @@ const BaseStarList* Ref2Base(const RefStarList *This);
 
 }} // end of namespaces
 
-#endif /* REFSTAR__H */
+#endif // LSST_JOINTCAL_REF_STAR_H

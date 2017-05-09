@@ -1,5 +1,6 @@
-#ifndef TWOTRANSFOMAPPING__H
-#define TWOTRANSFOMAPPING__H
+// -*- LSST-C++ -*-
+#ifndef LSST_JOINTCAL_TWO_TRANSFO_MAPPING_H
+#define LSST_JOINTCAL_TWO_TRANSFO_MAPPING_H
 
 #include "memory"
 
@@ -80,4 +81,5 @@ class TwoTransfoMapping: public Mapping
 };
 
 }} // end of namespaces
-#endif
+
+#endif // LSST_JOINTCAL_TWO_TRANSFO_MAPPING_H

@@ -1,9 +1,6 @@
-
-// This may look like C code, but it is really -*- C++ -*-
-
-
-#ifndef BASESTAR__H
-#define BASESTAR__H
+// -*- LSST-C++ -*-
+#ifndef LSST_JOINTCAL_BASE_STAR_H
+#define LSST_JOINTCAL_BASE_STAR_H
 
 
 #include <iostream>
@@ -79,4 +76,4 @@ typedef BaseStarList::const_iterator BaseStarCIterator;
 
 }}
 
-#endif /* BASESTAR__H */
+#endif // LSST_JOINTCAL_BASE_STAR_H

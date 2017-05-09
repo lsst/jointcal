@@ -1,5 +1,6 @@
-#ifndef CONSTRAINEDPOLYMODEL__H
-#define CONSTRAINEDPOLYMODEL__H
+// -*- LSST-C++ -*-
+#ifndef LSST_JOINTCAL_CONSTRAINED_POLY_MODEL_H
+#define LSST_JOINTCAL_CONSTRAINED_POLY_MODEL_H
 
 #include "memory" // for std::*_ptr
 
@@ -92,4 +93,4 @@ public :
 
 }} // end of namespaces
 
-#endif /* CONSTRAINEDPOLYMODEL__H */
+#endif // LSST_JOINTCAL_CONSTRAINED_POLY_MODEL_H

@@ -1,6 +1,6 @@
-// This may look like C code, but it is really -*- C++ -*-
-#ifndef FRAME__H
-#define FRAME__H
+// -*- LSST-C++ -*-
+#ifndef LSST_JOINTCAL_FRAME_H
+#define LSST_JOINTCAL_FRAME_H
 
 #include <iostream>
 #include "lsst/jointcal/Point.h"
@@ -94,4 +94,4 @@ private:
 
 }} // end of namespaces
 
-#endif /* FRAME__H */
+#endif // LSST_JOINTCAL_FRAME_H

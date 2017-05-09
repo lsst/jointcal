@@ -1,6 +1,6 @@
-// This may look like C code, but it is really -*- C++ -*-
-#ifndef  STARMATCH__H
-#define  STARMATCH__H
+// -*- LSST-C++ -*-
+#ifndef  LSST_JOINTCAL_STAR_MATCH_H
+#define  LSST_JOINTCAL_STAR_MATCH_H
 
 #include <iostream>
 #include <iterator> // for std::ostream_iterator
@@ -16,20 +16,17 @@ namespace lsst {
 namespace jointcal {
 
 
-
-/*! \file
-   \brief pairs of points
-
-   Used to handles matches of star std::lists (image/image) or image/catalog
-   to fit geometrical and photometric transformations.
-   */
-
-//! a pair of stars, usually belonging to different images.
-/*! One would normally assume that
-      they are the same object of the sky. The object contains basically two 2d points (called
-      later p1 and p2), and
-      two pointers (unused by the class and its satellites), that enable in the end to trace back
-      the stars in the caller data structures. */
+/// \file
+/// \brief pairs of points
+///
+/// Used to handles matches of star std::lists (image/image) or image/catalog
+/// to fit geometrical and photometric transformations.
+/// a pair of stars, usually belonging to different images.
+/// One would normally assume that
+///   they are the same object of the sky. The object contains basically two 2d points (called
+///   later p1 and p2), and
+///   two pointers (unused by the class and its satellites), that enable in the end to trace back
+///   the stars in the caller data structures. */
 
 //! A hanger for star associations
 class StarMatch {
@@ -270,4 +267,5 @@ double ComputeDist2(const StarMatchList &S, const Gtransfo &T);
 double computeChi2(const StarMatchList &L, const Gtransfo &T);
 
 }} // end of namespaces
-#endif /* STARMATCH__H */
+
+#endif // LSST_JOINTCAL_STAR_MATCH_H

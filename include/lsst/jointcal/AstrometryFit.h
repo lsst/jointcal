@@ -1,5 +1,6 @@
-#ifndef ASTROMFIT__H
-#define ASTROMFIT__H
+// -*- LSST-C++ -*-
+#ifndef LSST_JOINTCAL_ASTROMETRY_FIT_H
+#define LSST_JOINTCAL_ASTROMETRY_FIT_H
 
 #include <string>
 #include <iostream>
@@ -228,4 +229,4 @@ private :
 
 }
 }
-#endif /* ASTROMFIT__H */
+#endif // LSST_JOINTCAL_ASTROMETRY_FIT_H

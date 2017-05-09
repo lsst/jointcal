@@ -1,5 +1,6 @@
-#ifndef PROJECTIONHANDLER__H
-#define PROJECTIONHANDLER__H
+// -*- LSST-C++ -*-
+#ifndef LSST_JOINTCAL_PROJECTION_HANDLER_H
+#define LSST_JOINTCAL_PROJECTION_HANDLER_H
 
 #include "lsst/jointcal/CcdImage.h"
 #include "lsst/jointcal/Gtransfo.h"
@@ -58,8 +59,4 @@ class OneTPPerVisitHandler : public ProjectionHandler
 
 }} // end of namespaces
 
-
-
-
-
-#endif
+#endif // LSST_JOINTCAL_PROJECTION_HANDLER_H

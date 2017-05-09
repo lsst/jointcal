@@ -1,18 +1,16 @@
-// This may look like C code, but it is really -*- C++ -*-
-#ifndef STARLIST__H
-#define STARLIST__H
+// -*- LSST-C++ -*-
+#ifndef LSST_JOINTCAL_STAR_LIST_H
+#define LSST_JOINTCAL_STAR_LIST_H
 
 #include <string>
 #include <list>
 #include <iostream>
 #include <memory>
 
-//#include "countedref.h"
 #include "lsst/jointcal/Point.h"
 
 namespace lsst {
 namespace jointcal {
-
 
 class Frame;
 
@@ -93,6 +91,6 @@ template <class Star>  std::ostream & operator <<(std::ostream &stream, const St
 
 }} // end of namespaces
 
-#endif /* STARLIST__H */
+#endif // LSST_JOINTCAL_STAR_LIST_H
 
 

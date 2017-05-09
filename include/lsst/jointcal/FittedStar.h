@@ -1,6 +1,6 @@
-// -*- C++ -*-
-#ifndef FITTEDSTAR__H
-#define FITTEDSTAR__H
+// -*- LSST-C++ -*-
+#ifndef LSST_JOINTCAL_FITTED_STAR_H
+#define LSST_JOINTCAL_FITTED_STAR_H
 
 #include <iostream>
 #include <fstream>
@@ -166,4 +166,4 @@ const BaseStarList* Fitted2Base(const FittedStarList *This);
 
 }} // end of namespaces
 
-#endif /* FITTEDSTAR__H */
+#endif // LSST_JOINTCAL_FITTED_STAR_H

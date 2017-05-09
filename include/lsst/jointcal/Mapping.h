@@ -1,11 +1,9 @@
-#ifndef MAPPING__H
-#define MAPPING__H
-
+// -*- LSST-C++ -*-
+#ifndef LSST_JOINTCAL_MAPPING_H
+#define LSST_JOINTCAL_MAPPING_H
 
 #include <vector>
 #include "lsst/jointcal/Eigenstuff.h"
-
-
 
 namespace lsst {
 namespace jointcal {
@@ -54,4 +52,4 @@ class Mapping
 // typedef MappingList::const_iterator MappingCIterator;
 
 }} // end of namespaces
-#endif /* MAPPING__H */
+#endif // LSST_JOINTCAL_MAPPING_H
