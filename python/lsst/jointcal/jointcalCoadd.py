@@ -4,7 +4,6 @@ from __future__ import division, absolute_import, print_function
 
 from lsst.pipe.tasks.makeCoaddTempExp import MakeCoaddTempExpTask
 from lsst.pipe.base import Struct
-import lsst.afw.image as afwImage
 
 
 class JointcalCoaddTask(MakeCoaddTempExpTask):
@@ -20,16 +19,16 @@ class JointcalCoaddTask(MakeCoaddTempExpTask):
         If config.doApplyUberCal, meas_mosaic calibrations will be applied to
         the returned exposure using applyMosaicResults.
         """
-        exposure = dataRef.get("calexp", immediate=True)
+        exposure = dataRef.get("calexp")
 
         if not bgSubtracted:
-            background = dataRef.get("calexpBackground", immediate=True)
+            background = dataRef.get("calexpBackground")
             mi = exposure.getMaskedImage()
             mi += background.getImage()
             del mi
         if not self.config.doApplyUberCal:
             return exposure
-        # if we are here, it means that we have to apply the improved calibrations coming from meas_jointcal
+        # if we are here, it means that we have to apply the improved calibrations coming from jointcal
         self.log.info("doApplyUberCal is set - Using jointcal updated calibrations")
         self.applyjointcalResults(dataRef, calexp=exposure)
         return exposure
@@ -48,9 +47,9 @@ class JointcalCoaddTask(MakeCoaddTempExpTask):
         updated in-place.
         """
         if calexp is None:
-            calexp = dataRef.get("calexp", immediate=True)
+            calexp = dataRef.get("calexp")
 
-        wcsCont = dataRef.get("wcs", immediate=True)
+        wcsCont = dataRef.get("wcs")
         calexp.setWcs(wcsCont.getWcs())
 
         return Struct(exposure=calexp)
