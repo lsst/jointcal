@@ -51,7 +51,6 @@ class JointcalCoaddTask(MakeCoaddTempExpTask):
             calexp = dataRef.get("calexp", immediate=True)
 
         wcsCont = dataRef.get("wcs", immediate=True)
-        wcs = afwImage.TanWcs.cast(wcsCont.getWcs())
-        calexp.setWcs(wcs)
+        calexp.setWcs(wcsCont.getWcs())
 
         return Struct(exposure=calexp)
