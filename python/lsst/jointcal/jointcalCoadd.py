@@ -30,17 +30,10 @@ class JointcalCoaddTask(MakeCoaddTempExpTask):
             return exposure
         # if we are here, it means that we have to apply the improved calibrations coming from jointcal
         self.log.info("doApplyUberCal is set - Using jointcal updated calibrations")
-        self.applyjointcalResults(dataRef, calexp=exposure)
+        self.applyJointcalResultsExposure(dataRef, calexp=exposure)
         return exposure
 
-    def applyjointcalResults(self, dataRef, calexp=None):
-        """Deprecated function to apply the results to an exposure
-        Deprecated, because the mosaic results can be applied to more than
-        one kind of target, so it's worth changing the name to be specific.
-        """
-        return self.applyjointcalResultsExposure(dataRef, calexp).exposure
-
-    def applyjointcalResultsExposure(self, dataRef, calexp=None):
+    def applyJointcalResultsExposure(self, dataRef, calexp=None):
         """Update an Exposure with the Wcs, from meas_jointcal
         (Calib and flux sacling will be also used later).
         If None, the calexp will be loaded from the dataRef.  Otherwise it is
