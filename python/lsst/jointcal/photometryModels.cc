@@ -27,6 +27,7 @@
 #include "lsst/jointcal/PhotometryModel.h"
 #include "lsst/jointcal/Point.h"
 #include "lsst/jointcal/SimplePhotometryModel.h"
+#include "lsst/jointcal/ConstrainedPhotometryModel.h"
 
 namespace py = pybind11;
 using namespace pybind11::literals;
@@ -38,13 +39,19 @@ namespace {
 void declarePhotometryModel(py::module &mod) {
     py::class_<PhotometryModel, std::shared_ptr<PhotometryModel>> cls(mod, "PhotometryModel");
 
-    cls.def("photomFactor", &SimplePhotometryModel::photomFactor, "ccdImage"_a, "where"_a = Point());
+    cls.def("photomFactor", &PhotometryModel::photomFactor, "ccdImage"_a, "where"_a=Point());
 }
 
 void declareSimplePhotometryModel(py::module &mod) {
     py::class_<SimplePhotometryModel, std::shared_ptr<SimplePhotometryModel>, PhotometryModel> cls(
             mod, "SimplePhotometryModel");
     cls.def(py::init<CcdImageList const &>(), "ccdImageList"_a);
+}
+
+void declareConstrainedPhotometryModel(py::module &mod) {
+    py::class_<ConstrainedPhotometryModel, std::shared_ptr<ConstrainedPhotometryModel>, PhotometryModel>
+        cls(mod, "ConstrainedPhotometryModel");
+    cls.def(py::init<CcdImageList const&>(), "CcdImageList"_a);
 }
 
 PYBIND11_PLUGIN(photometryModels) {
@@ -54,6 +61,7 @@ PYBIND11_PLUGIN(photometryModels) {
 
     declarePhotometryModel(mod);
     declareSimplePhotometryModel(mod);
+    declareConstrainedPhotometryModel(mod);
 
     return mod.ptr();
 }
