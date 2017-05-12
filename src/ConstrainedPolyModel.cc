@@ -43,8 +43,8 @@ ConstrainedPolyModel::ConstrainedPolyModel(const CcdImageList &ccdImageList,
   for (auto &ccdImage: ccdImageList)
     {
       const CcdImage &im = *ccdImage;
-      unsigned visit = im.getVisit();
-      unsigned chip = im.getCcdId();
+      auto visit = im.getVisit();
+      auto chip = im.getCcdId();
       auto visitp = _visitMap.find(visit);
       if (visitp == _visitMap.end())
 	{
@@ -71,8 +71,8 @@ ConstrainedPolyModel::ConstrainedPolyModel(const CcdImageList &ccdImageList,
   for (auto &ccdImage: ccdImageList)
     {
       const CcdImage &im = *ccdImage;
-      unsigned visit = im.getVisit();
-      unsigned chip = im.getCcdId();
+      auto visit = im.getVisit();
+      auto chip = im.getCcdId();
       // check that the chip_indexed part was indeed assigned
       // (i.e. the reference visit was complete)
       if (_chipMap.find(chip) == _chipMap.end())
@@ -169,7 +169,7 @@ void ConstrainedPolyModel::freezeErrorScales()
 }
 
 
-const Gtransfo& ConstrainedPolyModel::getChipTransfo(const unsigned Chip) const
+const Gtransfo& ConstrainedPolyModel::getChipTransfo(const CcdIdType Chip) const
 {
   auto chipp = _chipMap.find(Chip);
   if (chipp == _chipMap.end()) {
