@@ -122,6 +122,13 @@ class JointcalConfig(pexConfig.Config):
         allowed={"simplePoly": "One polynomial per ccd",
                  "constrainedPoly": "One polynomial per ccd, and one polynomial per visit"}
     )
+    photometryModel = pexConfig.ChoiceField(
+        doc="Type of model to fit to photometry",
+        dtype=str,
+        default="simple",
+        allowed={"simple": "One constant zeropoint per ccd and visit",
+                 "constrained": "Constrained zeropoint per ccd, and one polynomial per visit"}
+    )
     astrometryRefObjLoader = pexConfig.ConfigurableField(
         target=LoadAstrometryNetObjectsTask,
         doc="Reference object loader for astrometric fit",
@@ -418,9 +425,12 @@ class JointcalTask(pipeBase.CmdLineTask):
             model : lsst.jointcal.PhotometryModel
                 The photometric model that was fit.
         """
-
         self.log.info("=== Starting photometric fitting...")
-        model = lsst.jointcal.SimplePhotometryModel(associations.getCcdImageList())
+
+        if self.config.photometryModel == "constrained":
+            model = lsst.jointcal.ConstrainedPhotometryModel(associations.getCcdImageList())
+        elif self.config.photometryModel == "simple":
+            model = lsst.jointcal.SimplePhotometryModel(associations.getCcdImageList())
 
         fit = lsst.jointcal.PhotometryFit(associations, model)
         fit.minimize("Model")
@@ -431,7 +441,9 @@ class JointcalTask(pipeBase.CmdLineTask):
         self.log.info(str(chi2))
         fit.minimize("Model Fluxes")
         chi2 = fit.computeChi2()
-        self.log.info("Fit completed with %s", str(chi2))
+        self.log.info("Fit prepared with %s", str(chi2))
+
+        chi2 = self._iterate_fit(fit, 20, "photometry", "Model Fluxes")
 
         self.metrics['photometryFinalChi2'] = chi2.chi2
         self.metrics['photometryFinalNdof'] = chi2.ndof
@@ -485,33 +497,40 @@ class JointcalTask(pipeBase.CmdLineTask):
         chi2 = fit.computeChi2()
         self.log.info(str(chi2))
 
-        max_steps = 20
-        for i in range(max_steps):
-            r = fit.minimize("Distortions Positions", 5)  # outliers removal at 5 sigma.
-            chi2 = fit.computeChi2()
-            self.log.info(str(chi2))
-            if r == 0:
-                self.log.debug("""fit has converged - no more outliers - redo minimixation\
-                               one more time in case we have lost accuracy in rank update""")
-                # Redo minimization one more time in case we have lost accuracy in rank update
-                r = fit.minimize("Distortions Positions", 5)  # outliers removal at 5 sigma.
-                chi2 = fit.computeChi2()
-                self.log.info("Fit completed with: %s", str(chi2))
-                break
-            elif r == 2:
-                self.log.warn("minimization failed")
-            elif r == 1:
-                self.log.warn("still some ouliers but chi2 increases - retry")
-            else:
-                break
-                self.log.error("unxepected return code from minimize")
-        else:
-            self.log.error("astrometry failed to converge after %d steps", max_steps)
+        chi2 = self._iterate_fit(fit, 20, "astrometry", "Distortions Positions")
 
         self.metrics['astrometryFinalChi2'] = chi2.chi2
         self.metrics['astrometryFinalNdof'] = chi2.ndof
 
         return Astrometry(fit, model, sky_to_tan_projection)
+
+    def _iterate_fit(self, fit, max_steps, name, whatToFit):
+        """Run fit.minimize up to max_steps times, returning the final chi2."""
+
+        for i in range(max_steps):
+            r = fit.minimize(whatToFit, 5)  # outlier removal at 5 sigma.
+            chi2 = fit.computeChi2()
+            self.log.info(str(chi2))
+            if r == 0:
+                self.log.debug("fit has converged - no more outliers - redo minimixation"
+                               "one more time in case we have lost accuracy in rank update")
+                # Redo minimization one more time in case we have lost accuracy in rank update
+                r = fit.minimize(whatToFit, 5)  # outliers removal at 5 sigma.
+                chi2 = fit.computeChi2()
+                self.log.info("Fit completed with: %s", str(chi2))
+                break
+            elif r == 2:
+                self.log.warn("minimization failed")
+                break
+            elif r == 1:
+                self.log.warn("still some ouliers but chi2 increases - retry")
+            else:
+                self.log.error("unxepected return code from minimize")
+                break
+        else:
+            self.log.error("%s failed to converge after %d steps"%(name, max_steps))
+
+        return chi2
 
     def _write_results(self, associations, astrom_model, photom_model, visit_ccd_to_dataRef):
         """
