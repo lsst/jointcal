@@ -49,8 +49,9 @@ void declareAssociations(py::module &mod) {
     cls.def("addImage", &Associations::addImage);
     cls.def("selectFittedStars", &Associations::selectFittedStars);
 
-    cls.def("getCcdImageList", &Associations::getCcdImageList);
-    cls.def_property_readonly("ccdImageList", &Associations::getCcdImageList);
+    cls.def("getCcdImageList", &Associations::getCcdImageList, py::return_value_policy::reference_internal);
+    cls.def_property_readonly("ccdImageList", &Associations::getCcdImageList,
+                              py::return_value_policy::reference_internal);
 
     cls.def("getRaDecBBox", &Associations::getRaDecBBox);
     cls.def_property_readonly("raDecBBox", &Associations::getRaDecBBox);
