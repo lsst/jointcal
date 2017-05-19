@@ -48,12 +48,11 @@ ConstrainedPolyModel::ConstrainedPolyModel(const CcdImageList &ccdImageList,
       auto visitp = _visitMap.find(visit);
       if (visitp == _visitMap.end())
 	{
-	  if (_visitMap.size() == 0)
-	    {
-          _visitMap[visit] = std::unique_ptr<SimpleGtransfoMapping>(new SimpleGtransfoMapping(GtransfoLinScale()));
-	    }
-	    else _visitMap[visit] = std::unique_ptr<SimplePolyMapping>(new SimplePolyMapping(GtransfoLin(),
-                                                                                  GtransfoPoly(degree)));
+	//   if (_visitMap.size() == 0)
+	//     {
+ //          _visitMap[visit] = std::unique_ptr<SimpleGtransfoMapping>(new SimpleGtransfoMapping(GtransfoLinScale()));
+	//     }
+        _visitMap[visit] = std::unique_ptr<SimpleGtransfoMapping>(new SimpleGtransfoMapping(GtransfoLin()));
 	}
       auto chipp = _chipMap.find(chip);
       if (chipp == _chipMap.end())
@@ -117,27 +116,21 @@ unsigned ConstrainedPolyModel::assignIndices(unsigned FirstIndex, const std::str
   if ((!_fittingChips)&&(!_fittingVisits))
     {_fittingChips = _fittingVisits = true;}
   if (_fittingChips)
-    for (auto i = _chipMap.begin(); i!=_chipMap.end(); ++i)
+    for (auto &i: _chipMap)
       {
-	SimplePolyMapping *p = dynamic_cast<SimplePolyMapping *>(&*(i->second));
-	if (!p)
-	  throw LSST_EXCEPT(pexExcept::InvalidParameterError,"ERROR: in ConstrainedPolyModel, all chip \
-mappings should be SimplePolyMappings");
-	p->SetIndex(index);
-	index+= p->Npar();
+       i.second->setIndex(index);
+       index += i.second->getNpar();
       }
   if (_fittingVisits)
-    for (auto i = _visitMap.begin(); i!=_visitMap.end(); ++i)
+    for (auto &i: _visitMap)
       {
-	SimplePolyMapping *p = dynamic_cast<SimplePolyMapping *>(&*(i->second));
-	if (!p) continue; // it should be GtransfoIdentity
-	p->SetIndex(index);
-	index+= p->Npar();
+        i.second->setIndex(index);
+        index += i.second->getNpar();
       }
   // Tell the mappings which derivatives they will have to fill:
-  for (auto i = _mappings.begin(); i != _mappings.end() ; ++i)
+  for (auto &i: _mappings)
     {
-      i->second->SetWhatToFit(_fittingChips, _fittingVisits);
+      i.second->SetWhatToFit(_fittingChips, _fittingVisits);
     }
   return index;
 }
@@ -148,15 +141,15 @@ void ConstrainedPolyModel::offsetParams(const Eigen::VectorXd &Delta)
     for (auto i = _chipMap.begin(); i!=_chipMap.end(); ++i)
       {
         auto *p = (&*(i->second));
-        if (p->Npar()) // probably useless test
-	  p->OffsetParams(&Delta(p->Index()));
+        if (p->getNpar()) // probably useless test
+	  p->OffsetParams(&Delta(p->getIndex()));
       }
   if (_fittingVisits)
     for (auto i = _visitMap.begin(); i!=_visitMap.end(); ++i)
       {
         auto *p = (&*(i->second));
-        if (p->Npar()) // probably useless test
-	  p->OffsetParams(&Delta(p->Index()));
+        if (p->getNpar()) // probably useless test
+	  p->OffsetParams(&Delta(p->getIndex()));
       }
 }
 

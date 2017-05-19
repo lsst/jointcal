@@ -19,24 +19,24 @@ TwoTransfoMapping::TwoTransfoMapping(SimpleGtransfoMapping *M1,
   SetWhatToFit(true,true);
 }
 
-unsigned TwoTransfoMapping::Npar() const
+unsigned TwoTransfoMapping::getNpar() const
 {
   return _nPar1+ _nPar2;
 }
 
 
-void TwoTransfoMapping::GetMappingIndices(std::vector<unsigned> &Indices) const
+void TwoTransfoMapping::setMappingIndices(std::vector<unsigned> &indices) const
 {
-  unsigned npar = Npar();
-  if (Indices.size()<npar) Indices.resize(npar);
+  unsigned npar = getNpar();
+  if (indices.size()<npar) indices.resize(npar);
   // in case we are only fitting one of the two transfos
-  if (_nPar1) _m1->GetMappingIndices(Indices);
-  else if (_nPar2) {_m2->GetMappingIndices(Indices); return;}
+  if (_nPar1) _m1->setMappingIndices(indices);
+  else if (_nPar2) {_m2->setMappingIndices(indices); return;}
   // if we get here we are fitting both
   // there is probably a more elegant way to feed a subpart of a std::vector
   std::vector<unsigned> ind2(_nPar2);
-  _m2->GetMappingIndices(ind2);
-  for (unsigned k=0; k<_nPar2; ++k) Indices.at(k+_nPar1) = ind2.at(k);
+  _m2->setMappingIndices(ind2);
+  for (unsigned k=0; k<_nPar2; ++k) indices.at(k+_nPar1) = ind2.at(k);
 }
 
 void TwoTransfoMapping::ComputeTransformAndDerivatives(const FatPoint &Where,
@@ -76,13 +76,13 @@ void TwoTransfoMapping::SetWhatToFit(const bool FittingT1, const bool FittingT2)
 
   if (FittingT1)
     {
-      _nPar1 = _m1->Npar();
+      _nPar1 = _m1->getNpar();
       tmp->h1 = Eigen::MatrixX2d(_nPar1,2);
     }
   else _nPar1 = 0;
   if (FittingT2)
     {
-      _nPar2 = _m2->Npar();
+      _nPar2 = _m2->getNpar();
       tmp->h2 = Eigen::MatrixX2d(_nPar2,2);
     }
   else _nPar2 = 0;

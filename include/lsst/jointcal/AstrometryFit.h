@@ -68,6 +68,7 @@ private :
 
     // counts in parameter subsets.
     unsigned int _nParDistortions;
+    unsigned int _nParPositions;
     unsigned int _nParTot;
     unsigned _nMeasuredStars;
     double _posError;  // constant term on error on position (in pixel unit)
@@ -221,8 +222,7 @@ private :
 
 
     //! only for outlier removal
-    void getMeasuredStarIndices(const MeasuredStar &ms,
-                                std::vector<unsigned> &indices) const;
+    void setMeasuredStarIndices(const MeasuredStar &ms, std::vector<unsigned> &indices) const;
 
 };
 

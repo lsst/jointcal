@@ -94,7 +94,7 @@ static double *get_dist2_array(const StarMatchList &L, const Gtransfo &T)
 
 int StarMatchList::Dof(const Gtransfo* T) const
 {
-  int npar = (T)? T->Npar() : (&(*transfo)?  transfo->Npar() : 0);
+  int npar = (T)? T->getNpar() : (&(*transfo)?  transfo->getNpar() : 0);
   int dof = 2*size() - npar;
   return (dof>0) ? dof : 0;
 }
@@ -151,7 +151,7 @@ void StarMatchList::RefineTransfo(double NSigmas)
 /* not very robust : assumes that we went through Refine just before... */
 double StarMatchList::Residual() const
 {
-  int deno = (2.*size() - transfo->Npar());
+  int deno = (2.*size() - transfo->getNpar());
   return (deno>0) ? sqrt(dist2/deno) : -1; // is -1 a good idea?
 }
 
@@ -285,7 +285,7 @@ void StarMatchList::DumpTransfo(std::ostream &stream) const
 
 double FitResidual(const double Dist2, const StarMatchList &S, const Gtransfo &T)
 {
-  return sqrt(Dist2/(2.*S.size()-T.Npar()));
+  return sqrt(Dist2/(2.*S.size()-T.getNpar()));
 }
 
 

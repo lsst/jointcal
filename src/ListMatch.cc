@@ -789,7 +789,7 @@ std::unique_ptr<Gtransfo> ListMatchRefine(const BaseStarList& List1, const BaseS
       LOGLS_INFO(_log, " ListMatchRefine: order " << order << " was a better guess.");
       transfo = brightMatch->Transfo()->Clone();
     }
-    nstarmin = brightMatch->Transfo()->Npar();
+    nstarmin = brightMatch->Transfo()->getNpar();
   } while (++order <= maxOrder);
 
   return transfo;

@@ -187,14 +187,14 @@ std::unique_ptr<Gtransfo> Gtransfo::RoughInverse(const Frame &Region) const
 // not dummy : what it does is virtual because ParamRef is virtual.
 void Gtransfo::GetParams(double *Params) const
 {
-  int npar = Npar();
+  int npar = getNpar();
   for (int i=0; i<npar ; ++i) Params[i] = ParamRef(i);
 }
 
 
 void Gtransfo::OffsetParams(const double *Params)
 {
-  int npar = Npar();
+  int npar = getNpar();
   for (int i=0; i<npar ; ++i) ParamRef(i) += Params[i];
 }
 

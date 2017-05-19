@@ -245,7 +245,7 @@ void AstrometryFit::LSDerivatives1(const CcdImage &ccdImage,
     // get the Mapping
     const Mapping *mapping = _astrometryModel->getMapping(ccdImage);
     // count parameters
-    unsigned npar_mapping = (_fittingDistortions) ? mapping->Npar() : 0;
+    unsigned npar_mapping = (_fittingDistortions) ? mapping->getNpar() : 0;
     unsigned npar_pos = (_fittingPos) ? 2 : 0;
     unsigned npar_refrac = (_fittingRefrac) ? 1 : 0;
     unsigned npar_pm = (_fittingPM) ? NPAR_PM : 0;
@@ -254,7 +254,7 @@ void AstrometryFit::LSDerivatives1(const CcdImage &ccdImage,
     // any constraint to the fit, so :
     if (npar_tot == 0) return;
     vector<unsigned> indices(npar_tot, -1);
-    if (_fittingDistortions)  mapping->GetMappingIndices(indices);
+    if (_fittingDistortions) mapping->setMappingIndices(indices);
 
     // proper motion stuff
     double mjd = ccdImage.getMjd() - _JDRef;
@@ -626,13 +626,13 @@ struct Chi2Vect : public std::vector<Chi2Entry>
 //! this routine is to be used only in the framework of outlier removal
 /*! it fills the array of indices of parameters that a Measured star
     constrains. Not really all of them if you check. */
-void AstrometryFit::getMeasuredStarIndices(const MeasuredStar &ms,
-                                       std::vector<unsigned> &indices) const
+void AstrometryFit::setMeasuredStarIndices(const MeasuredStar &ms,
+                                           std::vector<unsigned> &indices) const
 {
     if (_fittingDistortions)
     {
         const Mapping *mapping = _astrometryModel->getMapping(*ms.ccdImage);
-        mapping->GetMappingIndices(indices);
+        mapping->setMappingIndices(indices);
     }
     auto fs = ms.GetFittedStar();
     unsigned fsIndex = fs->IndexInMatrix();
@@ -750,7 +750,7 @@ unsigned AstrometryFit::findOutliers(double nSigCut,
         }
         else // it is a measurement term.
         {
-            getMeasuredStarIndices(*ms, indices);
+            setMeasuredStarIndices(*ms, indices);
         }
 
         /* Find out if we already discarded a stronger outlier
@@ -838,7 +838,7 @@ void AstrometryFit::assignIndices(const std::string &whatToFit)
             if ((_fittingPM) & fs.mightMove) ipar += NPAR_PM;
         }
     }
-    unsigned _nParPositions = ipar - _nParDistortions;
+    _nParPositions = ipar - _nParDistortions;
     if (_fittingRefrac)
     {
         _refracPosInMatrix = ipar;

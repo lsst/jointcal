@@ -36,7 +36,7 @@ namespace {
 void declareMapping(py::module &mod) {
     py::class_<Mapping, std::shared_ptr<Mapping>> cls(mod, "Mapping");
 
-    cls.def("Npar", &Mapping::Npar);
+    cls.def("getNpar", &Mapping::getNpar);
 }
 
 void declareTwoTransfoMapping(py::module &mod) {

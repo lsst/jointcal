@@ -97,7 +97,7 @@ BOOST_AUTO_TEST_CASE(test_polyfit)
       }
   jointcal::GtransfoPoly pol(3);
   double chi2 = pol.fit(sml);
-  std::cout << " chi2/ndf " << chi2 << '/' << sml.size()-pol.Npar() << std::endl;
+  std::cout << " chi2/ndf " << chi2 << '/' << sml.size()-pol.getNpar() << std::endl;
   // since there is no noise, the chi2 should be very very small:
   BOOST_CHECK( fabs(chi2)<1e-8);
 }
