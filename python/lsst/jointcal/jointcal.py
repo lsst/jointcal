@@ -279,7 +279,7 @@ class JointcalTask(pipeBase.CmdLineTask):
 
         centers = [ccdImage.getBoresightRaDec() for ccdImage in associations.getCcdImageList()]
         commonTangentPoint = lsst.afw.coord.averageCoord(centers)
-        self.log.debug("Using common tangent point: ", commonTangentPoint.getPosition())
+        self.log.debug("Using common tangent point: %s", commonTangentPoint.getPosition())
         associations.setCommonTangentPoint(commonTangentPoint.getPosition())
 
         # Use external reference catalogs handled by LSST stack mechanism
