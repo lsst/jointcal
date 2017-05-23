@@ -47,13 +47,15 @@ ConstrainedPolyModel::ConstrainedPolyModel(const CcdImageList &ccdImageList,
       auto chip = im.getCcdId();
       auto visitp = _visitMap.find(visit);
       if (visitp == _visitMap.end())
-	{
-	//   if (_visitMap.size() == 0)
-	//     {
- //          _visitMap[visit] = std::unique_ptr<SimpleGtransfoMapping>(new SimpleGtransfoMapping(GtransfoLinScale()));
-	//     }
-        _visitMap[visit] = std::unique_ptr<SimpleGtransfoMapping>(new SimpleGtransfoMapping(GtransfoLin()));
-	}
+      {
+         if (_visitMap.size() == 0) {
+            _visitMap[visit] = std::unique_ptr<SimpleGtransfoMapping>(new SimpleGtransfoMapping(GtransfoIdentity()));
+        }
+        else {
+            _visitMap[visit] = std::unique_ptr<SimpleGtransfoMapping>(new SimplePolyMapping(GtransfoLin(),
+                                                                                            GtransfoPoly(degree)));
+        }
+    }
       auto chipp = _chipMap.find(chip);
       if (chipp == _chipMap.end())
 	{
@@ -210,17 +212,39 @@ std::shared_ptr<TanSipPix2RaDec> ConstrainedPolyModel::produceSipWcs(const CcdIm
     return nullptr;
   }
 
+  GtransfoPoly pix2Tp;
   const GtransfoPoly &t1=dynamic_cast<const GtransfoPoly&>(mapping->T1());
-  const GtransfoPoly &t2=dynamic_cast<const GtransfoPoly&>(mapping->T2());
-  const TanRaDec2Pix *proj=dynamic_cast<const TanRaDec2Pix*>(sky2TP(ccdImage));
-  if (!(&t1)  || !(&t2) || !proj) {
-    LOGLS_ERROR(_log, "Problem with transforms of ccd/visit "
+  if (!(&t1)) {
+    LOGLS_ERROR(_log, "Problem with transform 1 of ccd/visit "
                 << ccdImage.getCcdId() << "/" << ccdImage.getVisit()
-                << ": T1 " << t1 << ", T2 " << t2 << ", projection " << proj);
+                << ": T1 " << mapping->T1());
     return nullptr;
   }
-
-  GtransfoPoly pix2Tp = t2*t1;
+  // NOTE: we currently expect T2 to be an identity for the first visit, so we have to treat it separately.
+  // TODO: We are aware that this is a hack, but it will be fixed as part of DM-10524.
+  try {
+    const GtransfoIdentity &t2=dynamic_cast<const GtransfoIdentity&>(mapping->T2());
+    pix2Tp = t1;
+  }
+  catch (std::bad_cast) {
+    try {
+        const GtransfoPoly &t2_poly=dynamic_cast<const GtransfoPoly&>(mapping->T2());
+        pix2Tp = t1*t2_poly;
+    }
+    catch (std::bad_cast) {
+        LOGLS_ERROR(_log, "Problem with transform 2 of ccd/visit "
+                    << ccdImage.getCcdId() << "/" << ccdImage.getVisit()
+                    << ": T2 " << mapping->T2());
+        return nullptr;
+    }
+  }
+  const TanRaDec2Pix *proj=dynamic_cast<const TanRaDec2Pix*>(sky2TP(ccdImage));
+  if (!proj) {
+    LOGLS_ERROR(_log, "Problem with projection of ccd/visit "
+                << ccdImage.getCcdId() << "/" << ccdImage.getVisit()
+                << ": projection " << sky2TP(ccdImage));
+    return nullptr;
+  }
 
   const GtransfoLin &projLinPart = proj->LinPart(); // should be the identity, but who knows? So, let us incorporate it into the pix2TP part.
   GtransfoPoly wcsPix2Tp = GtransfoPoly(projLinPart.invert())*pix2Tp;
