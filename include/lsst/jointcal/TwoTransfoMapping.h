@@ -36,10 +36,9 @@ class TwoTransfoMapping: public Mapping
   TwoTransfoMapping(SimpleGtransfoMapping *ChipM,
 		   SimpleGtransfoMapping *VisitM);
   //!
-  unsigned Npar() const;
+  unsigned getNpar() const;
 
-  //!
-  void GetMappingIndices(std::vector<unsigned> &Indices) const;
+  void setMappingIndices(std::vector<unsigned> &indices) const;
 
   //!
   void ComputeTransformAndDerivatives(const FatPoint &Where,
@@ -53,7 +52,7 @@ class TwoTransfoMapping: public Mapping
   void OffsetParams(const double *Delta)
   {// this routine is not used when fitting. used for debugging
     _m1->OffsetParams(Delta);
-    _m2->OffsetParams(Delta+ _m1->Npar());
+    _m2->OffsetParams(Delta+ _m1->getNpar());
   }
 
  //! access to transfos

@@ -8,6 +8,7 @@
 
 #include <iostream>
 #include <string>
+#include <sstream>
 #include <vector>
 
 #include "lsst/pex/exceptions.h"
@@ -59,6 +60,7 @@ public:
   //! dumps the transfo coefficients to stream.
   virtual void dump(std::ostream &stream = std::cout) const = 0;
 
+  std::string __str__() { std::stringstream s; dump(s); return s.str(); }
 
   //! fits a transfo to a std::list of Point pairs (p1,p2, the Point fields in StarMatch).
   /*! After the fit this(p1) yields approximately p2.
@@ -126,7 +128,7 @@ public:
   virtual std::unique_ptr<Gtransfo> RoughInverse(const Frame &Region) const;
 
   //! returns the number of parameters (to compute chi2's)
-  virtual int Npar() const {return 0;}
+  virtual int getNpar() const {return 0;}
 
   void Write(const std::string &FileName) const;
 
@@ -171,7 +173,7 @@ public:
     void dump(std::ostream &stream = std::cout) const
          { stream << "x' = x\ny' = y"<< std::endl;}
 
-    int Npar() const {return 0;}
+    int getNpar() const {return 0;}
     std::unique_ptr<Gtransfo> Clone() const { return std::unique_ptr<Gtransfo>(new GtransfoIdentity);}
 
     void Derivative(const Point &Where, GtransfoLin &Derivative,
@@ -247,7 +249,7 @@ public :
 
 
   //! total number of parameters
-  int Npar() const { return 2*nterms;}
+  int getNpar() const { return 2*nterms;}
 
   //! print out of coefficients in a readable form.
   void dump(std::ostream &stream = std::cout) const;
@@ -407,7 +409,7 @@ public:
     GtransfoLinShift( const Point &P) : GtransfoLin(P.x, P.y, 1., 0. ,0. ,1.) {};
     double fit(const StarMatchList &List);
 
-    int Npar() const {return 2;}
+    int getNpar() const {return 2;}
 };
 
 /*=============================================================*/
@@ -422,7 +424,7 @@ public:
 		   const double ScaleFactor=1.0);
     double fit(const StarMatchList &List);
 
-    int Npar() const {return 4;}
+    int getNpar() const {return 4;}
 };
 
 
@@ -439,7 +441,7 @@ class GtransfoLinScale :  public GtransfoLin {
     GtransfoLinScale(const double ScaleX, const double ScaleY) :
 	GtransfoLin(0.0, 0.0, ScaleX, 0.,0.,ScaleY) {};
 
-    int Npar() const {return 2;}
+    int getNpar() const {return 2;}
 };
 
 

@@ -58,17 +58,17 @@ class SimpleGtransfoMapping : public Mapping
   // interface Mapping functions:
 
   //!
-  unsigned Npar() const
+  unsigned getNpar() const
   {
-    if (toFit) return transfo->Npar();
+    if (toFit) return transfo->getNpar();
     else return 0;
   }
 
   //!
-  void GetMappingIndices(std::vector<unsigned> &Indices) const
+  void setMappingIndices(std::vector<unsigned> &indices) const
   {
-    if (Indices.size() < Npar()) Indices.resize(Npar());
-    for (unsigned k=0; k<Npar(); ++k) Indices[k] = index+k;
+    if (indices.size() < getNpar()) indices.resize(getNpar());
+    for (unsigned k=0; k<getNpar(); ++k) indices[k] = index+k;
   }
 
   //!
@@ -105,10 +105,10 @@ class SimpleGtransfoMapping : public Mapping
   }
 
   //! position of the parameters within the grand fitting scheme
-  unsigned Index() const { return index;}
+  unsigned getIndex() const { return index;}
 
   //!
-  void  SetIndex(unsigned I) {index=I;}
+  void  setIndex(unsigned i) {index=i;}
 
   virtual void ComputeTransformAndDerivatives(const FatPoint &Where,
                                               FatPoint &OutPos,

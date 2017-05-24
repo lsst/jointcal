@@ -36,7 +36,7 @@ SimplePolyModel::SimplePolyModel(const CcdImageList &ccdImageList,
       if (count < nNotFit)
 	{
       std::unique_ptr<SimpleGtransfoMapping> id(new SimpleGtransfoMapping(GtransfoIdentity()));
-	  id->SetIndex(-1); // non sense, because it has no parameters
+	  id->setIndex(-1); // non sense, because it has no parameters
 	  _myMap[&im] = std::move(id);
 	}
       else
@@ -53,7 +53,7 @@ SimplePolyModel::SimplePolyModel(const CcdImageList &ccdImageList,
 	    }
 	  GtransfoPoly pol(degree);
 		if (pol.Degree() > 0) // if not, it cannot be decreased
-	    while (unsigned(pol.Npar()) > 2*nObj)
+	    while (unsigned(pol.getNpar()) > 2*nObj)
 	      pol.SetDegree(pol.Degree() - 1);
 	  /* We have to center and normalize the coordinates so that
 	     the fit matrix is not too ill-conditionned. Basically, x
@@ -98,8 +98,8 @@ unsigned SimplePolyModel::assignIndices(unsigned firstIndex, const std::string &
     {
       SimplePolyMapping *p = dynamic_cast<SimplePolyMapping *>(&*(i->second));
       if (!p) continue; // it should be GtransfoIdentity
-      p->SetIndex(index);
-      index+= p->Npar();
+      p->setIndex(index);
+      index+= p->getNpar();
     }
   return index;
 }
@@ -110,7 +110,7 @@ void SimplePolyModel::offsetParams(const Eigen::VectorXd &delta)
     {
       SimplePolyMapping *p = dynamic_cast<SimplePolyMapping *>(&*(i->second));
       if (!p) continue; // it should be GtransfoIdentity
-      p->OffsetParams(&delta(p->Index()));
+      p->OffsetParams(&delta(p->getIndex()));
     }
 }
 
@@ -121,17 +121,17 @@ void SimplePolyModel::freezeErrorScales()
 }
 
 
-const Gtransfo& SimplePolyModel::GetTransfo(const CcdImage &ccdImage) const
+const Gtransfo& SimplePolyModel::getTransfo(const CcdImage &ccdImage) const
 {
   // return GetMapping(ccdImage)->Transfo(); // cannot do that
   auto p = _myMap.find(&ccdImage);
-  if  (p==_myMap.end()) throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,"SimplePolyModel::GetTransfo, never heard of CcdImage "+ccdImage.getName());
+  if  (p==_myMap.end()) throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,"SimplePolyModel::getTransfo, never heard of CcdImage "+ccdImage.getName());
   return p->second->Transfo();
 }
 
 std::shared_ptr<TanSipPix2RaDec> SimplePolyModel::produceSipWcs(const CcdImage &ccdImage) const
 {
-  const GtransfoPoly &pix2Tp=dynamic_cast<const GtransfoPoly&>(GetTransfo(ccdImage));
+  const GtransfoPoly &pix2Tp=dynamic_cast<const GtransfoPoly&>(getTransfo(ccdImage));
   const TanRaDec2Pix *proj=dynamic_cast<const TanRaDec2Pix*>(sky2TP(ccdImage));
   if (!(&pix2Tp)  || ! proj) return nullptr;
 

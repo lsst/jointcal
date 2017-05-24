@@ -291,7 +291,7 @@ void Associations::selectFittedStars(int minMeasurements)
         else ++fi;
     }
 
-    LOGLS_INFO(_log, "Fitted stars before measurement # cut: " << fittedStarList.size());
+    LOGLS_INFO(_log, "Fitted stars after measurement # cut: " << fittedStarList.size());
 }
 
 void Associations::assignMags()

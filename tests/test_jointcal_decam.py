@@ -35,7 +35,7 @@ class JointcalTestDECAM(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Test
     def setUp(self):
         # This value was empirically determined from the first run of jointcal on
         # this data, and will likely vary from survey to survey.
-        self.absolute_error = 62e-3*u.arcsecond
+        self.dist_rms_absolute = 62.5e-3*u.arcsecond
 
         do_plot = False
 
@@ -77,7 +77,29 @@ class JointcalTestDECAM(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Test
                    'photometryFinalNdof': 1626,
                    }
 
-        self._testJointcalTask(2, relative_error, self.absolute_error, pa1, metrics=metrics)
+        self._testJointcalTask(2, relative_error, self.dist_rms_absolute, pa1, metrics=metrics)
+
+    def test_jointcalTask_2_visits_constrainedPoly(self):
+        self.config = lsst.jointcal.jointcal.JointcalConfig()
+        self.config.astrometryModel = "constrainedPoly"
+        self.config.doPhotometry = False
+        self.jointcalStatistics.do_photometry = False
+
+        # NOTE: The relative RMS limit was empirically determined from the
+        # first run of jointcal on this data. We should always do better than
+        # this in the future!
+        relative_error = 20e-3*u.arcsecond
+        pa1 = None
+        metrics = {'collectedAstrometryRefStars': 8194,
+                   'selectedAstrometryRefStars': 8194,
+                   'associatedAstrometryFittedStars': 8241,
+                   'selectedAstrometryFittedStars': 2261,
+                   'selectedAstrometryCcdImageList': 17,
+                   'astrometryFinalChi2': 5106.2,
+                   'astrometryFinalNdof': 4530,
+                   }
+
+        self._testJointcalTask(2, relative_error, self.dist_rms_absolute, pa1, metrics=metrics)
 
 
 class MemoryTester(lsst.utils.tests.MemoryTestCase):

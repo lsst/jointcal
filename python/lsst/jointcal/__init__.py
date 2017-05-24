@@ -6,6 +6,7 @@ from .astrometryModels import *
 from .ccdImage import *
 from .gtransfo import *
 from .jointcalControl import *
+from .mappings import *
 from .photometryFit import *
 from .photometryModels import *
 from .projectionHandler import *

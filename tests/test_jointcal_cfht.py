@@ -35,7 +35,7 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
         # than the single-epoch astrometry (about 0.040").
         # This value was empirically determined from the first run of jointcal on
         # this data, and will likely vary from survey to survey.
-        self.dist_rms_absolute = 48e-3*u.arcsecond
+        self.dist_rms_absolute = 48.6e-3*u.arcsecond
 
         do_plot = False
 
@@ -71,6 +71,28 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
                    'astrometryFinalNdof': 2550,
                    'photometryFinalChi2': 13363.6,
                    'photometryFinalNdof': 1089
+                   }
+
+        self._testJointcalTask(2, dist_rms_relative, self.dist_rms_absolute, pa1, metrics=metrics)
+
+    def test_jointcalTask_2_visits_constrainedPoly(self):
+        self.config = lsst.jointcal.jointcal.JointcalConfig()
+        self.config.astrometryModel = "constrainedPoly"
+        self.config.doPhotometry = False
+        self.jointcalStatistics.do_photometry = False
+
+        # NOTE: The relative RMS limit was empirically determined from the
+        # first run of jointcal on this data. We should always do better than
+        # this in the future!
+        dist_rms_relative = 12e-3*u.arcsecond
+        pa1 = None
+        metrics = {'collectedAstrometryRefStars': 825,
+                   'selectedAstrometryRefStars': 825,
+                   'associatedAstrometryFittedStars': 2269,
+                   'selectedAstrometryFittedStars': 1239,
+                   'selectedAstrometryCcdImageList': 12,
+                   'astrometryFinalChi2': 1241.6,
+                   'astrometryFinalNdof': 2640,
                    }
 
         self._testJointcalTask(2, dist_rms_relative, self.dist_rms_absolute, pa1, metrics=metrics)

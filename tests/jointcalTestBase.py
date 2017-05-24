@@ -25,7 +25,8 @@ class JointcalTestBase(object):
                    input_dir="",
                    all_visits=None,
                    other_args=None,
-                   do_plot=False):
+                   do_plot=False,
+                   log_level=None):
         """
         Call from your child classes's setUp() to get the necessary variables built.
 
@@ -45,6 +46,10 @@ class JointcalTestBase(object):
             Optional other arguments for the butler dataId.
         do_plot : bool
             Set to True for a comparison plot and some diagnostic numbers.
+        log_level : str
+            Set to the default log level you want jointcal to produce while the
+            tests are running. See the developer docs about logging for valid
+            levels: https://developer.lsst.io/coding/logging.html
         """
         self._prep_reference_loader(center, radius)
         self.jointcalStatistics = utils.JointcalStatistics(match_radius, verbose=True)
@@ -54,6 +59,7 @@ class JointcalTestBase(object):
             other_args = []
         self.other_args = other_args
         self.do_plot = do_plot
+        self.log_level = log_level
         # Signal/Noise (flux/fluxSigma) for sources to be included in the RMS cross-match.
         # 100 is a balance between good centroids and enough sources.
         self.flux_limit = 100
@@ -164,6 +170,8 @@ class JointcalTestBase(object):
         """
         visits = '^'.join(str(v) for v in self.all_visits[:nCatalogs])
         output_dir = os.path.join('.test', self.__class__.__name__, caller)
+        if self.log_level is not None:
+            self.other_args.extend(['--loglevel', 'jointcal=%s'%self.log_level])
         args = [self.input_dir, '--output', output_dir,
                 '--clobber-versions', '--clobber-config',
                 '--doraise',

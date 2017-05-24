@@ -34,7 +34,7 @@ class ConstrainedPolyModel : public AstrometryModel
 {
   typedef std::map<const CcdImage*, std::unique_ptr<TwoTransfoMapping> > mappingMapType;
   mappingMapType _mappings;
-  typedef std::map<unsigned, std::unique_ptr<SimpleGtransfoMapping> > chipMapType;
+  typedef std::map<CcdIdType, std::unique_ptr<SimpleGtransfoMapping> > chipMapType;
   chipMapType _chipMap;
   typedef std::map<VisitIdType, std::unique_ptr<SimpleGtransfoMapping> > visitMapType;
   visitMapType _visitMap;
@@ -72,7 +72,7 @@ public :
   void freezeErrorScales();
 
   //! Access to mappings
-  const Gtransfo& getChipTransfo(const unsigned Chip) const;
+  const Gtransfo& getChipTransfo(const CcdIdType Chip) const;
 
   //! Access to mappings
   const Gtransfo& getVisitTransfo(const VisitIdType &Visit) const;
