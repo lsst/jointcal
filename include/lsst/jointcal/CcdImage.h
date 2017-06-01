@@ -28,22 +28,20 @@ typedef int CcdIdType;
  * Handler of an actual image from a single CCD.
  * NOTE: could possibly be replaced with a subclass of afw.image.Exposure?
  */
-class CcdImage
-{
+class CcdImage {
 private:
+    Frame imageFrame;  // in pixels
 
-    Frame imageFrame; // in pixels
-
-    MeasuredStarList _wholeCatalog; // the catalog of measured objets
+    MeasuredStarList _wholeCatalog;  // the catalog of measured objets
     MeasuredStarList _catalogForFit;
 
-    std::shared_ptr<BaseTanWcs> readWcs; // i.e. from pix to sky
-    std::shared_ptr<Gtransfo> inverseReadWcs; // i.e. from sky to pix
+    std::shared_ptr<BaseTanWcs> readWcs;       // i.e. from pix to sky
+    std::shared_ptr<Gtransfo> inverseReadWcs;  // i.e. from sky to pix
 
     // The following ones should probably be mostly removed.
-    std::shared_ptr<Gtransfo> CTP2TP; // go from CommonTangentPlane to this tangent plane.
-    std::shared_ptr<Gtransfo> TP2CTP; // reverse one
-    std::shared_ptr<Gtransfo> pix2CommonTangentPlane;// pixels -> CTP
+    std::shared_ptr<Gtransfo> CTP2TP;                  // go from CommonTangentPlane to this tangent plane.
+    std::shared_ptr<Gtransfo> TP2CTP;                  // reverse one
+    std::shared_ptr<Gtransfo> pix2CommonTangentPlane;  // pixels -> CTP
     std::shared_ptr<Gtransfo> pix2TP;
 
     std::shared_ptr<Gtransfo> sky2TP;
@@ -53,41 +51,37 @@ private:
     VisitIdType _visit;
 
     lsst::afw::coord::IcrsCoord boresightRaDec;
-    double airMass; // airmass value.
-    double fluxCoeff; // coefficient to convert ADUs to ADUs/sec at airmass 1
-    double mjd; // modified julian date
+    double airMass;    // airmass value.
+    double fluxCoeff;  // coefficient to convert ADUs to ADUs/sec at airmass 1
+    double mjd;        // modified julian date
     PTR(lsst::afw::image::Calib) _calib;
     std::string dateObs;
     // refraction
-    double sineta, coseta, tgz, hourAngle; // eta : parallactic angle, z: zenithal angle (X = 1/cos(z))
+    double sineta, coseta, tgz, hourAngle;  // eta : parallactic angle, z: zenithal angle (X = 1/cos(z))
 
     std::string _filter;
 
-    Point  _commonTangentPoint;
+    Point _commonTangentPoint;
 
-    void LoadCatalog(const lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &Cat, const std::string &fluxField);
+    void LoadCatalog(const lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &Cat,
+                     const std::string &fluxField);
 
 public:
-
     CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &Ri,
-             const PTR(lsst::afw::image::TanWcs) wcs,
-             const PTR(lsst::afw::image::VisitInfo) visitInfo,
-             const lsst::afw::geom::Box2I &bbox,
-             const std::string &filter,
-             const PTR(lsst::afw::image::Calib) calib,
-             const int &visit,
-             const int &ccd,
-             const std::string &fluxField );
+             const PTR(lsst::afw::image::TanWcs) wcs, const PTR(lsst::afw::image::VisitInfo) visitInfo,
+             const lsst::afw::geom::Box2I &bbox, const std::string &filter,
+             const PTR(lsst::afw::image::Calib) calib, const int &visit, const int &ccd,
+             const std::string &fluxField);
 
     //! Return the name that identifies this ccdImage.
-    std::string getName() const { return name;}
+    std::string getName() const { return name; }
 
     /**
      * @brief      Gets the as-read catalog.
      *
      * @return     The whole catalog.
      */
-    const MeasuredStarList &getWholeCatalog() const { return _wholeCatalog;}
+    const MeasuredStarList &getWholeCatalog() const { return _wholeCatalog; }
 
     //@{
     /**
@@ -95,8 +89,8 @@ public:
      *
      * @return     The catalog for fitting.
      */
-    const MeasuredStarList & getCatalogForFit() const { return _catalogForFit;}
-    MeasuredStarList & getCatalogForFit()  { return _catalogForFit;}
+    const MeasuredStarList &getCatalogForFit() const { return _catalogForFit; }
+    MeasuredStarList &getCatalogForFit() { return _catalogForFit; }
     //@}
 
     /**
@@ -111,36 +105,31 @@ public:
      *
      * @return     The common tangent point of all ccdImages (decimal degrees).
      */
-    Point const& getCommonTangentPoint() const { return _commonTangentPoint; }
+    Point const &getCommonTangentPoint() const { return _commonTangentPoint; }
 
     //!
-    const Gtransfo* Pix2CommonTangentPlane() const
-    { return pix2CommonTangentPlane.get();}
+    const Gtransfo *Pix2CommonTangentPlane() const { return pix2CommonTangentPlane.get(); }
 
     //!
-    const Gtransfo* CommonTangentPlane2TP() const
-    { return CTP2TP.get();}
+    const Gtransfo *CommonTangentPlane2TP() const { return CTP2TP.get(); }
 
     //!
-    const Gtransfo* TP2CommonTangentPlane() const
-    { return TP2CTP.get();}
+    const Gtransfo *TP2CommonTangentPlane() const { return TP2CTP.get(); }
 
     //!
-    const Gtransfo* Pix2TangentPlane() const
-    { return pix2TP.get();}
+    const Gtransfo *Pix2TangentPlane() const { return pix2TP.get(); }
 
     //!
-    const Gtransfo* Sky2TP() const
-    { return sky2TP.get();}
+    const Gtransfo *Sky2TP() const { return sky2TP.get(); }
 
     //! returns ccd ID
-    int getCcdId() const { return _ccdId;}
+    int getCcdId() const { return _ccdId; }
 
     //! returns visit ID
-    VisitIdType getVisit() const { return _visit;}
+    VisitIdType getVisit() const { return _visit; }
 
     //!  Airmass
-    double getAirMass() const {return airMass;}
+    double getAirMass() const { return airMass; }
 
     //! Date Obs
     std::string getDateObs() const { return dateObs; }
@@ -148,7 +137,7 @@ public:
     //! Julian Date
     double getMjd() const { return mjd; }
 
-    //!Return the exposure's photometric calibration
+    //! Return the exposure's photometric calibration
     PTR(lsst::afw::image::Calib) getCalib() { return _calib; }
 
     /**
@@ -169,27 +158,27 @@ public:
     double TanZ() const { return tgz; }
 
     //!
-    Point RefractionVector() const {return Point(tgz*coseta, tgz*sineta);}
+    Point RefractionVector() const { return Point(tgz * coseta, tgz * sineta); }
 
-    //!conversion from ADU to ADU/sec at airmass=1
-    double FluxCoeff() const { return fluxCoeff;}
+    //! conversion from ADU to ADU/sec at airmass=1
+    double FluxCoeff() const { return fluxCoeff; }
 
     //! return the CcdImage filter name
-    std::string getFilter() const { return _filter;}
+    std::string getFilter() const { return _filter; }
 
     //! the wcs read in the header. NOT updated when fitting.
-    const Gtransfo *ReadWCS() const {return readWcs.get();}
+    const Gtransfo *ReadWCS() const { return readWcs.get(); }
 
     //! the inverse of the one above.
-    const Gtransfo *InverseReadWCS() const {return inverseReadWcs.get();}
+    const Gtransfo *InverseReadWCS() const { return inverseReadWcs.get(); }
 
     //! Frame in pixels
-    const Frame& getImageFrame() const { return imageFrame;}
+    const Frame &getImageFrame() const { return imageFrame; }
 
 private:
-    CcdImage(const CcdImage &); // forbid copies
+    CcdImage(const CcdImage &);  // forbid copies
 };
+}  // namespace jointcal
+}  // namespace lsst
 
-}} // end of namespaces
-
-#endif // LSST_JOINTCAL_CCD_IMAGE_H
+#endif  // LSST_JOINTCAL_CCD_IMAGE_H

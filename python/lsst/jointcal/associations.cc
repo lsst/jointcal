@@ -40,8 +40,8 @@ void declareAssociations(py::module &mod) {
     // NOTE: these could go away if the lists they wrap can be accessed directly.
     cls.def("refStarListSize", &Associations::refStarListSize);
     cls.def("fittedStarListSize", &Associations::fittedStarListSize);
-    cls.def("associateCatalogs", &Associations::associateCatalogs,
-            "matchCutInArcsec"_a=0, "useFittedList"_a=false, "enlargeFittedList"_a=true);
+    cls.def("associateCatalogs", &Associations::associateCatalogs, "matchCutInArcsec"_a = 0,
+            "useFittedList"_a = false, "enlargeFittedList"_a = true);
     cls.def("collectRefStars", &Associations::collectRefStars);
     cls.def("deprojectFittedStars", &Associations::deprojectFittedStars);
     cls.def("nCcdImagesValidForFit", &Associations::nCcdImagesValidForFit);
@@ -58,7 +58,8 @@ void declareAssociations(py::module &mod) {
 
     cls.def("getCommonTangentPoint", &Associations::getCommonTangentPoint);
     cls.def("setCommonTangentPoint", &Associations::setCommonTangentPoint);
-    cls.def_property("commonTangentPoint", &Associations::getCommonTangentPoint, &Associations::setCommonTangentPoint);
+    cls.def_property("commonTangentPoint", &Associations::getCommonTangentPoint,
+                     &Associations::setCommonTangentPoint);
 }
 
 PYBIND11_PLUGIN(associations) {
@@ -69,5 +70,6 @@ PYBIND11_PLUGIN(associations) {
 
     return mod.ptr();
 }
-
-}}}  // lsst::jointcal::<anonymous>
+}  // namespace
+}  // namespace jointcal
+}  // namespace lsst

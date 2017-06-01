@@ -37,8 +37,8 @@ namespace {
 void declarePhotometryFit(py::module &mod) {
     py::class_<PhotometryFit, std::shared_ptr<PhotometryFit>> cls(mod, "PhotometryFit");
 
-    cls.def(py::init<Associations &, PhotometryModel *, double>(),
-            "associations"_a, "photometryModel"_a, "fluxError"_a);
+    cls.def(py::init<Associations &, PhotometryModel *, double>(), "associations"_a, "photometryModel"_a,
+            "fluxError"_a);
 
     cls.def("minimize", &PhotometryFit::minimize, "whatToFit"_a);
     cls.def("computeChi2", &PhotometryFit::computeChi2);
@@ -55,5 +55,6 @@ PYBIND11_PLUGIN(photometryFit) {
 
     return mod.ptr();
 }
-
-}}}  // lsst::jointcal::<anonymous>
+}  // namespace
+}  // namespace jointcal
+}  // namespace lsst

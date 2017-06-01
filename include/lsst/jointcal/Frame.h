@@ -8,11 +8,9 @@
 namespace lsst {
 namespace jointcal {
 
+typedef enum { WholeSizeFrame, ClippedSizeFrame } WhichFrame;
 
-typedef enum {WholeSizeFrame, ClippedSizeFrame} WhichFrame;
-
-
-typedef enum {LargeFrame, SmallFrame} WhichTransformed;
+typedef enum { LargeFrame, SmallFrame } WhichTransformed;
 
 //! rectangle with sides parallel to axes.
 /*! when Frame's are used to define subparts of images, xMin and xMax refer
@@ -20,78 +18,79 @@ typedef enum {LargeFrame, SmallFrame} WhichTransformed;
 
 class Frame {
 public:
-  //! coordinate of boundary.
-  double xMin,xMax,yMin,yMax;
+    //! coordinate of boundary.
+    double xMin, xMax, yMin, yMax;
 
-  //! Default constructor
-  Frame();
+    //! Default constructor
+    Frame();
 
-  //! this one is dangerous: you may swap the 2 middle arguments.
-  //! Prefer next one
-  Frame(double xMin, double yMin, double xMax, double yMax);
+    //! this one is dangerous: you may swap the 2 middle arguments.
+    //! Prefer next one
+    Frame(double xMin, double yMin, double xMax, double yMax);
 
-  //! typical use: Frame(Point(xmin,ymin),Point(xmax,ymax))
-  Frame(const Point &LowerLeft, const Point &UpperRight);
+    //! typical use: Frame(Point(xmin,ymin),Point(xmax,ymax))
+    Frame(const Point &LowerLeft, const Point &UpperRight);
 
-  //! size along x axis
-  double Width() const {return xMax-xMin;}
+    //! size along x axis
+    double Width() const { return xMax - xMin; }
 
-  //! size along y axis
-  double Height() const {return yMax-yMin;}
+    //! size along y axis
+    double Height() const { return yMax - yMin; }
 
-  //! Center  of the frame
-  Point Center() const {return Point((xMax+xMin)*0.5,(yMax+yMin)*0.5);}
+    //! Center  of the frame
+    Point Center() const { return Point((xMax + xMin) * 0.5, (yMax + yMin) * 0.5); }
 
-  //! intersection of Frame's.
-  Frame operator*(const Frame &Right) const;  /* intersection : a = b n c */
+    //! intersection of Frame's.
+    Frame operator*(const Frame &Right) const; /* intersection : a = b n c */
 
-  //! intersection of Frame's
-  Frame& operator*=( const Frame &Right);     /* intersection : a = a n b */
+    //! intersection of Frame's
+    Frame &operator*=(const Frame &Right); /* intersection : a = a n b */
 
-  //! union of Frames
-  Frame operator+(const Frame &Right) const;  /* union : a = b u c */
+    //! union of Frames
+    Frame operator+(const Frame &Right) const; /* union : a = b u c */
 
-  //! union of Frames
-  Frame& operator+=( const Frame &Right);     /* intersection : a = a u b */
+    //! union of Frames
+    Frame &operator+=(const Frame &Right); /* intersection : a = a u b */
 
-  //! shrinks the frame (if MarginSize>0), enlarges it (if MarginSize<0).
-  void CutMargin(const double MarginSize);
+    //! shrinks the frame (if MarginSize>0), enlarges it (if MarginSize<0).
+    void CutMargin(const double MarginSize);
 
-  //! shrinks the frame (if MarginSize>0), enlarges it (if MarginSize<0).
-  void CutMargin(const double MarginX, const double MarginY);
+    //! shrinks the frame (if MarginSize>0), enlarges it (if MarginSize<0).
+    void CutMargin(const double MarginX, const double MarginY);
 
-  //! necessary for comparisons (!= is defined from this one implicitely)
-  bool operator ==(const Frame &Right) const;
+    //! necessary for comparisons (!= is defined from this one implicitely)
+    bool operator==(const Frame &Right) const;
 
-  //! comparison
-  bool operator !=(const Frame &Right) const {return !(*this == Right);}
+    //! comparison
+    bool operator!=(const Frame &Right) const { return !(*this == Right); }
 
-  //! rescale it. The center does not move.
-  Frame Rescale(const double Factor) const;
+    //! rescale it. The center does not move.
+    Frame Rescale(const double Factor) const;
 
-  // the area.
-  double Area() const;
+    // the area.
+    double Area() const;
 
-  //! inside?
-  bool InFrame(double x, double y) const;
+    //! inside?
+    bool InFrame(double x, double y) const;
 
-  //! same as above
-  bool InFrame(const Point &pt) const
-  {return InFrame(pt.x,pt.y);}
+    //! same as above
+    bool InFrame(const Point &pt) const { return InFrame(pt.x, pt.y); }
 
-  //! distance to closest boundary.
-  double MinDistToEdges(const Point &P) const;
+    //! distance to closest boundary.
+    double MinDistToEdges(const Point &P) const;
 
-  void dump(std::ostream & stream = std::cout) const;
+    void dump(std::ostream &stream = std::cout) const;
 
-  //! allows \verbatim std::cout << frame; \endverbatim.
-  friend std::ostream & operator<<(std::ostream &stream, const Frame &Right)
-          { Right.dump(stream); return stream;};
+    //! allows \verbatim std::cout << frame; \endverbatim.
+    friend std::ostream &operator<<(std::ostream &stream, const Frame &Right) {
+        Right.dump(stream);
+        return stream;
+    };
 
 private:
-  void order();
+    void order();
 };
+}  // namespace jointcal
+}  // namespace lsst
 
-}} // end of namespaces
-
-#endif // LSST_JOINTCAL_FRAME_H
+#endif  // LSST_JOINTCAL_FRAME_H

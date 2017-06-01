@@ -38,13 +38,13 @@ namespace {
 void declarePhotometryModel(py::module &mod) {
     py::class_<PhotometryModel, std::shared_ptr<PhotometryModel>> cls(mod, "PhotometryModel");
 
-    cls.def("photomFactor", &SimplePhotometryModel::photomFactor, "ccdImage"_a, "where"_a=Point());
+    cls.def("photomFactor", &SimplePhotometryModel::photomFactor, "ccdImage"_a, "where"_a = Point());
 }
 
 void declareSimplePhotometryModel(py::module &mod) {
-    py::class_<SimplePhotometryModel, std::shared_ptr<SimplePhotometryModel>, PhotometryModel> cls(mod,
-                                                                                       "SimplePhotometryModel");
-    cls.def(py::init<CcdImageList const&>(), "ccdImageList"_a);
+    py::class_<SimplePhotometryModel, std::shared_ptr<SimplePhotometryModel>, PhotometryModel> cls(
+            mod, "SimplePhotometryModel");
+    cls.def(py::init<CcdImageList const &>(), "ccdImageList"_a);
 }
 
 PYBIND11_PLUGIN(photometryModels) {
@@ -57,5 +57,6 @@ PYBIND11_PLUGIN(photometryModels) {
 
     return mod.ptr();
 }
-
-}}}  // lsst::jointcal::<anonymous>
+}  // namespace
+}  // namespace jointcal
+}  // namespace lsst

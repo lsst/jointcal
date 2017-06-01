@@ -38,9 +38,9 @@ void declareProjectionHandler(py::module &mod) {
 }
 
 void declareOneTPPerVisitHandler(py::module &mod) {
-    py::class_<OneTPPerVisitHandler, std::shared_ptr<OneTPPerVisitHandler>, ProjectionHandler>
-        cls(mod, "OneTPPerVisitHandler");
-    cls.def(py::init<CcdImageList const&>(), "ccdImageList"_a);
+    py::class_<OneTPPerVisitHandler, std::shared_ptr<OneTPPerVisitHandler>, ProjectionHandler> cls(
+            mod, "OneTPPerVisitHandler");
+    cls.def(py::init<CcdImageList const &>(), "ccdImageList"_a);
 }
 
 PYBIND11_PLUGIN(projectionHandler) {
@@ -52,5 +52,6 @@ PYBIND11_PLUGIN(projectionHandler) {
 
     return mod.ptr();
 }
-
-}}}  // lsst::jointcal::<anonymous>
+}  // namespace
+}  // namespace jointcal
+}  // namespace lsst

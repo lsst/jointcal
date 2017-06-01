@@ -22,14 +22,13 @@ namespace jointcal {
 struct JointcalControl {
     LSST_CONTROL_FIELD(sourceFluxField, std::string, "name of flux field in source catalog");
 
-    explicit JointcalControl(std::string const& sourceFluxField = "slot_CalibFlux") :
-        // Set sourceFluxType to the value used in the source selector.
-        sourceFluxField(sourceFluxField)
-    {
+    explicit JointcalControl(std::string const& sourceFluxField = "slot_CalibFlux")
+            :  // Set sourceFluxType to the value used in the source selector.
+              sourceFluxField(sourceFluxField) {
         validate();
     }
 
-    ~JointcalControl() {};
+    ~JointcalControl(){};
 
     void validate() const {
         if (sourceFluxField.empty()) {
@@ -37,8 +36,7 @@ struct JointcalControl {
         }
     }
 };
+}  // namespace jointcal
+}  // namespace lsst
 
-}
-} // end of namespaces
-
-#endif // LSST_JOINTCAL_JOINTCAL_CONTROL_H
+#endif  // LSST_JOINTCAL_JOINTCAL_CONTROL_H

@@ -50,13 +50,13 @@ void declareTwoTransfoMapping(py::module &mod) {
 }
 
 void declareSimpleGtransfoMapping(py::module &mod) {
-    py::class_<SimpleGtransfoMapping, std::shared_ptr<SimpleGtransfoMapping>, Mapping>
-        cls(mod, "SimpleGtransfoMapping");
+    py::class_<SimpleGtransfoMapping, std::shared_ptr<SimpleGtransfoMapping>, Mapping> cls(
+            mod, "SimpleGtransfoMapping");
 }
 
 void declareSimplePolyMapping(py::module &mod) {
-    py::class_<SimplePolyMapping, std::shared_ptr<SimplePolyMapping>, SimpleGtransfoMapping>
-        cls(mod, "SimplePolyMapping");
+    py::class_<SimplePolyMapping, std::shared_ptr<SimplePolyMapping>, SimpleGtransfoMapping> cls(
+            mod, "SimplePolyMapping");
 }
 
 PYBIND11_PLUGIN(mappings) {
@@ -71,5 +71,6 @@ PYBIND11_PLUGIN(mappings) {
 
     return mod.ptr();
 }
-
-}}}  // lsst::jointcal::<anonymous>
+}  // namespace
+}  // namespace jointcal
+}  // namespace lsst

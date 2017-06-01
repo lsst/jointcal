@@ -47,7 +47,8 @@ void declareCcdImage(py::module &mod) {
     cls.def_property_readonly("ccdId", &CcdImage::getCcdId);
 
     cls.def("getImageFrame", &CcdImage::getImageFrame, py::return_value_policy::reference_internal);
-    cls.def_property_readonly("imageFrame", &CcdImage::getImageFrame, py::return_value_policy::reference_internal);
+    cls.def_property_readonly("imageFrame", &CcdImage::getImageFrame,
+                              py::return_value_policy::reference_internal);
 
     cls.def("getVisit", &CcdImage::getVisit);
     cls.def_property_readonly("visit", &CcdImage::getVisit);
@@ -57,7 +58,6 @@ void declareCcdImage(py::module &mod) {
     cls.def("setCommonTangentPoint", &CcdImage::setCommonTangentPoint);
     cls.def_property("commonTangentPoint", &CcdImage::getCommonTangentPoint, &CcdImage::setCommonTangentPoint,
                      py::return_value_policy::reference_internal);
-
 }
 
 PYBIND11_PLUGIN(ccdImage) {
@@ -67,5 +67,6 @@ PYBIND11_PLUGIN(ccdImage) {
 
     return mod.ptr();
 }
-
-}}}  // lsst::jointcal::<anonymous>
+}  // namespace
+}  // namespace jointcal
+}  // namespace lsst

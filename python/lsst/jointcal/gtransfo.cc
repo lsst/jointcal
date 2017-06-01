@@ -96,9 +96,10 @@ PYBIND11_PLUGIN(gtransfo) {
     declareTanSipPix2RaDec(mod);
 
     // utility functions
-    mod.def("gtransfoToTanWcs", &gtransfoToTanWcs, py::return_value_policy::move); // from SipToGtransfo.h
+    mod.def("gtransfoToTanWcs", &gtransfoToTanWcs, py::return_value_policy::move);  // from SipToGtransfo.h
 
     return mod.ptr();
 }
-
-}}}  // lsst::jointcal::<anonymous>
+}  // namespace
+}  // namespace jointcal
+}  // namespace lsst

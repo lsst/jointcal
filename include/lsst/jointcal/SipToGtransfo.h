@@ -10,17 +10,16 @@ namespace jointcal = lsst::jointcal;
 namespace lsst {
 namespace jointcal {
 
-  class Frame;
+class Frame;
 
-  //! Transform an afw TanWcs into a Gtransfo
-TanSipPix2RaDec convertTanWcs(const std::shared_ptr<lsst::afw::image::TanWcs>  wcs);
+//! Transform an afw TanWcs into a Gtransfo
+TanSipPix2RaDec convertTanWcs(const std::shared_ptr<lsst::afw::image::TanWcs> wcs);
 
 //! Transform the other way around
- PTR(lsst::afw::image::TanWcs)
-   gtransfoToTanWcs(const lsst::jointcal::TanSipPix2RaDec WcsTransfo,
-		    const lsst::jointcal::Frame &CcdFrame,
-		    const bool NoLowOrderSipTerms=false);
+PTR(lsst::afw::image::TanWcs)
+gtransfoToTanWcs(const lsst::jointcal::TanSipPix2RaDec WcsTransfo, const lsst::jointcal::Frame &CcdFrame,
+                 const bool NoLowOrderSipTerms = false);
+}  // namespace jointcal
+}  // namespace lsst
 
-}} // end of namespaces
-
-#endif // LSST_JOINTCAL_SIP_TO_GTRANSFO_H
+#endif  // LSST_JOINTCAL_SIP_TO_GTRANSFO_H

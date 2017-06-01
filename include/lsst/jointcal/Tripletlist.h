@@ -9,35 +9,26 @@
 namespace lsst {
 namespace jointcal {
 
-
 typedef Eigen::Triplet<double> Trip;
 
 // at the moment this class implements the eigen format.
 // it would be wise to implement it differently if talking to cholmod
-class TripletList : public std::vector<Trip>
-{
-  unsigned nextFreeIndex;
- public :
-  TripletList(int Count) {nextFreeIndex = 0; reserve(Count);};
+class TripletList : public std::vector<Trip> {
+    unsigned nextFreeIndex;
 
-  void AddTriplet(const unsigned i, const unsigned j, double val)
-  {
-    push_back(Trip(i,j,val));
-  }
+public:
+    TripletList(int Count) {
+        nextFreeIndex = 0;
+        reserve(Count);
+    };
 
-  unsigned NextFreeIndex() const
-  {
-    return nextFreeIndex;
-  }
+    void AddTriplet(const unsigned i, const unsigned j, double val) { push_back(Trip(i, j, val)); }
 
-  void SetNextFreeIndex(unsigned Index)
-  {
-    nextFreeIndex = Index;
-  }
+    unsigned NextFreeIndex() const { return nextFreeIndex; }
 
+    void SetNextFreeIndex(unsigned Index) { nextFreeIndex = Index; }
 };
+}  // namespace jointcal
+}  // namespace lsst
 
-}} // end of namespaces
-
-
-#endif // LSST_JOINTCAL_TRIPLETLIST_H
+#endif  // LSST_JOINTCAL_TRIPLETLIST_H

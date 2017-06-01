@@ -31,9 +31,7 @@ namespace lsst {
 namespace jointcal {
 namespace {
 
-void declareFrame(py::module &mod) {
-    py::class_<Frame, std::shared_ptr<Frame>> cls(mod, "Frame");
-}
+void declareFrame(py::module &mod) { py::class_<Frame, std::shared_ptr<Frame>> cls(mod, "Frame"); }
 
 PYBIND11_PLUGIN(frame) {
     py::module mod("frame");
@@ -42,5 +40,6 @@ PYBIND11_PLUGIN(frame) {
 
     return mod.ptr();
 }
-
-}}}  // lsst::jointcal::<anonymous>
+}  // namespace
+}  // namespace jointcal
+}  // namespace lsst

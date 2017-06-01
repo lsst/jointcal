@@ -5,4 +5,4 @@
 #include "Eigen/Core"
 typedef Eigen::Matrix<double, Eigen::Dynamic, 2> MatrixX2d;
 
-#endif // LSST_JOINTCAL_EIGENSTUFF_H
+#endif  // LSST_JOINTCAL_EIGENSTUFF_H
