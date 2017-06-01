@@ -12,6 +12,7 @@ scripts.BasicSConscript.pybind11(
      'mappings',
      'photometryFit',
      'photometryModels',
+     'photometryTransfo',
      'projectionHandler',
      'star'
     ],
