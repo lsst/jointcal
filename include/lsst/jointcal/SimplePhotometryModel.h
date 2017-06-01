@@ -2,11 +2,13 @@
 #ifndef LSST_JOINTCAL_SIMPLE_PHOTOMETRY_MODEL_H
 #define LSST_JOINTCAL_SIMPLE_PHOTOMETRY_MODEL_H
 
+#include <map>
+
 #include "lsst/jointcal/CcdImage.h"
 #include "lsst/jointcal/Eigenstuff.h"
+#include "lsst/jointcal/PhotometryMapping.h"
 #include "lsst/jointcal/PhotometryModel.h"
 #include "lsst/jointcal/Point.h"
-#include <map>
 
 namespace lsst {
 namespace jointcal {
@@ -17,21 +19,8 @@ class Point;
 //! Photometric response model which has a single photometric factor per CcdImage.
 /*! It considers a full exposure as reference. */
 class SimplePhotometryModel : public PhotometryModel {
-    struct PhotomStuff {
-        unsigned index;
-        double factor;
-        bool fixed;
-        PhotomStuff(const unsigned i = 0, const double f = 1) : index(i), factor(f), fixed(false){};
-    };
-
-    typedef std::map<const CcdImage *, PhotomStuff> mapType;
-    mapType _myMap;
-
-    PhotomStuff &find(const CcdImage &ccdImage);
-    const PhotomStuff &find(const CcdImage &ccdImage) const;
-
 public:
-    SimplePhotometryModel(const CcdImageList &ccdImageList);
+    SimplePhotometryModel(CcdImageList const &ccdImageList);
 
     /**
      * Assign indices to parameters involved in mappings, starting at firstIndex.
@@ -41,7 +30,7 @@ public:
      *
      * @return     The highest assigned index.
      */
-    unsigned assignIndices(const std::string &whatToFit, unsigned firstIndex);
+    unsigned assignIndices(std::string const &whatToFit, unsigned firstIndex);
 
     /**
      * Offset the parameters by the provided amounts.
@@ -50,7 +39,10 @@ public:
      *
      * @param[in]  delta  vector of offsets to apply
      */
-    void offsetParams(const Eigen::VectorXd &delta);
+    void offsetParams(Eigen::VectorXd const &delta);
+
+    /// Gets the transform associated with ccdImage.
+    const PhotometryTransfo &getTransfo(CcdImage const &ccdImage) const;
 
     /**
      * Return the "photometric factor" for this ccdImage.
@@ -62,11 +54,26 @@ public:
      *
      * @return     The photometric factor at the given location on ccdImage.
      */
-    double photomFactor(const CcdImage &ccdImage, const Point &where = Point()) const;
+    double photomFactor(CcdImage const &ccdImage, const Point &where = Point()) const;
 
-    void getIndicesAndDerivatives(const MeasuredStar &measuredStar, const CcdImage &ccdImage,
+    void getIndicesAndDerivatives(MeasuredStar const &measuredStar, CcdImage const &ccdImage,
                                   std::vector<unsigned> &indices, Eigen::VectorXd &D);
+
+private:
+    // struct PhotomStuff {
+    //     unsigned index;
+    //     double factor;
+    //     bool fixed;
+    //     PhotomStuff(const unsigned i = 0, const double f = 1) : index(i), factor(f), fixed(false){};
+    // };
+
+    typedef std::map<const CcdImage *, std::unique_ptr<PhotometryMapping> > mapType;
+    mapType _myMap;
+
+    /// Return the mapping associated with this ccdImage. name is a descriptor for error messages.
+    PhotometryMapping *findMapping(CcdImage const &ccdImage, std::string name) const;
 };
+
 }  // namespace jointcal
 }  // namespace lsst
 

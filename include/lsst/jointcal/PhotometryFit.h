@@ -49,10 +49,15 @@ public:
      *                        finely which subsets of the photometric model are
      *                        being fitted, if the the actual PhotometryModel
      *                        implements such a possibility.
+     * @param[in]  nSigmaCut  How many sigma to reject outliers at. Outlier
+     *                        rejection ignored for nSigmaCut=0.
      *
-     * @return     false if factorization failed, true otherwise.
+     * @return     Return code describing success of fit, can take 3 values:
+     *             0 : fit has converged - no more outliers
+     *             1 : still some ouliers but chi2 increased
+     *             2 : factorization failed
      */
-    bool minimize(const std::string &whatToFit);
+    int minimize(const std::string &whatToFit, double nSigmaCut = 0);
 
     //! Derivatives of the Chi2
     void LSDerivatives(TripletList &tripletList, Eigen::VectorXd &rhs) const;

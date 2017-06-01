@@ -813,14 +813,14 @@ static void write_vect_in_fits(const Eigen::VectorXd &vectorXd, const string &fi
 
 #endif
 
-unsigned AstrometryFit::minimize(const std::string &whatToFit, const double nSigRejCut) {
+int AstrometryFit::minimize(const std::string &whatToFit, const double nSigRejCut) {
     assignIndices(whatToFit);
 
     // return code can take 3 values :
     // 0 : fit has converged - no more outliers
     // 1 : still some ouliers but chi2 increases
     // 2 : factorization failed
-    unsigned returnCode = 0;
+    int returnCode = 0;
 
     // TODO : write a guesser for the number of triplets
     unsigned nTrip = (_LastNTrip) ? _LastNTrip : 1e6;

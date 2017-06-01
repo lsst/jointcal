@@ -107,7 +107,7 @@ public:
      *             1 : still some ouliers but chi2 increased
      *             2 : factorization failed
      */
-    unsigned minimize(const std::string &whatToFit, const double nSigRejCut = 0);
+    int minimize(const std::string &whatToFit, const double nSigRejCut = 0);
 
     //! Compute derivatives of measurement terms for this CcdImage
     void LSDerivatives1(const CcdImage &ccdImage, TripletList &tList, Eigen::VectorXd &rhs,

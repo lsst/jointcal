@@ -12,29 +12,39 @@ namespace lsst {
 namespace jointcal {
 
 class ConstrainedPhotometryModel : public PhotometryModel {
-
 public:
-    ConstrainedPhotometryModel(const CcdImageList &ccdImageList);
+    ConstrainedPhotometryModel(CcdImageList const &ccdImageList) {
+        for (auto &ccdImage : ccdImageList) {
+            _myMap[ccdImage] =
+                    std::unique_ptr<PhotometryMapping>(new PhotometryMapping(ConstantPhotometryTransfo()));
+        }
+    }
 
-    unsigned assignIndices(const std::string &whatToFit, unsigned firstIndex);
+    unsigned assignIndices(std::string const &whatToFit, unsigned firstIndex) { return 0; }
 
-    void offsetParams(const Eigen::VectorXd &delta);
+    void offsetParams(Eigen::VectorXd const &delta) {
+        for (auto &i : _myMap) {
+            i.second->offsetParams(&delta(i.second->getIndex()));
+        }
+    }
 
-    double photomFactor(const CcdImage& ccdImage, const Point &where) const;
+    double photomFactor(CcdImage const &ccdImage, const Point &where) const { return 0; }
 
-    void getIndicesAndDerivatives(const MeasuredStar &measuredStar,
-                                  const CcdImage &ccdImage,
-                                  std::vector<unsigned> &indices,
-                                  Eigen::VectorXd &D);
+    void getIndicesAndDerivatives(MeasuredStar const &measuredStar, CcdImage const &ccdImage,
+                                  std::vector<unsigned> &indices, Eigen::VectorXd &D) {
+        indices.reserve(_myMap.size());
+    }
 
 private:
     typedef std::map<std::shared_ptr<CcdImage>, std::unique_ptr<PhotometryMapping>> mapType;
+    mapType _myMap;
     // typedef std::map<VisitIdType, std::unique_ptr<ConstrainedPhotometryMapping>> VisitMapType;
     // VisitMapType _visitMap;
     // typedef std::map<CcdIdType, std::unique_ptr<ConstrainedPhotometryMapping>> ChipMapType;
     // ChipMapType _chipMap;
 };
 
-}} // namespaces
+}  // namespace jointcal
+}  // namespace lsst
 
-#endif // LSST_JOINTCAL_CONSTRAINED_PHOTOMETRY_MODEL_H
+#endif  // LSST_JOINTCAL_CONSTRAINED_PHOTOMETRY_MODEL_H

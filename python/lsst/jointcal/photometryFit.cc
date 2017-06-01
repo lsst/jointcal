@@ -39,7 +39,7 @@ void declarePhotometryFit(py::module &mod) {
 
     cls.def(py::init<Associations &, PhotometryModel *>(), "associations"_a, "photometryModel"_a);
 
-    cls.def("minimize", &PhotometryFit::minimize, "whatToFit"_a);
+    cls.def("minimize", &PhotometryFit::minimize, "whatToFit"_a, "nSigmaCut"_a = 0);
     cls.def("computeChi2", &PhotometryFit::computeChi2);
     cls.def("makeResTuple", &PhotometryFit::makeResTuple);
 }

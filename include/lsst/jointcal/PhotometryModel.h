@@ -24,7 +24,7 @@ public:
      *
      * @return     The highest assigned index.
      */
-    virtual unsigned assignIndices(const std::string &whatToFit, unsigned firstIndex) = 0;
+    virtual unsigned assignIndices(std::string const &whatToFit, unsigned firstIndex) = 0;
 
     /**
      * Offset the parameters by the provided amounts.
@@ -33,7 +33,7 @@ public:
      *
      * @param[in]  delta  vector of offsets to apply
      */
-    virtual void offsetParams(const Eigen::VectorXd &delta) = 0;
+    virtual void offsetParams(Eigen::VectorXd const &delta) = 0;
 
     /**
      * Return the "photometric factor" at a given location on a ccdImage.
@@ -45,10 +45,10 @@ public:
      *
      * @return     The photometric factor at the given location on ccdImage.
      */
-    virtual double photomFactor(const CcdImage &ccdImage, const Point &where) const = 0;
+    virtual double photomFactor(CcdImage const &ccdImage, const Point &where) const = 0;
 
     //! number of parameters to be read in indices.size()
-    virtual void getIndicesAndDerivatives(const MeasuredStar &measuredStar, const CcdImage &ccdImage,
+    virtual void getIndicesAndDerivatives(MeasuredStar const &measuredStar, CcdImage const &ccdImage,
                                           std::vector<unsigned> &indices, Eigen::VectorXd &D) = 0;
 
     virtual ~PhotometryModel(){};

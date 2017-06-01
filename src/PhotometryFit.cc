@@ -26,9 +26,7 @@ namespace lsst {
 namespace jointcal {
 
 PhotometryFit::PhotometryFit(Associations &associations, PhotometryModel *photometryModel)
-        : _associations(associations),
-          _photometryModel(photometryModel),
-          _lastNTrip(0) {
+        : _associations(associations), _photometryModel(photometryModel), _lastNTrip(0) {
     // The various _npar... are initialized in assignIndices.
     // Although there is no reason to adress them before one might be tempted by
     // evaluating a Chi2 rightaway, .. which uses these counts, so:
@@ -284,8 +282,14 @@ void PhotometryFit::offsetParams(const Eigen::VectorXd &delta) {
     }
 }
 
-bool PhotometryFit::minimize(const std::string &whatToFit) {
+int PhotometryFit::minimize(const std::string &whatToFit, double nSigmaCut) {
     assignIndices(whatToFit);
+
+    // return code can take 3 values :
+    // 0 : fit has converged - no more outliers
+    // 1 : still some ouliers but chi2 increases
+    // 2 : factorization failed
+    int returnCode = 0;
 
     // TODO : write a guesser for the number of triplets
     unsigned nTrip = (_lastNTrip) ? _lastNTrip : 1e6;
@@ -313,13 +317,13 @@ bool PhotometryFit::minimize(const std::string &whatToFit) {
     Eigen::SimplicialLDLT<SpMat> chol(hessian);
     if (chol.info() != Eigen::Success) {
         LOGLS_ERROR(_log, "minimize: factorization failed ");
-        return false;
+        return 1;
     }
 
     Eigen::VectorXd delta = chol.solve(grad);
 
     offsetParams(delta);
-    return true;
+    return returnCode;
 }
 
 void PhotometryFit::makeResTuple(const std::string &tupleName) const {

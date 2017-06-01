@@ -38,12 +38,14 @@ void declarePhotometryTransfo(py::module &mod) {
 }
 
 void declareConstantPhotometryTransfo(py::module &mod) {
-    py::class_<ConstantPhotometryTransfo, std::shared_ptr<ConstantPhotometryTransfo>, PhotometryTransfo>
-        cls(mod, "ConstantPhotometryTransfo");
+    py::class_<ConstantPhotometryTransfo, std::shared_ptr<ConstantPhotometryTransfo>, PhotometryTransfo> cls(
+            mod, "ConstantPhotometryTransfo");
+
+    cls.def(py::init<double>(), "value"_a = 1);
 }
 
-PYBIND11_PLUGIN(PhotometryTransfo) {
-    py::module mod("PhotometryTransfo");
+PYBIND11_PLUGIN(photometryTransfo) {
+    py::module mod("photometryTransfo");
 
     declarePhotometryTransfo(mod);
     declareConstantPhotometryTransfo(mod);
@@ -51,4 +53,6 @@ PYBIND11_PLUGIN(PhotometryTransfo) {
     return mod.ptr();
 }
 
-}}}  // lsst::jointcal::<anonymous>
+}  // namespace
+}  // namespace jointcal
+}  // namespace lsst
