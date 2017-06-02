@@ -16,66 +16,58 @@ class Point;
 
 //! Photometric response model which has a single photometric factor per CcdImage.
 /*! It considers a full exposure as reference. */
- class SimplePhotometryModel : public PhotometryModel
-{
+class SimplePhotometryModel : public PhotometryModel {
+    struct PhotomStuff {
+        unsigned index;
+        double factor;
+        bool fixed;
+        PhotomStuff(const unsigned i = 0, const double f = 1) : index(i), factor(f), fixed(false){};
+    };
 
-  struct PhotomStuff
-  {
-    unsigned index;
-    double factor;
-    bool fixed;
-    PhotomStuff(const unsigned i=0, const double f=1) : index(i), factor(f), fixed(false) {};
-  };
+    typedef std::map<const CcdImage *, PhotomStuff> mapType;
+    mapType _myMap;
 
-  typedef std::map<const CcdImage*,PhotomStuff> mapType;
-  mapType _myMap;
+    PhotomStuff &find(const CcdImage &ccdImage);
+    const PhotomStuff &find(const CcdImage &ccdImage) const;
 
-  PhotomStuff& find(const CcdImage &ccdImage);
-  const PhotomStuff& find(const CcdImage &ccdImage) const;
+public:
+    SimplePhotometryModel(const CcdImageList &ccdImageList);
 
-public :
+    /**
+     * Assign indices to parameters involved in mappings, starting at firstIndex.
+     *
+     * @param[in]  whatToFit   Ignored.
+     * @param[in]  firstIndex  Index to start assigning at.
+     *
+     * @return     The highest assigned index.
+     */
+    unsigned assignIndices(const std::string &whatToFit, unsigned firstIndex);
 
-  SimplePhotometryModel(const CcdImageList &ccdImageList);
+    /**
+     * Offset the parameters by the provided amounts.
+     *
+     * The shifts are applied according to the indices given in AssignIndices.a
+     *
+     * @param[in]  delta  vector of offsets to apply
+     */
+    void offsetParams(const Eigen::VectorXd &delta);
 
-  /**
-   * Assign indices to parameters involved in mappings, starting at firstIndex.
-   *
-   * @param[in]  whatToFit   Ignored.
-   * @param[in]  firstIndex  Index to start assigning at.
-   *
-   * @return     The highest assigned index.
-   */
-  unsigned assignIndices(const std::string &whatToFit, unsigned firstIndex);
+    /**
+     * Return the "photometric factor" for this ccdImage.
+     *
+     * Multiply this by a Calib's flux/magnitude zero-point to get the updated fluxMag0.
+     *
+     * @param[in]  ccdImage  The ccdImage to get the photometric factor for.
+     * @param[in]  where     Ignored
+     *
+     * @return     The photometric factor at the given location on ccdImage.
+     */
+    double photomFactor(const CcdImage &ccdImage, const Point &where = Point()) const;
 
-  /**
-   * Offset the parameters by the provided amounts.
-   *
-   * The shifts are applied according to the indices given in AssignIndices.a
-   *
-   * @param[in]  delta  vector of offsets to apply
-   */
-  void offsetParams(const Eigen::VectorXd &delta);
-
-  /**
-   * Return the "photometric factor" for this ccdImage.
-   *
-   * Multiply this by a Calib's flux/magnitude zero-point to get the updated fluxMag0.
-   *
-   * @param[in]  ccdImage  The ccdImage to get the photometric factor for.
-   * @param[in]  where     Ignored
-   *
-   * @return     The photometric factor at the given location on ccdImage.
-   */
-  double photomFactor(const CcdImage& ccdImage, const Point &where=Point()) const;
-
-  void getIndicesAndDerivatives(const MeasuredStar &measuredStar,
-                                const CcdImage &ccdImage,
-                                std::vector<unsigned> &indices,
-                                Eigen::VectorXd &D);
-
+    void getIndicesAndDerivatives(const MeasuredStar &measuredStar, const CcdImage &ccdImage,
+                                  std::vector<unsigned> &indices, Eigen::VectorXd &D);
 };
+}  // namespace jointcal
+}  // namespace lsst
 
-
-}} // end of namespaces
-
-#endif // LSST_JOINTCAL_SIMPLE_PHOTOMETRY_MODEL_H
+#endif  // LSST_JOINTCAL_SIMPLE_PHOTOMETRY_MODEL_H

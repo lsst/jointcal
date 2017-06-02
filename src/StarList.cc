@@ -14,45 +14,44 @@ namespace pexExcept = lsst::pex::exceptions;
 namespace lsst {
 namespace jointcal {
 
-
-template<class Star>void StarList<Star>::FluxSort()
-{
-  typedef StarList<Star>::Element E;
-  this->sort([] (const E &E1, const E &E2) {return (E1->flux > E2->flux);});
+template <class Star>
+void StarList<Star>::FluxSort() {
+    typedef StarList<Star>::Element E;
+    this->sort([](const E &E1, const E &E2) { return (E1->flux > E2->flux); });
 }
 
-template<class Star>void StarList<Star>::CutTail(const int NKeep)
-{
-  int count = 0;
-  auto si = this->begin();
-  for (  ; si != this->end() && count < NKeep; ++count, ++si);
-  while (si != this->end() ) {si = this->erase(si);}
-}
-
-template<class Star>void StarList<Star>::ExtractInFrame(StarList<Star> &Out, const Frame &aFrame) const
-{
-  for (auto const &star: *this)
-    {
-      if (aFrame.InFrame(*star))
-	{
-	  Out.push_back(std::make_shared<Star>(*star));
-	}
+template <class Star>
+void StarList<Star>::CutTail(const int NKeep) {
+    int count = 0;
+    auto si = this->begin();
+    for (; si != this->end() && count < NKeep; ++count, ++si)
+        ;
+    while (si != this->end()) {
+        si = this->erase(si);
     }
 }
 
-template<class Star>void StarList<Star>::CopyTo(StarList<Star> &Copy) const
-{
-  Copy.ClearList();
-  //  Copy.GlobVal() = this->GlobVal();
-  for (auto const &si: *this)
-    Copy.push_back(std::make_shared<Star>(*si));
+template <class Star>
+void StarList<Star>::ExtractInFrame(StarList<Star> &Out, const Frame &aFrame) const {
+    for (auto const &star : *this) {
+        if (aFrame.InFrame(*star)) {
+            Out.push_back(std::make_shared<Star>(*star));
+        }
+    }
+}
+
+template <class Star>
+void StarList<Star>::CopyTo(StarList<Star> &Copy) const {
+    Copy.ClearList();
+    //  Copy.GlobVal() = this->GlobVal();
+    for (auto const &si : *this) Copy.push_back(std::make_shared<Star>(*si));
 }
 
 // Explicit instantiations
 template class StarList<BaseStar>;
 template class StarList<FittedStar>;
 template class StarList<MeasuredStar>;
-
-}} // end of namespaces
+}  // namespace jointcal
+}  // namespace lsst
 
 #endif /* STARLIST__CC */

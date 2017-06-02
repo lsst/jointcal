@@ -17,12 +17,10 @@ class CcdImage;
  * projection from "Sky" (where coodinates are reported) to tangent plane
  * (where they are compared to transformed measurements)
  */
-struct ProjectionHandler
-{
-  virtual const Gtransfo* Sky2TP(const CcdImage &ccdImage) const = 0;
+struct ProjectionHandler {
+    virtual const Gtransfo *Sky2TP(const CcdImage &ccdImage) const = 0;
 
-  virtual ~ProjectionHandler() {};
-
+    virtual ~ProjectionHandler(){};
 };
 
 /**
@@ -30,13 +28,11 @@ struct ProjectionHandler
  * objects are expressed in the same space as the arrival mapping space. This
  * is useful for fitting transfo rms between images.
  */
-class IdentityProjectionHandler : public ProjectionHandler
-{
-  GtransfoIdentity id;
- public:
-  const Gtransfo* Sky2TP(const CcdImage &ccdImage) const
-  { return &id;};
+class IdentityProjectionHandler : public ProjectionHandler {
+    GtransfoIdentity id;
 
+public:
+    const Gtransfo *Sky2TP(const CcdImage &ccdImage) const { return &id; };
 };
 
 /**
@@ -46,17 +42,16 @@ class IdentityProjectionHandler : public ProjectionHandler
  * We arbitrarily chose that all chips from a same visit have the same tangent
  * point.
  */
-class OneTPPerVisitHandler : public ProjectionHandler
-{
-  typedef std::map<const unsigned, std::shared_ptr<const Gtransfo>> TransfoMap;
-  TransfoMap tMap;
+class OneTPPerVisitHandler : public ProjectionHandler {
+    typedef std::map<const unsigned, std::shared_ptr<const Gtransfo>> TransfoMap;
+    TransfoMap tMap;
 
- public:
-  OneTPPerVisitHandler(const CcdImageList &ccdImageList);
+public:
+    OneTPPerVisitHandler(const CcdImageList &ccdImageList);
 
-  const Gtransfo* Sky2TP(const CcdImage &ccdImage) const;
+    const Gtransfo *Sky2TP(const CcdImage &ccdImage) const;
 };
+}  // namespace jointcal
+}  // namespace lsst
 
-}} // end of namespaces
-
-#endif // LSST_JOINTCAL_PROJECTION_HANDLER_H
+#endif  // LSST_JOINTCAL_PROJECTION_HANDLER_H

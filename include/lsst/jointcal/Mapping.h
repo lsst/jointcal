@@ -12,14 +12,10 @@ class FatPoint;
 class Point;
 
 //! virtual class needed in the abstraction of the distortion model
-class Mapping
-{
-
-    public :
-
+class Mapping {
+public:
     //! Mumber of parameters in total
     virtual unsigned getNpar() const = 0;
-
 
     /// Sets how this set of parameters (of length Npar()) map into the "grand" fit
     /// Expects that indices has enough space reserved.
@@ -29,12 +25,10 @@ class Mapping
     /*! This is grouped into a single call because for most models,
         evaluating the derivatives w.r.T parameters is not much longer
         than just transforming */
-    virtual void ComputeTransformAndDerivatives(const FatPoint &Where,
-						FatPoint &OutPos,
-						Eigen::MatrixX2d &H) const = 0;
+    virtual void ComputeTransformAndDerivatives(const FatPoint &Where, FatPoint &OutPos,
+                                                Eigen::MatrixX2d &H) const = 0;
     //! The same as above but without the parameter derivatives (used to evaluate chi^2)
-    virtual void TransformPosAndErrors(const FatPoint &Where,
-				       FatPoint &OutPos) const = 0;
+    virtual void TransformPosAndErrors(const FatPoint &Where, FatPoint &OutPos) const = 0;
 
     //! Remember the error scale and freeze it
     //  virtual void FreezeErrorScales() = 0;
@@ -42,12 +36,11 @@ class Mapping
     virtual void OffsetParams(const double *Delta) = 0;
 
     //! The derivative w.r.t. position
-    virtual void  PosDerivative(const Point &Where, Eigen::Matrix2d &Der, double  Eps) const = 0;
+    virtual void PosDerivative(const Point &Where, Eigen::Matrix2d &Der, double Eps) const = 0;
 
     //!
-    virtual ~Mapping() {};
-
+    virtual ~Mapping(){};
 };
-
-}} // end of namespaces
-#endif // LSST_JOINTCAL_MAPPING_H
+}  // namespace jointcal
+}  // namespace lsst
+#endif  // LSST_JOINTCAL_MAPPING_H

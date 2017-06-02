@@ -8,7 +8,6 @@
 namespace lsst {
 namespace jointcal {
 
-
 /*! \file
     \brief Fast locator in starlists.
 */
@@ -29,70 +28,69 @@ namespace jointcal {
 */
 
 //! Fast locator in starlists.
-class FastFinder
-{
-  //  private :
-  public :
-  const BaseStarList baselist; // shallow copy of the initial list of stars (not used, acts as a conservatory). The need is arguable.
-  unsigned count;  // total number of objects (size of input list stars).
-  /* the sorted pointer array: It does not seem very wise to use smart
-     pointers here because reference counts will uselessly jump around
-     during sorting */
-  // Unfortunately we *must* use shared_ptr here because the return value of FindClosest is used to pass ownership
-  std::vector<std::shared_ptr<const BaseStar>>  stars;
-  unsigned nslice; // number of (X) slices
-  std::vector<unsigned> index;// index in "stars" of first object of each slice.
-  double xmin,xmax, xstep; // x bounds, slice size
+class FastFinder {
+    //  private :
+public:
+    const BaseStarList baselist;  // shallow copy of the initial list of stars (not used, acts as a
+                                  // conservatory). The need is arguable.
+    unsigned count;               // total number of objects (size of input list stars).
+                                  /* the sorted pointer array: It does not seem very wise to use smart
+                                     pointers here because reference counts will uselessly jump around
+                                     during sorting */
+    // Unfortunately we *must* use shared_ptr here because the return value of FindClosest is used to pass
+    // ownership
+    std::vector<std::shared_ptr<const BaseStar>> stars;
+    unsigned nslice;              // number of (X) slices
+    std::vector<unsigned> index;  // index in "stars" of first object of each slice.
+    double xmin, xmax, xstep;     // x bounds, slice size
 
-  typedef decltype(stars)::value_type stars_element;
-  typedef decltype(stars)::const_iterator pstar;
+    typedef decltype(stars)::value_type stars_element;
+    typedef decltype(stars)::const_iterator pstar;
 
-public :
+public:
     //! Constructor
-  FastFinder(const BaseStarList &List, const unsigned NXslice = 100);
+    FastFinder(const BaseStarList &List, const unsigned NXslice = 100);
 
-  //! Find the closest with some rejection capability
-  std::shared_ptr<const BaseStar> FindClosest(const Point &Where, const double MaxDist,
-			      bool (*SkipIt)(const BaseStar &) = nullptr) const;
+    //! Find the closest with some rejection capability
+    std::shared_ptr<const BaseStar> FindClosest(const Point &Where, const double MaxDist,
+                                                bool (*SkipIt)(const BaseStar &) = nullptr) const;
 
-  //!
-  std::shared_ptr<const BaseStar> SecondClosest(const Point &Where,
-				const double MaxDist,
-				std::shared_ptr<const BaseStar> &Closest,
-  				bool (*SkipIt)(const BaseStar &)= nullptr) const;
+    //!
+    std::shared_ptr<const BaseStar> SecondClosest(const Point &Where, const double MaxDist,
+                                                  std::shared_ptr<const BaseStar> &Closest,
+                                                  bool (*SkipIt)(const BaseStar &) = nullptr) const;
 
+    //! mostly for debugging
+    void dump() const;
 
-  //! mostly for debugging
-  void dump() const;
+    //! Iterator meant to traverse objects within some limiting distance. Initializer is begin_scan and end
+    //! condition is (*it == NULL). Used by FindClosest & co.
 
+    class Iterator {
+    public:  // could be made private, but what for??
+        const FastFinder &finder;
+        int currentSlice, endSlice;
+        double yStart, yEnd;  // Y limits ( for all stripes)
+        /* pointers to the first and beyond last stars in the y range for
+           the current stripe :  */
+        pstar current, pend;
+        pstar null_value;  // with pointers being iterators, the null value is not NULL
 
-  //! Iterator meant to traverse objects within some limiting distance. Initializer is begin_scan and end condition is (*it == NULL). Used by FindClosest & co.
+        void check() const;
 
-  class Iterator {
-    public : // could be made private, but what for??
-    const FastFinder &finder;
-    int currentSlice, endSlice;
-    double yStart, yEnd; // Y limits ( for all stripes)
-    /* pointers to the first and beyond last stars in the y range for
-       the current stripe :  */
-    pstar current, pend;
-    pstar null_value; // with pointers being iterators, the null value is not NULL
+    public:
+        Iterator(const FastFinder &f, const Point &Where, double MaxDist);
+        void operator++();
+        stars_element operator*() const;
+    };
 
-    void check() const;
+    Iterator begin_scan(const Point &Where, double MaxDist) const;
 
-  public:
-    Iterator(const FastFinder &f, const Point &Where, double MaxDist);
-    void operator++() ;
-    stars_element operator*() const;
-  };
-
-  Iterator begin_scan(const Point &Where, double MaxDist) const;
-
-  void find_range_in_slice(const int iSlice, const double YStart, const double YEnd, pstar &Start, pstar &End) const;
-  pstar locate_y_start(pstar Begin, pstar End, double YVal) const;
-  pstar locate_y_end(pstar Begin, pstar End, double YVal) const;
-
+    void find_range_in_slice(const int iSlice, const double YStart, const double YEnd, pstar &Start,
+                             pstar &End) const;
+    pstar locate_y_start(pstar Begin, pstar End, double YVal) const;
+    pstar locate_y_end(pstar Begin, pstar End, double YVal) const;
 };
-
-}}
-#endif // LSST_JOINTCAL_FAST_FINDER_H
+}  // namespace jointcal
+}  // namespace lsst
+#endif  // LSST_JOINTCAL_FAST_FINDER_H

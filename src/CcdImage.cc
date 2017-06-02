@@ -17,17 +17,16 @@ namespace jointcal = lsst::jointcal;
 namespace afwImg = lsst::afw::image;
 
 namespace {
-    LOG_LOGGER _log = LOG_GET("jointcal.CcdImage");
+LOG_LOGGER _log = LOG_GET("jointcal.CcdImage");
 }
 
 namespace lsst {
 namespace jointcal {
 
-static double sq(double x) { return x*x;}
+static double sq(double x) { return x * x; }
 
 void CcdImage::LoadCatalog(const lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &catalog,
-                           const std::string &fluxField)
-{
+                           const std::string &fluxField) {
     auto xKey = catalog.getSchema().find<double>("slot_Centroid_x").key;
     auto yKey = catalog.getSchema().find<double>("slot_Centroid_y").key;
     auto xsKey = catalog.getSchema().find<float>("slot_Centroid_xSigma").key;
@@ -36,11 +35,10 @@ void CcdImage::LoadCatalog(const lsst::afw::table::SortedCatalogT<lsst::afw::tab
     auto myyKey = catalog.getSchema().find<double>("slot_Shape_yy").key;
     auto mxyKey = catalog.getSchema().find<double>("slot_Shape_xy").key;
     auto fluxKey = catalog.getSchema().find<double>(fluxField + "_flux").key;
-    auto efluxKey = catalog.getSchema().find<double>(fluxField  + "_fluxSigma").key;
+    auto efluxKey = catalog.getSchema().find<double>(fluxField + "_fluxSigma").key;
 
     _wholeCatalog.clear();
-    for (auto const &i: catalog)
-    {
+    for (auto const &i : catalog) {
         auto ms = std::make_shared<MeasuredStar>();
         ms->x = i.get(xKey);
         ms->y = i.get(yKey);
@@ -52,10 +50,11 @@ void CcdImage::LoadCatalog(const lsst::afw::table::SortedCatalogT<lsst::afw::tab
         double mxx = i.get(mxxKey);
         double myy = i.get(myyKey);
         double mxy = i.get(mxyKey);
-        ms->vxy = mxy*(ms->vx + ms->vy)/(mxx + myy);
-        if (ms->vx < 0 || ms->vy < 0 || (ms->vxy*ms->vxy) > (ms->vx*ms->vy)) {
+        ms->vxy = mxy * (ms->vx + ms->vy) / (mxx + myy);
+        if (ms->vx < 0 || ms->vy < 0 || (ms->vxy * ms->vxy) > (ms->vx * ms->vy)) {
             LOGLS_WARN(_log, "Bad source detected in LoadCatalog : " << ms->vx << " " << ms->vy << " "
-                       << ms->vxy*ms->vxy << " " << ms->vx*ms->vy);
+                                                                     << ms->vxy * ms->vxy << " "
+                                                                     << ms->vx * ms->vy);
             continue;
         }
         ms->flux = i.get(fluxKey);
@@ -68,16 +67,16 @@ void CcdImage::LoadCatalog(const lsst::afw::table::SortedCatalogT<lsst::afw::tab
 }
 
 CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &Ri,
-                   const PTR(lsst::afw::image::TanWcs) wcs,
-                   const PTR(lsst::afw::image::VisitInfo) visitInfo,
-                   const lsst::afw::geom::Box2I &bbox,
-                   const std::string &filter,
-                   const PTR(lsst::afw::image::Calib) calib,
-                   const int &visit,
-                   const int &ccdId,
-                   const std::string &fluxField ) :
+                   const PTR(lsst::afw::image::TanWcs) wcs, const PTR(lsst::afw::image::VisitInfo) visitInfo,
+                   const lsst::afw::geom::Box2I &bbox, const std::string &filter,
+                   const PTR(lsst::afw::image::Calib) calib, const int &visit, const int &ccdId,
+                   const std::string &fluxField)
+        :
 
-    _filter(filter), _visit(visit), _ccdId(ccdId), _calib(calib)
+          _filter(filter),
+          _visit(visit),
+          _ccdId(ccdId),
+          _calib(calib)
 
 {
     LoadCatalog(Ri, fluxField);
@@ -108,24 +107,22 @@ CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceReco
 
     if (airMass == 1)
         sineta = coseta = tgz = 0;
-    else
-    {
-        double cosz = 1./airMass;
-        double sinz = sqrt(1 - cosz*cosz); //astronomers usually observe above the horizon
-        tgz = sinz/cosz;
-        sineta = cos(latitude)*sin(hourAngle)/sinz;
-        coseta = sqrt(1 - sineta*sineta);
+    else {
+        double cosz = 1. / airMass;
+        double sinz = sqrt(1 - cosz * cosz);  // astronomers usually observe above the horizon
+        tgz = sinz / cosz;
+        sineta = cos(latitude) * sin(hourAngle) / sinz;
+        coseta = sqrt(1 - sineta * sineta);
         if (boresightRaDec.getDec() > latitude) coseta = -coseta;
     }
 }
 
-void CcdImage::setCommonTangentPoint(const Point &commonTangentPoint)
-{
+void CcdImage::setCommonTangentPoint(const Point &commonTangentPoint) {
     _commonTangentPoint = commonTangentPoint;
 
     // use some other variable in case we later have to actually convert the
     // as-read wcs:
-    const BaseTanWcs* tanWcs = readWcs.get();
+    const BaseTanWcs *tanWcs = readWcs.get();
 
     /* we don't assume here that we know the internals of TanPix2RaDec:
        to construct pix->TP, we do pix->sky->TP, although pix->sky
@@ -145,6 +142,5 @@ void CcdImage::setCommonTangentPoint(const Point &commonTangentPoint)
     // this one is needed for matches :
     pix2CommonTangentPlane = GtransfoCompose(&raDec2CTP, tanWcs);
 }
-
-}
-} // end of namespaces
+}  // namespace jointcal
+}  // namespace lsst

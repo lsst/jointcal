@@ -11,93 +11,79 @@
 namespace lsst {
 namespace jointcal {
 
-
-
 class CcdImage;
 
-//! objects measured on actual images. Coordinates and uncertainties are expressed in pixel image frame. Flux expressed in ADU/s.
-class MeasuredStar : public BaseStar
-{
-  public :
-  double mag;
-  double wmag;
-  double eflux;
-  double aperrad;
-  double chi2;
-  const CcdImage *ccdImage;
+//! objects measured on actual images. Coordinates and uncertainties are expressed in pixel image frame. Flux
+//! expressed in ADU/s.
+class MeasuredStar : public BaseStar {
+public:
+    double mag;
+    double wmag;
+    double eflux;
+    double aperrad;
+    double chi2;
+    const CcdImage *ccdImage;
 
-  private :
-
+private:
     std::shared_ptr<const FittedStar> fittedStar;
-    bool   valid;
+    bool valid;
 
-  public :
-
+public:
     //!
-  MeasuredStar()
-    : BaseStar(),
-      mag(0.), wmag(0.), eflux(0.), aperrad(0.),
-      ccdImage(0),
-      valid(true) {}
+    MeasuredStar() : BaseStar(), mag(0.), wmag(0.), eflux(0.), aperrad(0.), ccdImage(0), valid(true) {}
 
-  // TODO: note F argument seems unused!
-  MeasuredStar(const BaseStar &B, const FittedStar *F = nullptr) :
-    BaseStar(B),
-    mag(0.), wmag(0.), eflux(0.), aperrad(0.),
-    ccdImage(0),
-    valid(true) {}
+    // TODO: note F argument seems unused!
+    MeasuredStar(const BaseStar &B, const FittedStar *F = nullptr)
+            : BaseStar(B), mag(0.), wmag(0.), eflux(0.), aperrad(0.), ccdImage(0), valid(true) {}
 
-  void SetFittedStar(std::shared_ptr<FittedStar> F)
-      { if (F)  F->MeasurementCount()++; fittedStar = std::move(F);
-      }
+    void SetFittedStar(std::shared_ptr<FittedStar> F) {
+        if (F) F->MeasurementCount()++;
+        fittedStar = std::move(F);
+    }
 
-  void dump(std::ostream & stream = std::cout) const
-    {
+    void dump(std::ostream &stream = std::cout) const {
         BaseStar::dump(stream);
         stream << " ccdImage: " << ccdImage << " valid: " << valid;
     }
 
-  double FluxSig() const { return eflux;}
+    double FluxSig() const { return eflux; }
 
-  double Mag() const { return mag;}
-  double AperRad() const { return aperrad; }
+    double Mag() const { return mag; }
+    double AperRad() const { return aperrad; }
 
-  //! the inverse of the mag variance
-  double MagWeight() const { return (flux*flux/(eflux*eflux));}
+    //! the inverse of the mag variance
+    double MagWeight() const { return (flux * flux / (eflux * eflux)); }
 
-  std::shared_ptr<const FittedStar> GetFittedStar() const { return fittedStar;};
+    std::shared_ptr<const FittedStar> GetFittedStar() const { return fittedStar; };
 
-  const CcdImage &GetCcdImage()  const { return *ccdImage;};
+    const CcdImage &GetCcdImage() const { return *ccdImage; };
 
-  void setCcdImage(const CcdImage *C) { ccdImage = C;};
+    void setCcdImage(const CcdImage *C) { ccdImage = C; };
 
-  //! Fits may use that to discard outliers
-  bool  IsValid() const { return valid; }
-  //! Fits may use that to discard outliers
-  void  SetValid(bool v) { valid=v; }
+    //! Fits may use that to discard outliers
+    bool IsValid() const { return valid; }
+    //! Fits may use that to discard outliers
+    void SetValid(bool v) { valid = v; }
 };
-
 
 /****** MeasuredStarList */
 
 //! A list of MeasuredStar. They are usually filled in Associations::AddImage
 class MeasuredStarList : public StarList<MeasuredStar> {
+public:
+    MeasuredStarList(){};
 
-  public :
-    MeasuredStarList() {};
-
-  void setCcdImage(const CcdImage *C);
+    void setCcdImage(const CcdImage *C);
 };
 
 typedef MeasuredStarList::const_iterator MeasuredStarCIterator;
 typedef MeasuredStarList::iterator MeasuredStarIterator;
 
-BaseStarList& Measured2Base(MeasuredStarList &This);
-BaseStarList* Measured2Base(MeasuredStarList *This);
-const BaseStarList& Measured2Base(const MeasuredStarList &This);
-const BaseStarList* Measured2Base(const MeasuredStarList *This);
+BaseStarList &Measured2Base(MeasuredStarList &This);
+BaseStarList *Measured2Base(MeasuredStarList *This);
+const BaseStarList &Measured2Base(const MeasuredStarList &This);
+const BaseStarList *Measured2Base(const MeasuredStarList *This);
+}  // namespace jointcal
+}  // namespace lsst
 
-}}  // end of namespaces
-
-#endif // LSST_JOINTCAL_MEASURED_STAR_H
-
+#endif  // LSST_JOINTCAL_MEASURED_STAR_H

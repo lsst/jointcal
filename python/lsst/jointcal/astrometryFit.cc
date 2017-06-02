@@ -37,10 +37,10 @@ namespace {
 void declareAstrometryFit(py::module &mod) {
     py::class_<AstrometryFit, std::shared_ptr<AstrometryFit>> cls(mod, "AstrometryFit");
 
-    cls.def(py::init<Associations &, AstrometryModel *, double>(),
-            "associations"_a, "astrometryModel"_a, "posError"_a);
+    cls.def(py::init<Associations &, AstrometryModel *, double>(), "associations"_a, "astrometryModel"_a,
+            "posError"_a);
 
-    cls.def("minimize", &AstrometryFit::minimize, "whatToFit"_a, "nSigRejCut"_a=0);
+    cls.def("minimize", &AstrometryFit::minimize, "whatToFit"_a, "nSigRejCut"_a = 0);
     cls.def("computeChi2", &AstrometryFit::computeChi2);
     cls.def("makeResTuple", &AstrometryFit::makeResTuple);
 }
@@ -55,5 +55,6 @@ PYBIND11_PLUGIN(astrometryFit) {
 
     return mod.ptr();
 }
-
-}}}  // lsst::jointcal::<anonymous>
+}  // namespace
+}  // namespace jointcal
+}  // namespace lsst

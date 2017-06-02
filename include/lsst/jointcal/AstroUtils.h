@@ -7,13 +7,11 @@
 namespace lsst {
 namespace jointcal {
 
+class Frame;
+class Gtransfo;
+//! Transform a Frame through a Transfo.
+Frame ApplyTransfo(const Frame& inputframe, const Gtransfo& T, const WhichTransformed W);
+}  // namespace jointcal
+}  // namespace lsst
 
-  class Frame;
-  class Gtransfo;
-  //! Transform a Frame through a Transfo.
-  Frame ApplyTransfo(const Frame& inputframe,const Gtransfo &T,
-		     const WhichTransformed W);
-
-}} // end of namespaces
-
-#endif // LSST_JOINTCAL_ASTRO_UTILS_H
+#endif  // LSST_JOINTCAL_ASTRO_UTILS_H

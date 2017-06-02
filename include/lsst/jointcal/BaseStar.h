@@ -2,7 +2,6 @@
 #ifndef LSST_JOINTCAL_BASE_STAR_H
 #define LSST_JOINTCAL_BASE_STAR_H
 
-
 #include <iostream>
 #include <cstdio>
 #include <string>
@@ -14,9 +13,7 @@
 namespace lsst {
 namespace jointcal {
 
-
 #define MEMPIX2DISK 1
-
 
 #define DECALAGE_IJ_XY 0.
 #define DECALAGE_XY_IJ 0.
@@ -26,54 +23,62 @@ namespace jointcal {
 #define BASESTAR_HAS_POSITION_ERRORS
 
 //! The base class for handling stars. Used by all matching routines.
-class BaseStar : public FatPoint
-{
+class BaseStar : public FatPoint {
+public:
+    double flux;
 
-  public :
-double flux;
+public:
+    BaseStar() {
+        x = 0;
+        y = 0;
+        flux = 0;
+    };
+    //! constructor
+    BaseStar(double xx, double yy, double ff) : FatPoint(xx, yy), flux(ff){};
+    BaseStar(const Point &a_point, double a_flux) : FatPoint(a_point), flux(a_flux){};
 
+    //! access stuff.
+    double X() const { return x; }
+    //!
+    double Y() const { return y; }
 
-  public:
- BaseStar(){x=0;y=0;flux=0;};
-  //! constructor
- BaseStar(double xx, double yy, double ff) : FatPoint(xx,yy), flux(ff)
-  {};
- BaseStar(const Point &a_point, double a_flux) : FatPoint(a_point), flux(a_flux)
-  {};
+    //! allows std::cout << aBaseStar;
+    friend std::ostream &operator<<(std::ostream &stream, const BaseStar &s) {
+        s.dump(stream);
+        return stream;
+    }
 
-  //! access stuff.
-  double X() const { return x;}
-  //!
-  double Y() const { return y;}
+    virtual std::string __str__() const {
+        std::stringstream s;
+        dump(s);
+        return s.str();
+    }
 
-  //! allows std::cout << aBaseStar;
-  friend std::ostream& operator << (std::ostream &stream, const BaseStar &s)
-  { s.dump(stream); return stream;}
+    virtual void dump(std::ostream &stream = std::cout) const {
+        stream << "x: " << x << " y: " << y << " flux: " << flux;
+    }
 
-  virtual std::string __str__() const {std::stringstream s; dump(s); return s.str();}
+    BaseStar &operator=(const Point &P) {
+        this->x = P.x;
+        this->y = P.y;
+        return (*this);
+    };
 
-  virtual void dump(std::ostream & stream = std::cout) const { stream << "x: "<< x << " y: " << y << " flux: " << flux;}
+    static const char *TypeName() { return "BaseStar"; }
 
-  BaseStar& operator=(const Point &P) {this->x = P.x; this->y = P.y; return (*this);};
-
-  static const char *TypeName() { return "BaseStar";}
-
-  virtual ~BaseStar(){};
+    virtual ~BaseStar(){};
 };
-
 
 //! enables to sort easily a starList (of anything that derives from BaseStar)
 bool DecreasingFlux(const BaseStar *S1, const BaseStar *S2);
 
 int DecodeFormat(const char *FormatLine, const char *StarName);
 
-
 typedef StarList<BaseStar> BaseStarList;
 
 typedef BaseStarList::const_iterator BaseStarCIterator;
- typedef BaseStarList::iterator BaseStarIterator;
+typedef BaseStarList::iterator BaseStarIterator;
+}
+}  // namespace lsst
 
-
-}}
-
-#endif // LSST_JOINTCAL_BASE_STAR_H
+#endif  // LSST_JOINTCAL_BASE_STAR_H

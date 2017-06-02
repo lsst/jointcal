@@ -53,18 +53,17 @@ class Associations;
  * have any Kind 2 terms.
  */
 class AstrometryFit {
-private :
-
+private:
     Associations &_assoc;
     std::string _whatToFit;
     bool _fittingDistortions, _fittingPos, _fittingRefrac, _fittingPM;
-    AstrometryModel * _astrometryModel;
-    int _LastNTrip; // last triplet count, used to speed up allocation
-    double _referenceColor, _sigCol; // average and r.m.s color
+    AstrometryModel *_astrometryModel;
+    int _LastNTrip;                   // last triplet count, used to speed up allocation
+    double _referenceColor, _sigCol;  // average and r.m.s color
     unsigned _nRefrac;
-    double _refractionCoefficient; // fit parameter
-    unsigned int _refracPosInMatrix; // where it stands
-    double _JDRef; // average Julian date
+    double _refractionCoefficient;    // fit parameter
+    unsigned int _refracPosInMatrix;  // where it stands
+    double _JDRef;                    // average Julian date
 
     // counts in parameter subsets.
     unsigned int _nParDistortions;
@@ -73,10 +72,9 @@ private :
     unsigned _nMeasuredStars;
     double _posError;  // constant term on error on position (in pixel unit)
 
-public :
-
+public:
     //! this is the only constructor
-    AstrometryFit (Associations &associations, AstrometryModel *astrometryModel, double posError);
+    AstrometryFit(Associations &associations, AstrometryModel *astrometryModel, double posError);
 
     /**
      * Does a 1 step minimization, assuming a linear model.
@@ -112,12 +110,11 @@ public :
     unsigned minimize(const std::string &whatToFit, const double nSigRejCut = 0);
 
     //! Compute derivatives of measurement terms for this CcdImage
-    void LSDerivatives1(const CcdImage &ccdImage,
-                        TripletList &tList, Eigen::VectorXd &rhs,
+    void LSDerivatives1(const CcdImage &ccdImage, TripletList &tList, Eigen::VectorXd &rhs,
                         const MeasuredStarList *msList = nullptr) const;
 
     //! Compute derivatives of reference terms (if any), associated to the FittedStarList
-    void LSDerivatives2(const FittedStarList & fsl, TripletList &tList, Eigen::VectorXd &rhs) const;
+    void LSDerivatives2(const FittedStarList &fsl, TripletList &tList, Eigen::VectorXd &rhs) const;
 
     //! Evaluates the chI^2 derivatives (Jacobian and gradient) for the current whatToFit setting.
     /*! The Jacobian is provided as triplets, the gradient as a dense
@@ -143,7 +140,7 @@ public :
      * affected when updating the mappings. This allows to have an exactly linear
      * fit, which can be useful.
      */
-    void freezeErrorScales() {_astrometryModel->freezeErrorScales();}
+    void freezeErrorScales() { _astrometryModel->freezeErrorScales(); }
 
     /**
      * Offset the parameters by the requested quantities. The used parameter
@@ -167,9 +164,7 @@ public :
      * Contributions to derivatives from (presumably) outlier terms. No
      * discarding done.
      */
-    void outliersContributions(MeasuredStarList &mOutliers,
-                               FittedStarList &fOutLiers,
-                               TripletList &tList,
+    void outliersContributions(MeasuredStarList &mOutliers, FittedStarList &fOutLiers, TripletList &tList,
                                Eigen::VectorXd &grad);
 
     /**
@@ -178,9 +173,7 @@ public :
      */
     unsigned removeOutliers(double nSigCut, const std::string &measOrRef = "Meas Ref");
 
-    unsigned findOutliers(double nSigCut,
-                          MeasuredStarList &mSOutliers,
-                          FittedStarList &fSOutliers,
+    unsigned findOutliers(double nSigCut, MeasuredStarList &mSOutliers, FittedStarList &fSOutliers,
                           const std::string &measOrRef = "Meas Ref") const;
 
     //! Just removes outliers from the fit. No Refit done.
@@ -203,13 +196,9 @@ public :
      */
     void checkStuff();
 
-private :
-
-    Point transformFittedStar(const FittedStar &fittedStar,
-                              const Gtransfo * sky2TP,
-                              const Point &refractionVector,
-                              double refractionCoeff,
-                              double mjd) const;
+private:
+    Point transformFittedStar(const FittedStar &fittedStar, const Gtransfo *sky2TP,
+                              const Point &refractionVector, double refractionCoeff, double mjd) const;
 
     template <class ListType, class Accum>
     void accumulateStatImageList(ListType &list, Accum &accum) const;
@@ -220,13 +209,9 @@ private :
     template <class Accum>
     void accumulateStatRefStars(Accum &accum) const;
 
-
     //! only for outlier removal
     void setMeasuredStarIndices(const MeasuredStar &ms, std::vector<unsigned> &indices) const;
-
 };
-
-
-}
-}
-#endif // LSST_JOINTCAL_ASTROMETRY_FIT_H
+}  // namespace jointcal
+}  // namespace lsst
+#endif  // LSST_JOINTCAL_ASTROMETRY_FIT_H

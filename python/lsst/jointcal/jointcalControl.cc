@@ -34,7 +34,7 @@ namespace {
 
 void declareJointcalControl(py::module &mod) {
     py::class_<JointcalControl, std::shared_ptr<JointcalControl>> cls(mod, "JointcalControl");
-    cls.def(py::init<std::string>(), "sourceFluxField"_a="slot_CalibFlux");
+    cls.def(py::init<std::string>(), "sourceFluxField"_a = "slot_CalibFlux");
 
     LSST_DECLARE_CONTROL_FIELD(cls, JointcalControl, sourceFluxField);
 }
@@ -46,5 +46,6 @@ PYBIND11_PLUGIN(jointcalControl) {
 
     return mod.ptr();
 }
-
-}}}  // lsst::jointcal::<anonymous>
+}  // namespace
+}  // namespace jointcal
+}  // namespace lsst

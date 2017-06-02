@@ -31,66 +31,66 @@ NOT Star's. This implies
 that Stars being inserted in the std::list have to be
 obtained using 'new'.  */
 
-
-  template<class Star> class StarList : public std::list<std::shared_ptr<Star>> {
-
+template <class Star>
+class StarList : public std::list<std::shared_ptr<Star>> {
 public:
-  typedef std::shared_ptr<Star> Element;
-  typedef typename std::list<Element>::const_iterator StarCIterator;
-  typedef typename std::list<Element>::iterator StarIterator;
+    typedef std::shared_ptr<Star> Element;
+    typedef typename std::list<Element>::const_iterator StarCIterator;
+    typedef typename std::list<Element>::iterator StarIterator;
 
+    /* constructors */
+    //! : default constructor (empty std::list).
+    StarList(){};
 
-/* constructors */
-//! : default constructor (empty std::list).
-  StarList() {};
+    std::shared_ptr<Star> EmptyStar() const { return std::make_shared<Star>(); }
 
-  std::shared_ptr<Star> EmptyStar() const { return std::make_shared<Star>(); }
+    /* destructor */
+    virtual ~StarList(){};
 
-/* destructor */
-  virtual ~StarList() {};
+    //! invokes dump(stream) for all Stars in the std::list.
+    void dump(std::ostream &stream = std::cout) const {
+        for (auto &p : *this) p->dump(stream);
+    }
 
+    //! a model routine to sort the std::list
+    /*! see DecreasingFlux() to see what it is, if you
+       want another sorting criterion) */
+    // le premier de la std::liste a le plus grand flux
+    void FluxSort();
 
-  //! invokes dump(stream) for all Stars in the std::list.
- void dump(std::ostream &stream = std::cout ) const {
-    for (auto &p: *this)
-        p->dump(stream);}
+    //! copy the head of the std::list at the  end of an other std::list (that may be empty on input)
+    void ExtractHead(StarList<Star> &Out, int NHead) const;
 
-  //!a model routine to sort the std::list
-  /*! see DecreasingFlux() to see what it is, if you
-     want another sorting criterion) */
-  // le premier de la std::liste a le plus grand flux
-  void FluxSort();
+    //! cuts the end of the std::list
+    void CutTail(const int NKeep);
 
-  //! copy the head of the std::list at the  end of an other std::list (that may be empty on input)
-  void ExtractHead(StarList<Star> &Out, int NHead) const;
+    //! copy the part of the std::list which is included in the frame at the end of another std::list
+    void ExtractInFrame(StarList<Star> &Out, const Frame &aFrame) const;
+    //! cut the part of the std::list which is at a distance < mindist of the edges defined by frame.
+    void CutEdges(const Frame &aFrame, float mindist);
 
-  //! cuts the end of the std::list
-  void CutTail(const int NKeep);
+    //! clears Copy and makes a copy of the std::list to Copy
+    void CopyTo(StarList<Star> &Copy) const;
 
-  //! copy the part of the std::list which is included in the frame at the end of another std::list
-  void ExtractInFrame(StarList<Star> &Out, const Frame &aFrame) const;
- //! cut the part of the std::list which is at a distance < mindist of the edges defined by frame.
-  void CutEdges(const Frame &aFrame, float mindist);
+    //! Clears the std::list
+    void ClearList() { CutTail(0); };
 
-  //! clears Copy and makes a copy of the std::list to Copy
-  void CopyTo(StarList<Star> &Copy) const;
+    //! enables to apply a geometrical transfo if Star is Basestar or derives from it.
+    /*! could be extended to other type of transformations. */
 
-  //! Clears the std::list
-  void ClearList() { CutTail(0);};
-
-  //! enables to apply a geometrical transfo if Star is Basestar or derives from it.
-  /*! could be extended to other type of transformations. */
-
-  template<class Operator> void ApplyTransfo(const Operator &Op)
-  {for (auto &p: *this) Op.TransformStar(*(p));}
+    template <class Operator>
+    void ApplyTransfo(const Operator &Op) {
+        for (auto &p : *this) Op.TransformStar(*(p));
+    }
 };
 
-  //! enables \verbatim  std::cout << my_list; \endverbatim
-template <class Star>  std::ostream & operator <<(std::ostream &stream, const StarList<Star> &List)
-    {List.dump(stream); return stream; }
+//! enables \verbatim  std::cout << my_list; \endverbatim
+template <class Star>
+std::ostream &operator<<(std::ostream &stream, const StarList<Star> &List) {
+    List.dump(stream);
+    return stream;
+}
+}  // namespace jointcal
+}  // namespace lsst
 
-}} // end of namespaces
-
-#endif // LSST_JOINTCAL_STAR_LIST_H
-
-
+#endif  // LSST_JOINTCAL_STAR_LIST_H

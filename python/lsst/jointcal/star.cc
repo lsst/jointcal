@@ -54,9 +54,9 @@ void declareBaseStar(py::module &mod) {
 
     // these three are actually declared in FatPoint, but we don't need that in Python.
     // NOTE: see DM-9814 about the necessity of the pointer cast below.
-    cls.def_readonly("vx", (double BaseStar::*) &BaseStar::vx);
-    cls.def_readonly("vy", (double BaseStar::*) &BaseStar::vy);
-    cls.def_readonly("vxy", (double BaseStar::*) &BaseStar::vxy);
+    cls.def_readonly("vx", (double BaseStar::*)&BaseStar::vx);
+    cls.def_readonly("vy", (double BaseStar::*)&BaseStar::vy);
+    cls.def_readonly("vxy", (double BaseStar::*)&BaseStar::vxy);
 
     cls.def_readonly("flux", &BaseStar::flux);
 
@@ -66,19 +66,19 @@ void declareBaseStar(py::module &mod) {
 void declareRefStar(py::module &mod) {
     py::class_<RefStar, std::shared_ptr<RefStar>, BaseStar> cls(mod, "RefStar");
 
-    cls.def(py::init<const BaseStar&>(), "baseStar"_a);
+    cls.def(py::init<const BaseStar &>(), "baseStar"_a);
 }
 
 void declareFittedStar(py::module &mod) {
     py::class_<FittedStar, std::shared_ptr<FittedStar>, BaseStar> cls(mod, "FittedStar");
 
-    cls.def(py::init<const BaseStar&>(), "baseStar"_a);
+    cls.def(py::init<const BaseStar &>(), "baseStar"_a);
 }
 
 void declareMeasuredStar(py::module &mod) {
     py::class_<MeasuredStar, std::shared_ptr<MeasuredStar>, BaseStar> cls(mod, "MeasuredStar");
 
-    cls.def(py::init<const BaseStar&>(), "baseStar"_a);
+    cls.def(py::init<const BaseStar &>(), "baseStar"_a);
 }
 
 PYBIND11_PLUGIN(star) {
@@ -92,5 +92,6 @@ PYBIND11_PLUGIN(star) {
 
     return mod.ptr();
 }
-
-}}}  // lsst::jointcal::<anonymous>
+}  // namespace
+}  // namespace jointcal
+}  // namespace lsst

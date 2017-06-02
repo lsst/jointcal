@@ -2,44 +2,43 @@
 #ifndef LSST_JOINTCAL_HISTO2D_H
 #define LSST_JOINTCAL_HISTO2D_H
 
-
 namespace lsst {
 namespace jointcal {
 
-
 class Histo2d {
+private:
+    std::unique_ptr<float[]> data;
+    int nx, ny;
+    float minx, miny;
+    float scalex, scaley;
 
- private:
-  std::unique_ptr<float[]> data;
-  int nx,ny;
-  float minx,miny;
-  float scalex, scaley;
+    bool indices(double X, double Y, int &ix, int &iy) const;
 
-  bool indices(double X, double Y, int &ix, int &iy) const;
+public:
+    Histo2d() : data() {}
+    Histo2d(int nx, float minx, float maxx, int ny, float miny, float maxy);
 
- public:
+    Histo2d(const Histo2d &Other);
 
-  Histo2d() : data() { }
-  Histo2d(int nx, float minx, float maxx, int ny, float miny,float maxy);
+    void Fill(float x, float y, float weight = 1.);
 
-  Histo2d(const Histo2d &Other);
+    double MaxBin(double &x, double &y) const;
 
-  void Fill(float x, float y, float weight=1.);
+    void BinWidth(double &Hdx, double &Hdy) const {
+        Hdx = 1. / scalex;
+        Hdy = 1. / scaley;
+    }
 
-  double MaxBin(double &x, double &y) const ;
+    double BinContent(double X, double Y) const;
 
-  void BinWidth(double &Hdx, double &Hdy) const { Hdx = 1./scalex; Hdy = 1./scaley;}
+    void ZeroBin(double X, double Y);
 
-  double BinContent(double X, double Y) const;
+    ~Histo2d() {}
 
-  void ZeroBin(double X, double Y);
-
-  ~Histo2d() { }
-
- private:
-  void operator = (const Histo2d &Right);
+private:
+    void operator=(const Histo2d &Right);
 };
+}  // namespace jointcal
+}  // namespace lsst
 
-}} // end of namespaces
-
-#endif // LSST_JOINTCAL_HISTO2D_H
+#endif  // LSST_JOINTCAL_HISTO2D_H

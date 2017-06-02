@@ -48,5 +48,6 @@ PYBIND11_PLUGIN(chi2) {
 
     return mod.ptr();
 }
-
-}}}  // lsst::jointcal::<anonymous>
+}  // namespace
+}  // namespace jointcal
+}  // namespace lsst
