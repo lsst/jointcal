@@ -46,8 +46,8 @@ SimplePolyModel::SimplePolyModel(const CcdImageList &ccdImageList, const Project
                 continue;
             }
             GtransfoPoly pol(degree);
-            if (pol.Degree() > 0)  // if not, it cannot be decreased
-                while (unsigned(pol.getNpar()) > 2 * nObj) pol.SetDegree(pol.Degree() - 1);
+            if (pol.getDegree() > 0)  // if not, it cannot be decreased
+                while (unsigned(pol.getNpar()) > 2 * nObj) pol.setDegree(pol.getDegree() - 1);
             /* We have to center and normalize the coordinates so that
                the fit matrix is not too ill-conditionned. Basically, x
                and y in pixels are mapped to [-1,1]. When the
@@ -57,9 +57,9 @@ SimplePolyModel::SimplePolyModel(const CcdImageList &ccdImageList, const Project
                remains hidden
              */
             const Frame &frame = im.getImageFrame();
-            GtransfoLin shiftAndNormalize = NormalizeCoordinatesTransfo(frame);
+            GtransfoLin shiftAndNormalize = normalizeCoordinatesTransfo(frame);
             if (initFromWcs) {
-                pol = GtransfoPoly(im.Pix2TangentPlane(), frame, degree);
+                pol = GtransfoPoly(im.getPix2TangentPlane(), frame, degree);
                 pol = pol * shiftAndNormalize.invert();
             }
             _myMap[&im] =
@@ -68,11 +68,11 @@ SimplePolyModel::SimplePolyModel(const CcdImageList &ccdImageList, const Project
     }
 }
 
-const Mapping *SimplePolyModel::getMapping(const CcdImage &ccdImageList) const {
-    mapType::const_iterator i = _myMap.find(&ccdImageList);
+const Mapping *SimplePolyModel::getMapping(const CcdImage &ccdImage) const {
+    mapType::const_iterator i = _myMap.find(&ccdImage);
     if (i == _myMap.cend())
         throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,
-                          "SimplePolyModel::GetMapping, never heard of CcdImage " + ccdImageList.getName());
+                          "SimplePolyModel::GetMapping, never heard of CcdImage " + ccdImage.getName());
     return (i->second.get());
 }
 
@@ -95,12 +95,12 @@ void SimplePolyModel::offsetParams(const Eigen::VectorXd &delta) {
     for (auto i = _myMap.begin(); i != _myMap.end(); ++i) {
         SimplePolyMapping *p = dynamic_cast<SimplePolyMapping *>(&*(i->second));
         if (!p) continue;  // it should be GtransfoIdentity
-        p->OffsetParams(&delta(p->getIndex()));
+        p->offsetParams(&delta(p->getIndex()));
     }
 }
 
 void SimplePolyModel::freezeErrorScales() {
-    for (auto i = _myMap.begin(); i != _myMap.end(); ++i) i->second->FreezeErrorScales();
+    for (auto i = _myMap.begin(); i != _myMap.end(); ++i) i->second->freezeErrorScales();
 }
 
 const Gtransfo &SimplePolyModel::getTransfo(const CcdImage &ccdImage) const {
@@ -109,24 +109,24 @@ const Gtransfo &SimplePolyModel::getTransfo(const CcdImage &ccdImage) const {
     if (p == _myMap.end())
         throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,
                           "SimplePolyModel::getTransfo, never heard of CcdImage " + ccdImage.getName());
-    return p->second->Transfo();
+    return p->second->getTransfo();
 }
 
 std::shared_ptr<TanSipPix2RaDec> SimplePolyModel::produceSipWcs(const CcdImage &ccdImage) const {
     const GtransfoPoly &pix2Tp = dynamic_cast<const GtransfoPoly &>(getTransfo(ccdImage));
-    const TanRaDec2Pix *proj = dynamic_cast<const TanRaDec2Pix *>(sky2TP(ccdImage));
+    const TanRaDec2Pix *proj = dynamic_cast<const TanRaDec2Pix *>(getSky2TP(ccdImage));
     if (!(&pix2Tp) || !proj) return nullptr;
 
-    const GtransfoLin &projLinPart = proj->LinPart();  // should be the identity, but who knows? So, let us
-                                                       // incorporate it into the pix2TP part.
+    const GtransfoLin &projLinPart = proj->getLinPart();  // should be the identity, but who knows? So, let us
+                                                          // incorporate it into the pix2TP part.
     GtransfoPoly wcsPix2Tp = GtransfoPoly(projLinPart.invert()) * pix2Tp;
 
     // compute a decent approximation, if higher order corrections get ignored
-    GtransfoLin cdStuff = wcsPix2Tp.LinearApproximation(ccdImage.getImageFrame().Center());
+    GtransfoLin cdStuff = wcsPix2Tp.linearApproximation(ccdImage.getImageFrame().getCenter());
 
     // wcsPix2TP = cdStuff*sip , so
     GtransfoPoly sip = GtransfoPoly(cdStuff.invert()) * wcsPix2Tp;
-    Point tangentPoint(proj->TangentPoint());
+    Point tangentPoint(proj->getTangentPoint());
     return std::make_shared<TanSipPix2RaDec>(cdStuff, tangentPoint, &sip);
 }
 }  // namespace jointcal

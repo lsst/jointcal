@@ -33,25 +33,25 @@ Histo2d::Histo2d(int nnx, float mminx, float mmaxx, int nny, float mminy, float 
     memset(data.get(), 0, nx * ny * sizeof(float));
 }
 
-Histo2d::Histo2d(const Histo2d &Other) {
-    memcpy(this, &Other, sizeof(Histo2d));
+Histo2d::Histo2d(const Histo2d &other) {
+    memcpy(this, &other, sizeof(Histo2d));
     data.reset(new float[nx * ny]);
-    memcpy((this->data).get(), Other.data.get(), nx * ny * sizeof(float));
+    memcpy((this->data).get(), other.data.get(), nx * ny * sizeof(float));
 }
 
-bool Histo2d::indices(double X, double Y, int &ix, int &iy) const {
-    ix = (int)floor((X - minx) * scalex);
+bool Histo2d::indices(double x, double y, int &ix, int &iy) const {
+    ix = (int)floor((x - minx) * scalex);
     if (ix < 0 || ix >= nx) return false;
-    iy = (int)floor((Y - miny) * scaley);
+    iy = (int)floor((y - miny) * scaley);
     return (iy >= 0 && iy < ny);
 }
 
-void Histo2d::Fill(float X, float Y, float Weight) {
+void Histo2d::fill(float x, float y, float weight) {
     int ix, iy;
-    if (indices(X, Y, ix, iy)) data[iy + ny * ix] += Weight;
+    if (indices(x, y, ix, iy)) data[iy + ny * ix] += weight;
 }
 
-double Histo2d::MaxBin(double &X, double &Y) const {
+double Histo2d::maxBin(double &x, double &y) const {
     float *p, *pend;
     int imax = 0;
     float valmax = -1e30;
@@ -64,20 +64,20 @@ double Histo2d::MaxBin(double &X, double &Y) const {
     }
     int ix = imax / ny;
     int iy = imax - ix * ny;
-    X = minx + ((float)ix + 0.5) / scalex;
-    Y = miny + ((float)iy + 0.5) / scaley;
+    x = minx + ((float)ix + 0.5) / scalex;
+    y = miny + ((float)iy + 0.5) / scaley;
     return valmax;
 }
 
-void Histo2d::ZeroBin(double X, double Y) {
+void Histo2d::zeroBin(double x, double y) {
     int ix, iy;
-    if (indices(X, Y, ix, iy)) data[iy + ny * ix] = 0;
+    if (indices(x, y, ix, iy)) data[iy + ny * ix] = 0;
 }
 
-double Histo2d::BinContent(double X, double Y) const {
+double Histo2d::binContent(double x, double y) const {
     int ix, iy;
-    if (indices(X, Y, ix, iy)) return data[iy + ny * ix];
-    LOGL_WARN(_log, "Histo2D::BinContent outside limits requested");
+    if (indices(x, y, ix, iy)) return data[iy + ny * ix];
+    LOGL_WARN(_log, "Histo2D::binContent outside limits requested");
     return -1e30;
 }
 }  // namespace jointcal

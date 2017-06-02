@@ -30,34 +30,32 @@ typedef int CcdIdType;
  */
 class CcdImage {
 private:
-    Frame imageFrame;  // in pixels
+    Frame _imageFrame;  // in pixels
 
     MeasuredStarList _wholeCatalog;  // the catalog of measured objets
     MeasuredStarList _catalogForFit;
 
-    std::shared_ptr<BaseTanWcs> readWcs;       // i.e. from pix to sky
-    std::shared_ptr<Gtransfo> inverseReadWcs;  // i.e. from sky to pix
+    std::shared_ptr<BaseTanWcs> _readWcs;       // i.e. from pix to sky
+    std::shared_ptr<Gtransfo> _inverseReadWcs;  // i.e. from sky to pix
 
     // The following ones should probably be mostly removed.
-    std::shared_ptr<Gtransfo> CTP2TP;                  // go from CommonTangentPlane to this tangent plane.
-    std::shared_ptr<Gtransfo> TP2CTP;                  // reverse one
-    std::shared_ptr<Gtransfo> pix2CommonTangentPlane;  // pixels -> CTP
-    std::shared_ptr<Gtransfo> pix2TP;
+    std::shared_ptr<Gtransfo> _CTP2TP;                  // go from CommonTangentPlane to this tangent plane.
+    std::shared_ptr<Gtransfo> _TP2CTP;                  // reverse one
+    std::shared_ptr<Gtransfo> _pix2CommonTangentPlane;  // pixels -> CTP
+    std::shared_ptr<Gtransfo> _pix2TP;
 
-    std::shared_ptr<Gtransfo> sky2TP;
+    std::shared_ptr<Gtransfo> _sky2TP;
 
-    std::string name;
+    std::string _name;
     CcdIdType _ccdId;
     VisitIdType _visit;
 
-    lsst::afw::coord::IcrsCoord boresightRaDec;
-    double airMass;    // airmass value.
-    double fluxCoeff;  // coefficient to convert ADUs to ADUs/sec at airmass 1
-    double mjd;        // modified julian date
+    lsst::afw::coord::IcrsCoord _boresightRaDec;
+    double _airMass;  // airmass value.
+    double _mjd;      // modified julian date
     PTR(lsst::afw::image::Calib) _calib;
-    std::string dateObs;
     // refraction
-    double sineta, coseta, tgz, hourAngle;  // eta : parallactic angle, z: zenithal angle (X = 1/cos(z))
+    double _sineta, _coseta, _tgz, _hourAngle;  // eta : parallactic angle, z: zenithal angle (X = 1/cos(z))
 
     std::string _filter;
 
@@ -67,14 +65,14 @@ private:
                      const std::string &fluxField);
 
 public:
-    CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &Ri,
+    CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &record,
              const PTR(lsst::afw::image::TanWcs) wcs, const PTR(lsst::afw::image::VisitInfo) visitInfo,
              const lsst::afw::geom::Box2I &bbox, const std::string &filter,
              const PTR(lsst::afw::image::Calib) calib, const int &visit, const int &ccd,
              const std::string &fluxField);
 
-    //! Return the name that identifies this ccdImage.
-    std::string getName() const { return name; }
+    //! Return the _name that identifies this ccdImage.
+    std::string getName() const { return _name; }
 
     /**
      * @brief      Gets the as-read catalog.
@@ -108,19 +106,19 @@ public:
     Point const &getCommonTangentPoint() const { return _commonTangentPoint; }
 
     //!
-    const Gtransfo *Pix2CommonTangentPlane() const { return pix2CommonTangentPlane.get(); }
+    const Gtransfo *getPix2CommonTangentPlane() const { return _pix2CommonTangentPlane.get(); }
 
     //!
-    const Gtransfo *CommonTangentPlane2TP() const { return CTP2TP.get(); }
+    const Gtransfo *getCommonTangentPlane2TP() const { return _CTP2TP.get(); }
 
     //!
-    const Gtransfo *TP2CommonTangentPlane() const { return TP2CTP.get(); }
+    const Gtransfo *getTP2CommonTangentPlane() const { return _TP2CTP.get(); }
 
     //!
-    const Gtransfo *Pix2TangentPlane() const { return pix2TP.get(); }
+    const Gtransfo *getPix2TangentPlane() const { return _pix2TP.get(); }
 
     //!
-    const Gtransfo *Sky2TP() const { return sky2TP.get(); }
+    const Gtransfo *getSky2TP() const { return _sky2TP.get(); }
 
     //! returns ccd ID
     int getCcdId() const { return _ccdId; }
@@ -129,13 +127,10 @@ public:
     VisitIdType getVisit() const { return _visit; }
 
     //!  Airmass
-    double getAirMass() const { return airMass; }
-
-    //! Date Obs
-    std::string getDateObs() const { return dateObs; }
+    double getAirMass() const { return _airMass; }
 
     //! Julian Date
-    double getMjd() const { return mjd; }
+    double getMjd() const { return _mjd; }
 
     //! Return the exposure's photometric calibration
     PTR(lsst::afw::image::Calib) getCalib() { return _calib; }
@@ -143,37 +138,34 @@ public:
     /**
      * @brief      Gets the boresight RA/Dec.
      */
-    lsst::afw::coord::IcrsCoord getBoresightRaDec() { return boresightRaDec; }
+    lsst::afw::coord::IcrsCoord getBoresightRaDec() { return _boresightRaDec; }
 
     //!
-    double HourAngle() const { return hourAngle; }
+    double getHourAngle() const { return _hourAngle; }
 
     //! Parallactic angle
-    double SinEta() const { return sineta; }
+    double getSinEta() const { return _sineta; }
 
     //! Parallactic angle
-    double CosEta() const { return coseta; }
+    double getCosEta() const { return _coseta; }
 
     //! Parallactic angle
-    double TanZ() const { return tgz; }
+    double getTanZ() const { return _tgz; }
 
     //!
-    Point RefractionVector() const { return Point(tgz * coseta, tgz * sineta); }
-
-    //! conversion from ADU to ADU/sec at airmass=1
-    double FluxCoeff() const { return fluxCoeff; }
+    Point getRefractionVector() const { return Point(_tgz * _coseta, _tgz * _sineta); }
 
     //! return the CcdImage filter name
     std::string getFilter() const { return _filter; }
 
     //! the wcs read in the header. NOT updated when fitting.
-    const Gtransfo *ReadWCS() const { return readWcs.get(); }
+    const Gtransfo *readWCS() const { return _readWcs.get(); }
 
     //! the inverse of the one above.
-    const Gtransfo *InverseReadWCS() const { return inverseReadWcs.get(); }
+    const Gtransfo *getInverseReadWCS() const { return _inverseReadWcs.get(); }
 
     //! Frame in pixels
-    const Frame &getImageFrame() const { return imageFrame; }
+    const Frame &getImageFrame() const { return _imageFrame; }
 
 private:
     CcdImage(const CcdImage &);  // forbid copies

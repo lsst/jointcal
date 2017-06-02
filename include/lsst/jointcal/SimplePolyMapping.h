@@ -25,28 +25,22 @@ protected:
     std::shared_ptr<Gtransfo> transfo;
 
     std::shared_ptr<Gtransfo> errorProp;
-    /* to avoid allocation at every call of PosDerivatives.
+    /* to avoid allocation at every call of positionDerivative.
        use a pointer for constness */
     std::unique_ptr<GtransfoLin> lin;
 
-#ifdef STORAGE
-    //! this is modern compilation-time check:
-    static_assert(std::is_base_of<Gtransfo, Tr>::value,
-                  "SimpleGtransfoMapping requires a class deriving from Gtransfo");
-#endif
-
 public:
-    SimpleGtransfoMapping(const Gtransfo &T, bool ToFit = true)
-            : toFit(ToFit), transfo(T.Clone()), errorProp(transfo), lin(new GtransfoLin) {
+    SimpleGtransfoMapping(const Gtransfo &gtransfo, bool toFit = true)
+            : toFit(toFit), transfo(gtransfo.clone()), errorProp(transfo), lin(new GtransfoLin) {
         // in this order:
         // take a copy of the input transfo,
         // assign the transformation used to propagate errors to the transfo itself
         // reserve some memory space to compute the derivatives (efficiency).
     }
 
-    virtual void FreezeErrorScales() {
+    virtual void freezeErrorScales() {
         // from there on, updating the transfo does not change the errors.
-        errorProp = transfo->Clone();
+        errorProp = transfo->clone();
     }
 
     // interface Mapping functions:
@@ -66,32 +60,32 @@ public:
     }
 
     //!
-    void TransformPosAndErrors(const FatPoint &Where, FatPoint &OutPos) const {
-        transfo->TransformPosAndErrors(Where, OutPos);
+    void transformPosAndErrors(const FatPoint &where, FatPoint &outPoint) const {
+        transfo->transformPosAndErrors(where, outPoint);
         FatPoint tmp;
-        errorProp->TransformPosAndErrors(Where, tmp);
-        OutPos.vx = tmp.vx;
-        OutPos.vy = tmp.vy;
-        OutPos.vxy = tmp.vxy;
+        errorProp->transformPosAndErrors(where, tmp);
+        outPoint.vx = tmp.vx;
+        outPoint.vy = tmp.vy;
+        outPoint.vxy = tmp.vxy;
     }
 
     //!
-    void PosDerivative(const Point &Where, Eigen::Matrix2d &Der, double Eps) const {
-        errorProp->Derivative(Where, *lin, Eps);
-        Der(0, 0) = lin->Coeff(1, 0, 0);
+    void positionDerivative(const Point &where, Eigen::Matrix2d &derivative, double epsilon) const {
+        errorProp->computeDerivative(where, *lin, epsilon);
+        derivative(0, 0) = lin->coeff(1, 0, 0);
         //
         /* This does not work : it was proved by rotating the frame
            see the compilation switch ROTATE_T2 in constrainedpolymodel.cc
-        Der(1,0) = lin->Coeff(1,0,1);
-        Der(0,1) = lin->Coeff(0,1,0);
+        derivative(1,0) = lin->coeff(1,0,1);
+        derivative(0,1) = lin->coeff(0,1,0);
         */
-        Der(1, 0) = lin->Coeff(0, 1, 0);
-        Der(0, 1) = lin->Coeff(1, 0, 1);
-        Der(1, 1) = lin->Coeff(0, 1, 1);
+        derivative(1, 0) = lin->coeff(0, 1, 0);
+        derivative(0, 1) = lin->coeff(1, 0, 1);
+        derivative(1, 1) = lin->coeff(0, 1, 1);
     }
 
     //!
-    void OffsetParams(const double *Delta) { transfo->OffsetParams(Delta); }
+    void offsetParams(const double *delta) { transfo->offsetParams(delta); }
 
     //! position of the parameters within the grand fitting scheme
     unsigned getIndex() const { return index; }
@@ -99,14 +93,14 @@ public:
     //!
     void setIndex(unsigned i) { index = i; }
 
-    virtual void ComputeTransformAndDerivatives(const FatPoint &Where, FatPoint &OutPos,
+    virtual void computeTransformAndDerivatives(const FatPoint &where, FatPoint &outPoint,
                                                 Eigen::MatrixX2d &H) const {
-        TransformPosAndErrors(Where, OutPos);
-        transfo->ParamDerivatives(Where, &H(0, 0), &H(0, 1));
+        transformPosAndErrors(where, outPoint);
+        transfo->paramDerivatives(where, &H(0, 0), &H(0, 1));
     }
 
     //! Access to the (fitted) transfo
-    virtual const Gtransfo &Transfo() const { return *transfo; }
+    virtual const Gtransfo &getTransfo() const { return *transfo; }
 };
 
 //! Mapping implementation for a polynomial transformation.
@@ -124,18 +118,18 @@ public:
     ~SimplePolyMapping() {}
 
     // ! contructor.
-    /*! The transformation will be initialized to Transfo, so that the effective transformation
-      reads Transfo*CenterAndScale */
-    SimplePolyMapping(const GtransfoLin &CenterAndScale, const GtransfoPoly &Transfo)
-            : SimpleGtransfoMapping(Transfo), _centerAndScale(CenterAndScale) {
+    /*! The transformation will be initialized to gtransfo, so that the effective transformation
+      reads gtransfo*CenterAndScale */
+    SimplePolyMapping(const GtransfoLin &CenterAndScale, const GtransfoPoly &gtransfo)
+            : SimpleGtransfoMapping(gtransfo), _centerAndScale(CenterAndScale) {
         // We assume that the initialization was done properly, for example that
-        // Transfo = pix2TP*CenterAndScale.invert(), so we do not touch transfo.
+        // gtransfo = pix2TP*CenterAndScale.invert(), so we do not touch transfo.
         /* store the (spatial) derivative of _centerAndScale. For the extra
-           diagonal terms, just copied the ones in PosDerivatives */
-        preDer(0, 0) = _centerAndScale.Coeff(1, 0, 0);
-        preDer(1, 0) = _centerAndScale.Coeff(0, 1, 0);
-        preDer(0, 1) = _centerAndScale.Coeff(1, 0, 1);
-        preDer(1, 1) = _centerAndScale.Coeff(0, 1, 1);
+           diagonal terms, just copied the ones in positionDerivatives */
+        preDer(0, 0) = _centerAndScale.coeff(1, 0, 0);
+        preDer(1, 0) = _centerAndScale.coeff(0, 1, 0);
+        preDer(0, 1) = _centerAndScale.coeff(1, 0, 1);
+        preDer(1, 1) = _centerAndScale.coeff(0, 1, 1);
 
         // check of matrix indexing (once for all)
         MatrixX2d H(3, 2);
@@ -145,53 +139,53 @@ public:
     /* The SimpleGtransfoMapping version does not account for the
        _centerAndScale transfo */
 
-    void PosDerivative(const Point &Where, Eigen::Matrix2d &Der, double Eps) const {
-        Point tmp = _centerAndScale.apply(Where);
-        errorProp->Derivative(tmp, *lin, Eps);
-        Der(0, 0) = lin->Coeff(1, 0, 0);
+    void positionDerivative(const Point &where, Eigen::Matrix2d &derivative, double epsilon) const {
+        Point tmp = _centerAndScale.apply(where);
+        errorProp->computeDerivative(tmp, *lin, epsilon);
+        derivative(0, 0) = lin->coeff(1, 0, 0);
         //
         /* This does not work : it was proved by rotating the frame
            see the compilation switch ROTATE_T2 in constrainedpolymodel.cc
-        Der(1,0) = lin->Coeff(1,0,1);
-        Der(0,1) = lin->Coeff(0,1,0);
+        derivative(1,0) = lin->coeff(1,0,1);
+        derivative(0,1) = lin->coeff(0,1,0);
         */
-        Der(1, 0) = lin->Coeff(0, 1, 0);
-        Der(0, 1) = lin->Coeff(1, 0, 1);
-        Der(1, 1) = lin->Coeff(0, 1, 1);
-        Der = preDer * Der;
+        derivative(1, 0) = lin->coeff(0, 1, 0);
+        derivative(0, 1) = lin->coeff(1, 0, 1);
+        derivative(1, 1) = lin->coeff(0, 1, 1);
+        derivative = preDer * derivative;
     }
 
     //! Calls the transforms and implements the centering and scaling of coordinates
     /* We should put the computation of error propagation and
        parameter derivatives into the same Gtransfo routine because
        it could be significantly faster */
-    virtual void ComputeTransformAndDerivatives(const FatPoint &Where, FatPoint &OutPos,
+    virtual void computeTransformAndDerivatives(const FatPoint &where, FatPoint &outPoint,
                                                 Eigen::MatrixX2d &H) const {
         FatPoint mid;
-        _centerAndScale.TransformPosAndErrors(Where, mid);
-        transfo->TransformPosAndErrors(mid, OutPos);
+        _centerAndScale.transformPosAndErrors(where, mid);
+        transfo->transformPosAndErrors(mid, outPoint);
         FatPoint tmp;
-        errorProp->TransformPosAndErrors(mid, tmp);
-        OutPos.vx = tmp.vx;
-        OutPos.vy = tmp.vy;
-        OutPos.vxy = tmp.vxy;
-        transfo->ParamDerivatives(mid, &H(0, 0), &H(0, 1));
+        errorProp->transformPosAndErrors(mid, tmp);
+        outPoint.vx = tmp.vx;
+        outPoint.vy = tmp.vy;
+        outPoint.vxy = tmp.vxy;
+        transfo->paramDerivatives(mid, &H(0, 0), &H(0, 1));
     }
 
     //! Implements as well the centering and scaling of coordinates
-    void TransformPosAndErrors(const FatPoint &Where, FatPoint &OutPos) const {
+    void transformPosAndErrors(const FatPoint &where, FatPoint &outPoint) const {
         FatPoint mid;
-        _centerAndScale.TransformPosAndErrors(Where, mid);
-        transfo->TransformPosAndErrors(mid, OutPos);
+        _centerAndScale.transformPosAndErrors(where, mid);
+        transfo->transformPosAndErrors(mid, outPoint);
         FatPoint tmp;
-        errorProp->TransformPosAndErrors(mid, tmp);
-        OutPos.vx = tmp.vx;
-        OutPos.vy = tmp.vy;
-        OutPos.vxy = tmp.vxy;
+        errorProp->transformPosAndErrors(mid, tmp);
+        outPoint.vx = tmp.vx;
+        outPoint.vy = tmp.vy;
+        outPoint.vxy = tmp.vxy;
     }
 
     //! Access to the (fitted) transfo
-    const Gtransfo &Transfo() const {
+    const Gtransfo &getTransfo() const {
         // Cannot fail given the contructor:
         const GtransfoPoly *fittedPoly = dynamic_cast<const GtransfoPoly *>(&(*transfo));
         actualResult = (*fittedPoly) * _centerAndScale;
@@ -205,9 +199,9 @@ public:
 class SimpleIdentityMapping : public SimpleGtransfoMapping<GtransfoIdentity> {
 public:
     //! nothing to do.
-    virtual void ComputeTransformAndDerivatives(const FatPoint &Where, FatPoint &OutPos,
+    virtual void computeTransformAndDerivatives(const FatPoint &where, FatPoint &outPoint,
                                                 Eigen::MatrixX2d &H) const {
-        OutPos = Where;
+        outPoint = where;
     }
 };
 #endif

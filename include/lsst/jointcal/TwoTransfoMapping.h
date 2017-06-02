@@ -29,39 +29,39 @@ class TwoTransfoMapping : public Mapping {
 
 public:
     //!
-    TwoTransfoMapping(SimpleGtransfoMapping *ChipM, SimpleGtransfoMapping *VisitM);
+    TwoTransfoMapping(SimpleGtransfoMapping *chipMapping, SimpleGtransfoMapping *visitMapping);
     //!
     unsigned getNpar() const;
 
     void setMappingIndices(std::vector<unsigned> &indices) const;
 
     //!
-    void ComputeTransformAndDerivatives(const FatPoint &Where, FatPoint &OutPos, Eigen::MatrixX2d &H) const;
+    void computeTransformAndDerivatives(const FatPoint &where, FatPoint &outPoint, Eigen::MatrixX2d &H) const;
     //!
-    void TransformPosAndErrors(const FatPoint &Where, FatPoint &OutPos) const;
+    void transformPosAndErrors(const FatPoint &where, FatPoint &outPoint) const;
 
     //!
-    void OffsetParams(const double *Delta) {  // this routine is not used when fitting. used for debugging
-        _m1->OffsetParams(Delta);
-        _m2->OffsetParams(Delta + _m1->getNpar());
+    void offsetParams(const double *delta) {  // this routine is not used when fitting. used for debugging
+        _m1->offsetParams(delta);
+        _m2->offsetParams(delta + _m1->getNpar());
     }
 
     //! access to transfos
-    const Gtransfo &T1() const { return _m1->Transfo(); }
+    const Gtransfo &getTransfo1() const { return _m1->getTransfo(); }
 
     //! access to transfos
-    const Gtransfo &T2() const { return _m2->Transfo(); }
+    const Gtransfo &getTransfo2() const { return _m2->getTransfo(); }
 
     //! Currently *not* implemented
-    void PosDerivative(const Point &Where, Eigen::Matrix2d &Der, double Eps) const;
+    void positionDerivative(const Point &where, Eigen::Matrix2d &derivative, double epsilon) const;
 
     //! Currently not implemented
-    void FreezeErrorScales();
+    void freezeErrorScales();
 
 private:
     friend class ConstrainedPolyModel;
     //!
-    void SetWhatToFit(const bool FittingT1, const bool FittingT2);
+    void setWhatToFit(const bool fittingT1, const bool fittingT2);
 };
 }  // namespace jointcal
 }  // namespace lsst

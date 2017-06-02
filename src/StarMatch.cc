@@ -17,9 +17,9 @@ namespace jointcal {
 
 static double sq(double x) { return x * x; }
 
-double StarMatch::Chi2(const Gtransfo &T) const {
+double StarMatch::computeChi2(const Gtransfo &gtransfo) const {
     FatPoint tr;
-    T.TransformPosAndErrors(point1, tr);
+    gtransfo.transformPosAndErrors(point1, tr);
     double vxx = tr.vx + point2.vx;
     double vyy = tr.vy + point2.vy;
     double vxy = tr.vxy + point2.vxy;
@@ -29,31 +29,31 @@ double StarMatch::Chi2(const Gtransfo &T) const {
            det;
 }
 
-std::ostream &operator<<(std::ostream &stream, const StarMatch &Match) {
-    stream << Match.point1.x << ' ' << Match.point1.y << ' ' << Match.point2.x << ' ' << Match.point2.y << ' '
-           << Match.distance << std::endl;
+std::ostream &operator<<(std::ostream &stream, const StarMatch &match) {
+    stream << match.point1.x << ' ' << match.point1.y << ' ' << match.point2.x << ' ' << match.point2.y << ' '
+           << match.distance << std::endl;
     return stream;
 }
 
-std::ostream &operator<<(std::ostream &stream, const StarMatchList &List) {
-    stream << " number of elements " << List.size() << std::endl;
-    copy(List.begin(), List.end(), std::ostream_iterator<StarMatch>(stream));
+std::ostream &operator<<(std::ostream &stream, const StarMatchList &starMatchList) {
+    stream << " number of elements " << starMatchList.size() << std::endl;
+    copy(starMatchList.begin(), starMatchList.end(), std::ostream_iterator<StarMatch>(stream));
     return stream;
 }
 
-static std::unique_ptr<double[]> chi2_array(const StarMatchList &L, const Gtransfo &T) {
-    unsigned s = L.size();
+static std::unique_ptr<double[]> chi2_array(const StarMatchList &starMatchList, const Gtransfo &gtransfo) {
+    unsigned s = starMatchList.size();
     auto res = std::unique_ptr<double[]>(new double[s]);
     unsigned count = 0;
-    for (auto const &it : L) res[count++] = it.Chi2(T);
+    for (auto const &it : starMatchList) res[count++] = it.computeChi2(gtransfo);
     return res;
 }
 
-static unsigned chi2_cleanup(StarMatchList &L, const double Chi2Cut, const Gtransfo &T) {
-    unsigned erased = L.RemoveAmbiguities(T);
-    for (auto smi = L.begin(); smi != L.end();) {
-        if (smi->chi2 > Chi2Cut) {
-            smi = L.erase(smi);
+static unsigned chi2_cleanup(StarMatchList &starMatchList, const double chi2Cut, const Gtransfo &gtransfo) {
+    unsigned erased = starMatchList.removeAmbiguities(gtransfo);
+    for (auto smi = starMatchList.begin(); smi != starMatchList.end();) {
+        if (smi->chi2 > chi2Cut) {
+            smi = starMatchList.erase(smi);
             erased++;
         } else
             ++smi;
@@ -61,43 +61,27 @@ static unsigned chi2_cleanup(StarMatchList &L, const double Chi2Cut, const Gtran
     return erased;
 }
 
-#ifdef DO_WE_NEED_IT
-static double *get_dist2_array(const StarMatchList &L, const Gtransfo &T) {
-    unsigned npair = L.size();
-    if (npair == 0) return nullptr;
-    std::unique_ptr<double[]> dist(new double[npair]);
-
-    unsigned i = 0;
-    for (auto smi = L.begin(); smi != L.end(); ++smi, ++i) {
-        const Point &p1 = smi->point1;
-        const Point &p2 = smi->point2;
-        dist[i] = p2.Dist2(T.apply(p1));
-    }
-    return dist;
-}
-#endif
-
-int StarMatchList::Dof(const Gtransfo *T) const {
-    int npar = (T) ? T->getNpar() : (&(*transfo) ? transfo->getNpar() : 0);
+int StarMatchList::getDof(const Gtransfo *gtransfo) const {
+    int npar = (gtransfo) ? gtransfo->getNpar() : (&(*_transfo) ? _transfo->getNpar() : 0);
     int dof = 2 * size() - npar;
     return (dof > 0) ? dof : 0;
 }
 
-/*! removes pairs beyond NSigmas in distance (where the sigma scale is
+/*! removes pairs beyond nSigmas in distance (where the sigma scale is
    set by the fit) and iterates until stabilization of the number of pairs.
    If the transfo is not assigned, it will be set to a GtransfoLinear. User
-   can set an other type/degree using SetTransfo() before call. */
-void StarMatchList::RefineTransfo(double NSigmas) {
+   can set an other type/degree using setTransfo() before call. */
+void StarMatchList::refineTransfo(double nSigmas) {
     double cut;
     unsigned nremoved;
-    if (!transfo) transfo.reset(new GtransfoLin);
+    if (!_transfo) _transfo.reset(new GtransfoLin);
     do {
         int nused = size();
         if (nused <= 2) {
-            chi2 = -1;
+            _chi2 = -1;
             break;
         }
-        chi2 = transfo->fit(*this);
+        _chi2 = _transfo->fit(*this);
         /* convention of the fitted routines :
            -  chi2 = 0 means zero degrees of freedom
                 (this was not enforced in Gtransfo{Lin,Quad,Cub} ...)
@@ -107,156 +91,140 @@ void StarMatchList::RefineTransfo(double NSigmas) {
            that in this (rare) case, we were discarding matches at random....
            With GtransfoPoly::fit, this is no longer the case.
         */
-        if (chi2 <= 0) return;
+        if (_chi2 <= 0) return;
         unsigned npair = int(size());
         if (npair == 0) break;  // should never happen
 
         // compute some chi2 statistics
         std::unique_ptr<double[]> chi2_array(new double[npair]);
         unsigned count = 0;
-        for (auto &starMatch : *this) chi2_array[count++] = starMatch.chi2 = starMatch.Chi2(*transfo);
+        for (auto &starMatch : *this) chi2_array[count++] = starMatch.chi2 = starMatch.computeChi2(*_transfo);
 
         std::sort(chi2_array.get(), chi2_array.get() + npair);
         double median = (npair & 1) ? chi2_array[npair / 2]
                                     : (chi2_array[npair / 2 - 1] + chi2_array[npair / 2]) * 0.5;
 
         // discard outliers : the cut is understood as a "distance" cut
-        cut = sq(NSigmas) * median;
-        nremoved = chi2_cleanup(*this, cut, *transfo);
+        cut = sq(nSigmas) * median;
+        nremoved = chi2_cleanup(*this, cut, *_transfo);
     } while (nremoved);
-    dist2 = ComputeDist2(*this, *transfo);
+    _dist2 = computeDist2(*this, *_transfo);
 }
 
 /* not very robust : assumes that we went through Refine just before... */
-double StarMatchList::Residual() const {
-    int deno = (2. * size() - transfo->getNpar());
-    return (deno > 0) ? sqrt(dist2 / deno) : -1;  // is -1 a good idea?
+double StarMatchList::computeResidual() const {
+    int deno = (2. * size() - _transfo->getNpar());
+    return (deno > 0) ? sqrt(_dist2 / deno) : -1;  // is -1 a good idea?
 }
 
-void StarMatchList::SetDistance(const Gtransfo &Transfo) {
-    for (auto &smi : *this) smi.SetDistance(Transfo);  // c'est compact
+void StarMatchList::setDistance(const Gtransfo &gtransfo) {
+    for (auto &smi : *this) smi.setDistance(gtransfo);  // c'est compact
 }
 
-unsigned StarMatchList::RemoveAmbiguities(const Gtransfo &Transfo, const int Which) {
-    if (!Which) return 0;
-    SetDistance(Transfo);
+unsigned StarMatchList::removeAmbiguities(const Gtransfo &gtransfo, int which) {
+    if (!which) return 0;
+    setDistance(gtransfo);
     int initial_count = size();
-    if (Which & 1) {
-        sort(CompareS1);
-        unique(SameS1);
+    if (which & 1) {
+        sort(compareStar1);
+        unique(sameStar1);
     }
-    if (Which & 2) {
-        sort(CompareS2);
-        unique(SameS2);
+    if (which & 2) {
+        sort(compareStar2);
+        unique(sameStar2);
     }
     return (initial_count - size());
 }
 
-void StarMatchList::SetTransfoOrder(const int Order) {
-    if (Order == 0)
-        SetTransfo(std::make_shared<GtransfoLinShift>());
-    else if (Order == 1)
-        SetTransfo(std::make_shared<GtransfoLin>());
+void StarMatchList::setTransfoOrder(int order) {
+    if (order == 0)
+        setTransfo(std::make_shared<GtransfoLinShift>());
+    else if (order == 1)
+        setTransfo(std::make_shared<GtransfoLin>());
     else
-        SetTransfo(GtransfoPoly(Order));
+        setTransfo(GtransfoPoly(order));
     // might consider throwing if order does not make sense (e.g. >10)
-    order = Order;
+    _order = order;
 }
 
-/* This routine should operate on a copy : RefineTransfo
+/* This routine should operate on a copy : refineTransfo
    might shorten the list */
-std::unique_ptr<Gtransfo>
-StarMatchList::InverseTransfo() /* it is not const although it tries not to change anything  */
-{
-    if (!transfo) return nullptr;
+/* it is not const although it tries not to change anything  */
+std::unique_ptr<Gtransfo> StarMatchList::inverseTransfo() {
+    if (!_transfo) return nullptr;
 
-    auto old_transfo = transfo->Clone();
-    double old_chi2 = chi2;
+    auto old_transfo = _transfo->clone();
+    double old_chi2 = _chi2;
 
-    Swap();
-    SetTransfoOrder(order);
-    RefineTransfo(3.);  // keep same order
-    auto inverted_transfo = transfo->Clone();
-    SetTransfo(old_transfo.get());
-    Swap();
-    chi2 = old_chi2;
+    swap();
+    setTransfoOrder(_order);
+    refineTransfo(3.);  // keep same order
+    auto inverted_transfo = _transfo->clone();
+    setTransfo(old_transfo.get());
+    swap();
+    _chi2 = old_chi2;
 
     return inverted_transfo;
 }
 
-void StarMatchList::CutTail(const int NKeep) {
+void StarMatchList::cutTail(int nKeep) {
     iterator si;
     int count = 0;
-    for (si = begin(); si != end() && count < NKeep; ++count, ++si)
+    for (si = begin(); si != end() && count < nKeep; ++count, ++si)
         ;
     erase(si, end());
 }
 
-void StarMatchList::Swap() {
+void StarMatchList::swap() {
     for (auto &starMatch : *this) {
-        starMatch.Swap();
+        starMatch.swap();
     }
 }
 
-int StarMatchList::RecoveredNumber(double mindist) const {
+int StarMatchList::recoveredNumber(double mindist) const {
     int n = 0;
     GtransfoIdentity identity;
     for (auto const &starMatch : *this) {
-        if (starMatch.Distance(identity) < mindist) n++;
+        if (starMatch.computeDistance(identity) < mindist) n++;
     }
     return (n);
 }
 
-void StarMatchList::ApplyTransfo(StarMatchList &Transformed, const Gtransfo *PriorTransfo,
-                                 const Gtransfo *PosteriorTransfo) const {
-    Transformed.clear();
+void StarMatchList::applyTransfo(StarMatchList &transformed, const Gtransfo *priorTransfo,
+                                 const Gtransfo *posteriorTransfo) const {
+    transformed.clear();
     GtransfoIdentity id;
-    const Gtransfo &T1 = (PriorTransfo) ? *PriorTransfo : id;
-    const Gtransfo &T2 = (PosteriorTransfo) ? *PosteriorTransfo : id;
+    const Gtransfo &T1 = (priorTransfo) ? *priorTransfo : id;
+    const Gtransfo &T2 = (posteriorTransfo) ? *posteriorTransfo : id;
 
     for (auto const &starMatch : *this) {
         FatPoint p1;
-        T1.TransformPosAndErrors(starMatch.point1, p1);
+        T1.transformPosAndErrors(starMatch.point1, p1);
         FatPoint p2;
-        T2.TransformPosAndErrors(starMatch.point2, p2);
-        Transformed.push_back(StarMatch(p1, p2, starMatch.s1, starMatch.s2));
+        T2.transformPosAndErrors(starMatch.point2, p2);
+        transformed.push_back(StarMatch(p1, p2, starMatch.s1, starMatch.s2));
     }
 }
 
-void StarMatchList::SetChi2() {
-    chi2 = 0;
-    for (auto &starMatch : *this) {
-        starMatch.chi2 = starMatch.Chi2(*transfo);
-        chi2 += starMatch.chi2;
-    }
-}
-
-void StarMatchList::DumpTransfo(std::ostream &stream) const {
+void StarMatchList::dumpTransfo(std::ostream &stream) const {
     stream << " ================================================================" << std::endl
-           << " Transformation between lists of order " << TransfoOrder() << std::endl
-           << *transfo  //<< endl
-           << " Chi2 = " << Chi2() << "  Residual = " << Residual() << std::endl
+           << " Transformation between lists of order " << getTransfoOrder() << std::endl
+           << *_transfo  //<< endl
+           << " Chi2 = " << getChi2() << "  Residual = " << computeResidual() << std::endl
            << "  Number in the list = " << size() << std::endl
            << " ================================================================" << std::endl;
 }
 
-double FitResidual(const double Dist2, const StarMatchList &S, const Gtransfo &T) {
-    return sqrt(Dist2 / (2. * S.size() - T.getNpar()));
-}
-
-double FitResidual(const StarMatchList &S, const Gtransfo &T) {
-    return FitResidual(ComputeDist2(S, T), S, T);
-}
-
-double ComputeDist2(const StarMatchList &S, const Gtransfo &T) {
+double computeDist2(const StarMatchList &starMatchList, const Gtransfo &gtransfo) {
     double dist2 = 0;
-    for (auto const &starMatch : S) dist2 += T.apply(starMatch.point1).Dist2(starMatch.point2);
+    for (auto const &starMatch : starMatchList)
+        dist2 += gtransfo.apply(starMatch.point1).computeDist2(starMatch.point2);
     return dist2;
 }
 
-double computeChi2(const StarMatchList &L, const Gtransfo &T) {
-    unsigned s = L.size();
-    std::unique_ptr<double[]> chi2s(chi2_array(L, T));
+double computeChi2(const StarMatchList &starMatchList, const Gtransfo &gtransfo) {
+    unsigned s = starMatchList.size();
+    std::unique_ptr<double[]> chi2s(chi2_array(starMatchList, gtransfo));
     double chi2 = 0;
     for (unsigned k = 0; k < s; ++k) chi2 += chi2s[k];
     return chi2;

@@ -50,9 +50,9 @@ public:
 
     /**
      * Positions the various parameter sets into the parameter vector, starting at
-     * FirstIndex.
+     * firstIndex.
      */
-    unsigned assignIndices(unsigned FirstIndex, const std::string &WhatToFit);
+    unsigned assignIndices(unsigned firstIndex, const std::string &whatToFit);
 
     /**
      * Dispaches the offsets after a fit step into the actual locations of
@@ -67,10 +67,10 @@ public:
     void freezeErrorScales();
 
     //! Access to mappings
-    const Gtransfo &getChipTransfo(const CcdIdType Chip) const;
+    const Gtransfo &getChipTransfo(const CcdIdType chip) const;
 
     //! Access to mappings
-    const Gtransfo &getVisitTransfo(const VisitIdType &Visit) const;
+    const Gtransfo &getVisitTransfo(const VisitIdType &visit) const;
 
     //! Access to array of visits involved in the solution.
     std::vector<VisitIdType> getVisits() const;
@@ -80,7 +80,7 @@ public:
      * stars are reported) onto the Tangent plane (into which the pixel coordinates
      * are transformed).
      */
-    const Gtransfo *sky2TP(const CcdImage &ccdImage) const { return _sky2TP->Sky2TP(ccdImage); }
+    const Gtransfo *getSky2TP(const CcdImage &ccdImage) const { return _sky2TP->getSky2TP(ccdImage); }
 
     std::shared_ptr<TanSipPix2RaDec> produceSipWcs(const CcdImage &ccdImage) const;
 };

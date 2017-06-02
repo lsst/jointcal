@@ -15,16 +15,16 @@ namespace lsst {
 namespace jointcal {
 
 template <class Star>
-void StarList<Star>::FluxSort() {
+void StarList<Star>::fluxSort() {
     typedef StarList<Star>::Element E;
-    this->sort([](const E &E1, const E &E2) { return (E1->flux > E2->flux); });
+    this->sort([](const E &e1, const E &e2) { return (e1->getFlux() > e2->getFlux()); });
 }
 
 template <class Star>
-void StarList<Star>::CutTail(const int NKeep) {
+void StarList<Star>::cutTail(const int nKeep) {
     int count = 0;
     auto si = this->begin();
-    for (; si != this->end() && count < NKeep; ++count, ++si)
+    for (; si != this->end() && count < nKeep; ++count, ++si)
         ;
     while (si != this->end()) {
         si = this->erase(si);
@@ -32,19 +32,19 @@ void StarList<Star>::CutTail(const int NKeep) {
 }
 
 template <class Star>
-void StarList<Star>::ExtractInFrame(StarList<Star> &Out, const Frame &aFrame) const {
+void StarList<Star>::extractInFrame(StarList<Star> &out, const Frame &frame) const {
     for (auto const &star : *this) {
-        if (aFrame.InFrame(*star)) {
-            Out.push_back(std::make_shared<Star>(*star));
+        if (frame.inFrame(*star)) {
+            out.push_back(std::make_shared<Star>(*star));
         }
     }
 }
 
 template <class Star>
-void StarList<Star>::CopyTo(StarList<Star> &Copy) const {
-    Copy.ClearList();
-    //  Copy.GlobVal() = this->GlobVal();
-    for (auto const &si : *this) Copy.push_back(std::make_shared<Star>(*si));
+void StarList<Star>::copyTo(StarList<Star> &copy) const {
+    copy.clearList();
+    //  copy.GlobVal() = this->GlobVal();
+    for (auto const &si : *this) copy.push_back(std::make_shared<Star>(*si));
 }
 
 // Explicit instantiations

@@ -80,7 +80,7 @@ public:
      * Does a 1 step minimization, assuming a linear model.
      *
      * It calls assignIndices, LSDerivatives, solves the linear system and calls
-     * OffsetParams. No line search. Relies on sparse linear algebra.
+     * offsetParams. No line search. Relies on sparse linear algebra.
      *
      * This is a complete Newton Raphson step. Compute first and second
      * derivatives, solve for the step and apply it, without a line search.
@@ -124,7 +124,7 @@ public:
 
     /**
      * Set parameter groups fixed or variable and assign indices to each
-     * parameter in the big matrix (which will be used by OffsetParams(...).
+     * parameter in the big matrix (which will be used by offsetParams(...).
      *
      * @param[in]  whatToFit  Valid strings: "Distortions", "Positions",
      *                        "Refrac", "PM" which define which parameter set is

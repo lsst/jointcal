@@ -90,7 +90,7 @@ BOOST_AUTO_TEST_CASE(test_polyfit)
 	s1->vy = 0.2;
 	s1->vxy = 0.05;
 	auto s2 = std::make_shared<jointcal::BaseStar>();
-	gtransfoWcs.TransformPosAndErrors(*s1, *s2);
+	gtransfoWcs.transformPosAndErrors(*s1, *s2);
 	bsl1.push_back(s1);
 	bsl2.push_back(s2);
 	sml.push_back(jointcal::StarMatch(*s1,*s2,s1,s2));

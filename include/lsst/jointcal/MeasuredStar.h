@@ -22,48 +22,47 @@ public:
     double eflux;
     double aperrad;
     double chi2;
-    const CcdImage *ccdImage;
 
 private:
-    std::shared_ptr<const FittedStar> fittedStar;
-    bool valid;
+    const CcdImage *_ccdImage;
+    std::shared_ptr<const FittedStar> _fittedStar;
+    bool _valid;
 
 public:
     //!
-    MeasuredStar() : BaseStar(), mag(0.), wmag(0.), eflux(0.), aperrad(0.), ccdImage(0), valid(true) {}
+    MeasuredStar() : BaseStar(), mag(0.), wmag(0.), eflux(0.), aperrad(0.), _ccdImage(0), _valid(true) {}
 
-    // TODO: note F argument seems unused!
-    MeasuredStar(const BaseStar &B, const FittedStar *F = nullptr)
-            : BaseStar(B), mag(0.), wmag(0.), eflux(0.), aperrad(0.), ccdImage(0), valid(true) {}
+    // TODO: note fittedStar argument seems unused!
+    MeasuredStar(const BaseStar &baseStar, const FittedStar *_fittedStar = nullptr)
+            : BaseStar(baseStar), mag(0.), wmag(0.), eflux(0.), aperrad(0.), _ccdImage(0), _valid(true) {}
 
-    void SetFittedStar(std::shared_ptr<FittedStar> F) {
-        if (F) F->MeasurementCount()++;
-        fittedStar = std::move(F);
+    void setFittedStar(std::shared_ptr<FittedStar> fittedStar) {
+        if (fittedStar) fittedStar->getMeasurementCount()++;
+        _fittedStar = std::move(fittedStar);
     }
 
     void dump(std::ostream &stream = std::cout) const {
         BaseStar::dump(stream);
-        stream << " ccdImage: " << ccdImage << " valid: " << valid;
+        stream << " ccdImage: " << _ccdImage << " valid: " << _valid;
     }
 
-    double FluxSig() const { return eflux; }
-
-    double Mag() const { return mag; }
-    double AperRad() const { return aperrad; }
+    double getFluxSig() const { return eflux; }
+    double getMag() const { return mag; }
+    double getAperRad() const { return aperrad; }
 
     //! the inverse of the mag variance
-    double MagWeight() const { return (flux * flux / (eflux * eflux)); }
+    double getMagWeight() const { return (_flux * _flux / (eflux * eflux)); }
 
-    std::shared_ptr<const FittedStar> GetFittedStar() const { return fittedStar; };
+    std::shared_ptr<const FittedStar> getFittedStar() const { return _fittedStar; };
 
-    const CcdImage &GetCcdImage() const { return *ccdImage; };
+    const CcdImage &getCcdImage() const { return *_ccdImage; };
 
-    void setCcdImage(const CcdImage *C) { ccdImage = C; };
+    void setCcdImage(const CcdImage *ccdImage) { _ccdImage = ccdImage; };
 
     //! Fits may use that to discard outliers
-    bool IsValid() const { return valid; }
+    bool isValid() const { return _valid; }
     //! Fits may use that to discard outliers
-    void SetValid(bool v) { valid = v; }
+    void setValid(bool v) { _valid = v; }
 };
 
 /****** MeasuredStarList */
@@ -73,7 +72,7 @@ class MeasuredStarList : public StarList<MeasuredStar> {
 public:
     MeasuredStarList(){};
 
-    void setCcdImage(const CcdImage *C);
+    void setCcdImage(const CcdImage *_ccdImage);
 };
 
 typedef MeasuredStarList::const_iterator MeasuredStarCIterator;

@@ -95,8 +95,8 @@ public:
 //! Set the color field of FittedStar 's from a colored catalog.
 /* If Color is "g-i", then the color is assigned from columns "g" and "i" of the colored catalog. */
 #ifdef TODO
-    void setFittedStarColors(std::string const &DicStarListName, std::string const &Color,
-                             double MatchCutArcSec);
+    void setFittedStarColors(std::string const &dicStarListName, std::string const &color,
+                             double matchCutArcSec);
 #endif
 
     /**
@@ -129,6 +129,6 @@ private:
     void assignMags();
 };
 
-#endif  // LSST_JOINTCAL_ASSOCIATIONS_H
 }  // namespace jointcal
 }  // namespace lsst
+#endif  // LSST_JOINTCAL_ASSOCIATIONS_H

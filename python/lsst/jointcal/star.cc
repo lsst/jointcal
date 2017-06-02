@@ -58,7 +58,8 @@ void declareBaseStar(py::module &mod) {
     cls.def_readonly("vy", (double BaseStar::*)&BaseStar::vy);
     cls.def_readonly("vxy", (double BaseStar::*)&BaseStar::vxy);
 
-    cls.def_readonly("flux", &BaseStar::flux);
+    // cls.def("getFlux", &BaseStar::getFlux);
+    cls.def_property_readonly("flux", (double (BaseStar::*)() const) & BaseStar::getFlux);
 
     cls.def("__str__", &BaseStar::__str__);
 }

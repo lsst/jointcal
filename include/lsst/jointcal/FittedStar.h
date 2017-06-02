@@ -36,91 +36,85 @@ class FittedStar : public BaseStar, public PmBlock {
     friend class PhotometryFit2;
 
 private:
-    double mag;
-    double emag;
-    double col;
-    int gen;
-    double wmag;
-    unsigned indexInMatrix;
-    int measurementCount;
+    double _mag;
+    double _emag;
+    double _col;
+    int _gen;
+    double _wmag;
+    unsigned _indexInMatrix;
+    int _measurementCount;
     const RefStar* _refStar;
 
-    double flux2;
-    double fluxErr;
-    double fluxErr2;
+    double _flux2;
+    double _fluxErr;
+    double _fluxErr2;
 
 public:
     FittedStar()
             : BaseStar(),
-              mag(-1),
-              emag(-1),
-              col(0.),
-              gen(-1),
-              wmag(0),
-              indexInMatrix(-1),
-              measurementCount(0),
+              _mag(-1),
+              _emag(-1),
+              _col(0.),
+              _gen(-1),
+              _wmag(0),
+              _indexInMatrix(-1),
+              _measurementCount(0),
               _refStar(nullptr),
-              fluxErr(-1),
-              fluxErr2(-1) {}
+              _fluxErr(-1),
+              _fluxErr2(-1) {}
 
-    FittedStar(const BaseStar& B)
-            : BaseStar(B),
-              mag(-1),
-              emag(-1),
-              col(0.),
-              gen(-1),
-              wmag(0),
-              indexInMatrix(0),
-              measurementCount(0),
+    FittedStar(const BaseStar& baseStar)
+            : BaseStar(baseStar),
+              _mag(-1),
+              _emag(-1),
+              _col(0.),
+              _gen(-1),
+              _wmag(0),
+              _indexInMatrix(0),
+              _measurementCount(0),
               _refStar(nullptr),
-              flux2(-1),
-              fluxErr(-1),
-              fluxErr2(-1) {}
+              _flux2(-1),
+              _fluxErr(-1),
+              _fluxErr2(-1) {}
 
     //!
-    FittedStar(const MeasuredStar& M);
+    FittedStar(const MeasuredStar& measuredStar);
 
     //!
     void clearBeforeAssoc() {
-        indexInMatrix = -1;
-        measurementCount = 0;
+        _indexInMatrix = -1;
+        _measurementCount = 0;
         _refStar = nullptr;
-        wmag = 0;
+        _wmag = 0;
     }
 
     //!
     void dump(std::ostream& stream = std::cout) const {
         BaseStar::dump(stream);
-        stream << " mcount: " << measurementCount;
+        stream << " mcount: " << _measurementCount;
     }
 
     //!
-    int MeasurementCount() const { return measurementCount; }
-
-    //!
-    int& MeasurementCount() { return measurementCount; }
+    int getMeasurementCount() const { return _measurementCount; }
+    int& getMeasurementCount() { return _measurementCount; }
 
     //! derived using available zero points in input images. In the absence ofZP, ZP= 0.
-    double Mag() const { return mag; }
-    double& Mag() { return mag; }
-    double EMag() const { return emag; }
-    double& EMag() { return emag; }
-    double Col() const { return col; }
-    double& Col() { return col; }
-    int Generation() const { return gen; }
-    int& Generation() { return gen; }
+    double getMag() const { return _mag; }
+    double getEMag() const { return _emag; }
+    double getCol() const { return _col; }
+    int getGeneration() const { return _gen; }
 
     //!
-    void SetMag(double Value) { mag = Value; }
+    void setMag(double mag) { _mag = mag; }
 
     //! this routine will hopefully soon disappear.
-    void AddMagMeasurement(double MagValue, double MagWeight);
+    void addMagMeasurement(double magValue, double magWeight);
 
     //! index is a value that a fit can set and reread....
-    void SetIndexInMatrix(const unsigned& Index) { indexInMatrix = Index; };
+    void setIndexInMatrix(const unsigned& index) { _indexInMatrix = index; };
 
     //!
-    int IndexInMatrix() const { return indexInMatrix; }
+    int getIndexInMatrix() const { return _indexInMatrix; }
 
     //! Set the astrometric reference star associated with this star.
     void setRefStar(const RefStar* _refStar);
@@ -129,15 +123,9 @@ public:
     const RefStar* getRefStar() const { return _refStar; };
 
     //! getters
-    double Flux() const { return flux; }
-    double& Flux() { return flux; }
-    double FluxErr() const { return fluxErr; }
-    double& FluxErr() { return fluxErr; }
-
-    double Flux2() const { return flux2; }
-    double& Flux2() { return flux2; }
-    double FluxErr2() const { return fluxErr2; }
-    double& FluxErr2() { return fluxErr2; }
+    double getFluxErr() const { return _fluxErr; }
+    double getFlux2() const { return _flux2; }
+    double getFluxErr2() const { return _fluxErr2; }
 };
 
 /****** FittedStarList */

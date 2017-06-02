@@ -16,8 +16,8 @@ struct Chi2 {
 
     Chi2() : chi2(0), ndof(0){};
 
-    friend std::ostream& operator<<(std::ostream& s, const Chi2& C) {
-        s << "Chi2/ndof : " << C.chi2 << '/' << C.ndof << '=' << C.chi2 / C.ndof;
+    friend std::ostream& operator<<(std::ostream& s, const Chi2& chi2) {
+        s << "chi2/ndof : " << chi2.chi2 << '/' << chi2.ndof << '=' << chi2.chi2 / chi2.ndof;
         return s;
     }
 
@@ -31,14 +31,14 @@ struct Chi2 {
     // Addentry has a third argument in order to make it compatible with an
     // other stat accumulator.
     template <typename T>
-    void AddEntry(double Inc, unsigned Dof, T) {
-        chi2 += Inc;
-        ndof += Dof;
+    void addEntry(double inc, unsigned dof, T) {
+        chi2 += inc;
+        ndof += dof;
     }
 
-    void operator+=(const Chi2& R) {
-        chi2 += R.chi2;
-        ndof += R.ndof;
+    void operator+=(const Chi2& right) {
+        chi2 += right.chi2;
+        ndof += right.ndof;
     }
 
 };  // end of struct Chi2

@@ -42,8 +42,6 @@ public:
     //! : default constructor (empty std::list).
     StarList(){};
 
-    std::shared_ptr<Star> EmptyStar() const { return std::make_shared<Star>(); }
-
     /* destructor */
     virtual ~StarList(){};
 
@@ -53,41 +51,36 @@ public:
     }
 
     //! a model routine to sort the std::list
-    /*! see DecreasingFlux() to see what it is, if you
+    /*! see decreasingFlux() to see what it is, if you
        want another sorting criterion) */
     // le premier de la std::liste a le plus grand flux
-    void FluxSort();
-
-    //! copy the head of the std::list at the  end of an other std::list (that may be empty on input)
-    void ExtractHead(StarList<Star> &Out, int NHead) const;
+    void fluxSort();
 
     //! cuts the end of the std::list
-    void CutTail(const int NKeep);
+    void cutTail(const int nKeep);
 
     //! copy the part of the std::list which is included in the frame at the end of another std::list
-    void ExtractInFrame(StarList<Star> &Out, const Frame &aFrame) const;
-    //! cut the part of the std::list which is at a distance < mindist of the edges defined by frame.
-    void CutEdges(const Frame &aFrame, float mindist);
+    void extractInFrame(StarList<Star> &out, const Frame &frame) const;
 
-    //! clears Copy and makes a copy of the std::list to Copy
-    void CopyTo(StarList<Star> &Copy) const;
+    //! clears copy and makes a copy of the std::list to copy
+    void copyTo(StarList<Star> &copy) const;
 
     //! Clears the std::list
-    void ClearList() { CutTail(0); };
+    void clearList() { cutTail(0); };
 
     //! enables to apply a geometrical transfo if Star is Basestar or derives from it.
     /*! could be extended to other type of transformations. */
 
     template <class Operator>
-    void ApplyTransfo(const Operator &Op) {
-        for (auto &p : *this) Op.TransformStar(*(p));
+    void applyTransfo(const Operator &op) {
+        for (auto &p : *this) op.transformStar(*(p));
     }
 };
 
 //! enables \verbatim  std::cout << my_list; \endverbatim
 template <class Star>
-std::ostream &operator<<(std::ostream &stream, const StarList<Star> &List) {
-    List.dump(stream);
+std::ostream &operator<<(std::ostream &stream, const StarList<Star> &list) {
+    list.dump(stream);
     return stream;
 }
 }  // namespace jointcal

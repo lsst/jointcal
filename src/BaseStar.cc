@@ -13,17 +13,21 @@ namespace jointcal {
 
 static double sq(double x) { return x * x; }
 
-bool DecreasingFlux(const BaseStar *S1, const BaseStar *S2) { return (S1->flux > S2->flux); }
+bool decreasingFlux(const BaseStar *star1, const BaseStar *star2) {
+    return (star1->getFlux() > star2->getFlux());
+}
 
-bool IncreasingMag(const BaseStar *S1, const BaseStar *S2) { return (S1->flux < S2->flux); }
+bool increasingMag(const BaseStar *star1, const BaseStar *star2) {
+    return (star1->getFlux() < star2->getFlux());
+}
 
 /**************** BaseStarList ******************/
 
-int DecodeFormat(const char *FormatLine, const char *StarName) {
-    if (!FormatLine || !StarName) return 0;
-    const char *p = strstr(FormatLine, StarName);
+int decodeFormat(const char *formatLine, const char *starName) {
+    if (!formatLine || !starName) return 0;
+    const char *p = strstr(formatLine, starName);
     if (!p) return 0;
-    return atoi(p + strlen(StarName));
+    return atoi(p + strlen(starName));
 }
 }  // namespace jointcal
 }  // namespace lsst

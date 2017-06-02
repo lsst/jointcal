@@ -14,19 +14,17 @@ typedef Eigen::Triplet<double> Trip;
 // at the moment this class implements the eigen format.
 // it would be wise to implement it differently if talking to cholmod
 class TripletList : public std::vector<Trip> {
-    unsigned nextFreeIndex;
+private:
+    unsigned _nextFreeIndex;
 
 public:
-    TripletList(int Count) {
-        nextFreeIndex = 0;
-        reserve(Count);
-    };
+    TripletList(int count) : _nextFreeIndex(0) { reserve(count); };
 
-    void AddTriplet(const unsigned i, const unsigned j, double val) { push_back(Trip(i, j, val)); }
+    void addTriplet(const unsigned i, const unsigned j, double val) { push_back(Trip(i, j, val)); }
 
-    unsigned NextFreeIndex() const { return nextFreeIndex; }
+    unsigned getNextFreeIndex() const { return _nextFreeIndex; }
 
-    void SetNextFreeIndex(unsigned Index) { nextFreeIndex = Index; }
+    void setNextFreeIndex(unsigned index) { _nextFreeIndex = index; }
 };
 }  // namespace jointcal
 }  // namespace lsst

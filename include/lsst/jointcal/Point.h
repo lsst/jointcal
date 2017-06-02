@@ -24,13 +24,13 @@ public:
     Point(double xx, double yy) : x(xx), y(yy){};
 
     //! -
-    double Distance(const Point& Other) const {
-        return sqrt((x - Other.x) * (x - Other.x) + (y - Other.y) * (y - Other.y));
+    double Distance(const Point& other) const {
+        return sqrt((x - other.x) * (x - other.x) + (y - other.y) * (y - other.y));
     };
 
-    //! distance squared to Other
-    double Dist2(const Point& Other) const {
-        return ((x - Other.x) * (x - Other.x) + (y - Other.y) * (y - Other.y));
+    //! distance squared to other
+    double computeDist2(const Point& other) const {
+        return ((x - other.x) * (x - other.x) + (y - other.y) * (y - other.y));
     };
 
     //! Sum
