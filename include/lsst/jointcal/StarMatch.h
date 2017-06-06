@@ -153,9 +153,6 @@ public:
     //! access to the chi2 of the last call to refineTransfo.
     double getChi2() const { return _chi2; }
 
-    //! returns the degree of freedom for the fit in x and y
-    int getDof(const Gtransfo *gtransfo = nullptr) const;
-
     //! returns the order of the used transfo
     int getTransfoOrder() const { return _order; }
 

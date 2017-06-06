@@ -61,12 +61,6 @@ static unsigned chi2_cleanup(StarMatchList &starMatchList, const double chi2Cut,
     return erased;
 }
 
-int StarMatchList::getDof(const Gtransfo *gtransfo) const {
-    int npar = (gtransfo) ? gtransfo->getNpar() : (&(*_transfo) ? _transfo->getNpar() : 0);
-    int dof = 2 * size() - npar;
-    return (dof > 0) ? dof : 0;
-}
-
 /*! removes pairs beyond nSigmas in distance (where the sigma scale is
    set by the fit) and iterates until stabilization of the number of pairs.
    If the transfo is not assigned, it will be set to a GtransfoLinear. User
