@@ -40,7 +40,7 @@ public:
     //!
     const Mapping *getMapping(const CcdImage &) const;
 
-    //! Positions the various parameter sets into the parameter vector, starting at FirstIndex
+    //! Positions the various parameter sets into the parameter vector, starting at firstIndex
     unsigned assignIndices(unsigned firstIndex, const std::string &whatToFit);
 
     // dispaches the offsets after a fit step into the actual locations of parameters
@@ -49,7 +49,7 @@ public:
     /*! the mapping of sky coordinates (i.e. the coordinate system
     in which fitted stars are reported) onto the Tangent plane
     (into which the pixel coordinates are transformed) */
-    const Gtransfo *sky2TP(const CcdImage &ccdImage) const { return _sky2TP->Sky2TP(ccdImage); }
+    const Gtransfo *getSky2TP(const CcdImage &ccdImage) const { return _sky2TP->getSky2TP(ccdImage); }
 
     //!
     virtual void freezeErrorScales();

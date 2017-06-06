@@ -29,61 +29,61 @@ public:
     Frame(double xMin, double yMin, double xMax, double yMax);
 
     //! typical use: Frame(Point(xmin,ymin),Point(xmax,ymax))
-    Frame(const Point &LowerLeft, const Point &UpperRight);
+    Frame(const Point &lowerLeft, const Point &upperRight);
 
     //! size along x axis
-    double Width() const { return xMax - xMin; }
+    double getWidth() const { return xMax - xMin; }
 
     //! size along y axis
-    double Height() const { return yMax - yMin; }
+    double getHeight() const { return yMax - yMin; }
 
     //! Center  of the frame
-    Point Center() const { return Point((xMax + xMin) * 0.5, (yMax + yMin) * 0.5); }
+    Point getCenter() const { return Point((xMax + xMin) * 0.5, (yMax + yMin) * 0.5); }
 
     //! intersection of Frame's.
-    Frame operator*(const Frame &Right) const; /* intersection : a = b n c */
+    Frame operator*(const Frame &right) const; /* intersection : a = b n c */
 
     //! intersection of Frame's
-    Frame &operator*=(const Frame &Right); /* intersection : a = a n b */
+    Frame &operator*=(const Frame &right); /* intersection : a = a n b */
 
     //! union of Frames
-    Frame operator+(const Frame &Right) const; /* union : a = b u c */
+    Frame operator+(const Frame &right) const; /* union : a = b u c */
 
     //! union of Frames
-    Frame &operator+=(const Frame &Right); /* intersection : a = a u b */
+    Frame &operator+=(const Frame &right); /* intersection : a = a u b */
 
-    //! shrinks the frame (if MarginSize>0), enlarges it (if MarginSize<0).
-    void CutMargin(const double MarginSize);
+    //! shrinks the frame (if marginSize>0), enlarges it (if marginSize<0).
+    void cutMargin(const double marginSize);
 
-    //! shrinks the frame (if MarginSize>0), enlarges it (if MarginSize<0).
-    void CutMargin(const double MarginX, const double MarginY);
+    //! shrinks the frame (if marginSize>0), enlarges it (if marginSize<0).
+    void cutMargin(const double marginX, const double marginY);
 
     //! necessary for comparisons (!= is defined from this one implicitely)
-    bool operator==(const Frame &Right) const;
+    bool operator==(const Frame &right) const;
 
     //! comparison
-    bool operator!=(const Frame &Right) const { return !(*this == Right); }
+    bool operator!=(const Frame &right) const { return !(*this == right); }
 
     //! rescale it. The center does not move.
-    Frame Rescale(const double Factor) const;
+    Frame rescale(const double factor) const;
 
     // the area.
-    double Area() const;
+    double getArea() const;
 
     //! inside?
-    bool InFrame(double x, double y) const;
+    bool inFrame(double x, double y) const;
 
     //! same as above
-    bool InFrame(const Point &pt) const { return InFrame(pt.x, pt.y); }
+    bool inFrame(const Point &point) const { return inFrame(point.x, point.y); }
 
     //! distance to closest boundary.
-    double MinDistToEdges(const Point &P) const;
+    double minDistToEdges(const Point &point) const;
 
     void dump(std::ostream &stream = std::cout) const;
 
     //! allows \verbatim std::cout << frame; \endverbatim.
-    friend std::ostream &operator<<(std::ostream &stream, const Frame &Right) {
-        Right.dump(stream);
+    friend std::ostream &operator<<(std::ostream &stream, const Frame &right) {
+        right.dump(stream);
         return stream;
     };
 

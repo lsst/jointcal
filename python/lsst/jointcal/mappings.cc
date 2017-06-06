@@ -42,11 +42,13 @@ void declareMapping(py::module &mod) {
 void declareTwoTransfoMapping(py::module &mod) {
     py::class_<TwoTransfoMapping, std::shared_ptr<TwoTransfoMapping>, Mapping> cls(mod, "TwoTransfoMapping");
 
-    cls.def("getT1", &TwoTransfoMapping::T1, py::return_value_policy::reference_internal);
-    cls.def_property_readonly("T1", &TwoTransfoMapping::T1, py::return_value_policy::reference_internal);
+    cls.def("getTransfo1", &TwoTransfoMapping::getTransfo1, py::return_value_policy::reference_internal);
+    cls.def_property_readonly("transfo1", &TwoTransfoMapping::getTransfo1,
+                              py::return_value_policy::reference_internal);
 
-    cls.def("getT2", &TwoTransfoMapping::T2, py::return_value_policy::reference_internal);
-    cls.def_property_readonly("T2", &TwoTransfoMapping::T2, py::return_value_policy::reference_internal);
+    cls.def("getTransfo2", &TwoTransfoMapping::getTransfo2, py::return_value_policy::reference_internal);
+    cls.def_property_readonly("transfo2", &TwoTransfoMapping::getTransfo2,
+                              py::return_value_policy::reference_internal);
 }
 
 void declareSimpleGtransfoMapping(py::module &mod) {

@@ -15,18 +15,29 @@ class GtransfoLin;
 
 //! Parameters to be provided to combinatorial searches
 struct MatchConditions {
-    int NStarsL1, NStarsL2;
-    int MaxTrialCount;
-    double NSigmas;
-    double MaxShiftX, MaxShiftY;
-    double SizeRatio, DeltaSizeRatio, MinMatchRatio;
-    int PrintLevel;
-    int Algorithm;
+    int nStarsList1, nStarsList2;
+    int maxTrialCount;
+    double nSigmas;
+    double maxShiftX, maxShiftY;
+    double sizeRatio, deltaSizeRatio, minMatchRatio;
+    int printLevel;
+    int algorithm;
 
-    MatchConditions(/* const std::string &DatacardsName = ""*/);
+    MatchConditions()
+            : nStarsList1(70),
+              nStarsList2(70),
+              maxTrialCount(4),
+              nSigmas(3.),
+              maxShiftX(50),
+              maxShiftY(50),
+              sizeRatio(1),
+              deltaSizeRatio(0.1 * sizeRatio),
+              minMatchRatio(1. / 3.),
+              printLevel(0),
+              algorithm(2) {}
 
-    double MinSizeRatio() const { return SizeRatio - DeltaSizeRatio; }
-    double MaxSizeRatio() const { return SizeRatio + DeltaSizeRatio; }
+    double minSizeRatio() const { return sizeRatio - deltaSizeRatio; }
+    double maxSizeRatio() const { return sizeRatio + deltaSizeRatio; }
 };
 
 /*! \file
@@ -41,46 +52,46 @@ the star, the higher the flux. They however only rely on flux ordering,
 not values.
  */
 
-//! searches a geometrical transformation that goes from List1 to List2.
+//! searches a geometrical transformation that goes from list1 to list2.
 /*!  The found transformation is a field of the returned object, as well as the star pairs
 (the matches) that were constructed.  (see StarMatchList class definition for more details).
-The various cuts are contained in Conditions (see listmatch.h) for its contents.
+The various cuts are contained in conditions (see listmatch.h) for its contents.
 This routine searches a transformation that involves a shift and a rotation. */
 
-std::unique_ptr<StarMatchList> MatchSearchRotShift(BaseStarList &L1, BaseStarList &L2,
-                                                   const MatchConditions &Conditions);
+std::unique_ptr<StarMatchList> matchSearchRotShift(BaseStarList &list1, BaseStarList &list2,
+                                                   const MatchConditions &conditions);
 
 //! same as above but searches also a flipped solution.
 
-std::unique_ptr<StarMatchList> MatchSearchRotShiftFlip(BaseStarList &L1, BaseStarList &L2,
-                                                       const MatchConditions &Conditions);
+std::unique_ptr<StarMatchList> matchSearchRotShiftFlip(BaseStarList &list1, BaseStarList &list2,
+                                                       const MatchConditions &conditions);
 
 //! assembles star matches.
-/*! It picks stars in L1, transforms them through Guess, and collects
-closest star in L2, and builds a match if closer than MaxDist). */
+/*! It picks stars in list1, transforms them through guess, and collects
+closest star in list2, and builds a match if closer than maxDist). */
 
-std::unique_ptr<StarMatchList> ListMatchCollect(const BaseStarList &L1, const BaseStarList &L2,
-                                                const Gtransfo *Guess, const double MaxDist);
+std::unique_ptr<StarMatchList> listMatchCollect(const BaseStarList &list1, const BaseStarList &list2,
+                                                const Gtransfo *guess, const double maxDist);
 
 //! same as before except that the transfo is the identity
 
-std::unique_ptr<StarMatchList> ListMatchCollect(const BaseStarList &L1, const BaseStarList &L2,
-                                                const double MaxDist);
+std::unique_ptr<StarMatchList> listMatchCollect(const BaseStarList &list1, const BaseStarList &list2,
+                                                const double maxDist);
 
 //! searches for a 2 dimensional shift using a very crude histogram method.
 
-std::unique_ptr<GtransfoLin> ListMatchupShift(const BaseStarList &L1, const BaseStarList &L2,
-                                              const Gtransfo &Tin, double MaxShift, double BinSize = 0);
+std::unique_ptr<GtransfoLin> listMatchupShift(const BaseStarList &list1, const BaseStarList &list2,
+                                              const Gtransfo &gtransfo, double maxShift, double binSize = 0);
 
-std::unique_ptr<Gtransfo> ListMatchCombinatorial(const BaseStarList &List1, const BaseStarList &List2,
-                                                 const MatchConditions &Conditions = MatchConditions());
-std::unique_ptr<Gtransfo> ListMatchRefine(const BaseStarList &List1, const BaseStarList &List2,
+std::unique_ptr<Gtransfo> listMatchCombinatorial(const BaseStarList &list1, const BaseStarList &list2,
+                                                 const MatchConditions &conditions = MatchConditions());
+std::unique_ptr<Gtransfo> listMatchRefine(const BaseStarList &list1, const BaseStarList &list2,
                                           std::unique_ptr<Gtransfo> transfo, const int maxOrder = 3);
 
 #ifdef DO_WE_NEED_THAT
-inline Gtransfo *ListMatch(const BaseStarList &List1, const BaseStarList &List2, const int maxOrder = 3) {
-    Gtransfo *transfo = ListMatchCombinatorial(List1, List2);
-    transfo = ListMatchRefine(List1, List2, transfo, maxOrder);
+inline Gtransfo *ListMatch(const BaseStarList &list1, const BaseStarList &list2, const int maxOrder = 3) {
+    Gtransfo *transfo = listMatchCombinatorial(list1, list2);
+    transfo = listMatchRefine(list1, list2, transfo, maxOrder);
     return transfo;
 }
 #endif /*  DO_WE_NEED_THAT */

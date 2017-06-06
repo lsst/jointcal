@@ -65,7 +65,7 @@ public:
 
     /**
      * Set parameter groups fixed or variable and assign indices to each parameter
-     * in the big matrix (which will be used by OffsetParams(...).
+     * in the big matrix (which will be used by offsetParams(...).
      *
      * @param[in]  whatToFit  Valid strings : "Model", "Fluxes", which define
      *                        which parameter sets are going to be fitted.
@@ -82,7 +82,7 @@ public:
     /**
      * Offset the parameters by the requested quantities. The used parameter
      * layout is the one from the last call to assignIndices or minimize(). There
-     * is no easy way to check that the current setting of WhatToFit and the
+     * is no easy way to check that the current setting of whatToFit and the
      * provided Delta vector are compatible. We can only test the size.
      *
      * @param[in]  delta  vector of offsets to apply
@@ -103,7 +103,7 @@ private:
 
     void outliersContributions(MeasuredStarList &outliers, TripletList &tripletList, Eigen::VectorXd &grad);
 
-    void findOutliers(double NSigCut, MeasuredStarList &outliers) const;
+    void findOutliers(double nSigCut, MeasuredStarList &outliers) const;
 
     void getMeasuredStarIndices(const MeasuredStar &measuredStar, std::vector<unsigned> &indices) const;
 
@@ -111,7 +111,7 @@ private:
     //! Compute the derivatives of the reference terms
     void LSDerivatives2(TripletList &tripletList, Eigen::VectorXd &rhs) const;
 
-    //! Evaluates the chI^2 derivatives (Jacobian and gradient) for the current WhatToFit setting.
+    //! Evaluates the chI^2 derivatives (Jacobian and gradient) for the current whatToFit setting.
 
     //! returns how many outliers were removed. No refit done.
     unsigned removeOutliers(double nSigCut);
@@ -123,7 +123,7 @@ private:
     void makeRefResTuple(const std::string &tupleName) const;
 
 private:
-    Point transformFittedStar(const FittedStar &fittedStar, const Gtransfo *Sky2TP,
+    Point transformFittedStar(const FittedStar &fittedStar, const Gtransfo *sky2TP,
                               const Point &refractionVector, double refractionCoeff, double mjd) const;
 
     //! only for outlier removal

@@ -38,18 +38,18 @@ void CcdImage::LoadCatalog(const lsst::afw::table::SortedCatalogT<lsst::afw::tab
     auto efluxKey = catalog.getSchema().find<double>(fluxField + "_fluxSigma").key;
 
     _wholeCatalog.clear();
-    for (auto const &i : catalog) {
+    for (auto const &record : catalog) {
         auto ms = std::make_shared<MeasuredStar>();
-        ms->x = i.get(xKey);
-        ms->y = i.get(yKey);
-        ms->vx = sq(i.get(xsKey));
-        ms->vy = sq(i.get(ysKey));
+        ms->x = record.get(xKey);
+        ms->y = record.get(yKey);
+        ms->vx = sq(record.get(xsKey));
+        ms->vy = sq(record.get(ysKey));
         /* the xy covariance is not provided in the input catalog: we
         cook it up from the x and y position variance and the shape
          measurements: */
-        double mxx = i.get(mxxKey);
-        double myy = i.get(myyKey);
-        double mxy = i.get(mxyKey);
+        double mxx = record.get(mxxKey);
+        double myy = record.get(myyKey);
+        double mxy = record.get(mxyKey);
         ms->vxy = mxy * (ms->vx + ms->vy) / (mxx + myy);
         if (ms->vx < 0 || ms->vy < 0 || (ms->vxy * ms->vxy) > (ms->vx * ms->vy)) {
             LOGLS_WARN(_log, "Bad source detected in LoadCatalog : " << ms->vx << " " << ms->vy << " "
@@ -57,16 +57,16 @@ void CcdImage::LoadCatalog(const lsst::afw::table::SortedCatalogT<lsst::afw::tab
                                                                      << ms->vx * ms->vy);
             continue;
         }
-        ms->flux = i.get(fluxKey);
-        ms->eflux = i.get(efluxKey);
-        ms->mag = _calib->getMagnitude(ms->flux);
+        ms->setFlux(record.get(fluxKey));
+        ms->eflux = record.get(efluxKey);
+        ms->mag = _calib->getMagnitude(ms->getFlux());
         ms->setCcdImage(this);
         _wholeCatalog.push_back(std::move(ms));
     }
     _wholeCatalog.setCcdImage(this);
 }
 
-CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &Ri,
+CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &record,
                    const PTR(lsst::afw::image::TanWcs) wcs, const PTR(lsst::afw::image::VisitInfo) visitInfo,
                    const lsst::afw::geom::Box2I &bbox, const std::string &filter,
                    const PTR(lsst::afw::image::Calib) calib, const int &visit, const int &ccdId,
@@ -79,41 +79,41 @@ CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceReco
           _calib(calib)
 
 {
-    LoadCatalog(Ri, fluxField);
+    LoadCatalog(record, fluxField);
 
     Point lowerLeft(bbox.getMinX(), bbox.getMinY());
     Point upperRight(bbox.getMaxX(), bbox.getMaxY());
-    imageFrame = Frame(lowerLeft, upperRight);
+    _imageFrame = Frame(lowerLeft, upperRight);
 
-    readWcs.reset(new jointcal::TanSipPix2RaDec(jointcal::convertTanWcs(wcs)));
-    inverseReadWcs = readWcs->InverseTransfo(0.01, imageFrame);
+    _readWcs.reset(new jointcal::TanSipPix2RaDec(jointcal::convertTanWcs(wcs)));
+    _inverseReadWcs = _readWcs->inverseTransfo(0.01, _imageFrame);
 
     std::stringstream out;
     out << visit << "_" << ccdId;
-    name = out.str();
+    _name = out.str();
 
-    boresightRaDec = visitInfo->getBoresightRaDec();
-    airMass = visitInfo->getBoresightAirmass();
-    mjd = visitInfo->getDate().get(lsst::daf::base::DateTime::MJD);
+    _boresightRaDec = visitInfo->getBoresightRaDec();
+    _airMass = visitInfo->getBoresightAirmass();
+    _mjd = visitInfo->getDate().get(lsst::daf::base::DateTime::MJD);
     double latitude = visitInfo->getObservatory().getLatitude();
     double lst_obs = visitInfo->getEra();
-    double hourAngle = visitInfo->getBoresightHourAngle();
+    _hourAngle = visitInfo->getBoresightHourAngle();
 
     // lsstSim doesn't manage ERA (and thus Hour Angle) properly, so it's going to be NaN.
     // Because we need the refraction vector later, go with 0 HA to prevent crashes on that NaN.
-    if (std::isnan(hourAngle) == true) {
-        hourAngle = 0;
+    if (std::isnan(_hourAngle) == true) {
+        _hourAngle = 0;
     }
 
-    if (airMass == 1)
-        sineta = coseta = tgz = 0;
+    if (_airMass == 1)
+        _sineta = _coseta = _tgz = 0;
     else {
-        double cosz = 1. / airMass;
+        double cosz = 1. / _airMass;
         double sinz = sqrt(1 - cosz * cosz);  // astronomers usually observe above the horizon
-        tgz = sinz / cosz;
-        sineta = cos(latitude) * sin(hourAngle) / sinz;
-        coseta = sqrt(1 - sineta * sineta);
-        if (boresightRaDec.getDec() > latitude) coseta = -coseta;
+        _tgz = sinz / cosz;
+        _sineta = cos(latitude) * sin(_hourAngle) / sinz;
+        _coseta = sqrt(1 - _sineta * _sineta);
+        if (_boresightRaDec.getDec() > latitude) _coseta = -_coseta;
     }
 }
 
@@ -122,25 +122,25 @@ void CcdImage::setCommonTangentPoint(const Point &commonTangentPoint) {
 
     // use some other variable in case we later have to actually convert the
     // as-read wcs:
-    const BaseTanWcs *tanWcs = readWcs.get();
+    const BaseTanWcs *tanWcs = _readWcs.get();
 
     /* we don't assume here that we know the internals of TanPix2RaDec:
        to construct pix->TP, we do pix->sky->TP, although pix->sky
        actually goes through TP */
     GtransfoLin identity;
-    TanRaDec2Pix raDec2TP(identity, tanWcs->TangentPoint());
-    pix2TP = GtransfoCompose(&raDec2TP, tanWcs);
+    TanRaDec2Pix raDec2TP(identity, tanWcs->getTangentPoint());
+    _pix2TP = gtransfoCompose(&raDec2TP, tanWcs);
     TanPix2RaDec CTP2RaDec(identity, commonTangentPoint);
-    CTP2TP = GtransfoCompose(&raDec2TP, &CTP2RaDec);
+    _CTP2TP = gtransfoCompose(&raDec2TP, &CTP2RaDec);
 
     // jump from one TP to an other:
     TanRaDec2Pix raDec2CTP(identity, commonTangentPoint);
-    TanPix2RaDec TP2RaDec(identity, tanWcs->TangentPoint());
-    TP2CTP = GtransfoCompose(&raDec2CTP, &TP2RaDec);
-    sky2TP.reset(new TanRaDec2Pix(identity, tanWcs->TangentPoint()));
+    TanPix2RaDec TP2RaDec(identity, tanWcs->getTangentPoint());
+    _TP2CTP = gtransfoCompose(&raDec2CTP, &TP2RaDec);
+    _sky2TP.reset(new TanRaDec2Pix(identity, tanWcs->getTangentPoint()));
 
     // this one is needed for matches :
-    pix2CommonTangentPlane = GtransfoCompose(&raDec2CTP, tanWcs);
+    _pix2CommonTangentPlane = gtransfoCompose(&raDec2CTP, tanWcs);
 }
 }  // namespace jointcal
 }  // namespace lsst

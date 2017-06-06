@@ -16,8 +16,8 @@ namespace jointcal {
 using namespace std;
 
 /****************** Frame class methods ***********************/
-Frame::Frame(const Point &LowerLeft, const Point &UpperRight) {
-    *this = Frame(LowerLeft.x, LowerLeft.y, UpperRight.x, UpperRight.y);
+Frame::Frame(const Point &lowerLeft, const Point &upperRight) {
+    *this = Frame(lowerLeft.x, lowerLeft.y, upperRight.x, upperRight.y);
 }
 
 Frame::Frame(double xmin, double ymin, double xmax, double ymax) {
@@ -30,45 +30,46 @@ Frame::Frame(double xmin, double ymin, double xmax, double ymax) {
 Frame::Frame() { xMin = xMax = yMin = yMax = 0; }
 
 /* positive if inside, negative if outside */
-double Frame::MinDistToEdges(const Point &P) const {
-    return min(min(P.x - xMin, xMax - P.x) /* minx */, min(P.y - yMin, yMax - P.y) /* miny */);
+double Frame::minDistToEdges(const Point &point) const {
+    return min(min(point.x - xMin, xMax - point.x) /* minx */,
+               min(point.y - yMin, yMax - point.y) /* miny */);
 }
 
-Frame Frame::operator*(const Frame &Right) const {
+Frame Frame::operator*(const Frame &right) const {
     Frame result = *this;
-    result *= Right;
+    result *= right;
     return result;
 }
 
-Frame &Frame::operator*=(const Frame &Right) {
-    Frame rightCopy = Right;
+Frame &Frame::operator*=(const Frame &right) {
+    Frame rightCopy = right;
     // make sure that coordinates are properly ordered
     this->order();
     rightCopy.order();
     xMin = max(xMin, rightCopy.xMin);
-    xMax = min(xMax, Right.xMax);
-    yMin = max(yMin, Right.yMin);
-    yMax = min(yMax, Right.yMax);
+    xMax = min(xMax, right.xMax);
+    yMin = max(yMin, right.yMin);
+    yMax = min(yMax, right.yMax);
     // check for an actual overlap. Why was this check added?
     if (xMin > xMax || yMin > yMax) *this = Frame();
     return *this;
 }
 
-Frame Frame::operator+(const Frame &Right) const {
+Frame Frame::operator+(const Frame &right) const {
     Frame result = *this;
-    result += Right;
+    result += right;
     return result;
 }
 
-Frame &Frame::operator+=(const Frame &Right) {
-    Frame rightCopy = Right;
+Frame &Frame::operator+=(const Frame &right) {
+    Frame rightCopy = right;
     // make sure that coordinates are properly ordered
     this->order();
     rightCopy.order();
     xMin = min(xMin, rightCopy.xMin);
-    xMax = max(xMax, Right.xMax);
-    yMin = min(yMin, Right.yMin);
-    yMax = max(yMax, Right.yMax);
+    xMax = max(xMax, right.xMax);
+    yMin = min(yMin, right.yMin);
+    yMax = max(yMax, right.yMax);
     return *this;
 }
 
@@ -77,30 +78,30 @@ void Frame::order() {
     if (yMin > yMax) swap(yMin, yMax);
 }
 
-bool Frame::operator==(const Frame &Right) const {
-    return ((xMin == Right.xMin) && (xMax == Right.xMax) && (yMin == Right.yMin) && (yMax == Right.yMax));
+bool Frame::operator==(const Frame &right) const {
+    return ((xMin == right.xMin) && (xMax == right.xMax) && (yMin == right.yMin) && (yMax == right.yMax));
 }
 
-void Frame::CutMargin(const double MarginX, const double MarginY) {
-    xMin += MarginX;
-    yMin += MarginY;
-    xMax -= MarginX;
-    yMax -= MarginY;
+void Frame::cutMargin(const double marginX, const double marginY) {
+    xMin += marginX;
+    yMin += marginY;
+    xMax -= marginX;
+    yMax -= marginY;
 }
 
-void Frame::CutMargin(const double MarginSize) { CutMargin(MarginSize, MarginSize); }
+void Frame::cutMargin(const double marginSize) { cutMargin(marginSize, marginSize); }
 
-Frame Frame::Rescale(const double Factor) const {
-    double hxsize = fabs(Factor * 0.5 * (xMax - xMin));
+Frame Frame::rescale(const double factor) const {
+    double hxsize = fabs(factor * 0.5 * (xMax - xMin));
     double xcenter = 0.5 * (xMax + xMin);
-    double hysize = fabs(Factor * 0.5 * (yMax - yMin));
+    double hysize = fabs(factor * 0.5 * (yMax - yMin));
     double ycenter = 0.5 * (yMax + yMin);
     return Frame(xcenter - hxsize, ycenter - hysize, xcenter + hxsize, ycenter + hysize);
 }
 
-double Frame::Area() const { return fabs((xMax - xMin) * (yMax - yMin)); }
+double Frame::getArea() const { return fabs((xMax - xMin) * (yMax - yMin)); }
 
-bool Frame::InFrame(double x, double y) const {
+bool Frame::inFrame(double x, double y) const {
     return ((x <= xMax) && (y <= yMax) && (x >= xMin) && (y >= yMin));
 }
 

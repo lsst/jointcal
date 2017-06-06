@@ -24,23 +24,23 @@ namespace jointcal {
 
 //! The base class for handling stars. Used by all matching routines.
 class BaseStar : public FatPoint {
-public:
-    double flux;
+protected:
+    double _flux;
 
 public:
     BaseStar() {
         x = 0;
         y = 0;
-        flux = 0;
+        _flux = 0;
     };
     //! constructor
-    BaseStar(double xx, double yy, double ff) : FatPoint(xx, yy), flux(ff){};
-    BaseStar(const Point &a_point, double a_flux) : FatPoint(a_point), flux(a_flux){};
+    BaseStar(double xx, double yy, double flux) : FatPoint(xx, yy), _flux(flux){};
+    BaseStar(const Point &point, double flux) : FatPoint(point), _flux(flux){};
 
     //! access stuff.
-    double X() const { return x; }
+    double getX() const { return x; }
     //!
-    double Y() const { return y; }
+    double getY() const { return y; }
 
     //! allows std::cout << aBaseStar;
     friend std::ostream &operator<<(std::ostream &stream, const BaseStar &s) {
@@ -55,24 +55,28 @@ public:
     }
 
     virtual void dump(std::ostream &stream = std::cout) const {
-        stream << "x: " << x << " y: " << y << " flux: " << flux;
+        stream << "x: " << x << " y: " << y << " flux: " << _flux;
     }
 
-    BaseStar &operator=(const Point &P) {
-        this->x = P.x;
-        this->y = P.y;
+    BaseStar &operator=(const Point &point) {
+        this->x = point.x;
+        this->y = point.y;
         return (*this);
     };
 
-    static const char *TypeName() { return "BaseStar"; }
+    static const char *typeName() { return "BaseStar"; }
 
     virtual ~BaseStar(){};
+
+    double getFlux() const { return _flux; }
+    double &getFlux() { return _flux; }
+    void setFlux(double flux) { _flux = flux; }
 };
 
 //! enables to sort easily a starList (of anything that derives from BaseStar)
-bool DecreasingFlux(const BaseStar *S1, const BaseStar *S2);
+bool decreasingFlux(const BaseStar *star1, const BaseStar *star2);
 
-int DecodeFormat(const char *FormatLine, const char *StarName);
+int decodeFormat(const char *formatLine, const char *starName);
 
 typedef StarList<BaseStar> BaseStarList;
 

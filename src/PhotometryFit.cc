@@ -36,14 +36,14 @@ PhotometryFit::PhotometryFit(Associations &associations, PhotometryModel *photom
     assignIndices("");
 }
 
-void PhotometryFit::LSDerivatives(TripletList &tList, Eigen::VectorXd &rhs) const {
-    auto L = _associations.getCcdImageList();
-    for (auto const &im : L) {
-        LSDerivatives(*im, tList, rhs);
+void PhotometryFit::LSDerivatives(TripletList &tripletList, Eigen::VectorXd &rhs) const {
+    auto ccdImageList = _associations.getCcdImageList();
+    for (auto const &im : ccdImageList) {
+        LSDerivatives(*im, tripletList, rhs);
     }
 }
 
-void PhotometryFit::LSDerivatives(const CcdImage &ccdImage, TripletList &tList, Eigen::VectorXd &rhs,
+void PhotometryFit::LSDerivatives(const CcdImage &ccdImage, TripletList &tripletList, Eigen::VectorXd &rhs,
                                   const MeasuredStarList *measuredStarList) const {
     /***************************************************************************/
     /**  Changes in this routine should be reflected into accumulateStat       */
@@ -51,7 +51,7 @@ void PhotometryFit::LSDerivatives(const CcdImage &ccdImage, TripletList &tList, 
     /* this routine works in two different ways: either providing the
        Ccd, of providing the MeasuredStarList. In the latter case, the
        Ccd should match the one(s) in the list. */
-    if (measuredStarList) assert((*(measuredStarList->begin()))->ccdImage == &ccdImage);
+    if (measuredStarList) assert(&(measuredStarList->front()->getCcdImage()) == &ccdImage);
 
     unsigned npar_max = 100;  // anything large
     vector<unsigned> indices(npar_max, -1);
@@ -59,12 +59,12 @@ void PhotometryFit::LSDerivatives(const CcdImage &ccdImage, TripletList &tList, 
     Eigen::VectorXd h(npar_max);
     Eigen::VectorXd grad(npar_max);
     // current position in the Jacobian
-    unsigned kTriplets = tList.NextFreeIndex();
+    unsigned kTriplets = tripletList.getNextFreeIndex();
     const MeasuredStarList &catalog = (measuredStarList) ? *measuredStarList : ccdImage.getCatalogForFit();
 
     for (auto const &i : catalog) {
         const MeasuredStar &measuredStar = *i;
-        if (!measuredStar.IsValid()) continue;
+        if (!measuredStar.isValid()) continue;
         // tweak the measurement errors
         double sigma = measuredStar.eflux;
 #ifdef FUTURE
@@ -73,26 +73,26 @@ void PhotometryFit::LSDerivatives(const CcdImage &ccdImage, TripletList &tList, 
         h.setZero();  // we cannot be sure that all entries will be overwritten.
 
         double pf = _photometryModel->photomFactor(ccdImage, measuredStar);
-        auto fs = measuredStar.GetFittedStar();
+        auto fs = measuredStar.getFittedStar();
 
-        double res = measuredStar.flux - pf * fs->flux;
+        double res = measuredStar.getFlux() - pf * fs->getFlux();
 
         if (_fittingModel) {
             _photometryModel->getIndicesAndDerivatives(measuredStar, ccdImage, indices, h);
             for (unsigned k = 0; k < indices.size(); k++) {
                 unsigned l = indices[k];
-                tList.AddTriplet(l, kTriplets, h[k] * fs->flux / sigma);
+                tripletList.addTriplet(l, kTriplets, h[k] * fs->getFlux() / sigma);
                 rhs[l] += h[k] * res / sqr(sigma);
             }
         }
         if (_fittingFluxes) {
-            unsigned index = fs->IndexInMatrix();
-            tList.AddTriplet(index, kTriplets, pf / sigma);
+            unsigned index = fs->getIndexInMatrix();
+            tripletList.addTriplet(index, kTriplets, pf / sigma);
             rhs[index] += res * pf / sqr(sigma);
         }
         kTriplets += 1;  // each measurement contributes 1 column in the Jacobian
     }                    // end loop on measurements
-    tList.SetNextFreeIndex(kTriplets);
+    tripletList.setNextFreeIndex(kTriplets);
 }
 
 // This is almost a selection of lines of LSDerivatives(CcdImage ...)
@@ -111,7 +111,7 @@ void PhotometryFit::accumulateStat(ListType &listType, Accum &accum) const {
         auto &catalog = ccdIMage.getCatalogForFit();
 
         for (auto const &measuredStar : catalog) {
-            if (!measuredStar->IsValid()) continue;
+            if (!measuredStar->isValid()) continue;
             // tweak the measurement errors
             double sigma = measuredStar->eflux;
 #ifdef FUTURE
@@ -119,10 +119,10 @@ void PhotometryFit::accumulateStat(ListType &listType, Accum &accum) const {
 #endif
 
             double pf = _photometryModel->photomFactor(ccdIMage, *measuredStar);
-            auto fs = measuredStar->GetFittedStar();
-            double res = measuredStar->flux - pf * fs->flux;
+            auto fs = measuredStar->getFittedStar();
+            double res = measuredStar->getFlux() - pf * fs->getFlux();
             double chi2Val = sqr(res / sigma);
-            accum.AddEntry(chi2Val, 1, measuredStar);
+            accum.addEntry(chi2Val, 1, measuredStar);
         }  // end loop on measurements
     }
 }
@@ -137,16 +137,16 @@ Chi2 PhotometryFit::computeChi2() const {
     return chi2;
 }
 
-void PhotometryFit::outliersContributions(MeasuredStarList &outliers, TripletList &tList,
+void PhotometryFit::outliersContributions(MeasuredStarList &outliers, TripletList &tripletList,
                                           Eigen::VectorXd &grad) {
-    for (auto &out : outliers) {
+    for (auto &outlier : outliers) {
         MeasuredStarList tmp;
-        tmp.push_back(out);
-        const CcdImage &ccdImage = *(out->ccdImage);
-        LSDerivatives(ccdImage, tList, grad, &tmp);
-        out->SetValid(false);
-        auto fs = std::const_pointer_cast<FittedStar>(out->GetFittedStar());
-        fs->MeasurementCount()--;
+        tmp.push_back(outlier);
+        const CcdImage &ccdImage = outlier->getCcdImage();
+        LSDerivatives(ccdImage, tripletList, grad, &tmp);
+        outlier->setValid(false);
+        auto fs = std::const_pointer_cast<FittedStar>(outlier->getFittedStar());
+        fs->getMeasurementCount()--;
     }
 }
 
@@ -159,13 +159,13 @@ struct Chi2Entry {
     double chi2;
     std::shared_ptr<MeasuredStar> measuredStar;
 
-    Chi2Entry(double c, std::shared_ptr<MeasuredStar> s) : chi2(c), measuredStar(std::move(s)) {}
+    Chi2Entry(double chi2, std::shared_ptr<MeasuredStar> star) : chi2(chi2), measuredStar(std::move(star)) {}
     // for sort
-    bool operator<(const Chi2Entry &R) const { return (chi2 < R.chi2); }
+    bool operator<(const Chi2Entry &right) const { return (chi2 < right.chi2); }
 };
 
 struct Chi2Vect : public vector<Chi2Entry> {
-    void AddEntry(double Chi2Val, unsigned ndof, std::shared_ptr<MeasuredStar> measuredStar) {
+    void addEntry(double Chi2Val, unsigned ndof, std::shared_ptr<MeasuredStar> measuredStar) {
         push_back(Chi2Entry(Chi2Val, std::move(measuredStar)));
     }
 };
@@ -178,11 +178,11 @@ void PhotometryFit::getMeasuredStarIndices(const MeasuredStar &measuredStar,
     indices.clear();
     if (_fittingModel) {
         Eigen::VectorXd h(100);
-        _photometryModel->getIndicesAndDerivatives(measuredStar, *measuredStar.ccdImage, indices, h);
+        _photometryModel->getIndicesAndDerivatives(measuredStar, measuredStar.getCcdImage(), indices, h);
     }
     if (_fittingFluxes) {
-        auto fs = measuredStar.GetFittedStar();
-        unsigned fsIndex = fs->IndexInMatrix();
+        auto fs = measuredStar.getFittedStar();
+        unsigned fsIndex = fs->getIndexInMatrix();
         indices.push_back(fsIndex);
     }
 }
@@ -256,9 +256,9 @@ void PhotometryFit::assignIndices(const std::string &whatToFit) {
             FittedStar &fs = *i;
             // the parameter layout here is used also
             // - when filling the derivatives
-            // - when updating (OffsetParams())
+            // - when updating (offsetParams())
             // - in GetMeasuredStarIndices
-            fs.SetIndexInMatrix(ipar);
+            fs.setIndexInMatrix(ipar);
             ipar += 1;
         }
     }
@@ -268,7 +268,7 @@ void PhotometryFit::assignIndices(const std::string &whatToFit) {
 void PhotometryFit::offsetParams(const Eigen::VectorXd &delta) {
     if (delta.size() != _nParTot)
         throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,
-                          "PhotometryFit::OffsetParams : the provided vector length is not compatible with "
+                          "PhotometryFit::offsetParams : the provided vector length is not compatible with "
                           "the current whatToFit setting");
     if (_fittingModel) _photometryModel->offsetParams(delta);
 
@@ -279,8 +279,8 @@ void PhotometryFit::offsetParams(const Eigen::VectorXd &delta) {
             // the parameter layout here is used also
             // - when filling the derivatives
             // - when assigning indices (assignIndices())
-            unsigned index = fs.IndexInMatrix();
-            fs.flux += delta(index);
+            unsigned index = fs.getIndexInMatrix();
+            fs.getFlux() += delta(index);
         }
     }
 }
@@ -290,20 +290,20 @@ bool PhotometryFit::minimize(const std::string &whatToFit) {
 
     // TODO : write a guesser for the number of triplets
     unsigned nTrip = (_lastNTrip) ? _lastNTrip : 1e6;
-    TripletList tList(nTrip);
+    TripletList tripletList(nTrip);
     Eigen::VectorXd grad(_nParTot);
     grad.setZero();
 
     // Fill the triplets
-    LSDerivatives(tList, grad);
-    _lastNTrip = tList.size();
+    LSDerivatives(tripletList, grad);
+    _lastNTrip = tripletList.size();
 
     SpMat hessian;
     {
-        SpMat jacobian(_nParTot, tList.NextFreeIndex());
-        jacobian.setFromTriplets(tList.begin(), tList.end());
+        SpMat jacobian(_nParTot, tripletList.getNextFreeIndex());
+        jacobian.setFromTriplets(tripletList.begin(), tripletList.end());
         // release memory shrink_to_fit is C++11
-        tList.clear();  // tList.shrink_to_fit();
+        tripletList.clear();  // tripletList.shrink_to_fit();
         hessian = jacobian * jacobian.transpose();
     }  // release the Jacobian
 
@@ -346,26 +346,26 @@ void PhotometryFit::makeResTuple(const std::string &tupleName) const {
           << "#chip: chip number" << endl
           << "#visit: visit id" << endl
           << "#end" << endl;
-    const CcdImageList &L = _associations.getCcdImageList();
-    for (auto const &i : L) {
+    const CcdImageList &ccdImageList = _associations.getCcdImageList();
+    for (auto const &i : ccdImageList) {
         const CcdImage &im = *i;
         const MeasuredStarList &cat = im.getCatalogForFit();
         for (auto const &is : cat) {
             const MeasuredStar &ms = *is;
-            if (!ms.IsValid()) continue;
+            if (!ms.isValid()) continue;
             double sigma = ms.eflux;
 #ifdef FUTURE
             tweakPhotomMeasurementErrors(inPos, ms, _posError);
 #endif
             double pf = _photometryModel->photomFactor(im, ms);
             double jd = im.getMjd();
-            auto fs = ms.GetFittedStar();
-            double res = ms.flux - pf * fs->flux;
+            auto fs = ms.getFittedStar();
+            double res = ms.getFlux() - pf * fs->getFlux();
             double chi2Val = sqr(res / sigma);
-            tuple << ms.x << ' ' << ms.y << ' ' << fs->Mag() << ' ' << ms.flux << ' ' << ms.eflux << ' '
-                  << fs->flux << ' ' << pf << ' ' << jd << ' ' << fs->color << ' ' << fs->IndexInMatrix()
-                  << ' ' << fs->x << ' ' << fs->y << ' ' << chi2Val << ' ' << fs->MeasurementCount() << ' '
-                  << im.getCcdId() << ' ' << im.getVisit() << endl;
+            tuple << ms.x << ' ' << ms.y << ' ' << fs->getMag() << ' ' << ms.getFlux() << ' ' << ms.eflux
+                  << ' ' << fs->getFlux() << ' ' << pf << ' ' << jd << ' ' << fs->color << ' '
+                  << fs->getIndexInMatrix() << ' ' << fs->x << ' ' << fs->y << ' ' << chi2Val << ' '
+                  << fs->getMeasurementCount() << ' ' << im.getCcdId() << ' ' << im.getVisit() << endl;
         }  // loop on measurements in image
     }      // loop on images
 }

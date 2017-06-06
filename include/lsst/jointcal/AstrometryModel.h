@@ -23,7 +23,7 @@ public:
     //! Mapping associated to a given CcdImage
     virtual const Mapping *getMapping(const CcdImage &) const = 0;
 
-    //! Assign indices to parameters involved in mappings, starting at FirstIndex. Returns the highest
+    //! Assign indices to parameters involved in mappings, starting at firstIndex. Returns the highest
     //! assigned index.
     virtual unsigned assignIndices(unsigned firstIndex, const std::string &whatToFit) = 0;
 
@@ -35,7 +35,7 @@ public:
     //! The transformation used to project the positions of FittedStars.
     /*! This defines the coordinate system into which the Mapping of
         this Ccdimage maps the pixel coordinates. */
-    virtual const Gtransfo *sky2TP(const CcdImage &ccdImage) const = 0;
+    virtual const Gtransfo *getSky2TP(const CcdImage &ccdImage) const = 0;
 
     //! Cook up a SIP WCS.
     virtual std::shared_ptr<TanSipPix2RaDec> produceSipWcs(const CcdImage &ccdImage) const = 0;

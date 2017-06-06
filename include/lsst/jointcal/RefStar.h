@@ -15,8 +15,8 @@ namespace jointcal {
 //! Tangent Plane seems a good idea.
 class RefStar : public BaseStar {
 private:
-    unsigned int index;
-    std::vector<double> refFlux;
+    unsigned int _index;
+    std::vector<double> _refFlux;
 
 public:
     //!
@@ -25,21 +25,21 @@ public:
     void dump(std::ostream& stream = std::cout) const {
         BaseStar::dump(stream);
         stream << " refFlux: [";
-        for (auto x : refFlux) {
+        for (auto x : _refFlux) {
             stream << x << ", ";
         }
-        stream << "] index: " << index;
+        stream << "] index: " << _index;
     }
 
     //! reference flux
-    double Flux(int filter) const;
+    double getFlux(int filter) const;
 
     //! assign the reference fluxes
-    void AssignRefFluxes(std::vector<double> const& refflux);
+    void assignRefFluxes(std::vector<double> const& refFlux);
 
     //! star index
-    unsigned int& Index() { return index; }
-    unsigned int Index() const { return index; }
+    unsigned int& getIndex() { return _index; }
+    unsigned int getIndex() const { return _index; }
 };
 
 /****** RefStarList ***********/

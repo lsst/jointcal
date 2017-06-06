@@ -18,7 +18,7 @@ class CcdImage;
  * (where they are compared to transformed measurements)
  */
 struct ProjectionHandler {
-    virtual const Gtransfo *Sky2TP(const CcdImage &ccdImage) const = 0;
+    virtual const Gtransfo *getSky2TP(const CcdImage &ccdImage) const = 0;
 
     virtual ~ProjectionHandler(){};
 };
@@ -32,7 +32,7 @@ class IdentityProjectionHandler : public ProjectionHandler {
     GtransfoIdentity id;
 
 public:
-    const Gtransfo *Sky2TP(const CcdImage &ccdImage) const { return &id; };
+    const Gtransfo *getSky2TP(const CcdImage &ccdImage) const { return &id; };
 };
 
 /**
@@ -49,7 +49,7 @@ class OneTPPerVisitHandler : public ProjectionHandler {
 public:
     OneTPPerVisitHandler(const CcdImageList &ccdImageList);
 
-    const Gtransfo *Sky2TP(const CcdImage &ccdImage) const;
+    const Gtransfo *getSky2TP(const CcdImage &ccdImage) const;
 };
 }  // namespace jointcal
 }  // namespace lsst

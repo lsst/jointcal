@@ -14,7 +14,7 @@ class Point;
 //! virtual class needed in the abstraction of the distortion model
 class Mapping {
 public:
-    //! Mumber of parameters in total
+    //! Number of parameters in total
     virtual unsigned getNpar() const = 0;
 
     /// Sets how this set of parameters (of length Npar()) map into the "grand" fit
@@ -25,18 +25,19 @@ public:
     /*! This is grouped into a single call because for most models,
         evaluating the derivatives w.r.T parameters is not much longer
         than just transforming */
-    virtual void ComputeTransformAndDerivatives(const FatPoint &Where, FatPoint &OutPos,
+    virtual void computeTransformAndDerivatives(const FatPoint &where, FatPoint &outPoint,
                                                 Eigen::MatrixX2d &H) const = 0;
     //! The same as above but without the parameter derivatives (used to evaluate chi^2)
-    virtual void TransformPosAndErrors(const FatPoint &Where, FatPoint &OutPos) const = 0;
+    virtual void transformPosAndErrors(const FatPoint &where, FatPoint &outPoint) const = 0;
 
     //! Remember the error scale and freeze it
-    //  virtual void FreezeErrorScales() = 0;
+    //  virtual void freezeErrorScales() = 0;
 
-    virtual void OffsetParams(const double *Delta) = 0;
+    virtual void offsetParams(const double *delta) = 0;
 
     //! The derivative w.r.t. position
-    virtual void PosDerivative(const Point &Where, Eigen::Matrix2d &Der, double Eps) const = 0;
+    virtual void positionDerivative(const Point &where, Eigen::Matrix2d &derivative,
+                                    double epsilon) const = 0;
 
     //!
     virtual ~Mapping(){};

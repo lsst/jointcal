@@ -12,11 +12,11 @@ class Mapping;
 OneTPPerVisitHandler::OneTPPerVisitHandler(const CcdImageList &ccdImageList) {
     for (auto const &i : ccdImageList) {
         const CcdImage &im = *i;
-        if (tMap.find(im.getVisit()) == tMap.end()) tMap[im.getVisit()] = im.Sky2TP()->Clone();
+        if (tMap.find(im.getVisit()) == tMap.end()) tMap[im.getVisit()] = im.getSky2TP()->clone();
     }
 }
 
-const Gtransfo *OneTPPerVisitHandler::Sky2TP(const CcdImage &ccdImage) const {
+const Gtransfo *OneTPPerVisitHandler::getSky2TP(const CcdImage &ccdImage) const {
     auto it = tMap.find(ccdImage.getVisit());
     if (it == tMap.end()) return nullptr;
     return &*(it->second);

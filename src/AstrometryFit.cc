@@ -216,7 +216,7 @@ void AstrometryFit::LSDerivatives1(const CcdImage &ccdImage, TripletList &tList,
     /* this routine works in two different ways: either providing the
        ccdImage, of providing the MeasuredStarList. In the latter case, the
        ccdImage should match the one(s) in the list. */
-    if (msList) assert((*(msList->begin()))->ccdImage == &ccdImage);
+    if (msList) assert(&(msList->front()->getCcdImage()) == &ccdImage);
 
     // get the Mapping
     const Mapping *mapping = _astrometryModel->getMapping(ccdImage);
@@ -235,9 +235,9 @@ void AstrometryFit::LSDerivatives1(const CcdImage &ccdImage, TripletList &tList,
     // proper motion stuff
     double mjd = ccdImage.getMjd() - _JDRef;
     // refraction stuff
-    Point refractionVector = ccdImage.RefractionVector();
+    Point refractionVector = ccdImage.getRefractionVector();
     // transformation from sky to TP
-    const Gtransfo *sky2TP = _astrometryModel->sky2TP(ccdImage);
+    const Gtransfo *sky2TP = _astrometryModel->getSky2TP(ccdImage);
     // reserve matrices once for all measurements
     GtransfoLin dypdy;
     // the shape of h (et al) is required this way in order to be able to
@@ -247,12 +247,12 @@ void AstrometryFit::LSDerivatives1(const CcdImage &ccdImage, TripletList &tList,
     Eigen::Matrix2d alpha(2, 2);
     Eigen::VectorXd grad(npar_tot);
     // current position in the Jacobian
-    unsigned kTriplets = tList.NextFreeIndex();
+    unsigned kTriplets = tList.getNextFreeIndex();
     const MeasuredStarList &catalog = (msList) ? *msList : ccdImage.getCatalogForFit();
 
     for (auto &i : catalog) {
         const MeasuredStar &ms = *i;
-        if (!ms.IsValid()) continue;
+        if (!ms.isValid()) continue;
         // tweak the measurement errors
         FatPoint inPos = ms;
         tweakAstromMeasurementErrors(inPos, ms, _posError);
@@ -260,9 +260,9 @@ void AstrometryFit::LSDerivatives1(const CcdImage &ccdImage, TripletList &tList,
         FatPoint outPos;
         // should *not* fill h if whatToFit excludes mapping parameters.
         if (_fittingDistortions)
-            mapping->ComputeTransformAndDerivatives(inPos, outPos, h);
+            mapping->computeTransformAndDerivatives(inPos, outPos, h);
         else
-            mapping->TransformPosAndErrors(inPos, outPos);
+            mapping->transformPosAndErrors(inPos, outPos);
 
         unsigned ipar = npar_mapping;
         double det = outPos.vx * outPos.vy - sqr(outPos.vxy);
@@ -284,7 +284,7 @@ void AstrometryFit::LSDerivatives1(const CcdImage &ccdImage, TripletList &tList,
         alpha(1, 1) = 1. / sqrt(det * transW(0, 0));
         alpha(0, 1) = 0;
 
-        auto fs = ms.GetFittedStar();
+        auto fs = ms.getFittedStar();
 
         Point fittedStarInTP =
                 transformFittedStar(*fs, sky2TP, refractionVector, _refractionCoefficient, mjd);
@@ -292,15 +292,15 @@ void AstrometryFit::LSDerivatives1(const CcdImage &ccdImage, TripletList &tList,
         // compute derivative of TP position w.r.t sky position ....
         if (npar_pos > 0)  // ... if actually fitting FittedStar position
         {
-            sky2TP->Derivative(*fs, dypdy, 1e-3);
+            sky2TP->computeDerivative(*fs, dypdy, 1e-3);
             // sign checked
             // TODO Still have to check with non trivial non-diagonal terms
             h(npar_mapping, 0) = -dypdy.A11();
             h(npar_mapping + 1, 0) = -dypdy.A12();
             h(npar_mapping, 1) = -dypdy.A21();
             h(npar_mapping + 1, 1) = -dypdy.A22();
-            indices[npar_mapping] = fs->IndexInMatrix();
-            indices.at(npar_mapping + 1) = fs->IndexInMatrix() + 1;
+            indices[npar_mapping] = fs->getIndexInMatrix();
+            indices.at(npar_mapping + 1) = fs->getIndexInMatrix() + 1;
             ipar += npar_pos;
         }
         /* only consider proper motions of objects allowed to move,
@@ -308,8 +308,8 @@ void AstrometryFit::LSDerivatives1(const CcdImage &ccdImage, TripletList &tList,
         if (_fittingPM && fs->mightMove) {
             h(ipar, 0) = -mjd;  // Sign unchecked but consistent with above
             h(ipar + 1, 1) = -mjd;
-            indices[ipar] = fs->IndexInMatrix() + 2;
-            indices[ipar + 1] = fs->IndexInMatrix() + 3;
+            indices[ipar] = fs->getIndexInMatrix() + 2;
+            indices[ipar + 1] = fs->getIndexInMatrix() + 3;
             ipar += npar_pm;
         }
         if (_fittingRefrac) {
@@ -337,16 +337,16 @@ void AstrometryFit::LSDerivatives1(const CcdImage &ccdImage, TripletList &tList,
                 double val = halpha(ipar, ic);
                 if (val == 0) continue;
 #if (TRIPLET_INTERNAL_COORD == COL)
-                tList.AddTriplet(indices[ipar], kTriplets + ic, val);
+                tList.addTriplet(indices[ipar], kTriplets + ic, val);
 #else
-                tList.AddTriplet(kTriplets + ic, indices[ipar], val);
+                tList.addTriplet(kTriplets + ic, indices[ipar], val);
 #endif
             }
             rhs(indices[ipar]) += grad(ipar);
         }
         kTriplets += 2;  // each measurement contributes 2 columns in the Jacobian
     }                    // end loop on measurements
-    tList.SetNextFreeIndex(kTriplets);
+    tList.setNextFreeIndex(kTriplets);
 }
 
 // we could consider computing the chi2 here.
@@ -369,7 +369,7 @@ void AstrometryFit::LSDerivatives2(const FittedStarList &fsl, TripletList &tList
     GtransfoLin der;
     Eigen::Vector2d res, grad;
     unsigned indices[2 + NPAR_PM];
-    unsigned kTriplets = tList.NextFreeIndex();
+    unsigned kTriplets = tList.getNextFreeIndex();
     /* We cannot use the spherical coordinates directly to evaluate
        Euclidean distances, we have to use a projector on some plane in
        order to express least squares. Not projecting could lead to a
@@ -381,11 +381,11 @@ void AstrometryFit::LSDerivatives2(const FittedStarList &fsl, TripletList &tList
         const FittedStar &fs = *i;
         const RefStar *rs = fs.getRefStar();
         if (rs == nullptr) continue;
-        proj.SetTangentPoint(fs);
+        proj.setTangentPoint(fs);
         // fs projects to (0,0), no need to compute its transform.
         FatPoint rsProj;
-        proj.TransformPosAndErrors(*rs, rsProj);
-        proj.Derivative(fs, der, 1e-4);
+        proj.transformPosAndErrors(*rs, rsProj);
+        proj.computeDerivative(fs, der, 1e-4);
         // sign checked. TODO check that the off-diagonal terms are OK.
         h(0, 0) = -der.A11();
         h(1, 0) = -der.A12();
@@ -409,8 +409,8 @@ void AstrometryFit::LSDerivatives2(const FittedStarList &fsl, TripletList &tList
         alpha(1, 0) = w(0, 1) / alpha(0, 0);
         alpha(1, 1) = 1. / sqrt(det * w(0, 0));
         alpha(0, 1) = 0;
-        indices[0] = fs.IndexInMatrix();
-        indices[1] = fs.IndexInMatrix() + 1;
+        indices[0] = fs.getIndexInMatrix();
+        indices[1] = fs.getIndexInMatrix() + 1;
         unsigned npar_tot = 2;
         /* TODO: account here for proper motions in the reference
         catalog. We can code the effect and set the value to 0. Most
@@ -432,16 +432,16 @@ void AstrometryFit::LSDerivatives2(const FittedStarList &fsl, TripletList &tList
                 double val = halpha(ipar, ic);
                 if (val == 0) continue;
 #if (TRIPLET_INTERNAL_COORD == COL)
-                tList.AddTriplet(indices[ipar], kTriplets + ic, val);
+                tList.addTriplet(indices[ipar], kTriplets + ic, val);
 #else
-                tList.AddTriplet(kTriplets + ic, indices[ipar], val);
+                tList.addTriplet(kTriplets + ic, indices[ipar], val);
 #endif
             }
             rhs(indices[ipar]) += grad(ipar);
         }
         kTriplets += 2;  // each measurement contributes 2 columns in the Jacobian
     }
-    tList.SetNextFreeIndex(kTriplets);
+    tList.setNextFreeIndex(kTriplets);
 }
 
 //! this routine computes the derivatives of all LS terms, including the ones that refer to references stars,
@@ -471,22 +471,22 @@ void AstrometryFit::accumulateStatImage(ImType &image, Accum &accu) const {
     // proper motion stuff
     double mjd = image.getMjd() - _JDRef;
     // refraction stuff
-    Point refractionVector = image.RefractionVector();
+    Point refractionVector = image.getRefractionVector();
     // transformation from sky to TP
-    const Gtransfo *sky2TP = _astrometryModel->sky2TP(image);
+    const Gtransfo *sky2TP = _astrometryModel->getSky2TP(image);
     // reserve matrix once for all measurements
     Eigen::Matrix2Xd transW(2, 2);
 
     auto &catalog = image.getCatalogForFit();
     for (auto const &ms : catalog) {
-        if (!ms->IsValid()) continue;
+        if (!ms->isValid()) continue;
         // tweak the measurement errors
         FatPoint inPos = *ms;
         tweakAstromMeasurementErrors(inPos, *ms, _posError);
 
         FatPoint outPos;
         // should *not* fill h if whatToFit excludes mapping parameters.
-        mapping->TransformPosAndErrors(inPos, outPos);
+        mapping->transformPosAndErrors(inPos, outPos);
         double det = outPos.vx * outPos.vy - sqr(outPos.vxy);
         if (det <= 0 || outPos.vx <= 0 || outPos.vy <= 0) {
             LOGLS_WARN(_log, " Inconsistent measurement errors :drop measurement at "
@@ -497,14 +497,14 @@ void AstrometryFit::accumulateStatImage(ImType &image, Accum &accu) const {
         transW(1, 1) = outPos.vx / det;
         transW(0, 1) = transW(1, 0) = -outPos.vxy / det;
 
-        auto fs = ms->GetFittedStar();
+        auto fs = ms->getFittedStar();
         Point fittedStarInTP =
                 transformFittedStar(*fs, sky2TP, refractionVector, _refractionCoefficient, mjd);
 
         Eigen::Vector2d res(fittedStarInTP.x - outPos.x, fittedStarInTP.y - outPos.y);
         double chi2Val = res.transpose() * transW * res;
 
-        accu.AddEntry(chi2Val, 2, ms);
+        accu.addEntry(chi2Val, 2, ms);
     }  // end of loop on measurements
 }
 
@@ -525,10 +525,10 @@ void AstrometryFit::accumulateStatRefStars(Accum &accum) const {
     for (auto const &fs : fsl) {
         const RefStar *rs = fs->getRefStar();
         if (rs == nullptr) continue;
-        proj.SetTangentPoint(*fs);
+        proj.setTangentPoint(*fs);
         // fs projects to (0,0), no need to compute its transform.
         FatPoint rsProj;
-        proj.TransformPosAndErrors(*rs, rsProj);
+        proj.transformPosAndErrors(*rs, rsProj);
         // TO DO : account for proper motions.
         double rx = rsProj.x;  // -fsProj.x (which is 0)
         double ry = rsProj.y;
@@ -539,7 +539,7 @@ void AstrometryFit::accumulateStatRefStars(Accum &accum) const {
         wxx *= HACK_REF_ERRORS;
         wyy *= HACK_REF_ERRORS;
         wxy *= HACK_REF_ERRORS;
-        accum.AddEntry(wxx * sqr(rx) + 2 * wxy * rx * ry + wyy * sqr(ry), 2, fs);
+        accum.addEntry(wxx * sqr(rx) + 2 * wxy * rx * ry + wyy * sqr(ry), 2, fs);
     }
 }
 
@@ -569,7 +569,7 @@ struct Chi2Entry {
 };
 
 struct Chi2Vect : public std::vector<Chi2Entry> {
-    void AddEntry(double Chi2Val, unsigned ndof, std::shared_ptr<BaseStar> ps) {
+    void addEntry(double Chi2Val, unsigned ndof, std::shared_ptr<BaseStar> ps) {
         this->push_back(Chi2Entry(Chi2Val, std::move(ps)));
     }
 };
@@ -579,11 +579,11 @@ struct Chi2Vect : public std::vector<Chi2Entry> {
     constrains. Not really all of them if you check. */
 void AstrometryFit::setMeasuredStarIndices(const MeasuredStar &ms, std::vector<unsigned> &indices) const {
     if (_fittingDistortions) {
-        const Mapping *mapping = _astrometryModel->getMapping(*ms.ccdImage);
+        const Mapping *mapping = _astrometryModel->getMapping(ms.getCcdImage());
         mapping->setMappingIndices(indices);
     }
-    auto fs = ms.GetFittedStar();
-    unsigned fsIndex = fs->IndexInMatrix();
+    auto fs = ms.getFittedStar();
+    unsigned fsIndex = fs->getIndexInMatrix();
     if (_fittingPos) {
         indices.push_back(fsIndex);
         indices.push_back(fsIndex + 1);
@@ -603,7 +603,7 @@ void AstrometryFit::outliersContributions(MeasuredStarList &msOutliers, FittedSt
     for (auto const &i : msOutliers) {
         MeasuredStarList tmp;
         tmp.push_back(i);
-        const CcdImage &ccd = *(i->ccdImage);
+        const CcdImage &ccd = i->getCcdImage();
         LSDerivatives1(ccd, tList, grad, &tmp);
     }
     LSDerivatives2(fOutliers, tList, grad);
@@ -680,8 +680,8 @@ unsigned AstrometryFit::findOutliers(double nSigCut, MeasuredStarList &msOutlier
         if (!ms)  // it is reference term.
         {
             fs = std::dynamic_pointer_cast<FittedStar>(i->ps);
-            indices.push_back(fs->IndexInMatrix());
-            indices.push_back(fs->IndexInMatrix() + 1);  // probably useless
+            indices.push_back(fs->getIndexInMatrix());
+            indices.push_back(fs->getIndexInMatrix() + 1);  // probably useless
             /* One might think it would be useful to account for PM
                parameters here, but it is just useless */
         } else  // it is a measurement term.
@@ -717,9 +717,9 @@ unsigned AstrometryFit::findOutliers(double nSigCut, MeasuredStarList &msOutlier
 void AstrometryFit::removeMeasOutliers(MeasuredStarList &outliers) {
     for (auto &i : outliers) {
         MeasuredStar &ms = *i;
-        auto fs = std::const_pointer_cast<FittedStar>(ms.GetFittedStar());
-        ms.SetValid(false);
-        fs->MeasurementCount()--;  // could be put in SetValid
+        auto fs = std::const_pointer_cast<FittedStar>(ms.getFittedStar());
+        ms.setValid(false);
+        fs->getMeasurementCount()--;  // could be put in setValid
     }
 }
 
@@ -756,7 +756,7 @@ void AstrometryFit::assignIndices(const std::string &whatToFit) {
             // - when filling the derivatives
             // - when updating (offsetParams())
             // - in GetMeasuredStarIndices
-            fs.SetIndexInMatrix(ipar);
+            fs.setIndexInMatrix(ipar);
             ipar += 2;
             if ((_fittingPM)&fs.mightMove) ipar += NPAR_PM;
         }
@@ -783,7 +783,7 @@ void AstrometryFit::offsetParams(const Eigen::VectorXd &delta) {
             // the parameter layout here is used also
             // - when filling the derivatives
             // - when assigning indices (assignIndices())
-            unsigned index = fs.IndexInMatrix();
+            unsigned index = fs.getIndexInMatrix();
             fs.x += delta(index);
             fs.y += delta(index + 1);
             if ((_fittingPM)&fs.mightMove) {
@@ -845,7 +845,7 @@ unsigned AstrometryFit::minimize(const std::string &whatToFit, const double nSig
     SpMat hessian;
     {
 #if (TRIPLET_INTERNAL_COORD == COL)
-        SpMat jacobian(_nParTot, tList.NextFreeIndex());
+        SpMat jacobian(_nParTot, tList.getNextFreeIndex());
         jacobian.setFromTriplets(tList.begin(), tList.end());
         // release memory shrink_to_fit is C++11
         tList.clear();  // tList.shrink_to_fit();
@@ -899,7 +899,7 @@ unsigned AstrometryFit::minimize(const std::string &whatToFit, const double nSig
         removeMeasOutliers(moutliers);
         removeRefOutliers(foutliers);
         // convert triplet list to eigen internal format
-        SpMat h(_nParTot, tList.NextFreeIndex());
+        SpMat h(_nParTot, tList.getNextFreeIndex());
         h.setFromTriplets(tList.begin(), tList.end());
         int update_status = chol.update(h, false /* means downdate */);
         LOGLS_DEBUG(_log, "cholmod update_status " << update_status);
@@ -932,7 +932,7 @@ void AstrometryFit::checkStuff() {
         Eigen::VectorXd rhs(_nParTot);
         rhs.setZero();
         LSDerivatives(tList, rhs);
-        SpMat jacobian(_nParTot, tList.NextFreeIndex());
+        SpMat jacobian(_nParTot, tList.getNextFreeIndex());
         jacobian.setFromTriplets(tList.begin(), tList.end());
         SpMat hessian = jacobian * jacobian.transpose();
 #ifdef STORAGE
@@ -987,17 +987,17 @@ void AstrometryFit::makeMeasResTuple(const std::string &tupleName) const {
         const CcdImage &im = *i;
         const MeasuredStarList &cat = im.getCatalogForFit();
         const Mapping *mapping = _astrometryModel->getMapping(im);
-        const Point &refractionVector = im.RefractionVector();
+        const Point &refractionVector = im.getRefractionVector();
         double mjd = im.getMjd() - _JDRef;
         for (auto const &is : cat) {
             const MeasuredStar &ms = *is;
-            if (!ms.IsValid()) continue;
+            if (!ms.isValid()) continue;
             FatPoint tpPos;
             FatPoint inPos = ms;
             tweakAstromMeasurementErrors(inPos, ms, _posError);
-            mapping->TransformPosAndErrors(inPos, tpPos);
-            const Gtransfo *sky2TP = _astrometryModel->sky2TP(im);
-            auto fs = ms.GetFittedStar();
+            mapping->transformPosAndErrors(inPos, tpPos);
+            const Gtransfo *sky2TP = _astrometryModel->getSky2TP(im);
+            auto fs = ms.getFittedStar();
 
             Point fittedStarInTP =
                     transformFittedStar(*fs, sky2TP, refractionVector, _refractionCoefficient, mjd);
@@ -1010,10 +1010,10 @@ void AstrometryFit::makeMeasResTuple(const std::string &tupleName) const {
             double chi2 = wxx * res.x * res.x + wyy * res.y * res.y + 2 * wxy * res.x * res.y;
             tuple << std::setprecision(9);
             tuple << ms.x << ' ' << ms.y << ' ' << res.x << ' ' << res.y << ' ' << tpPos.x << ' ' << tpPos.y
-                  << ' ' << fs->Mag() << ' ' << mjd << ' ' << tpPos.vx << ' ' << tpPos.vy << ' ' << tpPos.vxy
-                  << ' ' << fs->color << ' ' << fs->IndexInMatrix() << ' ' << fs->x << ' ' << fs->y << ' '
-                  << chi2 << ' ' << fs->MeasurementCount() << ' ' << im.getCcdId() << ' ' << im.getVisit()
-                  << endl;
+                  << ' ' << fs->getMag() << ' ' << mjd << ' ' << tpPos.vx << ' ' << tpPos.vy << ' '
+                  << tpPos.vxy << ' ' << fs->color << ' ' << fs->getIndexInMatrix() << ' ' << fs->x << ' '
+                  << fs->y << ' ' << chi2 << ' ' << fs->getMeasurementCount() << ' ' << im.getCcdId() << ' '
+                  << im.getVisit() << endl;
         }  // loop on measurements in image
     }      // loop on images
 }
@@ -1040,10 +1040,10 @@ void AstrometryFit::makeRefResTuple(const std::string &tupleName) const {
         const FittedStar &fs = *i;
         const RefStar *rs = fs.getRefStar();
         if (rs == nullptr) continue;
-        proj.SetTangentPoint(fs);
+        proj.setTangentPoint(fs);
         // fs projects to (0,0), no need to compute its transform.
         FatPoint rsProj;
-        proj.TransformPosAndErrors(*rs, rsProj);
+        proj.transformPosAndErrors(*rs, rsProj);
         double rx = rsProj.x;  // -fsProj.x (which is 0)
         double ry = rsProj.y;
         double det = rsProj.vx * rsProj.vy - sqr(rsProj.vxy);
@@ -1052,9 +1052,9 @@ void AstrometryFit::makeRefResTuple(const std::string &tupleName) const {
         double wxy = -rsProj.vxy / det;
         double chi2 = wxx * sqr(rx) + 2 * wxy * rx * ry + wyy * sqr(ry);
         tuple << std::setprecision(9);
-        tuple << fs.x << ' ' << fs.y << ' ' << rx << ' ' << ry << ' ' << fs.Mag() << ' ' << rsProj.vx << ' '
-              << rsProj.vy << ' ' << rsProj.vxy << ' ' << fs.color << ' ' << fs.IndexInMatrix() << ' ' << chi2
-              << ' ' << fs.MeasurementCount() << endl;
+        tuple << fs.x << ' ' << fs.y << ' ' << rx << ' ' << ry << ' ' << fs.getMag() << ' ' << rsProj.vx
+              << ' ' << rsProj.vy << ' ' << rsProj.vxy << ' ' << fs.color << ' ' << fs.getIndexInMatrix()
+              << ' ' << chi2 << ' ' << fs.getMeasurementCount() << endl;
     }  // loop on FittedStars
 }
 }  // namespace jointcal

@@ -11,13 +11,13 @@ LOG_LOGGER _log = LOG_GET("jointcal.FastFinder");
 namespace lsst {
 namespace jointcal {
 
-FastFinder::FastFinder(const BaseStarList &List, const unsigned NXslice)
-        : baselist(List), count(List.size()), stars(count), nslice(NXslice), index(nslice + 1) {
+FastFinder::FastFinder(const BaseStarList &list, const unsigned nXSlice)
+        : baselist(list), count(list.size()), stars(count), nslice(nXSlice), index(nslice + 1) {
     if (count == 0) return;
 
     // fill "stars"
     unsigned j = 0;
-    for (auto const &ci : List) {
+    for (auto const &ci : list) {
         stars[j] = ci;
         ++j;
     }
@@ -57,16 +57,16 @@ void FastFinder::dump() const {
     }
 }
 
-std::shared_ptr<const BaseStar> FastFinder::FindClosest(const Point &Where, const double MaxDist,
+std::shared_ptr<const BaseStar> FastFinder::findClosest(const Point &where, const double maxDist,
                                                         bool (*SkipIt)(const BaseStar &)) const {
     if (count == 0) return nullptr;
-    FastFinder::Iterator it = begin_scan(Where, MaxDist);
+    FastFinder::Iterator it = beginScan(where, maxDist);
     if (*it == nullptr) return nullptr;
     std::shared_ptr<const BaseStar> pbest;
-    double minDist2 = MaxDist * MaxDist;
+    double minDist2 = maxDist * maxDist;
     for (; *it != nullptr; ++it) {
         if (SkipIt && SkipIt(**it)) continue;
-        double dist2 = Where.Dist2(**it);
+        double dist2 = where.computeDist2(**it);
         if (dist2 < minDist2) {
             pbest = *it;
             minDist2 = dist2;
@@ -75,20 +75,20 @@ std::shared_ptr<const BaseStar> FastFinder::FindClosest(const Point &Where, cons
     return pbest;
 }
 
-std::shared_ptr<const BaseStar> FastFinder::SecondClosest(const Point &Where, const double MaxDist,
-                                                          std::shared_ptr<const BaseStar> &Closest,
+std::shared_ptr<const BaseStar> FastFinder::secondClosest(const Point &where, const double maxDist,
+                                                          std::shared_ptr<const BaseStar> &closest,
                                                           bool (*SkipIt)(const BaseStar &)) const {
-    Closest = nullptr;
+    closest = nullptr;
     if (count == 0) return nullptr;
-    FastFinder::Iterator it = begin_scan(Where, MaxDist);
+    FastFinder::Iterator it = beginScan(where, maxDist);
     if (*it == nullptr) return nullptr;
     std::shared_ptr<const BaseStar> pbest1;  // closest
     std::shared_ptr<const BaseStar> pbest2;  // second closest
-    double minDist1_2 = MaxDist * MaxDist;
-    double minDist2_2 = MaxDist * MaxDist;
+    double minDist1_2 = maxDist * maxDist;
+    double minDist2_2 = maxDist * maxDist;
     for (; *it != nullptr; ++it) {
         if (SkipIt && SkipIt(**it)) continue;
-        double dist2 = Where.Dist2(**it);
+        double dist2 = where.computeDist2(**it);
         if (dist2 < minDist1_2) {
             pbest2 = pbest1;
             minDist2_2 = minDist1_2;
@@ -99,71 +99,71 @@ std::shared_ptr<const BaseStar> FastFinder::SecondClosest(const Point &Where, co
             minDist2_2 = dist2;
         }
     }
-    Closest = pbest1;
+    closest = pbest1;
     return pbest2;
 }
 
 /* It is by no means clear the the 2 following routines are actually needed.
    It is nor clear to me (P.A) why they are different... but they really are.
 */
-/* Locate the last position (in the sorted array) between Begin and
-   End that lies before YVal.*/
-FastFinder::pstar FastFinder::locate_y_start(pstar Begin, pstar End, double YVal) const {
-    if (Begin == stars.end() || Begin == End) return stars.end();
-    int span = End - Begin - 1;
+/* Locate the last position (in the sorted array) between begin and
+   end that lies before yVal.*/
+FastFinder::pstar FastFinder::locateYStart(pstar begin, pstar end, double yVal) const {
+    if (begin == stars.end() || begin == end) return stars.end();
+    int span = end - begin - 1;
     while (span > 1) {
         int half_span = span / 2;
-        pstar middle = Begin + half_span;
-        if ((*middle)->y < YVal) {
-            Begin += half_span;
+        pstar middle = begin + half_span;
+        if ((*middle)->y < yVal) {
+            begin += half_span;
             span -= half_span;
         } else {
             span -= (span - half_span);
         }
     }
-    return Begin;
+    return begin;
 }
 
-/* Locate the first position (in the sorted array) between Begin and
-   End that lies beyond YVal.*/
-FastFinder::pstar FastFinder::locate_y_end(pstar Begin, pstar End, double YVal) const {
-    if (Begin == stars.end()) return stars.end();
-    int span = End - Begin - 1;
+/* Locate the first position (in the sorted array) between begin and
+   end that lies beyond yVal.*/
+FastFinder::pstar FastFinder::locateYEnd(pstar begin, pstar end, double yVal) const {
+    if (begin == stars.end()) return stars.end();
+    int span = end - begin - 1;
     while (span > 1) {
         int half_span = span / 2;
-        pstar middle = End - half_span;
-        if ((*middle)->y > YVal) {
-            End -= half_span;
+        pstar middle = end - half_span;
+        if ((*middle)->y > yVal) {
+            end -= half_span;
             span -= half_span;
         } else {
             span -= (span - half_span);
         }
     }
-    return End - 1;
+    return end - 1;
 }
 
-void FastFinder::find_range_in_slice(const int iSlice, const double YStart, const double YEnd, pstar &Start,
-                                     pstar &End) const {
-    Start = locate_y_start(stars.begin() + index[iSlice], stars.begin() + index[iSlice + 1], YStart);
-    End = locate_y_end(Start, stars.begin() + index[iSlice + 1], YEnd);
+void FastFinder::findRangeInSlice(const int iSlice, const double yStart, const double yEnd, pstar &start,
+                                  pstar &end) const {
+    start = locateYStart(stars.begin() + index[iSlice], stars.begin() + index[iSlice + 1], yStart);
+    end = locateYEnd(start, stars.begin() + index[iSlice + 1], yEnd);
 }
 
-FastFinder::Iterator FastFinder::begin_scan(const Point &Where, double MaxDist) const {
-    return FastFinder::Iterator(*this, Where, MaxDist);
+FastFinder::Iterator FastFinder::beginScan(const Point &where, double maxDist) const {
+    return FastFinder::Iterator(*this, where, maxDist);
 }
 
 using Iterator = FastFinder::Iterator;
 
-Iterator::Iterator(const FastFinder &F, const Point &Where, double MaxDist)
+Iterator::Iterator(const FastFinder &F, const Point &where, double maxDist)
         : finder(F), null_value(F.stars.end()) {
     current = pend = null_value;  // does not iterate
     int startSlice = 0;
     if (finder.xstep != 0)  // means we have several slices
     {
-        startSlice = std::max(0, int((Where.x - MaxDist - finder.xmin) / finder.xstep));
+        startSlice = std::max(0, int((where.x - maxDist - finder.xmin) / finder.xstep));
         /* obviously, endSlice (and starSlice) can be negative.
            This is why slice indices are "int" rather than "unsigned". */
-        endSlice = std::min(int(finder.nslice), int((Where.x + MaxDist - finder.xmin) / finder.xstep) + 1);
+        endSlice = std::min(int(finder.nslice), int((where.x + maxDist - finder.xmin) / finder.xstep) + 1);
     } else {
         startSlice = 0;
         endSlice = 1;
@@ -171,8 +171,8 @@ Iterator::Iterator(const FastFinder &F, const Point &Where, double MaxDist)
     // beyond limits:
     if (startSlice >= int(finder.nslice) || endSlice < 0) return;
     // we are inside in x, so, we setup the y range:
-    yStart = Where.y - MaxDist;
-    yEnd = Where.y + MaxDist;
+    yStart = where.y - maxDist;
+    yEnd = where.y + maxDist;
     /* rather than initializing here, we step back one
        slice and let "++" do its job */
     currentSlice = startSlice - 1;  // again, this requires "int" slices
@@ -194,7 +194,7 @@ void Iterator::operator++() {
                 current = null_value;
                 return;
             }
-            finder.find_range_in_slice(currentSlice, yStart, yEnd, current, pend);
+            finder.findRangeInSlice(currentSlice, yStart, yEnd, current, pend);
         } while (current == null_value);
     check();
 }
