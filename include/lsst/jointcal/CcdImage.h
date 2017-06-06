@@ -55,7 +55,10 @@ private:
     double _mjd;      // modified julian date
     PTR(lsst::afw::image::Calib) _calib;
     // refraction
-    double _sineta, _coseta, _tgz, _hourAngle;  // eta : parallactic angle, z: zenithal angle (X = 1/cos(z))
+    // eta : parallactic angle, z: zenithal angle (X = 1/cos(z))
+    double _sineta, _coseta, _tgz;
+    // Local Sidereal Time and hour angle of observation
+    double _lstObs, _hourAngle;
 
     std::string _filter;
 
