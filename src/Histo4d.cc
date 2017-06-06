@@ -131,7 +131,7 @@ void SparseHisto4d::binLimits(const double x[4], const int iDim, double &xMin, d
     int code = code_value(x);
     double xCenter[4];
     inverse_code(code, xCenter);
-    xMin, xCenter[iDim] - 0.5 / _scale[iDim];
+    xMin = xCenter[iDim] - 0.5 / _scale[iDim];
     xMax = xCenter[iDim] + 0.5 / _scale[iDim];
 }
 
