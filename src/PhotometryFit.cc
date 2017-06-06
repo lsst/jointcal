@@ -25,10 +25,9 @@ LOG_LOGGER _log = LOG_GET("jointcal.PhotometryFit");
 namespace lsst {
 namespace jointcal {
 
-PhotometryFit::PhotometryFit(Associations &associations, PhotometryModel *photometryModel, double fluxError)
+PhotometryFit::PhotometryFit(Associations &associations, PhotometryModel *photometryModel)
         : _associations(associations),
           _photometryModel(photometryModel),
-          _fluxError(fluxError),
           _lastNTrip(0) {
     // The various _npar... are initialized in assignIndices.
     // Although there is no reason to adress them before one might be tempted by
@@ -68,7 +67,7 @@ void PhotometryFit::LSDerivatives(const CcdImage &ccdImage, TripletList &triplet
         // tweak the measurement errors
         double sigma = measuredStar.eflux;
 #ifdef FUTURE
-        TweakPhotomMeasurementErrors(inPos, measuredStar, _posError);
+        TweakPhotomMeasurementErrors(inPos, measuredStar, _fluxError);
 #endif
         h.setZero();  // we cannot be sure that all entries will be overwritten.
 
@@ -115,7 +114,7 @@ void PhotometryFit::accumulateStat(ListType &listType, Accum &accum) const {
             // tweak the measurement errors
             double sigma = measuredStar->eflux;
 #ifdef FUTURE
-            TweakPhotomMeasurementErrors(inPos, measuredStar, _posError);
+            TweakPhotomMeasurementErrors(inPos, measuredStar, _fluxError);
 #endif
 
             double pf = _photometryModel->photomFactor(ccdIMage, *measuredStar);
@@ -355,7 +354,7 @@ void PhotometryFit::makeResTuple(const std::string &tupleName) const {
             if (!ms.isValid()) continue;
             double sigma = ms.eflux;
 #ifdef FUTURE
-            tweakPhotomMeasurementErrors(inPos, ms, _posError);
+            tweakPhotomMeasurementErrors(inPos, ms, _fluxError);
 #endif
             double pf = _photometryModel->photomFactor(im, ms);
             double jd = im.getMjd();

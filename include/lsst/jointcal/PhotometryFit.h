@@ -23,14 +23,13 @@ private:
     Associations &_associations;
     std::string _whatToFit;
     bool _fittingModel, _fittingFluxes;
-    unsigned _nParModel, _nParFluxes, _nParTot;
+    unsigned _nParModel, _nParTot;
     PhotometryModel *_photometryModel;
-    double _fluxError;
     int _lastNTrip;  // last triplet count, used to speed up allocation
 
 public:
     //! this is the only constructor
-    PhotometryFit(Associations &associations, PhotometryModel *model, double fluxError);
+    PhotometryFit(Associations &associations, PhotometryModel *model);
 
     /**
      * Does a 1 step minimization, assuming a linear model.
