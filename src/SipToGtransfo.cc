@@ -14,16 +14,13 @@ namespace afwGeom = lsst::afw::geom;
 namespace lsst {
 namespace jointcal {
 
-static const int lsstToFitsPixels = +1;
-static const int fitsToLsstPixels = -1;
-
 typedef std::shared_ptr<jointcal::GtransfoPoly> GtPoly_Ptr;
 
 jointcal::TanSipPix2RaDec convertTanWcs(const std::shared_ptr<lsst::afw::image::TanWcs> wcs) {
     GtPoly_Ptr sipCorr(new jointcal::GtransfoPoly(0));
 
-    /* beware : Wcs::getPixelOrigin return crpix_fits +
-     fitsToLsstPixels, so all the algebra we perform here happens in the
+    /* beware : Wcs::getPixelOrigin return crpix_fits - 1,
+     so all the algebra we perform here happens in the
      "Lsst frame", i.e (0,0)-based. this algebra is justified in the
      documentation of the package. */
 
