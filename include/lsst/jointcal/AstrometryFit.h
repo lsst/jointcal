@@ -168,12 +168,40 @@ public:
                                Eigen::VectorXd &grad);
 
     /**
-     * returns how many outliers were removed. No refit done. MeasOrRef can be
-     * "Meas" , "Ref", or "Meas Ref".
+     * Discards measurements and reference contributions contributing to the chi2 more than nSigmaCut,
+     * computed as:
+     * @f[
+     *    <chi2> + nSigmaCut + rms(chi2)
+     * @f]
+     * (statistics over contributions to the chi2).
+     * No refit done.
+     *
+     * @param[in]  nSigmaCut  Number of sigma to cut on.
+     * @param[in]  measOrRef  Which outliers to remove. One of "Meas", "Ref" or "Meas Ref".
+     *
+     * @return     Total number of outliers that were removed.
      */
-    unsigned removeOutliers(double nSigCut, const std::string &measOrRef = "Meas Ref");
+    unsigned removeOutliers(double nSigmaCut, const std::string &measOrRef = "Meas Ref");
 
-    unsigned findOutliers(double nSigCut, MeasuredStarList &mSOutliers, FittedStarList &fSOutliers,
+    /**
+     * Find Measurements and references contributing more than a cut, computed as
+     * @f[
+     *     <chi2> + nSigmaCut + rms(chi2).
+     * @f]
+     * The outliers are NOT removed, and no refit is done.
+     *
+     * After returning from here, there are still measurements that
+     * contribute above the cut, but their contribution should be evaluated after a
+     * refit before discarding them.
+     *
+     * @param[in]  nSigmaCut   Number of sigma to select on.
+     * @param[out] mSOutliers  list of MeasuredStar outliers to populate
+     * @param[out] fSOutliers  list of FittedStar outliers to populate
+     * @param[in]  measOrRef   Which outliers to remove. One of "Meas", "Ref" or "Meas Ref".
+     *
+     * @return     Total number of outliers that were removed.
+     */
+    unsigned findOutliers(double nSigmaCut, MeasuredStarList &mSOutliers, FittedStarList &fSOutliers,
                           const std::string &measOrRef = "Meas Ref") const;
 
     //! Just removes outliers from the fit. No Refit done.
