@@ -926,7 +926,7 @@ void AstrometryFit::checkStuff() {
 #endif
     const char *what2fit[] = {"Positions", "Distortions", "Positions Distortions"};
     // DEBUG
-    for (int k = 0; k < sizeof(what2fit) / sizeof(what2fit[0]); ++k) {
+    for (unsigned k = 0; k < sizeof(what2fit) / sizeof(what2fit[0]); ++k) {
         assignIndices(what2fit[k]);
         TripletList tList(10000);
         Eigen::VectorXd rhs(_nParTot);
