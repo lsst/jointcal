@@ -191,6 +191,9 @@ std::shared_ptr<TanSipPix2RaDec> ConstrainedPolyModel::produceSipWcs(const CcdIm
 
     GtransfoPoly pix2Tp;
     const GtransfoPoly &t1 = dynamic_cast<const GtransfoPoly &>(mapping->getTransfo1());
+    // TODO: This line produces a warning on clang (t1 is always valid: a failed dynamic_cast of a reference
+    // raises bad_cast instead of returning nullptr like a failed pointer cast), but I'll deal with it as
+    // part of DM-10524 (hopefully removing the necessity of the casts).
     if (!(&t1)) {
         LOGLS_ERROR(_log, "Problem with transform 1 of ccd/visit " << ccdImage.getCcdId() << "/"
                                                                    << ccdImage.getVisit() << ": T1 "

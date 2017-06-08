@@ -13,9 +13,9 @@ namespace lsst {
 namespace jointcal {
 
 SimplePhotometryModel::SimplePhotometryModel(const CcdImageList &ccdImageList) {
-    unsigned refVisit = -1;
+    VisitIdType refVisit = -1;
     for (auto const &ccdImage : ccdImageList) {
-        unsigned visit = ccdImage->getVisit();
+        VisitIdType visit = ccdImage->getVisit();
         if (refVisit == -1) refVisit = visit;
         if (visit == refVisit)
             _myMap[ccdImage.get()].fixed = true;

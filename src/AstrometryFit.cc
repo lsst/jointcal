@@ -609,25 +609,17 @@ void AstrometryFit::outliersContributions(MeasuredStarList &msOutliers, FittedSt
     LSDerivatives2(fOutliers, tList, grad);
 }
 
-//! Discards measurements and reference contributions contributing to the chi2 more than a cut, computed as
-//! <chi2>+nSigCut+rms(chi2) (statistics over contributions to the chi2). Returns the number of removed
-//! outliers. No refit done.
-unsigned AstrometryFit::removeOutliers(double nSigCut, const std::string &measOrRef) {
+unsigned AstrometryFit::removeOutliers(double nSigmaCut, const std::string &measOrRef) {
     MeasuredStarList msOutliers;
     FittedStarList fsOutliers;
-    unsigned n = findOutliers(nSigCut, msOutliers, fsOutliers, measOrRef);
+    unsigned n = findOutliers(nSigmaCut, msOutliers, fsOutliers, measOrRef);
     removeMeasOutliers(msOutliers);
     removeRefOutliers(fsOutliers);
     return n;
 }
 
-//! Find Measurements and references contributing more than a cut, computed as <chi2>+nSigCut+rms(chi2). The
-//! outliers are NOT removed, and no refit is done.
-/*! After returning from here, there are still measurements that
-  contribute above the cut, but their contribution should be
-  evaluated after a refit before discarding them. */
-unsigned AstrometryFit::findOutliers(double nSigCut, MeasuredStarList &msOutliers, FittedStarList &fsOutliers,
-                                     const std::string &measOrRef) const {
+unsigned AstrometryFit::findOutliers(double nSigmaCut, MeasuredStarList &msOutliers,
+                                     FittedStarList &fsOutliers, const std::string &measOrRef) const {
     bool searchMeas = (measOrRef.find("Meas") != std::string::npos);
     bool searchRef = (measOrRef.find("Ref") != std::string::npos);
 
@@ -656,7 +648,7 @@ unsigned AstrometryFit::findOutliers(double nSigCut, MeasuredStarList &msOutlier
     double sigma = sqrt(sum2 / nval - sqr(average));
     LOGLS_DEBUG(_log,
                 "RemoveOutliers chi2 stat: mean/median/sigma " << average << '/' << median << '/' << sigma);
-    double cut = average + nSigCut * sigma;
+    double cut = average + nSigmaCut * sigma;
     /* For each of the parameters, we will not remove more than 1
        measurement that contributes to constraining it. Keep track using
        of what we are touching using an integer vector. This is the
@@ -926,7 +918,7 @@ void AstrometryFit::checkStuff() {
 #endif
     const char *what2fit[] = {"Positions", "Distortions", "Positions Distortions"};
     // DEBUG
-    for (int k = 0; k < sizeof(what2fit) / sizeof(what2fit[0]); ++k) {
+    for (unsigned k = 0; k < sizeof(what2fit) / sizeof(what2fit[0]); ++k) {
         assignIndices(what2fit[k]);
         TripletList tList(10000);
         Eigen::VectorXd rhs(_nParTot);

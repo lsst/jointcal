@@ -422,7 +422,7 @@ class JointcalTask(pipeBase.CmdLineTask):
         self.log.info("=== Starting photometric fitting...")
         model = lsst.jointcal.SimplePhotometryModel(associations.getCcdImageList())
 
-        fit = lsst.jointcal.PhotometryFit(associations, model, self.config.posError)
+        fit = lsst.jointcal.PhotometryFit(associations, model)
         fit.minimize("Model")
         chi2 = fit.computeChi2()
         self.log.info(str(chi2))

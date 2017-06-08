@@ -115,7 +115,7 @@ const Gtransfo &SimplePolyModel::getTransfo(const CcdImage &ccdImage) const {
 std::shared_ptr<TanSipPix2RaDec> SimplePolyModel::produceSipWcs(const CcdImage &ccdImage) const {
     const GtransfoPoly &pix2Tp = dynamic_cast<const GtransfoPoly &>(getTransfo(ccdImage));
     const TanRaDec2Pix *proj = dynamic_cast<const TanRaDec2Pix *>(getSky2TP(ccdImage));
-    if (!(&pix2Tp) || !proj) return nullptr;
+    if (!proj) return nullptr;
 
     const GtransfoLin &projLinPart = proj->getLinPart();  // should be the identity, but who knows? So, let us
                                                           // incorporate it into the pix2TP part.

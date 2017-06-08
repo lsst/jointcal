@@ -71,14 +71,10 @@ CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceReco
                    const lsst::afw::geom::Box2I &bbox, const std::string &filter,
                    const PTR(lsst::afw::image::Calib) calib, const int &visit, const int &ccdId,
                    const std::string &fluxField)
-        :
-
-          _filter(filter),
+        : _ccdId(ccdId),
           _visit(visit),
-          _ccdId(ccdId),
-          _calib(calib)
-
-{
+          _calib(calib),
+          _filter(filter) {
     LoadCatalog(record, fluxField);
 
     Point lowerLeft(bbox.getMinX(), bbox.getMinY());
@@ -96,7 +92,7 @@ CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceReco
     _airMass = visitInfo->getBoresightAirmass();
     _mjd = visitInfo->getDate().get(lsst::daf::base::DateTime::MJD);
     double latitude = visitInfo->getObservatory().getLatitude();
-    double lst_obs = visitInfo->getEra();
+    _lstObs = visitInfo->getEra();
     _hourAngle = visitInfo->getBoresightHourAngle();
 
     // lsstSim doesn't manage ERA (and thus Hour Angle) properly, so it's going to be NaN.

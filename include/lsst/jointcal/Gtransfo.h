@@ -1,8 +1,4 @@
 // -*- LSST-C++ -*-
-
-/// \file gtransfo.h
-/// \brief Geometrical transformations (of 2D points)
-
 #ifndef LSST_JOINTCAL_GTRANSFO_H
 #define LSST_JOINTCAL_GTRANSFO_H
 

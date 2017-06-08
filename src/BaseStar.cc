@@ -11,8 +11,6 @@ namespace pexExcept = lsst::pex::exceptions;
 namespace lsst {
 namespace jointcal {
 
-static double sq(double x) { return x * x; }
-
 bool decreasingFlux(const BaseStar *star1, const BaseStar *star2) {
     return (star1->getFlux() > star2->getFlux());
 }
