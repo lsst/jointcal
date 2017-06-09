@@ -56,7 +56,7 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
         # first run of jointcal on this data. We should always do better than
         # this in the future!
         dist_rms_relative = 25e-3*u.arcsecond
-        pa1 = 0.019
+        pa1 = 0.014
         metrics = {'collectedAstrometryRefStars': 825,
                    'collectedPhotometryRefStars': 825,
                    'selectedAstrometryRefStars': 825,
@@ -69,8 +69,8 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
                    'selectedPhotometryCcdImageList': 12,
                    'astrometryFinalChi2': 1150.62,
                    'astrometryFinalNdof': 2550,
-                   'photometryFinalChi2': 13363.6,
-                   'photometryFinalNdof': 1089
+                   'photometryFinalChi2': 2813.17,
+                   'photometryFinalNdof': 1388
                    }
 
         self._testJointcalTask(2, dist_rms_relative, self.dist_rms_absolute, pa1, metrics=metrics)
@@ -103,14 +103,14 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
         self.config.doAstrometry = False
         self.jointcalStatistics.do_astrometry = False
 
-        pa1 = 0.01
+        pa1 = 0.014
         metrics = {'collectedPhotometryRefStars': 825,
                    'selectedPhotometryRefStars': 825,
                    'associatedPhotometryFittedStars': 2269,
                    'selectedPhotometryFittedStars': 1239,
                    'selectedPhotometryCcdImageList': 12,
-                   'photometryFinalChi2': 13363.6,
-                   'photometryFinalNdof': 1089
+                   'photometryFinalChi2': 2813.17,
+                   'photometryFinalNdof': 1388
                    }
 
         self.config = lsst.jointcal.jointcal.JointcalConfig()

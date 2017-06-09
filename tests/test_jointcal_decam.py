@@ -59,8 +59,8 @@ class JointcalTestDECAM(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Test
         # first run of jointcal on this data. We should always do better than
         # this in the future!
         relative_error = 32e-3*u.arcsecond
-        pa1 = 0.0383
-        # NOTE: decam fits are currently not converging; the chi2 jumps around, so skip that test.
+        pa1 = 0.14
+        # NOTE: decam fits are currently not converging; the chi2 jumps around, so skip that Metric.
         metrics = {'collectedAstrometryRefStars': 8194,
                    'collectedPhotometryRefStars': 8194,
                    'selectedAstrometryRefStars': 8194,
@@ -74,7 +74,7 @@ class JointcalTestDECAM(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Test
                    'astrometryFinalChi2': None,
                    'astrometryFinalNdof': 4306,
                    'photometryFinalChi2': None,
-                   'photometryFinalNdof': 1626,
+                   'photometryFinalNdof': 2391,
                    }
 
         self._testJointcalTask(2, relative_error, self.dist_rms_absolute, pa1, metrics=metrics)
