@@ -16,60 +16,6 @@
 
 typedef Eigen::SparseMatrix<double> SpMat;
 
-#if 0
-template<typename _MatrixType, int _UpLo = Eigen::Lower>
-class CholmodSupernodalLLT2 : public Eigen::CholmodBase<_MatrixType, _UpLo, CholmodSupernodalLLT2<_MatrixType, _UpLo> >
-{
-    typedef Eigen::CholmodBase<_MatrixType, _UpLo, CholmodSupernodalLLT2> Base;
-    using Base::m_cholmod;
-
-public:
-
-    typedef _MatrixType MatrixType;
-    typedef typename MatrixType::Index Index;
-
-    CholmodSupernodalLLT2() : Base() { init(); }
-    //! The factorization happens in the constructor.
-    CholmodSupernodalLLT2(const MatrixType& matrix) : Base()
-    {
-        init();
-        this->compute(matrix);
-    }
-
-    //! this routine is the one we added.
-    int update(const SpMat &H, const bool UpOrDown)
-    {
-        // check size
-        const Index size = Base::m_cholmodFactor->n;
-        EIGEN_UNUSED_VARIABLE(size);
-        eigen_assert(size == H.rows());
-        cholmod_sparse C_cs = viewAsCholmod(H);
-        /* We have to apply the magic permutation to the update matrix,
-           read page 117 of Cholmod UserGuide.pdf */
-        cholmod_sparse *C_cs_perm = cholmod_submatrix(C_cs,
-                                    Base::m_cholmodFactor->Perm,
-                                    Base::m_cholmodFactor->n,
-                                    nullptr, -1, nullptr, true, true,
-                                    &this->cholmod());
-
-        int ret = cholmod_updown(UpOrDown, &C_cs_perm, Base::m_cholmodFactor, &this->cholmod());
-        cholmod_free_sparse(C_cs_perm,  &this->cholmod());
-        return ret;
-    }
-
-    ~CholmodSupernodalLLT2() {}
-protected:
-    void init()
-    {
-        m_cholmod.final_asis = 1;
-        m_cholmod.supernodal = CHOLMOD_SUPERNODAL;
-        // In CholmodBase::CholmodBase(), the following statement is missing in
-        // SuiteSparse 3.2.0.8. Fixed in 3.2.7
-        Base::m_shiftOffset[0] = Base::m_shiftOffset[1] = RealScalar(0.0);
-    }
-};
-#endif
-
 //! Cholesky factorization class using cholmod, with the small-rank update capability.
 /*! Class derived from Eigen's CholmodBase, to add the factorization
     update capability to the interface. Besides this addition, it
@@ -128,8 +74,6 @@ protected:
 using namespace std;
 
 static double sqr(double x) { return x * x; }
-
-// const double posErrorIncrement=0.02;
 
 namespace {
 LOG_LOGGER _log = LOG_GET("jointcal.AstrometryFit");
@@ -336,11 +280,7 @@ void AstrometryFit::LSDerivatives1(const CcdImage &ccdImage, TripletList &tList,
             for (unsigned ic = 0; ic < 2; ++ic) {
                 double val = halpha(ipar, ic);
                 if (val == 0) continue;
-#if (TRIPLET_INTERNAL_COORD == COL)
                 tList.addTriplet(indices[ipar], kTriplets + ic, val);
-#else
-                tList.addTriplet(kTriplets + ic, indices[ipar], val);
-#endif
             }
             rhs(indices[ipar]) += grad(ipar);
         }
@@ -348,11 +288,6 @@ void AstrometryFit::LSDerivatives1(const CcdImage &ccdImage, TripletList &tList,
     }                    // end loop on measurements
     tList.setNextFreeIndex(kTriplets);
 }
-
-// we could consider computing the chi2 here.
-// (although it is not extremely useful)
-
-#define HACK_REF_ERRORS 1.  // used to isolate the measurement or ref terms
 
 void AstrometryFit::LSDerivatives2(const FittedStarList &fsl, TripletList &tList,
                                    Eigen::VectorXd &rhs) const {
@@ -400,8 +335,6 @@ void AstrometryFit::LSDerivatives2(const FittedStarList &fsl, TripletList &tList
         w(0, 0) = rsProj.vy / det;
         w(0, 1) = w(1, 0) = -rsProj.vxy / det;
         w(1, 1) = rsProj.vx / det;
-        w *= HACK_REF_ERRORS;
-        det /= sqr(HACK_REF_ERRORS);
         // compute alpha, a triangular square root
         // of w (i.e. a Cholesky factor)
         alpha(0, 0) = sqrt(w(0, 0));
@@ -431,11 +364,7 @@ void AstrometryFit::LSDerivatives2(const FittedStarList &fsl, TripletList &tList
             for (unsigned ic = 0; ic < 2; ++ic) {
                 double val = halpha(ipar, ic);
                 if (val == 0) continue;
-#if (TRIPLET_INTERNAL_COORD == COL)
                 tList.addTriplet(indices[ipar], kTriplets + ic, val);
-#else
-                tList.addTriplet(kTriplets + ic, indices[ipar], val);
-#endif
             }
             rhs(indices[ipar]) += grad(ipar);
         }
@@ -536,9 +465,6 @@ void AstrometryFit::accumulateStatRefStars(Accum &accum) const {
         double wxx = rsProj.vy / det;
         double wyy = rsProj.vx / det;
         double wxy = -rsProj.vxy / det;
-        wxx *= HACK_REF_ERRORS;
-        wyy *= HACK_REF_ERRORS;
-        wxy *= HACK_REF_ERRORS;
         accum.addEntry(wxx * sqr(rx) + 2 * wxy * rx * ry + wyy * sqr(ry), 2, fs);
     }
 }
@@ -836,20 +762,11 @@ int AstrometryFit::minimize(const std::string &whatToFit, const double nSigRejCu
 
     SpMat hessian;
     {
-#if (TRIPLET_INTERNAL_COORD == COL)
         SpMat jacobian(_nParTot, tList.getNextFreeIndex());
         jacobian.setFromTriplets(tList.begin(), tList.end());
         // release memory shrink_to_fit is C++11
         tList.clear();  // tList.shrink_to_fit();
         hessian = jacobian * jacobian.transpose();
-#else
-        SpMat jacobian(tList.NextRank(), _nParTot);
-        jacobian.setFromTriplets(tList.begin(), tList.end());
-        // release memory shrink_to_fit is C++11
-        tList.clear();  // tList.shrink_to_fit();
-        LOGLS_DEBUG(_log, " starting H=JtJ ");
-        hessian = jacobian.transpose() * jacobian;
-#endif
     }  // release the Jacobian
 
     LOGLS_DEBUG(_log, "Starting factorization, hessian: dim="
