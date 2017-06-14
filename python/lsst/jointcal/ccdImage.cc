@@ -38,7 +38,7 @@ void declareCcdImage(py::module &mod) {
     // Not wrapping constructor: CcdImages are always built inside Associations.
     // cls.def(py::init<>());
 
-    cls.def("getCalib", &CcdImage::getCalib);
+    cls.def("getPhotoCalib", &CcdImage::getPhotoCalib);
 
     cls.def("getBoresightRaDec", &CcdImage::getBoresightRaDec);
     cls.def_property_readonly("boresightRaDec", &CcdImage::getBoresightRaDec);

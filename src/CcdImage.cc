@@ -3,15 +3,18 @@
 #include <sstream>
 #include <math.h>
 
+#include "lsst/pex/exceptions.h"
+#include "lsst/afw/image/Image.h"
+#include "lsst/afw/image/PhotoCalib.h"
+#include "lsst/afw/geom/Angle.h"
+#include "lsst/afw/geom/Point.h"
+
 #include "lsst/log/Log.h"
 #include "lsst/jointcal/CcdImage.h"
 #include "lsst/jointcal/SipToGtransfo.h"
 #include "lsst/jointcal/AstroUtils.h"
-#include "lsst/afw/image/Image.h"
 #include "lsst/jointcal/Gtransfo.h"
 #include "lsst/jointcal/Point.h"
-#include "lsst/pex/exceptions.h"
-#include "lsst/afw/geom/Angle.h"
 
 namespace jointcal = lsst::jointcal;
 namespace afwImg = lsst::afw::image;
@@ -35,7 +38,7 @@ void CcdImage::LoadCatalog(const lsst::afw::table::SortedCatalogT<lsst::afw::tab
     auto myyKey = catalog.getSchema().find<double>("slot_Shape_yy").key;
     auto mxyKey = catalog.getSchema().find<double>("slot_Shape_xy").key;
     auto fluxKey = catalog.getSchema().find<double>(fluxField + "_flux").key;
-    auto efluxKey = catalog.getSchema().find<double>(fluxField + "_fluxSigma").key;
+    auto fluxErrKey = catalog.getSchema().find<double>(fluxField + "_fluxSigma").key;
 
     _wholeCatalog.clear();
     for (auto const &record : catalog) {
@@ -57,25 +60,28 @@ void CcdImage::LoadCatalog(const lsst::afw::table::SortedCatalogT<lsst::afw::tab
                                                                      << ms->vx * ms->vy);
             continue;
         }
-        ms->setFlux(record.get(fluxKey));
-        ms->eflux = record.get(efluxKey);
-        ms->mag = _calib->getMagnitude(ms->getFlux());
+        ms->setInstFlux(record.get(fluxKey));
+        ms->setInstFluxErr(record.get(fluxErrKey));
+        // TODO: the below lines will be less clumsy once DM-4044 is cleaned up and we can say:
+        // TODO: instFluxToMaggies(ms->getInstFlux(), ms) (because ms will be derived from afw::geom::Point).
+        afw::geom::Point<double, 2> point(ms->x, ms->y);
+        auto flux = _photoCalib->instFluxToMaggies(ms->getInstFlux(), ms->getInstFluxErr(), point);
+        ms->setFlux(flux.value);
+        ms->setFluxErr(flux.err);
+        ms->mag = _photoCalib->instFluxToMagnitude(ms->getInstFlux(), point);
         ms->setCcdImage(this);
         _wholeCatalog.push_back(std::move(ms));
     }
     _wholeCatalog.setCcdImage(this);
 }
 
-CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &record,
+CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &catalog,
                    const PTR(lsst::afw::image::TanWcs) wcs, const PTR(lsst::afw::image::VisitInfo) visitInfo,
                    const lsst::afw::geom::Box2I &bbox, const std::string &filter,
-                   const PTR(lsst::afw::image::Calib) calib, const int &visit, const int &ccdId,
-                   const std::string &fluxField)
-        : _ccdId(ccdId),
-          _visit(visit),
-          _calib(calib),
-          _filter(filter) {
-    LoadCatalog(record, fluxField);
+                   const std::shared_ptr<afw::image::PhotoCalib> photoCalib, const int &visit,
+                   const int &ccdId, const std::string &fluxField)
+        : _ccdId(ccdId), _visit(visit), _photoCalib(photoCalib), _filter(filter) {
+    LoadCatalog(catalog, fluxField);
 
     Point lowerLeft(bbox.getMinX(), bbox.getMinY());
     Point upperRight(bbox.getMaxX(), bbox.getMaxY());

@@ -20,7 +20,6 @@ FittedStar::FittedStar(const MeasuredStar &measuredStar)
         : BaseStar(measuredStar),
           _mag(measuredStar.getMag()),
           _emag(-1),
-          _col(0.),
           _gen(-1),
           _wmag(measuredStar.getMagWeight()),
           _indexInMatrix(-1),
@@ -28,7 +27,7 @@ FittedStar::FittedStar(const MeasuredStar &measuredStar)
           _refStar(nullptr),
           _flux2(-1),
           _fluxErr2(-1) {
-    _fluxErr = measuredStar.eflux;
+    _fluxErr = measuredStar.getInstFluxErr();
 }
 
 void FittedStar::setRefStar(const RefStar *refStar) {

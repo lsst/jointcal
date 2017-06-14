@@ -14,6 +14,7 @@ import lsst.afw.geom as afwGeom
 import lsst.afw.coord as afwCoord
 import lsst.pex.exceptions as pexExceptions
 import lsst.afw.table
+import lsst.meas.algorithms
 
 from lsst.meas.extensions.astrometryNet import LoadAstrometryNetObjectsTask
 from lsst.meas.algorithms.sourceSelector import sourceSelectorRegistry
@@ -231,6 +232,8 @@ class JointcalTask(pipeBase.CmdLineTask):
         tanWcs = calexp.getWcs()
         bbox = calexp.getBBox()
         filt = calexp.getInfo().getFilter().getName()
+        fluxMag0 = calib.getFluxMag0()
+        photoCalib = afwImage.PhotoCalib(fluxMag0[0], fluxMag0[1], bbox)
 
         goodSrc = self.sourceSelector.selectSources(src)
 
@@ -238,7 +241,7 @@ class JointcalTask(pipeBase.CmdLineTask):
             self.log.warn("no stars selected in ", visit, ccdname)
             return tanWcs
         self.log.info("%d stars selected in visit %d ccd %d", len(goodSrc.sourceCat), visit, ccdname)
-        associations.addImage(goodSrc.sourceCat, tanWcs, visitInfo, bbox, filt, calib,
+        associations.addImage(goodSrc.sourceCat, tanWcs, visitInfo, bbox, filt, photoCalib,
                               visit, ccdname, jointcalControl)
 
         Result = collections.namedtuple('Result_from_build_CcdImage', ('wcs', 'key', 'filter'))
@@ -325,7 +328,8 @@ class JointcalTask(pipeBase.CmdLineTask):
                                                       refObjLoader=self.photometryRefObjLoader,
                                                       fit_function=self._fit_photometry,
                                                       profile_jointcal=profile_jointcal,
-                                                      tract=tract)
+                                                      tract=tract,
+                                                      filters=filters)
         else:
             photometry = Photometry(None, None)
 
@@ -336,8 +340,8 @@ class JointcalTask(pipeBase.CmdLineTask):
         return pipeBase.Struct(dataRefs=dataRefs, oldWcsList=oldWcsList, metrics=self.metrics)
 
     def _do_load_refcat_and_fit(self, associations, defaultFilter, center, radius,
-                                name="", refObjLoader=None, fit_function=None, tract=None,
-                                profile_jointcal=False, match_cut=3.0):
+                                name="", refObjLoader=None, filters=[], fit_function=None,
+                                tract=None, profile_jointcal=False, match_cut=3.0):
         """Load reference catalog, perform the fit, and return the result.
 
         Parameters
@@ -354,6 +358,8 @@ class JointcalTask(pipeBase.CmdLineTask):
             Name of thing being fit: "Astrometry" or "Photometry".
         refObjLoader : lsst.meas.algorithms.LoadReferenceObjectsTask
             Reference object loader to load from for fit.
+        filters : list of str, optional
+            List of filters to load from the reference catalog.
         fit_function : function
             function to call to perform fit (takes associations object).
         tract : str
@@ -377,9 +383,24 @@ class JointcalTask(pipeBase.CmdLineTask):
         skyCircle = refObjLoader.loadSkyCircle(center,
                                                afwGeom.Angle(radius, afwGeom.radians),
                                                defaultFilter)
-        associations.collectRefStars(skyCircle.refCat,
-                                     self.config.matchCut*afwGeom.arcseconds,
-                                     skyCircle.fluxField)
+
+        # Need memory contiguity to get reference filters as a vector.
+        if not skyCircle.refCat.isContiguous():
+            refCat = skyCircle.refCat.copy(deep=True)
+        else:
+            refCat = skyCircle.refCat
+
+        # load the reference catalog fluxes.
+        # TODO: Simon will file a ticket for making this better (and making it use the color terms)
+        refFluxes = {}
+        refFluxErrs = {}
+        for filt in filters:
+            filtKeys = lsst.meas.algorithms.getRefFluxKeys(refCat.schema, filt)
+            refFluxes[filt] = refCat.get(filtKeys[0])
+            refFluxErrs[filt] = refCat.get(filtKeys[1])
+
+        associations.collectRefStars(refCat, self.config.matchCut*afwGeom.arcseconds,
+                                     skyCircle.fluxField, refFluxes, refFluxErrs)
         self.metrics['collected%sRefStars' % name] = associations.refStarListSize()
 
         associations.selectFittedStars(self.config.minMeasurements)
@@ -563,8 +584,9 @@ class JointcalTask(pipeBase.CmdLineTask):
             if self.config.doPhotometry:
                 self.log.info("Updating Calib for visit: %d, ccd: %d", visit, ccd)
                 # start with the original calib saved to the ccdImage
-                fluxMag0, fluxMag0Sigma = ccdImage.getCalib().getFluxMag0()
-                exp.getCalib().setFluxMag0(fluxMag0*photom_model.photomFactor(ccdImage), fluxMag0Sigma)
+                fluxMag0 = ccdImage.getPhotoCalib().getInstFluxMag0()
+                fluxMag0Err = ccdImage.getPhotoCalib().getInstFluxMag0Err()
+                exp.getCalib().setFluxMag0(fluxMag0*photom_model.photomFactor(ccdImage), fluxMag0Err)
             try:
                 dataRef.put(exp, 'wcs')
             except pexExceptions.Exception as e:

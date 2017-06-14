@@ -46,7 +46,7 @@ AstrometryFit::AstrometryFit(Associations &associations, AstrometryModel *astrom
     }
     LOGLS_INFO(_log, "Reference Color: " << _referenceColor << " sig " << _sigCol);
 
-    _nRefrac = _assoc.NBands();
+    _nRefrac = _assoc.getNFilters();
     _refractionCoefficient = 0;
 
     _nMeasuredStars = 0;

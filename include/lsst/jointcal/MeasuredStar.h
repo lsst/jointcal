@@ -19,22 +19,24 @@ class MeasuredStar : public BaseStar {
 public:
     double mag;
     double wmag;
-    double eflux;
-    double aperrad;
     double chi2;
 
 private:
+    // on-chip flux, in ADU
+    double _instFlux;
+    double _instFluxErr;
+
     const CcdImage *_ccdImage;
     std::shared_ptr<const FittedStar> _fittedStar;
     bool _valid;
 
 public:
     //!
-    MeasuredStar() : BaseStar(), mag(0.), wmag(0.), eflux(0.), aperrad(0.), _ccdImage(0), _valid(true) {}
+    MeasuredStar()
+            : BaseStar(), mag(0.), wmag(0.), _instFlux(0.), _instFluxErr(0.), _ccdImage(0), _valid(true) {}
 
-    // TODO: note fittedStar argument seems unused!
-    MeasuredStar(const BaseStar &baseStar, const FittedStar *_fittedStar = nullptr)
-            : BaseStar(baseStar), mag(0.), wmag(0.), eflux(0.), aperrad(0.), _ccdImage(0), _valid(true) {}
+    MeasuredStar(const BaseStar &baseStar)
+            : BaseStar(baseStar), mag(0.), wmag(0.), _instFluxErr(0.), _ccdImage(0), _valid(true) {}
 
     void setFittedStar(std::shared_ptr<FittedStar> fittedStar) {
         if (fittedStar) fittedStar->getMeasurementCount()++;
@@ -46,12 +48,15 @@ public:
         stream << " ccdImage: " << _ccdImage << " valid: " << _valid;
     }
 
-    double getFluxSig() const { return eflux; }
+    void setInstFlux(double instFlux) { _instFlux = instFlux; }
+    void setInstFluxErr(double instFluxErr) { _instFluxErr = instFluxErr; }
+
+    double getInstFlux() const { return _instFlux; }
+    double getInstFluxErr() const { return _instFluxErr; }
     double getMag() const { return mag; }
-    double getAperRad() const { return aperrad; }
 
     //! the inverse of the mag variance
-    double getMagWeight() const { return (_flux * _flux / (eflux * eflux)); }
+    double getMagWeight() const { return (_instFlux * _instFlux / (_instFluxErr * _instFluxErr)); }
 
     std::shared_ptr<const FittedStar> getFittedStar() const { return _fittedStar; };
 

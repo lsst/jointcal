@@ -43,7 +43,7 @@ public:
      * Source selection is performed in python, so Associations' constructor
      * only initializes a couple of variables.
      */
-    Associations();
+    Associations() : _commonTangentPoint(Point(0, 0)) {}
 
     /**
      * @brief      Sets a shared tangent point for all ccdImages.
@@ -71,7 +71,7 @@ public:
     void addImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &catalog,
                   std::shared_ptr<lsst::afw::image::TanWcs> wcs,
                   std::shared_ptr<lsst::afw::image::VisitInfo> visitInfo, lsst::afw::geom::Box2I const &bbox,
-                  std::string const &filter, std::shared_ptr<lsst::afw::image::Calib> calib, int visit,
+                  std::string const &filter, std::shared_ptr<afw::image::PhotoCalib> photoCalib, int visit,
                   int ccd, std::shared_ptr<lsst::jointcal::JointcalControl> control);
 
     //! incrementaly builds a merged catalog of all image catalogs
@@ -81,12 +81,17 @@ public:
     /**
      * @brief      Collect stars from an external reference catalog and associate them with fittedStars.
      *
-     * @param      refCat     The catalog of reference sources
-     * @param[in]  matchCut   Separation radius to match fitted and reference stars.
-     * @param      fluxField  The field name in refCat to get the flux from.
+     * @param      refCat         The catalog of reference sources
+     * @param[in]  matchCut       Separation radius to match fitted and
+     *                            reference stars.
+     * @param      fluxField      The field name in refCat to get the flux from.
+     * @param      refFluxMap     fluxes per filter of corresponding refCat objects (can be empty)
+     * @param      refFluxErrMap  flux errors per filter of corresponding refCat objects (can be empty)
      */
     void collectRefStars(lsst::afw::table::SortedCatalogT<lsst::afw::table::SimpleRecord> &refCat,
-                         afw::geom::Angle matchCut, std::string const &fluxField);
+                         afw::geom::Angle matchCut, std::string const &fluxField,
+                         std::map<std::string, std::vector<double> > const &refFluxMap,
+                         std::map<std::string, std::vector<double> > const &refFluxErrMap);
 
     //! Sends back the fitted stars coordinates on the sky FittedStarsList::inTangentPlaneCoordinates keeps
     //! track of that.
@@ -109,7 +114,7 @@ public:
     const CcdImageList &getCcdImageList() const { return ccdImageList; }
 
     //! Number of different bands in the input image list. Not implemented so far
-    unsigned NBands() const { return 1; }
+    unsigned getNFilters() const { return _filterMap.size(); }
 
     // Return the bounding box in (ra, dec) coordinates containing the whole catalog
     const lsst::afw::geom::Box2D getRaDecBBox();
@@ -127,6 +132,9 @@ private:
     void associateRefStars(double matchCutInArcsec, const Gtransfo *gtransfo);
 
     void assignMags();
+
+    // Map from filter name to index in each refStar's _refFlux/_refFluxErr vector.
+    std::unordered_map<std::string, std::size_t> _filterMap;
 };
 
 }  // namespace jointcal

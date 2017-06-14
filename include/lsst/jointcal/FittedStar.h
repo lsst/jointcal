@@ -38,7 +38,6 @@ class FittedStar : public BaseStar, public PmBlock {
 private:
     double _mag;
     double _emag;
-    double _col;
     int _gen;
     double _wmag;
     unsigned _indexInMatrix;
@@ -54,7 +53,6 @@ public:
             : BaseStar(),
               _mag(-1),
               _emag(-1),
-              _col(0.),
               _gen(-1),
               _wmag(0),
               _indexInMatrix(-1),
@@ -67,7 +65,6 @@ public:
             : BaseStar(baseStar),
               _mag(-1),
               _emag(-1),
-              _col(0.),
               _gen(-1),
               _wmag(0),
               _indexInMatrix(0),
@@ -100,8 +97,6 @@ public:
 
     //! derived using available zero points in input images. In the absence ofZP, ZP= 0.
     double getMag() const { return _mag; }
-    double getEMag() const { return _emag; }
-    double getCol() const { return _col; }
     int getGeneration() const { return _gen; }
 
     //!

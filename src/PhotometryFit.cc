@@ -64,7 +64,7 @@ void PhotometryFit::LSDerivatives(const CcdImage &ccdImage, TripletList &triplet
         const MeasuredStar &measuredStar = *i;
         if (!measuredStar.isValid()) continue;
         // tweak the measurement errors
-        double sigma = measuredStar.eflux;
+        double fluxErr = measuredStar.getFluxErr();
 #ifdef FUTURE
         TweakPhotomMeasurementErrors(inPos, measuredStar, _fluxError);
 #endif
@@ -73,20 +73,20 @@ void PhotometryFit::LSDerivatives(const CcdImage &ccdImage, TripletList &triplet
         double pf = _photometryModel->photomFactor(ccdImage, measuredStar);
         auto fs = measuredStar.getFittedStar();
 
-        double res = measuredStar.getFlux() - pf * fs->getFlux();
+        double residual = measuredStar.getFlux() - pf * fs->getFlux();
 
         if (_fittingModel) {
             _photometryModel->getIndicesAndDerivatives(measuredStar, ccdImage, indices, h);
             for (unsigned k = 0; k < indices.size(); k++) {
                 unsigned l = indices[k];
-                tripletList.addTriplet(l, kTriplets, h[k] * fs->getFlux() / sigma);
-                rhs[l] += h[k] * res / sqr(sigma);
+                tripletList.addTriplet(l, kTriplets, h[k] * fs->getFlux() / fluxErr);
+                rhs[l] += h[k] * residual / sqr(fluxErr);
             }
         }
         if (_fittingFluxes) {
             unsigned index = fs->getIndexInMatrix();
-            tripletList.addTriplet(index, kTriplets, pf / sigma);
-            rhs[index] += res * pf / sqr(sigma);
+            tripletList.addTriplet(index, kTriplets, pf / fluxErr);
+            rhs[index] += residual * pf / sqr(fluxErr);
         }
         kTriplets += 1;  // each measurement contributes 1 column in the Jacobian
     }                    // end loop on measurements
@@ -111,15 +111,15 @@ void PhotometryFit::accumulateStat(ListType &listType, Accum &accum) const {
         for (auto const &measuredStar : catalog) {
             if (!measuredStar->isValid()) continue;
             // tweak the measurement errors
-            double sigma = measuredStar->eflux;
+            double sigma = measuredStar->getFluxErr();
 #ifdef FUTURE
             TweakPhotomMeasurementErrors(inPos, measuredStar, _fluxError);
 #endif
 
             double pf = _photometryModel->photomFactor(ccdIMage, *measuredStar);
             auto fs = measuredStar->getFittedStar();
-            double res = measuredStar->getFlux() - pf * fs->getFlux();
-            double chi2Val = sqr(res / sigma);
+            double residual = measuredStar->getFlux() - pf * fs->getFlux();
+            double chi2Val = sqr(residual / sigma);
             accum.addEntry(chi2Val, 1, measuredStar);
         }  // end loop on measurements
     }
@@ -341,7 +341,7 @@ void PhotometryFit::makeResTuple(const std::string &tupleName) const {
           << "#yccd: " << endl
           << "#mag: rough mag" << endl
           << "#flux : measured flux" << endl
-          << "#eflux : measured flux erro" << endl
+          << "#fluxError : measured flux error" << endl
           << "#fflux : fitted flux" << endl
           << "#phot_factor:" << endl
           << "#jd: Julian date of the measurement" << endl
@@ -361,18 +361,18 @@ void PhotometryFit::makeResTuple(const std::string &tupleName) const {
         for (auto const &is : cat) {
             const MeasuredStar &ms = *is;
             if (!ms.isValid()) continue;
-            double sigma = ms.eflux;
+            double sigma = ms.getFluxErr();
 #ifdef FUTURE
             tweakPhotomMeasurementErrors(inPos, ms, _fluxError);
 #endif
             double pf = _photometryModel->photomFactor(im, ms);
             double jd = im.getMjd();
             auto fs = ms.getFittedStar();
-            double res = ms.getFlux() - pf * fs->getFlux();
-            double chi2Val = sqr(res / sigma);
-            tuple << ms.x << ' ' << ms.y << ' ' << fs->getMag() << ' ' << ms.getFlux() << ' ' << ms.eflux
-                  << ' ' << fs->getFlux() << ' ' << pf << ' ' << jd << ' ' << fs->color << ' '
-                  << fs->getIndexInMatrix() << ' ' << fs->x << ' ' << fs->y << ' ' << chi2Val << ' '
+            double residual = ms.getFlux() - pf * fs->getFlux();
+            double chi2Val = sqr(residual / sigma);
+            tuple << ms.x << ' ' << ms.y << ' ' << fs->getMag() << ' ' << ms.getFlux() << ' '
+                  << ms.getFluxErr() << ' ' << fs->getFlux() << ' ' << pf << ' ' << jd << ' ' << fs->color
+                  << ' ' << fs->getIndexInMatrix() << ' ' << fs->x << ' ' << fs->y << ' ' << chi2Val << ' '
                   << fs->getMeasurementCount() << ' ' << im.getCcdId() << ' ' << im.getVisit() << endl;
         }  // loop on measurements in image
     }      // loop on images

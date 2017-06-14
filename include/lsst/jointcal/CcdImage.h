@@ -7,7 +7,7 @@
 
 #include "lsst/afw/table/Source.h"
 #include "lsst/afw/image/TanWcs.h"
-#include "lsst/afw/image/Calib.h"
+#include "lsst/afw/image/PhotoCalib.h"
 #include "lsst/afw/image/VisitInfo.h"
 #include "lsst/afw/coord/Coord.h"
 #include "lsst/daf/base/PropertySet.h"
@@ -53,7 +53,7 @@ private:
     lsst::afw::coord::IcrsCoord _boresightRaDec;
     double _airMass;  // airmass value.
     double _mjd;      // modified julian date
-    PTR(lsst::afw::image::Calib) _calib;
+    std::shared_ptr<afw::image::PhotoCalib> _photoCalib;
     // refraction
     // eta : parallactic angle, z: zenithal angle (X = 1/cos(z))
     double _sineta, _coseta, _tgz;
@@ -71,7 +71,7 @@ public:
     CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &record,
              const PTR(lsst::afw::image::TanWcs) wcs, const PTR(lsst::afw::image::VisitInfo) visitInfo,
              const lsst::afw::geom::Box2I &bbox, const std::string &filter,
-             const PTR(lsst::afw::image::Calib) calib, const int &visit, const int &ccd,
+             const std::shared_ptr<afw::image::PhotoCalib> photoCalib, const int &visit, const int &ccd,
              const std::string &fluxField);
 
     //! Return the _name that identifies this ccdImage.
@@ -136,7 +136,7 @@ public:
     double getMjd() const { return _mjd; }
 
     //! Return the exposure's photometric calibration
-    PTR(lsst::afw::image::Calib) getCalib() { return _calib; }
+    std::shared_ptr<afw::image::PhotoCalib> getPhotoCalib() { return _photoCalib; }
 
     /**
      * @brief      Gets the boresight RA/Dec.

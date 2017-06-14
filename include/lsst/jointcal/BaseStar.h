@@ -17,15 +17,13 @@ namespace jointcal {
 
 #define DECALAGE_IJ_XY 0.
 #define DECALAGE_XY_IJ 0.
-/*! \file */
-
-// tell other pieces of code that BaseStar now derives from FatPoint (instead of Point)
-#define BASESTAR_HAS_POSITION_ERRORS
 
 //! The base class for handling stars. Used by all matching routines.
 class BaseStar : public FatPoint {
 protected:
+    // on-sky flux, in Maggies
     double _flux;
+    double _fluxErr;
 
 public:
     BaseStar() {
@@ -71,6 +69,10 @@ public:
     double getFlux() const { return _flux; }
     double &getFlux() { return _flux; }
     void setFlux(double flux) { _flux = flux; }
+
+    double getFluxErr() const { return _fluxErr; }
+    // double &getFluxErr() { return _fluxErr; }
+    void setFluxErr(double fluxErr) { _fluxErr = fluxErr; }
 };
 
 //! enables to sort easily a starList (of anything that derives from BaseStar)

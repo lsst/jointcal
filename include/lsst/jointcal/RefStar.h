@@ -16,26 +16,33 @@ namespace jointcal {
 class RefStar : public BaseStar {
 private:
     unsigned int _index;
-    std::vector<double> _refFlux;
+    // on-sky flux, in Maggies, per filter
+    std::vector<double> _refFluxList;
+    std::vector<double> _refFluxErrList;
 
 public:
+    // RefStar(double xx, double yy, std::vector<double>& refFluxList, std::vector<double>& refFluxErrList)
+    //         : FatPoint(xx, yy), _refFluxList(refFluxList), _refFluxErrList(refFluxErrList) {}
+
+    RefStar(double xx, double yy, double defaultFlux, std::vector<double>& refFluxList,
+            std::vector<double>& refFluxErrList)
+            : BaseStar(xx, yy, defaultFlux), _refFluxList(refFluxList), _refFluxErrList(refFluxErrList) {}
     //!
-    RefStar(const BaseStar& baseStar);
+    RefStar(const BaseStar& baseStar) : BaseStar(baseStar), _index(0) {}
 
     void dump(std::ostream& stream = std::cout) const {
         BaseStar::dump(stream);
         stream << " refFlux: [";
-        for (auto x : _refFlux) {
+        for (auto x : _refFluxList) {
             stream << x << ", ";
         }
         stream << "] index: " << _index;
     }
 
-    //! reference flux
-    double getFlux(int filter) const;
-
-    //! assign the reference fluxes
-    void assignRefFluxes(std::vector<double> const& refFlux);
+    /// reference flux in a given filter
+    double getFlux(size_t filter) const { return _refFluxList[filter]; }
+    /// reference fluxErr in a given filter
+    double getFluxErr(size_t filter) const { return _refFluxErrList[filter]; }
 
     //! star index
     unsigned int& getIndex() { return _index; }

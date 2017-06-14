@@ -33,15 +33,13 @@ LOG_LOGGER _log = LOG_GET("jointcal.Associations");
 namespace lsst {
 namespace jointcal {
 
-Associations::Associations() { _commonTangentPoint = Point(0, 0); }
-
 void Associations::addImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &catalog,
                             std::shared_ptr<lsst::afw::image::TanWcs> wcs,
                             std::shared_ptr<lsst::afw::image::VisitInfo> visitInfo,
                             lsst::afw::geom::Box2I const &bbox, std::string const &filter,
-                            std::shared_ptr<lsst::afw::image::Calib> calib, int visit, int ccd,
+                            std::shared_ptr<afw::image::PhotoCalib> photoCalib, int visit, int ccd,
                             std::shared_ptr<lsst::jointcal::JointcalControl> control) {
-    auto ccdImage = std::make_shared<CcdImage>(catalog, wcs, visitInfo, bbox, filter, calib, visit, ccd,
+    auto ccdImage = std::make_shared<CcdImage>(catalog, wcs, visitInfo, bbox, filter, photoCalib, visit, ccd,
                                                control->sourceFluxField);
     ccdImageList.push_back(ccdImage);
     LOGLS_DEBUG(_log, "Catalog " << ccdImage->getName() << " has " << ccdImage->getWholeCatalog().size()
@@ -139,34 +137,50 @@ void Associations::associateCatalogs(const double matchCutInArcSec, const bool u
 }
 
 void Associations::collectRefStars(lsst::afw::table::SortedCatalogT<lsst::afw::table::SimpleRecord> &refCat,
-                                   afw::geom::Angle matchCut, std::string const &fluxField) {
+                                   afw::geom::Angle matchCut, std::string const &fluxField,
+                                   std::map<std::string, std::vector<double> > const &refFluxMap,
+                                   std::map<std::string, std::vector<double> > const &refFluxErrMap) {
     if (refCat.size() == 0) {
         throw(LSST_EXCEPT(pex::exceptions::InvalidParameterError,
                           " reference catalog is empty : stop here "));
     }
 
-    //  auto coordKey = refCat.getSchema().find<lsst::afw::coord::Coord>("coord").key;
-    // Same syntax as the following line but with auto :  auto coordKey =
-    // afwTable::CoordKey(refCat.getSchema()["coord"]);
     afw::table::CoordKey coordKey = refCat.getSchema()["coord"];
     auto fluxKey = refCat.getSchema().find<double>(fluxField).key;
 
-    for (auto const &record : refCat) {
-        lsst::afw::coord::Coord coord = record.get(coordKey);
-        double flux = record.get(fluxKey);
-        double mag = lsst::afw::image::abMagFromFlux(flux);
+    _filterMap.clear();
+    _filterMap.reserve(refFluxMap.size());
+    size_t nFilters = 0;
+    for (auto const &filter : refFluxMap) {
+        _filterMap[filter.first] = nFilters;
+        nFilters++;
+    }
+
+    refStarList.clear();
+    for (size_t i = 0; i < refCat.size(); i++) {
+        auto const &record = refCat.get(i);
+
+        afw::coord::Coord coord = record->get(coordKey);
+        double defaultFlux = record->get(fluxKey);
+        std::vector<double> fluxList(nFilters);
+        std::vector<double> fluxErrList(nFilters);
+        for (auto const &filter : _filterMap) {
+            fluxList[filter.second] = refFluxMap.at(filter.first).at(i);
+            fluxErrList[filter.second] = refFluxErrMap.at(filter.first).at(i);
+        }
         double ra = lsst::afw::geom::radToDeg(coord.getLongitude());
         double dec = lsst::afw::geom::radToDeg(coord.getLatitude());
-        // TODO DM-10826: Why make a BaseStar here, when we're going to use it as a RefStar?
-        BaseStar star(ra, dec, mag);
+        auto star = std::make_shared<RefStar>(ra, dec, defaultFlux, fluxList, fluxErrList);
+
+        // TODO DM-10826: RefCats aren't guaranteed to have position errors.
+        // TODO: Need to devise a way to check whether the refCat has position errors
+        // TODO: and use them instead, if available.
         // cook up errors: 100 mas per cooordinate
+        star->vx = sqr(0.1 / 3600 / cos(coord.getLatitude()));
+        star->vy = sqr(0.1 / 3600);
+        star->vxy = 0.;
 
-        // TODO DM-10826: What is this? Why are we making fake errors here?
-
-        star.vx = sqr(0.1 / 3600 / cos(coord.getLatitude()));
-        star.vy = sqr(0.1 / 3600);
-        star.vxy = 0.;
-        refStarList.push_back(std::make_shared<RefStar>(star));
+        refStarList.push_back(star);
     }
 
     // project on CTP (i.e. RaDec2CTP), in degrees
