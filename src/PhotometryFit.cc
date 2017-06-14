@@ -1,15 +1,16 @@
 #include <iostream>
 #include <iomanip>
 #include <algorithm>
+#include <fstream>
+
+#include "Eigen/Sparse"
 
 #include "lsst/log/Log.h"
+#include "lsst/pex/exceptions.h"
 #include "lsst/jointcal/PhotometryFit.h"
 #include "lsst/jointcal/Associations.h"
+#include "lsst/jointcal/Eigenstuff.h"
 #include "lsst/jointcal/Gtransfo.h"
-#include "Eigen/Sparse"
-//#include "Eigen/CholmodSupport" // to switch to cholmod
-#include "lsst/pex/exceptions.h"
-#include <fstream>
 #include "lsst/jointcal/Tripletlist.h"
 
 typedef Eigen::SparseMatrix<double> SpMat;
@@ -301,6 +302,8 @@ int PhotometryFit::minimize(const std::string &whatToFit, double nSigmaCut) {
     LSDerivatives(tripletList, grad);
     _lastNTrip = tripletList.size();
 
+    LOGLS_DEBUG(_log, "End of triplet filling, ntrip = " << tripletList.size());
+
     SpMat hessian;
     {
         SpMat jacobian(_nParTot, tripletList.getNextFreeIndex());
@@ -315,6 +318,8 @@ int PhotometryFit::minimize(const std::string &whatToFit, double nSigmaCut) {
                               << " filling-frac = " << hessian.nonZeros() / sqr(hessian.rows()));
 
     Eigen::SimplicialLDLT<SpMat> chol(hessian);
+    // CholmodSimplicialLDLT2<SpMat> chol(hessian);
+
     if (chol.info() != Eigen::Success) {
         LOGLS_ERROR(_log, "minimize: factorization failed ");
         return 1;
