@@ -971,7 +971,6 @@ unsigned AstrometryFit::minimize(const std::string &whatToFit, const double nSig
         Eigen::VectorXd delta = chol.solve(grad);
         offsetParams(delta);
         Chi2 current_chi2(computeChi2());
-        LOGLS_DEBUG(_log, current_chi2);
         if (current_chi2.chi2 > old_chi2)
         {
             LOGL_WARN(_log, "chi2 went up, exiting outlier rejection loop");

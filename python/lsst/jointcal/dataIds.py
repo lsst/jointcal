@@ -28,10 +28,11 @@ class PerTractCcdDataIdContainer(CoaddDataIdContainer):
             idKeyTypeDict = butler.getKeys(datasetType="src", level=self.level)
         except KeyError as e:
             raise KeyError("Cannot get keys for datasetType %s at level %s: %s" % ("src", self.level, e))
-
         idKeyTypeDict = idKeyTypeDict.copy()
         idKeyTypeDict["tract"] = int
-
+        if not "visit" in idKeyTypeDict.keys():
+            idKeyTypeDict["visit"] = int
+        idKeyTypeDict["tract"] = int
         for dataDict in self.idList:
             for key, strVal in dataDict.items():
                 try:
@@ -46,10 +47,11 @@ class PerTractCcdDataIdContainer(CoaddDataIdContainer):
                         raise TypeError("Cannot cast value %r to %s for ID key %r" % (strVal, keyType, key,))
                     dataDict[key] = castVal
 
-    def _addDataRef(self, namespace, dataId, tract):
+    def _addDataRef(self, namespace, dataId, tract, visit):
         """Construct a dataRef based on dataId, but with an added tract key"""
         forcedDataId = dataId.copy()
         forcedDataId['tract'] = tract
+        forcedDataId['visit'] = visit
         dataRef = namespace.butler.dataRef(datasetType=self.datasetType, dataId=forcedDataId)
         self.refList.append(dataRef)
 
@@ -71,11 +73,15 @@ class PerTractCcdDataIdContainer(CoaddDataIdContainer):
 
                 for ref in namespace.butler.subset("calexp", dataId=dataId):
                     if not ref.datasetExists("calexp"):
+                        ref.datasetExists("calexp")
                         log.warnf("calexp with dataId: {} not found.", dict(dataId))
                         continue
-
                     # XXX fancier mechanism to select an individual exposure than just pulling out "visit"?
-                    visit = ref.dataId["visit"]
+                    if "visit" in ref.dataId.keys():
+                        visit = ref.dataId["visit"]
+                    else:
+                    
+                        visit = int(ref.dataId['field'][1] + ref.dataId['subfield'][1:] + '2' + ref.dataId['dateObs'][3:4].replace('-','') + ref.dataId['objname'][3:].zfill(4))
                     if visit not in visitRefs:
                         visitRefs[visit] = list()
                     visitRefs[visit].append(ref)
@@ -93,9 +99,11 @@ class PerTractCcdDataIdContainer(CoaddDataIdContainer):
                         visitTract[visit].add(tract.getId())
             else:
                 tract = dataId.pop("tract")
+                visit = int(dataId['field'][1] + dataId['subfield'][1:] + '2' + dataId['dateObs'][3:4].replace('-','') + dataId['objname'][3:].zfill(4))
+                visit = dataId.pop("visit")
                 # making a DataRef for src fills out any missing keys and allows us to iterate
                 for ref in namespace.butler.subset("src", dataId=dataId):
-                    self._addDataRef(namespace, ref.dataId, tract)
+                    self._addDataRef(namespace, ref.dataId, tract, visit)
 
         # Ensure all components of a visit are kept together by putting them all in the same set of tracts
         # NOTE: sorted() here is to keep py2 and py3 dataRefs in the same order.
@@ -103,7 +111,7 @@ class PerTractCcdDataIdContainer(CoaddDataIdContainer):
         for visit, tractSet in sorted(visitTract.items()):
             for ref in visitRefs[visit]:
                 for tract in sorted(tractSet):
-                    self._addDataRef(namespace, ref.dataId, tract)
+                    self._addDataRef(namespace, ref.dataId, tract, visit)
         if visitTract:
             tractCounter = collections.Counter()
             for tractSet in visitTract.values():

@@ -96,10 +96,9 @@ CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceReco
     boresightRaDec = visitInfo->getBoresightRaDec();
     airMass = visitInfo->getBoresightAirmass();
     mjd = visitInfo->getDate().get(lsst::daf::base::DateTime::MJD);
-    double latitude = visitInfo->getObservatory().getLatitude();
+    double latitude = -30.1716*(3.14159)/180.0; //visitInfo->getObservatory().getLatitude();
     double lst_obs = visitInfo->getEra();
     double hourAngle = visitInfo->getBoresightHourAngle();
-
     // lsstSim doesn't manage ERA (and thus Hour Angle) properly, so it's going to be NaN.
     // Because we need the refraction vector later, go with 0 HA to prevent crashes on that NaN.
     if (std::isnan(hourAngle) == true) {
@@ -110,12 +109,14 @@ CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceReco
         sineta = coseta = tgz = 0;
     else
     {
+        std::cout << "hourAngle: " << hourAngle << ", latitude: " << latitude << "\n";
         double cosz = 1./airMass;
         double sinz = sqrt(1 - cosz*cosz); //astronomers usually observe above the horizon
         tgz = sinz/cosz;
         sineta = cos(latitude)*sin(hourAngle)/sinz;
         coseta = sqrt(1 - sineta*sineta);
         if (boresightRaDec.getDec() > latitude) coseta = -coseta;
+        std::cout << "sineta: " << sineta << ", coseta: " << coseta << "\n";
     }
 }
 

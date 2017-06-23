@@ -196,8 +196,11 @@ class JointcalTask(pipeBase.CmdLineTask):
             filter : str
                 this calexp's filter
         """
-        visit = dataRef.dataId["visit"]
-        src = dataRef.get("src", flags=lsst.afw.table.SOURCE_IO_NO_FOOTPRINTS, immediate=True)
+        if "visit" in dataRef.dataId.keys():
+            visit = dataRef.dataId["visit"]
+        else:
+            visit = int(dataRef.dataId['field'][1] + dataRef.dataId['subfield'][1:] + '2' + dataRef.dataId['dateObs'][3:4].replace('-','') + dataRef.dataId['objname'][3:].zfill(4))
+        src = dataRef.get("src", immediate=True) #flags=lsst.afw.table.SOURCE_IO_NO_FOOTPRINTS, immediate=True)
         calexp = dataRef.get("calexp", immediate=True)
         visitInfo = calexp.getInfo().getVisitInfo()
         ccdname = calexp.getDetector().getId()
@@ -208,11 +211,10 @@ class JointcalTask(pipeBase.CmdLineTask):
         filt = calexp.getInfo().getFilter().getName()
 
         goodSrc = self.sourceSelector.selectSources(src)
-
         if len(goodSrc.sourceCat) == 0:
-            self.log.warn("no stars selected in ", visit, ccdname)
+            self.log.warn("no stars selected in %d, %s"%(visit, ccdname))
             return tanWcs
-        self.log.info("%d stars selected in visit %d ccd %d", len(goodSrc.sourceCat), visit, ccdname)
+        self.log.info("%d stars selected in visit %d ccd %d"%(len(goodSrc.sourceCat), visit, ccdname))
         associations.addImage(goodSrc.sourceCat, tanWcs, visitInfo, bbox, filt, calib,
                               visit, ccdname, jointcalControl)
 
@@ -261,7 +263,7 @@ class JointcalTask(pipeBase.CmdLineTask):
 
         centers = [ccdImage.getBoresightRaDec() for ccdImage in associations.getCcdImageList()]
         commonTangentPoint = lsst.afw.coord.averageCoord(centers)
-        self.log.debug("Using common tangent point: ", commonTangentPoint.getPosition())
+        self.log.debug("Using common tangent point: ") #%(commonTangentPoint.getPosition().getRa()))
         associations.setCommonTangentPoint(commonTangentPoint.getPosition())
 
         # Use external reference catalogs handled by LSST stack mechanism
@@ -279,12 +281,11 @@ class JointcalTask(pipeBase.CmdLineTask):
 
         # Determine a default filter associated with the catalog. See DM-9093
         defaultFilter = filters.most_common(1)[0][0]
-        self.log.debug("Using %s band for reference flux", defaultFilter)
-
+        self.log.debug("Using %s band for reference flux"%(defaultFilter))
         # TODO: need a better way to get the tract.
         tract = dataRefs[0].dataId['tract']
-
         if self.config.doAstrometry:
+            self.log.debug("Ready to doAstrometry")
             astrometry = self._do_load_refcat_and_fit(associations, defaultFilter, center, radius,
                                                       name="Astrometry",
                                                       refObjLoader=self.astrometryRefObjLoader,
@@ -295,6 +296,7 @@ class JointcalTask(pipeBase.CmdLineTask):
             astrometry = Astrometry(None, None, None)
 
         if self.config.doPhotometry:
+            self.log.debug("Ready to doPhotometry")
             photometry = self._do_load_refcat_and_fit(associations, defaultFilter, center, radius,
                                                       name="Photometry",
                                                       refObjLoader=self.photometryRefObjLoader,
@@ -343,7 +345,7 @@ class JointcalTask(pipeBase.CmdLineTask):
         -------
         Result of `fit_function()`
         """
-        self.log.info("====== Now processing %s...", name)
+        self.log.info("====== Now processing %s..."%(name))
         # TODO: this should not print "trying to invert a singular transformation:"
         # if it does that, something's not right about the WCS...
         associations.associateCatalogs(match_cut)
@@ -411,7 +413,7 @@ class JointcalTask(pipeBase.CmdLineTask):
         self.log.info(str(chi2))
         fit.minimize("Model Fluxes")
         chi2 = fit.computeChi2()
-        self.log.info("Fit completed with %s", str(chi2))
+        self.log.info("Fit completed with %s"%(str(chi2)))
 
         self.metrics['photometryFinalChi2'] = chi2.chi2
         self.metrics['photometryFinalNdof'] = chi2.ndof
@@ -470,7 +472,7 @@ class JointcalTask(pipeBase.CmdLineTask):
                 # Redo minimization one more time in case we have lost accuracy in rank update
                 r = fit.minimize("Distortions Positions", 5)  # outliers removal at 5 sigma.
                 chi2 = fit.computeChi2()
-                self.log.info("Fit completed with: %s", str(chi2))
+                self.log.info("Fit completed with: %s"%(str(chi2)))
                 break
             elif r == 2:
                 self.log.warn("minimization failed")
