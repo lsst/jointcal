@@ -14,7 +14,11 @@ namespace jointcal {
 class Point;
 
 /*
- * A photometric transform, defined the same as PhotoCalib:
+ * A photometric transform, defined as a scale factor of the input calibration.
+ *
+ *     initialCalibFlux (Maggies) * transfo(x,y) -> correctedFlux (Maggies)
+ *
+ * @todo Eventually will be defined the same as PhotoCalib:
  *     instFlux (ADU) -> flux (maggies)
  *
  * @seealso lsst::afw::image::PhotoCalib
@@ -52,6 +56,10 @@ public:
 
 /*
  * Photometric offset independent of position.
+ *
+ * initialCalibFlux (Maggies) * constantTransfo -> correctedFlux (Maggies)
+ *
+ * @todo Eventually to be defined as:
  *     instFlux / value = flux
  */
 class ConstantPhotometryTransfo : public PhotometryTransfo {
