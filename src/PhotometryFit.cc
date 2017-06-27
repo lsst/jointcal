@@ -9,15 +9,12 @@
 #include "lsst/pex/exceptions.h"
 #include "lsst/jointcal/PhotometryFit.h"
 #include "lsst/jointcal/Associations.h"
+#include "lsst/jointcal/Chi2.h"
 #include "lsst/jointcal/Eigenstuff.h"
 #include "lsst/jointcal/Gtransfo.h"
 #include "lsst/jointcal/Tripletlist.h"
 
-typedef Eigen::SparseMatrix<double> SpMat;
-
 using namespace std;
-
-static double sqr(double x) { return x * x; }
 
 namespace {
 LOG_LOGGER _log = LOG_GET("jointcal.PhotometryFit");
@@ -126,8 +123,8 @@ void PhotometryFit::accumulateStat(ListType &listType, Accum &accum) const {
 }
 
 //! for the list of images in the provided  association and the reference stars, if any
-Chi2 PhotometryFit::computeChi2() const {
-    Chi2 chi2;
+Chi2Statistic PhotometryFit::computeChi2() const {
+    Chi2Statistic chi2;
     accumulateStat(_associations.getCcdImageList(), chi2);
     // so far, chi2.ndof contains the number of squares.
     // So, subtract here the number of parameters.
@@ -148,26 +145,6 @@ void PhotometryFit::outliersContributions(MeasuredStarList &outliers, TripletLis
     }
 }
 
-//! a class to accumulate chi2 contributions together with pointers to the contributors.
-/*! This structure allows to compute the chi2 statistics (average and
-  variance) and directly point back to the bad guys without
-  relooping. The Chi2Entry routine makes it compatible with
-  accumulateStatImage and accumulateStatImageList. */
-struct Chi2Entry {
-    double chi2;
-    std::shared_ptr<MeasuredStar> measuredStar;
-
-    Chi2Entry(double chi2, std::shared_ptr<MeasuredStar> star) : chi2(chi2), measuredStar(std::move(star)) {}
-    // for sort
-    bool operator<(const Chi2Entry &right) const { return (chi2 < right.chi2); }
-};
-
-struct Chi2Vect : public vector<Chi2Entry> {
-    void addEntry(double Chi2Val, unsigned ndof, std::shared_ptr<MeasuredStar> measuredStar) {
-        push_back(Chi2Entry(Chi2Val, std::move(measuredStar)));
-    }
-};
-
 //! this routine is to be used only in the framework of outlier removal
 /*! it fills the array of indices of parameters that a Measured star
     constrains. Not really all of them if you check. */
@@ -185,32 +162,25 @@ void PhotometryFit::getMeasuredStarIndices(const MeasuredStar &measuredStar,
     }
 }
 
-void PhotometryFit::findOutliers(double nSigCut, MeasuredStarList &outliers) const {
+void PhotometryFit::findOutliers(double nSigmaCut, MeasuredStarList &outliers) const {
     /* Aims at providing an outlier list for small-rank update
        of the factorization. */
 
     // collect chi2 contributions of the measurements.
-    Chi2Vect chi2s;
-    //  chi2s.reserve(_nMeasuredStars);
-    accumulateStat(_associations.ccdImageList, chi2s);
+    Chi2List chi2List;
+    // chi2List.reserve(_nMeasuredStars);
+    accumulateStat(_associations.ccdImageList, chi2List);
     // do some stat
-    unsigned nval = chi2s.size();
+    unsigned nval = chi2List.size();
     if (nval == 0) return;
-    sort(chi2s.begin(), chi2s.end());  // increasing order. We rely on this later.
-    double median =
-            (nval & 1) ? chi2s[nval / 2].chi2 : 0.5 * (chi2s[nval / 2 - 1].chi2 + chi2s[nval / 2].chi2);
+    sort(chi2List.begin(), chi2List.end());  // increasing order. We rely on this later.
+    double median = (nval & 1) ? chi2List[nval / 2].chi2
+                               : 0.5 * (chi2List[nval / 2 - 1].chi2 + chi2List[nval / 2].chi2);
     // some more stats. should go into the class if recycled anywhere else
-    double sum = 0;
-    double sum2 = 0;
-    for (auto const &i : chi2s) {
-        sum += i.chi2;
-        sum2 += sqr(i.chi2);
-    }
-    double average = sum / nval;
-    double sigma = sqrt(sum2 / nval - sqr(average));
-    LOGLS_INFO(_log,
-               "findOutliers chi2 stat: mean/median/sigma " << average << '/' << median << '/' << sigma);
-    double cut = average + nSigCut * sigma;
+    auto averageAndSigma = chi2List.computeAverageAndSigma();
+    LOGLS_DEBUG(_log, "RemoveOutliers chi2 stat: mean/median/sigma " << averageAndSigma.first << '/' << median
+                                                                     << '/' << averageAndSigma.second);
+    double cut = averageAndSigma.first + nSigmaCut * averageAndSigma.second;
     /* For each of the parameters, we will not remove more than 1
        measurement that contributes to constraining it. Keep track
        of the affected parameters using an integer vector. This is the
@@ -220,19 +190,19 @@ void PhotometryFit::findOutliers(double nSigCut, MeasuredStarList &outliers) con
     affectedParams.setZero();
 
     // start from the strongest outliers, i.e. at the end of the array.
-    for (auto i = chi2s.rbegin(); i != chi2s.rend(); ++i) {
-        if (i->chi2 < cut) break;  // because the array is sorted.
+    for (auto chi2 = chi2List.rbegin(); chi2 != chi2List.rend(); ++chi2) {
+        if (chi2->chi2 < cut) break;  // because the array is sorted.
         vector<unsigned> indices;
-        getMeasuredStarIndices(*(i->measuredStar), indices);
+        getMeasuredStarIndices(*(chi2->star), indices);
         bool drop_it = true;
         /* find out if a stronger outlier constraining one of the parameters
            this one contrains was already discarded. If yes, we keep this one */
-        for (auto const &i : indices)
-            if (affectedParams(i) != 0) drop_it = false;
+        for (auto const &chi2 : indices)
+            if (affectedParams(chi2) != 0) drop_it = false;
 
         if (drop_it) {
             for (auto const &i : indices) affectedParams(i)++;
-            outliers.push_back(i->measuredStar);
+            outliers.push_back(std::dynamic_pointer_cast<MeasuredStar>(chi2->star));
         }
     }  // end loop on measurements
     LOGLS_INFO(_log, "findMeasOutliers: found " << outliers.size() << " outliers");

@@ -54,7 +54,7 @@ class Associations;
  */
 class AstrometryFit {
 private:
-    Associations &_assoc;
+    Associations &_associations;
     std::string _whatToFit;
     bool _fittingDistortions, _fittingPos, _fittingRefrac, _fittingPM;
     AstrometryModel *_astrometryModel;
@@ -158,7 +158,7 @@ public:
      * For the list of images in the provided  association and the reference
      * stars, if any.
      */
-    Chi2 computeChi2() const;
+    Chi2Statistic computeChi2() const;
 
     /**
      * Contributions to derivatives from (presumably) outlier terms. No

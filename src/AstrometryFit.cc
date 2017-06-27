@@ -9,14 +9,13 @@
 #include "lsst/pex/exceptions.h"
 #include "lsst/jointcal/AstrometryFit.h"
 #include "lsst/jointcal/Associations.h"
+#include "lsst/jointcal/Chi2.h"
 #include "lsst/jointcal/Eigenstuff.h"
 #include "lsst/jointcal/Mapping.h"
 #include "lsst/jointcal/Gtransfo.h"
 #include "lsst/jointcal/Tripletlist.h"
 
 using namespace std;
-
-static double sqr(double x) { return x * x; }
 
 namespace {
 LOG_LOGGER _log = LOG_GET("jointcal.AstrometryFit");
@@ -26,7 +25,7 @@ namespace lsst {
 namespace jointcal {
 
 AstrometryFit::AstrometryFit(Associations &associations, AstrometryModel *astrometryModel, double posError)
-        : _assoc(associations), _astrometryModel(astrometryModel), _posError(posError) {
+        : _associations(associations), _astrometryModel(astrometryModel), _posError(posError) {
     _LastNTrip = 0;
     _JDRef = 0;
 
@@ -35,7 +34,7 @@ AstrometryFit::AstrometryFit(Associations &associations, AstrometryModel *astrom
     _referenceColor = 0;
     _sigCol = 0;
     unsigned count = 0;
-    for (auto const &i : _assoc.fittedStarList) {
+    for (auto const &i : _associations.fittedStarList) {
         _referenceColor += i->color;
         _sigCol += sqr(i->color);
         count++;
@@ -46,7 +45,7 @@ AstrometryFit::AstrometryFit(Associations &associations, AstrometryModel *astrom
     }
     LOGLS_INFO(_log, "Reference Color: " << _referenceColor << " sig " << _sigCol);
 
-    _nRefrac = _assoc.getNFilters();
+    _nRefrac = _associations.getNFilters();
     _refractionCoefficient = 0;
 
     _nMeasuredStars = 0;
@@ -240,7 +239,7 @@ void AstrometryFit::LSDerivatives2(const FittedStarList &fsl, TripletList &tList
     if (!_fittingPos) return;
     /* the other case where the accumulation of derivatives stops
        here is when there are no RefStars */
-    if (_assoc.refStarList.size() == 0) return;
+    if (_associations.refStarList.size() == 0) return;
     Eigen::Matrix2d w(2, 2);
     Eigen::Matrix2d alpha(2, 2);
     Eigen::Matrix2d h(2, 2), halpha(2, 2), hw(2, 2);
@@ -319,11 +318,11 @@ void AstrometryFit::LSDerivatives2(const FittedStarList &fsl, TripletList &tList
 //! this routine computes the derivatives of all LS terms, including the ones that refer to references stars,
 //! if any
 void AstrometryFit::LSDerivatives(TripletList &tList, Eigen::VectorXd &rhs) const {
-    auto L = _assoc.getCcdImageList();
+    auto L = _associations.getCcdImageList();
     for (auto const &im : L) {
         LSDerivatives1(*im, tList, rhs);
     }
-    LSDerivatives2(_assoc.fittedStarList, tList, rhs);
+    LSDerivatives2(_associations.fittedStarList, tList, rhs);
 }
 
 // This is almost a selection of lines of LSDerivatives1(CcdImage ...)
@@ -392,7 +391,7 @@ template <class Accum>
 void AstrometryFit::accumulateStatRefStars(Accum &accum) const {
     /* If you wonder why we project here, read comments in
        AstrometryFit::LSDerivatives2(TripletList &TList, Eigen::VectorXd &Rhs) */
-    FittedStarList &fsl = _assoc.fittedStarList;
+    FittedStarList &fsl = _associations.fittedStarList;
     TanRaDec2Pix proj(GtransfoLin(), Point(0., 0.));
     for (auto const &fs : fsl) {
         const RefStar *rs = fs->getRefStar();
@@ -412,9 +411,9 @@ void AstrometryFit::accumulateStatRefStars(Accum &accum) const {
     }
 }
 
-Chi2 AstrometryFit::computeChi2() const {
-    Chi2 chi2;
-    accumulateStatImageList(_assoc.getCcdImageList(), chi2);
+Chi2Statistic AstrometryFit::computeChi2() const {
+    Chi2Statistic chi2;
+    accumulateStatImageList(_associations.getCcdImageList(), chi2);
     // now ref stars:
     accumulateStatRefStars(chi2);
     // so far, ndof contains the number of squares.
@@ -422,26 +421,6 @@ Chi2 AstrometryFit::computeChi2() const {
     chi2.ndof -= _nParTot;
     return chi2;
 }
-
-//! a class to accumulate chi2 contributions together with pointers to the contributors.
-/*! This structure allows to compute the chi2 statistics (average and
-  variance) and directly point back to the bad guys without
-  relooping. The Chi2Entry routine makes it compatible with
-  accumulateStatImage and accumulateStatImageList. */
-struct Chi2Entry {
-    double chi2;
-    std::shared_ptr<BaseStar> ps;
-
-    Chi2Entry(double c, std::shared_ptr<BaseStar> s) : chi2(c), ps(std::move(s)) {}
-    // for sort
-    bool operator<(const Chi2Entry &R) const { return (chi2 < R.chi2); }
-};
-
-struct Chi2Vect : public std::vector<Chi2Entry> {
-    void addEntry(double Chi2Val, unsigned ndof, std::shared_ptr<BaseStar> ps) {
-        this->push_back(Chi2Entry(Chi2Val, std::move(ps)));
-    }
-};
 
 //! this routine is to be used only in the framework of outlier removal
 /*! it fills the array of indices of parameters that a Measured star
@@ -493,31 +472,23 @@ unsigned AstrometryFit::findOutliers(double nSigmaCut, MeasuredStarList &msOutli
     bool searchRef = (measOrRef.find("Ref") != std::string::npos);
 
     // collect chi2 contributions
-    Chi2Vect chi2s;
-    chi2s.reserve(_nMeasuredStars + _assoc.refStarList.size());
+    Chi2List chi2List;
+    chi2List.reserve(_nMeasuredStars + _associations.refStarList.size());
     // contributions from measurement terms:
-    if (searchMeas) accumulateStatImageList(_assoc.ccdImageList, chi2s);
+    if (searchMeas) accumulateStatImageList(_associations.ccdImageList, chi2List);
     // and from reference terms
-    if (searchRef) accumulateStatRefStars(chi2s);
+    if (searchRef) accumulateStatRefStars(chi2List);
 
-    // do some stat
-    unsigned nval = chi2s.size();
+    // compute some statistics
+    size_t nval = chi2List.size();
     if (nval == 0) return 0;
-    sort(chi2s.begin(), chi2s.end());
-    double median =
-            (nval & 1) ? chi2s[nval / 2].chi2 : 0.5 * (chi2s[nval / 2 - 1].chi2 + chi2s[nval / 2].chi2);
-    // some more stats. should go into the class if recycled anywhere else
-    double sum = 0;
-    double sum2 = 0;
-    for (auto i = chi2s.begin(); i != chi2s.end(); ++i) {
-        sum += i->chi2;
-        sum2 += sqr(i->chi2);
-    }
-    double average = sum / nval;
-    double sigma = sqrt(sum2 / nval - sqr(average));
-    LOGLS_DEBUG(_log,
-                "RemoveOutliers chi2 stat: mean/median/sigma " << average << '/' << median << '/' << sigma);
-    double cut = average + nSigmaCut * sigma;
+    sort(chi2List.begin(), chi2List.end());
+    double median = (nval & 1) ? chi2List[nval / 2].chi2
+                               : 0.5 * (chi2List[nval / 2 - 1].chi2 + chi2List[nval / 2].chi2);
+    auto averageAndSigma = chi2List.computeAverageAndSigma();
+    LOGLS_DEBUG(_log, "RemoveOutliers chi2 stat: mean/median/sigma " << averageAndSigma.first << '/' << median
+                                                                     << '/' << averageAndSigma.second);
+    double cut = averageAndSigma.first + nSigmaCut * averageAndSigma.second;
     /* For each of the parameters, we will not remove more than 1
        measurement that contributes to constraining it. Keep track using
        of what we are touching using an integer vector. This is the
@@ -528,19 +499,18 @@ unsigned AstrometryFit::findOutliers(double nSigmaCut, MeasuredStarList &msOutli
 
     unsigned nOutliers = 0;  // returned to the caller
     // start from the strongest outliers.
-    for (auto i = chi2s.rbegin(); i != chi2s.rend(); ++i) {
-        if (i->chi2 < cut) break;  // because the array is sorted.
+    for (auto chi2 = chi2List.rbegin(); chi2 != chi2List.rend(); ++chi2) {
+        if (chi2->chi2 < cut) break;  // because the array is sorted.
         vector<unsigned> indices;
         indices.reserve(100);  // just there to limit reallocations.
         /* now, we want to get the indices of the parameters this chi2
         term depends on. We have to figure out which kind of term it
-         is; we use for that the type of the star attached to
-         the Chi2Entry. */
-        auto ms = std::dynamic_pointer_cast<MeasuredStar>(i->ps);
+         is; we use for that the type of the star attached to the Chi2Star. */
+        auto ms = std::dynamic_pointer_cast<MeasuredStar>(chi2->star);
         std::shared_ptr<FittedStar> fs;
         if (!ms)  // it is reference term.
         {
-            fs = std::dynamic_pointer_cast<FittedStar>(i->ps);
+            fs = std::dynamic_pointer_cast<FittedStar>(chi2->star);
             indices.push_back(fs->getIndexInMatrix());
             indices.push_back(fs->getIndexInMatrix() + 1);  // probably useless
             /* One might think it would be useful to account for PM
@@ -610,7 +580,7 @@ void AstrometryFit::assignIndices(const std::string &whatToFit) {
     unsigned ipar = _nParDistortions;
 
     if (_fittingPos) {
-        FittedStarList &fsl = _assoc.fittedStarList;
+        FittedStarList &fsl = _associations.fittedStarList;
         for (auto const &i : fsl) {
             FittedStar &fs = *i;
             // the parameter layout here is used also
@@ -638,7 +608,7 @@ void AstrometryFit::offsetParams(const Eigen::VectorXd &delta) {
     if (_fittingDistortions) _astrometryModel->offsetParams(delta);
 
     if (_fittingPos) {
-        FittedStarList &fsl = _assoc.fittedStarList;
+        FittedStarList &fsl = _associations.fittedStarList;
         for (auto const &i : fsl) {
             FittedStar &fs = *i;
             // the parameter layout here is used also
@@ -728,7 +698,7 @@ int AstrometryFit::minimize(const std::string &whatToFit, const double nSigRejCu
     while (true) {
         Eigen::VectorXd delta = chol.solve(grad);
         offsetParams(delta);
-        Chi2 current_chi2(computeChi2());
+        Chi2Statistic current_chi2(computeChi2());
         LOGLS_DEBUG(_log, current_chi2);
         if (current_chi2.chi2 > old_chi2) {
             LOGL_WARN(_log, "chi2 went up, exiting outlier rejection loop");
@@ -834,7 +804,7 @@ void AstrometryFit::makeMeasResTuple(const std::string &tupleName) const {
           << "#chip: chip number" << endl
           << "#visit: visit id" << endl
           << "#end" << endl;
-    const CcdImageList &L = _assoc.getCcdImageList();
+    const CcdImageList &L = _associations.getCcdImageList();
     for (auto const &i : L) {
         const CcdImage &im = *i;
         const MeasuredStarList &cat = im.getCatalogForFit();
@@ -886,7 +856,7 @@ void AstrometryFit::makeRefResTuple(const std::string &tupleName) const {
           << "#nm: number of measurements of this FittedStar" << endl
           << "#end" << endl;
     // The following loop is heavily inspired from AstrometryFit::computeChi2()
-    const FittedStarList &fsl = _assoc.fittedStarList;
+    const FittedStarList &fsl = _associations.fittedStarList;
     TanRaDec2Pix proj(GtransfoLin(), Point(0., 0.));
     for (auto const &i : fsl) {
         const FittedStar &fs = *i;

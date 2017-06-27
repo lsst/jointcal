@@ -23,9 +23,13 @@ private:
     Associations &_associations;
     std::string _whatToFit;
     bool _fittingModel, _fittingFluxes;
-    unsigned _nParModel, _nParTot;
     PhotometryModel *_photometryModel;
     int _lastNTrip;  // last triplet count, used to speed up allocation
+
+    // counts in parameter subsets.
+    unsigned int _nParModel;
+    unsigned int _nParFluxes;
+    unsigned int _nParTot;
 
 public:
     //! this is the only constructor
@@ -96,7 +100,7 @@ public:
     /**
      * Returns a chi2 for the current state
      */
-    Chi2 computeChi2() const;
+    Chi2Statistic computeChi2() const;
 
     //! Produces an ntuple
     void makeResTuple(const std::string &tupleName) const;

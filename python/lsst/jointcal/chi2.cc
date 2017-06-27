@@ -32,13 +32,13 @@ namespace jointcal {
 namespace {
 
 void declareChi2(py::module &mod) {
-    py::class_<Chi2, std::shared_ptr<Chi2>> cls(mod, "Chi2");
+    py::class_<Chi2Statistic, std::shared_ptr<Chi2Statistic>> cls(mod, "Chi2Statistic");
 
     cls.def(py::init<>());
 
-    cls.def("__str__", &Chi2::__str__);
-    cls.def_readwrite("chi2", &Chi2::chi2);
-    cls.def_readwrite("ndof", &Chi2::ndof);
+    cls.def("__str__", &Chi2Statistic::__str__);
+    cls.def_readwrite("chi2", &Chi2Statistic::chi2);
+    cls.def_readwrite("ndof", &Chi2Statistic::ndof);
 }
 
 PYBIND11_PLUGIN(chi2) {

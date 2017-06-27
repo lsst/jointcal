@@ -30,6 +30,9 @@ namespace {
 LOG_LOGGER _log = LOG_GET("jointcal.Associations");
 }
 
+// TODO: Remove this once RFC-356 is implemented and all refcats give fluxes in Maggies.
+const double JanskyToMaggy = 3631.0;
+
 namespace lsst {
 namespace jointcal {
 
@@ -161,12 +164,12 @@ void Associations::collectRefStars(lsst::afw::table::SortedCatalogT<lsst::afw::t
         auto const &record = refCat.get(i);
 
         afw::coord::Coord coord = record->get(coordKey);
-        double defaultFlux = record->get(fluxKey);
+        double defaultFlux = record->get(fluxKey) / JanskyToMaggy;
         std::vector<double> fluxList(nFilters);
         std::vector<double> fluxErrList(nFilters);
         for (auto const &filter : _filterMap) {
-            fluxList[filter.second] = refFluxMap.at(filter.first).at(i);
-            fluxErrList[filter.second] = refFluxErrMap.at(filter.first).at(i);
+            fluxList[filter.second] = refFluxMap.at(filter.first).at(i) / JanskyToMaggy;
+            fluxErrList[filter.second] = refFluxErrMap.at(filter.first).at(i) / JanskyToMaggy;
         }
         double ra = lsst::afw::geom::radToDeg(coord.getLongitude());
         double dec = lsst::afw::geom::radToDeg(coord.getLatitude());
