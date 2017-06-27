@@ -34,12 +34,14 @@ PhotometryFit::PhotometryFit(Associations &associations, PhotometryModel *photom
 void PhotometryFit::LSDerivatives(TripletList &tripletList, Eigen::VectorXd &rhs) const {
     auto ccdImageList = _associations.getCcdImageList();
     for (auto const &im : ccdImageList) {
-        LSDerivatives(*im, tripletList, rhs);
+        LSDerivativesPerCcdImage(*im, tripletList, rhs);
     }
+    LSDerivativesReference(_associations.fittedStarList, tList, rhs);
 }
 
-void PhotometryFit::LSDerivatives(const CcdImage &ccdImage, TripletList &tripletList, Eigen::VectorXd &rhs,
-                                  const MeasuredStarList *measuredStarList) const {
+void PhotometryFit::LSDerivativesPerCcdImage(const CcdImage &ccdImage, TripletList &tripletList,
+                                             Eigen::VectorXd &rhs,
+                                             const MeasuredStarList *measuredStarList) const {
     /***************************************************************************/
     /**  Changes in this routine should be reflected into accumulateStat       */
     /***************************************************************************/
@@ -88,6 +90,14 @@ void PhotometryFit::LSDerivatives(const CcdImage &ccdImage, TripletList &triplet
         kTriplets += 1;  // each measurement contributes 1 column in the Jacobian
     }                    // end loop on measurements
     tripletList.setNextFreeIndex(kTriplets);
+}
+
+/// Compute the derivatives of the reference terms
+void LSDerivativesReference(const FittedStarList &fsl, TripletList &tList, Eigen::VectorXd &rhs) const {
+    // Derivatives of terms involving fitted and refstars only contribute if we are fitting fluxes.
+    if (!_fittingFluxes) return;
+    // Can't compute anything if there are no refStars.
+    if (_associations.refStarList.size() == 0) return;
 }
 
 // This is almost a selection of lines of LSDerivatives(CcdImage ...)

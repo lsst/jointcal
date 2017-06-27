@@ -63,13 +63,13 @@ public:
      */
     int minimize(const std::string &whatToFit, double nSigmaCut = 0);
 
-    //! Derivatives of the Chi2
+    /**
+     * Evaluates the chI^2 derivatives (Jacobian and gradient) for the current whatToFit setting.
+     *
+     * The Jacobian is provided as triplets, the gradient as a dense vector.
+     * The parameters which vary are to be set using assignIndices.
+     */
     void LSDerivatives(TripletList &tripletList, Eigen::VectorXd &rhs) const;
-
-    //! Compute the derivatives for this CcdImage. The last argument allows to to
-    //! process a sub-list (used for outlier removal)
-    void LSDerivatives(const CcdImage &ccdImage, TripletList &tripletList, Eigen::VectorXd &rhs,
-                       const MeasuredStarList *measuredStarList = nullptr) const;
 
     /**
      * Set parameter groups fixed or variable and assign indices to each parameter
@@ -115,12 +115,17 @@ private:
 
     void getMeasuredStarIndices(const MeasuredStar &measuredStar, std::vector<unsigned> &indices) const;
 
+    /** Compute the derivatives for a CcdImage.
+     *
+     * The last argument allows to to process a sub-list for outlier removal.
+     */
+    void LSDerivativesPerCcdImage(const CcdImage &ccdImage, TripletList &tripletList, Eigen::VectorXd &rhs,
+                                  const MeasuredStarList *measuredStarList = nullptr) const;
+
+    /// Compute the derivatives of the reference terms
+    void LSDerivativesReference(const FittedStarList &fsl, TripletList &tList, Eigen::VectorXd &rhs) const;
+
 #ifdef STORAGE
-    //! Compute the derivatives of the reference terms
-    void LSDerivatives2(TripletList &tripletList, Eigen::VectorXd &rhs) const;
-
-    //! Evaluates the chI^2 derivatives (Jacobian and gradient) for the current whatToFit setting.
-
     //! returns how many outliers were removed. No refit done.
     unsigned removeOutliers(double nSigCut);
 
