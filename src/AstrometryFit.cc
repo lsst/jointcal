@@ -93,8 +93,8 @@ static void tweakAstromMeasurementErrors(FatPoint &P, const MeasuredStar &Ms, do
 
 // we could consider computing the chi2 here.
 // (although it is not extremely useful)
-void AstrometryFit::LSDerivatives1(const CcdImage &ccdImage, TripletList &tList, Eigen::VectorXd &rhs,
-                                   const MeasuredStarList *msList) const {
+void AstrometryFit::LSDerivativesPerCcdImage(const CcdImage &ccdImage, TripletList &tList,
+                                             Eigen::VectorXd &rhs, const MeasuredStarList *msList) const {
     /***************************************************************************/
     /**  Changes in this routine should be reflected into accumulateStatImage  */
     /***************************************************************************/
@@ -126,9 +126,9 @@ void AstrometryFit::LSDerivatives1(const CcdImage &ccdImage, TripletList &tList,
     const Gtransfo *sky2TP = _astrometryModel->getSky2TP(ccdImage);
     // reserve matrices once for all measurements
     GtransfoLin dypdy;
-    // the shape of h (et al) is required this way in order to be able to
+    // the shape of H (et al) is required this way in order to be able to
     // separate derivatives along x and y as vectors.
-    Eigen::MatrixX2d h(npar_tot, 2), halpha(npar_tot, 2), hw(npar_tot, 2);
+    Eigen::MatrixX2d H(npar_tot, 2), halpha(npar_tot, 2), HW(npar_tot, 2);
     Eigen::Matrix2d transW(2, 2);
     Eigen::Matrix2d alpha(2, 2);
     Eigen::VectorXd grad(npar_tot);
@@ -142,11 +142,11 @@ void AstrometryFit::LSDerivatives1(const CcdImage &ccdImage, TripletList &tList,
         // tweak the measurement errors
         FatPoint inPos = ms;
         tweakAstromMeasurementErrors(inPos, ms, _posError);
-        h.setZero();  // we cannot be sure that all entries will be overwritten.
+        H.setZero();  // we cannot be sure that all entries will be overwritten.
         FatPoint outPos;
-        // should *not* fill h if whatToFit excludes mapping parameters.
+        // should *not* fill H if whatToFit excludes mapping parameters.
         if (_fittingDistortions)
-            mapping->computeTransformAndDerivatives(inPos, outPos, h);
+            mapping->computeTransformAndDerivatives(inPos, outPos, H);
         else
             mapping->transformPosAndErrors(inPos, outPos);
 
@@ -181,10 +181,10 @@ void AstrometryFit::LSDerivatives1(const CcdImage &ccdImage, TripletList &tList,
             sky2TP->computeDerivative(*fs, dypdy, 1e-3);
             // sign checked
             // TODO Still have to check with non trivial non-diagonal terms
-            h(npar_mapping, 0) = -dypdy.A11();
-            h(npar_mapping + 1, 0) = -dypdy.A12();
-            h(npar_mapping, 1) = -dypdy.A21();
-            h(npar_mapping + 1, 1) = -dypdy.A22();
+            H(npar_mapping, 0) = -dypdy.A11();
+            H(npar_mapping + 1, 0) = -dypdy.A12();
+            H(npar_mapping, 1) = -dypdy.A21();
+            H(npar_mapping + 1, 1) = -dypdy.A22();
             indices[npar_mapping] = fs->getIndexInMatrix();
             indices.at(npar_mapping + 1) = fs->getIndexInMatrix() + 1;
             ipar += npar_pos;
@@ -192,8 +192,8 @@ void AstrometryFit::LSDerivatives1(const CcdImage &ccdImage, TripletList &tList,
         /* only consider proper motions of objects allowed to move,
         unless the fit is going to be degenerate */
         if (_fittingPM && fs->mightMove) {
-            h(ipar, 0) = -mjd;  // Sign unchecked but consistent with above
-            h(ipar + 1, 1) = -mjd;
+            H(ipar, 0) = -mjd;  // Sign unchecked but consistent with above
+            H(ipar + 1, 1) = -mjd;
             indices[ipar] = fs->getIndexInMatrix() + 2;
             indices[ipar + 1] = fs->getIndexInMatrix() + 3;
             ipar += npar_pm;
@@ -203,8 +203,8 @@ void AstrometryFit::LSDerivatives1(const CcdImage &ccdImage, TripletList &tList,
                consistent with transformFittedStar */
             double color = fs->color - _referenceColor;
             // sign checked
-            h(ipar, 0) = -refractionVector.x * color;
-            h(ipar, 1) = -refractionVector.y * color;
+            H(ipar, 0) = -refractionVector.x * color;
+            H(ipar, 1) = -refractionVector.y * color;
             indices[ipar] = _refracPosInMatrix;
             ipar += 1;
         }
@@ -212,11 +212,11 @@ void AstrometryFit::LSDerivatives1(const CcdImage &ccdImage, TripletList &tList,
         // We can now compute the residual
         Eigen::Vector2d res(fittedStarInTP.x - outPos.x, fittedStarInTP.y - outPos.y);
 
-        // do not write grad = h*transW*res to avoid
+        // do not write grad = H*transW*res to avoid
         // dynamic allocation of a temporary
-        halpha = h * alpha;
-        hw = h * transW;
-        grad = hw * res;
+        halpha = H * alpha;
+        HW = H * transW;
+        grad = HW * res;
         // now feed in triplets and rhs
         for (unsigned ipar = 0; ipar < npar_tot; ++ipar) {
             for (unsigned ic = 0; ic < 2; ++ic) {
@@ -231,8 +231,8 @@ void AstrometryFit::LSDerivatives1(const CcdImage &ccdImage, TripletList &tList,
     tList.setNextFreeIndex(kTriplets);
 }
 
-void AstrometryFit::LSDerivatives2(const FittedStarList &fsl, TripletList &tList,
-                                   Eigen::VectorXd &rhs) const {
+void AstrometryFit::LSDerivativesReference(const FittedStarList &fsl, TripletList &tList,
+                                           Eigen::VectorXd &rhs) const {
     /* We compute here the derivatives of the terms involving fitted
        stars and reference stars. They only provide contributions if we
        are fitting positions: */
@@ -240,9 +240,9 @@ void AstrometryFit::LSDerivatives2(const FittedStarList &fsl, TripletList &tList
     /* the other case where the accumulation of derivatives stops
        here is when there are no RefStars */
     if (_associations.refStarList.size() == 0) return;
-    Eigen::Matrix2d w(2, 2);
+    Eigen::Matrix2d W(2, 2);
     Eigen::Matrix2d alpha(2, 2);
-    Eigen::Matrix2d h(2, 2), halpha(2, 2), hw(2, 2);
+    Eigen::Matrix2d H(2, 2), halpha(2, 2), HW(2, 2);
     GtransfoLin der;
     Eigen::Vector2d res, grad;
     unsigned indices[2 + NPAR_PM];
@@ -262,27 +262,28 @@ void AstrometryFit::LSDerivatives2(const FittedStarList &fsl, TripletList &tList
         // fs projects to (0,0), no need to compute its transform.
         FatPoint rsProj;
         proj.transformPosAndErrors(*rs, rsProj);
+        // Compute the derivative of the projector to incorporate its effects on the errors.
         proj.computeDerivative(fs, der, 1e-4);
         // sign checked. TODO check that the off-diagonal terms are OK.
-        h(0, 0) = -der.A11();
-        h(1, 0) = -der.A12();
-        h(0, 1) = -der.A21();
-        h(1, 1) = -der.A22();
+        H(0, 0) = -der.A11();
+        H(1, 0) = -der.A12();
+        H(0, 1) = -der.A21();
+        H(1, 1) = -der.A22();
         // TO DO : account for proper motions.
         double det = rsProj.vx * rsProj.vy - sqr(rsProj.vxy);
         if (rsProj.vx <= 0 || rsProj.vy <= 0 || det <= 0) {
             LOGLS_WARN(_log, "RefStar error matrix not positive definite for:  " << *rs);
             continue;
         }
-        w(0, 0) = rsProj.vy / det;
-        w(0, 1) = w(1, 0) = -rsProj.vxy / det;
-        w(1, 1) = rsProj.vx / det;
+        W(0, 0) = rsProj.vy / det;
+        W(0, 1) = W(1, 0) = -rsProj.vxy / det;
+        W(1, 1) = rsProj.vx / det;
         // compute alpha, a triangular square root
-        // of w (i.e. a Cholesky factor)
-        alpha(0, 0) = sqrt(w(0, 0));
+        // of W (i.e. a Cholesky factor)
+        alpha(0, 0) = sqrt(W(0, 0));
         // checked that  alpha*alphaT = transW
-        alpha(1, 0) = w(0, 1) / alpha(0, 0);
-        alpha(1, 1) = 1. / sqrt(det * w(0, 0));
+        alpha(1, 0) = W(0, 1) / alpha(0, 0);
+        alpha(1, 1) = 1. / sqrt(det * W(0, 0));
         alpha(0, 1) = 0;
         indices[0] = fs.getIndexInMatrix();
         indices[1] = fs.getIndexInMatrix() + 1;
@@ -297,10 +298,10 @@ void AstrometryFit::LSDerivatives2(const FittedStarList &fsl, TripletList &tList
         with the measurement terms. Since P(fs) = 0, we have: */
         res[0] = -rsProj.x;
         res[1] = -rsProj.y;
-        halpha = h * alpha;
-        // grad = h*w*res
-        hw = h * w;
-        grad = hw * res;
+        halpha = H * alpha;
+        // grad = H*W*res
+        HW = H * W;
+        grad = HW * res;
         // now feed in triplets and rhs
         for (unsigned ipar = 0; ipar < npar_tot; ++ipar) {
             for (unsigned ic = 0; ic < 2; ++ic) {
@@ -320,12 +321,12 @@ void AstrometryFit::LSDerivatives2(const FittedStarList &fsl, TripletList &tList
 void AstrometryFit::LSDerivatives(TripletList &tList, Eigen::VectorXd &rhs) const {
     auto L = _associations.getCcdImageList();
     for (auto const &im : L) {
-        LSDerivatives1(*im, tList, rhs);
+        LSDerivativesPerCcdImage(*im, tList, rhs);
     }
-    LSDerivatives2(_associations.fittedStarList, tList, rhs);
+    LSDerivativesReference(_associations.fittedStarList, tList, rhs);
 }
 
-// This is almost a selection of lines of LSDerivatives1(CcdImage ...)
+// This is almost a selection of lines of LSDerivativesPerCcdImage(CcdImage ...)
 /* This routine (and the following one) is template because it is used
 both with its first argument as "const CCdImage &" and "CcdImage &",
 and I did not want to replicate it.  The constness of the iterators is
@@ -334,7 +335,7 @@ automagically set by declaring them as "auto" */
 template <class ImType, class Accum>
 void AstrometryFit::accumulateStatImage(ImType &image, Accum &accu) const {
     /**********************************************************************/
-    /**  Changes in this routine should be reflected into LSDerivatives1  */
+    /**  Changes in this routine should be reflected into LSDerivativesPerCcdImage  */
     /**********************************************************************/
     /* Setup */
     // 1 : get the Mapping's
@@ -356,7 +357,7 @@ void AstrometryFit::accumulateStatImage(ImType &image, Accum &accu) const {
         tweakAstromMeasurementErrors(inPos, *ms, _posError);
 
         FatPoint outPos;
-        // should *not* fill h if whatToFit excludes mapping parameters.
+        // should *not* fill H if whatToFit excludes mapping parameters.
         mapping->transformPosAndErrors(inPos, outPos);
         double det = outPos.vx * outPos.vy - sqr(outPos.vxy);
         if (det <= 0 || outPos.vx <= 0 || outPos.vy <= 0) {
@@ -390,7 +391,7 @@ void AstrometryFit::accumulateStatImageList(ListType &list, Accum &accum) const 
 template <class Accum>
 void AstrometryFit::accumulateStatRefStars(Accum &accum) const {
     /* If you wonder why we project here, read comments in
-       AstrometryFit::LSDerivatives2(TripletList &TList, Eigen::VectorXd &Rhs) */
+       AstrometryFit::LSDerivativesReference(TripletList &TList, Eigen::VectorXd &Rhs) */
     FittedStarList &fsl = _associations.fittedStarList;
     TanRaDec2Pix proj(GtransfoLin(), Point(0., 0.));
     for (auto const &fs : fsl) {
@@ -452,9 +453,9 @@ void AstrometryFit::outliersContributions(MeasuredStarList &msOutliers, FittedSt
         MeasuredStarList tmp;
         tmp.push_back(i);
         const CcdImage &ccd = i->getCcdImage();
-        LSDerivatives1(ccd, tList, grad, &tmp);
+        LSDerivativesPerCcdImage(ccd, tList, grad, &tmp);
     }
-    LSDerivatives2(fOutliers, tList, grad);
+    LSDerivativesReference(fOutliers, tList, grad);
 }
 
 unsigned AstrometryFit::removeOutliers(double nSigmaCut, const std::string &measOrRef) {
@@ -721,9 +722,9 @@ int AstrometryFit::minimize(const std::string &whatToFit, const double nSigRejCu
         removeMeasOutliers(moutliers);
         removeRefOutliers(foutliers);
         // convert triplet list to eigen internal format
-        SpMat h(_nParTot, tList.getNextFreeIndex());
-        h.setFromTriplets(tList.begin(), tList.end());
-        int update_status = chol.update(h, false /* means downdate */);
+        SpMat H(_nParTot, tList.getNextFreeIndex());
+        H.setFromTriplets(tList.begin(), tList.end());
+        int update_status = chol.update(H, false /* means downdate */);
         LOGLS_DEBUG(_log, "cholmod update_status " << update_status);
         /* The contribution of outliers to the gradient is the opposite
         of the contribution of all other terms, because they add up
@@ -759,7 +760,7 @@ void AstrometryFit::checkStuff() {
         SpMat hessian = jacobian * jacobian.transpose();
 #ifdef STORAGE
         char name[24];
-        sprintf(name, "h%d.fits", k);
+        sprintf(name, "H%d.fits", k);
         write_sparse_matrix_in_fits(hessian, name);
         sprintf(name, "g%d.fits", k);
         write_vect_in_fits(rhs, name);

@@ -53,7 +53,7 @@ void PhotometryFit::LSDerivativesPerCcdImage(const CcdImage &ccdImage, TripletLi
     unsigned npar_max = 100;  // anything large
     vector<unsigned> indices(npar_max, -1);
 
-    Eigen::VectorXd h(npar_max);
+    Eigen::VectorXd H(npar_max);
     Eigen::VectorXd grad(npar_max);
     // current position in the Jacobian
     unsigned kTriplets = tripletList.getNextFreeIndex();
@@ -67,7 +67,7 @@ void PhotometryFit::LSDerivativesPerCcdImage(const CcdImage &ccdImage, TripletLi
 #ifdef FUTURE
         TweakPhotomMeasurementErrors(inPos, measuredStar, _fluxError);
 #endif
-        h.setZero();  // we cannot be sure that all entries will be overwritten.
+        H.setZero();  // we cannot be sure that all entries will be overwritten.
 
         double pf = _photometryModel->photomFactor(ccdImage, measuredStar);
         auto fs = measuredStar.getFittedStar();
@@ -75,11 +75,11 @@ void PhotometryFit::LSDerivativesPerCcdImage(const CcdImage &ccdImage, TripletLi
         double residual = measuredStar.getFlux() - pf * fs->getFlux();
 
         if (_fittingModel) {
-            _photometryModel->setIndicesAndDerivatives(measuredStar, ccdImage, indices, h);
+            _photometryModel->setIndicesAndDerivatives(measuredStar, ccdImage, indices, H);
             for (unsigned k = 0; k < indices.size(); k++) {
                 unsigned l = indices[k];
-                tripletList.addTriplet(l, kTriplets, h[k] * fs->getFlux() / fluxErr);
-                rhs[l] += h[k] * residual / sqr(fluxErr);
+                tripletList.addTriplet(l, kTriplets, H[k] * fs->getFlux() / fluxErr);
+                rhs[l] += H[k] * residual / sqr(fluxErr);
             }
         }
         if (_fittingFluxes) {
@@ -105,6 +105,8 @@ void PhotometryFit::LSDerivativesReference(const FittedStarList &fittedStarList,
         auto refStar = fittedStar->getRefStar();
         if (refStar == nullptr) continue;
 
+        // Because we have no projector here (unlike AstrometryFit), the calculation of the
+        // sigma term is much simpler.
         kTriplets += 1;
     }
     tripletList.setNextFreeIndex(kTriplets);

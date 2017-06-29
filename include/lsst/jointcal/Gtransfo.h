@@ -82,7 +82,11 @@ public:
     //! returns the local jacobian.
     virtual double getJacobian(const double x, const double y) const;
 
-    //! Computes the local Derivative of a transfo. Step is used for numerical derivation.
+    /**
+     * Computes the local Derivative of a transfo, w.r.t. position.
+     *
+     * Step is used for numerical derivation.
+     */
     virtual void computeDerivative(const Point &where, GtransfoLin &derivative,
                                    const double step = 0.01) const;
 

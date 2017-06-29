@@ -109,13 +109,6 @@ public:
      */
     int minimize(const std::string &whatToFit, const double nSigRejCut = 0);
 
-    //! Compute derivatives of measurement terms for this CcdImage
-    void LSDerivatives1(const CcdImage &ccdImage, TripletList &tList, Eigen::VectorXd &rhs,
-                        const MeasuredStarList *msList = nullptr) const;
-
-    //! Compute derivatives of reference terms (if any), associated to the FittedStarList
-    void LSDerivatives2(const FittedStarList &fsl, TripletList &tList, Eigen::VectorXd &rhs) const;
-
     //! Evaluates the chI^2 derivatives (Jacobian and gradient) for the current whatToFit setting.
     /*! The Jacobian is provided as triplets, the gradient as a dense
         vector. The parameters which vary are to be set using
@@ -210,7 +203,11 @@ public:
     //! Just removes outliers from the fit. No Refit done.
     void removeRefOutliers(FittedStarList &outliers);
 
-    //! Produces both ntuples (cook up names from the provided string)
+    /**
+     * Save the full chi2 term per star, that was used in the minimization.
+     *
+     * Produces both MeasuredStar and RefStar tuples (cook up names from the provided string)
+     */
     void makeResTuple(const std::string &tupleName) const;
 
     //! Produces a tuple containing residuals of measurement terms.
@@ -225,6 +222,13 @@ public:
     void checkStuff();
 
 private:
+    //! Compute derivatives of measurement terms for this CcdImage
+    void LSDerivativesPerCcdImage(const CcdImage &ccdImage, TripletList &tList, Eigen::VectorXd &rhs,
+                                  const MeasuredStarList *msList = nullptr) const;
+
+    //! Compute derivatives of reference terms (if any), associated to the FittedStarList
+    void LSDerivativesReference(const FittedStarList &fsl, TripletList &tList, Eigen::VectorXd &rhs) const;
+
     Point transformFittedStar(const FittedStar &fittedStar, const Gtransfo *sky2TP,
                               const Point &refractionVector, double refractionCoeff, double mjd) const;
 
