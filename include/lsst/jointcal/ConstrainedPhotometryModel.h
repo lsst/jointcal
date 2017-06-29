@@ -15,8 +15,8 @@ class ConstrainedPhotometryModel : public PhotometryModel {
 public:
     ConstrainedPhotometryModel(CcdImageList const &ccdImageList) {
         for (auto &ccdImage : ccdImageList) {
-            _myMap[ccdImage] =
-                    std::unique_ptr<PhotometryMapping>(new PhotometryMapping(ConstantPhotometryTransfo()));
+            _myMap[ccdImage] = std::unique_ptr<PhotometryMapping>(
+                    new PhotometryMapping(PhotometryTransfoSpatiallyInvariant()));
         }
     }
 
@@ -30,7 +30,7 @@ public:
 
     double photomFactor(CcdImage const &ccdImage, const Point &where) const { return 0; }
 
-    void getIndicesAndDerivatives(MeasuredStar const &measuredStar, CcdImage const &ccdImage,
+    void setIndicesAndDerivatives(MeasuredStar const &measuredStar, CcdImage const &ccdImage,
                                   std::vector<unsigned> &indices, Eigen::VectorXd &D) {
         indices.reserve(_myMap.size());
     }

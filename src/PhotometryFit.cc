@@ -33,10 +33,10 @@ PhotometryFit::PhotometryFit(Associations &associations, PhotometryModel *photom
 
 void PhotometryFit::LSDerivatives(TripletList &tripletList, Eigen::VectorXd &rhs) const {
     auto ccdImageList = _associations.getCcdImageList();
-    for (auto const &im : ccdImageList) {
-        LSDerivativesPerCcdImage(*im, tripletList, rhs);
+    for (auto const &ccdImage : ccdImageList) {
+        LSDerivativesPerCcdImage(*ccdImage, tripletList, rhs);
     }
-    LSDerivativesReference(_associations.fittedStarList, tList, rhs);
+    LSDerivativesReference(_associations.fittedStarList, tripletList, rhs);
 }
 
 void PhotometryFit::LSDerivativesPerCcdImage(const CcdImage &ccdImage, TripletList &tripletList,
@@ -75,7 +75,7 @@ void PhotometryFit::LSDerivativesPerCcdImage(const CcdImage &ccdImage, TripletLi
         double residual = measuredStar.getFlux() - pf * fs->getFlux();
 
         if (_fittingModel) {
-            _photometryModel->getIndicesAndDerivatives(measuredStar, ccdImage, indices, h);
+            _photometryModel->setIndicesAndDerivatives(measuredStar, ccdImage, indices, h);
             for (unsigned k = 0; k < indices.size(); k++) {
                 unsigned l = indices[k];
                 tripletList.addTriplet(l, kTriplets, h[k] * fs->getFlux() / fluxErr);
@@ -92,12 +92,22 @@ void PhotometryFit::LSDerivativesPerCcdImage(const CcdImage &ccdImage, TripletLi
     tripletList.setNextFreeIndex(kTriplets);
 }
 
-/// Compute the derivatives of the reference terms
-void LSDerivativesReference(const FittedStarList &fsl, TripletList &tList, Eigen::VectorXd &rhs) const {
+void PhotometryFit::LSDerivativesReference(const FittedStarList &fittedStarList, TripletList &tripletList,
+                                           Eigen::VectorXd &rhs) const {
     // Derivatives of terms involving fitted and refstars only contribute if we are fitting fluxes.
     if (!_fittingFluxes) return;
     // Can't compute anything if there are no refStars.
     if (_associations.refStarList.size() == 0) return;
+
+    unsigned kTriplets = tripletList.getNextFreeIndex();
+
+    for (auto const &fittedStar : fittedStarList) {
+        auto refStar = fittedStar->getRefStar();
+        if (refStar == nullptr) continue;
+
+        kTriplets += 1;
+    }
+    tripletList.setNextFreeIndex(kTriplets);
 }
 
 // This is almost a selection of lines of LSDerivatives(CcdImage ...)
@@ -148,7 +158,7 @@ void PhotometryFit::outliersContributions(MeasuredStarList &outliers, TripletLis
         MeasuredStarList tmp;
         tmp.push_back(outlier);
         const CcdImage &ccdImage = outlier->getCcdImage();
-        LSDerivatives(ccdImage, tripletList, grad, &tmp);
+        LSDerivativesPerCcdImage(ccdImage, tripletList, grad, &tmp);
         outlier->setValid(false);
         auto fs = std::const_pointer_cast<FittedStar>(outlier->getFittedStar());
         fs->getMeasurementCount()--;
@@ -158,12 +168,12 @@ void PhotometryFit::outliersContributions(MeasuredStarList &outliers, TripletLis
 //! this routine is to be used only in the framework of outlier removal
 /*! it fills the array of indices of parameters that a Measured star
     constrains. Not really all of them if you check. */
-void PhotometryFit::getMeasuredStarIndices(const MeasuredStar &measuredStar,
+void PhotometryFit::setMeasuredStarIndices(const MeasuredStar &measuredStar,
                                            std::vector<unsigned> &indices) const {
     indices.clear();
     if (_fittingModel) {
         Eigen::VectorXd h(100);
-        _photometryModel->getIndicesAndDerivatives(measuredStar, measuredStar.getCcdImage(), indices, h);
+        _photometryModel->setIndicesAndDerivatives(measuredStar, measuredStar.getCcdImage(), indices, h);
     }
     if (_fittingFluxes) {
         auto fs = measuredStar.getFittedStar();
@@ -203,7 +213,7 @@ void PhotometryFit::findOutliers(double nSigmaCut, MeasuredStarList &outliers) c
     for (auto chi2 = chi2List.rbegin(); chi2 != chi2List.rend(); ++chi2) {
         if (chi2->chi2 < cut) break;  // because the array is sorted.
         vector<unsigned> indices;
-        getMeasuredStarIndices(*(chi2->star), indices);
+        setMeasuredStarIndices(*(chi2->star), indices);
         bool drop_it = true;
         /* find out if a stronger outlier constraining one of the parameters
            this one contrains was already discarded. If yes, we keep this one */
@@ -235,7 +245,7 @@ void PhotometryFit::assignIndices(const std::string &whatToFit) {
             // the parameter layout here is used also
             // - when filling the derivatives
             // - when updating (offsetParams())
-            // - in GetMeasuredStarIndices
+            // - in SetMeasuredStarIndices
             fs.setIndexInMatrix(ipar);
             ipar += 1;
         }

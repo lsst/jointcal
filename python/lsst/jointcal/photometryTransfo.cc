@@ -37,9 +37,10 @@ void declarePhotometryTransfo(py::module &mod) {
     cls.def("__str__", &PhotometryTransfo::__str__);
 }
 
-void declareConstantPhotometryTransfo(py::module &mod) {
-    py::class_<ConstantPhotometryTransfo, std::shared_ptr<ConstantPhotometryTransfo>, PhotometryTransfo> cls(
-            mod, "ConstantPhotometryTransfo");
+void declarePhotometryTransfoSpatiallyInvariant(py::module &mod) {
+    py::class_<PhotometryTransfoSpatiallyInvariant, std::shared_ptr<PhotometryTransfoSpatiallyInvariant>,
+               PhotometryTransfo>
+            cls(mod, "PhotometryTransfoSpatiallyInvariant");
 
     cls.def(py::init<double>(), "value"_a = 1);
 }
@@ -48,7 +49,7 @@ PYBIND11_PLUGIN(photometryTransfo) {
     py::module mod("photometryTransfo");
 
     declarePhotometryTransfo(mod);
-    declareConstantPhotometryTransfo(mod);
+    declarePhotometryTransfoSpatiallyInvariant(mod);
 
     return mod.ptr();
 }

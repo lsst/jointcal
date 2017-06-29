@@ -56,7 +56,7 @@ public:
      */
     double photomFactor(CcdImage const &ccdImage, const Point &where = Point()) const;
 
-    void getIndicesAndDerivatives(MeasuredStar const &measuredStar, CcdImage const &ccdImage,
+    void setIndicesAndDerivatives(MeasuredStar const &measuredStar, CcdImage const &ccdImage,
                                   std::vector<unsigned> &indices, Eigen::VectorXd &D);
 
 private:

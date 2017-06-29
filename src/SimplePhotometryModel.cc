@@ -16,8 +16,8 @@ namespace jointcal {
 
 SimplePhotometryModel::SimplePhotometryModel(CcdImageList const &ccdImageList) {
     for (auto const &ccdImage : ccdImageList) {
-        _myMap[ccdImage.get()] =
-                std::unique_ptr<PhotometryMapping>(new PhotometryMapping(ConstantPhotometryTransfo()));
+        _myMap[ccdImage.get()] = std::unique_ptr<PhotometryMapping>(
+                new PhotometryMapping(PhotometryTransfoSpatiallyInvariant()));
     }
     LOGLS_INFO(_log, "SimplePhotometryModel got " << _myMap.size() << " ccdImage mappings.");
 }
@@ -49,10 +49,10 @@ double SimplePhotometryModel::photomFactor(CcdImage const &ccdImage, Point const
     return mapping->getTransfo().apply(where, 1.0);
 }
 
-void SimplePhotometryModel::getIndicesAndDerivatives(MeasuredStar const &measuredStar,
+void SimplePhotometryModel::setIndicesAndDerivatives(MeasuredStar const &measuredStar,
                                                      CcdImage const &ccdImage, std::vector<unsigned> &indices,
                                                      Eigen::VectorXd &derivative) {
-    auto mapping = this->findMapping(ccdImage, "getIndicesAndDerivatives");
+    auto mapping = this->findMapping(ccdImage, "setIndicesAndDerivatives");
     indices.resize(1);
     indices[0] = mapping->getIndex();
     derivative[0] = 1;

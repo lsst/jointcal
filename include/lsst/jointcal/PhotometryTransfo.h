@@ -13,6 +13,8 @@ namespace jointcal {
 
 class Point;
 
+class PhotometryTransfoSpatiallyInvariant;
+
 /*
  * A photometric transform, defined as a scale factor of the input calibration.
  *
@@ -50,21 +52,24 @@ public:
     /// Offset the parameters by some small amount during fitting.
     virtual void offsetParams(const double *delta) = 0;
 
-    //! returns a copy (allocated by new) of the transformation.
+    /// return a copy (allocated by new) of the transformation.
     virtual std::unique_ptr<PhotometryTransfo> clone() const = 0;
+
+    void computeDerivative(const Point &where, PhotometryTransfoSpatiallyInvariant &derivative,
+                           const double step = 0.01) const;
 };
 
 /*
  * Photometric offset independent of position.
  *
- * initialCalibFlux (Maggies) * constantTransfo -> correctedFlux (Maggies)
+ * initialCalibFlux (Maggies) * SpatiallyInvariantTransfo -> correctedFlux (Maggies)
  *
  * @todo Eventually to be defined as:
  *     instFlux / value = flux
  */
-class ConstantPhotometryTransfo : public PhotometryTransfo {
+class PhotometryTransfoSpatiallyInvariant : public PhotometryTransfo {
 public:
-    ConstantPhotometryTransfo(double value = 1) : _value(value) {}
+    PhotometryTransfoSpatiallyInvariant(double value = 1) : _value(value) {}
 
     void apply(double x, double y, double instFlux, double &out) const { out = instFlux / _value; }
 
@@ -75,8 +80,19 @@ public:
     void offsetParams(const double *delta) { _value += *delta; };
 
     std::unique_ptr<PhotometryTransfo> clone() const {
-        return std::unique_ptr<PhotometryTransfo>(new ConstantPhotometryTransfo(_value));
+        return std::unique_ptr<PhotometryTransfo>(new PhotometryTransfoSpatiallyInvariant(_value));
     }
+
+    /// The spatial derivative of a constant zeropoint is 1.
+    void computeDerivative(const Point &where, PhotometryTransfoSpatiallyInvariant &derivative,
+                           const double step = 0.01) const {
+        derivative.setValue(1);
+    }
+
+protected:
+    void setValue(double value) { _value = value; }
+
+    friend class PhotometryTransfo;
 
 private:
     /// value of this transform at all locations.

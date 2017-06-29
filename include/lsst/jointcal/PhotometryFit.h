@@ -113,7 +113,7 @@ private:
 
     void findOutliers(double nSigCut, MeasuredStarList &outliers) const;
 
-    void getMeasuredStarIndices(const MeasuredStar &measuredStar, std::vector<unsigned> &indices) const;
+    void setMeasuredStarIndices(const MeasuredStar &measuredStar, std::vector<unsigned> &indices) const;
 
     /** Compute the derivatives for a CcdImage.
      *
@@ -123,7 +123,8 @@ private:
                                   const MeasuredStarList *measuredStarList = nullptr) const;
 
     /// Compute the derivatives of the reference terms
-    void LSDerivativesReference(const FittedStarList &fsl, TripletList &tList, Eigen::VectorXd &rhs) const;
+    void LSDerivativesReference(const FittedStarList &fittedStarList, TripletList &tripletList,
+                                Eigen::VectorXd &rhs) const;
 
 #ifdef STORAGE
     //! returns how many outliers were removed. No refit done.

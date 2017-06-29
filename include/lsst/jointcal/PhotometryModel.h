@@ -38,7 +38,7 @@ public:
     /**
      * Return the "photometric factor" at a given location on a ccdImage.
      *
-     * Multiply this by a Calib's flux/magnitude zero-point to get the updated fluxMag0.
+     * Multiply this by a Calib's flux/magnitude zero-point to get the updated fluxMag0 at that point.
      *
      * @param[in]  ccdImage  The ccdImage to get the photometric factor for.
      * @param[in]  where     Possition on ccdImage in ccd coordinates.
@@ -48,7 +48,7 @@ public:
     virtual double photomFactor(CcdImage const &ccdImage, const Point &where) const = 0;
 
     //! number of parameters to be read in indices.size()
-    virtual void getIndicesAndDerivatives(MeasuredStar const &measuredStar, CcdImage const &ccdImage,
+    virtual void setIndicesAndDerivatives(MeasuredStar const &measuredStar, CcdImage const &ccdImage,
                                           std::vector<unsigned> &indices, Eigen::VectorXd &D) = 0;
 
     virtual ~PhotometryModel(){};
