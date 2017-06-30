@@ -239,7 +239,7 @@ for mappings and the projection scheme. We however provide some
 implementations for both aspects that we discuss in the next two sections.
 
 \subsection{The distortion model}
-The routines in the \ClName{AstrometricFit} class do not really evaluate
+The routines in the \ClName{AstrometryFit} class do not really evaluate
 the derivatives of the mappings, but rather defer those to other classes.
 The main reason for this separation is that one could conceive
 different ways to model the mappings from pixel coordinates to
@@ -295,7 +295,7 @@ for a brief introduction to WCS concepts).
 So, the choice of the projectors involved in the fit
 are naturally left to the user. This is done via a
 virtual class \ClName{ProjectionHandler}, an instance
-of which has to be provided to the \ClName{AstrometricFit} constructor.
+of which has to be provided to the \ClName{AstrometryFit} constructor.
 There are obviously ready-to-use \ClName{ProjectionHandler} implementations
 which should suit essentially any need. For the standard astrometric
 fit aiming at setting WCS's, we provide the \ClName{OneTPPerShoot}
@@ -369,19 +369,19 @@ if we take advantage of its sparseness.
 Let us rewrite the $\chi^2$ (expression~\ref{eq:chi2}) as:
 \begin{align}
 \chi^2 & =  \sum_{\gamma,i}  {R^m_{\gamma i}}^T W_{\gamma,i}  R^m_{\gamma i} \nonumber \\
-         & +\sum_j {R^r_{j}}^T W_{j}  R^r_{j} \label{eq:grad_chi2}\\
+         & +\sum_j {R^r_{j}}^T W_{j}  R^r_{j} \label{eq:grad_chi2}
 \end{align}
-where the meaning or the $R$ vectors is easily derived by comparing to
+where the meaning of the $R$ vectors is easily derived by comparing to
 \ref{eq:chi2}. We want to find the point where $d \chi^2/d \theta = 0$,
 where $\theta$ of (size $N_p$) denotes the vector of parameters. We have
 \begin{align}
-\frac{1}{2} \frac{d \chi^2}{d \theta} & =  \sum_{\gamma,i}  {R^m_{\gamma i}}^T W_{\gamma,i}  h^m_{\gamma i} \\
-         & +\sum_j {R^r_{j}}^T W_{j}  h^r_{j} \\
+\frac{1}{2} \frac{d \chi^2}{d \theta} & =  \sum_{\gamma,i}  {R^m_{\gamma i}}^T W_{\gamma,i}  H^m_{\gamma i} \\
+         & +\sum_j {R^r_{j}}^T W_{j}  H^r_{j}
 \end{align}
-where the h matrices are $2 \times N_p$ in size and read:
+where the H matrices are $2 \times N_p$ in size and read:
 \begin{align}
- h^m_{\gamma i} & = \frac{d {R^m_{\gamma i}}}{ d \theta} \\
-  h^r_{j}     & = \frac{d {R^m_{j}}}{ d \theta} 
+ H^m_{\gamma i} & = \frac{d {R^m_{\gamma i}}}{ d \theta} \\
+  H^r_{j}     & = \frac{d {R^m_{j}}}{ d \theta}
 \end{align}
 The matrix $W_{\gamma,i}$ is obtained by transporting the measurement
 errors through the fitted mapping. This introduces a dependency of the
@@ -425,8 +425,8 @@ search, i.e. to minimize $\chi^2(\theta_0 + \lambda\times
 
 We write the second derivative of our $\chi^2$ (or Hessian) as:
 \begin{align}
-\frac{1}{2} \frac{d^2 \chi^2}{d \theta^2} & =  \sum_{\gamma,i}  {h^m_{\gamma i}}^T W_{\gamma,i}  h^m_{\gamma i} \nonumber \\
-         & +\sum_j {h^r_{j}}^T W_{j}  h^r_{j} \label{eq:def_hessian}\\
+\frac{1}{2} \frac{d^2 \chi^2}{d \theta^2} & =  \sum_{\gamma,i}  {H^m_{\gamma i}}^T W_{\gamma,i}  H^m_{\gamma i} \nonumber \\
+         & +\sum_j {H^r_{j}}^T W_{j}  H^r_{j} \label{eq:def_hessian}
 \end{align}
 where we have neglected the second derivatives of the $R$
 vectors. This is both simple and handy, because this second derivative
@@ -439,7 +439,7 @@ parameter $\eta_\gamma$, for example polynomials, are to be favored.
 Since the matrices $W_{\gamma,i}$ are positive-definite, they have
 square roots (e.g. the Cholesky square root) and can be written as:
 $W_{\gamma,i} = \alpha^T_{\gamma i} \alpha_{\gamma i}$. Defining
-$K^m_{\gamma i} = \alpha_{\gamma i} h^m_{\gamma i}$, the Hessian
+$K^m_{\gamma i} = \alpha_{\gamma i} H^m_{\gamma i}$, the Hessian
 expression becomes
 \begin{align}
 \frac{1}{2} \frac{d^2 \chi^2}{d \theta^2} & =  \sum_{\gamma,i}  {K^m_{\gamma i}}^T K^m_{\gamma i} +\sum_j {K^r_{j}} K^r_{j} %\label{eq:def_hessian}
@@ -457,12 +457,12 @@ $$
 In the code, we take advantage of the fact that each term of the
 $\chi^2$ only depends on a small number of parameters. The data
 stuctures allow us to rapidly collect the indices of these parameters,
-and we evaluate in fact the $h$ matrices for these indices only.
+and we evaluate in fact the $H$ matrices for these indices only.
 
-The computation of the Jacobian and the gradient is orchestrated in
-the \ClName{AstrometricFit} class.  The routines
-\RoutineName{AstrometricFit::LSDerivatives1} and
-\RoutineName{AstrometricFit::LSDerivatives2} evaluate the contributions to
+The computation of the Jacobian and the gradient is performed in
+the \ClName{AstrometryFit} class. The methods
+\RoutineName{AstrometryFit::LSDerivativesPerCcdImage} and \\
+\RoutineName{AstrometryFit::LSDerivativesReference} evaluate the contributions to
 the Jacobian and gradient of the $\chi^2$ from the measurement terms
 and the references terms respectively. In these routines, the Jacobian
 is represented as a list of triplets $(i,j,J_{ij})$ describing its
@@ -470,14 +470,14 @@ elements. This list is then transformed into a representation of
 sparse matrices suitable for algebra, and in particular suitable to
 evaluate the product $J^TJ$. Once we have evaluated $H\equiv J^TJ$, we
 can solve $HX=-g$ using a Cholesky factorization. For sparse linear
-algebra, at least the Cholmod and Eigen packages provide the required
-functionalities. It turns out that for practical problems, the
-calculation of $J^TJ$ or the factorization are the most CPU intensive 
+algebra, the Cholmod and Eigen packages provide the required
+functionality. It turns out that for practical problems, the
+calculation of $J^TJ$ or the factorization are the most CPU intensive
 parts of the calculations, and
 there is hence not much to be gained in speeding up the calculation of
 derivatives. For the factorization, we have tried both Eigen and
 Cholmod (via the Eigen interface) and their speeds differ by less
-than 10 \%. 
+than 10\%.
 
 \subsection{A small note about our choice for linear solvers}
 The standard Cholesky decomposition of a matrix H consists in finding
@@ -506,16 +506,16 @@ some sort of mechanism to associate indices in the vector parameter to
 some subset (e.g. the position of an FittedStar) of these parameters.
 Furthermore, the implementation we have chosen does not allow
 trivially to allocate the actual parameters at successive positions in
-memory. The \RoutineName{AstrometricFit::AssignIndices} takes care of
+memory. The \RoutineName{AstrometryFit::AssignIndices} takes care of
 assigning indices to all classes of parameters. For the mappings, the
 actual \ClName{DistortionModel} implementation does this part of the
 job. All these indices are used to properly fill the Jacobian and
 gradient, and eventually to offset parameters in the
-\RoutineName{AstrometricFit::OffsetParams}.
+\RoutineName{AstrometryFit::OffsetParams}.
 
 Since the indexing of parameters is done dynamically, it is
 straightforward to only fit a subset of parameters. this is why the routine
-\RoutineName{AstrometricFit::AssignIndices} takes a string argument that specifies
+\RoutineName{AstrometryFit::AssignIndices} takes a string argument that specifies
 what is to be fitted.
 
 \section{Fitting the transformations between a set of images}
@@ -569,13 +569,13 @@ the provided code.
 # select objects measured at least twice.
         assoc.SelectFittedStars()
 # Send back fitted stars on the sky.
-        assoc.DeprojectFittedStars() # required for AstrometricFit
+        assoc.DeprojectFittedStars() # required for AstrometryFit
 # Chose a ProjectionHandler
         sky2TP = OneTPPerShoot(assoc.TheCcdImageList())
 # chose a distortion model
         spm = SimplePolyModel(assoc.TheCcdImageList(), sky2TP, True, 0)
 # Assemble the whole thing
-        fit = AstrometricFit(assoc,spm)
+        fit = AstrometryFit(assoc,spm)
 # we are ready to run. Initialize parameters by running "partial fits"
         fit.Minimize("Distortions")
         fit.Minimize("Positions")
