@@ -113,7 +113,7 @@ public:
     /*! The Jacobian is provided as triplets, the gradient as a dense
         vector. The parameters which vary are to be set using
         assignIndices.  */
-    void LSDerivatives(TripletList &tList, Eigen::VectorXd &rhs) const;
+    void LSDerivatives(TripletList &tripletList, Eigen::VectorXd &rhs) const;
 
     /**
      * Set parameter groups fixed or variable and assign indices to each
@@ -157,8 +157,8 @@ public:
      * Contributions to derivatives from (presumably) outlier terms. No
      * discarding done.
      */
-    void outliersContributions(MeasuredStarList &mOutliers, FittedStarList &fOutLiers, TripletList &tList,
-                               Eigen::VectorXd &grad);
+    void outliersContributions(MeasuredStarList &mOutliers, FittedStarList &fOutLiers,
+                               TripletList &tripletList, Eigen::VectorXd &grad);
 
     /**
      * Discards measurements and reference contributions contributing to the chi2 more than nSigmaCut,
@@ -223,11 +223,12 @@ public:
 
 private:
     //! Compute derivatives of measurement terms for this CcdImage
-    void LSDerivativesPerCcdImage(const CcdImage &ccdImage, TripletList &tList, Eigen::VectorXd &rhs,
+    void LSDerivativesPerCcdImage(const CcdImage &ccdImage, TripletList &tripletList, Eigen::VectorXd &rhs,
                                   const MeasuredStarList *msList = nullptr) const;
 
     //! Compute derivatives of reference terms (if any), associated to the FittedStarList
-    void LSDerivativesReference(const FittedStarList &fsl, TripletList &tList, Eigen::VectorXd &rhs) const;
+    void LSDerivativesReference(const FittedStarList &fittedStarList, TripletList &tripletList,
+                                Eigen::VectorXd &rhs) const;
 
     Point transformFittedStar(const FittedStar &fittedStar, const Gtransfo *sky2TP,
                               const Point &refractionVector, double refractionCoeff, double mjd) const;

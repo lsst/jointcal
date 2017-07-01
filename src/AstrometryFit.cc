@@ -93,7 +93,7 @@ static void tweakAstromMeasurementErrors(FatPoint &P, const MeasuredStar &Ms, do
 
 // we could consider computing the chi2 here.
 // (although it is not extremely useful)
-void AstrometryFit::LSDerivativesPerCcdImage(const CcdImage &ccdImage, TripletList &tList,
+void AstrometryFit::LSDerivativesPerCcdImage(const CcdImage &ccdImage, TripletList &tripletList,
                                              Eigen::VectorXd &rhs, const MeasuredStarList *msList) const {
     /***************************************************************************/
     /**  Changes in this routine should be reflected into accumulateStatImage  */
@@ -133,7 +133,7 @@ void AstrometryFit::LSDerivativesPerCcdImage(const CcdImage &ccdImage, TripletLi
     Eigen::Matrix2d alpha(2, 2);
     Eigen::VectorXd grad(npar_tot);
     // current position in the Jacobian
-    unsigned kTriplets = tList.getNextFreeIndex();
+    unsigned kTriplets = tripletList.getNextFreeIndex();
     const MeasuredStarList &catalog = (msList) ? *msList : ccdImage.getCatalogForFit();
 
     for (auto &i : catalog) {
@@ -222,16 +222,16 @@ void AstrometryFit::LSDerivativesPerCcdImage(const CcdImage &ccdImage, TripletLi
             for (unsigned ic = 0; ic < 2; ++ic) {
                 double val = halpha(ipar, ic);
                 if (val == 0) continue;
-                tList.addTriplet(indices[ipar], kTriplets + ic, val);
+                tripletList.addTriplet(indices[ipar], kTriplets + ic, val);
             }
             rhs(indices[ipar]) += grad(ipar);
         }
         kTriplets += 2;  // each measurement contributes 2 columns in the Jacobian
     }                    // end loop on measurements
-    tList.setNextFreeIndex(kTriplets);
+    tripletList.setNextFreeIndex(kTriplets);
 }
 
-void AstrometryFit::LSDerivativesReference(const FittedStarList &fsl, TripletList &tList,
+void AstrometryFit::LSDerivativesReference(const FittedStarList &fittedStarList, TripletList &tripletList,
                                            Eigen::VectorXd &rhs) const {
     /* We compute here the derivatives of the terms involving fitted
        stars and reference stars. They only provide contributions if we
@@ -246,7 +246,7 @@ void AstrometryFit::LSDerivativesReference(const FittedStarList &fsl, TripletLis
     GtransfoLin der;
     Eigen::Vector2d res, grad;
     unsigned indices[2 + NPAR_PM];
-    unsigned kTriplets = tList.getNextFreeIndex();
+    unsigned kTriplets = tripletList.getNextFreeIndex();
     /* We cannot use the spherical coordinates directly to evaluate
        Euclidean distances, we have to use a projector on some plane in
        order to express least squares. Not projecting could lead to a
@@ -254,7 +254,7 @@ void AstrometryFit::LSDerivativesReference(const FittedStarList &fsl, TripletLis
        projector. We construct a projector and will change its
        projection point at every object */
     TanRaDec2Pix proj(GtransfoLin(), Point(0., 0.));
-    for (auto const &i : fsl) {
+    for (auto const &i : fittedStarList) {
         const FittedStar &fs = *i;
         const RefStar *rs = fs.getRefStar();
         if (rs == nullptr) continue;
@@ -307,23 +307,23 @@ void AstrometryFit::LSDerivativesReference(const FittedStarList &fsl, TripletLis
             for (unsigned ic = 0; ic < 2; ++ic) {
                 double val = halpha(ipar, ic);
                 if (val == 0) continue;
-                tList.addTriplet(indices[ipar], kTriplets + ic, val);
+                tripletList.addTriplet(indices[ipar], kTriplets + ic, val);
             }
             rhs(indices[ipar]) += grad(ipar);
         }
         kTriplets += 2;  // each measurement contributes 2 columns in the Jacobian
     }
-    tList.setNextFreeIndex(kTriplets);
+    tripletList.setNextFreeIndex(kTriplets);
 }
 
 //! this routine computes the derivatives of all LS terms, including the ones that refer to references stars,
 //! if any
-void AstrometryFit::LSDerivatives(TripletList &tList, Eigen::VectorXd &rhs) const {
+void AstrometryFit::LSDerivatives(TripletList &tripletList, Eigen::VectorXd &rhs) const {
     auto L = _associations.getCcdImageList();
     for (auto const &im : L) {
-        LSDerivativesPerCcdImage(*im, tList, rhs);
+        LSDerivativesPerCcdImage(*im, tripletList, rhs);
     }
-    LSDerivativesReference(_associations.fittedStarList, tList, rhs);
+    LSDerivativesReference(_associations.fittedStarList, tripletList, rhs);
 }
 
 // This is almost a selection of lines of LSDerivativesPerCcdImage(CcdImage ...)
@@ -392,9 +392,9 @@ template <class Accum>
 void AstrometryFit::accumulateStatRefStars(Accum &accum) const {
     /* If you wonder why we project here, read comments in
        AstrometryFit::LSDerivativesReference(TripletList &TList, Eigen::VectorXd &Rhs) */
-    FittedStarList &fsl = _associations.fittedStarList;
+    FittedStarList &fittedStarList = _associations.fittedStarList;
     TanRaDec2Pix proj(GtransfoLin(), Point(0., 0.));
-    for (auto const &fs : fsl) {
+    for (auto const &fs : fittedStarList) {
         const RefStar *rs = fs->getRefStar();
         if (rs == nullptr) continue;
         proj.setTangentPoint(*fs);
@@ -447,15 +447,15 @@ void AstrometryFit::setMeasuredStarIndices(const MeasuredStar &ms, std::vector<u
 
 //! contributions to derivatives of (presumambly) outlier terms. No discarding done.
 void AstrometryFit::outliersContributions(MeasuredStarList &msOutliers, FittedStarList &fOutliers,
-                                          TripletList &tList, Eigen::VectorXd &grad) {
+                                          TripletList &tripletList, Eigen::VectorXd &grad) {
     // contributions from measurement terms:
     for (auto const &i : msOutliers) {
         MeasuredStarList tmp;
         tmp.push_back(i);
         const CcdImage &ccd = i->getCcdImage();
-        LSDerivativesPerCcdImage(ccd, tList, grad, &tmp);
+        LSDerivativesPerCcdImage(ccd, tripletList, grad, &tmp);
     }
-    LSDerivativesReference(fOutliers, tList, grad);
+    LSDerivativesReference(fOutliers, tripletList, grad);
 }
 
 unsigned AstrometryFit::removeOutliers(double nSigmaCut, const std::string &measOrRef) {
@@ -581,8 +581,8 @@ void AstrometryFit::assignIndices(const std::string &whatToFit) {
     unsigned ipar = _nParDistortions;
 
     if (_fittingPos) {
-        FittedStarList &fsl = _associations.fittedStarList;
-        for (auto const &i : fsl) {
+        FittedStarList &fittedStarList = _associations.fittedStarList;
+        for (auto const &i : fittedStarList) {
             FittedStar &fs = *i;
             // the parameter layout here is used also
             // - when filling the derivatives
@@ -609,8 +609,8 @@ void AstrometryFit::offsetParams(const Eigen::VectorXd &delta) {
     if (_fittingDistortions) _astrometryModel->offsetParams(delta);
 
     if (_fittingPos) {
-        FittedStarList &fsl = _associations.fittedStarList;
-        for (auto const &i : fsl) {
+        FittedStarList &fittedStarList = _associations.fittedStarList;
+        for (auto const &i : fittedStarList) {
             FittedStar &fs = *i;
             // the parameter layout here is used also
             // - when filling the derivatives
@@ -664,22 +664,22 @@ int AstrometryFit::minimize(const std::string &whatToFit, const double nSigRejCu
 
     // TODO : write a guesser for the number of triplets
     unsigned nTrip = (_LastNTrip) ? _LastNTrip : 1e6;
-    TripletList tList(nTrip);
+    TripletList tripletList(nTrip);
     Eigen::VectorXd grad(_nParTot);
     grad.setZero();
 
     // Fill the triplets
-    LSDerivatives(tList, grad);
-    _LastNTrip = tList.size();
+    LSDerivatives(tripletList, grad);
+    _LastNTrip = tripletList.size();
 
-    LOGLS_DEBUG(_log, "End of triplet filling, ntrip = " << tList.size());
+    LOGLS_DEBUG(_log, "End of triplet filling, ntrip = " << tripletList.size());
 
     SpMat hessian;
     {
-        SpMat jacobian(_nParTot, tList.getNextFreeIndex());
-        jacobian.setFromTriplets(tList.begin(), tList.end());
+        SpMat jacobian(_nParTot, tripletList.getNextFreeIndex());
+        jacobian.setFromTriplets(tripletList.begin(), tripletList.end());
         // release memory shrink_to_fit is C++11
-        tList.clear();  // tList.shrink_to_fit();
+        tripletList.clear();  // tripletList.shrink_to_fit();
         hessian = jacobian * jacobian.transpose();
     }  // release the Jacobian
 
@@ -714,16 +714,16 @@ int AstrometryFit::minimize(const std::string &whatToFit, const double nSigRejCu
         int n_outliers = findOutliers(nSigRejCut, moutliers, foutliers);
         tot_outliers += n_outliers;
         if (n_outliers == 0) break;
-        TripletList tList(1000);  // initial allocation size.
-        grad.setZero();           // recycle the gradient
+        TripletList tripletList(1000);  // initial allocation size.
+        grad.setZero();                 // recycle the gradient
         // compute the contributions of outliers to derivatives
-        outliersContributions(moutliers, foutliers, tList, grad);
+        outliersContributions(moutliers, foutliers, tripletList, grad);
         // actually discard them
         removeMeasOutliers(moutliers);
         removeRefOutliers(foutliers);
         // convert triplet list to eigen internal format
-        SpMat H(_nParTot, tList.getNextFreeIndex());
-        H.setFromTriplets(tList.begin(), tList.end());
+        SpMat H(_nParTot, tripletList.getNextFreeIndex());
+        H.setFromTriplets(tripletList.begin(), tripletList.end());
         int update_status = chol.update(H, false /* means downdate */);
         LOGLS_DEBUG(_log, "cholmod update_status " << update_status);
         /* The contribution of outliers to the gradient is the opposite
@@ -751,12 +751,12 @@ void AstrometryFit::checkStuff() {
     // DEBUG
     for (unsigned k = 0; k < sizeof(what2fit) / sizeof(what2fit[0]); ++k) {
         assignIndices(what2fit[k]);
-        TripletList tList(10000);
+        TripletList tripletList(10000);
         Eigen::VectorXd rhs(_nParTot);
         rhs.setZero();
-        LSDerivatives(tList, rhs);
-        SpMat jacobian(_nParTot, tList.getNextFreeIndex());
-        jacobian.setFromTriplets(tList.begin(), tList.end());
+        LSDerivatives(tripletList, rhs);
+        SpMat jacobian(_nParTot, tripletList.getNextFreeIndex());
+        jacobian.setFromTriplets(tripletList.begin(), tripletList.end());
         SpMat hessian = jacobian * jacobian.transpose();
 #ifdef STORAGE
         char name[24];
@@ -857,9 +857,9 @@ void AstrometryFit::makeRefResTuple(const std::string &tupleName) const {
           << "#nm: number of measurements of this FittedStar" << endl
           << "#end" << endl;
     // The following loop is heavily inspired from AstrometryFit::computeChi2()
-    const FittedStarList &fsl = _associations.fittedStarList;
+    const FittedStarList &fittedStarList = _associations.fittedStarList;
     TanRaDec2Pix proj(GtransfoLin(), Point(0., 0.));
-    for (auto const &i : fsl) {
+    for (auto const &i : fittedStarList) {
         const FittedStar &fs = *i;
         const RefStar *rs = fs.getRefStar();
         if (rs == nullptr) continue;
