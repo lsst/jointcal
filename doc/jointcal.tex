@@ -211,7 +211,7 @@ in pixel space of this CcdImage;
 \item $F_k$ is the (sky) position of the FittedStar corresponding 
 to this MeasuredStar. In the data structure, the FittedStar is just pointed to 
 by the MeasuredStar see fig. \ref{fig:AssocClasses};
-\item $W_{\gamma,i}$ is the measurement weight of $M_\gamma((X_{\gamma,i})$, i.e.
+\item $W_{\gamma,i}$ is the measurement weight of $M_\gamma(X_{\gamma,i})$, i.e.
 the inverse of the 2$\times$2 covariance matrix.
 \end{itemize}
 
@@ -245,7 +245,7 @@ The main reason for this separation is that one could conceive
 different ways to model the mappings from pixel coordinates to
 the tangent plane, and the actual model should be abstract
 in the routines accumulating gradient and Jacobian. The class
-\ClName{DistortionModel} is an abstract class aiming at
+\ClName{AstrometryModel} is an abstract class aiming at
 connecting generically the fitting routines to actual models.
 We have so far coded two of these models:
 \begin{itemize} 
@@ -372,7 +372,12 @@ Let us rewrite the $\chi^2$ (expression~\ref{eq:chi2}) as:
          & +\sum_j {R^r_{j}}^T W_{j}  R^r_{j} \label{eq:grad_chi2}
 \end{align}
 where the meaning of the $R$ vectors is easily derived by comparing to
-\ref{eq:chi2}. We want to find the point where $d \chi^2/d \theta = 0$,
+\ref{eq:chi2} (from which we borrow the notations):
+\begin{align}
+R^m_{\gamma i}  &= M_\gamma(X_{\gamma,i})-P_{\gamma}(F_k) \\
+R^r_{j} &= [P(F_j)-P(R_j)]  \label{eq:ref_res}
+\end{align}
+We want to find the point where $d \chi^2/d \theta = 0$,
 where $\theta$ of (size $N_p$) denotes the vector of parameters. We have
 \begin{align}
 \frac{1}{2} \frac{d \chi^2}{d \theta} & =  \sum_{\gamma,i}  {R^m_{\gamma i}}^T W_{\gamma,i}  H^m_{\gamma i} \\
@@ -381,19 +386,23 @@ where $\theta$ of (size $N_p$) denotes the vector of parameters. We have
 where the H matrices are $2 \times N_p$ in size and read:
 \begin{align}
  H^m_{\gamma i} & = \frac{d {R^m_{\gamma i}}}{ d \theta} \\
-  H^r_{j}     & = \frac{d {R^m_{j}}}{ d \theta}
+  H^r_{j}     & = \frac{d {R^r_{j}}}{ d \theta}
 \end{align}
 The matrix $W_{\gamma,i}$ is obtained by transporting the measurement
-errors through the fitted mapping. This introduces a dependency of the
-$\chi^2$ on the parameters that we have decided not to track, because
+errors through the fitted mapping. This introduces an extra dependency of the
+$\chi^2$ on the parameters, that we have decided not to track in the derivatives, because
 these errors mostly depend on the mapping scaling, which is very well
 determined from the beginning. However, small changes of scaling can
 lead to the $\chi^2$ increasing between iterations. This is why we
 provide the \ClName{AstrometryModel::freezeErrorScales} which allows
 one to uses for there on the {\it current} state of the model to 
-propagate errors, even if mappings are updated.  
+propagate errors, even if mappings are updated. $d R^m_{\gamma i}/d \theta$
+has two non-zero blocks: the derivatives with respect to the parameters of the $M_\gamma$
+mapping
+(which are delivered by the Gtransfo-derived class that implements the
+fitted mapping, namely by the \ClName{Gtransfo::paramDerivatives} routine); and the derivative with respect to the $F_k$ position which reads $d P_\gamma(F_k)/d F_k$ (delivered as well by the class that implements the projector, via the \ClName{Gtransfo::computeDerivative} routine).
 
-The matrix $W_j$ should be derived from
+Regarding reference terms, the matrix $W_j$ should be derived from
 the reference catalog position uncertainty matrix $V_0$ (typically
 delivered for ($\alpha,\delta$) coordinates):
 \begin{equation*}
@@ -402,9 +411,9 @@ W_j = (P'^T V_0 P')^{-1}
 where $P'$ is the derivative of the projector. The inverse of $W_j$ is
 in practice obtained using the routine
 \ClName{Gtransfo::transformPosAndErrors} which is attached to the
-projector. The derivative of the reference residual $R^m_{j}$ with respect to
-the \ClName{FittedStar} position $F_j$ (see eq. \ref{eq:chi2}),
-requires to know explicitly the $2\times 2$ matrix of the derivative
+projector. The derivative of the reference residual $R^r_{j}$ with respect to
+the \ClName{FittedStar} position $F_j$ (see eq. \ref{eq:ref_res}),
+is just the $2\times 2$ matrix of the derivative
 $P'$ of the projector $P$, which we compute using \ClName{Gtransfo::computeDerivative}.
 
 
@@ -492,7 +501,8 @@ of Cholmod, which considerably speeds up the outlier removal.
 This is done in the CholmodSimplicialLDLT2 class. Using Cholmod has 
 a drawback: we need its run-time library. Cholmod is now packaged 
 in SuiteSparse, much bigger than what we need. This is why we packaged
-the smallest possible subset of SuiteSparse into jointcal\_cholmod. 
+the smallest possible subset of SuiteSparse that fulfills our needs 
+into jointcal\_cholmod.
 
 
 %In the basic tests we have performed (with typically $\sim 1000$ calexps),
@@ -508,7 +518,7 @@ Furthermore, the implementation we have chosen does not allow
 trivially to allocate the actual parameters at successive positions in
 memory. The \RoutineName{AstrometryFit::AssignIndices} takes care of
 assigning indices to all classes of parameters. For the mappings, the
-actual \ClName{DistortionModel} implementation does this part of the
+actual \ClName{AstrometryModel} implementation does this part of the
 job. All these indices are used to properly fill the Jacobian and
 gradient, and eventually to offset parameters in the
 \RoutineName{AstrometryFit::OffsetParams}.
