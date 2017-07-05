@@ -424,10 +424,10 @@ GtransfoPoly::GtransfoPoly(const Gtransfo *gtransfo, const Frame &frame, unsigne
     double step = sqrt(fabs(frame.getArea()) / double(nPoint));
     for (double x = frame.xMin + step / 2; x <= frame.xMax; x += step)
         for (double y = frame.yMin + step / 2; y <= frame.yMax; y += step) {
-            auto pix = std::make_shared<BaseStar>(x, y, 0);
+            auto pix = std::make_shared<BaseStar>(x, y, 0, 0);
             double xtr, ytr;
             gtransfo->apply(x, y, xtr, ytr);
-            auto tp = std::make_shared<BaseStar>(xtr, ytr, 0);
+            auto tp = std::make_shared<BaseStar>(xtr, ytr, 0, 0);
             /* These are fake stars so no need to transform fake errors.
                all errors (and weights) will be equal : */
             sm.push_back(StarMatch(*pix, *tp, pix, tp));
@@ -453,7 +453,6 @@ void GtransfoPoly::computeMonomials(double xIn, double yIn, double *monomial) co
         double yy = 1;
         unsigned k = ix * (ix + 1) / 2;
         for (unsigned iy = 0; iy <= _degree - ix; ++iy) {
-            //	  assert(k<nterms);
             monomial[k] = xx * yy;
             yy *= yIn;
             k += ix + iy + 2;

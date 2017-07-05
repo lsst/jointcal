@@ -79,7 +79,7 @@ public:
     /**
      * Does a 1 step minimization, assuming a linear model.
      *
-     * It calls assignIndices, LSDerivatives, solves the linear system and calls
+     * It calls assignIndices, leastSquareDerivatives, solves the linear system and calls
      * offsetParams. No line search. Relies on sparse linear algebra.
      *
      * This is a complete Newton Raphson step. Compute first and second
@@ -88,7 +88,7 @@ public:
      * @param[in]  whatToFit   Valid strings: "Distortions", "Positions",
      *                         "Refrac", "PM" which define which parameter set
      *                         is going to be variable when computing
-     *                         derivatives (LSDerivatives) and minimizing
+     *                         derivatives (leastSquareDerivatives) and minimizing
      *                         (minimize()). whatToFit="Positions Distortions"
      *                         will minimize w.r.t mappings and objects
      *                         positions, and not w.r.t proper motions and
@@ -113,7 +113,7 @@ public:
     /*! The Jacobian is provided as triplets, the gradient as a dense
         vector. The parameters which vary are to be set using
         assignIndices.  */
-    void LSDerivatives(TripletList &tripletList, Eigen::VectorXd &rhs) const;
+    void leastSquareDerivatives(TripletList &tripletList, Eigen::VectorXd &rhs) const;
 
     /**
      * Set parameter groups fixed or variable and assign indices to each
@@ -122,7 +122,7 @@ public:
      * @param[in]  whatToFit  Valid strings: "Distortions", "Positions",
      *                        "Refrac", "PM" which define which parameter set is
      *                        going to be variable when computing derivatives
-     *                        (LSDerivatives) and minimizing (minimize()).
+     *                        (leastSquareDerivatives) and minimizing (minimize()).
      */
     void assignIndices(const std::string &whatToFit);
 
@@ -222,13 +222,17 @@ public:
     void checkStuff();
 
 private:
-    //! Compute derivatives of measurement terms for this CcdImage
-    void LSDerivativesPerCcdImage(const CcdImage &ccdImage, TripletList &tripletList, Eigen::VectorXd &rhs,
-                                  const MeasuredStarList *msList = nullptr) const;
+    /** Compute the derivatives of the measurement terms (measured stars and model) for a CcdImage.
+     *
+     * The last argument allows to to process a sub-list for outlier removal.
+     */
+    void leastSquareDerivativesMeasurement(const CcdImage &ccdImage, TripletList &tripletList,
+                                           Eigen::VectorXd &rhs,
+                                           const MeasuredStarList *msList = nullptr) const;
 
-    //! Compute derivatives of reference terms (if any), associated to the FittedStarList
-    void LSDerivativesReference(const FittedStarList &fittedStarList, TripletList &tripletList,
-                                Eigen::VectorXd &rhs) const;
+    /// Compute derivatives of reference terms
+    void leastSquareDerivativesReference(const FittedStarList &fittedStarList, TripletList &tripletList,
+                                         Eigen::VectorXd &rhs) const;
 
     Point transformFittedStar(const FittedStar &fittedStar, const Gtransfo *sky2TP,
                               const Point &refractionVector, double refractionCoeff, double mjd) const;

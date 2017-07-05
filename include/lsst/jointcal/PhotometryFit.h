@@ -38,7 +38,7 @@ public:
     /**
      * Does a 1 step minimization, assuming a linear model.
      *
-     * It calls assignIndices, LSDerivatives, solves the linear system and calls
+     * It calls assignIndices, leastSquareDerivatives, solves the linear system and calls
      * offsetParams. No line search. Relies on sparse linear algebra.
      *
      * This is a complete Newton Raphson step. Compute first and second
@@ -69,7 +69,7 @@ public:
      * The Jacobian is provided as triplets, the gradient as a dense vector.
      * The parameters which vary are to be set using assignIndices.
      */
-    void LSDerivatives(TripletList &tripletList, Eigen::VectorXd &rhs) const;
+    void leastSquareDerivatives(TripletList &tripletList, Eigen::VectorXd &rhs) const;
 
     /**
      * Set parameter groups fixed or variable and assign indices to each parameter
@@ -107,29 +107,40 @@ public:
 
 private:
     template <class ListType, class Accum>
-    void accumulateStat(ListType &listType, Accum &accum) const;
+    void accumulateStatImageList(ListType &listType, Accum &accum) const;
 
-    void outliersContributions(MeasuredStarList &outliers, TripletList &tripletList, Eigen::VectorXd &grad);
+    template <class Accum>
+    void accumulateStatRefStars(Accum &accum) const;
 
-    void findOutliers(double nSigCut, MeasuredStarList &outliers) const;
+    void outliersContributions(MeasuredStarList &msOutliers, FittedStarList &fsOutliers,
+                               TripletList &tripletList, Eigen::VectorXd &grad);
+
+    unsigned findOutliers(double nSigmaCut, MeasuredStarList &msOutliers, FittedStarList &fsOutliers) const;
 
     void setMeasuredStarIndices(const MeasuredStar &measuredStar, std::vector<unsigned> &indices) const;
 
-    /** Compute the derivatives for a CcdImage.
+    /** Compute the derivatives of the measured stars and model for a CcdImage.
      *
      * The last argument allows to to process a sub-list for outlier removal.
      */
-    void LSDerivativesPerCcdImage(const CcdImage &ccdImage, TripletList &tripletList, Eigen::VectorXd &rhs,
-                                  const MeasuredStarList *measuredStarList = nullptr) const;
+    void leastSquareDerivativesMeasurement(const CcdImage &ccdImage, TripletList &tripletList,
+                                           Eigen::VectorXd &rhs,
+                                           const MeasuredStarList *measuredStarList = nullptr) const;
 
     /// Compute the derivatives of the reference terms
-    void LSDerivativesReference(const FittedStarList &fittedStarList, TripletList &tripletList,
-                                Eigen::VectorXd &rhs) const;
+    void leastSquareDerivativesReference(const FittedStarList &fittedStarList, TripletList &tripletList,
+                                         Eigen::VectorXd &rhs) const;
 
-#ifdef STORAGE
     //! returns how many outliers were removed. No refit done.
     unsigned removeOutliers(double nSigCut);
 
+    /// Just removes measuredStar outliers from the fit. No Refit done.
+    void removeMeasOutliers(MeasuredStarList &outliers);
+
+    /// Just removes refStar outliers from the fit. No Refit done.
+    void removeRefOutliers(FittedStarList &outliers);
+
+#ifdef STORAGE
     //! Produces a tuple containing residuals of measurement terms.
     void makeMeasResTuple(const std::string &tupleName) const;
 

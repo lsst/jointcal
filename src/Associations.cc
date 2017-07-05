@@ -150,6 +150,7 @@ void Associations::collectRefStars(lsst::afw::table::SortedCatalogT<lsst::afw::t
 
     afw::table::CoordKey coordKey = refCat.getSchema()["coord"];
     auto fluxKey = refCat.getSchema().find<double>(fluxField).key;
+    auto fluxErrKey = refCat.getSchema().find<double>(fluxField + "Sigma").key;
 
     _filterMap.clear();
     _filterMap.reserve(refFluxMap.size());
@@ -165,6 +166,7 @@ void Associations::collectRefStars(lsst::afw::table::SortedCatalogT<lsst::afw::t
 
         afw::coord::Coord coord = record->get(coordKey);
         double defaultFlux = record->get(fluxKey) / JanskyToMaggy;
+        double defaultFluxErr = record->get(fluxErrKey) / JanskyToMaggy;
         std::vector<double> fluxList(nFilters);
         std::vector<double> fluxErrList(nFilters);
         for (auto const &filter : _filterMap) {
@@ -173,7 +175,7 @@ void Associations::collectRefStars(lsst::afw::table::SortedCatalogT<lsst::afw::t
         }
         double ra = lsst::afw::geom::radToDeg(coord.getLongitude());
         double dec = lsst::afw::geom::radToDeg(coord.getLatitude());
-        auto star = std::make_shared<RefStar>(ra, dec, defaultFlux, fluxList, fluxErrList);
+        auto star = std::make_shared<RefStar>(ra, dec, defaultFlux, defaultFluxErr, fluxList, fluxErrList);
 
         // TODO DM-10826: RefCats aren't guaranteed to have position errors.
         // TODO: Need to devise a way to check whether the refCat has position errors

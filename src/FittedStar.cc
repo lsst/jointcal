@@ -24,9 +24,7 @@ FittedStar::FittedStar(const MeasuredStar &measuredStar)
           _wmag(measuredStar.getMagWeight()),
           _indexInMatrix(-1),
           _measurementCount(0),
-          _refStar(nullptr),
-          _flux2(-1),
-          _fluxErr2(-1) {
+          _refStar(nullptr) {
     _fluxErr = measuredStar.getInstFluxErr();
 }
 

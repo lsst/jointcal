@@ -93,8 +93,9 @@ static void tweakAstromMeasurementErrors(FatPoint &P, const MeasuredStar &Ms, do
 
 // we could consider computing the chi2 here.
 // (although it is not extremely useful)
-void AstrometryFit::LSDerivativesPerCcdImage(const CcdImage &ccdImage, TripletList &tripletList,
-                                             Eigen::VectorXd &rhs, const MeasuredStarList *msList) const {
+void AstrometryFit::leastSquareDerivativesMeasurement(const CcdImage &ccdImage, TripletList &tripletList,
+                                                      Eigen::VectorXd &rhs,
+                                                      const MeasuredStarList *msList) const {
     /***************************************************************************/
     /**  Changes in this routine should be reflected into accumulateStatImage  */
     /***************************************************************************/
@@ -231,8 +232,8 @@ void AstrometryFit::LSDerivativesPerCcdImage(const CcdImage &ccdImage, TripletLi
     tripletList.setNextFreeIndex(kTriplets);
 }
 
-void AstrometryFit::LSDerivativesReference(const FittedStarList &fittedStarList, TripletList &tripletList,
-                                           Eigen::VectorXd &rhs) const {
+void AstrometryFit::leastSquareDerivativesReference(const FittedStarList &fittedStarList,
+                                                    TripletList &tripletList, Eigen::VectorXd &rhs) const {
     /* We compute here the derivatives of the terms involving fitted
        stars and reference stars. They only provide contributions if we
        are fitting positions: */
@@ -318,15 +319,15 @@ void AstrometryFit::LSDerivativesReference(const FittedStarList &fittedStarList,
 
 //! this routine computes the derivatives of all LS terms, including the ones that refer to references stars,
 //! if any
-void AstrometryFit::LSDerivatives(TripletList &tripletList, Eigen::VectorXd &rhs) const {
+void AstrometryFit::leastSquareDerivatives(TripletList &tripletList, Eigen::VectorXd &rhs) const {
     auto L = _associations.getCcdImageList();
     for (auto const &im : L) {
-        LSDerivativesPerCcdImage(*im, tripletList, rhs);
+        leastSquareDerivativesMeasurement(*im, tripletList, rhs);
     }
-    LSDerivativesReference(_associations.fittedStarList, tripletList, rhs);
+    leastSquareDerivativesReference(_associations.fittedStarList, tripletList, rhs);
 }
 
-// This is almost a selection of lines of LSDerivativesPerCcdImage(CcdImage ...)
+// This is almost a selection of lines of leastSquareDerivativesMeasurement(CcdImage ...)
 /* This routine (and the following one) is template because it is used
 both with its first argument as "const CCdImage &" and "CcdImage &",
 and I did not want to replicate it.  The constness of the iterators is
@@ -335,7 +336,7 @@ automagically set by declaring them as "auto" */
 template <class ImType, class Accum>
 void AstrometryFit::accumulateStatImage(ImType &image, Accum &accu) const {
     /**********************************************************************/
-    /**  Changes in this routine should be reflected into LSDerivativesPerCcdImage  */
+    /**  Changes in this routine should be reflected into leastSquareDerivativesMeasurement  */
     /**********************************************************************/
     /* Setup */
     // 1 : get the Mapping's
@@ -391,7 +392,7 @@ void AstrometryFit::accumulateStatImageList(ListType &list, Accum &accum) const 
 template <class Accum>
 void AstrometryFit::accumulateStatRefStars(Accum &accum) const {
     /* If you wonder why we project here, read comments in
-       AstrometryFit::LSDerivativesReference(TripletList &TList, Eigen::VectorXd &Rhs) */
+       AstrometryFit::leastSquareDerivativesReference(TripletList &TList, Eigen::VectorXd &Rhs) */
     FittedStarList &fittedStarList = _associations.fittedStarList;
     TanRaDec2Pix proj(GtransfoLin(), Point(0., 0.));
     for (auto const &fs : fittedStarList) {
@@ -453,9 +454,9 @@ void AstrometryFit::outliersContributions(MeasuredStarList &msOutliers, FittedSt
         MeasuredStarList tmp;
         tmp.push_back(i);
         const CcdImage &ccd = i->getCcdImage();
-        LSDerivativesPerCcdImage(ccd, tripletList, grad, &tmp);
+        leastSquareDerivativesMeasurement(ccd, tripletList, grad, &tmp);
     }
-    LSDerivativesReference(fOutliers, tripletList, grad);
+    leastSquareDerivativesReference(fOutliers, tripletList, grad);
 }
 
 unsigned AstrometryFit::removeOutliers(double nSigmaCut, const std::string &measOrRef) {
@@ -669,7 +670,7 @@ int AstrometryFit::minimize(const std::string &whatToFit, const double nSigRejCu
     grad.setZero();
 
     // Fill the triplets
-    LSDerivatives(tripletList, grad);
+    leastSquareDerivatives(tripletList, grad);
     _LastNTrip = tripletList.size();
 
     LOGLS_DEBUG(_log, "End of triplet filling, ntrip = " << tripletList.size());
@@ -754,7 +755,7 @@ void AstrometryFit::checkStuff() {
         TripletList tripletList(10000);
         Eigen::VectorXd rhs(_nParTot);
         rhs.setZero();
-        LSDerivatives(tripletList, rhs);
+        leastSquareDerivatives(tripletList, rhs);
         SpMat jacobian(_nParTot, tripletList.getNextFreeIndex());
         jacobian.setFromTriplets(tripletList.begin(), tripletList.end());
         SpMat hessian = jacobian * jacobian.transpose();

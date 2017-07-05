@@ -49,9 +49,6 @@ void declarePoint(py::module &mod) {
 void declareBaseStar(py::module &mod) {
     py::class_<BaseStar, std::shared_ptr<BaseStar>, Point> cls(mod, "BaseStar");
 
-    cls.def(py::init<>());
-    cls.def(py::init<double, double, double>(), "x"_a, "y"_a, "flux"_a);
-
     // these three are actually declared in FatPoint, but we don't need that in Python.
     // NOTE: see DM-9814 about the necessity of the pointer cast below.
     cls.def_readonly("vx", (double BaseStar::*)&BaseStar::vx);

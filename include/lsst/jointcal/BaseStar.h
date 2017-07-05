@@ -32,8 +32,10 @@ public:
         _flux = 0;
     };
     //! constructor
-    BaseStar(double xx, double yy, double flux) : FatPoint(xx, yy), _flux(flux){};
-    BaseStar(const Point &point, double flux) : FatPoint(point), _flux(flux){};
+    BaseStar(double xx, double yy, double flux, double fluxErr)
+            : FatPoint(xx, yy), _flux(flux), _fluxErr(fluxErr){};
+    BaseStar(const Point &point, double flux, double fluxErr)
+            : FatPoint(point), _flux(flux), _fluxErr(fluxErr){};
 
     //! access stuff.
     double getX() const { return x; }

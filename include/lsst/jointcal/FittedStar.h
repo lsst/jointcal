@@ -29,12 +29,12 @@ struct PmBlock {
     PmBlock() : pmx(0), pmy(0), epmx(0), epmy(0), epmxy(0), color(0), mightMove(false){};
 };
 
-//! The objects which have been measured several times. The MeasuredStar s measuring the same object in
-//! differenr CcdImage s point to the same FittedStar.
+/**
+ * The objects which have been measured several times.
+ *
+ * The MeasuredStars representing the same object in different CcdImages each point to one FittedStar.
+ */
 class FittedStar : public BaseStar, public PmBlock {
-    friend class PhotometryFit;
-    friend class PhotometryFit2;
-
 private:
     double _mag;
     double _emag;
@@ -44,9 +44,7 @@ private:
     int _measurementCount;
     const RefStar* _refStar;
 
-    double _flux2;
     double _fluxErr;
-    double _fluxErr2;
 
 public:
     FittedStar()
@@ -57,9 +55,7 @@ public:
               _wmag(0),
               _indexInMatrix(-1),
               _measurementCount(0),
-              _refStar(nullptr),
-              _fluxErr(-1),
-              _fluxErr2(-1) {}
+              _refStar(nullptr) {}
 
     FittedStar(const BaseStar& baseStar)
             : BaseStar(baseStar),
@@ -69,10 +65,7 @@ public:
               _wmag(0),
               _indexInMatrix(0),
               _measurementCount(0),
-              _refStar(nullptr),
-              _flux2(-1),
-              _fluxErr(-1),
-              _fluxErr2(-1) {}
+              _refStar(nullptr) {}
 
     //!
     FittedStar(const MeasuredStar& measuredStar);
@@ -116,11 +109,6 @@ public:
 
     //! Get the astrometric reference star associated with this star.
     const RefStar* getRefStar() const { return _refStar; };
-
-    //! getters
-    double getFluxErr() const { return _fluxErr; }
-    double getFlux2() const { return _flux2; }
-    double getFluxErr2() const { return _fluxErr2; }
 };
 
 /****** FittedStarList */

@@ -83,6 +83,15 @@ struct Chi2List : public std::vector<Chi2Star> {
         double sigma = sqrt(sum2 / this->size() - sqr(average));
         return std::make_pair(average, sigma);
     }
+
+    friend std::ostream& operator<<(std::ostream& s, const Chi2List& chi2List) {
+        s << "chi2 per star : ";
+        for (auto chi2 : chi2List) {
+            s << *(chi2.star) << " chi2: " << chi2.chi2 << " ; ";
+        }
+        s << std::endl;
+        return s;
+    }
 };
 
 }  // namespace jointcal
