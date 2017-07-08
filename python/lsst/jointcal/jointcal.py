@@ -454,6 +454,8 @@ class JointcalTask(pipeBase.CmdLineTask):
             model = lsst.jointcal.SimplePhotometryModel(associations.getCcdImageList())
 
         fit = lsst.jointcal.PhotometryFit(associations, model)
+        chi2 = fit.computeChi2()
+        self.log.info("Initialized: %s", str(chi2))
         fit.minimize("Model")
         chi2 = fit.computeChi2()
         self.log.info(str(chi2))
@@ -508,6 +510,8 @@ class JointcalTask(pipeBase.CmdLineTask):
                                                   True, 0, self.config.polyOrder)
 
         fit = lsst.jointcal.AstrometryFit(associations, model, self.config.posError)
+        chi2 = fit.computeChi2()
+        self.log.info("Initialized: %s", str(chi2))
         fit.minimize("Distortions")
         chi2 = fit.computeChi2()
         self.log.info(str(chi2))
