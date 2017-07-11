@@ -60,6 +60,7 @@ void CcdImage::LoadCatalog(const lsst::afw::table::SortedCatalogT<lsst::afw::tab
                                                                      << ms->vx * ms->vy);
             continue;
         }
+        ms->setId(record.getId());
         ms->setInstFlux(record.get(fluxKey));
         ms->setInstFluxErr(record.get(fluxErrKey));
         // TODO: the below lines will be less clumsy once DM-4044 is cleaned up and we can say:

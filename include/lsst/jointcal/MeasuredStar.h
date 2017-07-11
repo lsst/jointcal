@@ -22,6 +22,8 @@ public:
     double chi2;
 
 private:
+    unsigned _id;  // id in original catalog
+
     // on-chip flux, in ADU
     double _instFlux;
     double _instFluxErr;
@@ -33,10 +35,17 @@ private:
 public:
     //!
     MeasuredStar()
-            : BaseStar(), mag(0.), wmag(0.), _instFlux(0.), _instFluxErr(0.), _ccdImage(0), _valid(true) {}
+            : BaseStar(),
+              mag(0.),
+              wmag(0.),
+              _id(0),
+              _instFlux(0.),
+              _instFluxErr(0.),
+              _ccdImage(0),
+              _valid(true) {}
 
     MeasuredStar(const BaseStar &baseStar)
-            : BaseStar(baseStar), mag(0.), wmag(0.), _instFluxErr(0.), _ccdImage(0), _valid(true) {}
+            : BaseStar(baseStar), mag(0.), wmag(0.), _id(0), _instFluxErr(0.), _ccdImage(0), _valid(true) {}
 
     void setFittedStar(std::shared_ptr<FittedStar> fittedStar) {
         if (fittedStar) fittedStar->getMeasurementCount()++;
@@ -45,7 +54,7 @@ public:
 
     void dump(std::ostream &stream = std::cout) const {
         BaseStar::dump(stream);
-        stream << " ccdImage: " << _ccdImage << " valid: " << _valid;
+        stream << " id: " << _id << " valid: " << _valid;
     }
 
     void setInstFlux(double instFlux) { _instFlux = instFlux; }
@@ -54,6 +63,9 @@ public:
     double getInstFlux() const { return _instFlux; }
     double getInstFluxErr() const { return _instFluxErr; }
     double getMag() const { return mag; }
+
+    void setId(unsigned id) { _id = id; }
+    unsigned getId() { return _id; }
 
     //! the inverse of the mag variance
     double getMagWeight() const { return (_instFlux * _instFlux / (_instFluxErr * _instFluxErr)); }
