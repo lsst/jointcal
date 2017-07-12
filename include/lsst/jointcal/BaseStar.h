@@ -55,7 +55,7 @@ public:
     }
 
     virtual void dump(std::ostream &stream = std::cout) const {
-        stream << "x: " << x << " y: " << y << " flux: " << _flux;
+        stream << "x: " << x << " y: " << y << " flux: " << _flux << " fluxErr: " << _fluxErr;
     }
 
     BaseStar &operator=(const Point &point) {
