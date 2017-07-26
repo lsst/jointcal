@@ -1,6 +1,6 @@
 // -*- C++ -*-
-//
 #include <iostream>
+#include <limits>
 #include <sstream>
 
 #include "lsst/log/Log.h"
@@ -150,8 +150,16 @@ void Associations::collectRefStars(lsst::afw::table::SortedCatalogT<lsst::afw::t
 
     afw::table::CoordKey coordKey = refCat.getSchema()["coord"];
     auto fluxKey = refCat.getSchema().find<double>(fluxField).key;
-    auto fluxErrKey = refCat.getSchema().find<double>(fluxField + "Sigma").key;
-
+    // Don't blow up if the reference catalog doesn't contain errors.
+    afw::table::Key<double> fluxErrKey;
+    try {
+        fluxErrKey = refCat.getSchema().find<double>(fluxField + "Sigma").key;
+    } catch (pex::exceptions::NotFoundError) {
+        LOGLS_WARN(_log, "Flux error field ("
+                                 << fluxField + "Sigma"
+                                 << ") not found in reference catalog. Not using ref flux errors.");
+    }
+    std::cout << "Error key: " << fluxErrKey << " valid: " << fluxErrKey.isValid() << std::endl;
     _filterMap.clear();
     _filterMap.reserve(refFluxMap.size());
     size_t nFilters = 0;
@@ -166,7 +174,11 @@ void Associations::collectRefStars(lsst::afw::table::SortedCatalogT<lsst::afw::t
 
         afw::coord::Coord coord = record->get(coordKey);
         double defaultFlux = record->get(fluxKey) / JanskyToMaggy;
-        double defaultFluxErr = record->get(fluxErrKey) / JanskyToMaggy;
+        double defaultFluxErr;
+        if (fluxErrKey.isValid())
+            defaultFluxErr = record->get(fluxErrKey) / JanskyToMaggy;
+        else
+            defaultFluxErr = std::numeric_limits<double>::quiet_NaN();
         std::vector<double> fluxList(nFilters);
         std::vector<double> fluxErrList(nFilters);
         for (auto const &filter : _filterMap) {
