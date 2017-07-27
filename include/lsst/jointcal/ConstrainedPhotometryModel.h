@@ -30,12 +30,21 @@ public:
 
     double photomFactor(CcdImage const &ccdImage, const Point &where) const { return 0; }
 
-    void setIndicesAndDerivatives(MeasuredStar const &measuredStar, CcdImage const &ccdImage,
-                                  std::vector<unsigned> &indices, Eigen::VectorXd &D) {
-        indices.reserve(_myMap.size());
-    }
+    void getMappingIndices(CcdImage const &ccdImage, std::vector<unsigned> &indices) {}
+
+    void computeParameterDerivatives(MeasuredStar const &measuredStar, CcdImage const &ccdImage,
+                                     Eigen::VectorXd &derivatives) {}
 
 private:
+    PhotometryMapping *findMapping(CcdImage const &ccdImage, std::string name) const {
+        return nullptr;  // waiting on creation of ConstrainedPhotometryModel.cc
+        // auto i = _myMap.find(&ccdImage);
+        // if (i == _myMap.end())
+        //     throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,
+        //                       "SimplePolyModel::" + name + ", cannot find CcdImage " + ccdImage.getName());
+        // return i->second.get();
+    }
+
     typedef std::map<std::shared_ptr<CcdImage>, std::unique_ptr<PhotometryMapping>> mapType;
     mapType _myMap;
     // typedef std::map<VisitIdType, std::unique_ptr<ConstrainedPhotometryMapping>> VisitMapType;

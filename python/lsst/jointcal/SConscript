@@ -2,15 +2,14 @@
 from lsst.sconsUtils import scripts
 scripts.BasicSConscript.pybind11(
     ['associations',
-     'astrometryFit',
      'astrometryModels',
      'ccdImage',
      'chi2',
+     'fitter',
      'frame',
      'gtransfo',
      'jointcalControl',
      'mappings',
-     'photometryFit',
      'photometryModels',
      'photometryTransfo',
      'projectionHandler',

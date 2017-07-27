@@ -22,8 +22,11 @@
 
 #include "pybind11/pybind11.h"
 
-#include "lsst/jointcal/Chi2.h"
 #include "lsst/jointcal/Associations.h"
+#include "lsst/jointcal/AstrometryFit.h"
+#include "lsst/jointcal/AstrometryModel.h"
+#include "lsst/jointcal/Chi2.h"
+#include "lsst/jointcal/FitterBase.h"
 #include "lsst/jointcal/PhotometryFit.h"
 #include "lsst/jointcal/PhotometryModel.h"
 
@@ -34,22 +37,36 @@ namespace lsst {
 namespace jointcal {
 namespace {
 
-void declarePhotometryFit(py::module &mod) {
-    py::class_<PhotometryFit, std::shared_ptr<PhotometryFit>> cls(mod, "PhotometryFit");
+void declareFitterBase(py::module &mod) {
+    py::class_<FitterBase, std::shared_ptr<FitterBase>> cls(mod, "FitterBase");
 
-    cls.def(py::init<Associations &, PhotometryModel *>(), "associations"_a, "photometryModel"_a);
-
-    cls.def("minimize", &PhotometryFit::minimize, "whatToFit"_a, "nSigmaCut"_a = 0);
-    cls.def("computeChi2", &PhotometryFit::computeChi2);
-    cls.def("makeResTuple", &PhotometryFit::makeResTuple);
+    cls.def("minimize", &FitterBase::minimize, "whatToFit"_a, "nSigRejCut"_a = 0);
+    cls.def("computeChi2", &FitterBase::computeChi2);
+    cls.def("saveResultTuples", &FitterBase::saveResultTuples);
 }
 
-PYBIND11_PLUGIN(photometryFit) {
+void declareAstrometryFit(py::module &mod) {
+    py::class_<AstrometryFit, std::shared_ptr<AstrometryFit>, FitterBase> cls(mod, "AstrometryFit");
+
+    cls.def(py::init<Associations &, AstrometryModel &, double>(), "associations"_a, "astrometryModel"_a,
+            "posError"_a);
+}
+
+void declarePhotometryFit(py::module &mod) {
+    py::class_<PhotometryFit, std::shared_ptr<PhotometryFit>, FitterBase> cls(mod, "PhotometryFit");
+
+    cls.def(py::init<Associations &, PhotometryModel &>(), "associations"_a, "photometryModel"_a);
+}
+
+PYBIND11_PLUGIN(fitter) {
     py::module::import("lsst.jointcal.associations");
+    py::module::import("lsst.jointcal.astrometryModels");
     py::module::import("lsst.jointcal.chi2");
     py::module::import("lsst.jointcal.photometryModels");
-    py::module mod("photometryFit");
+    py::module mod("fitter");
 
+    declareFitterBase(mod);
+    declareAstrometryFit(mod);
     declarePhotometryFit(mod);
 
     return mod.ptr();

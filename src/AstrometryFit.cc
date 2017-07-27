@@ -11,6 +11,7 @@
 #include "lsst/jointcal/Associations.h"
 #include "lsst/jointcal/Chi2.h"
 #include "lsst/jointcal/Eigenstuff.h"
+#include "lsst/jointcal/FitterBase.h"
 #include "lsst/jointcal/Mapping.h"
 #include "lsst/jointcal/Gtransfo.h"
 #include "lsst/jointcal/Tripletlist.h"
@@ -24,9 +25,8 @@ LOG_LOGGER _log = LOG_GET("jointcal.AstrometryFit");
 namespace lsst {
 namespace jointcal {
 
-AstrometryFit::AstrometryFit(Associations &associations, AstrometryModel *astrometryModel, double posError)
-        : _associations(associations), _astrometryModel(astrometryModel), _posError(posError) {
-    _LastNTrip = 0;
+AstrometryFit::AstrometryFit(Associations &associations, AstrometryModel &astrometryModel, double posError)
+        : FitterBase(associations), _astrometryModel(astrometryModel), _posError(posError) {
     _JDRef = 0;
 
     _posError = posError;
@@ -94,7 +94,7 @@ static void tweakAstromMeasurementErrors(FatPoint &P, const MeasuredStar &Ms, do
 // we could consider computing the chi2 here.
 // (although it is not extremely useful)
 void AstrometryFit::leastSquareDerivativesMeasurement(const CcdImage &ccdImage, TripletList &tripletList,
-                                                      Eigen::VectorXd &rhs,
+                                                      Eigen::VectorXd &fullGrad,
                                                       const MeasuredStarList *msList) const {
     /***************************************************************************/
     /**  Changes in this routine should be reflected into accumulateStatImage  */
@@ -106,7 +106,7 @@ void AstrometryFit::leastSquareDerivativesMeasurement(const CcdImage &ccdImage, 
     if (msList) assert(&(msList->front()->getCcdImage()) == &ccdImage);
 
     // get the Mapping
-    const Mapping *mapping = _astrometryModel->getMapping(ccdImage);
+    const Mapping *mapping = _astrometryModel.getMapping(ccdImage);
     // count parameters
     unsigned npar_mapping = (_fittingDistortions) ? mapping->getNpar() : 0;
     unsigned npar_pos = (_fittingPos) ? 2 : 0;
@@ -124,7 +124,7 @@ void AstrometryFit::leastSquareDerivativesMeasurement(const CcdImage &ccdImage, 
     // refraction stuff
     Point refractionVector = ccdImage.getRefractionVector();
     // transformation from sky to TP
-    const Gtransfo *sky2TP = _astrometryModel->getSky2TP(ccdImage);
+    const Gtransfo *sky2TP = _astrometryModel.getSky2TP(ccdImage);
     // reserve matrices once for all measurements
     GtransfoLin dypdy;
     // the shape of H (et al) is required this way in order to be able to
@@ -218,14 +218,14 @@ void AstrometryFit::leastSquareDerivativesMeasurement(const CcdImage &ccdImage, 
         halpha = H * alpha;
         HW = H * transW;
         grad = HW * res;
-        // now feed in triplets and rhs
+        // now feed in triplets and fullGrad
         for (unsigned ipar = 0; ipar < npar_tot; ++ipar) {
             for (unsigned ic = 0; ic < 2; ++ic) {
                 double val = halpha(ipar, ic);
                 if (val == 0) continue;
                 tripletList.addTriplet(indices[ipar], kTriplets + ic, val);
             }
-            rhs(indices[ipar]) += grad(ipar);
+            fullGrad(indices[ipar]) += grad(ipar);
         }
         kTriplets += 2;  // each measurement contributes 2 columns in the Jacobian
     }                    // end loop on measurements
@@ -233,7 +233,8 @@ void AstrometryFit::leastSquareDerivativesMeasurement(const CcdImage &ccdImage, 
 }
 
 void AstrometryFit::leastSquareDerivativesReference(const FittedStarList &fittedStarList,
-                                                    TripletList &tripletList, Eigen::VectorXd &rhs) const {
+                                                    TripletList &tripletList,
+                                                    Eigen::VectorXd &fullGrad) const {
     /* We compute here the derivatives of the terms involving fitted
        stars and reference stars. They only provide contributions if we
        are fitting positions: */
@@ -303,54 +304,38 @@ void AstrometryFit::leastSquareDerivativesReference(const FittedStarList &fitted
         // grad = H*W*res
         HW = H * W;
         grad = HW * res;
-        // now feed in triplets and rhs
+        // now feed in triplets and fullGrad
         for (unsigned ipar = 0; ipar < npar_tot; ++ipar) {
             for (unsigned ic = 0; ic < 2; ++ic) {
                 double val = halpha(ipar, ic);
                 if (val == 0) continue;
                 tripletList.addTriplet(indices[ipar], kTriplets + ic, val);
             }
-            rhs(indices[ipar]) += grad(ipar);
+            fullGrad(indices[ipar]) += grad(ipar);
         }
         kTriplets += 2;  // each measurement contributes 2 columns in the Jacobian
     }
     tripletList.setNextFreeIndex(kTriplets);
 }
 
-//! this routine computes the derivatives of all LS terms, including the ones that refer to references stars,
-//! if any
-void AstrometryFit::leastSquareDerivatives(TripletList &tripletList, Eigen::VectorXd &rhs) const {
-    auto L = _associations.getCcdImageList();
-    for (auto const &im : L) {
-        leastSquareDerivativesMeasurement(*im, tripletList, rhs);
-    }
-    leastSquareDerivativesReference(_associations.fittedStarList, tripletList, rhs);
-}
-
 // This is almost a selection of lines of leastSquareDerivativesMeasurement(CcdImage ...)
-/* This routine (and the following one) is template because it is used
-both with its first argument as "const CCdImage &" and "CcdImage &",
-and I did not want to replicate it.  The constness of the iterators is
-automagically set by declaring them as "auto" */
-
-template <class ImType, class Accum>
-void AstrometryFit::accumulateStatImage(ImType &image, Accum &accu) const {
+void AstrometryFit::accumulateStatImage(CcdImage const &ccdImage, Chi2Accumulator &accum) const {
     /**********************************************************************/
     /**  Changes in this routine should be reflected into leastSquareDerivativesMeasurement  */
     /**********************************************************************/
     /* Setup */
     // 1 : get the Mapping's
-    const Mapping *mapping = _astrometryModel->getMapping(image);
+    const Mapping *mapping = _astrometryModel.getMapping(ccdImage);
     // proper motion stuff
-    double mjd = image.getMjd() - _JDRef;
+    double mjd = ccdImage.getMjd() - _JDRef;
     // refraction stuff
-    Point refractionVector = image.getRefractionVector();
+    Point refractionVector = ccdImage.getRefractionVector();
     // transformation from sky to TP
-    const Gtransfo *sky2TP = _astrometryModel->getSky2TP(image);
+    const Gtransfo *sky2TP = _astrometryModel.getSky2TP(ccdImage);
     // reserve matrix once for all measurements
     Eigen::Matrix2Xd transW(2, 2);
 
-    auto &catalog = image.getCatalogForFit();
+    auto &catalog = ccdImage.getCatalogForFit();
     for (auto const &ms : catalog) {
         if (!ms->isValid()) continue;
         // tweak the measurement errors
@@ -363,7 +348,7 @@ void AstrometryFit::accumulateStatImage(ImType &image, Accum &accu) const {
         double det = outPos.vx * outPos.vy - sqr(outPos.vxy);
         if (det <= 0 || outPos.vx <= 0 || outPos.vy <= 0) {
             LOGLS_WARN(_log, " Inconsistent measurement errors :drop measurement at "
-                                     << Point(*ms) << " in image " << image.getName());
+                                     << Point(*ms) << " in image " << ccdImage.getName());
             continue;
         }
         transW(0, 0) = outPos.vy / det;
@@ -377,20 +362,17 @@ void AstrometryFit::accumulateStatImage(ImType &image, Accum &accu) const {
         Eigen::Vector2d res(fittedStarInTP.x - outPos.x, fittedStarInTP.y - outPos.y);
         double chi2Val = res.transpose() * transW * res;
 
-        accu.addEntry(chi2Val, 2, ms);
+        accum.addEntry(chi2Val, 2, ms);
     }  // end of loop on measurements
 }
 
-//! for a list of images.
-template <class ListType, class Accum>
-void AstrometryFit::accumulateStatImageList(ListType &list, Accum &accum) const {
-    for (auto &im : list) {
-        accumulateStatImage(*im, accum);
+void AstrometryFit::accumulateStatImageList(CcdImageList const &ccdImageList, Chi2Accumulator &accum) const {
+    for (auto &ccdImage : ccdImageList) {
+        accumulateStatImage(*ccdImage, accum);
     }
 }
 
-template <class Accum>
-void AstrometryFit::accumulateStatRefStars(Accum &accum) const {
+void AstrometryFit::accumulateStatRefStars(Chi2Accumulator &accum) const {
     /* If you wonder why we project here, read comments in
        AstrometryFit::leastSquareDerivativesReference(TripletList &TList, Eigen::VectorXd &Rhs) */
     FittedStarList &fittedStarList = _associations.fittedStarList;
@@ -413,23 +395,12 @@ void AstrometryFit::accumulateStatRefStars(Accum &accum) const {
     }
 }
 
-Chi2Statistic AstrometryFit::computeChi2() const {
-    Chi2Statistic chi2;
-    accumulateStatImageList(_associations.getCcdImageList(), chi2);
-    // now ref stars:
-    accumulateStatRefStars(chi2);
-    // so far, ndof contains the number of squares.
-    // So, subtract here the number of parameters.
-    chi2.ndof -= _nParTot;
-    return chi2;
-}
-
 //! this routine is to be used only in the framework of outlier removal
 /*! it fills the array of indices of parameters that a Measured star
     constrains. Not really all of them if you check. */
 void AstrometryFit::setMeasuredStarIndices(const MeasuredStar &ms, std::vector<unsigned> &indices) const {
     if (_fittingDistortions) {
-        const Mapping *mapping = _astrometryModel->getMapping(ms.getCcdImage());
+        const Mapping *mapping = _astrometryModel.getMapping(ms.getCcdImage());
         mapping->setMappingIndices(indices);
     }
     auto fs = ms.getFittedStar();
@@ -444,123 +415,6 @@ void AstrometryFit::setMeasuredStarIndices(const MeasuredStar &ms, std::vector<u
     }
     /* Should not put the index of refaction stuff or we will not be
        able to remove more than 1 star at a time. */
-}
-
-//! contributions to derivatives of (presumambly) outlier terms. No discarding done.
-void AstrometryFit::outliersContributions(MeasuredStarList &msOutliers, FittedStarList &fOutliers,
-                                          TripletList &tripletList, Eigen::VectorXd &grad) {
-    // contributions from measurement terms:
-    for (auto const &i : msOutliers) {
-        MeasuredStarList tmp;
-        tmp.push_back(i);
-        const CcdImage &ccd = i->getCcdImage();
-        leastSquareDerivativesMeasurement(ccd, tripletList, grad, &tmp);
-    }
-    leastSquareDerivativesReference(fOutliers, tripletList, grad);
-}
-
-unsigned AstrometryFit::removeOutliers(double nSigmaCut, const std::string &measOrRef) {
-    MeasuredStarList msOutliers;
-    FittedStarList fsOutliers;
-    unsigned n = findOutliers(nSigmaCut, msOutliers, fsOutliers, measOrRef);
-    removeMeasOutliers(msOutliers);
-    removeRefOutliers(fsOutliers);
-    return n;
-}
-
-unsigned AstrometryFit::findOutliers(double nSigmaCut, MeasuredStarList &msOutliers,
-                                     FittedStarList &fsOutliers, const std::string &measOrRef) const {
-    bool searchMeas = (measOrRef.find("Meas") != std::string::npos);
-    bool searchRef = (measOrRef.find("Ref") != std::string::npos);
-
-    // collect chi2 contributions
-    Chi2List chi2List;
-    chi2List.reserve(_nMeasuredStars + _associations.refStarList.size());
-    // contributions from measurement terms:
-    if (searchMeas) accumulateStatImageList(_associations.ccdImageList, chi2List);
-    // and from reference terms
-    if (searchRef) accumulateStatRefStars(chi2List);
-
-    // compute some statistics
-    size_t nval = chi2List.size();
-    if (nval == 0) return 0;
-    sort(chi2List.begin(), chi2List.end());
-    double median = (nval & 1) ? chi2List[nval / 2].chi2
-                               : 0.5 * (chi2List[nval / 2 - 1].chi2 + chi2List[nval / 2].chi2);
-    auto averageAndSigma = chi2List.computeAverageAndSigma();
-    LOGLS_DEBUG(_log, "RemoveOutliers chi2 stat: mean/median/sigma " << averageAndSigma.first << '/' << median
-                                                                     << '/' << averageAndSigma.second);
-    double cut = averageAndSigma.first + nSigmaCut * averageAndSigma.second;
-    /* For each of the parameters, we will not remove more than 1
-       measurement that contributes to constraining it. Keep track using
-       of what we are touching using an integer vector. This is the
-       trick that Marc Betoule came up to for outlier removals in "star
-       flats" fits. */
-    Eigen::VectorXi affectedParams(_nParTot);
-    affectedParams.setZero();
-
-    unsigned nOutliers = 0;  // returned to the caller
-    // start from the strongest outliers.
-    for (auto chi2 = chi2List.rbegin(); chi2 != chi2List.rend(); ++chi2) {
-        if (chi2->chi2 < cut) break;  // because the array is sorted.
-        vector<unsigned> indices;
-        indices.reserve(100);  // just there to limit reallocations.
-        /* now, we want to get the indices of the parameters this chi2
-        term depends on. We have to figure out which kind of term it
-         is; we use for that the type of the star attached to the Chi2Star. */
-        auto ms = std::dynamic_pointer_cast<MeasuredStar>(chi2->star);
-        std::shared_ptr<FittedStar> fs;
-        if (!ms)  // it is reference term.
-        {
-            fs = std::dynamic_pointer_cast<FittedStar>(chi2->star);
-            indices.push_back(fs->getIndexInMatrix());
-            indices.push_back(fs->getIndexInMatrix() + 1);  // probably useless
-            /* One might think it would be useful to account for PM
-               parameters here, but it is just useless */
-        } else  // it is a measurement term.
-        {
-            setMeasuredStarIndices(*ms, indices);
-        }
-
-        /* Find out if we already discarded a stronger outlier
-        constraining some parameter this one constrains as well. If
-         yes, we keep this one, because this stronger outlier could be
-         causing the large chi2 we have in hand.  */
-        bool drop_it = true;
-        for (auto const &i : indices)
-            if (affectedParams(i) != 0) drop_it = false;
-
-        if (drop_it)  // store the outlier in one of the lists:
-        {
-            if (ms)  // measurement term
-                msOutliers.push_back(ms);
-            else  // ref term
-                fsOutliers.push_back(fs);
-            // mark the parameters as directly changed when we discard this chi2 term.
-            for (auto const &i : indices) affectedParams(i)++;
-            nOutliers++;
-        }
-    }  // end loop on measurements/references
-    LOGLS_INFO(_log, "findOutliers: found " << msOutliers.size() << " meas outliers and " << fsOutliers.size()
-                                            << " ref outliers ");
-
-    return nOutliers;
-}
-
-void AstrometryFit::removeMeasOutliers(MeasuredStarList &outliers) {
-    for (auto &i : outliers) {
-        MeasuredStar &ms = *i;
-        auto fs = std::const_pointer_cast<FittedStar>(ms.getFittedStar());
-        ms.setValid(false);
-        fs->getMeasurementCount()--;  // could be put in setValid
-    }
-}
-
-void AstrometryFit::removeRefOutliers(FittedStarList &outliers) {
-    for (auto &i : outliers) {
-        FittedStar &fs = *i;
-        fs.setRefStar(nullptr);
-    }
 }
 
 void AstrometryFit::assignIndices(const std::string &whatToFit) {
@@ -578,20 +432,19 @@ void AstrometryFit::assignIndices(const std::string &whatToFit) {
     // When entering here, we assume that whatToFit has already been interpreted.
 
     _nParDistortions = 0;
-    if (_fittingDistortions) _nParDistortions = _astrometryModel->assignIndices(0, _whatToFit);
+    if (_fittingDistortions) _nParDistortions = _astrometryModel.assignIndices(0, _whatToFit);
     unsigned ipar = _nParDistortions;
 
     if (_fittingPos) {
         FittedStarList &fittedStarList = _associations.fittedStarList;
-        for (auto const &i : fittedStarList) {
-            FittedStar &fs = *i;
+        for (auto &fittedStar : fittedStarList) {
             // the parameter layout here is used also
             // - when filling the derivatives
             // - when updating (offsetParams())
             // - in GetMeasuredStarIndices
-            fs.setIndexInMatrix(ipar);
+            fittedStar->setIndexInMatrix(ipar);
             ipar += 2;
-            if ((_fittingPM)&fs.mightMove) ipar += NPAR_PM;
+            if ((_fittingPM)&fittedStar->mightMove) ipar += NPAR_PM;
         }
     }
     _nParPositions = ipar - _nParDistortions;
@@ -607,7 +460,7 @@ void AstrometryFit::offsetParams(const Eigen::VectorXd &delta) {
         throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,
                           "AstrometryFit::offsetParams : the provided vector length is not compatible with "
                           "the current whatToFit setting");
-    if (_fittingDistortions) _astrometryModel->offsetParams(delta);
+    if (_fittingDistortions) _astrometryModel.offsetParams(delta);
 
     if (_fittingPos) {
         FittedStarList &fittedStarList = _associations.fittedStarList;
@@ -654,90 +507,6 @@ static void write_vect_in_fits(const Eigen::VectorXd &vectorXd, const string &fi
 
 #endif
 
-int AstrometryFit::minimize(const std::string &whatToFit, const double nSigRejCut) {
-    assignIndices(whatToFit);
-
-    // return code can take 3 values :
-    // 0 : fit has converged - no more outliers
-    // 1 : still some ouliers but chi2 increases
-    // 2 : factorization failed
-    int returnCode = 0;
-
-    // TODO : write a guesser for the number of triplets
-    unsigned nTrip = (_LastNTrip) ? _LastNTrip : 1e6;
-    TripletList tripletList(nTrip);
-    Eigen::VectorXd grad(_nParTot);
-    grad.setZero();
-
-    // Fill the triplets
-    leastSquareDerivatives(tripletList, grad);
-    _LastNTrip = tripletList.size();
-
-    LOGLS_DEBUG(_log, "End of triplet filling, ntrip = " << tripletList.size());
-
-    SpMat hessian;
-    {
-        SpMat jacobian(_nParTot, tripletList.getNextFreeIndex());
-        jacobian.setFromTriplets(tripletList.begin(), tripletList.end());
-        // release memory shrink_to_fit is C++11
-        tripletList.clear();  // tripletList.shrink_to_fit();
-        hessian = jacobian * jacobian.transpose();
-    }  // release the Jacobian
-
-    LOGLS_DEBUG(_log, "Starting factorization, hessian: dim="
-                              << hessian.rows() << " nnz=" << hessian.nonZeros()
-                              << " filling-frac = " << hessian.nonZeros() / sqr(hessian.rows()));
-
-    CholmodSimplicialLDLT2<SpMat> chol(hessian);
-    if (chol.info() != Eigen::Success) {
-        LOGLS_ERROR(_log, "minimize: factorization failed ");
-        return 2;
-    }
-
-    unsigned tot_outliers = 0;
-    double old_chi2 = computeChi2().chi2;
-
-    while (true) {
-        Eigen::VectorXd delta = chol.solve(grad);
-        offsetParams(delta);
-        Chi2Statistic current_chi2(computeChi2());
-        LOGLS_DEBUG(_log, current_chi2);
-        if (current_chi2.chi2 > old_chi2) {
-            LOGL_WARN(_log, "chi2 went up, exiting outlier rejection loop");
-            returnCode = 1;
-            break;
-        }
-        old_chi2 = current_chi2.chi2;
-
-        if (nSigRejCut == 0) break;
-        MeasuredStarList moutliers;
-        FittedStarList foutliers;
-        int n_outliers = findOutliers(nSigRejCut, moutliers, foutliers);
-        tot_outliers += n_outliers;
-        if (n_outliers == 0) break;
-        TripletList tripletList(1000);  // initial allocation size.
-        grad.setZero();                 // recycle the gradient
-        // compute the contributions of outliers to derivatives
-        outliersContributions(moutliers, foutliers, tripletList, grad);
-        // actually discard them
-        removeMeasOutliers(moutliers);
-        removeRefOutliers(foutliers);
-        // convert triplet list to eigen internal format
-        SpMat H(_nParTot, tripletList.getNextFreeIndex());
-        H.setFromTriplets(tripletList.begin(), tripletList.end());
-        int update_status = chol.update(H, false /* means downdate */);
-        LOGLS_DEBUG(_log, "cholmod update_status " << update_status);
-        /* The contribution of outliers to the gradient is the opposite
-        of the contribution of all other terms, because they add up
-         to 0 */
-        grad *= -1;
-    }
-
-    LOGLS_INFO(_log, "Total number of outliers " << tot_outliers);
-
-    return returnCode;
-}
-
 void AstrometryFit::checkStuff() {
 #if (0)
     const char *what2fit[] = {"Positions",
@@ -753,9 +522,9 @@ void AstrometryFit::checkStuff() {
     for (unsigned k = 0; k < sizeof(what2fit) / sizeof(what2fit[0]); ++k) {
         assignIndices(what2fit[k]);
         TripletList tripletList(10000);
-        Eigen::VectorXd rhs(_nParTot);
-        rhs.setZero();
-        leastSquareDerivatives(tripletList, rhs);
+        Eigen::VectorXd grad(_nParTot);
+        grad.setZero();
+        leastSquareDerivatives(tripletList, grad);
         SpMat jacobian(_nParTot, tripletList.getNextFreeIndex());
         jacobian.setFromTriplets(tripletList.begin(), tripletList.end());
         SpMat hessian = jacobian * jacobian.transpose();
@@ -764,13 +533,13 @@ void AstrometryFit::checkStuff() {
         sprintf(name, "H%d.fits", k);
         write_sparse_matrix_in_fits(hessian, name);
         sprintf(name, "g%d.fits", k);
-        write_vect_in_fits(rhs, name);
+        write_vect_in_fits(grad, name);
 #endif
         LOGLS_DEBUG(_log, "npar : " << _nParTot << ' ' << _nParDistortions);
     }
 }
 
-void AstrometryFit::makeResTuple(const std::string &tupleName) const {
+void AstrometryFit::saveResultTuples(const std::string &tupleName) const {
     /* cook-up 2 different file names by inserting something just before
        the dot (if any), and within the actual file name. */
     size_t dot = tupleName.rfind('.');
@@ -810,7 +579,7 @@ void AstrometryFit::makeMeasResTuple(const std::string &tupleName) const {
     for (auto const &i : L) {
         const CcdImage &im = *i;
         const MeasuredStarList &cat = im.getCatalogForFit();
-        const Mapping *mapping = _astrometryModel->getMapping(im);
+        const Mapping *mapping = _astrometryModel.getMapping(im);
         const Point &refractionVector = im.getRefractionVector();
         double mjd = im.getMjd() - _JDRef;
         for (auto const &is : cat) {
@@ -820,7 +589,7 @@ void AstrometryFit::makeMeasResTuple(const std::string &tupleName) const {
             FatPoint inPos = ms;
             tweakAstromMeasurementErrors(inPos, ms, _posError);
             mapping->transformPosAndErrors(inPos, tpPos);
-            const Gtransfo *sky2TP = _astrometryModel->getSky2TP(im);
+            const Gtransfo *sky2TP = _astrometryModel.getSky2TP(im);
             auto fs = ms.getFittedStar();
 
             Point fittedStarInTP =

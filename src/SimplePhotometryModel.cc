@@ -35,13 +35,8 @@ unsigned SimplePhotometryModel::assignIndices(std::string const &whatToFit, unsi
 void SimplePhotometryModel::offsetParams(Eigen::VectorXd const &delta) {
     for (auto &i : _myMap) {
         auto mapping = i.second.get();
-        mapping->offsetParams(&delta(mapping->getIndex()));
+        mapping->offsetParams(&delta[mapping->getIndex()]);
     }
-}
-
-const PhotometryTransfo &SimplePhotometryModel::getTransfo(CcdImage const &ccdImage) const {
-    auto mapping = this->findMapping(ccdImage, "getTransfo");
-    return mapping->getTransfo();
 }
 
 double SimplePhotometryModel::photomFactor(CcdImage const &ccdImage, Point const &where) const {
@@ -49,13 +44,18 @@ double SimplePhotometryModel::photomFactor(CcdImage const &ccdImage, Point const
     return mapping->getTransfo().apply(where, 1.0);
 }
 
-void SimplePhotometryModel::setIndicesAndDerivatives(MeasuredStar const &measuredStar,
-                                                     CcdImage const &ccdImage, std::vector<unsigned> &indices,
-                                                     Eigen::VectorXd &derivative) {
-    auto mapping = this->findMapping(ccdImage, "setIndicesAndDerivatives");
-    indices.resize(1);
+void SimplePhotometryModel::getMappingIndices(CcdImage const &ccdImage, std::vector<unsigned> &indices) {
+    auto mapping = this->findMapping(ccdImage, "getMappingIndices");
+    if (indices.size() < mapping->getNpar()) indices.resize(mapping->getNpar());
     indices[0] = mapping->getIndex();
-    derivative[0] = 1;
+}
+
+void SimplePhotometryModel::computeParameterDerivatives(MeasuredStar const &measuredStar,
+                                                        CcdImage const &ccdImage,
+                                                        Eigen::VectorXd &derivatives) {
+    // auto mapping = this->findMapping(ccdImage, "computeParameterDerivatives");
+    // TODO: use mapping->computeDerivative(measuredStar)*measuredStar.getFlux() here instead.
+    derivatives[0] = 1. * measuredStar.getFlux();
 }
 
 PhotometryMapping *SimplePhotometryModel::findMapping(CcdImage const &ccdImage, std::string name) const {

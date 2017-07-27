@@ -41,9 +41,6 @@ public:
      */
     void offsetParams(Eigen::VectorXd const &delta);
 
-    /// Gets the transform associated with ccdImage.
-    const PhotometryTransfo &getTransfo(CcdImage const &ccdImage) const;
-
     /**
      * Return the "photometric factor" for this ccdImage.
      *
@@ -56,8 +53,10 @@ public:
      */
     double photomFactor(CcdImage const &ccdImage, const Point &where = Point()) const;
 
-    void setIndicesAndDerivatives(MeasuredStar const &measuredStar, CcdImage const &ccdImage,
-                                  std::vector<unsigned> &indices, Eigen::VectorXd &D);
+    void getMappingIndices(CcdImage const &ccdImage, std::vector<unsigned> &indices);
+
+    void computeParameterDerivatives(MeasuredStar const &measuredStar, CcdImage const &ccdImage,
+                                     Eigen::VectorXd &derivatives);
 
 private:
     // struct PhotomStuff {

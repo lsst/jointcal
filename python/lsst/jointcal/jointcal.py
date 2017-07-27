@@ -412,11 +412,10 @@ class JointcalTask(pipeBase.CmdLineTask):
         load_cat_prof_file = 'jointcal_fit_%s.prof'%name if profile_jointcal else ''
         with pipeBase.cmdLineTask.profile(load_cat_prof_file):
             result = fit_function(associations)
-        # TODO: not clear that this is really needed any longer?
-        # TODO: makeResTuple should at least be renamed, if we do want to keep that big data-dump around.
-        # Fill reference and measurement n-tuples for each tract
+        # TODO: this should probably be made optional and turned into a "butler save" somehow.
+        # Save reference and measurement n-tuples for each tract
         tupleName = "{}_res_{}.list".format(name, tract)
-        result.fit.makeResTuple(tupleName)
+        result.fit.saveResultTuples(tupleName)
 
         return result
 
@@ -590,7 +589,7 @@ class JointcalTask(pipeBase.CmdLineTask):
                 # start with the original calib saved to the ccdImage
                 fluxMag0 = ccdImage.getPhotoCalib().getInstFluxMag0()
                 fluxMag0Err = ccdImage.getPhotoCalib().getInstFluxMag0Err()
-                exp.getCalib().setFluxMag0(fluxMag0*photom_model.photomFactor(ccdImage), fluxMag0Err)
+                exp.getCalib().setFluxMag0(fluxMag0/photom_model.photomFactor(ccdImage), fluxMag0Err)
             try:
                 dataRef.put(exp, 'wcs')
             except pexExceptions.Exception as e:

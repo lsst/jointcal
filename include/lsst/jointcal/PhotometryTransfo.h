@@ -49,7 +49,7 @@ public:
     /// Return the number of parameters (used to compute chisq)
     virtual int getNpar() const { return 0; }
 
-    /// Offset the parameters by some small amount during fitting.
+    /// Offset the parameters by some amount during fitting.
     virtual void offsetParams(const double *delta) = 0;
 
     /// return a copy (allocated by new) of the transformation.
@@ -71,13 +71,13 @@ class PhotometryTransfoSpatiallyInvariant : public PhotometryTransfo {
 public:
     PhotometryTransfoSpatiallyInvariant(double value = 1) : _value(value) {}
 
-    void apply(double x, double y, double instFlux, double &out) const { out = instFlux / _value; }
+    void apply(double x, double y, double instFlux, double &out) const { out = instFlux * _value; }
 
     void dump(std::ostream &stream = std::cout) const { stream << _value; }
 
     int getNpar() const { return 1; }
 
-    void offsetParams(const double *delta) { _value += *delta; };
+    void offsetParams(const double *delta) { _value -= *delta; };
 
     std::unique_ptr<PhotometryTransfo> clone() const {
         return std::unique_ptr<PhotometryTransfo>(new PhotometryTransfoSpatiallyInvariant(_value));

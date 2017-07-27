@@ -58,12 +58,12 @@ public:
     /**
      * @brief      Create a ccdImage from an exposure catalog and metadata, and add it to the list.
      *
-     * @param      catalog    The extracted source catalog, selected for good astrometric sources.
+     * @param[in]  catalog    The extracted source catalog, selected for good astrometric sources.
      * @param[in]  wcs        The exposure's original wcs
      * @param[in]  visitInfo  The exposure's visitInfo object
-     * @param      bbox       The bounding box of the exposure
-     * @param      filter     The exposure's filter
-     * @param[in]  calib      The exposure's photometric calibration
+     * @param[in]  bbox       The bounding box of the exposure
+     * @param[in]  filter     The exposure's filter
+     * @param[in]  photoCalib The exposure's photometric calibration
      * @param[in]  visit      The visit identifier
      * @param[in]  ccd        The ccd identifier
      * @param[in]  control    The JointcalControl object

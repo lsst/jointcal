@@ -4,76 +4,43 @@
 #include <string>
 #include <iostream>
 #include <sstream>
-#include <map>
 
+#include "lsst/jointcal/Associations.h"
 #include "lsst/jointcal/CcdImage.h"
+#include "lsst/jointcal/Chi2.h"
 #include "lsst/jointcal/Eigenstuff.h"
+#include "lsst/jointcal/FitterBase.h"
 #include "lsst/jointcal/Tripletlist.h"
 #include "lsst/jointcal/PhotometryModel.h"
-#include "lsst/jointcal/Chi2.h"
 
 namespace lsst {
 namespace jointcal {
 
-class Associations;
-
 //! Class that handles the photometric least squares problem.
-class PhotometryFit {
+class PhotometryFit : public FitterBase {
 private:
-    Associations &_associations;
-    std::string _whatToFit;
+    // Associations &_associations;
+    // std::string _whatToFit;
     bool _fittingModel, _fittingFluxes;
-    PhotometryModel *_photometryModel;
-    int _lastNTrip;  // last triplet count, used to speed up allocation
+    PhotometryModel &_photometryModel;
 
     // counts in parameter subsets.
     unsigned int _nParModel;
     unsigned int _nParFluxes;
-    unsigned int _nParTot;
+    // unsigned int _nParTot;
 
 public:
     //! this is the only constructor
-    PhotometryFit(Associations &associations, PhotometryModel *model);
+    PhotometryFit(Associations &associations, PhotometryModel &photometryModel)
+            : FitterBase(associations), _photometryModel(photometryModel) {
+        // The various _npar... are initialized in assignIndices.
+        // Although there is no reason to adress them before one might be tempted by
+        // evaluating a Chi2 rightaway, .. which uses these counts, so:
+        assignIndices("");
+    }
 
     /**
-     * Does a 1 step minimization, assuming a linear model.
-     *
-     * It calls assignIndices, leastSquareDerivatives, solves the linear system and calls
-     * offsetParams. No line search. Relies on sparse linear algebra.
-     *
-     * This is a complete Newton Raphson step. Compute first and second
-     * derivatives, solve for the step and apply it, without a line search.
-     *
-     * @param[in]  whatToFit  Valid strings : "Model", "Fluxes", which define
-     *                        which parameter sets are going to be fitted.
-     *                        whatToFit="Model Fluxes"  will set both parameter
-     *                        sets variable when computing derivatives. Provided
-     *                        it contains "Model", whatToFit is passed over to the
-     *                        PhotometryModel, and can hence be used to control more
-     *                        finely which subsets of the photometric model are
-     *                        being fitted, if the the actual PhotometryModel
-     *                        implements such a possibility.
-     * @param[in]  nSigmaCut  How many sigma to reject outliers at. Outlier
-     *                        rejection ignored for nSigmaCut=0.
-     *
-     * @return     Return code describing success of fit, can take 3 values:
-     *             0 : fit has converged - no more outliers
-     *             1 : still some ouliers but chi2 increased
-     *             2 : factorization failed
-     */
-    int minimize(const std::string &whatToFit, double nSigmaCut = 0);
-
-    /**
-     * Evaluates the chI^2 derivatives (Jacobian and gradient) for the current whatToFit setting.
-     *
-     * The Jacobian is provided as triplets, the gradient as a dense vector.
-     * The parameters which vary are to be set using assignIndices.
-     */
-    void leastSquareDerivatives(TripletList &tripletList, Eigen::VectorXd &rhs) const;
-
-    /**
-     * Set parameter groups fixed or variable and assign indices to each parameter
-     * in the big matrix (which will be used by offsetParams(...).
+     * Set parameters to fit and assign indices in the big matrix.
      *
      * @param[in]  whatToFit  Valid strings : "Model", "Fluxes", which define
      *                        which parameter sets are going to be fitted.
@@ -97,25 +64,12 @@ public:
      */
     void offsetParams(const Eigen::VectorXd &delta);
 
-    /**
-     * Returns a chi2 for the current state
-     */
-    Chi2Statistic computeChi2() const;
-
-    //! Produces an ntuple
-    void makeResTuple(const std::string &tupleName) const;
+    void saveResultTuples(const std::string &tupleName) const;
 
 private:
-    template <class ListType, class Accum>
-    void accumulateStatImageList(ListType &listType, Accum &accum) const;
+    void accumulateStatImageList(CcdImageList const &ccdImageList, Chi2Accumulator &accum) const;
 
-    template <class Accum>
-    void accumulateStatRefStars(Accum &accum) const;
-
-    void outliersContributions(MeasuredStarList &msOutliers, FittedStarList &fsOutliers,
-                               TripletList &tripletList, Eigen::VectorXd &grad);
-
-    unsigned findOutliers(double nSigmaCut, MeasuredStarList &msOutliers, FittedStarList &fsOutliers) const;
+    void accumulateStatRefStars(Chi2Accumulator &accum) const;
 
     void setMeasuredStarIndices(const MeasuredStar &measuredStar, std::vector<unsigned> &indices) const;
 
@@ -124,21 +78,12 @@ private:
      * The last argument allows to to process a sub-list for outlier removal.
      */
     void leastSquareDerivativesMeasurement(const CcdImage &ccdImage, TripletList &tripletList,
-                                           Eigen::VectorXd &rhs,
+                                           Eigen::VectorXd &grad,
                                            const MeasuredStarList *measuredStarList = nullptr) const;
 
     /// Compute the derivatives of the reference terms
     void leastSquareDerivativesReference(const FittedStarList &fittedStarList, TripletList &tripletList,
-                                         Eigen::VectorXd &rhs) const;
-
-    //! returns how many outliers were removed. No refit done.
-    unsigned removeOutliers(double nSigCut);
-
-    /// Just removes measuredStar outliers from the fit. No Refit done.
-    void removeMeasOutliers(MeasuredStarList &outliers);
-
-    /// Just removes refStar outliers from the fit. No Refit done.
-    void removeRefOutliers(FittedStarList &outliers);
+                                         Eigen::VectorXd &grad) const;
 
 #ifdef STORAGE
     //! Produces a tuple containing residuals of measurement terms.

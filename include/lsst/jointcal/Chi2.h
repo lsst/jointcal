@@ -14,8 +14,19 @@ static double sqr(double x) { return x * x; }
 namespace lsst {
 namespace jointcal {
 
-/// Simple structure to accumulate chi2 and ndof
-struct Chi2Statistic {
+/**
+ * Base class for Chi2Statistic and Chi2List, to allow addEntry inside Fitter for either class.
+ *
+ * Essentially a mixin.
+ */
+class Chi2Accumulator {
+public:
+    virtual void addEntry(double inc, unsigned dof, std::shared_ptr<BaseStar> star) = 0;
+};
+
+/// Simple structure to accumulate chi2 and ndof.
+class Chi2Statistic : public Chi2Accumulator {
+public:
     double chi2;
     unsigned ndof;
 
@@ -33,10 +44,8 @@ struct Chi2Statistic {
         return s.str();
     }
 
-    // Addentry has an ignored third argument in order to make it compatible with an
-    // other stat accumulator.
-    template <typename T>
-    void addEntry(double inc, unsigned dof, T) {
+    // Addentry has an ignored third argument in order to make it compatible with Chi2List.
+    void addEntry(double inc, unsigned dof, std::shared_ptr<BaseStar>) {
         chi2 += inc;
         ndof += dof;
     }
@@ -45,8 +54,7 @@ struct Chi2Statistic {
         chi2 += rhs.chi2;
         ndof += rhs.ndof;
     }
-
-};  // end of struct Chi2
+};
 
 /*
  * A class to accumulate chi2 contributions together with pointers to the contributors.
@@ -63,10 +71,16 @@ struct Chi2Star {
     Chi2Star(double chi2, std::shared_ptr<BaseStar> star) : chi2(chi2), star(std::move(star)) {}
     // for sorting
     bool operator<(const Chi2Star& rhs) const { return (chi2 < rhs.chi2); }
+
+    friend std::ostream& operator<<(std::ostream& s, const Chi2Star& chi2Star) {
+        s << "chi2: " << chi2Star.chi2 << " star: " << *(chi2Star.star) << std::endl;
+        return s;
+    }
 };
 
-/// structure to accumulate chi2 and stars
-struct Chi2List : public std::vector<Chi2Star> {
+/// Structure to accumulate the chi2 contributions per each star (to help find outliers).
+class Chi2List : public Chi2Accumulator, public std::vector<Chi2Star> {
+public:
     void addEntry(double chi2, unsigned ndof, std::shared_ptr<BaseStar> star) {
         this->push_back(Chi2Star(chi2, std::move(star)));
     }
