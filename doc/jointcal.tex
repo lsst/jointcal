@@ -380,8 +380,8 @@ R^r_{j} &= [P(F_j)-P(R_j)]  \label{eq:ref_res}
 We want to find the point where $d \chi^2/d \theta = 0$,
 where $\theta$ of (size $N_p$) denotes the vector of parameters. We have
 \begin{align}
-\frac{1}{2} \frac{d \chi^2}{d \theta} & =  \sum_{\gamma,i}  {R^m_{\gamma i}}^T W_{\gamma,i}  H^m_{\gamma i} \\
-         & +\sum_j {R^r_{j}}^T W_{j}  H^r_{j}
+\frac{1}{2} \frac{d \chi^2}{d \theta} & =  \sum_{\gamma,i}  {R^m_{\gamma i}}^T W_{\gamma,i}  H^m_{\gamma i} \nonumber \\
+         & +\sum_j {R^r_{j}}^T W_{j}  H^r_{j} \label{eq:gradient}
 \end{align}
 where the H matrices are $2 \times N_p$ in size and read:
 \begin{align}
@@ -470,15 +470,18 @@ and we evaluate in fact the $H$ matrices for these indices only.
 
 The computation of the Jacobian and the gradient is performed in
 the \ClName{AstrometryFit} class. The methods
-\RoutineName{AstrometryFit::LSDerivativesPerCcdImage} and \\
-\RoutineName{AstrometryFit::LSDerivativesReference} evaluate the contributions to
+\RoutineName{AstrometryFit::leastSquareDerivativesMeasurement} and \\
+\RoutineName{AstrometryFit::leastSquareDerivativesReference} evaluate the contributions to
 the Jacobian and gradient of the $\chi^2$ from the measurement terms
 and the references terms respectively. In these routines, the Jacobian
 is represented as a list of triplets $(i,j,J_{ij})$ describing its
 elements. This list is then transformed into a representation of
 sparse matrices suitable for algebra, and in particular suitable to
 evaluate the product $J^TJ$. Once we have evaluated $H\equiv J^TJ$, we
-can solve $HX=-g$ using a Cholesky factorization. For sparse linear
+can solve $HX=-g$ (see eq. \ref{eq:step_definition}, where the Hessian, $H$, is as
+defined in \ref{eq:def_hessian}, $X$ is the vector of parameter/fittedStar deltas
+we are solving for, and $g$ is the gradient of the $\chi^2$, given in \ref{eq:gradient})
+using a Cholesky factorization. For sparse linear
 algebra, the Cholmod and Eigen packages provide the required
 functionality. It turns out that for practical problems, the
 calculation of $J^TJ$ or the factorization are the most CPU intensive
