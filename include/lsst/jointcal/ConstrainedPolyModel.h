@@ -29,11 +29,12 @@ namespace jointcal {
  * is meant for set of images from a single mosaic imager.
  */
 class ConstrainedPolyModel : public AstrometryModel {
-    typedef std::map<const CcdImage *, std::unique_ptr<TwoTransfoMapping> > mappingMapType;
+private:
+    typedef std::map<const CcdImage *, std::unique_ptr<TwoTransfoMapping>> mappingMapType;
     mappingMapType _mappings;
-    typedef std::map<CcdIdType, std::unique_ptr<SimpleGtransfoMapping> > chipMapType;
+    typedef std::map<CcdIdType, std::unique_ptr<SimpleGtransfoMapping>> chipMapType;
     chipMapType _chipMap;
-    typedef std::map<VisitIdType, std::unique_ptr<SimpleGtransfoMapping> > visitMapType;
+    typedef std::map<VisitIdType, std::unique_ptr<SimpleGtransfoMapping>> visitMapType;
     visitMapType _visitMap;
     const ProjectionHandler *_sky2TP;
     bool _fittingChips, _fittingVisits;
@@ -41,24 +42,30 @@ class ConstrainedPolyModel : public AstrometryModel {
     Frame _tpFrame;  // just for output of the chip transfos
 
 public:
-    ConstrainedPolyModel(const CcdImageList &ccdImageList, const ProjectionHandler *projectionHandler,
+    ConstrainedPolyModel(CcdImageList const &ccdImageList, ProjectionHandler const *projectionHandler,
                          bool initFromWCS, unsigned nNotFit = 0);
+
+    /// No copy or move: there is only ever one instance of a given model (i.e. per ccd+visit)
+    ConstrainedPolyModel(ConstrainedPolyModel const &) = delete;
+    ConstrainedPolyModel(ConstrainedPolyModel &&) = delete;
+    ConstrainedPolyModel &operator=(ConstrainedPolyModel const &) = delete;
+    ConstrainedPolyModel &operator=(ConstrainedPolyModel &&) = delete;
 
     // The following routines are the interface to AstrometryFit
     //!
-    const Mapping *getMapping(const CcdImage &) const;
+    Mapping const *getMapping(CcdImage const &) const;
 
     /**
      * Positions the various parameter sets into the parameter vector, starting at
      * firstIndex.
      */
-    unsigned assignIndices(unsigned firstIndex, const std::string &whatToFit);
+    unsigned assignIndices(unsigned firstIndex, std::string const &whatToFit);
 
     /**
      * Dispaches the offsets after a fit step into the actual locations of
      * parameters.
      */
-    void offsetParams(const Eigen::VectorXd &Delta);
+    void offsetParams(Eigen::VectorXd const &Delta);
 
     /**
      * From there on, measurement errors are propagated using the current
@@ -67,10 +74,10 @@ public:
     void freezeErrorScales();
 
     //! Access to mappings
-    const Gtransfo &getChipTransfo(const CcdIdType chip) const;
+    Gtransfo const &getChipTransfo(CcdIdType const chip) const;
 
     //! Access to mappings
-    const Gtransfo &getVisitTransfo(const VisitIdType &visit) const;
+    Gtransfo const &getVisitTransfo(VisitIdType const &visit) const;
 
     //! Access to array of visits involved in the solution.
     std::vector<VisitIdType> getVisits() const;
@@ -80,9 +87,9 @@ public:
      * stars are reported) onto the Tangent plane (into which the pixel coordinates
      * are transformed).
      */
-    const Gtransfo *getSky2TP(const CcdImage &ccdImage) const { return _sky2TP->getSky2TP(ccdImage); }
+    const Gtransfo *getSky2TP(CcdImage const &ccdImage) const { return _sky2TP->getSky2TP(ccdImage); }
 
-    std::shared_ptr<TanSipPix2RaDec> produceSipWcs(const CcdImage &ccdImage) const;
+    std::shared_ptr<TanSipPix2RaDec> produceSipWcs(CcdImage const &ccdImage) const;
 };
 }  // namespace jointcal
 }  // namespace lsst

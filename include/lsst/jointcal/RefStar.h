@@ -20,16 +20,17 @@ private:
     std::vector<double> _refFluxErrList;
 
 public:
-    // RefStar(double xx, double yy, std::vector<double>& refFluxList, std::vector<double>& refFluxErrList)
-    //         : FatPoint(xx, yy), _refFluxList(refFluxList), _refFluxErrList(refFluxErrList) {}
-
     RefStar(double xx, double yy, double defaultFlux, double defaultFluxErr, std::vector<double>& refFluxList,
             std::vector<double>& refFluxErrList)
             : BaseStar(xx, yy, defaultFlux, defaultFluxErr),
               _refFluxList(refFluxList),
               _refFluxErrList(refFluxErrList) {}
-    //!
-    RefStar(const BaseStar& baseStar) : BaseStar(baseStar) {}
+
+    /// No move or copy: each RefStar is unique, and should be accessed/managed via shared_ptr.
+    RefStar(RefStar const&) = delete;
+    RefStar(RefStar&&) = delete;
+    RefStar& operator=(RefStar const&) = default;
+    RefStar& operator=(RefStar&&) = delete;
 
     void dump(std::ostream& stream = std::cout) const {
         BaseStar::dump(stream);

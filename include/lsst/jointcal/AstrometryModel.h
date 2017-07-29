@@ -21,24 +21,24 @@ the top of simplepolymodel.h */
 class AstrometryModel {
 public:
     //! Mapping associated to a given CcdImage
-    virtual const Mapping *getMapping(const CcdImage &) const = 0;
+    virtual const Mapping *getMapping(CcdImage const &) const = 0;
 
     //! Assign indices to parameters involved in mappings, starting at firstIndex. Returns the highest
     //! assigned index.
-    virtual unsigned assignIndices(unsigned firstIndex, const std::string &whatToFit) = 0;
+    virtual unsigned assignIndices(unsigned firstIndex, std::string const &whatToFit) = 0;
 
     //! Offset the parameters by the provided amounts.
     /*! The shifts are applied according to the indices given in
         AssignIndices. */
-    virtual void offsetParams(const Eigen::VectorXd &delta) = 0;
+    virtual void offsetParams(Eigen::VectorXd const &delta) = 0;
 
     //! The transformation used to project the positions of FittedStars.
     /*! This defines the coordinate system into which the Mapping of
         this Ccdimage maps the pixel coordinates. */
-    virtual const Gtransfo *getSky2TP(const CcdImage &ccdImage) const = 0;
+    virtual const Gtransfo *getSky2TP(CcdImage const &ccdImage) const = 0;
 
     //! Cook up a SIP WCS.
-    virtual std::shared_ptr<TanSipPix2RaDec> produceSipWcs(const CcdImage &ccdImage) const = 0;
+    virtual std::shared_ptr<TanSipPix2RaDec> produceSipWcs(CcdImage const &ccdImage) const = 0;
 
     //!
     virtual void freezeErrorScales() = 0;

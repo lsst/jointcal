@@ -6,10 +6,9 @@
 #include <iostream>
 #include <sstream>
 #include <utility>
+#include <vector>
 
 #include "lsst/jointcal/BaseStar.h"
-
-static double sqr(double x) { return x * x; }
 
 namespace lsst {
 namespace jointcal {
@@ -22,6 +21,8 @@ namespace jointcal {
 class Chi2Accumulator {
 public:
     virtual void addEntry(double inc, unsigned dof, std::shared_ptr<BaseStar> star) = 0;
+
+    virtual ~Chi2Accumulator(){};
 };
 
 /// Simple structure to accumulate chi2 and ndof.
@@ -32,7 +33,7 @@ public:
 
     Chi2Statistic() : chi2(0), ndof(0){};
 
-    friend std::ostream& operator<<(std::ostream& s, const Chi2Statistic& chi2) {
+    friend std::ostream& operator<<(std::ostream& s, Chi2Statistic const& chi2) {
         s << "chi2/ndof : " << chi2.chi2 << '/' << chi2.ndof << '=' << chi2.chi2 / chi2.ndof;
         return s;
     }
@@ -45,14 +46,15 @@ public:
     }
 
     // Addentry has an ignored third argument in order to make it compatible with Chi2List.
-    void addEntry(double inc, unsigned dof, std::shared_ptr<BaseStar>) {
+    void addEntry(double inc, unsigned dof, std::shared_ptr<BaseStar>) override {
         chi2 += inc;
         ndof += dof;
     }
 
-    void operator+=(const Chi2Statistic& rhs) {
+    Chi2Statistic& operator+=(Chi2Statistic const& rhs) {
         chi2 += rhs.chi2;
         ndof += rhs.ndof;
+        return *this;
     }
 };
 
@@ -70,9 +72,9 @@ struct Chi2Star {
 
     Chi2Star(double chi2, std::shared_ptr<BaseStar> star) : chi2(chi2), star(std::move(star)) {}
     // for sorting
-    bool operator<(const Chi2Star& rhs) const { return (chi2 < rhs.chi2); }
+    bool operator<(Chi2Star const& rhs) const { return (chi2 < rhs.chi2); }
 
-    friend std::ostream& operator<<(std::ostream& s, const Chi2Star& chi2Star) {
+    friend std::ostream& operator<<(std::ostream& s, Chi2Star const& chi2Star) {
         s << "chi2: " << chi2Star.chi2 << " star: " << *(chi2Star.star) << std::endl;
         return s;
     }
@@ -81,31 +83,14 @@ struct Chi2Star {
 /// Structure to accumulate the chi2 contributions per each star (to help find outliers).
 class Chi2List : public Chi2Accumulator, public std::vector<Chi2Star> {
 public:
-    void addEntry(double chi2, unsigned ndof, std::shared_ptr<BaseStar> star) {
+    void addEntry(double chi2, unsigned ndof, std::shared_ptr<BaseStar> star) override {
         this->push_back(Chi2Star(chi2, std::move(star)));
     }
 
     /// Compute the average and std-deviation of these chisq values.
-    std::pair<double, double> computeAverageAndSigma() {
-        double sum = 0;
-        double sum2 = 0;
-        for (auto i : *this) {
-            sum += i.chi2;
-            sum2 += sqr(i.chi2);
-        }
-        double average = sum / this->size();
-        double sigma = sqrt(sum2 / this->size() - sqr(average));
-        return std::make_pair(average, sigma);
-    }
+    std::pair<double, double> computeAverageAndSigma();
 
-    friend std::ostream& operator<<(std::ostream& s, const Chi2List& chi2List) {
-        s << "chi2 per star : ";
-        for (auto chi2 : chi2List) {
-            s << *(chi2.star) << " chi2: " << chi2.chi2 << " ; ";
-        }
-        s << std::endl;
-        return s;
-    }
+    friend std::ostream& operator<<(std::ostream& s, Chi2List const& chi2List);
 };
 
 }  // namespace jointcal

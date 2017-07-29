@@ -53,23 +53,16 @@ namespace jointcal {
  * have any Kind 2 terms.
  */
 class AstrometryFit : public FitterBase {
-private:
-    bool _fittingDistortions, _fittingPos, _fittingRefrac, _fittingPM;
-    AstrometryModel &_astrometryModel;
-    double _referenceColor, _sigCol;  // average and r.m.s color
-    unsigned _nRefrac;
-    double _refractionCoefficient;    // fit parameter
-    unsigned int _refracPosInMatrix;  // where it stands
-    double _JDRef;                    // average Julian date
-
-    // counts in parameter subsets.
-    unsigned int _nParDistortions;
-    unsigned int _nParPositions;
-    double _posError;  // constant term on error on position (in pixel unit)
-
 public:
     //! this is the only constructor
-    AstrometryFit(Associations &associations, AstrometryModel &astrometryModel, double posError);
+    AstrometryFit(std::shared_ptr<Associations> associations,
+                  std::shared_ptr<AstrometryModel> astrometryModel, double posError);
+
+    /// No copy or move: there is only ever one fitter of a given type.
+    AstrometryFit(AstrometryFit const &) = delete;
+    AstrometryFit(AstrometryFit &&) = delete;
+    AstrometryFit &operator=(AstrometryFit const &) = delete;
+    AstrometryFit &operator=(AstrometryFit &&) = delete;
 
     /**
      * Set parameters to fit and assign indices in the big matrix.
@@ -89,7 +82,7 @@ public:
      *                         subsets of distortion parameter on or off, if the
      *                         AstrometryModel implements such a thing.
      */
-    void assignIndices(const std::string &whatToFit);
+    void assignIndices(std::string const &whatToFit) override;
 
     /**
      * The transformations used to propagate errors are freezed to the current
@@ -98,25 +91,17 @@ public:
      * affected when updating the mappings. This allows to have an exactly linear
      * fit, which can be useful.
      */
-    void freezeErrorScales() { _astrometryModel.freezeErrorScales(); }
+    void freezeErrorScales() { _astrometryModel->freezeErrorScales(); }
 
-    /**
-     * Offset the parameters by the requested quantities. The used parameter
-     * layout is the one from the last call to assignIndices or minimize().
-     * There is no easy way to check that the current setting of whatToFit and
-     * the provided Delta vector are compatible. We can only test the size.
-     *
-     * @param[in]  delta  vector of offsets to apply
-     */
-    void offsetParams(const Eigen::VectorXd &delta);
+    void offsetParams(Eigen::VectorXd const &delta) override;
 
-    void saveResultTuples(const std::string &tupleName) const;
+    void saveResultTuples(std::string const &tupleName) const override;
 
     //! Produces a tuple containing residuals of measurement terms.
-    void makeMeasResTuple(const std::string &tupleName) const;
+    void makeMeasResTuple(std::string const &tupleName) const;
 
     //! Produces a tuple containing residuals of reference terms.
-    void makeRefResTuple(const std::string &tupleName) const;
+    void makeRefResTuple(std::string const &tupleName) const;
 
     /**
      * DEBUGGING routine
@@ -124,26 +109,39 @@ public:
     void checkStuff();
 
 private:
-    // void leastSquareDerivatives(TripletList &tripletList, Eigen::VectorXd &grad) const;
+    bool _fittingDistortions, _fittingPos, _fittingRefrac, _fittingPM;
+    std::shared_ptr<AstrometryModel> _astrometryModel;
+    double _referenceColor, _sigCol;  // average and r.m.s color
+    double _refractionCoefficient;    // fit parameter
+    unsigned int _refracPosInMatrix;  // where it stands
+    double _JDRef;                    // average Julian date
 
-    void leastSquareDerivativesMeasurement(const CcdImage &ccdImage, TripletList &tripletList,
+    // counts in parameter subsets.
+    unsigned int _nParDistortions;
+    unsigned int _nParPositions;
+    unsigned int _nParRefrac;
+
+    double _posError;  // constant term on error on position (in pixel unit)
+
+    void leastSquareDerivativesMeasurement(CcdImage const &ccdImage, TripletList &tripletList,
                                            Eigen::VectorXd &grad,
-                                           const MeasuredStarList *msList = nullptr) const;
+                                           MeasuredStarList const *msList = nullptr) const override;
 
-    void leastSquareDerivativesReference(const FittedStarList &fittedStarList, TripletList &tripletList,
-                                         Eigen::VectorXd &grad) const;
+    void leastSquareDerivativesReference(FittedStarList const &fittedStarList, TripletList &tripletList,
+                                         Eigen::VectorXd &grad) const override;
 
-    Point transformFittedStar(const FittedStar &fittedStar, const Gtransfo *sky2TP,
-                              const Point &refractionVector, double refractionCoeff, double mjd) const;
+    void accumulateStatImageList(CcdImageList const &ccdImageList, Chi2Accumulator &accum) const override;
 
-    void accumulateStatImageList(CcdImageList const &ccdImageList, Chi2Accumulator &accum) const;
+    void accumulateStatRefStars(Chi2Accumulator &accum) const override;
 
+    void getIndicesOfMeasuredStar(MeasuredStar const &measuredStar,
+                                  std::vector<unsigned> &indices) const override;
+
+    Point transformFittedStar(FittedStar const &fittedStar, Gtransfo const *sky2TP,
+                              Point const &refractionVector, double refractionCoeff, double mjd) const;
+
+    /// Compute the chi2 (per star or total, depending on which Chi2Accumulator is used) from one CcdImage.
     void accumulateStatImage(CcdImage const &ccdImage, Chi2Accumulator &accum) const;
-
-    void accumulateStatRefStars(Chi2Accumulator &accum) const;
-
-    //! only for outlier removal
-    void setMeasuredStarIndices(const MeasuredStar &ms, std::vector<unsigned> &indices) const;
 };
 }  // namespace jointcal
 }  // namespace lsst

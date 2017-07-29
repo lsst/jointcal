@@ -13,30 +13,36 @@ namespace jointcal {
 
 class ConstrainedPhotometryModel : public PhotometryModel {
 public:
-    ConstrainedPhotometryModel(CcdImageList const &ccdImageList) {
-        for (auto &ccdImage : ccdImageList) {
+    explicit ConstrainedPhotometryModel(CcdImageList const &ccdImageList) {
+        for (auto const &ccdImage : ccdImageList) {
             _myMap[ccdImage] = std::unique_ptr<PhotometryMapping>(
                     new PhotometryMapping(PhotometryTransfoSpatiallyInvariant()));
         }
     }
 
-    unsigned assignIndices(std::string const &whatToFit, unsigned firstIndex) { return 0; }
+    /// No copy or move: there is only ever one instance of a given model (i.e. per ccd+visit)
+    ConstrainedPhotometryModel(ConstrainedPhotometryModel const &) = delete;
+    ConstrainedPhotometryModel(ConstrainedPhotometryModel &&) = delete;
+    ConstrainedPhotometryModel &operator=(ConstrainedPhotometryModel const &) = delete;
+    ConstrainedPhotometryModel &operator=(ConstrainedPhotometryModel &&) = delete;
 
-    void offsetParams(Eigen::VectorXd const &delta) {
+    unsigned assignIndices(std::string const &whatToFit, unsigned firstIndex) override { return 0; }
+
+    void offsetParams(Eigen::VectorXd const &delta) override {
         for (auto &i : _myMap) {
             i.second->offsetParams(&delta(i.second->getIndex()));
         }
     }
 
-    double photomFactor(CcdImage const &ccdImage, const Point &where) const { return 0; }
+    double photomFactor(CcdImage const &ccdImage, Point const &where) const override { return 0; }
 
-    void getMappingIndices(CcdImage const &ccdImage, std::vector<unsigned> &indices) {}
+    void getMappingIndices(CcdImage const &ccdImage, std::vector<unsigned> &indices) override {}
 
     void computeParameterDerivatives(MeasuredStar const &measuredStar, CcdImage const &ccdImage,
-                                     Eigen::VectorXd &derivatives) {}
+                                     Eigen::VectorXd &derivatives) override {}
 
 private:
-    PhotometryMapping *findMapping(CcdImage const &ccdImage, std::string name) const {
+    PhotometryMapping *findMapping(CcdImage const &ccdImage, std::string name) const override {
         return nullptr;  // waiting on creation of ConstrainedPhotometryModel.cc
         // auto i = _myMap.find(&ccdImage);
         // if (i == _myMap.end())
@@ -45,8 +51,8 @@ private:
         // return i->second.get();
     }
 
-    typedef std::map<std::shared_ptr<CcdImage>, std::unique_ptr<PhotometryMapping>> mapType;
-    mapType _myMap;
+    typedef std::map<std::shared_ptr<CcdImage>, std::unique_ptr<PhotometryMapping>> MapType;
+    MapType _myMap;
     // typedef std::map<VisitIdType, std::unique_ptr<ConstrainedPhotometryMapping>> VisitMapType;
     // VisitMapType _visitMap;
     // typedef std::map<CcdIdType, std::unique_ptr<ConstrainedPhotometryMapping>> ChipMapType;

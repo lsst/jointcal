@@ -16,7 +16,7 @@
 #include "lsst/jointcal/Gtransfo.h"
 #include "lsst/jointcal/Tripletlist.h"
 
-using namespace std;
+static double sqr(double x) { return x * x; }
 
 namespace {
 LOG_LOGGER _log = LOG_GET("jointcal.AstrometryFit");
@@ -25,8 +25,15 @@ LOG_LOGGER _log = LOG_GET("jointcal.AstrometryFit");
 namespace lsst {
 namespace jointcal {
 
-AstrometryFit::AstrometryFit(Associations &associations, AstrometryModel &astrometryModel, double posError)
-        : FitterBase(associations), _astrometryModel(astrometryModel), _posError(posError) {
+AstrometryFit::AstrometryFit(std::shared_ptr<Associations> associations,
+                             std::shared_ptr<AstrometryModel> astrometryModel, double posError)
+        : FitterBase(associations),
+          _astrometryModel(astrometryModel),
+          _refractionCoefficient(0),
+          _nParDistortions(0),
+          _nParPositions(0),
+          _nParRefrac(_associations->getNFilters()),
+          _posError(posError) {
     _JDRef = 0;
 
     _posError = posError;
@@ -34,7 +41,7 @@ AstrometryFit::AstrometryFit(Associations &associations, AstrometryModel &astrom
     _referenceColor = 0;
     _sigCol = 0;
     unsigned count = 0;
-    for (auto const &i : _associations.fittedStarList) {
+    for (auto const &i : _associations->fittedStarList) {
         _referenceColor += i->color;
         _sigCol += sqr(i->color);
         count++;
@@ -44,15 +51,6 @@ AstrometryFit::AstrometryFit(Associations &associations, AstrometryModel &astrom
         if (_sigCol > 0) _sigCol = sqrt(_sigCol / count - sqr(_referenceColor));
     }
     LOGLS_INFO(_log, "Reference Color: " << _referenceColor << " sig " << _sigCol);
-
-    _nRefrac = _associations.getNFilters();
-    _refractionCoefficient = 0;
-
-    _nMeasuredStars = 0;
-    // The various _npar... are initialized in assignIndices.
-    // Although there is no reason to adress them before one might be tempted by
-    // evaluating a Chi2 rightaway, .. which uses these counts, so:
-    assignIndices("");
 }
 
 #define NPAR_PM 2
@@ -60,8 +58,8 @@ AstrometryFit::AstrometryFit(Associations &associations, AstrometryModel &astrom
 /* ! this routine is used in 3 instances: when computing
 the derivatives, when computing the Chi2, when filling a tuple.
 */
-Point AstrometryFit::transformFittedStar(const FittedStar &fittedStar, const Gtransfo *sky2TP,
-                                         const Point &refractionVector, double refractionCoeff,
+Point AstrometryFit::transformFittedStar(FittedStar const &fittedStar, Gtransfo const *sky2TP,
+                                         Point const &refractionVector, double refractionCoeff,
                                          double mjd) const {
     Point fittedStarInTP = sky2TP->apply(fittedStar);
     if (fittedStar.mightMove) {
@@ -80,7 +78,7 @@ Point AstrometryFit::transformFittedStar(const FittedStar &fittedStar, const Gtr
 /*! This is the first implementation of an error "model".  We'll
   certainly have to upgrade it. MeasuredStar provides the mag in case
   we need it.  */
-static void tweakAstromMeasurementErrors(FatPoint &P, const MeasuredStar &Ms, double error) {
+static void tweakAstromMeasurementErrors(FatPoint &P, MeasuredStar const &Ms, double error) {
     static bool called = false;
     static double increment = 0;
     if (!called) {
@@ -93,12 +91,14 @@ static void tweakAstromMeasurementErrors(FatPoint &P, const MeasuredStar &Ms, do
 
 // we could consider computing the chi2 here.
 // (although it is not extremely useful)
-void AstrometryFit::leastSquareDerivativesMeasurement(const CcdImage &ccdImage, TripletList &tripletList,
+void AstrometryFit::leastSquareDerivativesMeasurement(CcdImage const &ccdImage, TripletList &tripletList,
                                                       Eigen::VectorXd &fullGrad,
-                                                      const MeasuredStarList *msList) const {
-    /***************************************************************************/
-    /**  Changes in this routine should be reflected into accumulateStatImage  */
-    /***************************************************************************/
+                                                      MeasuredStarList const *msList) const {
+    /**********************************************************************/
+    /* @note the math in this method and accumulateStatImage() must be kept consistent,
+     * in terms of +/- convention, definition of model, etc. */
+    /**********************************************************************/
+
     /* Setup */
     /* this routine works in two different ways: either providing the
        ccdImage, of providing the MeasuredStarList. In the latter case, the
@@ -106,7 +106,7 @@ void AstrometryFit::leastSquareDerivativesMeasurement(const CcdImage &ccdImage, 
     if (msList) assert(&(msList->front()->getCcdImage()) == &ccdImage);
 
     // get the Mapping
-    const Mapping *mapping = _astrometryModel.getMapping(ccdImage);
+    const Mapping *mapping = _astrometryModel->getMapping(ccdImage);
     // count parameters
     unsigned npar_mapping = (_fittingDistortions) ? mapping->getNpar() : 0;
     unsigned npar_pos = (_fittingPos) ? 2 : 0;
@@ -116,7 +116,7 @@ void AstrometryFit::leastSquareDerivativesMeasurement(const CcdImage &ccdImage, 
     // if (npar_tot == 0) this CcdImage does not contribute
     // any constraint to the fit, so :
     if (npar_tot == 0) return;
-    vector<unsigned> indices(npar_tot, -1);
+    std::vector<unsigned> indices(npar_tot, -1);
     if (_fittingDistortions) mapping->setMappingIndices(indices);
 
     // proper motion stuff
@@ -124,7 +124,7 @@ void AstrometryFit::leastSquareDerivativesMeasurement(const CcdImage &ccdImage, 
     // refraction stuff
     Point refractionVector = ccdImage.getRefractionVector();
     // transformation from sky to TP
-    const Gtransfo *sky2TP = _astrometryModel.getSky2TP(ccdImage);
+    const Gtransfo *sky2TP = _astrometryModel->getSky2TP(ccdImage);
     // reserve matrices once for all measurements
     GtransfoLin dypdy;
     // the shape of H (et al) is required this way in order to be able to
@@ -232,16 +232,21 @@ void AstrometryFit::leastSquareDerivativesMeasurement(const CcdImage &ccdImage, 
     tripletList.setNextFreeIndex(kTriplets);
 }
 
-void AstrometryFit::leastSquareDerivativesReference(const FittedStarList &fittedStarList,
+void AstrometryFit::leastSquareDerivativesReference(FittedStarList const &fittedStarList,
                                                     TripletList &tripletList,
                                                     Eigen::VectorXd &fullGrad) const {
+    /**********************************************************************/
+    /* @note the math in this method and accumulateStatRefStars() must be kept consistent,
+     * in terms of +/- convention, definition of model, etc. */
+    /**********************************************************************/
+
     /* We compute here the derivatives of the terms involving fitted
        stars and reference stars. They only provide contributions if we
        are fitting positions: */
     if (!_fittingPos) return;
     /* the other case where the accumulation of derivatives stops
        here is when there are no RefStars */
-    if (_associations.refStarList.size() == 0) return;
+    if (_associations->refStarList.size() == 0) return;
     Eigen::Matrix2d W(2, 2);
     Eigen::Matrix2d alpha(2, 2);
     Eigen::Matrix2d H(2, 2), halpha(2, 2), HW(2, 2);
@@ -318,20 +323,20 @@ void AstrometryFit::leastSquareDerivativesReference(const FittedStarList &fitted
     tripletList.setNextFreeIndex(kTriplets);
 }
 
-// This is almost a selection of lines of leastSquareDerivativesMeasurement(CcdImage ...)
 void AstrometryFit::accumulateStatImage(CcdImage const &ccdImage, Chi2Accumulator &accum) const {
     /**********************************************************************/
-    /**  Changes in this routine should be reflected into leastSquareDerivativesMeasurement  */
+    /** @note the math in this method and leastSquareDerivativesMeasurement() must be kept consistent,
+     * in terms of +/- convention, definition of model, etc. */
     /**********************************************************************/
     /* Setup */
     // 1 : get the Mapping's
-    const Mapping *mapping = _astrometryModel.getMapping(ccdImage);
+    const Mapping *mapping = _astrometryModel->getMapping(ccdImage);
     // proper motion stuff
     double mjd = ccdImage.getMjd() - _JDRef;
     // refraction stuff
     Point refractionVector = ccdImage.getRefractionVector();
     // transformation from sky to TP
-    const Gtransfo *sky2TP = _astrometryModel.getSky2TP(ccdImage);
+    const Gtransfo *sky2TP = _astrometryModel->getSky2TP(ccdImage);
     // reserve matrix once for all measurements
     Eigen::Matrix2Xd transW(2, 2);
 
@@ -367,15 +372,20 @@ void AstrometryFit::accumulateStatImage(CcdImage const &ccdImage, Chi2Accumulato
 }
 
 void AstrometryFit::accumulateStatImageList(CcdImageList const &ccdImageList, Chi2Accumulator &accum) const {
-    for (auto &ccdImage : ccdImageList) {
+    for (auto const &ccdImage : ccdImageList) {
         accumulateStatImage(*ccdImage, accum);
     }
 }
 
 void AstrometryFit::accumulateStatRefStars(Chi2Accumulator &accum) const {
+    /**********************************************************************/
+    /** @note the math in this method and leastSquareDerivativesReference() must be kept consistent,
+     * in terms of +/- convention, definition of model, etc. */
+    /**********************************************************************/
+
     /* If you wonder why we project here, read comments in
        AstrometryFit::leastSquareDerivativesReference(TripletList &TList, Eigen::VectorXd &Rhs) */
-    FittedStarList &fittedStarList = _associations.fittedStarList;
+    FittedStarList &fittedStarList = _associations->fittedStarList;
     TanRaDec2Pix proj(GtransfoLin(), Point(0., 0.));
     for (auto const &fs : fittedStarList) {
         const RefStar *rs = fs->getRefStar();
@@ -398,12 +408,13 @@ void AstrometryFit::accumulateStatRefStars(Chi2Accumulator &accum) const {
 //! this routine is to be used only in the framework of outlier removal
 /*! it fills the array of indices of parameters that a Measured star
     constrains. Not really all of them if you check. */
-void AstrometryFit::setMeasuredStarIndices(const MeasuredStar &ms, std::vector<unsigned> &indices) const {
+void AstrometryFit::getIndicesOfMeasuredStar(MeasuredStar const &measuredStar,
+                                             std::vector<unsigned> &indices) const {
     if (_fittingDistortions) {
-        const Mapping *mapping = _astrometryModel.getMapping(ms.getCcdImage());
+        const Mapping *mapping = _astrometryModel->getMapping(measuredStar.getCcdImage());
         mapping->setMappingIndices(indices);
     }
-    auto fs = ms.getFittedStar();
+    auto fs = measuredStar.getFittedStar();
     unsigned fsIndex = fs->getIndexInMatrix();
     if (_fittingPos) {
         indices.push_back(fsIndex);
@@ -417,26 +428,26 @@ void AstrometryFit::setMeasuredStarIndices(const MeasuredStar &ms, std::vector<u
        able to remove more than 1 star at a time. */
 }
 
-void AstrometryFit::assignIndices(const std::string &whatToFit) {
+void AstrometryFit::assignIndices(std::string const &whatToFit) {
     _whatToFit = whatToFit;
     LOGLS_INFO(_log, "assignIndices: Now fitting " << whatToFit);
-    _fittingDistortions = (_whatToFit.find("Distortions") != string::npos);
-    _fittingPos = (_whatToFit.find("Positions") != string::npos);
-    _fittingRefrac = (_whatToFit.find("Refrac") != string::npos);
+    _fittingDistortions = (_whatToFit.find("Distortions") != std::string::npos);
+    _fittingPos = (_whatToFit.find("Positions") != std::string::npos);
+    _fittingRefrac = (_whatToFit.find("Refrac") != std::string::npos);
     if (_sigCol == 0 && _fittingRefrac) {
         LOGLS_WARN(_log,
                    "Cannot fit refraction coefficients without a color lever arm. Ignoring refraction.");
         _fittingRefrac = false;
     }
-    _fittingPM = (_whatToFit.find("PM") != string::npos);
+    _fittingPM = (_whatToFit.find("PM") != std::string::npos);
     // When entering here, we assume that whatToFit has already been interpreted.
 
     _nParDistortions = 0;
-    if (_fittingDistortions) _nParDistortions = _astrometryModel.assignIndices(0, _whatToFit);
+    if (_fittingDistortions) _nParDistortions = _astrometryModel->assignIndices(0, _whatToFit);
     unsigned ipar = _nParDistortions;
 
     if (_fittingPos) {
-        FittedStarList &fittedStarList = _associations.fittedStarList;
+        FittedStarList &fittedStarList = _associations->fittedStarList;
         for (auto &fittedStar : fittedStarList) {
             // the parameter layout here is used also
             // - when filling the derivatives
@@ -450,20 +461,20 @@ void AstrometryFit::assignIndices(const std::string &whatToFit) {
     _nParPositions = ipar - _nParDistortions;
     if (_fittingRefrac) {
         _refracPosInMatrix = ipar;
-        ipar += _nRefrac;
+        ipar += _nParRefrac;
     }
     _nParTot = ipar;
 }
 
-void AstrometryFit::offsetParams(const Eigen::VectorXd &delta) {
+void AstrometryFit::offsetParams(Eigen::VectorXd const &delta) {
     if (delta.size() != _nParTot)
         throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,
                           "AstrometryFit::offsetParams : the provided vector length is not compatible with "
                           "the current whatToFit setting");
-    if (_fittingDistortions) _astrometryModel.offsetParams(delta);
+    if (_fittingDistortions) _astrometryModel->offsetParams(delta);
 
     if (_fittingPos) {
-        FittedStarList &fittedStarList = _associations.fittedStarList;
+        FittedStarList &fittedStarList = _associations->fittedStarList;
         for (auto const &i : fittedStarList) {
             FittedStar &fs = *i;
             // the parameter layout here is used also
@@ -485,7 +496,7 @@ void AstrometryFit::offsetParams(const Eigen::VectorXd &delta) {
 
 // should not be too large !
 #ifdef STORAGE
-static void write_sparse_matrix_in_fits(const SpMat &mat, const string &fitsName) {
+static void write_sparse_matrix_in_fits(SpMat const &mat, std::string const &fitsName) {
     if (mat.rows() * mat.cols() > 2e8) {
         LOGLS_WARN(_log,
                    "write_sparse_matrix_in_fits: yout matrix is too large. " << fitsName << " not generated");
@@ -499,7 +510,7 @@ static void write_sparse_matrix_in_fits(const SpMat &mat, const string &fitsName
     m.writeFits(fitsName);
 }
 
-static void write_vect_in_fits(const Eigen::VectorXd &vectorXd, const string &fitsName) {
+static void write_vect_in_fits(Eigen::VectorXd const &vectorXd, std::string const &fitsName) {
     Vect v(vectorXd.size());
     for (int k = 0; k < vectorXd.size(); ++k) v(k) = V(k);
     Mat(v).writeFits(fitsName);
@@ -539,12 +550,12 @@ void AstrometryFit::checkStuff() {
     }
 }
 
-void AstrometryFit::saveResultTuples(const std::string &tupleName) const {
+void AstrometryFit::saveResultTuples(std::string const &tupleName) const {
     /* cook-up 2 different file names by inserting something just before
        the dot (if any), and within the actual file name. */
     size_t dot = tupleName.rfind('.');
     size_t slash = tupleName.rfind('/');
-    if (dot == string::npos || (slash != string::npos && dot < slash)) dot = tupleName.size();
+    if (dot == std::string::npos || (slash != std::string::npos && dot < slash)) dot = tupleName.size();
     std::string meas_tuple(tupleName);
     meas_tuple.insert(dot, "-meas");
     makeMeasResTuple(meas_tuple);
@@ -553,33 +564,33 @@ void AstrometryFit::saveResultTuples(const std::string &tupleName) const {
     makeRefResTuple(ref_tuple);
 }
 
-void AstrometryFit::makeMeasResTuple(const std::string &tupleName) const {
+void AstrometryFit::makeMeasResTuple(std::string const &tupleName) const {
     std::ofstream tuple(tupleName.c_str());
-    tuple << "#xccd: coordinate in CCD" << endl
-          << "#yccd: " << endl
-          << "#rx:   residual in degrees in TP" << endl
-          << "#ry:" << endl
-          << "#xtp: transformed coordinate in TP " << endl
-          << "#ytp:" << endl
-          << "#mag: rough mag" << endl
-          << "#jd: Julian date of the measurement" << endl
-          << "#rvx: transformed measurement uncertainty " << endl
-          << "#rvy:" << endl
-          << "#rvxy:" << endl
-          << "#color : " << endl
-          << "#fsindex: some unique index of the object" << endl
-          << "#ra: pos of fitted star" << endl
-          << "#dec: pos of fitted star" << endl
-          << "#chi2: contribution to Chi2 (2D dofs)" << endl
-          << "#nm: number of measurements of this FittedStar" << endl
-          << "#chip: chip number" << endl
-          << "#visit: visit id" << endl
-          << "#end" << endl;
-    const CcdImageList &L = _associations.getCcdImageList();
+    tuple << "#xccd: coordinate in CCD" << std::endl
+          << "#yccd: " << std::endl
+          << "#rx:   residual in degrees in TP" << std::endl
+          << "#ry:" << std::endl
+          << "#xtp: transformed coordinate in TP " << std::endl
+          << "#ytp:" << std::endl
+          << "#mag: rough mag" << std::endl
+          << "#jd: Julian date of the measurement" << std::endl
+          << "#rvx: transformed measurement uncertainty " << std::endl
+          << "#rvy:" << std::endl
+          << "#rvxy:" << std::endl
+          << "#color : " << std::endl
+          << "#fsindex: some unique index of the object" << std::endl
+          << "#ra: pos of fitted star" << std::endl
+          << "#dec: pos of fitted star" << std::endl
+          << "#chi2: contribution to Chi2 (2D dofs)" << std::endl
+          << "#nm: number of measurements of this FittedStar" << std::endl
+          << "#chip: chip number" << std::endl
+          << "#visit: visit id" << std::endl
+          << "#end" << std::endl;
+    const CcdImageList &L = _associations->getCcdImageList();
     for (auto const &i : L) {
         const CcdImage &im = *i;
         const MeasuredStarList &cat = im.getCatalogForFit();
-        const Mapping *mapping = _astrometryModel.getMapping(im);
+        const Mapping *mapping = _astrometryModel->getMapping(im);
         const Point &refractionVector = im.getRefractionVector();
         double mjd = im.getMjd() - _JDRef;
         for (auto const &is : cat) {
@@ -589,7 +600,7 @@ void AstrometryFit::makeMeasResTuple(const std::string &tupleName) const {
             FatPoint inPos = ms;
             tweakAstromMeasurementErrors(inPos, ms, _posError);
             mapping->transformPosAndErrors(inPos, tpPos);
-            const Gtransfo *sky2TP = _astrometryModel.getSky2TP(im);
+            const Gtransfo *sky2TP = _astrometryModel->getSky2TP(im);
             auto fs = ms.getFittedStar();
 
             Point fittedStarInTP =
@@ -606,28 +617,28 @@ void AstrometryFit::makeMeasResTuple(const std::string &tupleName) const {
                   << ' ' << fs->getMag() << ' ' << mjd << ' ' << tpPos.vx << ' ' << tpPos.vy << ' '
                   << tpPos.vxy << ' ' << fs->color << ' ' << fs->getIndexInMatrix() << ' ' << fs->x << ' '
                   << fs->y << ' ' << chi2 << ' ' << fs->getMeasurementCount() << ' ' << im.getCcdId() << ' '
-                  << im.getVisit() << endl;
+                  << im.getVisit() << std::endl;
         }  // loop on measurements in image
     }      // loop on images
 }
 
-void AstrometryFit::makeRefResTuple(const std::string &tupleName) const {
+void AstrometryFit::makeRefResTuple(std::string const &tupleName) const {
     std::ofstream tuple(tupleName.c_str());
-    tuple << "#ra: coordinates of FittedStar" << endl
-          << "#dec: " << endl
-          << "#rx:   residual in degrees in TP" << endl
-          << "#ry:" << endl
-          << "#mag: mag" << endl
-          << "#rvx: transformed measurement uncertainty " << endl
-          << "#rvy:" << endl
-          << "#rvxy:" << endl
-          << "#color : " << endl
-          << "#fsindex: some unique index of the object" << endl
-          << "#chi2: contribution to Chi2 (2D dofs)" << endl
-          << "#nm: number of measurements of this FittedStar" << endl
-          << "#end" << endl;
+    tuple << "#ra: coordinates of FittedStar" << std::endl
+          << "#dec: " << std::endl
+          << "#rx:   residual in degrees in TP" << std::endl
+          << "#ry:" << std::endl
+          << "#mag: mag" << std::endl
+          << "#rvx: transformed measurement uncertainty " << std::endl
+          << "#rvy:" << std::endl
+          << "#rvxy:" << std::endl
+          << "#color : " << std::endl
+          << "#fsindex: some unique index of the object" << std::endl
+          << "#chi2: contribution to Chi2 (2D dofs)" << std::endl
+          << "#nm: number of measurements of this FittedStar" << std::endl
+          << "#end" << std::endl;
     // The following loop is heavily inspired from AstrometryFit::computeChi2()
-    const FittedStarList &fittedStarList = _associations.fittedStarList;
+    const FittedStarList &fittedStarList = _associations->fittedStarList;
     TanRaDec2Pix proj(GtransfoLin(), Point(0., 0.));
     for (auto const &i : fittedStarList) {
         const FittedStar &fs = *i;
@@ -647,7 +658,7 @@ void AstrometryFit::makeRefResTuple(const std::string &tupleName) const {
         tuple << std::setprecision(9);
         tuple << fs.x << ' ' << fs.y << ' ' << rx << ' ' << ry << ' ' << fs.getMag() << ' ' << rsProj.vx
               << ' ' << rsProj.vy << ' ' << rsProj.vxy << ' ' << fs.color << ' ' << fs.getIndexInMatrix()
-              << ' ' << chi2 << ' ' << fs.getMeasurementCount() << endl;
+              << ' ' << chi2 << ' ' << fs.getMeasurementCount() << std::endl;
     }  // loop on FittedStars
 }
 }  // namespace jointcal

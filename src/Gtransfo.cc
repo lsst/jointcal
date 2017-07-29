@@ -1591,7 +1591,7 @@ std::unique_ptr<Gtransfo> gtransfoRead(const std::string &fileName) {
         std::unique_ptr<Gtransfo> res(gtransfoRead(s));
         s.close();
         return res;
-    } catch (pex::exceptions::InvalidParameterError e) {
+    } catch (pex::exceptions::InvalidParameterError &e) {
         throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,
                           std::string(e.what()) + " in file " + fileName);
     }

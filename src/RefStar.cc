@@ -8,11 +8,6 @@
 namespace lsst {
 namespace jointcal {
 
-// void RefStar::assignRefFluxes(std::vector<double> const &refFlux) {
-//     _refFlux.clear();
-//     copy(refFlux.begin(), refFlux.end(), back_inserter(_refFlux));
-// }
-
 BaseStarList &Ref2Base(RefStarList &This) { return (BaseStarList &)This; }
 
 BaseStarList *Ref2Base(RefStarList *This) { return (BaseStarList *)This; }

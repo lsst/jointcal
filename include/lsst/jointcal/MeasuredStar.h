@@ -44,8 +44,15 @@ public:
               _ccdImage(0),
               _valid(true) {}
 
-    MeasuredStar(const BaseStar &baseStar)
+    MeasuredStar(BaseStar const &baseStar)
             : BaseStar(baseStar), mag(0.), wmag(0.), _id(0), _instFluxErr(0.), _ccdImage(0), _valid(true) {}
+
+    /// No move, allow copy constructor: we may copy the fitted StarLists when associating and matching
+    /// catalogs, otherwise Stars should be managed by shared_ptr only.
+    MeasuredStar(MeasuredStar const &) = default;
+    MeasuredStar(MeasuredStar &&) = delete;
+    MeasuredStar &operator=(MeasuredStar const &) = delete;
+    MeasuredStar &operator=(MeasuredStar &&) = delete;
 
     void setFittedStar(std::shared_ptr<FittedStar> fittedStar) {
         if (fittedStar) fittedStar->getMeasurementCount()++;
@@ -72,7 +79,7 @@ public:
 
     std::shared_ptr<const FittedStar> getFittedStar() const { return _fittedStar; };
 
-    const CcdImage &getCcdImage() const { return *_ccdImage; };
+    CcdImage const &getCcdImage() const { return *_ccdImage; };
 
     void setCcdImage(const CcdImage *ccdImage) { _ccdImage = ccdImage; };
 

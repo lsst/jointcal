@@ -22,6 +22,7 @@ from lsst.meas.algorithms.sourceSelector import sourceSelectorRegistry
 from .dataIds import PerTractCcdDataIdContainer
 
 import lsst.jointcal
+from lsst.jointcal import MinimizeResult
 
 __all__ = ["JointcalConfig", "JointcalTask"]
 
@@ -447,6 +448,7 @@ class JointcalTask(pipeBase.CmdLineTask):
         """
         self.log.info("=== Starting photometric fitting...")
 
+        # TODO: should use pex.config.RegistryField here (see DM-9195)
         if self.config.photometryModel == "constrained":
             model = lsst.jointcal.ConstrainedPhotometryModel(associations.getCcdImageList())
         elif self.config.photometryModel == "simple":
@@ -535,7 +537,7 @@ class JointcalTask(pipeBase.CmdLineTask):
             r = fit.minimize(whatToFit, 5)  # outlier removal at 5 sigma.
             chi2 = fit.computeChi2()
             self.log.info(str(chi2))
-            if r == 0:
+            if r == MinimizeResult.Converged:
                 self.log.debug("fit has converged - no more outliers - redo minimixation"
                                "one more time in case we have lost accuracy in rank update")
                 # Redo minimization one more time in case we have lost accuracy in rank update
@@ -543,10 +545,10 @@ class JointcalTask(pipeBase.CmdLineTask):
                 chi2 = fit.computeChi2()
                 self.log.info("Fit completed with: %s", str(chi2))
                 break
-            elif r == 2:
+            elif r == MinimizeResult.Failed:
                 self.log.warn("minimization failed")
                 break
-            elif r == 1:
+            elif r == MinimizeResult.Chi2Increased:
                 self.log.warn("still some ouliers but chi2 increases - retry")
             else:
                 self.log.error("unxepected return code from minimize")

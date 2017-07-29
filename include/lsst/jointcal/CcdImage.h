@@ -19,7 +19,7 @@
 namespace lsst {
 namespace jointcal {
 
-typedef std::list<std::shared_ptr<CcdImage> > CcdImageList;
+typedef std::list<std::shared_ptr<CcdImage>> CcdImageList;
 
 typedef int VisitIdType;
 typedef int CcdIdType;
@@ -64,15 +64,20 @@ private:
 
     Point _commonTangentPoint;
 
-    void LoadCatalog(const lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &Cat,
-                     const std::string &fluxField);
+    void LoadCatalog(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> const &Cat,
+                     std::string const &fluxField);
 
 public:
-    CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &record,
-             const PTR(lsst::afw::image::TanWcs) wcs, const PTR(lsst::afw::image::VisitInfo) visitInfo,
-             const lsst::afw::geom::Box2I &bbox, const std::string &filter,
-             const std::shared_ptr<afw::image::PhotoCalib> photoCalib, const int &visit, const int &ccd,
-             const std::string &fluxField);
+    CcdImage(afw::table::SourceCatalog &record, std::shared_ptr<lsst::afw::image::TanWcs> wcs,
+             std::shared_ptr<lsst::afw::image::VisitInfo> visitInfo, afw::geom::Box2I const &bbox,
+             std::string const &filter, std::shared_ptr<afw::image::PhotoCalib> photoCalib, int visit,
+             int ccd, std::string const &fluxField);
+
+    /// No move or copy: each CCD image is unique to that ccd+visit, and Associations holds all CcdImages.
+    CcdImage(CcdImage const &) = delete;
+    CcdImage(CcdImage &&) = delete;
+    CcdImage &operator=(CcdImage const &) = delete;
+    CcdImage &operator=(CcdImage &&) = delete;
 
     //! Return the _name that identifies this ccdImage.
     std::string getName() const { return _name; }
@@ -82,7 +87,7 @@ public:
      *
      * @return     The whole catalog.
      */
-    const MeasuredStarList &getWholeCatalog() const { return _wholeCatalog; }
+    MeasuredStarList const &getWholeCatalog() const { return _wholeCatalog; }
 
     //@{
     /**
@@ -90,7 +95,7 @@ public:
      *
      * @return     The catalog for fitting.
      */
-    const MeasuredStarList &getCatalogForFit() const { return _catalogForFit; }
+    MeasuredStarList const &getCatalogForFit() const { return _catalogForFit; }
     MeasuredStarList &getCatalogForFit() { return _catalogForFit; }
     //@}
 
@@ -99,7 +104,7 @@ public:
      *
      * @param[in]  commonTangentPoint  The common tangent point of all ccdImages (decimal degrees).
      */
-    void setCommonTangentPoint(const Point &commonTangentPoint);
+    void setCommonTangentPoint(Point const &commonTangentPoint);
 
     /**
      * @brief      Gets the common tangent point, shared between all ccdImages.
@@ -109,19 +114,19 @@ public:
     Point const &getCommonTangentPoint() const { return _commonTangentPoint; }
 
     //!
-    const Gtransfo *getPix2CommonTangentPlane() const { return _pix2CommonTangentPlane.get(); }
+    Gtransfo const *getPix2CommonTangentPlane() const { return _pix2CommonTangentPlane.get(); }
 
     //!
-    const Gtransfo *getCommonTangentPlane2TP() const { return _CTP2TP.get(); }
+    Gtransfo const *getCommonTangentPlane2TP() const { return _CTP2TP.get(); }
 
     //!
-    const Gtransfo *getTP2CommonTangentPlane() const { return _TP2CTP.get(); }
+    Gtransfo const *getTP2CommonTangentPlane() const { return _TP2CTP.get(); }
 
     //!
-    const Gtransfo *getPix2TangentPlane() const { return _pix2TP.get(); }
+    Gtransfo const *getPix2TangentPlane() const { return _pix2TP.get(); }
 
     //!
-    const Gtransfo *getSky2TP() const { return _sky2TP.get(); }
+    Gtransfo const *getSky2TP() const { return _sky2TP.get(); }
 
     //! returns ccd ID
     int getCcdId() const { return _ccdId; }
@@ -162,16 +167,13 @@ public:
     std::string getFilter() const { return _filter; }
 
     //! the wcs read in the header. NOT updated when fitting.
-    const Gtransfo *readWCS() const { return _readWcs.get(); }
+    Gtransfo const *readWCS() const { return _readWcs.get(); }
 
     //! the inverse of the one above.
-    const Gtransfo *getInverseReadWCS() const { return _inverseReadWcs.get(); }
+    Gtransfo const *getInverseReadWCS() const { return _inverseReadWcs.get(); }
 
     //! Frame in pixels
-    const Frame &getImageFrame() const { return _imageFrame; }
-
-private:
-    CcdImage(const CcdImage &);  // forbid copies
+    Frame const &getImageFrame() const { return _imageFrame; }
 };
 }  // namespace jointcal
 }  // namespace lsst

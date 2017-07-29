@@ -47,10 +47,10 @@ public:
      *
      * @return     The photometric factor at the given location on ccdImage.
      */
-    virtual double photomFactor(CcdImage const &ccdImage, const Point &where) const = 0;
+    virtual double photomFactor(CcdImage const &ccdImage, Point const &where) const = 0;
 
     /// Get the mapping associated with ccdImage.
-    const PhotometryMapping &getMapping(CcdImage const &ccdImage) const {
+    PhotometryMapping const &getMapping(CcdImage const &ccdImage) const {
         return *(this->findMapping(ccdImage, "getMapping"));
     }
 

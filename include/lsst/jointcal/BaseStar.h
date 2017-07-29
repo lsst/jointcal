@@ -34,7 +34,7 @@ public:
     //! constructor
     BaseStar(double xx, double yy, double flux, double fluxErr)
             : FatPoint(xx, yy), _flux(flux), _fluxErr(fluxErr){};
-    BaseStar(const Point &point, double flux, double fluxErr)
+    BaseStar(Point const &point, double flux, double fluxErr)
             : FatPoint(point), _flux(flux), _fluxErr(fluxErr){};
 
     //! access stuff.
@@ -43,7 +43,7 @@ public:
     double getY() const { return y; }
 
     //! allows std::cout << aBaseStar;
-    friend std::ostream &operator<<(std::ostream &stream, const BaseStar &s) {
+    friend std::ostream &operator<<(std::ostream &stream, BaseStar const &s) {
         s.dump(stream);
         return stream;
     }
@@ -58,7 +58,7 @@ public:
         stream << "x: " << x << " y: " << y << " flux: " << _flux << " fluxErr: " << _fluxErr;
     }
 
-    BaseStar &operator=(const Point &point) {
+    BaseStar &operator=(Point const &point) {
         this->x = point.x;
         this->y = point.y;
         return (*this);
@@ -73,14 +73,13 @@ public:
     void setFlux(double flux) { _flux = flux; }
 
     double getFluxErr() const { return _fluxErr; }
-    // double &getFluxErr() { return _fluxErr; }
     void setFluxErr(double fluxErr) { _fluxErr = fluxErr; }
 };
 
 //! enables to sort easily a starList (of anything that derives from BaseStar)
-bool decreasingFlux(const BaseStar *star1, const BaseStar *star2);
+bool decreasingFlux(BaseStar const *star1, BaseStar const *star2);
 
-int decodeFormat(const char *formatLine, const char *starName);
+int decodeFormat(char const *formatLine, char const *starName);
 
 typedef StarList<BaseStar> BaseStarList;
 

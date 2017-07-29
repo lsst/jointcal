@@ -25,18 +25,18 @@ public:
     /*! This is grouped into a single call because for most models,
         evaluating the derivatives w.r.T parameters is not much longer
         than just transforming */
-    virtual void computeTransformAndDerivatives(const FatPoint &where, FatPoint &outPoint,
+    virtual void computeTransformAndDerivatives(FatPoint const &where, FatPoint &outPoint,
                                                 Eigen::MatrixX2d &H) const = 0;
     //! The same as above but without the parameter derivatives (used to evaluate chi^2)
-    virtual void transformPosAndErrors(const FatPoint &where, FatPoint &outPoint) const = 0;
+    virtual void transformPosAndErrors(FatPoint const &where, FatPoint &outPoint) const = 0;
 
     //! Remember the error scale and freeze it
     //  virtual void freezeErrorScales() = 0;
 
-    virtual void offsetParams(const double *delta) = 0;
+    virtual void offsetParams(double const *delta) = 0;
 
     //! The derivative w.r.t. position
-    virtual void positionDerivative(const Point &where, Eigen::Matrix2d &derivative,
+    virtual void positionDerivative(Point const &where, Eigen::Matrix2d &derivative,
                                     double epsilon) const = 0;
 
     //!

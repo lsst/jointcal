@@ -21,7 +21,7 @@ typedef Eigen::SparseMatrix<double> SpMat;
  */
 template <typename _MatrixType, int _UpLo = Eigen::Lower>
 class CholmodSimplicialLDLT2
-        : public Eigen::CholmodBase<_MatrixType, _UpLo, CholmodSimplicialLDLT2<_MatrixType, _UpLo> > {
+        : public Eigen::CholmodBase<_MatrixType, _UpLo, CholmodSimplicialLDLT2<_MatrixType, _UpLo>> {
     typedef Eigen::CholmodBase<_MatrixType, _UpLo, CholmodSimplicialLDLT2> Base;
     using Base::m_cholmod;
 
@@ -32,15 +32,15 @@ public:
 
     CholmodSimplicialLDLT2() : Base() { init(); }
 
-    CholmodSimplicialLDLT2(const MatrixType &matrix) : Base() {
+    CholmodSimplicialLDLT2(MatrixType const &matrix) : Base() {
         init();
         this->compute(matrix);
     }
 
     // this routine is the one we added
-    int update(const SpMat &H, const bool UpOrDown) {
+    int update(SpMat const &H, bool UpOrDown) {
         // check size
-        const Index size = Base::m_cholmodFactor->n;
+        Index const size = Base::m_cholmodFactor->n;
         EIGEN_UNUSED_VARIABLE(size);
         eigen_assert(size == H.rows());
 
@@ -56,8 +56,6 @@ public:
         assert(ret != 0);
         return ret;
     }
-
-    ~CholmodSimplicialLDLT2() {}
 
 protected:
     void init() {

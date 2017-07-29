@@ -18,26 +18,22 @@ namespace jointcal {
 
 //! Class that handles the photometric least squares problem.
 class PhotometryFit : public FitterBase {
-private:
-    // Associations &_associations;
-    // std::string _whatToFit;
-    bool _fittingModel, _fittingFluxes;
-    PhotometryModel &_photometryModel;
-
-    // counts in parameter subsets.
-    unsigned int _nParModel;
-    unsigned int _nParFluxes;
-    // unsigned int _nParTot;
-
 public:
     //! this is the only constructor
-    PhotometryFit(Associations &associations, PhotometryModel &photometryModel)
-            : FitterBase(associations), _photometryModel(photometryModel) {
-        // The various _npar... are initialized in assignIndices.
-        // Although there is no reason to adress them before one might be tempted by
-        // evaluating a Chi2 rightaway, .. which uses these counts, so:
-        assignIndices("");
-    }
+    PhotometryFit(std::shared_ptr<Associations> associations,
+                  std::shared_ptr<PhotometryModel> photometryModel)
+            : FitterBase(associations),
+              _fittingModel(false),
+              _fittingFluxes(false),
+              _photometryModel(photometryModel),
+              _nParModel(0),
+              _nParFluxes(0) {}
+
+    /// No copy or move: there is only ever one fitter of a given type.
+    PhotometryFit(PhotometryFit const &) = delete;
+    PhotometryFit(PhotometryFit &&) = delete;
+    PhotometryFit &operator=(PhotometryFit const &) = delete;
+    PhotometryFit &operator=(PhotometryFit &&) = delete;
 
     /**
      * Set parameters to fit and assign indices in the big matrix.
@@ -52,52 +48,44 @@ public:
      *                        being fitted, if the the actual PhotometryModel
      *                        implements such a possibility.
      */
-    void assignIndices(const std::string &whatToFit);
+    void assignIndices(std::string const &whatToFit) override;
 
-    /**
-     * Offset the parameters by the requested quantities. The used parameter
-     * layout is the one from the last call to assignIndices or minimize(). There
-     * is no easy way to check that the current setting of whatToFit and the
-     * provided Delta vector are compatible. We can only test the size.
-     *
-     * @param[in]  delta  vector of offsets to apply
-     */
-    void offsetParams(const Eigen::VectorXd &delta);
+    void offsetParams(Eigen::VectorXd const &delta) override;
 
-    void saveResultTuples(const std::string &tupleName) const;
+    void saveResultTuples(std::string const &tupleName) const override;
 
 private:
-    void accumulateStatImageList(CcdImageList const &ccdImageList, Chi2Accumulator &accum) const;
+    bool _fittingModel, _fittingFluxes;
+    std::shared_ptr<PhotometryModel> _photometryModel;
 
-    void accumulateStatRefStars(Chi2Accumulator &accum) const;
+    // counts in parameter subsets.
+    unsigned int _nParModel;
+    unsigned int _nParFluxes;
 
-    void setMeasuredStarIndices(const MeasuredStar &measuredStar, std::vector<unsigned> &indices) const;
+    void accumulateStatImageList(CcdImageList const &ccdImageList, Chi2Accumulator &accum) const override;
 
-    /** Compute the derivatives of the measured stars and model for a CcdImage.
-     *
-     * The last argument allows to to process a sub-list for outlier removal.
-     */
-    void leastSquareDerivativesMeasurement(const CcdImage &ccdImage, TripletList &tripletList,
+    void accumulateStatRefStars(Chi2Accumulator &accum) const override;
+
+    void getIndicesOfMeasuredStar(MeasuredStar const &measuredStar,
+                                  std::vector<unsigned> &indices) const override;
+
+    void leastSquareDerivativesMeasurement(CcdImage const &ccdImage, TripletList &tripletList,
                                            Eigen::VectorXd &grad,
-                                           const MeasuredStarList *measuredStarList = nullptr) const;
+                                           MeasuredStarList const *measuredStarList = nullptr) const override;
 
     /// Compute the derivatives of the reference terms
-    void leastSquareDerivativesReference(const FittedStarList &fittedStarList, TripletList &tripletList,
-                                         Eigen::VectorXd &grad) const;
+    void leastSquareDerivativesReference(FittedStarList const &fittedStarList, TripletList &tripletList,
+                                         Eigen::VectorXd &grad) const override;
 
 #ifdef STORAGE
     //! Produces a tuple containing residuals of measurement terms.
-    void makeMeasResTuple(const std::string &tupleName) const;
+    void makeMeasResTuple(std::string const &tupleName) const;
 
     //! Produces a tuple containing residuals of reference terms.
-    void makeRefResTuple(const std::string &tupleName) const;
+    void makeRefResTuple(std::string const &tupleName) const;
 
-private:
-    Point transformFittedStar(const FittedStar &fittedStar, const Gtransfo *sky2TP,
-                              const Point &refractionVector, double refractionCoeff, double mjd) const;
-
-    //! only for outlier removal
-    void getMeasuredStarIndices(const MeasuredStar &measuredStar, std::vector<unsigned> &indices) const;
+    Point transformFittedStar(FittedStar const &fittedStar, Gtransfo const *sky2TP,
+                              Point const &refractionVector, double refractionCoeff, double mjd) const;
 #endif
 };
 }  // namespace jointcal

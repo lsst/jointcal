@@ -64,19 +64,20 @@ void declareBaseStar(py::module &mod) {
 void declareRefStar(py::module &mod) {
     py::class_<RefStar, std::shared_ptr<RefStar>, BaseStar> cls(mod, "RefStar");
 
-    cls.def(py::init<const BaseStar &>(), "baseStar"_a);
+    cls.def(py::init<double, double, double, double, std::vector<double> &, std::vector<double> &>(), "xx"_a,
+            "yy"_a, "defaultFlux"_a, "defaultFluxErr"_a, "refFluxList"_a, "refFluxErrList"_a);
 }
 
 void declareFittedStar(py::module &mod) {
     py::class_<FittedStar, std::shared_ptr<FittedStar>, BaseStar> cls(mod, "FittedStar");
 
-    cls.def(py::init<const BaseStar &>(), "baseStar"_a);
+    cls.def(py::init<BaseStar const &>(), "baseStar"_a);
 }
 
 void declareMeasuredStar(py::module &mod) {
     py::class_<MeasuredStar, std::shared_ptr<MeasuredStar>, BaseStar> cls(mod, "MeasuredStar");
 
-    cls.def(py::init<const BaseStar &>(), "baseStar"_a);
+    cls.def(py::init<BaseStar const &>(), "baseStar"_a);
 }
 
 PYBIND11_PLUGIN(star) {

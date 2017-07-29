@@ -22,6 +22,12 @@ class SimplePhotometryModel : public PhotometryModel {
 public:
     SimplePhotometryModel(CcdImageList const &ccdImageList);
 
+    /// No copy or move: there is only ever one instance of a given model (i.e. per ccd+visit)
+    SimplePhotometryModel(SimplePhotometryModel const &) = delete;
+    SimplePhotometryModel(SimplePhotometryModel &&) = delete;
+    SimplePhotometryModel &operator=(SimplePhotometryModel const &) = delete;
+    SimplePhotometryModel &operator=(SimplePhotometryModel &&) = delete;
+
     /**
      * Assign indices to parameters involved in mappings, starting at firstIndex.
      *
@@ -30,7 +36,7 @@ public:
      *
      * @return     The highest assigned index.
      */
-    unsigned assignIndices(std::string const &whatToFit, unsigned firstIndex);
+    unsigned assignIndices(std::string const &whatToFit, unsigned firstIndex) override;
 
     /**
      * Offset the parameters by the provided amounts.
@@ -39,7 +45,7 @@ public:
      *
      * @param[in]  delta  vector of offsets to apply
      */
-    void offsetParams(Eigen::VectorXd const &delta);
+    void offsetParams(Eigen::VectorXd const &delta) override;
 
     /**
      * Return the "photometric factor" for this ccdImage.
@@ -51,26 +57,19 @@ public:
      *
      * @return     The photometric factor at the given location on ccdImage.
      */
-    double photomFactor(CcdImage const &ccdImage, const Point &where = Point()) const;
+    double photomFactor(CcdImage const &ccdImage, Point const &where = Point()) const override;
 
-    void getMappingIndices(CcdImage const &ccdImage, std::vector<unsigned> &indices);
+    void getMappingIndices(CcdImage const &ccdImage, std::vector<unsigned> &indices) override;
 
     void computeParameterDerivatives(MeasuredStar const &measuredStar, CcdImage const &ccdImage,
-                                     Eigen::VectorXd &derivatives);
+                                     Eigen::VectorXd &derivatives) override;
 
 private:
-    // struct PhotomStuff {
-    //     unsigned index;
-    //     double factor;
-    //     bool fixed;
-    //     PhotomStuff(const unsigned i = 0, const double f = 1) : index(i), factor(f), fixed(false){};
-    // };
-
-    typedef std::map<const CcdImage *, std::unique_ptr<PhotometryMapping> > mapType;
-    mapType _myMap;
+    typedef std::map<CcdImage const *, std::unique_ptr<PhotometryMapping>> MapType;
+    MapType _myMap;
 
     /// Return the mapping associated with this ccdImage. name is a descriptor for error messages.
-    PhotometryMapping *findMapping(CcdImage const &ccdImage, std::string name) const;
+    PhotometryMapping *findMapping(CcdImage const &ccdImage, std::string name) const override;
 };
 
 }  // namespace jointcal

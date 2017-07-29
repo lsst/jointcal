@@ -32,12 +32,11 @@ struct PmBlock {
 /**
  * The objects which have been measured several times.
  *
- * The MeasuredStars representing the same object in different CcdImages each point to one FittedStar.
+ * MeasuredStars from different CcdImages that represent the same on-sky object all point to one FittedStar.
  */
 class FittedStar : public BaseStar, public PmBlock {
 private:
     double _mag;
-    double _emag;
     int _gen;
     double _wmag;
     unsigned _indexInMatrix;
@@ -50,7 +49,6 @@ public:
     FittedStar()
             : BaseStar(),
               _mag(-1),
-              _emag(-1),
               _gen(-1),
               _wmag(0),
               _indexInMatrix(-1),
@@ -60,7 +58,6 @@ public:
     FittedStar(const BaseStar& baseStar)
             : BaseStar(baseStar),
               _mag(-1),
-              _emag(-1),
               _gen(-1),
               _wmag(0),
               _indexInMatrix(0),
@@ -69,6 +66,13 @@ public:
 
     //!
     FittedStar(const MeasuredStar& measuredStar);
+
+    /// No move, allow copy constructor: we may copy the fitted StarLists when associating and matching
+    /// catalogs, otherwise Stars should be managed by shared_ptr only.
+    FittedStar(FittedStar const&) = default;
+    FittedStar(FittedStar&&) = delete;
+    FittedStar& operator=(FittedStar const&) = delete;
+    FittedStar& operator=(FittedStar&&) = delete;
 
     //!
     void clearBeforeAssoc() {

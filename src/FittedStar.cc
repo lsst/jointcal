@@ -19,7 +19,6 @@ namespace jointcal {
 FittedStar::FittedStar(const MeasuredStar &measuredStar)
         : BaseStar(measuredStar),
           _mag(measuredStar.getMag()),
-          _emag(-1),
           _gen(-1),
           _wmag(measuredStar.getMagWeight()),
           _indexInMatrix(-1),

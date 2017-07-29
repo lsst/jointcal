@@ -9,6 +9,8 @@
 #include "lsst/jointcal/FittedStar.h"
 #include "lsst/jointcal/MeasuredStar.h"
 
+static double sqr(double x) { return x * x; }
+
 namespace {
 LOG_LOGGER _log = LOG_GET("jointcal.Fitter");
 }
@@ -18,7 +20,7 @@ namespace jointcal {
 
 Chi2Statistic FitterBase::computeChi2() const {
     Chi2Statistic chi2;
-    accumulateStatImageList(_associations.getCcdImageList(), chi2);
+    accumulateStatImageList(_associations->getCcdImageList(), chi2);
     accumulateStatRefStars(chi2);
     // chi2.ndof contains the number of squares.
     // So subtract the number of parameters.
@@ -30,9 +32,9 @@ unsigned FitterBase::findOutliers(double nSigmaCut, MeasuredStarList &msOutliers
                                   FittedStarList &fsOutliers) const {
     // collect chi2 contributions
     Chi2List chi2List;
-    chi2List.reserve(_nMeasuredStars + _associations.refStarList.size());
+    chi2List.reserve(_nMeasuredStars + _associations->refStarList.size());
     // contributions from measurement terms:
-    accumulateStatImageList(_associations.ccdImageList, chi2List);
+    accumulateStatImageList(_associations->ccdImageList, chi2List);
     // and from reference terms
     accumulateStatRefStars(chi2List);
 
@@ -59,22 +61,20 @@ unsigned FitterBase::findOutliers(double nSigmaCut, MeasuredStarList &msOutliers
     for (auto chi2 = chi2List.rbegin(); chi2 != chi2List.rend(); ++chi2) {
         if (chi2->chi2 < cut) break;  // because the array is sorted.
         std::vector<unsigned> indices;
-        indices.reserve(100);  // just there to limit reallocations.
         /* now, we want to get the indices of the parameters this chi2
         term depends on. We have to figure out which kind of term it
          is; we use for that the type of the star attached to the Chi2Star. */
         auto ms = std::dynamic_pointer_cast<MeasuredStar>(chi2->star);
         std::shared_ptr<FittedStar> fs;
-        if (!ms)  // it is reference term.
-        {
+        if (!ms) {
+            // it is reference term.
             fs = std::dynamic_pointer_cast<FittedStar>(chi2->star);
             indices.push_back(fs->getIndexInMatrix());
             indices.push_back(fs->getIndexInMatrix() + 1);  // probably useless
             /* One might think it would be useful to account for PM
                parameters here, but it is just useless */
-        } else  // it is a measurement term.
-        {
-            setMeasuredStarIndices(*ms, indices);
+        } else {  // it is a measurement term.
+            getIndicesOfMeasuredStar(*ms, indices);
         }
 
         /* Find out if we already discarded a stronger outlier
@@ -82,17 +82,25 @@ unsigned FitterBase::findOutliers(double nSigmaCut, MeasuredStarList &msOutliers
          yes, we keep this one, because this stronger outlier could be
          causing the large chi2 we have in hand.  */
         bool drop_it = true;
-        for (auto const &i : indices)
-            if (affectedParams(i) != 0) drop_it = false;
+        for (auto const &i : indices) {
+            if (affectedParams(i) != 0) {
+                drop_it = false;
+            }
+        }
 
         if (drop_it)  // store the outlier in one of the lists:
         {
-            if (ms)  // measurement term
+            if (ms) {
+                // measurement term
                 msOutliers.push_back(ms);
-            else  // ref term
+            } else {
+                // ref term
                 fsOutliers.push_back(fs);
+            }
             // mark the parameters as directly changed when we discard this chi2 term.
-            for (auto const &i : indices) affectedParams(i)++;
+            for (auto const &i : indices) {
+                affectedParams(i)++;
+            }
             nOutliers++;
         }
     }  // end loop on measurements/references
@@ -102,14 +110,10 @@ unsigned FitterBase::findOutliers(double nSigmaCut, MeasuredStarList &msOutliers
     return nOutliers;
 }
 
-int FitterBase::minimize(const std::string &whatToFit, double nSigmaCut) {
+MinimizeResult FitterBase::minimize(std::string const &whatToFit, double nSigmaCut) {
     assignIndices(whatToFit);
 
-    // return code can take 3 values :
-    // 0 : fit has converged - no more outliers
-    // 1 : still some ouliers but chi2 increases
-    // 2 : factorization failed
-    int returnCode = 0;
+    MinimizeResult returnCode = MinimizeResult::Converged;
 
     // TODO : write a guesser for the number of triplets
     unsigned nTrip = (_lastNTrip) ? _lastNTrip : 1e6;
@@ -139,7 +143,7 @@ int FitterBase::minimize(const std::string &whatToFit, double nSigmaCut) {
     CholmodSimplicialLDLT2<SpMat> chol(hessian);
     if (chol.info() != Eigen::Success) {
         LOGLS_ERROR(_log, "minimize: factorization failed ");
-        return 2;
+        return MinimizeResult::Failed;
     }
 
     unsigned totalOutliers = 0;
@@ -152,7 +156,7 @@ int FitterBase::minimize(const std::string &whatToFit, double nSigmaCut) {
         LOGLS_DEBUG(_log, currentChi2);
         if (currentChi2.chi2 > oldChi2) {
             LOGL_WARN(_log, "chi2 went up, skipping outlier rejection loop");
-            returnCode = 1;
+            returnCode = MinimizeResult::Chi2Increased;
             break;
         }
         oldChi2 = currentChi2.chi2;
@@ -163,8 +167,8 @@ int FitterBase::minimize(const std::string &whatToFit, double nSigmaCut) {
         int nOutliers = findOutliers(nSigmaCut, msOutliers, fsOutliers);
         totalOutliers += nOutliers;
         if (nOutliers == 0) break;
-        TripletList tripletList(1000);  // initial allocation size.
-        grad.setZero();                 // recycle the gradient
+        TripletList tripletList(nOutliers);
+        grad.setZero();  // recycle the gradient
         // compute the contributions of outliers to derivatives
         outliersContributions(msOutliers, fsOutliers, tripletList, grad);
         // Remove significant outliers
@@ -210,11 +214,11 @@ void FitterBase::removeRefOutliers(FittedStarList &outliers) {
 }
 
 void FitterBase::leastSquareDerivatives(TripletList &tripletList, Eigen::VectorXd &grad) const {
-    auto ccdImageList = _associations.getCcdImageList();
+    auto ccdImageList = _associations->getCcdImageList();
     for (auto const &ccdImage : ccdImageList) {
         leastSquareDerivativesMeasurement(*ccdImage, tripletList, grad);
     }
-    leastSquareDerivativesReference(_associations.fittedStarList, tripletList, grad);
+    leastSquareDerivativesReference(_associations->fittedStarList, tripletList, grad);
 }
 
 }  // namespace jointcal

@@ -34,7 +34,7 @@ void TwoTransfoMapping::setMappingIndices(std::vector<unsigned> &indices) const 
     for (unsigned k = 0; k < _nPar2; ++k) indices.at(k + _nPar1) = ind2.at(k);
 }
 
-void TwoTransfoMapping::computeTransformAndDerivatives(const FatPoint &where, FatPoint &outPoint,
+void TwoTransfoMapping::computeTransformAndDerivatives(FatPoint const &where, FatPoint &outPoint,
                                                        Eigen::MatrixX2d &H) const {
     // not true in general. Will crash if H is too small.
     //  assert(H.cols()==Npar());
@@ -79,7 +79,7 @@ void TwoTransfoMapping::transformPosAndErrors(const FatPoint &where, FatPoint &o
     _m2->transformPosAndErrors(pMid, outPoint);
 }
 
-void TwoTransfoMapping::positionDerivative(const Point &where, Eigen::Matrix2d &derivative,
+void TwoTransfoMapping::positionDerivative(Point const &where, Eigen::Matrix2d &derivative,
                                            double epsilon) const {
     Eigen::Matrix2d d1, d2;  // seems that it does not trigger dynamic allocation
     _m1->positionDerivative(where, d1, 1e-4);

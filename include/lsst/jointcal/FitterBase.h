@@ -12,6 +12,13 @@
 namespace lsst {
 namespace jointcal {
 
+/// Return value of minimize()
+enum class MinimizeResult {
+    Converged,      // fit has converged - no more outliers
+    Chi2Increased,  // still some ouliers but chi2 increases
+    Failed          // factorization failed
+};
+
 /**
  * Base class for fitters.
  *
@@ -20,9 +27,14 @@ namespace jointcal {
  */
 class FitterBase {
 public:
-    FitterBase(Associations &associations) : _associations(associations), _lastNTrip(0), _nMeasuredStars(0) {
-        // The various _npar are initialized in assignIndices, which must be called in the child constructor.
-    }
+    explicit FitterBase(std::shared_ptr<Associations> associations)
+            : _associations(associations), _whatToFit(""), _lastNTrip(0), _nParTot(0), _nMeasuredStars(0) {}
+
+    /// No copy or move: there is only ever one fitter of a given type.
+    FitterBase(FitterBase const &) = delete;
+    FitterBase(FitterBase &&) = delete;
+    FitterBase &operator=(FitterBase const &) = delete;
+    FitterBase &operator=(FitterBase &&) = delete;
 
     /**
      * Does a 1 step minimization, assuming a linear model.
@@ -38,18 +50,15 @@ public:
      * @param[in]  nSigmaCut  How many sigma to reject outliers at. Outlier
      *                        rejection ignored for nSigmaCut=0.
      *
-     * @return     Return code describing success of fit, can take 3 values:
-     *             0 : fit has converged - no more outliers
-     *             1 : still some ouliers but chi2 increased
-     *             2 : factorization failed
+     * @return  Return code describing success/failure of fit.
      *
      * @note   When fitting one parameter set by itself (e.g. "Model"), the system is purely linear,
      *         which should result in the optimal chi2 after a single step. This can
-     *         be used to debug the fitter by fitting that paramter set twice in a row:
+     *         be used to debug the fitter by fitting that parameter set twice in a row:
      *         the second run with the same "whatToFit" will produce no change in
      *         the fitted parameters, if the calculations and indices are defined correctly.
      */
-    int minimize(const std::string &whatToFit, double nSigmaCut = 0);
+    MinimizeResult minimize(std::string const &whatToFit, double nSigmaCut = 0);
 
     /**
      * Returns the chi2 for the current state.
@@ -75,24 +84,27 @@ public:
      *
      * @param[in]  delta  vector of offsets to apply
      */
-    virtual void offsetParams(const Eigen::VectorXd &delta) = 0;
+    virtual void offsetParams(Eigen::VectorXd const &delta) = 0;
 
     /**
      * Set parameters to fit and assign indices in the big matrix.
      *
      * @param[in]  whatToFit  See child class documentation for valid string values.
      */
-    virtual void assignIndices(const std::string &whatToFit) = 0;
+    virtual void assignIndices(std::string const &whatToFit) = 0;
 
     /**
-     * Save the full chi2 term per star that was used in the minimization.
+     * Save the full chi2 term per star that was used in the minimization, for debugging.
      *
-     * Produces both MeasuredStar and RefStar tuples.
+     * Saves results to text files "tupleName-meas" and "tupleName-ref" for the
+     * MeasuredStar and RefStar tuples, respectively.
+     * This method is mostly useful for debugging: we will probably want to create a better persistence
+     * system for jointcal's internal representations in the future.
      */
-    virtual void saveResultTuples(const std::string &tupleName) const = 0;
+    virtual void saveResultTuples(std::string const &tupleName) const = 0;
 
 protected:
-    Associations &_associations;
+    std::shared_ptr<Associations> _associations;
     std::string _whatToFit;
 
     int _lastNTrip;  // last triplet count, used to speed up allocation
@@ -130,11 +142,14 @@ protected:
     /// Remove refStar outliers from the fit. No Refit done.
     void removeRefOutliers(FittedStarList &outliers);
 
-    virtual void setMeasuredStarIndices(const MeasuredStar &measuredStar,
-                                        std::vector<unsigned> &indices) const = 0;
+    /// Set the indices of a measured star from the full matrix, for outlier removal.
+    virtual void getIndicesOfMeasuredStar(MeasuredStar const &measuredStar,
+                                          std::vector<unsigned> &indices) const = 0;
 
+    /// Compute the chi2 (per star or total, depending on which Chi2Accumulator is used) for measurements.
     virtual void accumulateStatImageList(CcdImageList const &ccdImageList, Chi2Accumulator &accum) const = 0;
 
+    /// Compute the chi2 (per star or total, depending on which Chi2Accumulator is used) for RefStars.
     virtual void accumulateStatRefStars(Chi2Accumulator &accum) const = 0;
 
     /**
@@ -143,11 +158,11 @@ protected:
      * The last argument will process a sub-list for outlier removal.
      */
     virtual void leastSquareDerivativesMeasurement(
-            const CcdImage &ccdImage, TripletList &tripletList, Eigen::VectorXd &grad,
-            const MeasuredStarList *measuredStarList = nullptr) const = 0;
+            CcdImage const &ccdImage, TripletList &tripletList, Eigen::VectorXd &grad,
+            MeasuredStarList const *measuredStarList = nullptr) const = 0;
 
     /// Compute the derivatives of the reference terms
-    virtual void leastSquareDerivativesReference(const FittedStarList &fittedStarList,
+    virtual void leastSquareDerivativesReference(FittedStarList const &fittedStarList,
                                                  TripletList &tripletList, Eigen::VectorXd &grad) const = 0;
 };
 }  // namespace jointcal

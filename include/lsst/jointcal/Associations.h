@@ -43,7 +43,15 @@ public:
      * Source selection is performed in python, so Associations' constructor
      * only initializes a couple of variables.
      */
-    Associations() : _commonTangentPoint(Point(0, 0)) {}
+    Associations()
+            : _commonTangentPoint(Point(std::numeric_limits<double>::quiet_NaN(),
+                                        std::numeric_limits<double>::quiet_NaN())) {}
+
+    /// No moves or copies: jointcal only ever needs one Associations object.
+    Associations(Associations const &) = delete;
+    Associations(Associations &&) = delete;
+    Associations &operator=(Associations const &) = delete;
+    Associations &operator=(Associations &&) = delete;
 
     /**
      * @brief      Sets a shared tangent point for all ccdImages.
@@ -90,8 +98,8 @@ public:
      */
     void collectRefStars(lsst::afw::table::SortedCatalogT<lsst::afw::table::SimpleRecord> &refCat,
                          afw::geom::Angle matchCut, std::string const &fluxField,
-                         std::map<std::string, std::vector<double> > const &refFluxMap,
-                         std::map<std::string, std::vector<double> > const &refFluxErrMap);
+                         std::map<std::string, std::vector<double>> const &refFluxMap,
+                         std::map<std::string, std::vector<double>> const &refFluxErrMap);
 
     //! Sends back the fitted stars coordinates on the sky FittedStarsList::inTangentPlaneCoordinates keeps
     //! track of that.
@@ -111,7 +119,7 @@ public:
      */
     void selectFittedStars(int minMeasurements);
 
-    const CcdImageList &getCcdImageList() const { return ccdImageList; }
+    CcdImageList const &getCcdImageList() const { return ccdImageList; }
 
     //! Number of different bands in the input image list. Not implemented so far
     unsigned getNFilters() const { return _filterMap.size(); }

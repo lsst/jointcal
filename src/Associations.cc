@@ -141,8 +141,8 @@ void Associations::associateCatalogs(const double matchCutInArcSec, const bool u
 
 void Associations::collectRefStars(lsst::afw::table::SortedCatalogT<lsst::afw::table::SimpleRecord> &refCat,
                                    afw::geom::Angle matchCut, std::string const &fluxField,
-                                   std::map<std::string, std::vector<double> > const &refFluxMap,
-                                   std::map<std::string, std::vector<double> > const &refFluxErrMap) {
+                                   std::map<std::string, std::vector<double>> const &refFluxMap,
+                                   std::map<std::string, std::vector<double>> const &refFluxErrMap) {
     if (refCat.size() == 0) {
         throw(LSST_EXCEPT(pex::exceptions::InvalidParameterError,
                           " reference catalog is empty : stop here "));
@@ -154,9 +154,9 @@ void Associations::collectRefStars(lsst::afw::table::SortedCatalogT<lsst::afw::t
     afw::table::Key<double> fluxErrKey;
     try {
         fluxErrKey = refCat.getSchema().find<double>(fluxField + "Sigma").key;
-    } catch (pex::exceptions::NotFoundError) {
+    } catch (pex::exceptions::NotFoundError &) {
         LOGLS_WARN(_log, "Flux error field ("
-                                 << fluxField + "Sigma"
+                                 << fluxField << "Sigma"
                                  << ") not found in reference catalog. Not using ref flux errors.");
     }
     std::cout << "Error key: " << fluxErrKey << " valid: " << fluxErrKey.isValid() << std::endl;
@@ -175,10 +175,11 @@ void Associations::collectRefStars(lsst::afw::table::SortedCatalogT<lsst::afw::t
         afw::coord::Coord coord = record->get(coordKey);
         double defaultFlux = record->get(fluxKey) / JanskyToMaggy;
         double defaultFluxErr;
-        if (fluxErrKey.isValid())
+        if (fluxErrKey.isValid()) {
             defaultFluxErr = record->get(fluxErrKey) / JanskyToMaggy;
-        else
+        } else {
             defaultFluxErr = std::numeric_limits<double>::quiet_NaN();
+        }
         std::vector<double> fluxList(nFilters);
         std::vector<double> fluxErrList(nFilters);
         for (auto const &filter : _filterMap) {

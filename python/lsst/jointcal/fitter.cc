@@ -48,14 +48,15 @@ void declareFitterBase(py::module &mod) {
 void declareAstrometryFit(py::module &mod) {
     py::class_<AstrometryFit, std::shared_ptr<AstrometryFit>, FitterBase> cls(mod, "AstrometryFit");
 
-    cls.def(py::init<Associations &, AstrometryModel &, double>(), "associations"_a, "astrometryModel"_a,
-            "posError"_a);
+    cls.def(py::init<std::shared_ptr<Associations>, std::shared_ptr<AstrometryModel>, double>(),
+            "associations"_a, "astrometryModel"_a, "posError"_a);
 }
 
 void declarePhotometryFit(py::module &mod) {
     py::class_<PhotometryFit, std::shared_ptr<PhotometryFit>, FitterBase> cls(mod, "PhotometryFit");
 
-    cls.def(py::init<Associations &, PhotometryModel &>(), "associations"_a, "photometryModel"_a);
+    cls.def(py::init<std::shared_ptr<Associations>, std::shared_ptr<PhotometryModel>>(), "associations"_a,
+            "photometryModel"_a);
 }
 
 PYBIND11_PLUGIN(fitter) {
@@ -64,6 +65,11 @@ PYBIND11_PLUGIN(fitter) {
     py::module::import("lsst.jointcal.chi2");
     py::module::import("lsst.jointcal.photometryModels");
     py::module mod("fitter");
+
+    py::enum_<MinimizeResult>(mod, "MinimizeResult")
+            .value("Converged", MinimizeResult::Converged)
+            .value("Chi2Increased", MinimizeResult::Chi2Increased)
+            .value("Failed", MinimizeResult::Failed);
 
     declareFitterBase(mod);
     declareAstrometryFit(mod);
