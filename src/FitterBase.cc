@@ -9,8 +9,6 @@
 #include "lsst/jointcal/FittedStar.h"
 #include "lsst/jointcal/MeasuredStar.h"
 
-static double sqr(double x) { return x * x; }
-
 namespace {
 LOG_LOGGER _log = LOG_GET("jointcal.Fitter");
 }
@@ -138,7 +136,7 @@ MinimizeResult FitterBase::minimize(std::string const &whatToFit, double nSigmaC
 
     LOGLS_DEBUG(_log, "Starting factorization, hessian: dim="
                               << hessian.rows() << " non-zeros=" << hessian.nonZeros()
-                              << " filling-frac = " << hessian.nonZeros() / sqr(hessian.rows()));
+                              << " filling-frac = " << hessian.nonZeros() / std::pow(hessian.rows(), 2));
 
     CholmodSimplicialLDLT2<SpMat> chol(hessian);
     if (chol.info() != Eigen::Success) {

@@ -14,8 +14,6 @@
 #include "lsst/jointcal/Gtransfo.h"
 #include "lsst/jointcal/Tripletlist.h"
 
-static double sqr(double x) { return x * x; }
-
 namespace {
 LOG_LOGGER _log = LOG_GET("jointcal.PhotometryFit");
 }
@@ -69,7 +67,7 @@ void PhotometryFit::leastSquareDerivativesMeasurement(CcdImage const &ccdImage, 
         double residual = computeMeasurementResidual(photomFactor, *measuredStar);
 
         double inverseSigma = 1.0 / (photomFactor * fluxErr);
-        double W = sqr(inverseSigma);
+        double W = std::pow(inverseSigma, 2);
 
         if (_fittingModel) {
             _photometryModel->getMappingIndices(ccdImage, indices);
@@ -122,7 +120,7 @@ void PhotometryFit::leastSquareDerivativesReference(FittedStarList const &fitted
         unsigned index = fittedStar->getIndexInMatrix();
         // Note: H = dR/dFittedStar == 1
         tripletList.addTriplet(index, kTriplets, 1.0 * inverseSigma);
-        grad(index) += 1.0 * sqr(inverseSigma) * residual;
+        grad(index) += 1.0 * std::pow(inverseSigma, 2) * residual;
         kTriplets += 1;
     }
     tripletList.setNextFreeIndex(kTriplets);
@@ -146,7 +144,7 @@ void PhotometryFit::accumulateStatImageList(CcdImageList const &ccdImageList, Ch
 #endif
             double residual = computeMeasurementResidual(photomFactor, *measuredStar);
 
-            double chi2Val = sqr(residual / sigma);
+            double chi2Val = std::pow(residual / sigma, 2);
             accum.addEntry(chi2Val, 1, measuredStar);
         }  // end loop on measurements
     }
@@ -162,7 +160,7 @@ void PhotometryFit::accumulateStatRefStars(Chi2Accumulator &accum) const {
     for (auto const &fittedStar : fittedStarList) {
         auto refStar = fittedStar->getRefStar();
         if (refStar == nullptr) continue;
-        double chi2 = sqr(((fittedStar->getFlux() - refStar->getFlux()) / refStar->getFluxErr()));
+        double chi2 = std::pow(((fittedStar->getFlux() - refStar->getFlux()) / refStar->getFluxErr()), 2);
         accum.addEntry(chi2, 1, fittedStar);
     }
 }
@@ -265,7 +263,7 @@ void PhotometryFit::saveResultTuples(std::string const &tupleName) const {
             double jd = im.getMjd();
             auto fs = ms.getFittedStar();
             double residual = ms.getFlux() - photomFactor * fs->getFlux();
-            double chi2Val = sqr(residual / sigma);
+            double chi2Val = std::pow(residual / sigma, 2);
             tuple << ms.x << ' ' << ms.y << ' ' << fs->getMag() << ' ' << ms.getFlux() << ' '
                   << ms.getFluxErr() << ' ' << fs->getFlux() << ' ' << photomFactor << ' ' << jd << ' '
                   << fs->color << ' ' << fs->getIndexInMatrix() << ' ' << fs->x << ' ' << fs->y << ' '

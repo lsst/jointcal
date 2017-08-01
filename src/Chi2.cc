@@ -25,8 +25,6 @@
 
 #include "lsst/jointcal/Chi2.h"
 
-static double sqr(double x) { return x * x; }
-
 namespace lsst {
 namespace jointcal {
 
@@ -35,10 +33,10 @@ std::pair<double, double> Chi2List::computeAverageAndSigma() {
     double sum2 = 0;
     for (auto i : *this) {
         sum += i.chi2;
-        sum2 += sqr(i.chi2);
+        sum2 += std::pow(i.chi2, 2);
     }
     double average = sum / this->size();
-    double sigma = sqrt(sum2 / this->size() - sqr(average));
+    double sigma = sqrt(sum2 / this->size() - std::pow(average, 2));
     return std::make_pair(average, sigma);
 }
 

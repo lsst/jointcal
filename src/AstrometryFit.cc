@@ -16,8 +16,6 @@
 #include "lsst/jointcal/Gtransfo.h"
 #include "lsst/jointcal/Tripletlist.h"
 
-static double sqr(double x) { return x * x; }
-
 namespace {
 LOG_LOGGER _log = LOG_GET("jointcal.AstrometryFit");
 }
@@ -43,12 +41,12 @@ AstrometryFit::AstrometryFit(std::shared_ptr<Associations> associations,
     unsigned count = 0;
     for (auto const &i : _associations->fittedStarList) {
         _referenceColor += i->color;
-        _sigCol += sqr(i->color);
+        _sigCol += std::pow(i->color, 2);
         count++;
     }
     if (count) {
         _referenceColor /= double(count);
-        if (_sigCol > 0) _sigCol = sqrt(_sigCol / count - sqr(_referenceColor));
+        if (_sigCol > 0) _sigCol = sqrt(_sigCol / count - std::pow(_referenceColor, 2));
     }
     LOGLS_INFO(_log, "Reference Color: " << _referenceColor << " sig " << _sigCol);
 }
@@ -82,7 +80,7 @@ static void tweakAstromMeasurementErrors(FatPoint &P, MeasuredStar const &Ms, do
     static bool called = false;
     static double increment = 0;
     if (!called) {
-        increment = sqr(error);  // was in Preferences
+        increment = std::pow(error, 2);  // was in Preferences
         called = true;
     }
     P.vx += increment;
@@ -152,7 +150,7 @@ void AstrometryFit::leastSquareDerivativesMeasurement(CcdImage const &ccdImage, 
             mapping->transformPosAndErrors(inPos, outPos);
 
         unsigned ipar = npar_mapping;
-        double det = outPos.vx * outPos.vy - sqr(outPos.vxy);
+        double det = outPos.vx * outPos.vy - std::pow(outPos.vxy, 2);
         if (det <= 0 || outPos.vx <= 0 || outPos.vy <= 0) {
             LOGLS_WARN(_log, "Inconsistent measurement errors: drop measurement at "
                                      << Point(ms) << " in image " << ccdImage.getName());
@@ -277,7 +275,7 @@ void AstrometryFit::leastSquareDerivativesReference(FittedStarList const &fitted
         H(0, 1) = -der.A21();
         H(1, 1) = -der.A22();
         // TO DO : account for proper motions.
-        double det = rsProj.vx * rsProj.vy - sqr(rsProj.vxy);
+        double det = rsProj.vx * rsProj.vy - std::pow(rsProj.vxy, 2);
         if (rsProj.vx <= 0 || rsProj.vy <= 0 || det <= 0) {
             LOGLS_WARN(_log, "RefStar error matrix not positive definite for:  " << *rs);
             continue;
@@ -350,7 +348,7 @@ void AstrometryFit::accumulateStatImage(CcdImage const &ccdImage, Chi2Accumulato
         FatPoint outPos;
         // should *not* fill H if whatToFit excludes mapping parameters.
         mapping->transformPosAndErrors(inPos, outPos);
-        double det = outPos.vx * outPos.vy - sqr(outPos.vxy);
+        double det = outPos.vx * outPos.vy - std::pow(outPos.vxy, 2);
         if (det <= 0 || outPos.vx <= 0 || outPos.vy <= 0) {
             LOGLS_WARN(_log, " Inconsistent measurement errors :drop measurement at "
                                      << Point(*ms) << " in image " << ccdImage.getName());
@@ -397,11 +395,11 @@ void AstrometryFit::accumulateStatRefStars(Chi2Accumulator &accum) const {
         // TO DO : account for proper motions.
         double rx = rsProj.x;  // -fsProj.x (which is 0)
         double ry = rsProj.y;
-        double det = rsProj.vx * rsProj.vy - sqr(rsProj.vxy);
+        double det = rsProj.vx * rsProj.vy - std::pow(rsProj.vxy, 2);
         double wxx = rsProj.vy / det;
         double wyy = rsProj.vx / det;
         double wxy = -rsProj.vxy / det;
-        accum.addEntry(wxx * sqr(rx) + 2 * wxy * rx * ry + wyy * sqr(ry), 2, fs);
+        accum.addEntry(wxx * std::pow(rx, 2) + 2 * wxy * rx * ry + wyy * std::pow(ry, 2), 2, fs);
     }
 }
 
@@ -606,7 +604,7 @@ void AstrometryFit::makeMeasResTuple(std::string const &tupleName) const {
             Point fittedStarInTP =
                     transformFittedStar(*fs, sky2TP, refractionVector, _refractionCoefficient, mjd);
             Point res = tpPos - fittedStarInTP;
-            double det = tpPos.vx * tpPos.vy - sqr(tpPos.vxy);
+            double det = tpPos.vx * tpPos.vy - std::pow(tpPos.vxy, 2);
             double wxx = tpPos.vy / det;
             double wyy = tpPos.vx / det;
             double wxy = -tpPos.vxy / det;
@@ -650,11 +648,11 @@ void AstrometryFit::makeRefResTuple(std::string const &tupleName) const {
         proj.transformPosAndErrors(*rs, rsProj);
         double rx = rsProj.x;  // -fsProj.x (which is 0)
         double ry = rsProj.y;
-        double det = rsProj.vx * rsProj.vy - sqr(rsProj.vxy);
+        double det = rsProj.vx * rsProj.vy - std::pow(rsProj.vxy, 2);
         double wxx = rsProj.vy / det;
         double wyy = rsProj.vx / det;
         double wxy = -rsProj.vxy / det;
-        double chi2 = wxx * sqr(rx) + 2 * wxy * rx * ry + wyy * sqr(ry);
+        double chi2 = wxx * std::pow(rx, 2) + 2 * wxy * rx * ry + wyy * std::pow(ry, 2);
         tuple << std::setprecision(9);
         tuple << fs.x << ' ' << fs.y << ' ' << rx << ' ' << ry << ' ' << fs.getMag() << ' ' << rsProj.vx
               << ' ' << rsProj.vy << ' ' << rsProj.vxy << ' ' << fs.color << ' ' << fs.getIndexInMatrix()

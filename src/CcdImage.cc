@@ -26,8 +26,6 @@ LOG_LOGGER _log = LOG_GET("jointcal.CcdImage");
 namespace lsst {
 namespace jointcal {
 
-static double sqr(double x) { return x * x; }
-
 void CcdImage::LoadCatalog(afw::table::SourceCatalog const &catalog, std::string const &fluxField) {
     auto xKey = catalog.getSchema().find<double>("slot_Centroid_x").key;
     auto yKey = catalog.getSchema().find<double>("slot_Centroid_y").key;
@@ -44,8 +42,8 @@ void CcdImage::LoadCatalog(afw::table::SourceCatalog const &catalog, std::string
         auto ms = std::make_shared<MeasuredStar>();
         ms->x = record.get(xKey);
         ms->y = record.get(yKey);
-        ms->vx = sqr(record.get(xsKey));
-        ms->vy = sqr(record.get(ysKey));
+        ms->vx = std::pow(record.get(xsKey), 2);
+        ms->vy = std::pow(record.get(ysKey), 2);
         /* the xy covariance is not provided in the input catalog: we
         cook it up from the x and y position variance and the shape
          measurements: */

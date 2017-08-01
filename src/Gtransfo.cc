@@ -28,8 +28,6 @@ bool isIdentity(const Gtransfo *gtransfo) {
     return (dynamic_cast<const GtransfoIdentity *>(gtransfo) != nullptr);
 }
 
-static double sqr(double x) { return x * x; }
-
 bool isIntegerShift(const Gtransfo *gtransfo) {
     const GtransfoPoly *shift = dynamic_cast<const GtransfoPoly *>(gtransfo);
     if (shift == nullptr) return false;
@@ -739,16 +737,16 @@ static GtransfoLin shiftAndNormalize(const StarMatchList &starMatchList) {
         const Point &point1 = a_match.point1;
         xav += point1.x;
         yav += point1.y;
-        x2 += sqr(point1.x);
-        y2 += sqr(point1.y);
+        x2 += std::pow(point1.x, 2);
+        y2 += std::pow(point1.y, 2);
         count++;
     }
     if (count == 0) return GtransfoLin();
     xav /= count;
     yav /= count;
     // 3.5 stands for sqrt(12).
-    double xspan = 3.5 * sqrt(x2 / count - sqr(xav));
-    double yspan = 3.5 * sqrt(y2 / count - sqr(yav));
+    double xspan = 3.5 * sqrt(x2 / count - std::pow(xav, 2));
+    double yspan = 3.5 * sqrt(y2 / count - std::pow(yav, 2));
     return GtransfoLinScale(2. / xspan, 2. / yspan) * GtransfoLinShift(-xav, -yav);
 }
 

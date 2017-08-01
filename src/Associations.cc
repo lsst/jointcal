@@ -24,8 +24,6 @@
 
 namespace jointcal = lsst::jointcal;
 
-static double sqr(double x) { return x * x; }
-
 namespace {
 LOG_LOGGER _log = LOG_GET("jointcal.Associations");
 }
@@ -194,8 +192,8 @@ void Associations::collectRefStars(lsst::afw::table::SortedCatalogT<lsst::afw::t
         // TODO: Need to devise a way to check whether the refCat has position errors
         // TODO: and use them instead, if available.
         // cook up errors: 100 mas per cooordinate
-        star->vx = sqr(0.1 / 3600 / cos(coord.getLatitude()));
-        star->vy = sqr(0.1 / 3600);
+        star->vx = std::pow(0.1 / 3600 / cos(coord.getLatitude()), 2);
+        star->vy = std::pow(0.1 / 3600, 2);
         star->vxy = 0.;
 
         refStarList.push_back(star);
