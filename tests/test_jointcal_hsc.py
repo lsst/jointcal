@@ -69,17 +69,25 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
                    'selectedPhotometryCcdImageList': 6,
                    'astrometryFinalChi2': 691.12,
                    'astrometryFinalNdof': 1858,
-                   'photometryFinalChi2': 3753.82,
-                   'photometryFinalNdof': 504
+                   'photometryFinalChi2': 1525.03,
+                   'photometryFinalNdof': 965
                    }
         self._testJointcalTask(2, dist_rms_relative, self.dist_rms_absolute, pa1, metrics=metrics)
 
-    def test_jointcalTask_11_visits(self):
+    def test_jointcalTask_11_visits_no_photometry(self):
+        """Test 11 visits with different filters.
+        Testing photometry doesn't make sense for this currently.
+        """
+
+        self.config = lsst.jointcal.jointcal.JointcalConfig()
+        self.config.doPhotometry = False
+        self.jointcalStatistics.do_photometry = False
+
         # NOTE: The relative RMS limit was empirically determined from the
         # first run of jointcal on this data. We should always do better than
         # this in the future!
         dist_rms_relative = 17e-3*u.arcsecond
-        pa1 = 0.134
+        pa1 = None  # pa1 = 0.134
         metrics = {'collectedAstrometryRefStars': 3649,
                    'collectedPhotometryRefStars': 3649,
                    'selectedAstrometryRefStars': 3649,
@@ -92,8 +100,8 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
                    'selectedPhotometryCcdImageList': 33,
                    'astrometryFinalChi2': 7929.656,
                    'astrometryFinalNdof': 14262,
-                   'photometryFinalChi2': 16773556.5,
-                   'photometryFinalNdof': 6569
+                   'photometryFinalChi2': None,
+                   'photometryFinalNdof': None
                    }
         self._testJointcalTask(11, dist_rms_relative, self.dist_rms_absolute, pa1, metrics=metrics)
 
@@ -105,8 +113,8 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
                    'associatedPhotometryFittedStars': 1151,
                    'selectedPhotometryFittedStars': 770,
                    'selectedPhotometryCcdImageList': 6,
-                   'photometryFinalChi2': 3753.82,
-                   'photometryFinalNdof': 504
+                   'photometryFinalChi2': 1525.03,
+                   'photometryFinalNdof': 965
                    }
 
         self.config = lsst.jointcal.jointcal.JointcalConfig()
@@ -186,8 +194,8 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
                    'selectedPhotometryCcdImageList': 6,
                    'astrometryFinalChi2': 435.01995,
                    'astrometryFinalNdof': 1412,
-                   'photometryFinalChi2': 3753.82,
-                   'photometryFinalNdof': 504
+                   'photometryFinalChi2': 1525.03,
+                   'photometryFinalNdof': 965
                    }
         # NOTE: The astrometry/photometry tests are computed using the a.net SDSS refcat,
         # so the absolute astrometry RMS will be larger (because GAIA is better, so

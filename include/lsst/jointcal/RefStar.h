@@ -15,31 +15,38 @@ namespace jointcal {
 //! Tangent Plane seems a good idea.
 class RefStar : public BaseStar {
 private:
-    unsigned int _index;
-    std::vector<double> _refFlux;
+    // on-sky flux, in Maggies, per filter
+    std::vector<double> _refFluxList;
+    std::vector<double> _refFluxErrList;
 
 public:
-    //!
-    RefStar(const BaseStar& baseStar);
+    RefStar(double xx, double yy, double defaultFlux, double defaultFluxErr, std::vector<double>& refFluxList,
+            std::vector<double>& refFluxErrList)
+            : BaseStar(xx, yy, defaultFlux, defaultFluxErr),
+              _refFluxList(refFluxList),
+              _refFluxErrList(refFluxErrList) {}
+
+    /// No move or copy: each RefStar is unique, and should be accessed/managed via shared_ptr.
+    RefStar(RefStar const&) = delete;
+    RefStar(RefStar&&) = delete;
+    RefStar& operator=(RefStar const&) = default;
+    RefStar& operator=(RefStar&&) = delete;
 
     void dump(std::ostream& stream = std::cout) const {
         BaseStar::dump(stream);
         stream << " refFlux: [";
-        for (auto x : _refFlux) {
+        for (auto x : _refFluxList) {
             stream << x << ", ";
         }
-        stream << "] index: " << _index;
+        stream << "]";
     }
 
-    //! reference flux
-    double getFlux(int filter) const;
-
-    //! assign the reference fluxes
-    void assignRefFluxes(std::vector<double> const& refFlux);
-
-    //! star index
-    unsigned int& getIndex() { return _index; }
-    unsigned int getIndex() const { return _index; }
+    using BaseStar::getFlux;
+    using BaseStar::getFluxErr;
+    /// reference flux in a given filter
+    double getFlux(size_t filter) const { return _refFluxList[filter]; }
+    /// reference fluxErr in a given filter
+    double getFluxErr(size_t filter) const { return _refFluxErrList[filter]; }
 };
 
 /****** RefStarList ***********/

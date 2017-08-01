@@ -19,16 +19,12 @@ namespace jointcal {
 FittedStar::FittedStar(const MeasuredStar &measuredStar)
         : BaseStar(measuredStar),
           _mag(measuredStar.getMag()),
-          _emag(-1),
-          _col(0.),
           _gen(-1),
           _wmag(measuredStar.getMagWeight()),
           _indexInMatrix(-1),
           _measurementCount(0),
-          _refStar(nullptr),
-          _flux2(-1),
-          _fluxErr2(-1) {
-    _fluxErr = measuredStar.eflux;
+          _refStar(nullptr) {
+    _fluxErr = measuredStar.getInstFluxErr();
 }
 
 void FittedStar::setRefStar(const RefStar *refStar) {

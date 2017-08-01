@@ -30,13 +30,19 @@ protected:
     std::unique_ptr<GtransfoLin> lin;
 
 public:
-    SimpleGtransfoMapping(const Gtransfo &gtransfo, bool toFit = true)
+    SimpleGtransfoMapping(Gtransfo const &gtransfo, bool toFit = true)
             : toFit(toFit), transfo(gtransfo.clone()), errorProp(transfo), lin(new GtransfoLin) {
         // in this order:
         // take a copy of the input transfo,
         // assign the transformation used to propagate errors to the transfo itself
         // reserve some memory space to compute the derivatives (efficiency).
     }
+
+    /// No copy or move: there is only ever one instance of a given mapping (i.e.. per ccd+visit)
+    SimpleGtransfoMapping(SimpleGtransfoMapping const &) = delete;
+    SimpleGtransfoMapping(SimpleGtransfoMapping &&) = delete;
+    SimpleGtransfoMapping &operator=(SimpleGtransfoMapping const &) = delete;
+    SimpleGtransfoMapping &operator=(SimpleGtransfoMapping &&) = delete;
 
     virtual void freezeErrorScales() {
         // from there on, updating the transfo does not change the errors.
@@ -60,7 +66,7 @@ public:
     }
 
     //!
-    void transformPosAndErrors(const FatPoint &where, FatPoint &outPoint) const {
+    void transformPosAndErrors(FatPoint const &where, FatPoint &outPoint) const {
         transfo->transformPosAndErrors(where, outPoint);
         FatPoint tmp;
         errorProp->transformPosAndErrors(where, tmp);
@@ -70,7 +76,7 @@ public:
     }
 
     //!
-    void positionDerivative(const Point &where, Eigen::Matrix2d &derivative, double epsilon) const {
+    void positionDerivative(Point const &where, Eigen::Matrix2d &derivative, double epsilon) const {
         errorProp->computeDerivative(where, *lin, epsilon);
         derivative(0, 0) = lin->coeff(1, 0, 0);
         //
@@ -85,7 +91,7 @@ public:
     }
 
     //!
-    void offsetParams(const double *delta) { transfo->offsetParams(delta); }
+    void offsetParams(double const *delta) { transfo->offsetParams(delta); }
 
     //! position of the parameters within the grand fitting scheme
     unsigned getIndex() const { return index; }
@@ -93,14 +99,14 @@ public:
     //!
     void setIndex(unsigned i) { index = i; }
 
-    virtual void computeTransformAndDerivatives(const FatPoint &where, FatPoint &outPoint,
+    virtual void computeTransformAndDerivatives(FatPoint const &where, FatPoint &outPoint,
                                                 Eigen::MatrixX2d &H) const {
         transformPosAndErrors(where, outPoint);
         transfo->paramDerivatives(where, &H(0, 0), &H(0, 1));
     }
 
     //! Access to the (fitted) transfo
-    virtual const Gtransfo &getTransfo() const { return *transfo; }
+    virtual Gtransfo const &getTransfo() const { return *transfo; }
 };
 
 //! Mapping implementation for a polynomial transformation.
@@ -120,7 +126,7 @@ public:
     // ! contructor.
     /*! The transformation will be initialized to gtransfo, so that the effective transformation
       reads gtransfo*CenterAndScale */
-    SimplePolyMapping(const GtransfoLin &CenterAndScale, const GtransfoPoly &gtransfo)
+    SimplePolyMapping(GtransfoLin const &CenterAndScale, GtransfoPoly const &gtransfo)
             : SimpleGtransfoMapping(gtransfo), _centerAndScale(CenterAndScale) {
         // We assume that the initialization was done properly, for example that
         // gtransfo = pix2TP*CenterAndScale.invert(), so we do not touch transfo.
@@ -136,10 +142,16 @@ public:
         assert((&H(1, 0) - &H(0, 0)) == 1);
     }
 
+    /// No copy or move: there is only ever one instance of a given mapping (i.e.. per ccd+visit)
+    SimplePolyMapping(SimplePolyMapping const &) = delete;
+    SimplePolyMapping(SimplePolyMapping &&) = delete;
+    SimplePolyMapping &operator=(SimplePolyMapping const &) = delete;
+    SimplePolyMapping &operator=(SimplePolyMapping &&) = delete;
+
     /* The SimpleGtransfoMapping version does not account for the
        _centerAndScale transfo */
 
-    void positionDerivative(const Point &where, Eigen::Matrix2d &derivative, double epsilon) const {
+    void positionDerivative(Point const &where, Eigen::Matrix2d &derivative, double epsilon) const {
         Point tmp = _centerAndScale.apply(where);
         errorProp->computeDerivative(tmp, *lin, epsilon);
         derivative(0, 0) = lin->coeff(1, 0, 0);
@@ -159,7 +171,7 @@ public:
     /* We should put the computation of error propagation and
        parameter derivatives into the same Gtransfo routine because
        it could be significantly faster */
-    virtual void computeTransformAndDerivatives(const FatPoint &where, FatPoint &outPoint,
+    virtual void computeTransformAndDerivatives(FatPoint const &where, FatPoint &outPoint,
                                                 Eigen::MatrixX2d &H) const {
         FatPoint mid;
         _centerAndScale.transformPosAndErrors(where, mid);
@@ -173,7 +185,7 @@ public:
     }
 
     //! Implements as well the centering and scaling of coordinates
-    void transformPosAndErrors(const FatPoint &where, FatPoint &outPoint) const {
+    void transformPosAndErrors(FatPoint const &where, FatPoint &outPoint) const {
         FatPoint mid;
         _centerAndScale.transformPosAndErrors(where, mid);
         transfo->transformPosAndErrors(mid, outPoint);
@@ -185,7 +197,7 @@ public:
     }
 
     //! Access to the (fitted) transfo
-    const Gtransfo &getTransfo() const {
+    Gtransfo const &getTransfo() const {
         // Cannot fail given the contructor:
         const GtransfoPoly *fittedPoly = dynamic_cast<const GtransfoPoly *>(&(*transfo));
         actualResult = (*fittedPoly) * _centerAndScale;
@@ -199,7 +211,7 @@ public:
 class SimpleIdentityMapping : public SimpleGtransfoMapping<GtransfoIdentity> {
 public:
     //! nothing to do.
-    virtual void computeTransformAndDerivatives(const FatPoint &where, FatPoint &outPoint,
+    virtual void computeTransformAndDerivatives(FatPoint const &where, FatPoint &outPoint,
                                                 Eigen::MatrixX2d &H) const {
         outPoint = where;
     }

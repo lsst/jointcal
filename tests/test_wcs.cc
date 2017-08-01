@@ -85,7 +85,7 @@ BOOST_AUTO_TEST_CASE(test_polyfit)
   for (double x=10; x<2000; x+= 120)
     for (double y=20; y<4000; y+=160)
       {
-	auto s1 = std::make_shared<jointcal::BaseStar>(x,y,1);
+	auto s1 = std::make_shared<jointcal::BaseStar>(x,y,1,0.01);
 	s1->vx = 0.1;
 	s1->vy = 0.2;
 	s1->vxy = 0.05;

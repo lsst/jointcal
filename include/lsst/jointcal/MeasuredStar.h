@@ -19,22 +19,40 @@ class MeasuredStar : public BaseStar {
 public:
     double mag;
     double wmag;
-    double eflux;
-    double aperrad;
     double chi2;
 
 private:
+    unsigned _id;  // id in original catalog
+
+    // on-chip flux, in ADU
+    double _instFlux;
+    double _instFluxErr;
+
     const CcdImage *_ccdImage;
     std::shared_ptr<const FittedStar> _fittedStar;
     bool _valid;
 
 public:
     //!
-    MeasuredStar() : BaseStar(), mag(0.), wmag(0.), eflux(0.), aperrad(0.), _ccdImage(0), _valid(true) {}
+    MeasuredStar()
+            : BaseStar(),
+              mag(0.),
+              wmag(0.),
+              _id(0),
+              _instFlux(0.),
+              _instFluxErr(0.),
+              _ccdImage(0),
+              _valid(true) {}
 
-    // TODO: note fittedStar argument seems unused!
-    MeasuredStar(const BaseStar &baseStar, const FittedStar *_fittedStar = nullptr)
-            : BaseStar(baseStar), mag(0.), wmag(0.), eflux(0.), aperrad(0.), _ccdImage(0), _valid(true) {}
+    MeasuredStar(BaseStar const &baseStar)
+            : BaseStar(baseStar), mag(0.), wmag(0.), _id(0), _instFluxErr(0.), _ccdImage(0), _valid(true) {}
+
+    /// No move, allow copy constructor: we may copy the fitted StarLists when associating and matching
+    /// catalogs, otherwise Stars should be managed by shared_ptr only.
+    MeasuredStar(MeasuredStar const &) = default;
+    MeasuredStar(MeasuredStar &&) = delete;
+    MeasuredStar &operator=(MeasuredStar const &) = delete;
+    MeasuredStar &operator=(MeasuredStar &&) = delete;
 
     void setFittedStar(std::shared_ptr<FittedStar> fittedStar) {
         if (fittedStar) fittedStar->getMeasurementCount()++;
@@ -43,19 +61,25 @@ public:
 
     void dump(std::ostream &stream = std::cout) const {
         BaseStar::dump(stream);
-        stream << " ccdImage: " << _ccdImage << " valid: " << _valid;
+        stream << " id: " << _id << " valid: " << _valid;
     }
 
-    double getFluxSig() const { return eflux; }
+    void setInstFlux(double instFlux) { _instFlux = instFlux; }
+    void setInstFluxErr(double instFluxErr) { _instFluxErr = instFluxErr; }
+
+    double getInstFlux() const { return _instFlux; }
+    double getInstFluxErr() const { return _instFluxErr; }
     double getMag() const { return mag; }
-    double getAperRad() const { return aperrad; }
+
+    void setId(unsigned id) { _id = id; }
+    unsigned getId() { return _id; }
 
     //! the inverse of the mag variance
-    double getMagWeight() const { return (_flux * _flux / (eflux * eflux)); }
+    double getMagWeight() const { return (_instFlux * _instFlux / (_instFluxErr * _instFluxErr)); }
 
     std::shared_ptr<const FittedStar> getFittedStar() const { return _fittedStar; };
 
-    const CcdImage &getCcdImage() const { return *_ccdImage; };
+    CcdImage const &getCcdImage() const { return *_ccdImage; };
 
     void setCcdImage(const CcdImage *ccdImage) { _ccdImage = ccdImage; };
 

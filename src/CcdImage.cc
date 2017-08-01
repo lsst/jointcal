@@ -3,15 +3,18 @@
 #include <sstream>
 #include <math.h>
 
+#include "lsst/pex/exceptions.h"
+#include "lsst/afw/image/Image.h"
+#include "lsst/afw/image/PhotoCalib.h"
+#include "lsst/afw/geom/Angle.h"
+#include "lsst/afw/geom/Point.h"
+
 #include "lsst/log/Log.h"
 #include "lsst/jointcal/CcdImage.h"
 #include "lsst/jointcal/SipToGtransfo.h"
 #include "lsst/jointcal/AstroUtils.h"
-#include "lsst/afw/image/Image.h"
 #include "lsst/jointcal/Gtransfo.h"
 #include "lsst/jointcal/Point.h"
-#include "lsst/pex/exceptions.h"
-#include "lsst/afw/geom/Angle.h"
 
 namespace jointcal = lsst::jointcal;
 namespace afwImg = lsst::afw::image;
@@ -23,10 +26,9 @@ LOG_LOGGER _log = LOG_GET("jointcal.CcdImage");
 namespace lsst {
 namespace jointcal {
 
-static double sq(double x) { return x * x; }
+static double sqr(double x) { return x * x; }
 
-void CcdImage::LoadCatalog(const lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &catalog,
-                           const std::string &fluxField) {
+void CcdImage::LoadCatalog(afw::table::SourceCatalog const &catalog, std::string const &fluxField) {
     auto xKey = catalog.getSchema().find<double>("slot_Centroid_x").key;
     auto yKey = catalog.getSchema().find<double>("slot_Centroid_y").key;
     auto xsKey = catalog.getSchema().find<float>("slot_Centroid_xSigma").key;
@@ -35,15 +37,15 @@ void CcdImage::LoadCatalog(const lsst::afw::table::SortedCatalogT<lsst::afw::tab
     auto myyKey = catalog.getSchema().find<double>("slot_Shape_yy").key;
     auto mxyKey = catalog.getSchema().find<double>("slot_Shape_xy").key;
     auto fluxKey = catalog.getSchema().find<double>(fluxField + "_flux").key;
-    auto efluxKey = catalog.getSchema().find<double>(fluxField + "_fluxSigma").key;
+    auto fluxErrKey = catalog.getSchema().find<double>(fluxField + "_fluxSigma").key;
 
     _wholeCatalog.clear();
     for (auto const &record : catalog) {
         auto ms = std::make_shared<MeasuredStar>();
         ms->x = record.get(xKey);
         ms->y = record.get(yKey);
-        ms->vx = sq(record.get(xsKey));
-        ms->vy = sq(record.get(ysKey));
+        ms->vx = sqr(record.get(xsKey));
+        ms->vy = sqr(record.get(ysKey));
         /* the xy covariance is not provided in the input catalog: we
         cook it up from the x and y position variance and the shape
          measurements: */
@@ -57,25 +59,28 @@ void CcdImage::LoadCatalog(const lsst::afw::table::SortedCatalogT<lsst::afw::tab
                                                                      << ms->vx * ms->vy);
             continue;
         }
-        ms->setFlux(record.get(fluxKey));
-        ms->eflux = record.get(efluxKey);
-        ms->mag = _calib->getMagnitude(ms->getFlux());
+        ms->setId(record.getId());
+        ms->setInstFlux(record.get(fluxKey));
+        ms->setInstFluxErr(record.get(fluxErrKey));
+        // TODO: the below lines will be less clumsy once DM-4044 is cleaned up and we can say:
+        // TODO: instFluxToMaggies(ms->getInstFlux(), ms) (because ms will be derived from afw::geom::Point).
+        afw::geom::Point<double, 2> point(ms->x, ms->y);
+        auto flux = _photoCalib->instFluxToMaggies(ms->getInstFlux(), ms->getInstFluxErr(), point);
+        ms->setFlux(flux.value);
+        ms->setFluxErr(flux.err);
+        ms->mag = _photoCalib->instFluxToMagnitude(ms->getInstFlux(), point);
         ms->setCcdImage(this);
         _wholeCatalog.push_back(std::move(ms));
     }
     _wholeCatalog.setCcdImage(this);
 }
 
-CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &record,
-                   const PTR(lsst::afw::image::TanWcs) wcs, const PTR(lsst::afw::image::VisitInfo) visitInfo,
-                   const lsst::afw::geom::Box2I &bbox, const std::string &filter,
-                   const PTR(lsst::afw::image::Calib) calib, const int &visit, const int &ccdId,
-                   const std::string &fluxField)
-        : _ccdId(ccdId),
-          _visit(visit),
-          _calib(calib),
-          _filter(filter) {
-    LoadCatalog(record, fluxField);
+CcdImage::CcdImage(afw::table::SourceCatalog &catalog, std::shared_ptr<lsst::afw::image::TanWcs> wcs,
+                   std::shared_ptr<lsst::afw::image::VisitInfo> visitInfo, afw::geom::Box2I const &bbox,
+                   std::string const &filter, std::shared_ptr<afw::image::PhotoCalib> photoCalib, int visit,
+                   int ccdId, std::string const &fluxField)
+        : _ccdId(ccdId), _visit(visit), _photoCalib(photoCalib), _filter(filter) {
+    LoadCatalog(catalog, fluxField);
 
     Point lowerLeft(bbox.getMinX(), bbox.getMinY());
     Point upperRight(bbox.getMaxX(), bbox.getMaxY());
@@ -113,7 +118,7 @@ CcdImage::CcdImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceReco
     }
 }
 
-void CcdImage::setCommonTangentPoint(const Point &commonTangentPoint) {
+void CcdImage::setCommonTangentPoint(Point const &commonTangentPoint) {
     _commonTangentPoint = commonTangentPoint;
 
     // use some other variable in case we later have to actually convert the

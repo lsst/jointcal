@@ -14,6 +14,7 @@ import lsst.afw.geom as afwGeom
 import lsst.afw.coord as afwCoord
 import lsst.pex.exceptions as pexExceptions
 import lsst.afw.table
+import lsst.meas.algorithms
 
 from lsst.meas.extensions.astrometryNet import LoadAstrometryNetObjectsTask
 from lsst.meas.algorithms.sourceSelector import sourceSelectorRegistry
@@ -21,6 +22,7 @@ from lsst.meas.algorithms.sourceSelector import sourceSelectorRegistry
 from .dataIds import PerTractCcdDataIdContainer
 
 import lsst.jointcal
+from lsst.jointcal import MinimizeResult
 
 __all__ = ["JointcalConfig", "JointcalTask"]
 
@@ -121,6 +123,13 @@ class JointcalConfig(pexConfig.Config):
         default="simplePoly",
         allowed={"simplePoly": "One polynomial per ccd",
                  "constrainedPoly": "One polynomial per ccd, and one polynomial per visit"}
+    )
+    photometryModel = pexConfig.ChoiceField(
+        doc="Type of model to fit to photometry",
+        dtype=str,
+        default="simple",
+        allowed={"simple": "One constant zeropoint per ccd and visit",
+                 "constrained": "Constrained zeropoint per ccd, and one polynomial per visit"}
     )
     astrometryRefObjLoader = pexConfig.ConfigurableField(
         target=LoadAstrometryNetObjectsTask,
@@ -224,6 +233,8 @@ class JointcalTask(pipeBase.CmdLineTask):
         tanWcs = calexp.getWcs()
         bbox = calexp.getBBox()
         filt = calexp.getInfo().getFilter().getName()
+        fluxMag0 = calib.getFluxMag0()
+        photoCalib = afwImage.PhotoCalib(fluxMag0[0], fluxMag0[1], bbox)
 
         goodSrc = self.sourceSelector.selectSources(src)
 
@@ -231,7 +242,7 @@ class JointcalTask(pipeBase.CmdLineTask):
             self.log.warn("no stars selected in ", visit, ccdname)
             return tanWcs
         self.log.info("%d stars selected in visit %d ccd %d", len(goodSrc.sourceCat), visit, ccdname)
-        associations.addImage(goodSrc.sourceCat, tanWcs, visitInfo, bbox, filt, calib,
+        associations.addImage(goodSrc.sourceCat, tanWcs, visitInfo, bbox, filt, photoCalib,
                               visit, ccdname, jointcalControl)
 
         Result = collections.namedtuple('Result_from_build_CcdImage', ('wcs', 'key', 'filter'))
@@ -318,7 +329,8 @@ class JointcalTask(pipeBase.CmdLineTask):
                                                       refObjLoader=self.photometryRefObjLoader,
                                                       fit_function=self._fit_photometry,
                                                       profile_jointcal=profile_jointcal,
-                                                      tract=tract)
+                                                      tract=tract,
+                                                      filters=filters)
         else:
             photometry = Photometry(None, None)
 
@@ -329,8 +341,8 @@ class JointcalTask(pipeBase.CmdLineTask):
         return pipeBase.Struct(dataRefs=dataRefs, oldWcsList=oldWcsList, metrics=self.metrics)
 
     def _do_load_refcat_and_fit(self, associations, defaultFilter, center, radius,
-                                name="", refObjLoader=None, fit_function=None, tract=None,
-                                profile_jointcal=False, match_cut=3.0):
+                                name="", refObjLoader=None, filters=[], fit_function=None,
+                                tract=None, profile_jointcal=False, match_cut=3.0):
         """Load reference catalog, perform the fit, and return the result.
 
         Parameters
@@ -347,6 +359,8 @@ class JointcalTask(pipeBase.CmdLineTask):
             Name of thing being fit: "Astrometry" or "Photometry".
         refObjLoader : lsst.meas.algorithms.LoadReferenceObjectsTask
             Reference object loader to load from for fit.
+        filters : list of str, optional
+            List of filters to load from the reference catalog.
         fit_function : function
             function to call to perform fit (takes associations object).
         tract : str
@@ -370,9 +384,24 @@ class JointcalTask(pipeBase.CmdLineTask):
         skyCircle = refObjLoader.loadSkyCircle(center,
                                                afwGeom.Angle(radius, afwGeom.radians),
                                                defaultFilter)
-        associations.collectRefStars(skyCircle.refCat,
-                                     self.config.matchCut*afwGeom.arcseconds,
-                                     skyCircle.fluxField)
+
+        # Need memory contiguity to get reference filters as a vector.
+        if not skyCircle.refCat.isContiguous():
+            refCat = skyCircle.refCat.copy(deep=True)
+        else:
+            refCat = skyCircle.refCat
+
+        # load the reference catalog fluxes.
+        # TODO: Simon will file a ticket for making this better (and making it use the color terms)
+        refFluxes = {}
+        refFluxErrs = {}
+        for filt in filters:
+            filtKeys = lsst.meas.algorithms.getRefFluxKeys(refCat.schema, filt)
+            refFluxes[filt] = refCat.get(filtKeys[0])
+            refFluxErrs[filt] = refCat.get(filtKeys[1])
+
+        associations.collectRefStars(refCat, self.config.matchCut*afwGeom.arcseconds,
+                                     skyCircle.fluxField, refFluxes, refFluxErrs)
         self.metrics['collected%sRefStars' % name] = associations.refStarListSize()
 
         associations.selectFittedStars(self.config.minMeasurements)
@@ -384,11 +413,10 @@ class JointcalTask(pipeBase.CmdLineTask):
         load_cat_prof_file = 'jointcal_fit_%s.prof'%name if profile_jointcal else ''
         with pipeBase.cmdLineTask.profile(load_cat_prof_file):
             result = fit_function(associations)
-        # TODO: not clear that this is really needed any longer?
-        # TODO: makeResTuple should at least be renamed, if we do want to keep that big data-dump around.
-        # Fill reference and measurement n-tuples for each tract
+        # TODO: this should probably be made optional and turned into a "butler save" somehow.
+        # Save reference and measurement n-tuples for each tract
         tupleName = "{}_res_{}.list".format(name, tract)
-        result.fit.makeResTuple(tupleName)
+        result.fit.saveResultTuples(tupleName)
 
         return result
 
@@ -418,11 +446,17 @@ class JointcalTask(pipeBase.CmdLineTask):
             model : lsst.jointcal.PhotometryModel
                 The photometric model that was fit.
         """
-
         self.log.info("=== Starting photometric fitting...")
-        model = lsst.jointcal.SimplePhotometryModel(associations.getCcdImageList())
+
+        # TODO: should use pex.config.RegistryField here (see DM-9195)
+        if self.config.photometryModel == "constrained":
+            model = lsst.jointcal.ConstrainedPhotometryModel(associations.getCcdImageList())
+        elif self.config.photometryModel == "simple":
+            model = lsst.jointcal.SimplePhotometryModel(associations.getCcdImageList())
 
         fit = lsst.jointcal.PhotometryFit(associations, model)
+        chi2 = fit.computeChi2()
+        self.log.info("Initialized: %s", str(chi2))
         fit.minimize("Model")
         chi2 = fit.computeChi2()
         self.log.info(str(chi2))
@@ -431,7 +465,9 @@ class JointcalTask(pipeBase.CmdLineTask):
         self.log.info(str(chi2))
         fit.minimize("Model Fluxes")
         chi2 = fit.computeChi2()
-        self.log.info("Fit completed with %s", str(chi2))
+        self.log.info("Fit prepared with %s", str(chi2))
+
+        chi2 = self._iterate_fit(fit, 20, "photometry", "Model Fluxes")
 
         self.metrics['photometryFinalChi2'] = chi2.chi2
         self.metrics['photometryFinalNdof'] = chi2.ndof
@@ -475,6 +511,8 @@ class JointcalTask(pipeBase.CmdLineTask):
                                                   True, 0, self.config.polyOrder)
 
         fit = lsst.jointcal.AstrometryFit(associations, model, self.config.posError)
+        chi2 = fit.computeChi2()
+        self.log.info("Initialized: %s", str(chi2))
         fit.minimize("Distortions")
         chi2 = fit.computeChi2()
         self.log.info(str(chi2))
@@ -485,33 +523,40 @@ class JointcalTask(pipeBase.CmdLineTask):
         chi2 = fit.computeChi2()
         self.log.info(str(chi2))
 
-        max_steps = 20
-        for i in range(max_steps):
-            r = fit.minimize("Distortions Positions", 5)  # outliers removal at 5 sigma.
-            chi2 = fit.computeChi2()
-            self.log.info(str(chi2))
-            if r == 0:
-                self.log.debug("""fit has converged - no more outliers - redo minimixation\
-                               one more time in case we have lost accuracy in rank update""")
-                # Redo minimization one more time in case we have lost accuracy in rank update
-                r = fit.minimize("Distortions Positions", 5)  # outliers removal at 5 sigma.
-                chi2 = fit.computeChi2()
-                self.log.info("Fit completed with: %s", str(chi2))
-                break
-            elif r == 2:
-                self.log.warn("minimization failed")
-            elif r == 1:
-                self.log.warn("still some ouliers but chi2 increases - retry")
-            else:
-                break
-                self.log.error("unxepected return code from minimize")
-        else:
-            self.log.error("astrometry failed to converge after %d steps", max_steps)
+        chi2 = self._iterate_fit(fit, 20, "astrometry", "Distortions Positions")
 
         self.metrics['astrometryFinalChi2'] = chi2.chi2
         self.metrics['astrometryFinalNdof'] = chi2.ndof
 
         return Astrometry(fit, model, sky_to_tan_projection)
+
+    def _iterate_fit(self, fit, max_steps, name, whatToFit):
+        """Run fit.minimize up to max_steps times, returning the final chi2."""
+
+        for i in range(max_steps):
+            r = fit.minimize(whatToFit, 5)  # outlier removal at 5 sigma.
+            chi2 = fit.computeChi2()
+            self.log.info(str(chi2))
+            if r == MinimizeResult.Converged:
+                self.log.debug("fit has converged - no more outliers - redo minimixation"
+                               "one more time in case we have lost accuracy in rank update")
+                # Redo minimization one more time in case we have lost accuracy in rank update
+                r = fit.minimize(whatToFit, 5)  # outliers removal at 5 sigma.
+                chi2 = fit.computeChi2()
+                self.log.info("Fit completed with: %s", str(chi2))
+                break
+            elif r == MinimizeResult.Failed:
+                self.log.warn("minimization failed")
+                break
+            elif r == MinimizeResult.Chi2Increased:
+                self.log.warn("still some ouliers but chi2 increases - retry")
+            else:
+                self.log.error("unxepected return code from minimize")
+                break
+        else:
+            self.log.error("%s failed to converge after %d steps"%(name, max_steps))
+
+        return chi2
 
     def _write_results(self, associations, astrom_model, photom_model, visit_ccd_to_dataRef):
         """
@@ -544,8 +589,9 @@ class JointcalTask(pipeBase.CmdLineTask):
             if self.config.doPhotometry:
                 self.log.info("Updating Calib for visit: %d, ccd: %d", visit, ccd)
                 # start with the original calib saved to the ccdImage
-                fluxMag0, fluxMag0Sigma = ccdImage.getCalib().getFluxMag0()
-                exp.getCalib().setFluxMag0(fluxMag0*photom_model.photomFactor(ccdImage), fluxMag0Sigma)
+                fluxMag0 = ccdImage.getPhotoCalib().getInstFluxMag0()
+                fluxMag0Err = ccdImage.getPhotoCalib().getInstFluxMag0Err()
+                exp.getCalib().setFluxMag0(fluxMag0/photom_model.photomFactor(ccdImage), fluxMag0Err)
             try:
                 dataRef.put(exp, 'wcs')
             except pexExceptions.Exception as e:

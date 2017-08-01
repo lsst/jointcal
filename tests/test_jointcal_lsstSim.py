@@ -68,44 +68,57 @@ class JointcalTestLSSTSim(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Te
         # first run of jointcal on this data. We should always do better than
         # this in the future!
         dist_rms_relative = 9.7e-3*u.arcsecond
-        pa1 = 2.64e-3
+        # TODO: reinstate photometry tests once DM-11397 is fixed.
+        # NOTE: the measured values of the metrics may change with the new fitter.
+        pa1 = None
+        self.config = lsst.jointcal.jointcal.JointcalConfig()
+        self.config.doPhotometry = False
+        self.jointcalStatistics.do_photometry = False
+        # pa1 = 2.64e-3
+        # 'collectedPhotometryRefStars': 1686,
+        # 'selectedPhotometryRefStars': 1686,
+        # 'associatedPhotometryFittedStars': 1365,
+        # 'selectedPhotometryFittedStars': 789,
+        # 'selectedPhotometryCcdImageList': 2,
+        # 'photometryFinalChi2': 2310.628,
+        # 'photometryFinalNdof': 727
         metrics = {'collectedAstrometryRefStars': 1686,
-                   'collectedPhotometryRefStars': 1686,
                    'selectedAstrometryRefStars': 1686,
-                   'selectedPhotometryRefStars': 1686,
                    'associatedAstrometryFittedStars': 1365,
-                   'associatedPhotometryFittedStars': 1365,
                    'selectedAstrometryFittedStars': 789,
-                   'selectedPhotometryFittedStars': 789,
                    'selectedAstrometryCcdImageList': 2,
-                   'selectedPhotometryCcdImageList': 2,
                    'astrometryFinalChi2': 742.4992,
                    'astrometryFinalNdof': 1698,
-                   'photometryFinalChi2': 2310.628,
-                   'photometryFinalNdof': 728
                    }
         self._testJointcalTask(2, dist_rms_relative, self.dist_rms_absolute, pa1, metrics=metrics)
 
     def testJointcalTask_10_visits(self):
         dist_rms_relative = 7.9e-3*u.arcsecond
-        pa1 = 2.64e-3
+        # TODO: reinstate photometry tests once DM-11397 is fixed.
+        # NOTE: the measured values of the metrics may change with the new fitter.
+        pa1 = None
+        self.config = lsst.jointcal.jointcal.JointcalConfig()
+        self.config.doPhotometry = False
+        self.jointcalStatistics.do_photometry = False
+        # pa1 = 2.64e-3
+        # 'collectedPhotometryRefStars': 1686,
+        # 'selectedPhotometryRefStars': 1686,
+        # 'associatedPhotometryFittedStars': 1823,
+        # 'selectedPhotometryFittedStars': 1506,
+        # 'selectedPhotometryCcdImageList': 10,
+        # 'photometryFinalChi2': 35321.947,
+        # 'photometryFinalNdof': 9140
         metrics = {'collectedAstrometryRefStars': 1686,
-                   'collectedPhotometryRefStars': 1686,
                    'selectedAstrometryRefStars': 1686,
-                   'selectedPhotometryRefStars': 1686,
                    'associatedAstrometryFittedStars': 1823,
-                   'associatedPhotometryFittedStars': 1823,
                    'selectedAstrometryFittedStars': 1506,
-                   'selectedPhotometryFittedStars': 1506,
                    'selectedAstrometryCcdImageList': 10,
-                   'selectedPhotometryCcdImageList': 10,
                    'astrometryFinalChi2': 7262.2075,
                    'astrometryFinalNdof': 18260,
-                   'photometryFinalChi2': 35321.947,
-                   'photometryFinalNdof': 9141
                    }
         self._testJointcalTask(10, dist_rms_relative, self.dist_rms_absolute, pa1, metrics=metrics)
 
+    @unittest.skip("A.net reference catalog missing flux errors. Unskip once DM-.")
     def testJointcalTask_2_visits_no_astrometry(self):
         """Test turning off fitting astrometry."""
         pa1 = 2.64e-3
@@ -115,7 +128,7 @@ class JointcalTestLSSTSim(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Te
                    'selectedPhotometryFittedStars': 789,
                    'selectedPhotometryCcdImageList': 2,
                    'photometryFinalChi2': 2310.6280,
-                   'photometryFinalNdof': 728
+                   'photometryFinalNdof': 727
                    }
 
         self.config = lsst.jointcal.jointcal.JointcalConfig()

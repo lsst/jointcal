@@ -6,16 +6,16 @@
 #include <iostream>
 #include <sstream>
 
+#include "lsst/jointcal/Associations.h"
 #include "lsst/jointcal/CcdImage.h"
+#include "lsst/jointcal/Chi2.h"
 #include "lsst/jointcal/Eigenstuff.h"
+#include "lsst/jointcal/FitterBase.h"
 #include "lsst/jointcal/Tripletlist.h"
 #include "lsst/jointcal/AstrometryModel.h"
-#include "lsst/jointcal/Chi2.h"
 
 namespace lsst {
 namespace jointcal {
-
-class Associations;
 
 /**
  * Class that handles the astrometric least squares problem.
@@ -52,43 +52,25 @@ class Associations;
  * CcdImage's. One does not need reference object and would then naturally not
  * have any Kind 2 terms.
  */
-class AstrometryFit {
-private:
-    Associations &_assoc;
-    std::string _whatToFit;
-    bool _fittingDistortions, _fittingPos, _fittingRefrac, _fittingPM;
-    AstrometryModel *_astrometryModel;
-    int _LastNTrip;                   // last triplet count, used to speed up allocation
-    double _referenceColor, _sigCol;  // average and r.m.s color
-    unsigned _nRefrac;
-    double _refractionCoefficient;    // fit parameter
-    unsigned int _refracPosInMatrix;  // where it stands
-    double _JDRef;                    // average Julian date
-
-    // counts in parameter subsets.
-    unsigned int _nParDistortions;
-    unsigned int _nParPositions;
-    unsigned int _nParTot;
-    unsigned _nMeasuredStars;
-    double _posError;  // constant term on error on position (in pixel unit)
-
+class AstrometryFit : public FitterBase {
 public:
     //! this is the only constructor
-    AstrometryFit(Associations &associations, AstrometryModel *astrometryModel, double posError);
+    AstrometryFit(std::shared_ptr<Associations> associations,
+                  std::shared_ptr<AstrometryModel> astrometryModel, double posError);
+
+    /// No copy or move: there is only ever one fitter of a given type.
+    AstrometryFit(AstrometryFit const &) = delete;
+    AstrometryFit(AstrometryFit &&) = delete;
+    AstrometryFit &operator=(AstrometryFit const &) = delete;
+    AstrometryFit &operator=(AstrometryFit &&) = delete;
 
     /**
-     * Does a 1 step minimization, assuming a linear model.
+     * Set parameters to fit and assign indices in the big matrix.
      *
-     * It calls assignIndices, LSDerivatives, solves the linear system and calls
-     * offsetParams. No line search. Relies on sparse linear algebra.
-     *
-     * This is a complete Newton Raphson step. Compute first and second
-     * derivatives, solve for the step and apply it, without a line search.
-     *
-     * @param[in]  whatToFit   Valid strings: "Distortions", "Positions",
+     * @param[in]  whatToFit   Valid strings: zero or more of "Distortions", "Positions",
      *                         "Refrac", "PM" which define which parameter set
      *                         is going to be variable when computing
-     *                         derivatives (LSDerivatives) and minimizing
+     *                         derivatives (leastSquareDerivatives) and minimizing
      *                         (minimize()). whatToFit="Positions Distortions"
      *                         will minimize w.r.t mappings and objects
      *                         positions, and not w.r.t proper motions and
@@ -99,39 +81,8 @@ public:
      *                         AstrometryModel, and it can then be used to turn
      *                         subsets of distortion parameter on or off, if the
      *                         AstrometryModel implements such a thing.
-     * @param[in]  nSigRejCut  How many sigma to reject outliers at. Outlier
-     *                         rejection ignored for nSigRejCut=0
-     *
-     * @return     Return code describing success of fit, can take 3 values:
-     *             0 : fit has converged - no more outliers
-     *             1 : still some ouliers but chi2 increased
-     *             2 : factorization failed
      */
-    unsigned minimize(const std::string &whatToFit, const double nSigRejCut = 0);
-
-    //! Compute derivatives of measurement terms for this CcdImage
-    void LSDerivatives1(const CcdImage &ccdImage, TripletList &tList, Eigen::VectorXd &rhs,
-                        const MeasuredStarList *msList = nullptr) const;
-
-    //! Compute derivatives of reference terms (if any), associated to the FittedStarList
-    void LSDerivatives2(const FittedStarList &fsl, TripletList &tList, Eigen::VectorXd &rhs) const;
-
-    //! Evaluates the chI^2 derivatives (Jacobian and gradient) for the current whatToFit setting.
-    /*! The Jacobian is provided as triplets, the gradient as a dense
-        vector. The parameters which vary are to be set using
-        assignIndices.  */
-    void LSDerivatives(TripletList &tList, Eigen::VectorXd &rhs) const;
-
-    /**
-     * Set parameter groups fixed or variable and assign indices to each
-     * parameter in the big matrix (which will be used by offsetParams(...).
-     *
-     * @param[in]  whatToFit  Valid strings: "Distortions", "Positions",
-     *                        "Refrac", "PM" which define which parameter set is
-     *                        going to be variable when computing derivatives
-     *                        (LSDerivatives) and minimizing (minimize()).
-     */
-    void assignIndices(const std::string &whatToFit);
+    void assignIndices(std::string const &whatToFit) override;
 
     /**
      * The transformations used to propagate errors are freezed to the current
@@ -142,82 +93,15 @@ public:
      */
     void freezeErrorScales() { _astrometryModel->freezeErrorScales(); }
 
-    /**
-     * Offset the parameters by the requested quantities. The used parameter
-     * layout is the one from the last call to assignIndices or minimize().
-     * There is no easy way to check that the current setting of whatToFit and
-     * the provided Delta vector are compatible. We can only test the size.
-     *
-     * @param[in]  delta  vector of offsets to apply
-     */
-    void offsetParams(const Eigen::VectorXd &delta);
+    void offsetParams(Eigen::VectorXd const &delta) override;
 
-    /**
-     * Returns a chi2 for the current state.
-     *
-     * For the list of images in the provided  association and the reference
-     * stars, if any.
-     */
-    Chi2 computeChi2() const;
-
-    /**
-     * Contributions to derivatives from (presumably) outlier terms. No
-     * discarding done.
-     */
-    void outliersContributions(MeasuredStarList &mOutliers, FittedStarList &fOutLiers, TripletList &tList,
-                               Eigen::VectorXd &grad);
-
-    /**
-     * Discards measurements and reference contributions contributing to the chi2 more than nSigmaCut,
-     * computed as:
-     * @f[
-     *    <chi2> + nSigmaCut + rms(chi2)
-     * @f]
-     * (statistics over contributions to the chi2).
-     * No refit done.
-     *
-     * @param[in]  nSigmaCut  Number of sigma to cut on.
-     * @param[in]  measOrRef  Which outliers to remove. One of "Meas", "Ref" or "Meas Ref".
-     *
-     * @return     Total number of outliers that were removed.
-     */
-    unsigned removeOutliers(double nSigmaCut, const std::string &measOrRef = "Meas Ref");
-
-    /**
-     * Find Measurements and references contributing more than a cut, computed as
-     * @f[
-     *     <chi2> + nSigmaCut + rms(chi2).
-     * @f]
-     * The outliers are NOT removed, and no refit is done.
-     *
-     * After returning from here, there are still measurements that
-     * contribute above the cut, but their contribution should be evaluated after a
-     * refit before discarding them.
-     *
-     * @param[in]  nSigmaCut   Number of sigma to select on.
-     * @param[out] mSOutliers  list of MeasuredStar outliers to populate
-     * @param[out] fSOutliers  list of FittedStar outliers to populate
-     * @param[in]  measOrRef   Which outliers to remove. One of "Meas", "Ref" or "Meas Ref".
-     *
-     * @return     Total number of outliers that were removed.
-     */
-    unsigned findOutliers(double nSigmaCut, MeasuredStarList &mSOutliers, FittedStarList &fSOutliers,
-                          const std::string &measOrRef = "Meas Ref") const;
-
-    //! Just removes outliers from the fit. No Refit done.
-    void removeMeasOutliers(MeasuredStarList &outliers);
-
-    //! Just removes outliers from the fit. No Refit done.
-    void removeRefOutliers(FittedStarList &outliers);
-
-    //! Produces both ntuples (cook up names from the provided string)
-    void makeResTuple(const std::string &tupleName) const;
+    void saveResultTuples(std::string const &tupleName) const override;
 
     //! Produces a tuple containing residuals of measurement terms.
-    void makeMeasResTuple(const std::string &tupleName) const;
+    void makeMeasResTuple(std::string const &tupleName) const;
 
     //! Produces a tuple containing residuals of reference terms.
-    void makeRefResTuple(const std::string &tupleName) const;
+    void makeRefResTuple(std::string const &tupleName) const;
 
     /**
      * DEBUGGING routine
@@ -225,20 +109,39 @@ public:
     void checkStuff();
 
 private:
-    Point transformFittedStar(const FittedStar &fittedStar, const Gtransfo *sky2TP,
-                              const Point &refractionVector, double refractionCoeff, double mjd) const;
+    bool _fittingDistortions, _fittingPos, _fittingRefrac, _fittingPM;
+    std::shared_ptr<AstrometryModel> _astrometryModel;
+    double _referenceColor, _sigCol;  // average and r.m.s color
+    double _refractionCoefficient;    // fit parameter
+    unsigned int _refracPosInMatrix;  // where it stands
+    double _JDRef;                    // average Julian date
 
-    template <class ListType, class Accum>
-    void accumulateStatImageList(ListType &list, Accum &accum) const;
+    // counts in parameter subsets.
+    unsigned int _nParDistortions;
+    unsigned int _nParPositions;
+    unsigned int _nParRefrac;
 
-    template <class ImType, class Accum>
-    void accumulateStatImage(ImType &image, Accum &accum) const;
+    double _posError;  // constant term on error on position (in pixel unit)
 
-    template <class Accum>
-    void accumulateStatRefStars(Accum &accum) const;
+    void leastSquareDerivativesMeasurement(CcdImage const &ccdImage, TripletList &tripletList,
+                                           Eigen::VectorXd &grad,
+                                           MeasuredStarList const *msList = nullptr) const override;
 
-    //! only for outlier removal
-    void setMeasuredStarIndices(const MeasuredStar &ms, std::vector<unsigned> &indices) const;
+    void leastSquareDerivativesReference(FittedStarList const &fittedStarList, TripletList &tripletList,
+                                         Eigen::VectorXd &grad) const override;
+
+    void accumulateStatImageList(CcdImageList const &ccdImageList, Chi2Accumulator &accum) const override;
+
+    void accumulateStatRefStars(Chi2Accumulator &accum) const override;
+
+    void getIndicesOfMeasuredStar(MeasuredStar const &measuredStar,
+                                  std::vector<unsigned> &indices) const override;
+
+    Point transformFittedStar(FittedStar const &fittedStar, Gtransfo const *sky2TP,
+                              Point const &refractionVector, double refractionCoeff, double mjd) const;
+
+    /// Compute the chi2 (per star or total, depending on which Chi2Accumulator is used) from one CcdImage.
+    void accumulateStatImage(CcdImage const &ccdImage, Chi2Accumulator &accum) const;
 };
 }  // namespace jointcal
 }  // namespace lsst

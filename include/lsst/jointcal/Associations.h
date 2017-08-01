@@ -43,7 +43,15 @@ public:
      * Source selection is performed in python, so Associations' constructor
      * only initializes a couple of variables.
      */
-    Associations();
+    Associations()
+            : _commonTangentPoint(Point(std::numeric_limits<double>::quiet_NaN(),
+                                        std::numeric_limits<double>::quiet_NaN())) {}
+
+    /// No moves or copies: jointcal only ever needs one Associations object.
+    Associations(Associations const &) = delete;
+    Associations(Associations &&) = delete;
+    Associations &operator=(Associations const &) = delete;
+    Associations &operator=(Associations &&) = delete;
 
     /**
      * @brief      Sets a shared tangent point for all ccdImages.
@@ -58,12 +66,12 @@ public:
     /**
      * @brief      Create a ccdImage from an exposure catalog and metadata, and add it to the list.
      *
-     * @param      catalog    The extracted source catalog, selected for good astrometric sources.
+     * @param[in]  catalog    The extracted source catalog, selected for good astrometric sources.
      * @param[in]  wcs        The exposure's original wcs
      * @param[in]  visitInfo  The exposure's visitInfo object
-     * @param      bbox       The bounding box of the exposure
-     * @param      filter     The exposure's filter
-     * @param[in]  calib      The exposure's photometric calibration
+     * @param[in]  bbox       The bounding box of the exposure
+     * @param[in]  filter     The exposure's filter
+     * @param[in]  photoCalib The exposure's photometric calibration
      * @param[in]  visit      The visit identifier
      * @param[in]  ccd        The ccd identifier
      * @param[in]  control    The JointcalControl object
@@ -71,7 +79,7 @@ public:
     void addImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &catalog,
                   std::shared_ptr<lsst::afw::image::TanWcs> wcs,
                   std::shared_ptr<lsst::afw::image::VisitInfo> visitInfo, lsst::afw::geom::Box2I const &bbox,
-                  std::string const &filter, std::shared_ptr<lsst::afw::image::Calib> calib, int visit,
+                  std::string const &filter, std::shared_ptr<afw::image::PhotoCalib> photoCalib, int visit,
                   int ccd, std::shared_ptr<lsst::jointcal::JointcalControl> control);
 
     //! incrementaly builds a merged catalog of all image catalogs
@@ -81,12 +89,17 @@ public:
     /**
      * @brief      Collect stars from an external reference catalog and associate them with fittedStars.
      *
-     * @param      refCat     The catalog of reference sources
-     * @param[in]  matchCut   Separation radius to match fitted and reference stars.
-     * @param      fluxField  The field name in refCat to get the flux from.
+     * @param      refCat         The catalog of reference sources
+     * @param[in]  matchCut       Separation radius to match fitted and
+     *                            reference stars.
+     * @param      fluxField      The field name in refCat to get the flux from.
+     * @param      refFluxMap     fluxes per filter of corresponding refCat objects (can be empty)
+     * @param      refFluxErrMap  flux errors per filter of corresponding refCat objects (can be empty)
      */
     void collectRefStars(lsst::afw::table::SortedCatalogT<lsst::afw::table::SimpleRecord> &refCat,
-                         afw::geom::Angle matchCut, std::string const &fluxField);
+                         afw::geom::Angle matchCut, std::string const &fluxField,
+                         std::map<std::string, std::vector<double>> const &refFluxMap,
+                         std::map<std::string, std::vector<double>> const &refFluxErrMap);
 
     //! Sends back the fitted stars coordinates on the sky FittedStarsList::inTangentPlaneCoordinates keeps
     //! track of that.
@@ -106,10 +119,10 @@ public:
      */
     void selectFittedStars(int minMeasurements);
 
-    const CcdImageList &getCcdImageList() const { return ccdImageList; }
+    CcdImageList const &getCcdImageList() const { return ccdImageList; }
 
     //! Number of different bands in the input image list. Not implemented so far
-    unsigned NBands() const { return 1; }
+    unsigned getNFilters() const { return _filterMap.size(); }
 
     // Return the bounding box in (ra, dec) coordinates containing the whole catalog
     const lsst::afw::geom::Box2D getRaDecBBox();
@@ -127,6 +140,9 @@ private:
     void associateRefStars(double matchCutInArcsec, const Gtransfo *gtransfo);
 
     void assignMags();
+
+    // Map from filter name to index in each refStar's _refFlux/_refFluxErr vector.
+    std::unordered_map<std::string, std::size_t> _filterMap;
 };
 
 }  // namespace jointcal

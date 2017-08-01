@@ -17,15 +17,13 @@ namespace jointcal {
 
 #define DECALAGE_IJ_XY 0.
 #define DECALAGE_XY_IJ 0.
-/*! \file */
-
-// tell other pieces of code that BaseStar now derives from FatPoint (instead of Point)
-#define BASESTAR_HAS_POSITION_ERRORS
 
 //! The base class for handling stars. Used by all matching routines.
 class BaseStar : public FatPoint {
 protected:
+    // on-sky flux, in Maggies
     double _flux;
+    double _fluxErr;
 
 public:
     BaseStar() {
@@ -34,8 +32,10 @@ public:
         _flux = 0;
     };
     //! constructor
-    BaseStar(double xx, double yy, double flux) : FatPoint(xx, yy), _flux(flux){};
-    BaseStar(const Point &point, double flux) : FatPoint(point), _flux(flux){};
+    BaseStar(double xx, double yy, double flux, double fluxErr)
+            : FatPoint(xx, yy), _flux(flux), _fluxErr(fluxErr){};
+    BaseStar(Point const &point, double flux, double fluxErr)
+            : FatPoint(point), _flux(flux), _fluxErr(fluxErr){};
 
     //! access stuff.
     double getX() const { return x; }
@@ -43,7 +43,7 @@ public:
     double getY() const { return y; }
 
     //! allows std::cout << aBaseStar;
-    friend std::ostream &operator<<(std::ostream &stream, const BaseStar &s) {
+    friend std::ostream &operator<<(std::ostream &stream, BaseStar const &s) {
         s.dump(stream);
         return stream;
     }
@@ -55,10 +55,10 @@ public:
     }
 
     virtual void dump(std::ostream &stream = std::cout) const {
-        stream << "x: " << x << " y: " << y << " flux: " << _flux;
+        stream << "x: " << x << " y: " << y << " flux: " << _flux << " fluxErr: " << _fluxErr;
     }
 
-    BaseStar &operator=(const Point &point) {
+    BaseStar &operator=(Point const &point) {
         this->x = point.x;
         this->y = point.y;
         return (*this);
@@ -71,12 +71,15 @@ public:
     double getFlux() const { return _flux; }
     double &getFlux() { return _flux; }
     void setFlux(double flux) { _flux = flux; }
+
+    double getFluxErr() const { return _fluxErr; }
+    void setFluxErr(double fluxErr) { _fluxErr = fluxErr; }
 };
 
 //! enables to sort easily a starList (of anything that derives from BaseStar)
-bool decreasingFlux(const BaseStar *star1, const BaseStar *star2);
+bool decreasingFlux(BaseStar const *star1, BaseStar const *star2);
 
-int decodeFormat(const char *formatLine, const char *starName);
+int decodeFormat(char const *formatLine, char const *starName);
 
 typedef StarList<BaseStar> BaseStarList;
 

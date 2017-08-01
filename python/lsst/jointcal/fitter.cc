@@ -26,6 +26,9 @@
 #include "lsst/jointcal/AstrometryFit.h"
 #include "lsst/jointcal/AstrometryModel.h"
 #include "lsst/jointcal/Chi2.h"
+#include "lsst/jointcal/FitterBase.h"
+#include "lsst/jointcal/PhotometryFit.h"
+#include "lsst/jointcal/PhotometryModel.h"
 
 namespace py = pybind11;
 using namespace pybind11::literals;
@@ -34,24 +37,43 @@ namespace lsst {
 namespace jointcal {
 namespace {
 
-void declareAstrometryFit(py::module &mod) {
-    py::class_<AstrometryFit, std::shared_ptr<AstrometryFit>> cls(mod, "AstrometryFit");
+void declareFitterBase(py::module &mod) {
+    py::class_<FitterBase, std::shared_ptr<FitterBase>> cls(mod, "FitterBase");
 
-    cls.def(py::init<Associations &, AstrometryModel *, double>(), "associations"_a, "astrometryModel"_a,
-            "posError"_a);
-
-    cls.def("minimize", &AstrometryFit::minimize, "whatToFit"_a, "nSigRejCut"_a = 0);
-    cls.def("computeChi2", &AstrometryFit::computeChi2);
-    cls.def("makeResTuple", &AstrometryFit::makeResTuple);
+    cls.def("minimize", &FitterBase::minimize, "whatToFit"_a, "nSigRejCut"_a = 0);
+    cls.def("computeChi2", &FitterBase::computeChi2);
+    cls.def("saveResultTuples", &FitterBase::saveResultTuples);
 }
 
-PYBIND11_PLUGIN(astrometryFit) {
+void declareAstrometryFit(py::module &mod) {
+    py::class_<AstrometryFit, std::shared_ptr<AstrometryFit>, FitterBase> cls(mod, "AstrometryFit");
+
+    cls.def(py::init<std::shared_ptr<Associations>, std::shared_ptr<AstrometryModel>, double>(),
+            "associations"_a, "astrometryModel"_a, "posError"_a);
+}
+
+void declarePhotometryFit(py::module &mod) {
+    py::class_<PhotometryFit, std::shared_ptr<PhotometryFit>, FitterBase> cls(mod, "PhotometryFit");
+
+    cls.def(py::init<std::shared_ptr<Associations>, std::shared_ptr<PhotometryModel>>(), "associations"_a,
+            "photometryModel"_a);
+}
+
+PYBIND11_PLUGIN(fitter) {
     py::module::import("lsst.jointcal.associations");
     py::module::import("lsst.jointcal.astrometryModels");
     py::module::import("lsst.jointcal.chi2");
-    py::module mod("astrometryFit");
+    py::module::import("lsst.jointcal.photometryModels");
+    py::module mod("fitter");
 
+    py::enum_<MinimizeResult>(mod, "MinimizeResult")
+            .value("Converged", MinimizeResult::Converged)
+            .value("Chi2Increased", MinimizeResult::Chi2Increased)
+            .value("Failed", MinimizeResult::Failed);
+
+    declareFitterBase(mod);
     declareAstrometryFit(mod);
+    declarePhotometryFit(mod);
 
     return mod.ptr();
 }

@@ -29,56 +29,50 @@ struct PmBlock {
     PmBlock() : pmx(0), pmy(0), epmx(0), epmy(0), epmxy(0), color(0), mightMove(false){};
 };
 
-//! The objects which have been measured several times. The MeasuredStar s measuring the same object in
-//! differenr CcdImage s point to the same FittedStar.
+/**
+ * The objects which have been measured several times.
+ *
+ * MeasuredStars from different CcdImages that represent the same on-sky object all point to one FittedStar.
+ */
 class FittedStar : public BaseStar, public PmBlock {
-    friend class PhotometryFit;
-    friend class PhotometryFit2;
-
 private:
     double _mag;
-    double _emag;
-    double _col;
     int _gen;
     double _wmag;
     unsigned _indexInMatrix;
     int _measurementCount;
     const RefStar* _refStar;
 
-    double _flux2;
     double _fluxErr;
-    double _fluxErr2;
 
 public:
     FittedStar()
             : BaseStar(),
               _mag(-1),
-              _emag(-1),
-              _col(0.),
               _gen(-1),
               _wmag(0),
               _indexInMatrix(-1),
               _measurementCount(0),
-              _refStar(nullptr),
-              _fluxErr(-1),
-              _fluxErr2(-1) {}
+              _refStar(nullptr) {}
 
     FittedStar(const BaseStar& baseStar)
             : BaseStar(baseStar),
               _mag(-1),
-              _emag(-1),
-              _col(0.),
               _gen(-1),
               _wmag(0),
               _indexInMatrix(0),
               _measurementCount(0),
-              _refStar(nullptr),
-              _flux2(-1),
-              _fluxErr(-1),
-              _fluxErr2(-1) {}
+              _refStar(nullptr) {}
 
     //!
     FittedStar(const MeasuredStar& measuredStar);
+
+    /// No move, allow copy constructor: we may copy the fitted StarLists when associating and matching
+    /// catalogs, otherwise Stars should be managed by shared_ptr only.
+    FittedStar(FittedStar const&) = default;
+    FittedStar(FittedStar&&) = delete;
+    FittedStar& operator=(FittedStar const&) = delete;
+    FittedStar& operator=(FittedStar&&) = delete;
 
     //!
     void clearBeforeAssoc() {
@@ -100,8 +94,6 @@ public:
 
     //! derived using available zero points in input images. In the absence ofZP, ZP= 0.
     double getMag() const { return _mag; }
-    double getEMag() const { return _emag; }
-    double getCol() const { return _col; }
     int getGeneration() const { return _gen; }
 
     //!
@@ -121,11 +113,6 @@ public:
 
     //! Get the astrometric reference star associated with this star.
     const RefStar* getRefStar() const { return _refStar; };
-
-    //! getters
-    double getFluxErr() const { return _fluxErr; }
-    double getFlux2() const { return _flux2; }
-    double getFluxErr2() const { return _fluxErr2; }
 };
 
 /****** FittedStarList */

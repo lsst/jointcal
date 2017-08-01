@@ -22,7 +22,7 @@
 
 #include "pybind11/pybind11.h"
 
-#include "lsst/jointcal/Chi2.h"
+#include "lsst/jointcal/PhotometryTransfo.h"
 
 namespace py = pybind11;
 using namespace pybind11::literals;
@@ -31,23 +31,29 @@ namespace lsst {
 namespace jointcal {
 namespace {
 
-void declareChi2(py::module &mod) {
-    py::class_<Chi2Statistic, std::shared_ptr<Chi2Statistic>> cls(mod, "Chi2Statistic");
+void declarePhotometryTransfo(py::module &mod) {
+    py::class_<PhotometryTransfo, std::shared_ptr<PhotometryTransfo>> cls(mod, "PhotometryTransfo");
 
-    cls.def(py::init<>());
-
-    cls.def("__str__", &Chi2Statistic::__str__);
-    cls.def_readwrite("chi2", &Chi2Statistic::chi2);
-    cls.def_readwrite("ndof", &Chi2Statistic::ndof);
+    cls.def("__str__", &PhotometryTransfo::__str__);
 }
 
-PYBIND11_PLUGIN(chi2) {
-    py::module mod("chi2");
+void declarePhotometryTransfoSpatiallyInvariant(py::module &mod) {
+    py::class_<PhotometryTransfoSpatiallyInvariant, std::shared_ptr<PhotometryTransfoSpatiallyInvariant>,
+               PhotometryTransfo>
+            cls(mod, "PhotometryTransfoSpatiallyInvariant");
 
-    declareChi2(mod);
+    cls.def(py::init<double>(), "value"_a = 1);
+}
+
+PYBIND11_PLUGIN(photometryTransfo) {
+    py::module mod("photometryTransfo");
+
+    declarePhotometryTransfo(mod);
+    declarePhotometryTransfoSpatiallyInvariant(mod);
 
     return mod.ptr();
 }
+
 }  // namespace
 }  // namespace jointcal
 }  // namespace lsst

@@ -31,8 +31,8 @@ static int DistortionDegree = 3;
 
 using namespace std;
 
-ConstrainedPolyModel::ConstrainedPolyModel(const CcdImageList &ccdImageList,
-                                           const ProjectionHandler *projectionHandler, bool initFromWCS,
+ConstrainedPolyModel::ConstrainedPolyModel(CcdImageList const &ccdImageList,
+                                           ProjectionHandler const *projectionHandler, bool initFromWCS,
                                            unsigned nNotFit)
         : _sky2TP(projectionHandler)
 
@@ -88,7 +88,7 @@ ConstrainedPolyModel::ConstrainedPolyModel(const CcdImageList &ccdImageList,
     for (auto i = _visitMap.begin(); i != _visitMap.end(); ++i) LOGLS_DEBUG(_log, i->first);
 }
 
-const Mapping *ConstrainedPolyModel::getMapping(const CcdImage &ccdImage) const {
+const Mapping *ConstrainedPolyModel::getMapping(CcdImage const &ccdImage) const {
     mappingMapType::const_iterator i = _mappings.find(&ccdImage);
     if (i == _mappings.end()) return nullptr;
     return (i->second.get());
@@ -98,7 +98,7 @@ const Mapping *ConstrainedPolyModel::getMapping(const CcdImage &ccdImage) const 
   whatToFit. If whatToFit contains "Distortions" and not
   Distortions<Something>, it is understood as both chips and
   visits. */
-unsigned ConstrainedPolyModel::assignIndices(unsigned firstIndex, const std::string &whatToFit) {
+unsigned ConstrainedPolyModel::assignIndices(unsigned firstIndex, std::string const &whatToFit) {
     unsigned index = firstIndex;
     if (whatToFit.find("Distortions") == std::string::npos) {
         LOGLS_ERROR(_log, "assignIndices was called and Distortions is *not* in whatToFit");
@@ -128,7 +128,7 @@ unsigned ConstrainedPolyModel::assignIndices(unsigned firstIndex, const std::str
     return index;
 }
 
-void ConstrainedPolyModel::offsetParams(const Eigen::VectorXd &delta) {
+void ConstrainedPolyModel::offsetParams(Eigen::VectorXd const &delta) {
     if (_fittingChips)
         for (auto i = _chipMap.begin(); i != _chipMap.end(); ++i) {
             auto *p = (&*(i->second));
@@ -148,7 +148,7 @@ void ConstrainedPolyModel::freezeErrorScales() {
     for (auto i = _chipMap.begin(); i != _chipMap.end(); ++i) i->second->freezeErrorScales();
 }
 
-const Gtransfo &ConstrainedPolyModel::getChipTransfo(const CcdIdType chip) const {
+const Gtransfo &ConstrainedPolyModel::getChipTransfo(CcdIdType const chip) const {
     auto chipp = _chipMap.find(chip);
     if (chipp == _chipMap.end()) {
         std::stringstream errMsg;
@@ -166,7 +166,7 @@ std::vector<VisitIdType> ConstrainedPolyModel::getVisits() const {
     return res;
 }
 
-const Gtransfo &ConstrainedPolyModel::getVisitTransfo(const VisitIdType &visit) const {
+const Gtransfo &ConstrainedPolyModel::getVisitTransfo(VisitIdType const &visit) const {
     auto visitp = _visitMap.find(visit);
     if (visitp == _visitMap.end()) {
         std::stringstream errMsg;
@@ -176,11 +176,11 @@ const Gtransfo &ConstrainedPolyModel::getVisitTransfo(const VisitIdType &visit) 
     return visitp->second->getTransfo();
 }
 
-std::shared_ptr<TanSipPix2RaDec> ConstrainedPolyModel::produceSipWcs(const CcdImage &ccdImage) const {
+std::shared_ptr<TanSipPix2RaDec> ConstrainedPolyModel::produceSipWcs(CcdImage const &ccdImage) const {
     const TwoTransfoMapping *mapping;
     try {
         mapping = _mappings.at(&ccdImage).get();
-    } catch (std::out_of_range) {
+    } catch (std::out_of_range &) {
         LOGLS_ERROR(_log, "CcdImage with ccd/visit " << ccdImage.getCcdId() << "/" << ccdImage.getVisit()
                                                      << " not found in constrainedPolyModel mapping list.");
         std::ostringstream os;
@@ -205,11 +205,11 @@ std::shared_ptr<TanSipPix2RaDec> ConstrainedPolyModel::produceSipWcs(const CcdIm
     try {
         const GtransfoIdentity &t2 = dynamic_cast<const GtransfoIdentity &>(mapping->getTransfo2());
         pix2Tp = t1;
-    } catch (std::bad_cast) {
+    } catch (std::bad_cast &) {
         try {
             const GtransfoPoly &t2_poly = dynamic_cast<const GtransfoPoly &>(mapping->getTransfo2());
             pix2Tp = t1 * t2_poly;
-        } catch (std::bad_cast) {
+        } catch (std::bad_cast &) {
             LOGLS_ERROR(_log, "Problem with transform 2 of ccd/visit " << ccdImage.getCcdId() << "/"
                                                                        << ccdImage.getVisit() << ": T2 "
                                                                        << mapping->getTransfo2());

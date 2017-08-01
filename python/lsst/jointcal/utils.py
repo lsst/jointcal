@@ -443,11 +443,12 @@ def plot_flux_distributions(plt, old_mag, new_mag, old_weighted_rms, new_weighte
     plt.savefig(filename.format(name))
 
     plt.figure()
-    seaborn.distplot(old_weighted_rms, fit=scipy.stats.lognorm, kde=False)
-    seaborn.distplot(new_weighted_rms, fit=scipy.stats.lognorm, kde=False)
-    plt.title('')
+    seaborn.distplot(old_weighted_rms, fit=scipy.stats.lognorm, kde=False, label="old", color=old_color)
+    seaborn.distplot(new_weighted_rms, fit=scipy.stats.lognorm, kde=False, label="new", color=new_color)
+    plt.title('Source RMS pre/post-jointcal')
     plt.xlabel('rms(flux)/mean(flux)')
     plt.ylabel('number')
+    plt.legend(loc='upper right')
     filename = os.path.join(outdir, '{}-photometry-rms.pdf')
     plt.savefig(filename.format(name))
 

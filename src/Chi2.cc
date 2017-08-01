@@ -20,40 +20,36 @@
  * see <https://www.lsstcorp.org/LegalNotices/>.
  */
 
-#include "pybind11/pybind11.h"
+#include <utility>
+#include <iostream>
 
 #include "lsst/jointcal/Chi2.h"
-#include "lsst/jointcal/Associations.h"
-#include "lsst/jointcal/PhotometryFit.h"
-#include "lsst/jointcal/PhotometryModel.h"
 
-namespace py = pybind11;
-using namespace pybind11::literals;
+static double sqr(double x) { return x * x; }
 
 namespace lsst {
 namespace jointcal {
-namespace {
 
-void declarePhotometryFit(py::module &mod) {
-    py::class_<PhotometryFit, std::shared_ptr<PhotometryFit>> cls(mod, "PhotometryFit");
-
-    cls.def(py::init<Associations &, PhotometryModel *>(), "associations"_a, "photometryModel"_a);
-
-    cls.def("minimize", &PhotometryFit::minimize, "whatToFit"_a);
-    cls.def("computeChi2", &PhotometryFit::computeChi2);
-    cls.def("makeResTuple", &PhotometryFit::makeResTuple);
+std::pair<double, double> Chi2List::computeAverageAndSigma() {
+    double sum = 0;
+    double sum2 = 0;
+    for (auto i : *this) {
+        sum += i.chi2;
+        sum2 += sqr(i.chi2);
+    }
+    double average = sum / this->size();
+    double sigma = sqrt(sum2 / this->size() - sqr(average));
+    return std::make_pair(average, sigma);
 }
 
-PYBIND11_PLUGIN(photometryFit) {
-    py::module::import("lsst.jointcal.associations");
-    py::module::import("lsst.jointcal.chi2");
-    py::module::import("lsst.jointcal.photometryModels");
-    py::module mod("photometryFit");
-
-    declarePhotometryFit(mod);
-
-    return mod.ptr();
+std::ostream& operator<<(std::ostream& s, Chi2List const& chi2List) {
+    s << "chi2 per star : ";
+    for (auto chi2 : chi2List) {
+        s << *(chi2.star) << " chi2: " << chi2.chi2 << " ; ";
+    }
+    s << std::endl;
+    return s;
 }
-}  // namespace
+
 }  // namespace jointcal
 }  // namespace lsst

@@ -13,6 +13,7 @@ namespace jointcal {
 
 //! The mapping with two transfos in a row.
 class TwoTransfoMapping : public Mapping {
+private:
     SimpleGtransfoMapping *_m1, *_m2;
     unsigned _nPar1, _nPar2;
     struct tmpVars  // just there to get around constness issues
@@ -23,37 +24,40 @@ class TwoTransfoMapping : public Mapping {
 
     std::unique_ptr<tmpVars> tmp;
 
-    // forbid copies
-    TwoTransfoMapping(const TwoTransfoMapping &);
-    void operator=(const TwoTransfoMapping &);
-
 public:
     //!
     TwoTransfoMapping(SimpleGtransfoMapping *chipMapping, SimpleGtransfoMapping *visitMapping);
+
+    /// No copy or move: there is only ever one instance of a given model (i.e.. per ccd+visit)
+    TwoTransfoMapping(TwoTransfoMapping const &) = delete;
+    TwoTransfoMapping(TwoTransfoMapping &&) = delete;
+    TwoTransfoMapping &operator=(TwoTransfoMapping const &) = delete;
+    TwoTransfoMapping &operator=(TwoTransfoMapping &&) = delete;
+
     //!
     unsigned getNpar() const;
 
     void setMappingIndices(std::vector<unsigned> &indices) const;
 
     //!
-    void computeTransformAndDerivatives(const FatPoint &where, FatPoint &outPoint, Eigen::MatrixX2d &H) const;
+    void computeTransformAndDerivatives(FatPoint const &where, FatPoint &outPoint, Eigen::MatrixX2d &H) const;
     //!
-    void transformPosAndErrors(const FatPoint &where, FatPoint &outPoint) const;
+    void transformPosAndErrors(FatPoint const &where, FatPoint &outPoint) const;
 
     //!
-    void offsetParams(const double *delta) {  // this routine is not used when fitting. used for debugging
+    void offsetParams(double const *delta) {  // this routine is not used when fitting. used for debugging
         _m1->offsetParams(delta);
         _m2->offsetParams(delta + _m1->getNpar());
     }
 
     //! access to transfos
-    const Gtransfo &getTransfo1() const { return _m1->getTransfo(); }
+    Gtransfo const &getTransfo1() const { return _m1->getTransfo(); }
 
     //! access to transfos
-    const Gtransfo &getTransfo2() const { return _m2->getTransfo(); }
+    Gtransfo const &getTransfo2() const { return _m2->getTransfo(); }
 
     //! Currently *not* implemented
-    void positionDerivative(const Point &where, Eigen::Matrix2d &derivative, double epsilon) const;
+    void positionDerivative(Point const &where, Eigen::Matrix2d &derivative, double epsilon) const;
 
     //! Currently not implemented
     void freezeErrorScales();

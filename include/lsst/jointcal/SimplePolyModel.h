@@ -27,37 +27,43 @@ separate transfrom per CcdImage. One could chose other setups.
 //! this is the model used to fit independent CCDs, meaning that there is no instrument model.
 /* This modeling of distortions can even accommodate images set mixing instruments */
 class SimplePolyModel : public AstrometryModel {
-    typedef std::map<const CcdImage *, std::unique_ptr<SimpleGtransfoMapping> > mapType;
+    typedef std::map<const CcdImage *, std::unique_ptr<SimpleGtransfoMapping>> mapType;
     mapType _myMap;
     const ProjectionHandler *_sky2TP;
 
 public:
     //! Sky2TP is just a name, it can be anything
-    SimplePolyModel(const CcdImageList &ccdImageList, const ProjectionHandler *projectionHandler,
+    SimplePolyModel(CcdImageList const &ccdImageList, ProjectionHandler const *projectionHandler,
                     bool initFromWCS, unsigned nNotFit = 0, unsigned degree = 3);
+
+    /// No copy or move: there is only ever one instance of a given model (i.e.. per ccd+visit)
+    SimplePolyModel(SimplePolyModel const &) = delete;
+    SimplePolyModel(SimplePolyModel &&) = delete;
+    SimplePolyModel &operator=(SimplePolyModel const &) = delete;
+    SimplePolyModel &operator=(SimplePolyModel &&) = delete;
 
     // The following routines are the interface to AstrometryFit
     //!
-    const Mapping *getMapping(const CcdImage &) const;
+    const Mapping *getMapping(CcdImage const &) const;
 
     //! Positions the various parameter sets into the parameter vector, starting at firstIndex
-    unsigned assignIndices(unsigned firstIndex, const std::string &whatToFit);
+    unsigned assignIndices(unsigned firstIndex, std::string const &whatToFit);
 
     // dispaches the offsets after a fit step into the actual locations of parameters
-    void offsetParams(const Eigen::VectorXd &delta);
+    void offsetParams(Eigen::VectorXd const &delta);
 
     /*! the mapping of sky coordinates (i.e. the coordinate system
     in which fitted stars are reported) onto the Tangent plane
     (into which the pixel coordinates are transformed) */
-    const Gtransfo *getSky2TP(const CcdImage &ccdImage) const { return _sky2TP->getSky2TP(ccdImage); }
+    const Gtransfo *getSky2TP(CcdImage const &ccdImage) const { return _sky2TP->getSky2TP(ccdImage); }
 
     //!
     virtual void freezeErrorScales();
 
     //! Access to mappings
-    const Gtransfo &getTransfo(const CcdImage &ccdImage) const;
+    Gtransfo const &getTransfo(CcdImage const &ccdImage) const;
 
-    std::shared_ptr<TanSipPix2RaDec> produceSipWcs(const CcdImage &ccdImage) const;
+    std::shared_ptr<TanSipPix2RaDec> produceSipWcs(CcdImage const &ccdImage) const;
 
     ~SimplePolyModel(){};
 };
