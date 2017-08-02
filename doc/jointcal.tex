@@ -99,7 +99,7 @@ residual ntuples and hope that the first serious users will contribute
 plotting tools.
 
 The code is heavily biased towards astrometry. One related problem,
-important in some of the target applications, is relative {\it
+important in some of the target applications, is relative {\textit
   photometry}.  We have not provided yet the determination of relative
 flux scales between images but we plan to do so. The principles are
 similar to relative astrometry, but considerably simpler. The main reason
@@ -145,7 +145,7 @@ In the LSST stack framework, the reduced input images are called
 ``Calexp''. Each of those typically holds the data from 1 CCD
 and exposure, and associate the ``reduction'' products, typically
 a variance map, a catalog and a WCS obtained by matching the catalog to
-some external reference. The data from a {\it Calexp} we need for further
+some external reference. The data from a {\textit Calexp} we need for further
 processing is stored into a \ClName{CcdImage} object. It basically
 stores informations derived from the image FITS header, from the WCS,
 and from the image catalog.
@@ -395,7 +395,7 @@ these errors mostly depend on the mapping scaling, which is very well
 determined from the beginning. However, small changes of scaling can
 lead to the $\chi^2$ increasing between iterations. This is why we
 provide the \ClName{AstrometryModel::freezeErrorScales} which allows
-one to uses for there on the {\it current} state of the model to 
+one to uses for there on the {\textit current} state of the model to 
 propagate errors, even if mappings are updated. $d R^m_{\gamma i}/d \theta$
 has two non-zero blocks: the derivatives with respect to the parameters of the $M_\gamma$
 mapping
