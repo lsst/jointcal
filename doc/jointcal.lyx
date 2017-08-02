@@ -1,0 +1,3436 @@
+#LyX 2.2 created this file. For more info see http://www.lyx.org/
+\lyxformat 508
+\begin_document
+\begin_header
+\save_transient_properties true
+\origin unavailable
+\textclass scrartcl
+\begin_preamble
+\usepackage{caption}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%\usepackage{epsfig}
+%\usepackage{graphicx}
+\usepackage{authblk}
+%% \usepackage{natbib,twoopt,ifthen}
+%\usepackage{aas_macros}
+ 
+% write ``draft'' across the pages
+\usepackage{draftwatermark}
+\SetWatermarkScale{5}
+\SetWatermarkLightness{0.90}
+\newcommand{\FixMe}[1]{{\bf \large #1}}
+\newcommand{\ClName}[1]{{\bf #1}}
+\newcommand{\RoutineName}[1]{\texttt{#1}}
+\def\arcsec{\hbox{$^{\prime\prime}$}}
+%\addmargin{-0.5cm}{-0.5cm}
+\providecommand{\eprint}[1]{\href{http://arxiv.org/abs/#1}{#1}}
+
+% KOMA script complains loudly 
+% if we use the old font selection macros.
+\def\bf{\normalfont\bfseries}
+\def\rm{\normalfont \rmfamily}
+\end_preamble
+\use_default_options false
+\maintain_unincluded_children false
+\language english
+\language_package default
+\inputencoding utf8
+\fontencoding default
+\font_roman "default" "default"
+\font_sans "default" "default"
+\font_typewriter "default" "default"
+\font_math "auto" "auto"
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100 100
+\font_tt_scale 100 100
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command bibtex
+\index_command default
+\paperfontsize 12
+\spacing single
+\use_hyperref true
+\pdf_bookmarks false
+\pdf_bookmarksnumbered false
+\pdf_bookmarksopen false
+\pdf_bookmarksopenlevel 1
+\pdf_breaklinks true
+\pdf_pdfborder true
+\pdf_colorlinks true
+\pdf_backref section
+\pdf_pdfusetitle false
+\pdf_quoted_options "linkcolor=blue,citecolor=blue,filecolor=black,urlcolor=blue"
+\papersize letterpaper
+\use_geometry true
+\use_package amsmath 2
+\use_package amssymb 2
+\use_package cancel 0
+\use_package esint 1
+\use_package mathdots 0
+\use_package mathtools 0
+\use_package mhchem 0
+\use_package stackrel 0
+\use_package stmaryrd 0
+\use_package undertilde 0
+\cite_engine natbib
+\cite_engine_type numerical
+\biblio_style plain
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\justification true
+\use_refstyle 0
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\leftmargin 2cm
+\topmargin 2cm
+\rightmargin 2cm
+\bottommargin 2cm
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\quotes_language english
+\papercolumns 1
+\papersides 2
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Title
+jointcal: Simultaneous Astrometry & Photometry for thousands of Exposures
+ with Large CCD Mosaics 
+\end_layout
+
+\begin_layout Author
+John Parejko (University of Washington), Pierre Astier (LPNHE/IN2P3/CNRS
+ Paris)
+\end_layout
+
+\begin_layout Abstract
+The jointcal package aims at optimizing simultaneously the WCS's of a set
+ of astronomical images of the same field.
+ This approach produces in principle, and often as well in practice, WCS's
+ which are more precise than when fitted independently.
+ This is especially true when the images are deeper than the astrometric
+ reference catalogs.
+ In the 
+\begin_inset Quotes eld
+\end_inset
+
+Astromatic
+\begin_inset Quotes erd
+\end_inset
+
+ software suite, this simultaneous astrometry functionality is fulfilled
+ by 
+\begin_inset Quotes eld
+\end_inset
+
+SCAMP
+\begin_inset Quotes erd
+\end_inset
+
+.
+ The code we describe here has similar aims, but follows a slightly different
+ route.
+ It is meant to be used within the LSST software stack framework.
+ 
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset toc
+LatexCommand tableofcontents
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+Introduction
+\end_layout
+
+\begin_layout Standard
+With deep astronomical images, it is extremely common that the relative
+ astrometry between images is considerably more precise than the accuracy
+ of external catalogs, where 
+\begin_inset Quotes eld
+\end_inset
+
+more precise
+\begin_inset Quotes erd
+\end_inset
+
+ can be as large as two orders of magnitude.
+ For applications where the quality of relative astrometry is important
+ or vital, it is important to rely on some sort of simultaneous astrometry
+ solution, if possible optimal in a statistical sense.
+\end_layout
+
+\begin_layout Standard
+This package performs a least-square fit to a set of images.
+ Since it aims at statistical optimality, we maximize the likelihood of
+ the measurements with respect to all unknown parameters required to describe
+ the data.
+ These parameters consists mostly in two sets: the position (on the sky)
+ of the objects in common, and the mapping of each image to the sky.
+ To these obvious parameters, one can add proper motions (where applicable),
+ and parameters describing the differential effect of atmospheric refraction
+ on the position of objects.
+ It is clear that one cannot fit simultaneously the position on the sky
+ and the mappings from CCD coordinates to the sky, without extra constraints:
+ the 
+\begin_inset Quotes eld
+\end_inset
+
+sky
+\begin_inset Quotes erd
+\end_inset
+
+ coordinate system is then undefined, and one needs reference positions
+ in order to fully define this frame.
+ So far, we have used the USNO (A 2.0) catalog for this purpose.
+\end_layout
+
+\begin_layout Standard
+SCAMP
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+see 
+\begin_inset CommandInset href
+LatexCommand href
+target "http://www.astromatic.net/software/scamp"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+ is the reference package for simultaneous astrometry in astronomy, at least
+ for relative alignment of wide-field images prior to stacking.
+ Regarding optimization, SCAMP follows a somehow different route from ours:
+ it does not optimize over the position of common objects but rather minimizes
+ the distance between pairs of transformed measurements of the same object.
+ This approach is not a maximum likelihood optimization, and hence is likely
+ sub-optimal statistics wise.
+ We do not know how sub-optimal it is, but the main drawback of SCAMP in
+ the context of LSST is the fact that it is a program and not a library,
+ and hence not flexible regarding formats of images and catalogs.
+ But since SCAMP has been used for almost a decade in production by various
+ teams, the quality checking tools it provides should likely be reproduced
+ in the context of our package.
+ We provide residual ntuples and hope that the first serious users will
+ contribute plotting tools.
+\end_layout
+
+\begin_layout Standard
+The code is heavily biased towards astrometry.
+ One related problem, important in some of the target applications, is relative
+ 
+\shape italic
+photometry
+\shape default
+.
+ We have not provided yet the determination of relative flux scales between
+ images but we plan to do so.
+ The principles are similar to relative astrometry, but considerably simpler.
+ The main reason to integrate it to the present package is that loading
+ the input catalogs takes a large amount of time and so, solving for the
+ relative photometry once they are in memory looks like a good idea.
+\end_layout
+
+\begin_layout Standard
+The plan of this note goes as follows: we first sketch the algorithm (
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+S
+\end_layout
+
+\end_inset
+
+ 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "sec:algo"
+
+\end_inset
+
+).
+ We then describe the first step, i.e.
+ how we associate the measurements of the same objects in different exposures
+ (
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+S
+\end_layout
+
+\end_inset
+
+ 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "sec:assoc"
+
+\end_inset
+
+).
+ We provide our least-squares formulation in 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+S
+\end_layout
+
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "sec:ls"
+
+\end_inset
+
+, and describe the how we evaluate the derivatives with respect to the parameter
+s.
+\end_layout
+
+\begin_layout Section
+Algorithm flow 
+\begin_inset CommandInset label
+LatexCommand label
+name "sec:algo"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The algorithm assumes that the input images are equipped with a WCS accurate
+ to 
+\begin_inset Formula $\sim1\arcsec$
+\end_inset
+
+.
+ Currently, the code interprets properly the SIP WCS's (relying on the IO's
+ from afw), with or without distortions.
+ The code might handle transparently the 
+\begin_inset Quotes eld
+\end_inset
+
+PV
+\begin_inset Quotes erd
+\end_inset
+
+ encoding of distortions (used in SCAMP and Swarp), but lacks the IO's required
+ to use this format.
+ Note that in both instances, the WCS boils down to a polynomial 2D transform
+ from CCD space to a tangent plane, followed by a gnomonic de-projection
+ to the celestial sphere.
+ The difference between formats lies into the encoding of the polynomial,
+ but they map exactly the same space of distortion functions.
+\end_layout
+
+\begin_layout Standard
+The algorithm can be roughly split into these successive steps: 
+\end_layout
+
+\begin_layout Enumerate
+load the input catalogs and 'rough' WCS's (the selection of objects is left
+ to the user) 
+\end_layout
+
+\begin_layout Enumerate
+Associate these catalogs, i.e.
+ associate the detections of the same object in the image set.
+ one can also associate these ensemble of detections with an external catalog
+ (USNO in practise).
+ 
+\end_layout
+
+\begin_layout Enumerate
+Actually fit what should be fitted, with outlier clipping.
+ 
+\end_layout
+
+\begin_layout Enumerate
+Output results.
+ 
+\end_layout
+
+\begin_layout Section
+Association of the input catalogs 
+\begin_inset CommandInset label
+LatexCommand label
+name "sec:assoc"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+In the LSST stack framework, the reduced input images are called 
+\begin_inset Quotes eld
+\end_inset
+
+Calexp
+\begin_inset Quotes erd
+\end_inset
+
+.
+ Each of those typically holds the data from 1 CCD and exposure, and associate
+ the 
+\begin_inset Quotes eld
+\end_inset
+
+reduction
+\begin_inset Quotes erd
+\end_inset
+
+ products, typically a variance map, a catalog and a WCS obtained by matching
+ the catalog to some external reference.
+ The data from a 
+\shape italic
+Calexp
+\shape default
+ we need for further processing is stored into a 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+ClName{
+\end_layout
+
+\end_inset
+
+CcdImage
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+ object.
+ It basically stores informations derived from the image FITS header, from
+ the WCS, and from the image catalog.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+placement ht
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+centering
+\end_layout
+
+\end_inset
+
+ 
+\begin_inset Graphics
+	filename AssocClasses.pdf
+	width 80text%
+
+\end_inset
+
+ 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+captionsetup
+\end_layout
+
+\end_inset
+
+
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+{
+\end_layout
+
+\end_inset
+
+margin=
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+{
+\end_layout
+
+\end_inset
+
+0.07
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+textwidth
+\end_layout
+
+\end_inset
+
+,0.07
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+textwidth
+\end_layout
+
+\end_inset
+
+
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+% only for this figure
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Chart of class relations which implement the associations between input
+ catalogs.
+ One 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+ClName{
+\end_layout
+
+\end_inset
+
+FittedStar
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+ usually has several 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+ClName{
+\end_layout
+
+\end_inset
+
+MeasuredStar
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+ pointing to it, and each 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+ClName{
+\end_layout
+
+\end_inset
+
+RefStar
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+ points to exactly one 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+ClName{
+\end_layout
+
+\end_inset
+
+FittedStar
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+.
+ Most 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+ClName{
+\end_layout
+
+\end_inset
+
+FittedStar's
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+ have no 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+ClName{
+\end_layout
+
+\end_inset
+
+RefStar
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+.
+ 
+\begin_inset CommandInset label
+LatexCommand label
+name "fig:AssocClasses"
+
+\end_inset
+
+ 
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+ClName{
+\end_layout
+
+\end_inset
+
+Associations
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+ class holds the list of input 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+ClName{
+\end_layout
+
+\end_inset
+
+CcdImage's
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+ and connects together the measurements of the same object.
+ The input measurements are called 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+ClName{
+\end_layout
+
+\end_inset
+
+MeasuredStar
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+ and the common detections are called 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+ClName{
+\end_layout
+
+\end_inset
+
+FittedStar
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+.
+ The objects collected in an external catalog are called 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+ClName{
+\end_layout
+
+\end_inset
+
+RefStar
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+.
+ Despite their names, these classes can represent galaxies as well as stars.
+ The collections of sush objects are stored into 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+ClName{
+\end_layout
+
+\end_inset
+
+MeasuredStarList
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+, 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+ClName{
+\end_layout
+
+\end_inset
+
+RefStarList
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+ and 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+ClName{
+\end_layout
+
+\end_inset
+
+FittedStarList
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+, which are container derived from 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+ClName{
+\end_layout
+
+\end_inset
+
+std::list
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+.
+ The relations between these classes, all implemented in C++, are displayed
+ in figure 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "fig:AssocClasses"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Section
+Least squares 
+\begin_inset CommandInset label
+LatexCommand label
+name "sec:ls"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Least-squares expression
+\end_layout
+
+\begin_layout Standard
+The fit consists of minimizing: 
+\begin_inset Formula 
+\begin{align}
+\chi^{2} & =\sum_{\gamma,i}[M_{\gamma}(X_{\gamma,i})-P_{\gamma}(F_{k})]^{T}W_{\gamma,i}[M_{\gamma}(X_{\gamma,i})-P_{\gamma}(F_{k})] & \textrm{(meas. terms)}\nonumber \\
+ & +\sum_{j}[P(F_{j})-P(R_{j})]^{T}W_{j}[P(F_{j})-P(R_{j})] & \textrm{(ref. terms)}\label{eq:chi2}
+\end{align}
+
+\end_inset
+
+where the first line iterates on all MeasuredStar (
+\begin_inset Formula $i$
+\end_inset
+
+) from all CcdImage (indexed by 
+\begin_inset Formula $\gamma$
+\end_inset
+
+), and the second iterates on all RefStar (
+\begin_inset Formula $j$
+\end_inset
+
+).
+ In the first terms, the object at position 
+\begin_inset Formula $F_{k}$
+\end_inset
+
+ is the one that was measured at position 
+\begin_inset Formula $X_{\gamma,i}$
+\end_inset
+
+ in image 
+\begin_inset Formula $\gamma$
+\end_inset
+
+.
+ The association between measurements and objects is described in the above
+ paragraph.
+\end_layout
+
+\begin_layout Standard
+The measurement terms compare the measurement positions to objects positions,
+ the reference terms compare object positions to reference positions.
+ We need these two sets of terms because not all objects 
+\begin_inset Formula $F_{k}$
+\end_inset
+
+ in the first terms appear in the second terms: there are plenty of objects
+ in the images which are not in the reference catalogs, but which constrain
+ the mappings 
+\begin_inset Formula $M_{\gamma}$
+\end_inset
+
+ to transform measured coordinates to the same positions.
+\end_layout
+
+\begin_layout Standard
+For the measurement terms (first line), the notations are: 
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $M_{\gamma}$
+\end_inset
+
+ is the mapping (for CcdImage 
+\begin_inset Formula $\gamma$
+\end_inset
+
+) from pixel space to some tangent plane to the celestial sphere, (defined
+ by 
+\begin_inset Formula $P_{\gamma}$
+\end_inset
+
+); 
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $P_{\gamma}$
+\end_inset
+
+ is a projector from sidereal coordinate to some tangent plane; 
+\begin_inset Formula $P_{\gamma}$
+\end_inset
+
+ is user-defined.
+ 
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $X_{\gamma,i}$
+\end_inset
+
+ is the position of MeasuredStar 
+\begin_inset Formula $i$
+\end_inset
+
+ of CcdImage 
+\begin_inset Formula $\gamma$
+\end_inset
+
+ in pixel space of this CcdImage; 
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $F_{k}$
+\end_inset
+
+ is the (sky) position of the FittedStar corresponding to this MeasuredStar.
+ In the data structure, the FittedStar is just pointed to by the MeasuredStar
+ see fig.
+ 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "fig:AssocClasses"
+
+\end_inset
+
+; 
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $W_{\gamma,i}$
+\end_inset
+
+ is the measurement weight of 
+\begin_inset Formula $M_{\gamma}(X_{\gamma,i})$
+\end_inset
+
+, i.e.
+ the inverse of the 2
+\begin_inset Formula $\times$
+\end_inset
+
+2 covariance matrix.
+ 
+\end_layout
+
+\begin_layout Standard
+The notations for the reference terms (second line) are: 
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $R_{j}$
+\end_inset
+
+ refers to the (sky) position of RefStar 
+\begin_inset Formula $j$
+\end_inset
+
+ 
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $F_{j}$
+\end_inset
+
+ refers to the (sky) position of the corresponding FittedStar (i.e.
+ pointed to by the RefStar, see fig.
+ 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "fig:AssocClasses"
+
+\end_inset
+
+) 
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $P$
+\end_inset
+
+ is some (user-provided) projector; 
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $W_{j}$
+\end_inset
+
+ is the weight matrix of the projected position 
+\begin_inset Formula $P(R_{j})$
+\end_inset
+
+.
+ 
+\end_layout
+
+\begin_layout Standard
+The expression 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:chi2"
+
+\end_inset
+
+ above depends on two sets of parameters: the parameters defining the mappings
+ 
+\begin_inset Formula $M$
+\end_inset
+
+ and the positions 
+\begin_inset Formula $F_{k}$
+\end_inset
+
+.
+ For a practical problem, this amounts to a very large number of parameters,
+ which becomes tractable if one remarks that every term in the 
+\begin_inset Formula $\chi2$
+\end_inset
+
+ only addresses a small number of parameters.
+ We exploit this feature to compute rapidly the gradient and even the Hessian
+ of the 
+\begin_inset Formula $\chi^{2}$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+So far, we have not specified how we model the mappings 
+\begin_inset Formula $M$
+\end_inset
+
+ nor how we choose the various projectors that appear in expression 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:chi2"
+
+\end_inset
+
+.
+ The code has been written to allow the final user to provide its own version
+ of both the model for mappings and the projection scheme.
+ We however provide some implementations for both aspects that we discuss
+ in the next two sections.
+\end_layout
+
+\begin_layout Subsection
+The distortion model
+\end_layout
+
+\begin_layout Standard
+The routines in the 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+ClName{
+\end_layout
+
+\end_inset
+
+AstrometryFit
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+ class do not really evaluate the derivatives of the mappings, but rather
+ defer those to other classes.
+ The main reason for this separation is that one could conceive different
+ ways to model the mappings from pixel coordinates to the tangent plane,
+ and the actual model should be abstract in the routines accumulating gradient
+ and Jacobian.
+ The class 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+ClName{
+\end_layout
+
+\end_inset
+
+AstrometryModel
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+ is an abstract class aiming at connecting generically the fitting routines
+ to actual models.
+ We have so far coded two of these models: 
+\end_layout
+
+\begin_layout Itemize
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+ClName{
+\end_layout
+
+\end_inset
+
+SimplePolyModel
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+ implements one polynomial mapping per input 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+ClName{
+\end_layout
+
+\end_inset
+
+CcdImage
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+ (i.e Calexp).
+ 
+\end_layout
+
+\begin_layout Itemize
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+ClName{
+\end_layout
+
+\end_inset
+
+ConstrainedPolyModel
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+ implements a model where the mapping for each CcdImage is a composition
+ of a polynomial for each CCD and a polynomial for each exposure.
+ For one of the exposures, the mapping should be fixed or the model is degenerat
+e.
+ 
+\end_layout
+
+\begin_layout Standard
+For example, if one fits 10 exposures from a 36-CCD camera, there will be
+ 
+\begin_inset Formula $10\times36$
+\end_inset
+
+ polynomials to fit with the first model, and 
+\begin_inset Formula $10+36$
+\end_inset
+
+ with the second model.
+ The 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+ClName{
+\end_layout
+
+\end_inset
+
+ConstrainedPolyModel
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+ assumes that the focal plane of the instrument does not change across the
+ data set.
+ We could consider coding a model made from one 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+ClName{
+\end_layout
+
+\end_inset
+
+ConstrainedPolyModel
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+ per set of images for which the instrument can be considered as geometrically
+ stable.
+ This is similar to how Scamp models the distortions.
+\end_layout
+
+\begin_layout Standard
+In both of these models, we have used standard polynomials in 2 dimensions
+ rather than an orthogonal set (e.g.
+ Legendre, Laguerre, ...) because regular polynomials are easy to compose (i.e.
+ one can easily compute the coefficients of P(Q(X)) ), and they map exactly
+ the same space as the common orthogonal sets.
+ We have taken care of 
+\begin_inset Quotes eld
+\end_inset
+
+normalizing
+\begin_inset Quotes erd
+\end_inset
+
+ the input coordinates (roughly map the range of fitted data over the 
+\begin_inset Formula $[-1,1]$
+\end_inset
+
+ interval), in order to alleviate the well-know numerical issues associated
+ to fitting of polynomials.
+\end_layout
+
+\begin_layout Subsection
+Choice of projectors
+\end_layout
+
+\begin_layout Standard
+In the least squares expression 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:chi2"
+
+\end_inset
+
+, the residuals of the measurement terms read: 
+\begin_inset Formula 
+\[
+R_{\gamma i}=M_{\gamma}(X_{\gamma,i})-P_{\gamma}(F_{j})
+\]
+
+\end_inset
+
+If the coordinates 
+\begin_inset Formula $F_{j}$
+\end_inset
+
+ are sidereal coordinates, the projector 
+\begin_inset Formula $P_{\gamma}$
+\end_inset
+
+ determine the meaning of the mapping 
+\begin_inset Formula $M_{\gamma}$
+\end_inset
+
+.
+ If one is aiming at producing WCS's for the image, it seems wise to choose
+ for 
+\begin_inset Formula $P_{\gamma}$
+\end_inset
+
+ the projection used foe the envisioned WCS, so that the mapping 
+\begin_inset Formula $M_{\gamma}$
+\end_inset
+
+ just describes the transformation from pixel space to the projection plane.
+ For a SIP WCS, one will then naturally choose a gnomonic projector, so
+ that 
+\begin_inset Formula $M_{\gamma}$
+\end_inset
+
+ can eventually be split into the 
+\begin_inset Quotes eld
+\end_inset
+
+CD
+\begin_inset Quotes erd
+\end_inset
+
+ matrix and the SIP-specific higher order distortion terms (see 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+S
+\end_layout
+
+\end_inset
+
+ 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "sec:sip-wcs"
+
+\end_inset
+
+ for a brief introduction to WCS concepts).
+\end_layout
+
+\begin_layout Standard
+So, the choice of the projectors involved in the fit are naturally left
+ to the user.
+ This is done via a virtual class 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+ClName{
+\end_layout
+
+\end_inset
+
+ProjectionHandler
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+, an instance of which has to be provided to the 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+ClName{
+\end_layout
+
+\end_inset
+
+AstrometryFit
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+ constructor.
+ There are obviously ready-to-use 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+ClName{
+\end_layout
+
+\end_inset
+
+ProjectionHandler
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+ implementations which should suit essentially any need.
+ For the standard astrometric fit aiming at setting WCS's, we provide the
+ 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+ClName{
+\end_layout
+
+\end_inset
+
+OneTPPerShoot
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+ derived class, which implements a common projection point for all chips
+ of the same exposure.
+ It is fairly easy to implement derived classes with other policies.
+\end_layout
+
+\begin_layout Standard
+The choice of the projector appearing in the reference terms of 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:chi2"
+
+\end_inset
+
+ is not left to the user because we could not find a good reason to provide
+ this flexibility, and we have implemented a gnomonic projection.
+ We use a projector there so that the comparison of positions is done using
+ an Euclidean metric.
+\end_layout
+
+\begin_layout Subsection
+Proper motions and atmospheric refraction
+\end_layout
+
+\begin_layout Standard
+The expression 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:chi2"
+
+\end_inset
+
+ above depends on two sets of parameters: the parameters defining the mappings
+ and the positions 
+\begin_inset Formula $F_{k}$
+\end_inset
+
+.
+ This expression hides two details implemented in the code: accounting for
+ proper motions and differential effects of atmospheric refraction.
+\end_layout
+
+\begin_layout Standard
+Proper motions can be accounted for to predict the expected positions of
+ objects and even be considered as fit parameters.
+ At the moment we neither have code to detect that some (presumably stellar)
+ object is moving, nor code to ingest proper motions from some external
+ catalog.
+ Each 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+ClName{
+\end_layout
+
+\end_inset
+
+FittedStar
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+ has a flag that says whether it is affected by a proper motion and the
+ proper motion parameters can all be fitted or not (see 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+S
+\end_layout
+
+\end_inset
+
+ 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "sec:indices_whattofit"
+
+\end_inset
+
+).
+\end_layout
+
+\begin_layout Standard
+The code allows to account for differential chromatic effects of atmospheric
+ refraction, i.e.
+ the fact that objects positions in the image plane are shifted by atmospheric
+ refraction in a way that depends on their color.
+ The shift reads: 
+\begin_inset Formula 
+\begin{equation}
+\delta X=k_{b}(c-c_{0})\hat{n}\label{eq:refrac_corr}
+\end{equation}
+
+\end_inset
+
+where 
+\begin_inset Formula $k_{b}$
+\end_inset
+
+ is a fit parameter (one per band 
+\begin_inset Formula $b$
+\end_inset
+
+), 
+\begin_inset Formula $c$
+\end_inset
+
+ is the color of the object in hand, 
+\begin_inset Formula $c_{0}$
+\end_inset
+
+ is the average color, and 
+\begin_inset Formula $\hat{n}$
+\end_inset
+
+ is the direction of the displacement in the tangent plane (i.e.
+ a normalized vector along the parallactic direction, computed once for
+ all for each Calexp).
+ We have not accounted for pressure variations because they are usually
+ small, but it would not be difficult.
+ The code accounts for color-driven differential effects within a given
+ band, but ignores the differences across bands, would one attempt to fit
+ images from different bands at the same time.
+ Differences in recorded positions across bands will be accounted for in
+ the fitted mappings.
+ It is important to do so because we are fitting WCS's, and we want the
+ fitted mappings to reflect at best the effects affecting measured positions.
+ Since the color correction 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:refrac_corr"
+
+\end_inset
+
+ is not accounted for when using WCS's to transform measured position, we
+ have made this correction zero on average.
+ As for proper motions, fitting or not these refraction-induced differential
+ position shifts is left to the user (see 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+S
+\end_layout
+
+\end_inset
+
+ 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "sec:indices_whattofit"
+
+\end_inset
+
+).
+\end_layout
+
+\begin_layout Subsection
+Minimization approach
+\end_layout
+
+\begin_layout Standard
+The expression 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:chi2"
+
+\end_inset
+
+ depends on two sets of parameters: the parameters defining the mappings
+ 
+\begin_inset Formula $M_{\gamma}(X)\equiv=M_{\gamma}(\eta_{\gamma},X)$
+\end_inset
+
+, and the positions 
+\begin_inset Formula $F_{k}$
+\end_inset
+
+.
+ There are indeed extra parameter sets and what is described here applies
+ as well to those.
+\end_layout
+
+\begin_layout Standard
+We call 
+\begin_inset Formula $\theta$
+\end_inset
+
+ the vector that gathers all parameters.
+ For a practical problem its size can easily reach 
+\begin_inset Formula $10^{5}$
+\end_inset
+
+.
+ But the matrix 
+\begin_inset Formula $d^{2}\chi^{2}/d\theta^{2}$
+\end_inset
+
+ is very sparse, because there are no terms connecting 
+\begin_inset Formula $F_{i}$
+\end_inset
+
+ and 
+\begin_inset Formula $F_{j}$
+\end_inset
+
+ if 
+\begin_inset Formula $i\neq j$
+\end_inset
+
+, and depending on how the mappings are parametrized, a set of 
+\begin_inset Formula $\eta_{\gamma}$
+\end_inset
+
+ parameters could be connected (in the second derivative matrix) to only
+ a small set of 
+\begin_inset Formula $F_{j}$
+\end_inset
+
+'s.
+ So, it is tempting to search for the 
+\begin_inset Formula $\chi^{2}$
+\end_inset
+
+ minimum using methods involving the second derivative matrix, if we take
+ advantage of its sparseness.
+\end_layout
+
+\begin_layout Standard
+Let us rewrite the 
+\begin_inset Formula $\chi^{2}$
+\end_inset
+
+ (expression
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:chi2"
+
+\end_inset
+
+) as: 
+\begin_inset Formula 
+\begin{align}
+\chi^{2} & =\sum_{\gamma,i}{R_{\gamma i}^{m}}^{T}W_{\gamma,i}R_{\gamma i}^{m}\nonumber \\
+ & +\sum_{j}{R_{j}^{r}}^{T}W_{j}R_{j}^{r}\label{eq:grad_chi2}
+\end{align}
+
+\end_inset
+
+where the meaning of the 
+\begin_inset Formula $R$
+\end_inset
+
+ vectors is easily derived by comparing to 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:chi2"
+
+\end_inset
+
+ (from which we borrow the notations): 
+\begin_inset Formula 
+\begin{align}
+R_{\gamma i}^{m} & =M_{\gamma}(X_{\gamma,i})-P_{\gamma}(F_{k})\\
+R_{j}^{r} & =[P(F_{j})-P(R_{j})]\label{eq:ref_res}
+\end{align}
+
+\end_inset
+
+We want to find the point where 
+\begin_inset Formula $d\chi^{2}/d\theta=0$
+\end_inset
+
+, where 
+\begin_inset Formula $\theta$
+\end_inset
+
+ of (size 
+\begin_inset Formula $N_{p}$
+\end_inset
+
+) denotes the vector of parameters.
+ We have 
+\begin_inset Formula 
+\begin{align}
+\frac{1}{2}\frac{d\chi^{2}}{d\theta} & =\sum_{\gamma,i}{R_{\gamma i}^{m}}^{T}W_{\gamma,i}H_{\gamma i}^{m}\nonumber \\
+ & +\sum_{j}{R_{j}^{r}}^{T}W_{j}H_{j}^{r}\label{eq:gradient}
+\end{align}
+
+\end_inset
+
+where the H matrices are 
+\begin_inset Formula $2\times N_{p}$
+\end_inset
+
+ in size and read: 
+\begin_inset Formula 
+\begin{align}
+H_{\gamma i}^{m} & =\frac{d{R_{\gamma i}^{m}}}{d\theta}\\
+H_{j}^{r} & =\frac{d{R_{j}^{r}}}{d\theta}
+\end{align}
+
+\end_inset
+
+The matrix 
+\begin_inset Formula $W_{\gamma,i}$
+\end_inset
+
+ is obtained by transporting the measurement errors through the fitted mapping.
+ This introduces an extra dependency of the 
+\begin_inset Formula $\chi^{2}$
+\end_inset
+
+ on the parameters, that we have decided not to track in the derivatives,
+ because these errors mostly depend on the mapping scaling, which is very
+ well determined from the beginning.
+ However, small changes of scaling can lead to the 
+\begin_inset Formula $\chi^{2}$
+\end_inset
+
+ increasing between iterations.
+ This is why we provide the 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+ClName{
+\end_layout
+
+\end_inset
+
+AstrometryModel::freezeErrorScales
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+ which allows one to uses for there on the 
+\shape italic
+current
+\shape default
+ state of the model to propagate errors, even if mappings are updated.
+ 
+\begin_inset Formula $dR_{\gamma i}^{m}/d\theta$
+\end_inset
+
+ has two non-zero blocks: the derivatives with respect to the parameters
+ of the 
+\begin_inset Formula $M_{\gamma}$
+\end_inset
+
+ mapping (which are delivered by the Gtransfo-derived class that implements
+ the fitted mapping, namely by the 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+ClName{
+\end_layout
+
+\end_inset
+
+Gtransfo::paramDerivatives
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+ routine); and the derivative with respect to the 
+\begin_inset Formula $F_{k}$
+\end_inset
+
+ position which reads 
+\begin_inset Formula $dP_{\gamma}(F_{k})/dF_{k}$
+\end_inset
+
+ (delivered as well by the class that implements the projector, via the
+ 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+ClName{
+\end_layout
+
+\end_inset
+
+Gtransfo::computeDerivative
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+ routine).
+\end_layout
+
+\begin_layout Standard
+Regarding reference terms, the matrix 
+\begin_inset Formula $W_{j}$
+\end_inset
+
+ should be derived from the reference catalog position uncertainty matrix
+ 
+\begin_inset Formula $V_{0}$
+\end_inset
+
+ (typically delivered for (
+\begin_inset Formula $\alpha,\delta$
+\end_inset
+
+) coordinates): 
+\begin_inset Formula 
+\[
+W_{j}=(P'^{T}V_{0}P')^{-1}
+\]
+
+\end_inset
+
+where 
+\begin_inset Formula $P'$
+\end_inset
+
+ is the derivative of the projector.
+ The inverse of 
+\begin_inset Formula $W_{j}$
+\end_inset
+
+ is in practice obtained using the routine 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+ClName{
+\end_layout
+
+\end_inset
+
+Gtransfo::transformPosAndErrors
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+ which is attached to the projector.
+ The derivative of the reference residual 
+\begin_inset Formula $R_{j}^{r}$
+\end_inset
+
+ with respect to the 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+ClName{
+\end_layout
+
+\end_inset
+
+FittedStar
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+ position 
+\begin_inset Formula $F_{j}$
+\end_inset
+
+ (see eq.
+ 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:ref_res"
+
+\end_inset
+
+), is just the 
+\begin_inset Formula $2\times2$
+\end_inset
+
+ matrix of the derivative 
+\begin_inset Formula $P'$
+\end_inset
+
+ of the projector 
+\begin_inset Formula $P$
+\end_inset
+
+, which we compute using 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+ClName{
+\end_layout
+
+\end_inset
+
+Gtransfo::computeDerivative
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+If one is ready to evaluate the second derivative matrix of the 
+\begin_inset Formula $\chi^{2}$
+\end_inset
+
+, the standard method to zero the gradient is to Taylor expand it: 
+\begin_inset Formula 
+\[
+\frac{d\chi^{2}}{d\theta}(\theta_{0}+\delta\theta)=\frac{d\chi^{2}}{d\theta}(\theta_{0})+\frac{d^{2}\chi^{2}}{d\theta^{2}}(\theta_{0})\delta\theta+O(\delta\theta^{2})
+\]
+
+\end_inset
+
+and solve for the offset that zeroes it to first order: 
+\begin_inset Formula 
+\begin{equation}
+\delta\theta=-\left[\frac{d^{2}\chi^{2}}{d\theta^{2}}(\theta_{0})\right]^{-1}\frac{d\chi^{2}}{d\theta}(\theta_{0})\label{eq:step_definition}
+\end{equation}
+
+\end_inset
+
+At this stage, if the problem is non-linear (more precisely, if the second
+ derivative varies rapidly) it is wise to consider a line search, i.e.
+ to minimize 
+\begin_inset Formula $\chi^{2}(\theta_{0}+\lambda\times\delta\theta)$
+\end_inset
+
+ over 
+\begin_inset Formula $\lambda$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+We write the second derivative of our 
+\begin_inset Formula $\chi^{2}$
+\end_inset
+
+ (or Hessian) as: 
+\begin_inset Formula 
+\begin{align}
+\frac{1}{2}\frac{d^{2}\chi^{2}}{d\theta^{2}} & =\sum_{\gamma,i}{H_{\gamma i}^{m}}^{T}W_{\gamma,i}H_{\gamma i}^{m}\nonumber \\
+ & +\sum_{j}{H_{j}^{r}}^{T}W_{j}H_{j}^{r}\label{eq:def_hessian}
+\end{align}
+
+\end_inset
+
+where we have neglected the second derivatives of the 
+\begin_inset Formula $R$
+\end_inset
+
+ vectors.
+ This is both simple and handy, because this second derivative is then by
+ construction positive-definite and hence the parameter offsets (defined
+ in 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:step_definition"
+
+\end_inset
+
+) can be evaluated using the (fast) Cholesky factorization.
+ This indicates that, if possible, mappings 
+\begin_inset Formula $M_{\gamma}(\eta_{\gamma},X)$
+\end_inset
+
+ linear with respect to their parameter 
+\begin_inset Formula $\eta_{\gamma}$
+\end_inset
+
+, for example polynomials, are to be favored.
+\end_layout
+
+\begin_layout Standard
+Since the matrices 
+\begin_inset Formula $W_{\gamma,i}$
+\end_inset
+
+ are positive-definite, they have square roots (e.g.
+ the Cholesky square root) and can be written as: 
+\begin_inset Formula $W_{\gamma,i}=\alpha_{\gamma i}^{T}\alpha_{\gamma i}$
+\end_inset
+
+.
+ Defining 
+\begin_inset Formula $K_{\gamma i}^{m}=\alpha_{\gamma i}H_{\gamma i}^{m}$
+\end_inset
+
+, the Hessian expression becomes 
+\begin_inset Formula 
+\begin{align}
+\frac{1}{2}\frac{d^{2}\chi^{2}}{d\theta^{2}} & =\sum_{\gamma,i}{K_{\gamma i}^{m}}^{T}K_{\gamma i}^{m}+\sum_{j}{K_{j}^{r}}K_{j}^{r}%\label{eq:def_{h}essian}
+\end{align}
+
+\end_inset
+
+The sums present in this expression can be performed using matrix algebra.
+ We concatenate all the 
+\begin_inset Formula $K$
+\end_inset
+
+ matrices into a big matrix, called the Jacobian matrix: 
+\begin_inset Formula 
+\[
+J\equiv\left[\{K_{\gamma i}^{m},\forall\gamma,i\},\{K_{j}^{r},\forall j\}\right]
+\]
+
+\end_inset
+
+and we then simply have 
+\begin_inset Formula 
+\[
+\frac{1}{2}\frac{d^{2}\chi^{2}}{d\theta^{2}}=J^{T}J
+\]
+
+\end_inset
+
+In the code, we take advantage of the fact that each term of the 
+\begin_inset Formula $\chi^{2}$
+\end_inset
+
+ only depends on a small number of parameters.
+ The data stuctures allow us to rapidly collect the indices of these parameters,
+ and we evaluate in fact the 
+\begin_inset Formula $H$
+\end_inset
+
+ matrices for these indices only.
+\end_layout
+
+\begin_layout Standard
+The computation of the Jacobian and the gradient is performed in the 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+ClName{
+\end_layout
+
+\end_inset
+
+AstrometryFit
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+ class.
+ The methods 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+RoutineName{
+\end_layout
+
+\end_inset
+
+AstrometryFit::leastSquareDerivativesMeasurement
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+ and 
+\begin_inset Newline newline
+\end_inset
+
+ 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+RoutineName{
+\end_layout
+
+\end_inset
+
+AstrometryFit::leastSquareDerivativesReference
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+ evaluate the contributions to the Jacobian and gradient of the 
+\begin_inset Formula $\chi^{2}$
+\end_inset
+
+ from the measurement terms and the references terms respectively.
+ In these routines, the Jacobian is represented as a list of triplets 
+\begin_inset Formula $(i,j,J_{ij})$
+\end_inset
+
+ describing its elements.
+ This list is then transformed into a representation of sparse matrices
+ suitable for algebra, and in particular suitable to evaluate the product
+ 
+\begin_inset Formula $J^{T}J$
+\end_inset
+
+.
+ Once we have evaluated 
+\begin_inset Formula $H\equiv J^{T}J$
+\end_inset
+
+, we can solve 
+\begin_inset Formula $HX=-g$
+\end_inset
+
+ (see eq.
+ 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:step_definition"
+
+\end_inset
+
+, where the Hessian, 
+\begin_inset Formula $H$
+\end_inset
+
+, is as defined in 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:def_hessian"
+
+\end_inset
+
+, 
+\begin_inset Formula $X$
+\end_inset
+
+ is the vector of parameter/fittedStar deltas we are solving for, and 
+\begin_inset Formula $g$
+\end_inset
+
+ is the gradient of the 
+\begin_inset Formula $\chi^{2}$
+\end_inset
+
+, given in 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:gradient"
+
+\end_inset
+
+) using a Cholesky factorization.
+ For sparse linear algebra, the Cholmod and Eigen packages provide the required
+ functionality.
+ It turns out that for practical problems, the calculation of 
+\begin_inset Formula $J^{T}J$
+\end_inset
+
+ or the factorization are the most CPU intensive parts of the calculations,
+ and there is hence not much to be gained in speeding up the calculation
+ of derivatives.
+ For the factorization, we have tried both Eigen and Cholmod (via the Eigen
+ interface) and their speeds differ by less than 10%.
+\end_layout
+
+\begin_layout Subsection
+A small note about our choice for linear solvers
+\end_layout
+
+\begin_layout Standard
+The standard Cholesky decomposition of a matrix H consists in finding a
+ factor 
+\begin_inset Formula $L$
+\end_inset
+
+ such that 
+\begin_inset Formula $H=LL^{T}$
+\end_inset
+
+, with L triangular (possibly after a permutation of indices).
+ Both Eigen and Cholmod offer a variant, 
+\begin_inset Formula $H=LDL^{T}$
+\end_inset
+
+, where D is diagonal and L (still triangular) has 1's on its diagonal.
+ We have settled for this variant, because it offers improved numerical
+ stability and allows one, if needed, to add constraints (via Lagrange multiplie
+rs) to the problem.
+ We have also improved the Eigen interface to Cholmod by exposing to the
+ user the factorization update capability of Cholmod, which considerably
+ speeds up the outlier removal.
+ This is done in the CholmodSimplicialLDLT2 class.
+ Using Cholmod has a drawback: we need its run-time library.
+ Cholmod is now packaged in SuiteSparse, much bigger than what we need.
+ This is why we packaged the smallest possible subset of SuiteSparse that
+ fulfills our needs into jointcal_cholmod.
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+%In the basic tests we have performed (with typically $
+\backslash
+sim 1000$ calexps),
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+%factorizing the Hessian requires typically 10s while computing the
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+%Jacobian and gradient takes of the order of 1s.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Indices of fits parameters and Fits of parameter subsets 
+\begin_inset CommandInset label
+LatexCommand label
+name "sec:indices_whattofit"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Since we use vector algebra to represent the fit parameters, we need some
+ sort of mechanism to associate indices in the vector parameter to some
+ subset (e.g.
+ the position of an FittedStar) of these parameters.
+ Furthermore, the implementation we have chosen does not allow trivially
+ to allocate the actual parameters at successive positions in memory.
+ The 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+RoutineName{
+\end_layout
+
+\end_inset
+
+AstrometryFit::AssignIndices
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+ takes care of assigning indices to all classes of parameters.
+ For the mappings, the actual 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+ClName{
+\end_layout
+
+\end_inset
+
+AstrometryModel
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+ implementation does this part of the job.
+ All these indices are used to properly fill the Jacobian and gradient,
+ and eventually to offset parameters in the 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+RoutineName{
+\end_layout
+
+\end_inset
+
+AstrometryFit::OffsetParams
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+Since the indexing of parameters is done dynamically, it is straightforward
+ to only fit a subset of parameters.
+ this is why the routine 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+RoutineName{
+\end_layout
+
+\end_inset
+
+AstrometryFit::AssignIndices
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+ takes a string argument that specifies what is to be fitted.
+\end_layout
+
+\begin_layout Section
+Fitting the transformations between a set of images
+\end_layout
+
+\begin_layout Standard
+Some applications require to determine transformations between images rather
+ than mappings on the sky.
+ For example a simultaneous fit of PSF photometry for the computation of
+ the light curve a point-like transient requires mappings between images
+ to transport the common position in pixel space from some reference image
+ to any other in the series.
+ The calexp series would typically involve the CCD from each exposure that
+ covers the region of interest.
+ The package described here can fit for the needed mappings: 
+\end_layout
+
+\begin_layout Itemize
+in order to remove all reference terms from the 
+\begin_inset Formula $\chi^{2}$
+\end_inset
+
+ of eq.
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "eq:chi2"
+
+\end_inset
+
+, one just avoids to call 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+RoutineName{
+\end_layout
+
+\end_inset
+
+Associations::CollectRefStars
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+.
+ 
+\end_layout
+
+\begin_layout Itemize
+One chooses polynomial mappings for all Calexp but one which will serve
+ as a reference and have a fixed identity mapping.
+ The distortion model 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+ClName{
+\end_layout
+
+\end_inset
+
+SimplePolyModel
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+ allows to do that.
+ 
+\end_layout
+
+\begin_layout Itemize
+Chose identity projectors (the class 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+ClName{
+\end_layout
+
+\end_inset
+
+IdentityProjector
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+ does precisely that).
+ 
+\end_layout
+
+\begin_layout Standard
+So, fitting transformations between image sets can be done with the provided
+ code.
+\end_layout
+
+\begin_layout Section
+Run example
+\end_layout
+
+\begin_layout Verbatim
+
+\end_layout
+
+\begin_layout Verbatim
+
+        assoc = Associations()
+\end_layout
+
+\begin_layout Verbatim
+
+\end_layout
+
+\begin_layout Verbatim
+
+# iterate on the input calexps        
+\end_layout
+
+\begin_layout Verbatim
+
+        for dataRef in ref :
+\end_layout
+
+\begin_layout Verbatim
+
+            src = dataRef.get("src", immediate=True)
+\end_layout
+
+\begin_layout Verbatim
+
+            calexp = dataRef.get("calexp", immediate=True)
+\end_layout
+
+\begin_layout Verbatim
+
+            tanwcs = afwImage.TanWcs.cast(calexp.getWcs())
+\end_layout
+
+\begin_layout Verbatim
+
+            bbox = calexp.getBBox()
+\end_layout
+
+\begin_layout Verbatim
+
+            md = dataRef.get("calexp_md", immediate=True)
+\end_layout
+
+\begin_layout Verbatim
+
+            calib = afwImage.Calib(md)
+\end_layout
+
+\begin_layout Verbatim
+
+            filt = calexp.getFilter().getName()
+\end_layout
+
+\begin_layout Verbatim
+
+# select proper sources            
+\end_layout
+
+\begin_layout Verbatim
+
+            newSrc = ss.select(src, calib)
+\end_layout
+
+\begin_layout Verbatim
+
+\end_layout
+
+\begin_layout Verbatim
+
+# actually load the data            
+\end_layout
+
+\begin_layout Verbatim
+
+            assoc.AddImage(newSrc, tanwcs, md, bbox, filt, calib,
+\end_layout
+
+\begin_layout Verbatim
+
+                           dataRef.dataId['visit'], dataRef.dataId['ccd'],
+\end_layout
+
+\begin_layout Verbatim
+
+                           dataRef.getButler().mapper.getCameraName(), 
+\end_layout
+
+\begin_layout Verbatim
+
+                           astromControl)
+\end_layout
+
+\begin_layout Verbatim
+
+\end_layout
+
+\begin_layout Verbatim
+
+# carry out the association        
+\end_layout
+
+\begin_layout Verbatim
+
+        matchCut = 3.0
+\end_layout
+
+\begin_layout Verbatim
+
+        assoc.AssociateCatalogs(matchCut)
+\end_layout
+
+\begin_layout Verbatim
+
+# collect reference objects
+\end_layout
+
+\begin_layout Verbatim
+
+        assoc.CollectRefStars(False) # do not project RefStars
+\end_layout
+
+\begin_layout Verbatim
+
+# select objects measured at least twice.
+\end_layout
+
+\begin_layout Verbatim
+
+        assoc.SelectFittedStars()
+\end_layout
+
+\begin_layout Verbatim
+
+# Send back fitted stars on the sky.
+\end_layout
+
+\begin_layout Verbatim
+
+        assoc.DeprojectFittedStars() # required for AstrometryFit
+\end_layout
+
+\begin_layout Verbatim
+
+# Chose a ProjectionHandler
+\end_layout
+
+\begin_layout Verbatim
+
+        sky2TP = OneTPPerShoot(assoc.TheCcdImageList())
+\end_layout
+
+\begin_layout Verbatim
+
+# chose a distortion model
+\end_layout
+
+\begin_layout Verbatim
+
+        spm = SimplePolyModel(assoc.TheCcdImageList(), sky2TP, True, 0)
+\end_layout
+
+\begin_layout Verbatim
+
+# Assemble the whole thing
+\end_layout
+
+\begin_layout Verbatim
+
+        fit = AstrometryFit(assoc,spm)
+\end_layout
+
+\begin_layout Verbatim
+
+# we are ready to run.
+ Initialize parameters by running "partial fits"
+\end_layout
+
+\begin_layout Verbatim
+
+        fit.Minimize("Distortions")
+\end_layout
+
+\begin_layout Verbatim
+
+        fit.Minimize("Positions")
+\end_layout
+
+\begin_layout Verbatim
+
+# now fit both sets simultaneously.
+\end_layout
+
+\begin_layout Verbatim
+
+        fit.Minimize("Distortions Positions")
+\end_layout
+
+\begin_layout Verbatim
+
+# output residual tuples
+\end_layout
+
+\begin_layout Verbatim
+
+        fit.MakeResTuple("res.list")
+\end_layout
+
+\begin_layout Standard
+\start_of_appendix
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+%dummy comment inserted by tex2lyx to ensure that this paragraph is not
+ empty
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+Representation of distortions in SIP WCS's 
+\begin_inset CommandInset label
+LatexCommand label
+name "sec:sip-wcs"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The purpose of the appendix is to provide the minimal introduction to WCS
+ concepts required to understand the code (and the comments) when browsing
+ through it.
+ Readers familiar with WCSs can give up here.
+\end_layout
+
+\begin_layout Standard
+WCS's are abstract concepts meant to map data on coordinate systems.
+ In the astronomical imaging framework, this almost always means mapping
+ the pixel space into sidereal coordinates, expressed in some conventional
+ space
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+The WCS concepts are broad enough to accommodate mapping of planet images,
+ but we will obviously not venture into that.
+\end_layout
+
+\end_inset
+
+.
+ One key aspect of the WCS 
+\begin_inset Quotes eld
+\end_inset
+
+system
+\begin_inset Quotes erd
+\end_inset
+
+ is that it proposes some implementation of the mappings in FITS headers,
+ which comes with software libraries to decode and encode the mappings.
+ The WCS conventions cover a very broad scope of applications, and wide-field
+ imaging makes use of a very small subset of those.
+\end_layout
+
+\begin_layout Standard
+For the mappings used in wide-field imaging, the transformation from pixel
+ space to sky can be pictured in two steps: 
+\end_layout
+
+\begin_layout Enumerate
+mapping coordinates in pixel space onto a plane.
+ 
+\end_layout
+
+\begin_layout Enumerate
+de-projecting this plane to the celestial sphere.
+ 
+\end_layout
+
+\begin_layout Standard
+Let us clear up the projection/de-projection step first.
+ There are plenty of choices possible here, and the differences only matter
+ fir really large images.
+ The projection used by default in the imaging community seems to be the
+ gnomonic projection: the intermediate space is a plane tangent to the celestial
+ sphere and the plane
+\begin_inset Formula $\rightarrow$
+\end_inset
+
+sphere correspondence is obtained by drawing lines that go through the center
+ of the sphere.
+ In practice there is no need to know that, because any software dealing
+ with WCS's can pick up the right FITS keywords and compute the required
+ projection and de-projection.
+ For this gnomonic projection, one finds 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+verb&CTYPE1='RA---TAN'&
+\end_layout
+
+\end_inset
+
+ and 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+verb&CTYPE2='DEC--TAN'&
+\end_layout
+
+\end_inset
+
+ in the FITS header.
+ This projection is often used to generate re-sampled and/or co-added images
+ and one should keep in mind that, for large images, the pixels are not
+ exactly iso-area.
+ One point of convention that might be useful to keep in mind; is that WCS
+ conventions express angles in degrees.
+ In the gnomonic projection, offsets in the tangent plane are expressed
+ in degrees (defined through angles along great circles at the tangent point),
+ so that the metric in the tangent plane is ortho-normal), and sidereal
+ angles evaluated on the sky are also provided in degrees by the standard
+ implementations.
+ A notable exception is the LSST software stack where, by default, the angles
+ are provided in radians.
+\end_layout
+
+\begin_layout Standard
+We now come back to the first mapping step, i.e.
+ converting coordinates measured in pixel units into some intermediate coordinat
+e system.
+ The universal WCS convention here is pretty minimal: it allows for an affine
+ transform, which is in general not sufficient to map the optical distortions
+ of the imaging system, even after a clever choice of the projection.
+ Extensions of the WCS convention have been proposed here, but none is universal
+ly understood.
+ The LSST software stack implements the SIP addition, which consists in
+ applying a 2-d polynomial transform to the CCD space coordinates, prior
+ to entering the standard WCS chain (affine transform, then de-projection).
+ In practice, the SIP 
+\begin_inset Quotes eld
+\end_inset
+
+twisting
+\begin_inset Quotes erd
+\end_inset
+
+ is applied by the LSST software itself (in the class 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+ClName{
+\end_layout
+
+\end_inset
+
+afw::image::TanWcs
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+), and the 
+\begin_inset Quotes eld
+\end_inset
+
+standard
+\begin_inset Quotes erd
+\end_inset
+
+ part (affine and de-projection, or the reverse transform) are sub-contracted
+ to the 
+\begin_inset Quotes eld
+\end_inset
+
+libwcs
+\begin_inset Quotes erd
+\end_inset
+
+ code.
+\end_layout
+
+\begin_layout Standard
+One common complication of the WCS arena is that it was designed in the
+ FITS framework convention, itself highly fortran-biased for array indexing,
+ so that the first corner pixel of an image is indexed (1,1).
+ The LSST software, and most modern environments use C-like indexing, i.e.
+ images stars at (0,0), as well as coordinates in images.
+ The WCS LSST software hides this detail to users, by offsetting the pixel
+ space coordinates provided and obtained from the wcs-handling library.
+\end_layout
+
+\begin_layout Standard
+We now detail what is involved in the SIP convention: the SIP 
+\begin_inset Quotes eld
+\end_inset
+
+twisting
+\begin_inset Quotes erd
+\end_inset
+
+ itself is encoded through 4 polynomials of 2 variables, which encode the
+ direct and reverse transformations.
+ The standard affine transform is expressed through a 
+\begin_inset Formula $2\times2$
+\end_inset
+
+ matrix (
+\begin_inset Formula $Cd$
+\end_inset
+
+) and a reference point 
+\begin_inset Formula $X_{ref}$
+\end_inset
+
+ (called 
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+verb'CRPIX'
+\end_layout
+
+\end_inset
+
+ in the fits header): 
+\begin_inset Formula 
+\[
+Y_{TP}=Cd(X_{pix}-X_{ref})
+\]
+
+\end_inset
+
+
+\begin_inset Formula $X_{pix}$
+\end_inset
+
+ is a point in the CCD space, and 
+\begin_inset Formula $Y_{TP}$
+\end_inset
+
+ is its transform in the tangent plane.
+ Obviously, 
+\begin_inset Formula $X_{pix}$
+\end_inset
+
+ and 
+\begin_inset Formula $X_{ref}$
+\end_inset
+
+ should be expressed in the same frame so that the transform does not depend
+ this frame choice.
+ We write symbolically this transform as 
+\begin_inset Formula $Y_{TP}=L(X_{pix})$
+\end_inset
+
+ The SIP distortions are defined by a polynomial transformation in pixel
+ space, that we call 
+\begin_inset Formula $P_{A}$
+\end_inset
+
+, for the forward transformation.
+ By convention, the transform from pixel space to tangent plane then reads:
+ 
+\begin_inset Formula 
+\[
+Y_{TP}=L\left(X_{pix}-X_{ref}+P_{A}(X_{pix}-X_{ref})\right)
+\]
+
+\end_inset
+
+which again does not depend on the frame choice (0-based or 1-based), provided
+ 
+\begin_inset Formula $X_{pix}$
+\end_inset
+
+ and 
+\begin_inset Formula $X_{ref}$
+\end_inset
+
+ are expressed in the same frame.
+\end_layout
+
+\begin_layout Standard
+In jointcal ,the internal representation of SIP WCS's uses three straight
+ 2d
+\begin_inset Formula $\rightarrow$
+\end_inset
+
+2d transformations: the SIP correction, the affine transformation and the
+ de-projection.
+ Those are just composed to yield the actual transform, and the two first
+ ones are generic polynomial transformations.
+ We provide routines to translate the TanWcs objects into our representation
+ (
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+RoutineName{
+\end_layout
+
+\end_inset
+
+ConvertTanWcs
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+) and back (
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+
+\backslash
+RoutineName{
+\end_layout
+
+\end_inset
+
+GtransfoToTanWcs
+\begin_inset ERT
+status collapsed
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\end_inset
+
+).
+ In the latter case, we also derive the reverse distortion polynomials,
+ which are built if needed in our representation of SIP WCSs.
+\end_layout
+
+\end_body
+\end_document
