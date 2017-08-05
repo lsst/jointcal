@@ -2,6 +2,8 @@
 #ifndef LSST_JOINTCAL_PHOTOMETRY_MODEL_H
 #define LSST_JOINTCAL_PHOTOMETRY_MODEL_H
 
+#include "lsst/afw/image/PhotoCalib.h"
+
 #include "lsst/jointcal/CcdImage.h"
 #include "lsst/jointcal/Eigenstuff.h"
 #include "lsst/jointcal/PhotometryMapping.h"
@@ -38,26 +40,20 @@ public:
     virtual void offsetParams(Eigen::VectorXd const &delta) = 0;
 
     /**
-     * Return the "photometric factor" at a given location on a ccdImage.
+     * Return the on-sky transformed flux for measuredStar on ccdImage.
      *
-     * Multiply this by a Calib's flux/magnitude zero-point to get the updated fluxMag0 at that point.
+     * @param[in]  ccdImage     The ccdImage where measuredStar resides.
+     * @param      measuredStar The measured star position to compute the transform at.
+     * @param[in]  instFlux     The instrument flux to transform.
      *
-     * @param[in]  ccdImage  The ccdImage to get the photometric factor for.
-     * @param[in]  where     Possition on ccdImage in ccd coordinates.
-     *
-     * @return     The photometric factor at the given location on ccdImage.
+     * @return     The on-sky flux transformed from instFlux at measuredStar's position.
      */
-    virtual double photomFactor(CcdImage const &ccdImage, Point const &where) const = 0;
-
-    /// Get the mapping associated with ccdImage.
-    PhotometryMapping const &getMapping(CcdImage const &ccdImage) const {
-        return *(this->findMapping(ccdImage, "getMapping"));
-    }
+    virtual double transform(CcdImage const &ccdImage, MeasuredStar const &measuredStar,
+                             double instFlux) const = 0;
 
     /**
      * Get how this set of parameters (of length Npar()) map into the "grand" fit.
      *
-     * @param[in]     ccdImage  The ccdImage to find the mapping of.
      * @param[out]    indices   The indices of the mapping associated with ccdImage.
      */
     virtual void getMappingIndices(CcdImage const &ccdImage, std::vector<unsigned> &indices) = 0;
@@ -72,15 +68,37 @@ public:
     virtual void computeParameterDerivatives(MeasuredStar const &measuredStar, CcdImage const &ccdImage,
                                              Eigen::VectorXd &derivatives) = 0;
 
-    // //! number of parameters to be read in indices.size()
-    // virtual void setIndicesAndDerivatives(MeasuredStar const &measuredStar, CcdImage const &ccdImage,
-    //                                       std::vector<unsigned> &indices, Eigen::VectorXd &D) = 0;
+    /**
+     * Return the mapping of ccdImage represented as a PhotoCalib.
+     */
+    virtual std::shared_ptr<afw::image::PhotoCalib> toPhotoCalib(CcdImage const &ccdImage) const = 0;
+    // {
+    //     return this->findMapping(ccdImage, "getMapping")->toPhotoCalib();
+    // }
 
-    virtual ~PhotometryModel(){};
+    /// Return the number of parameters in the mapping of CcdImage
+    unsigned getNpar(CcdImage const &ccdImage) const {
+        return this->findMapping(ccdImage, "getNpar")->getNpar();
+    }
+
+    /// Get the mapping associated with ccdImage.
+    PhotometryMappingBase const &getMapping(CcdImage const &ccdImage) const {
+        return *(this->findMapping(ccdImage, "getMapping"));
+    }
+
+    /// Dump the contents of the transfos, for debugging.
+    virtual void dump(std::ostream &stream = std::cout) const = 0;
+
+    /// For python print().
+    std::string __str__() const {
+        std::stringstream s;
+        dump(s);
+        return s.str();
+    }
 
 protected:
     /// Return a pointer to the mapping associated with this ccdImage. name is for describing error messages.
-    virtual PhotometryMapping *findMapping(CcdImage const &ccdImage, std::string name) const = 0;
+    virtual PhotometryMappingBase *findMapping(CcdImage const &ccdImage, std::string name) const = 0;
 };
 }  // namespace jointcal
 }  // namespace lsst

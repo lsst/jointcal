@@ -131,6 +131,11 @@ class JointcalConfig(pexConfig.Config):
         allowed={"simple": "One constant zeropoint per ccd and visit",
                  "constrained": "Constrained zeropoint per ccd, and one polynomial per visit"}
     )
+    photometryVisitDegree = pexConfig.Field(
+        doc="Degree of the per-visit polynomial transform for the constrained photometry model.",
+        dtype=int,
+        default=7,
+    )
     astrometryRefObjLoader = pexConfig.ConfigurableField(
         target=LoadAstrometryNetObjectsTask,
         doc="Reference object loader for astrometric fit",
@@ -230,7 +235,8 @@ class JointcalTask(pipeBase.CmdLineTask):
         src = dataRef.get("src", flags=lsst.afw.table.SOURCE_IO_NO_FOOTPRINTS, immediate=True)
         calexp = dataRef.get("calexp", immediate=True)
         visitInfo = calexp.getInfo().getVisitInfo()
-        ccdname = calexp.getDetector().getId()
+        detector = calexp.getDetector()
+        ccdname = detector.getId()
 
         calib = calexp.getCalib()
         tanWcs = calexp.getWcs()
@@ -245,7 +251,7 @@ class JointcalTask(pipeBase.CmdLineTask):
             self.log.warn("no stars selected in ", visit, ccdname)
             return tanWcs
         self.log.info("%d stars selected in visit %d ccd %d", len(goodSrc.sourceCat), visit, ccdname)
-        associations.addImage(goodSrc.sourceCat, tanWcs, visitInfo, bbox, filt, photoCalib,
+        associations.addImage(goodSrc.sourceCat, tanWcs, visitInfo, bbox, filt, photoCalib, detector,
                               visit, ccdname, jointcalControl)
 
         Result = collections.namedtuple('Result_from_build_CcdImage', ('wcs', 'key', 'filter'))
@@ -284,6 +290,10 @@ class JointcalTask(pipeBase.CmdLineTask):
         filters = []
         load_cat_prof_file = 'jointcal_build_ccdImage.prof' if profile_jointcal else ''
         with pipeBase.cmdLineTask.profile(load_cat_prof_file):
+            # We need the bounding-box of the focal plane for photometry visit models.
+            # NOTE: we only need to read it once, because its the same for all exposure of a camera.
+            camera = dataRefs[0].get('camera', immediate=True)
+            self.focalPlaneBBox = camera.getFpBBox()
             for ref in dataRefs:
                 result = self._build_ccdImage(ref, associations, jointcalControl)
                 oldWcsList.append(result.wcs)
@@ -453,7 +463,9 @@ class JointcalTask(pipeBase.CmdLineTask):
 
         # TODO: should use pex.config.RegistryField here (see DM-9195)
         if self.config.photometryModel == "constrained":
-            model = lsst.jointcal.ConstrainedPhotometryModel(associations.getCcdImageList())
+            model = lsst.jointcal.ConstrainedPhotometryModel(associations.getCcdImageList(),
+                                                             self.focalPlaneBBox,
+                                                             visitDegree=self.config.photometryVisitDegree)
         elif self.config.photometryModel == "simple":
             model = lsst.jointcal.SimplePhotometryModel(associations.getCcdImageList())
 
@@ -470,7 +482,7 @@ class JointcalTask(pipeBase.CmdLineTask):
         chi2 = fit.computeChi2()
         self.log.info("Fit prepared with %s", str(chi2))
 
-        chi2 = self._iterate_fit(fit, 20, "photometry", "Model Fluxes")
+        chi2 = self._iterate_fit(fit, model, 20, "photometry", "Model Fluxes")
 
         self.metrics['photometryFinalChi2'] = chi2.chi2
         self.metrics['photometryFinalNdof'] = chi2.ndof
@@ -526,14 +538,14 @@ class JointcalTask(pipeBase.CmdLineTask):
         chi2 = fit.computeChi2()
         self.log.info(str(chi2))
 
-        chi2 = self._iterate_fit(fit, 20, "astrometry", "Distortions Positions")
+        chi2 = self._iterate_fit(fit, model, 20, "astrometry", "Distortions Positions")
 
         self.metrics['astrometryFinalChi2'] = chi2.chi2
         self.metrics['astrometryFinalNdof'] = chi2.ndof
 
         return Astrometry(fit, model, sky_to_tan_projection)
 
-    def _iterate_fit(self, fit, max_steps, name, whatToFit):
+    def _iterate_fit(self, fit, model, max_steps, name, whatToFit):
         """Run fit.minimize up to max_steps times, returning the final chi2."""
 
         for i in range(max_steps):
@@ -561,7 +573,7 @@ class JointcalTask(pipeBase.CmdLineTask):
 
         return chi2
 
-    def _write_results(self, associations, astrom_model, photom_model, visit_ccd_to_dataRef):
+    def _write_results(self, associations, astrometry_model, photometry_model, visit_ccd_to_dataRef):
         """
         Write the fitted results (photometric and astrometric) to a new 'wcs' dataRef.
 
@@ -569,9 +581,9 @@ class JointcalTask(pipeBase.CmdLineTask):
         ----------
         associations : lsst.jointcal.Associations
             The star/reference star associations to fit.
-        astrom_model : lsst.jointcal.AstrometryModel
+        astrometry_model : lsst.jointcal.AstrometryModel
             The astrometric model that was fit.
-        photom_model : lsst.jointcal.PhotometryModel
+        photometry_model : lsst.jointcal.PhotometryModel
             The photometric model that was fit.
         visit_ccd_to_dataRef : dict of Key: lsst.daf.persistence.ButlerDataRef
             dict of ccdImage identifiers to dataRefs that were fit
@@ -586,17 +598,20 @@ class JointcalTask(pipeBase.CmdLineTask):
             exp = afwImage.ExposureI(0, 0)
             if self.config.doAstrometry:
                 self.log.info("Updating WCS for visit: %d, ccd: %d", visit, ccd)
-                tanSip = astrom_model.produceSipWcs(ccdImage)
+                tanSip = astrometry_model.produceSipWcs(ccdImage)
                 tanWcs = lsst.jointcal.gtransfoToTanWcs(tanSip, ccdImage.imageFrame, False)
                 exp.setWcs(tanWcs)
+                try:
+                    dataRef.put(exp, 'wcs')
+                except pexExceptions.Exception as e:
+                    self.log.fatal('Failed to write updated Wcs: %s', str(e))
+                    raise e
             if self.config.doPhotometry:
-                self.log.info("Updating Calib for visit: %d, ccd: %d", visit, ccd)
-                # start with the original calib saved to the ccdImage
-                fluxMag0 = ccdImage.getPhotoCalib().getInstFluxMag0()
-                fluxMag0Err = ccdImage.getPhotoCalib().getInstFluxMag0Err()
-                exp.getCalib().setFluxMag0(fluxMag0/photom_model.photomFactor(ccdImage), fluxMag0Err)
-            try:
-                dataRef.put(exp, 'wcs')
-            except pexExceptions.Exception as e:
-                self.log.fatal('Failed to write updated Wcs and Calib: %s', str(e))
-                raise e
+                self.log.info("Updating PhotoCalib for visit: %d, ccd: %d", visit, ccd)
+                photoCalib = photometry_model.toPhotoCalib(ccdImage)
+                # exp.getCalib().setFluxMag0(fluxMag0/photometry_model.photomFactor(ccdImage), fluxMag0Err)
+                try:
+                    dataRef.put(photoCalib, 'photoCalib')
+                except pexExceptions.Exception as e:
+                    self.log.fatal('Failed to write updated PhotoCalib: %s', str(e))
+                    raise e

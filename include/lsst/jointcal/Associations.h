@@ -79,8 +79,9 @@ public:
     void addImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &catalog,
                   std::shared_ptr<lsst::afw::image::TanWcs> wcs,
                   std::shared_ptr<lsst::afw::image::VisitInfo> visitInfo, lsst::afw::geom::Box2I const &bbox,
-                  std::string const &filter, std::shared_ptr<afw::image::PhotoCalib> photoCalib, int visit,
-                  int ccd, std::shared_ptr<lsst::jointcal::JointcalControl> control);
+                  std::string const &filter, std::shared_ptr<afw::image::PhotoCalib> photoCalib,
+                  std::shared_ptr<afw::cameraGeom::Detector> detector, int visit, int ccd,
+                  std::shared_ptr<lsst::jointcal::JointcalControl> control);
 
     //! incrementaly builds a merged catalog of all image catalogs
     void associateCatalogs(const double matchCutInArcsec = 0, const bool useFittedList = false,

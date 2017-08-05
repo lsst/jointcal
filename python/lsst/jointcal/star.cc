@@ -49,6 +49,8 @@ void declarePoint(py::module &mod) {
 void declareBaseStar(py::module &mod) {
     py::class_<BaseStar, std::shared_ptr<BaseStar>, Point> cls(mod, "BaseStar");
 
+    cls.def(py::init<double, double, double, double>(), "x"_a, "y"_a, "flux"_a, "fluxErr"_a);
+
     // these three are actually declared in FatPoint, but we don't need that in Python.
     // NOTE: see DM-9814 about the necessity of the pointer cast below.
     cls.def_readonly("vx", (double BaseStar::*)&BaseStar::vx);
@@ -78,6 +80,15 @@ void declareMeasuredStar(py::module &mod) {
     py::class_<MeasuredStar, std::shared_ptr<MeasuredStar>, BaseStar> cls(mod, "MeasuredStar");
 
     cls.def(py::init<BaseStar const &>(), "baseStar"_a);
+
+    cls.def("getInstFlux", &MeasuredStar::getInstFlux);
+    cls.def("setInstFlux", &MeasuredStar::setInstFlux);
+    cls.def("getInstFluxErr", &MeasuredStar::getInstFluxErr);
+    cls.def("setInstFluxErr", &MeasuredStar::setInstFluxErr);
+    cls.def("setXFocal", &MeasuredStar::setXFocal);
+    cls.def("setYFocal", &MeasuredStar::setYFocal);
+    cls.def("getXFocal", &MeasuredStar::getXFocal);
+    cls.def("getYFocal", &MeasuredStar::getYFocal);
 }
 
 PYBIND11_PLUGIN(star) {

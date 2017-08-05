@@ -32,6 +32,8 @@ private:
     std::shared_ptr<const FittedStar> _fittedStar;
     bool _valid;
 
+    double _xFocal, _yFocal;
+
 public:
     //!
     MeasuredStar()
@@ -42,10 +44,20 @@ public:
               _instFlux(0.),
               _instFluxErr(0.),
               _ccdImage(0),
-              _valid(true) {}
+              _valid(true),
+              _xFocal(0.0),
+              _yFocal(0.0) {}
 
     MeasuredStar(BaseStar const &baseStar)
-            : BaseStar(baseStar), mag(0.), wmag(0.), _id(0), _instFluxErr(0.), _ccdImage(0), _valid(true) {}
+            : BaseStar(baseStar),
+              mag(0.),
+              wmag(0.),
+              _id(0),
+              _instFluxErr(0.),
+              _ccdImage(0),
+              _valid(true),
+              _xFocal(0.0),
+              _yFocal(0.0) {}
 
     /// No move, allow copy constructor: we may copy the fitted StarLists when associating and matching
     /// catalogs, otherwise Stars should be managed by shared_ptr only.
@@ -61,7 +73,8 @@ public:
 
     void dump(std::ostream &stream = std::cout) const {
         BaseStar::dump(stream);
-        stream << " id: " << _id << " valid: " << _valid;
+        stream << " instFlux: " << _instFlux << " instFluxErr: " << _instFluxErr << " id: " << _id
+               << " valid: " << _valid;
     }
 
     void setInstFlux(double instFlux) { _instFlux = instFlux; }
@@ -76,6 +89,11 @@ public:
 
     //! the inverse of the mag variance
     double getMagWeight() const { return (_instFlux * _instFlux / (_instFluxErr * _instFluxErr)); }
+
+    double getXFocal() const { return _xFocal; }
+    void setXFocal(double xFocal) { _xFocal = xFocal; }
+    double getYFocal() const { return _yFocal; }
+    void setYFocal(double yFocal) { _yFocal = yFocal; }
 
     std::shared_ptr<const FittedStar> getFittedStar() const { return _fittedStar; };
 

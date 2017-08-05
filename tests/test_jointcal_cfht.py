@@ -49,7 +49,8 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
         self.setUp_base(center, radius,
                         input_dir=input_dir,
                         all_visits=all_visits,
-                        do_plot=do_plot)
+                        do_plot=do_plot,
+                        log_level="DEBUG")
 
     def test_jointcalTask_2_visits(self):
         # NOTE: The relative RMS limit was empirically determined from the

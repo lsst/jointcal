@@ -39,7 +39,9 @@ namespace {
 void declarePhotometryModel(py::module &mod) {
     py::class_<PhotometryModel, std::shared_ptr<PhotometryModel>> cls(mod, "PhotometryModel");
 
-    cls.def("photomFactor", &PhotometryModel::photomFactor, "ccdImage"_a, "where"_a = Point());
+    cls.def("toPhotoCalib", &PhotometryModel::toPhotoCalib);
+    cls.def("transform", &PhotometryModel::transform);
+    cls.def("__str__", &PhotometryModel::__str__);
 }
 
 void declareSimplePhotometryModel(py::module &mod) {
@@ -51,7 +53,8 @@ void declareSimplePhotometryModel(py::module &mod) {
 void declareConstrainedPhotometryModel(py::module &mod) {
     py::class_<ConstrainedPhotometryModel, std::shared_ptr<ConstrainedPhotometryModel>, PhotometryModel> cls(
             mod, "ConstrainedPhotometryModel");
-    cls.def(py::init<CcdImageList const &>(), "CcdImageList"_a);
+    cls.def(py::init<CcdImageList const &, afw::geom::Box2D const &, int>(), "CcdImageList"_a, "bbox"_a,
+            "visitDegree"_a = 7);
 }
 
 PYBIND11_PLUGIN(photometryModels) {
