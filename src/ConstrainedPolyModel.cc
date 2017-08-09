@@ -130,16 +130,14 @@ unsigned ConstrainedPolyModel::assignIndices(unsigned firstIndex, std::string co
 
 void ConstrainedPolyModel::offsetParams(Eigen::VectorXd const &delta) {
     if (_fittingChips)
-        for (auto i = _chipMap.begin(); i != _chipMap.end(); ++i) {
-            auto *p = (&*(i->second));
-            if (p->getNpar())  // probably useless test
-                p->offsetParams(&delta(p->getIndex()));
+        for (auto &i : _chipMap) {
+            auto mapping = i.second.get();
+            mapping->offsetParams(delta.segment(mapping->getIndex(), mapping->getNpar()));
         }
     if (_fittingVisits)
-        for (auto i = _visitMap.begin(); i != _visitMap.end(); ++i) {
-            auto *p = (&*(i->second));
-            if (p->getNpar())  // probably useless test
-                p->offsetParams(&delta(p->getIndex()));
+        for (auto &i : _visitMap) {
+            auto mapping = i.second.get();
+            mapping->offsetParams(delta.segment(mapping->getIndex(), mapping->getNpar()));
         }
 }
 

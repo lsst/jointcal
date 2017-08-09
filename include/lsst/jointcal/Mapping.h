@@ -33,7 +33,7 @@ public:
     //! Remember the error scale and freeze it
     //  virtual void freezeErrorScales() = 0;
 
-    virtual void offsetParams(double const *delta) = 0;
+    virtual void offsetParams(Eigen::VectorXd const &delta) = 0;
 
     //! The derivative w.r.t. position
     virtual void positionDerivative(Point const &where, Eigen::Matrix2d &derivative,

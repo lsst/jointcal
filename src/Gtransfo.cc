@@ -6,6 +6,8 @@
 #include "assert.h"
 #include <sstream>
 
+#include "Eigen/Core"
+
 #include "lsst/log/Log.h"
 #include "lsst/jointcal/Gtransfo.h"
 #include "lsst/jointcal/Frame.h"
@@ -169,9 +171,9 @@ void Gtransfo::getParams(double *params) const {
     for (int i = 0; i < npar; ++i) params[i] = paramRef(i);
 }
 
-void Gtransfo::offsetParams(const double *params) {
+void Gtransfo::offsetParams(Eigen::VectorXd const &delta) {
     int npar = getNpar();
-    for (int i = 0; i < npar; ++i) paramRef(i) += params[i];
+    for (int i = 0; i < npar; ++i) paramRef(i) += delta[i];
 }
 
 double Gtransfo::paramRef(const int) const {

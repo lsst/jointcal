@@ -44,10 +44,15 @@ public:
     //!
     void transformPosAndErrors(FatPoint const &where, FatPoint &outPoint) const;
 
-    //!
-    void offsetParams(double const *delta) {  // this routine is not used when fitting. used for debugging
-        _m1->offsetParams(delta);
-        _m2->offsetParams(delta + _m1->getNpar());
+    /**
+     * @copydoc Mapping::offsetParams
+     *
+     * @note  this routine is not used when fitting (the Model manages the mappings separately),
+     *        but can be useful for debugging
+     */
+    void offsetParams(Eigen::VectorXd const &delta) {
+        _m1->offsetParams(delta.segment(_m1->getIndex(), _m1->getNpar()));
+        _m2->offsetParams(delta.segment(_m2->getIndex() + _m1->getNpar(), _m2->getNpar()));
     }
 
     //! access to transfos

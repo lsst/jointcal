@@ -91,7 +91,7 @@ public:
     }
 
     //!
-    void offsetParams(double const *delta) { transfo->offsetParams(delta); }
+    void offsetParams(Eigen::VectorXd const &delta) { transfo->offsetParams(delta); }
 
     //! position of the parameters within the grand fitting scheme
     unsigned getIndex() const { return index; }
