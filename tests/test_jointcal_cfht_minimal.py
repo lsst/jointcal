@@ -56,7 +56,7 @@ class JointcalTestCFHTMinimal(jointcalTestBase.JointcalTestBase, lsst.utils.test
                    'associatedPhotometryFittedStars': 2,
                    'selectedPhotometryFittedStars': 2,
                    'selectedPhotometryCcdImageList': 2,
-                   'photometryFinalChi2': 2.33674,
+                   'photometryFinalChi2': 2.336915,
                    'photometryFinalNdof': 1
                    }
 

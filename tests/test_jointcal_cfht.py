@@ -70,7 +70,7 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
                    'selectedPhotometryCcdImageList': 12,
                    'astrometryFinalChi2': 1150.62,
                    'astrometryFinalNdof': 2550,
-                   'photometryFinalChi2': 2813.17,
+                   'photometryFinalChi2': 2820.84,
                    'photometryFinalNdof': 1388
                    }
 
@@ -104,25 +104,22 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
         self.config.doAstrometry = False
         self.jointcalStatistics.do_astrometry = False
 
-        pa1 = 0.014
+        pa1 = 0.017
         metrics = {'collectedPhotometryRefStars': 825,
                    'selectedPhotometryRefStars': 825,
                    'associatedPhotometryFittedStars': 2269,
                    'selectedPhotometryFittedStars': 1239,
                    'selectedPhotometryCcdImageList': 12,
-                   'photometryFinalChi2': 2813.17,
-                   'photometryFinalNdof': 1388
+                   'photometryFinalChi2': 2640.74,
+                   'photometryFinalNdof': 1328
                    }
-
-        self.config = lsst.jointcal.jointcal.JointcalConfig()
-        self.config.doAstrometry = False
-        self.jointcalStatistics.do_astrometry = False
 
         self._testJointcalTask(2, None, None, pa1, metrics=metrics)
 
 
 class MemoryTester(lsst.utils.tests.MemoryTestCase):
     pass
+
 
 if __name__ == "__main__":
     lsst.utils.tests.init()
