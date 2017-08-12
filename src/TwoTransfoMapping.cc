@@ -17,20 +17,20 @@ TwoTransfoMapping::TwoTransfoMapping(SimpleGtransfoMapping *mapping1, SimpleGtra
 
 unsigned TwoTransfoMapping::getNpar() const { return _nPar1 + _nPar2; }
 
-void TwoTransfoMapping::setMappingIndices(std::vector<unsigned> &indices) const {
+void TwoTransfoMapping::getMappingIndices(std::vector<unsigned> &indices) const {
     unsigned npar = getNpar();
     if (indices.size() < npar) indices.resize(npar);
     // in case we are only fitting one of the two transfos
     if (_nPar1)
-        _m1->setMappingIndices(indices);
+        _m1->getMappingIndices(indices);
     else if (_nPar2) {
-        _m2->setMappingIndices(indices);
+        _m2->getMappingIndices(indices);
         return;
     }
     // if we get here we are fitting both
     // there is probably a more elegant way to feed a subpart of a std::vector
     std::vector<unsigned> ind2(_nPar2);
-    _m2->setMappingIndices(ind2);
+    _m2->getMappingIndices(ind2);
     for (unsigned k = 0; k < _nPar2; ++k) indices.at(k + _nPar1) = ind2.at(k);
 }
 

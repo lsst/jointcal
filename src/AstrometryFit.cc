@@ -115,7 +115,7 @@ void AstrometryFit::leastSquareDerivativesMeasurement(CcdImage const &ccdImage, 
     // any constraint to the fit, so :
     if (npar_tot == 0) return;
     std::vector<unsigned> indices(npar_tot, -1);
-    if (_fittingDistortions) mapping->setMappingIndices(indices);
+    if (_fittingDistortions) mapping->getMappingIndices(indices);
 
     // proper motion stuff
     double mjd = ccdImage.getMjd() - _JDRef;
@@ -410,7 +410,7 @@ void AstrometryFit::getIndicesOfMeasuredStar(MeasuredStar const &measuredStar,
                                              std::vector<unsigned> &indices) const {
     if (_fittingDistortions) {
         const Mapping *mapping = _astrometryModel->getMapping(measuredStar.getCcdImage());
-        mapping->setMappingIndices(indices);
+        mapping->getMappingIndices(indices);
     }
     auto fs = measuredStar.getFittedStar();
     unsigned fsIndex = fs->getIndexInMatrix();

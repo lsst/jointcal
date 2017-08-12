@@ -19,7 +19,7 @@ public:
 
     /// Sets how this set of parameters (of length Npar()) map into the "grand" fit
     /// Expects that indices has enough space reserved.
-    virtual void setMappingIndices(std::vector<unsigned> &indices) const = 0;
+    virtual void getMappingIndices(std::vector<unsigned> &indices) const = 0;
 
     //! Actually applies the mapping and evaluates the derivatives w.r.t the fitted parameters.
     /*! This is grouped into a single call because for most models,
