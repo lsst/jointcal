@@ -8,6 +8,7 @@ import os
 import inspect
 
 import lsst.afw.geom
+import lsst.afw.image.utils
 from lsst.meas.extensions.astrometryNet import LoadAstrometryNetObjectsTask, LoadAstrometryNetObjectsConfig
 
 from lsst.jointcal import jointcal, utils
@@ -69,6 +70,10 @@ class JointcalTestBase(object):
 
         # Append `msg` arguments to assert failures.
         self.longMessage = True
+
+        # Ensure that the filter list is reset for each test so that we avoid
+        # confusion or contamination from other instruments.
+        lsst.afw.image.utils.resetFilters()
 
     def tearDown(self):
         if getattr(self, 'reference', None) is not None:
