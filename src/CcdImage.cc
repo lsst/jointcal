@@ -38,7 +38,8 @@ void CcdImage::LoadCatalog(afw::table::SourceCatalog const &catalog, std::string
     auto fluxKey = catalog.getSchema().find<double>(fluxField + "_flux").key;
     auto fluxErrKey = catalog.getSchema().find<double>(fluxField + "_fluxSigma").key;
 
-    auto transform = _detector->getTransform(afw::cameraGeom::FOCAL_PLANE);
+    auto transform = _detector->getTransform(_detector->makeCameraSys(afw::cameraGeom::PIXELS),
+                                             afw::cameraGeom::FOCAL_PLANE);
 
     _wholeCatalog.clear();
     for (auto const &record : catalog) {
@@ -47,7 +48,7 @@ void CcdImage::LoadCatalog(afw::table::SourceCatalog const &catalog, std::string
         ms->y = record.get(yKey);
         ms->vx = std::pow(record.get(xsKey), 2);
         ms->vy = std::pow(record.get(ysKey), 2);
-        auto pointFocal = transform->forwardTransform(record.getCentroid());
+        auto pointFocal = transform->applyForward(record.getCentroid());
         ms->setXFocal(pointFocal.getX());
         ms->setYFocal(pointFocal.getY());
         /* the xy covariance is not provided in the input catalog: we
