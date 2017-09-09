@@ -11,6 +11,7 @@
 #include "lsst/jointcal/Frame.h"
 #include "lsst/afw/image/TanWcs.h"
 #include "lsst/afw/image/Utils.h"
+#include "lsst/afw/image/Image.h"
 #include "lsst/afw/fits.h"
 #include "lsst/daf/base.h"
 
@@ -117,11 +118,8 @@ BOOST_AUTO_TEST_CASE(test_wcs_convertions)
   const PTR(afwImg::TanWcs) tanWcs = std::dynamic_pointer_cast<afwImg::TanWcs>(wcs);
 
   jointcal::TanSipPix2RaDec gtransfoWcs = jointcal::convertTanWcs(tanWcs);
-  int naxis1 = propSet->get<int>("NAXIS1");
-  int naxis2 = propSet->get<int>("NAXIS2");
-  jointcal::Frame imageFrame(0,0,naxis1,naxis2);
-
-
+  auto const bbox = lsst::afw::image::bboxFromMetadata(*propSet);
+  jointcal::Frame const imageFrame(bbox.getMinX(), bbox.getMinY(), bbox.getMaxX(), bbox.getMaxY());
 
   // test the back conversion, in two cases
   for (int noLowOrderSipTerm  = 0; noLowOrderSipTerm <=1; noLowOrderSipTerm++) {
