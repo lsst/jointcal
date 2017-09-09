@@ -56,7 +56,7 @@ public:
      *
      * @param[out]    indices   The indices of the mapping associated with ccdImage.
      */
-    virtual void getMappingIndices(CcdImage const &ccdImage, std::vector<unsigned> &indices) = 0;
+    virtual void getMappingIndices(CcdImage const &ccdImage, std::vector<unsigned> &indices) const = 0;
 
     /**
      * Compute the parametric derivatives of this model.
@@ -66,7 +66,7 @@ public:
      * @param[out]  derivatives   The computed derivatives. Must be pre-allocated to the correct size.
      */
     virtual void computeParameterDerivatives(MeasuredStar const &measuredStar, CcdImage const &ccdImage,
-                                             Eigen::VectorXd &derivatives) = 0;
+                                             Eigen::VectorXd &derivatives) const = 0;
 
     /**
      * Return the mapping of ccdImage represented as a PhotoCalib.

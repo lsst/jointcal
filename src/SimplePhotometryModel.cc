@@ -18,9 +18,9 @@ SimplePhotometryModel::SimplePhotometryModel(CcdImageList const &ccdImageList) {
     _myMap.reserve(ccdImageList.size());
     for (auto const &ccdImage : ccdImageList) {
         auto photoCalib = ccdImage->getPhotoCalib();
-        // Use (fluxMag0)^-1 from the PhotoCalib as the default.
+        // Use the single-frame processing calibration from the PhotoCalib as the default.
         auto transfo =
-                std::make_shared<PhotometryTransfoSpatiallyInvariant>(1.0 / photoCalib->getInstFluxMag0());
+                std::make_shared<PhotometryTransfoSpatiallyInvariant>(photoCalib->getCalibrationMean());
         _myMap.emplace(ccdImage->getHashKey(),
                        std::unique_ptr<PhotometryMapping>(new PhotometryMapping(transfo)));
     }
@@ -50,7 +50,8 @@ double SimplePhotometryModel::transform(CcdImage const &ccdImage, MeasuredStar c
     return mapping->transform(star, instFlux);
 }
 
-void SimplePhotometryModel::getMappingIndices(CcdImage const &ccdImage, std::vector<unsigned> &indices) {
+void SimplePhotometryModel::getMappingIndices(CcdImage const &ccdImage,
+                                              std::vector<unsigned> &indices) const {
     auto mapping = this->findMapping(ccdImage, "getMappingIndices");
     if (indices.size() < mapping->getNpar()) indices.resize(mapping->getNpar());
     indices[0] = mapping->getIndex();
@@ -58,16 +59,16 @@ void SimplePhotometryModel::getMappingIndices(CcdImage const &ccdImage, std::vec
 
 void SimplePhotometryModel::computeParameterDerivatives(MeasuredStar const &measuredStar,
                                                         CcdImage const &ccdImage,
-                                                        Eigen::VectorXd &derivatives) {
+                                                        Eigen::VectorXd &derivatives) const {
     auto mapping = this->findMapping(ccdImage, "computeParameterDerivatives");
     mapping->computeParameterDerivatives(measuredStar, measuredStar.getInstFlux(), derivatives);
 }
 
 std::shared_ptr<afw::image::PhotoCalib> SimplePhotometryModel::toPhotoCalib(CcdImage const &ccdImage) const {
-    double instFluxMag0 = 1.0 / (this->findMapping(ccdImage, "getMapping")->getParameters()[0]);
+    double calibration = (this->findMapping(ccdImage, "getMapping")->getParameters()[0]);
     auto oldPhotoCalib = ccdImage.getPhotoCalib();
     return std::unique_ptr<afw::image::PhotoCalib>(
-            new afw::image::PhotoCalib(instFluxMag0, oldPhotoCalib->getInstFluxMag0Err()));
+            new afw::image::PhotoCalib(calibration, oldPhotoCalib->getCalibrationErr()));
 }
 
 void SimplePhotometryModel::dump(std::ostream &stream) const {

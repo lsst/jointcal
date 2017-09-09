@@ -51,16 +51,14 @@ public:
     double transform(CcdImage const &ccdImage, MeasuredStar const &star, double instFlux) const override;
 
     /// @copydoc PhotometryModel::getMappingIndices
-    void getMappingIndices(CcdImage const &ccdImage, std::vector<unsigned> &indices) override;
+    void getMappingIndices(CcdImage const &ccdImage, std::vector<unsigned> &indices) const override;
 
     /// @copydoc PhotometryModel::computeParameterDerivatives
     void computeParameterDerivatives(MeasuredStar const &measuredStar, CcdImage const &ccdImage,
-                                     Eigen::VectorXd &derivatives) override;
+                                     Eigen::VectorXd &derivatives) const override;
 
     /// @copydoc PhotometryModel::toPhotoCalib
-    std::shared_ptr<afw::image::PhotoCalib> toPhotoCalib(CcdImage const &ccdImage) const override {
-        return nullptr;
-    }
+    std::shared_ptr<afw::image::PhotoCalib> toPhotoCalib(CcdImage const &ccdImage) const override;
 
     /// @copydoc PhotometryModel::dump
     void dump(std::ostream &stream = std::cout) const override;

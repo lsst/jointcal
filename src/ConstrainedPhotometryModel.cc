@@ -3,6 +3,11 @@
 
 #include "lsst/log/Log.h"
 
+#include "astshim.h"
+#include "astshim/ChebyMap.h"
+#include "lsst/afw/geom/Transform.h"
+#include "lsst/afw/image/PhotoCalib.h"
+#include "lsst/afw/math/TransformBoundedField.h"
 #include "lsst/jointcal/CcdImage.h"
 #include "lsst/jointcal/ConstrainedPhotometryModel.h"
 #include "lsst/jointcal/PhotometryMapping.h"
@@ -37,9 +42,9 @@ ConstrainedPhotometryModel::ConstrainedPhotometryModel(CcdImageList const &ccdIm
                 constrainedChip = chip;
             }
             auto photoCalib = ccdImage->getPhotoCalib();
-            // Use (fluxMag0)^-1 from the PhotoCalib as the default.
-            auto chipTransfo = std::make_shared<PhotometryTransfoSpatiallyInvariant>(
-                    1.0 / photoCalib->getInstFluxMag0());
+            // Use the single-frame processing calibration from the PhotoCalib as the default.
+            auto chipTransfo =
+                    std::make_shared<PhotometryTransfoSpatiallyInvariant>(photoCalib->getCalibrationMean());
             _chipMap[chip] = std::unique_ptr<PhotometryMapping>(new PhotometryMapping(chipTransfo));
         }
         // If the visit is not in the map, add it, otherwise continue.
@@ -104,7 +109,8 @@ double ConstrainedPhotometryModel::transform(CcdImage const &ccdImage, MeasuredS
     return mapping->transform(measuredStar, instFlux);
 }
 
-void ConstrainedPhotometryModel::getMappingIndices(CcdImage const &ccdImage, std::vector<unsigned> &indices) {
+void ConstrainedPhotometryModel::getMappingIndices(CcdImage const &ccdImage,
+                                                   std::vector<unsigned> &indices) const {
     auto mapping = this->findMapping(ccdImage, "getMappingIndices");
     mapping->getMappingIndices(indices);
     // TODO: I think I need a for loop here, from the above value to that +mapping->getNpar()?
@@ -112,9 +118,68 @@ void ConstrainedPhotometryModel::getMappingIndices(CcdImage const &ccdImage, std
 
 void ConstrainedPhotometryModel::computeParameterDerivatives(MeasuredStar const &measuredStar,
                                                              CcdImage const &ccdImage,
-                                                             Eigen::VectorXd &derivatives) {
+                                                             Eigen::VectorXd &derivatives) const {
     auto mapping = this->findMapping(ccdImage, "computeParameterDerivatives");
     mapping->computeParameterDerivatives(measuredStar, measuredStar.getInstFlux(), derivatives);
+}
+
+namespace {
+// Convert photoTransfo's way of storing Chebyshev coefficients into the format wanted by ChebyMap.
+ndarray::Array<double, 2, 2> toChebyMapCoeffs(std::shared_ptr<PhotometryTransfoChebyshev> transfo) {
+    auto coeffs = transfo->getCoefficients();
+    // 4 x nPar: ChebyMap wants rows that look like (a_ij, 1, i, j) for out += a_ij*T_i(x)*T_j(y)
+    ndarray::Array<double, 2, 2> chebyCoeffs = allocate(ndarray::makeVector(transfo->getNpar(), 4));
+    Eigen::VectorXd::Index k = 0;
+    auto degree = transfo->getDegree();
+    for (ndarray::Size j = 0; j <= degree; ++j) {
+        auto const iMax = degree - j;  // to save re-computing `i+j <= degree` every inner step.
+        for (ndarray::Size i = 0; i <= iMax; ++i, ++k) {
+            chebyCoeffs[k][0] = coeffs[j][i];
+            chebyCoeffs[k][1] = 1;
+            chebyCoeffs[k][2] = i;
+            chebyCoeffs[k][3] = j;
+        }
+    }
+    return chebyCoeffs;
+}
+}  // namespace
+
+std::shared_ptr<afw::image::PhotoCalib> ConstrainedPhotometryModel::toPhotoCalib(
+        CcdImage const &ccdImage) const {
+    auto oldPhotoCalib = ccdImage.getPhotoCalib();
+    auto detector = ccdImage.getDetector();
+    auto ccdBBox = detector->getBBox();
+    ChipVisitPhotometryMapping *mapping =
+            dynamic_cast<ChipVisitPhotometryMapping *>(this->findMapping(ccdImage, "toPhotoCalib"));
+    // There should be no way in which we can get to this point and not have a ChipVisitMapping,
+    // so blow up if we don't.
+    assert(mapping != nullptr);
+    auto pixToFocal = detector->getTransform(afw::cameraGeom::PIXELS, afw::cameraGeom::FOCAL_PLANE);
+    // We know it's a Chebyshev transfo because we created it as such, so blow up if it's not.
+    auto visitTransfo =
+            std::dynamic_pointer_cast<PhotometryTransfoChebyshev>(mapping->getVisitMapping()->getTransfo());
+    assert(visitTransfo != nullptr);
+    auto focalBBox = visitTransfo->getBBox();
+
+    // Unravel our chebyshev coefficients to build an astshim::ChebyMap.
+    auto coeff_f = toChebyMapCoeffs(
+            std::dynamic_pointer_cast<PhotometryTransfoChebyshev>(mapping->getVisitMapping()->getTransfo()));
+    // Bounds are the bbox
+    std::vector<double> lowerBound = {focalBBox.getMinX(), focalBBox.getMinY()};
+    std::vector<double> upperBound = {focalBBox.getMaxX(), focalBBox.getMaxY()};
+    ast::ChebyMap chebyMap(coeff_f, 1, lowerBound, upperBound);
+
+    // The chip part is easy: zoom map with the single value as the "zoom" factor.
+    ast::ZoomMap zoomMap(1, mapping->getChipMapping()->getParameters()[0]);
+
+    // Now stitch them all together.
+    auto transform =
+            afw::geom::TransformPoint2ToGeneric(pixToFocal->getFrameSet()->then(chebyMap).then(zoomMap));
+    // NOTE: TransformBoundedField does not yet implement mean(), so we have to compute it here.
+    double mean = mapping->getChipMapping()->getParameters()[0] * visitTransfo->mean();
+    auto boundedField = std::make_shared<afw::math::TransformBoundedField>(ccdBBox, transform);
+    return std::make_shared<afw::image::PhotoCalib>(mean, oldPhotoCalib->getCalibrationErr(), boundedField,
+                                                    false);
 }
 
 void ConstrainedPhotometryModel::dump(std::ostream &stream) const {

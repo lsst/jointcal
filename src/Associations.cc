@@ -158,7 +158,6 @@ void Associations::collectRefStars(lsst::afw::table::SortedCatalogT<lsst::afw::t
                                  << fluxField << "Sigma"
                                  << ") not found in reference catalog. Not using ref flux errors.");
     }
-    std::cout << "Error key: " << fluxErrKey << " valid: " << fluxErrKey.isValid() << std::endl;
     _filterMap.clear();
     _filterMap.reserve(refFluxMap.size());
     size_t nFilters = 0;

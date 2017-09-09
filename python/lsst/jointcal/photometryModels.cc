@@ -22,6 +22,10 @@
 
 #include "pybind11/pybind11.h"
 #include "pybind11/stl.h"
+#include "numpy/arrayobject.h"
+#include "ndarray/pybind11.h"
+#include "ndarray/eigen.h"
+#include "Eigen/Core"
 
 #include "lsst/jointcal/CcdImage.h"
 #include "lsst/jointcal/PhotometryModel.h"
@@ -39,8 +43,19 @@ namespace {
 void declarePhotometryModel(py::module &mod) {
     py::class_<PhotometryModel, std::shared_ptr<PhotometryModel>> cls(mod, "PhotometryModel");
 
-    cls.def("toPhotoCalib", &PhotometryModel::toPhotoCalib);
+    cls.def("assignIndices", &PhotometryModel::assignIndices);
+    cls.def("offsetParams", &PhotometryModel::offsetParams);
     cls.def("transform", &PhotometryModel::transform);
+    cls.def("getMappingIndices", &PhotometryModel::getMappingIndices);
+    cls.def("computeParameterDerivatives",
+            [](PhotometryModel const &self, MeasuredStar const &star, CcdImage const &ccdImage) {
+                Eigen::VectorXd derivatives(self.getNpar(ccdImage));
+                self.computeParameterDerivatives(star, ccdImage, derivatives);
+                return derivatives;
+            });
+
+    cls.def("getNpar", &PhotometryModel::getNpar);
+    cls.def("toPhotoCalib", &PhotometryModel::toPhotoCalib);
     cls.def("__str__", &PhotometryModel::__str__);
 }
 
@@ -62,6 +77,11 @@ PYBIND11_PLUGIN(photometryModels) {
     py::module::import("lsst.jointcal.photometryTransfo");
     py::module::import("lsst.jointcal.star");
     py::module mod("photometryModels");
+
+    if (_import_array() < 0) {
+        PyErr_SetString(PyExc_ImportError, "numpy.core.multiarray failed to import");
+        return nullptr;
+    }
 
     declarePhotometryModel(mod);
     declareSimplePhotometryModel(mod);

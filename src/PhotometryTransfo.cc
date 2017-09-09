@@ -63,14 +63,16 @@ ndarray::Array<double, 2, 2> _identityChebyshev(size_t degree) {
 }  // namespace
 
 PhotometryTransfoChebyshev::PhotometryTransfoChebyshev(size_t degree, afw::geom::Box2D const &bbox)
-        : _toChebyshevRange(makeChebyshevRangeTransform(bbox)),
+        : _bbox(bbox),
+          _toChebyshevRange(makeChebyshevRangeTransform(bbox)),
           _coefficients(_identityChebyshev(degree)),
           _degree(degree),
           _nParameters((degree + 1) * (degree + 2) / 2) {}
 
 PhotometryTransfoChebyshev::PhotometryTransfoChebyshev(ndarray::Array<double, 2, 2> const &coefficients,
                                                        afw::geom::Box2D const &bbox)
-        : _toChebyshevRange(makeChebyshevRangeTransform(bbox)),
+        : _bbox(bbox),
+          _toChebyshevRange(makeChebyshevRangeTransform(bbox)),
           _coefficients(coefficients),
           _degree(coefficients.size() - 1),
           _nParameters((_degree + 1) * (_degree + 2) / 2) {}
@@ -91,6 +93,30 @@ void PhotometryTransfoChebyshev::offsetParams(Eigen::VectorXd const &delta) {
         }
     }
 }
+
+namespace {
+// The integral of T_n(x) over [-1,1]:
+// https://en.wikipedia.org/wiki/Chebyshev_polynomials#Differentiation_and_integration
+double integrateTn(int n) {
+    if (n % 2 == 1)
+        return 0;
+    else
+        return 2.0 / (1.0 - double(n * n));
+}
+}  // namespace
+
+double PhotometryTransfoChebyshev::integrate() const {
+    double result = 0;
+    double determinant = _bbox.getArea() / 4.0;
+    for (ndarray::Size j = 0; j < _coefficients.getSize<0>(); j++) {
+        for (ndarray::Size i = 0; i < _coefficients.getSize<1>(); i++) {
+            result += _coefficients[j][i] * integrateTn(i) * integrateTn(j);
+        }
+    }
+    return result * determinant;
+}
+
+double PhotometryTransfoChebyshev::mean() const { return integrate() / _bbox.getArea(); }
 
 void PhotometryTransfoChebyshev::computeParameterDerivatives(double x, double y, double instFlux,
                                                              Eigen::Ref<Eigen::VectorXd> derivatives) const {

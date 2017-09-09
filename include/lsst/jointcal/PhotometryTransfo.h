@@ -191,12 +191,23 @@ public:
     /// @copydoc PhotometryTransfo::getParameters
     Eigen::VectorXd getParameters() const override;
 
+    ndarray::Size getDegree() const { return _degree; }
+
+    afw::geom::Box2D getBBox() const { return _bbox; }
+
+    // Compute the mean of this function over its bounding-box.
+    double mean() const;
+
 private:
+    afw::geom::Box2D _bbox;                        // the domain of this function
     afw::geom::AffineTransform _toChebyshevRange;  // maps points from the bbox to [-1,1]x[-1,1]
 
     ndarray::Array<double, 2, 2> _coefficients;  // shape=(degree+1, degree+1)
     ndarray::Size _degree;
     ndarray::Size _nParameters;
+
+    // Compute the integral of this function over its bounding-box.
+    double integrate() const;
 };
 
 }  // namespace jointcal

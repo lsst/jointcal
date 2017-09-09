@@ -17,7 +17,6 @@ class CcdImage;
 class Point;
 
 //! Photometric response model which has a single photometric factor per CcdImage.
-/*! It considers a full exposure as reference. */
 class SimplePhotometryModel : public PhotometryModel {
 public:
     SimplePhotometryModel(CcdImageList const &ccdImageList);
@@ -38,11 +37,11 @@ public:
     double transform(CcdImage const &ccdImage, MeasuredStar const &star, double instFlux) const override;
 
     /// @copydoc PhotometryModel::getMappingIndices
-    void getMappingIndices(CcdImage const &ccdImage, std::vector<unsigned> &indices) override;
+    void getMappingIndices(CcdImage const &ccdImage, std::vector<unsigned> &indices) const override;
 
     /// @copydoc PhotometryModel::computeParameterDerivatives
     void computeParameterDerivatives(MeasuredStar const &measuredStar, CcdImage const &ccdImage,
-                                     Eigen::VectorXd &derivatives) override;
+                                     Eigen::VectorXd &derivatives) const override;
 
     /**
      * @copydoc PhotometryModel::toPhotoCalib

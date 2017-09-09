@@ -120,7 +120,7 @@ class JointcalStatistics(object):
             for ref in data_refs:
                 calib = ref.get('calexp').getCalib()
                 fluxMag0 = calib.getFluxMag0()
-                old_calibs.append(lsst.afw.image.PhotoCalib(fluxMag0[0], fluxMag0[1]))
+                old_calibs.append(lsst.afw.image.PhotoCalib(1.0/fluxMag0[0], fluxMag0[1]/fluxMag0[0]**2))
 
         self.old_dist, self.old_flux, self.old_ref_flux, self.old_source = compute(old_cats, old_calibs)
 

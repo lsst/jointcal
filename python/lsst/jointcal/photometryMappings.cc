@@ -77,16 +77,6 @@ void declareChipVisitPhotometryMapping(py::module &mod) {
 
     cls.def(py::init<std::shared_ptr<PhotometryMapping>, std::shared_ptr<PhotometryMapping>>(),
             "chipMapping"_a, "visitMapping"_a);
-
-    // cls.def("getTransfo1", &ChipVisitPhotometryMapping::getTransfo1,
-    //         py::return_value_policy::reference_internal);
-    // cls.def_property_readonly("transfo1", &ChipVisitPhotometryMapping::getTransfo1,
-    //                           py::return_value_policy::reference_internal);
-
-    // cls.def("getTransfo2", &ChipVisitPhotometryMapping::getTransfo2,
-    //         py::return_value_policy::reference_internal);
-    // cls.def_property_readonly("transfo2", &ChipVisitPhotometryMapping::getTransfo2,
-    //                           py::return_value_policy::reference_internal);
 }
 
 PYBIND11_PLUGIN(photometryMappings) {

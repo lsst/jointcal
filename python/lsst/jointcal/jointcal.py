@@ -243,7 +243,7 @@ class JointcalTask(pipeBase.CmdLineTask):
         bbox = calexp.getBBox()
         filt = calexp.getInfo().getFilter().getName()
         fluxMag0 = calib.getFluxMag0()
-        photoCalib = afwImage.PhotoCalib(fluxMag0[0], fluxMag0[1], bbox)
+        photoCalib = afwImage.PhotoCalib(1.0/fluxMag0[0], fluxMag0[1]/fluxMag0[0]**2, bbox)
 
         goodSrc = self.sourceSelector.selectSources(src)
 
@@ -609,7 +609,6 @@ class JointcalTask(pipeBase.CmdLineTask):
             if self.config.doPhotometry:
                 self.log.info("Updating PhotoCalib for visit: %d, ccd: %d", visit, ccd)
                 photoCalib = photometry_model.toPhotoCalib(ccdImage)
-                # exp.getCalib().setFluxMag0(fluxMag0/photometry_model.photomFactor(ccdImage), fluxMag0Err)
                 try:
                     dataRef.put(photoCalib, 'photoCalib')
                 except pexExceptions.Exception as e:

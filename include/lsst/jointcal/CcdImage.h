@@ -138,7 +138,7 @@ public:
     //! returns visit ID
     VisitIdType getVisit() const { return _visit; }
 
-    std::shared_ptr<afw::cameraGeom::Detector> getDetector() { return _detector; }
+    std::shared_ptr<afw::cameraGeom::Detector> getDetector() const { return _detector; }
 
     CcdImageKey getHashKey() const { return CcdImageKey(_visit, _ccdId); }
 

@@ -38,7 +38,7 @@ void CcdImage::LoadCatalog(afw::table::SourceCatalog const &catalog, std::string
     auto fluxKey = catalog.getSchema().find<double>(fluxField + "_flux").key;
     auto fluxErrKey = catalog.getSchema().find<double>(fluxField + "_fluxSigma").key;
 
-    auto transform = _detector->getTransform(_detector->makeCameraSys(afw::cameraGeom::PIXELS),
+    auto transform = _detector->getTransform(afw::cameraGeom::PIXELS,
                                              afw::cameraGeom::FOCAL_PLANE);
 
     _wholeCatalog.clear();

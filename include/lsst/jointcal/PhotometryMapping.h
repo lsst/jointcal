@@ -200,6 +200,9 @@ public:
         _visitMapping->dump(stream);
     }
 
+    std::shared_ptr<PhotometryMapping> getChipMapping() const { return _chipMapping; }
+    std::shared_ptr<PhotometryMapping> getVisitMapping() const { return _visitMapping; }
+
 private:
     // the actual transformation to be fit
     std::shared_ptr<PhotometryMapping> _chipMapping;

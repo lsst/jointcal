@@ -35,8 +35,12 @@ namespace {
 void declareCcdImage(py::module &mod) {
     py::class_<CcdImage, std::shared_ptr<CcdImage>> cls(mod, "CcdImage");
 
-    // Not wrapping constructor: CcdImages are always built inside Associations.
-    // cls.def(py::init<>());
+    cls.def(py::init<afw::table::SourceCatalog &, std::shared_ptr<lsst::afw::image::TanWcs>,
+                     std::shared_ptr<lsst::afw::image::VisitInfo>, afw::geom::Box2I const &,
+                     std::string const &, std::shared_ptr<afw::image::PhotoCalib>,
+                     std::shared_ptr<afw::cameraGeom::Detector>, int, int, std::string const &>(),
+            "record"_a, "wcs"_a, "visitInfo"_a, "bbox"_a, "filter"_a, "photoCalib"_a, "detector"_a, "visit"_a,
+            "ccd"_a, "fluxField"_a);
 
     cls.def("getPhotoCalib", &CcdImage::getPhotoCalib);
 
