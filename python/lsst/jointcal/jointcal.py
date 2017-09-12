@@ -223,7 +223,10 @@ class JointcalTask(pipeBase.CmdLineTask):
             filter : str
                 this calexp's filter
         """
-        visit = dataRef.dataId["visit"]
+        if "visit" in dataRef.dataId.keys():
+            visit = dataRef.dataId["visit"]
+        else:
+            visit = dataRef.getButler().queryMetadata("calexp", ("visit"), dataRef.dataId)[0]
         src = dataRef.get("src", flags=lsst.afw.table.SOURCE_IO_NO_FOOTPRINTS, immediate=True)
         calexp = dataRef.get("calexp", immediate=True)
         visitInfo = calexp.getInfo().getVisitInfo()

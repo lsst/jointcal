@@ -75,7 +75,11 @@ class PerTractCcdDataIdContainer(CoaddDataIdContainer):
                         continue
 
                     # XXX fancier mechanism to select an individual exposure than just pulling out "visit"?
-                    visit = ref.dataId["visit"]
+                    if "visit" in ref.dataId.keys():
+                        visit = ref.dataId["visit"]
+                    else:
+                        # Fallback if visit is not in the dataId
+                        visit = namespace.butler.queryMetadata("calexp", ("visit"), ref.dataId)[0]
                     if visit not in visitRefs:
                         visitRefs[visit] = list()
                     visitRefs[visit].append(ref)
