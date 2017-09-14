@@ -484,7 +484,7 @@ def plot_all_wcs_deltas(plt, data_refs, visits, old_wcs_list, per_ccd_plot=False
             md = ref.get('calexp_md')
             dims = bboxFromMetadata(md).getDimensions()
             plot_wcs(plt, old_wcs_list[i], ref.get('wcs').getWcs(),
-                     dims.getWidth(), dims.getHeight(),
+                     dims.getX(), dims.getY(),
                      center=(md.get('CRVAL1'), md.get('CRVAL2')), name='dataRef %d'%i,
                      outdir=outdir)
 
@@ -540,7 +540,7 @@ def plot_all_wcs_quivers(plt, data_refs, visits, old_wcs_list, name, outdir='.pl
             md = ref.get('calexp_md')
             dims = bboxFromMetadata(md).getDimensions()
             Q = plot_wcs_quivers(ax, old_wcs, ref.get('wcs').getWcs(),
-                                 dims.getWidth(), dims.getHeight())
+                                 dims.getX(), dims.getY())
             # TODO: add CCD bounding boxes to plot once DM-5503 is finished.
             # TODO: add a circle for the full focal plane.
         length = (0.1*u.arcsecond).to(u.radian).value
@@ -608,7 +608,7 @@ def plot_wcs_magnitude(plt, data_refs, visits, old_wcs_list, name, outdir='.plot
                 continue
             md = ref.get('calexp_md')
             dims = bboxFromMetadata(md).getDimensions()
-            x1, y1, x2, y2 = make_xy_wcs_grid(dims.getWidth(), dims.getHeight(),
+            x1, y1, x2, y2 = make_xy_wcs_grid(dims.getX(), dims.getY(),
                                               old_wcs, ref.get('wcs').getWcs())
             uu = x2 - x1
             vv = y2 - y1
