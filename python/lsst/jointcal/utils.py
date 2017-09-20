@@ -498,7 +498,7 @@ def plot_all_wcs_deltas(plt, data_refs, visits, old_wcs_list, per_ccd_plot=False
     if per_ccd_plot:
         for i, ref in enumerate(data_refs):
             md = ref.get('calexp_md')
-            dims = bboxFromMetadata(md).getDimensions()
+            dims = lsst.afw.image.bboxFromMetadata(md).getDimensions()
             plot_wcs(plt, old_wcs_list[i], ref.get('wcs').getWcs(),
                      dims.getX(), dims.getY(),
                      center=(md.get('CRVAL1'), md.get('CRVAL2')), name='dataRef %d'%i,
@@ -554,7 +554,7 @@ def plot_all_wcs_quivers(plt, data_refs, visits, old_wcs_list, name, outdir='.pl
             if ref.dataId['visit'] != visit:
                 continue
             md = ref.get('calexp_md')
-            dims = bboxFromMetadata(md).getDimensions()
+            dims = lsst.afw.image.bboxFromMetadata(md).getDimensions()
             Q = plot_wcs_quivers(ax, old_wcs, ref.get('wcs').getWcs(),
                                  dims.getX(), dims.getY())
             # TODO: add CCD bounding boxes to plot once DM-5503 is finished.
@@ -623,7 +623,7 @@ def plot_wcs_magnitude(plt, data_refs, visits, old_wcs_list, name, outdir='.plot
             if ref.dataId['visit'] != visit:
                 continue
             md = ref.get('calexp_md')
-            dims = bboxFromMetadata(md).getDimensions()
+            dims = lsst.afw.image.bboxFromMetadata(md).getDimensions()
             x1, y1, x2, y2 = make_xy_wcs_grid(dims.getX(), dims.getY(),
                                               old_wcs, ref.get('wcs').getWcs())
             uu = x2 - x1
