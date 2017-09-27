@@ -67,8 +67,9 @@ unsigned FitterBase::findOutliers(double nSigmaCut, MeasuredStarList &msOutliers
         if (!ms) {
             // it is reference term.
             fs = std::dynamic_pointer_cast<FittedStar>(chi2->star);
+            // NOTE: Stars contribute twice to astrometry (x,y), but once to photometry (flux),
+            // NOTE: but we only need to mark one index here because both will be removed with that star.
             indices.push_back(fs->getIndexInMatrix());
-            indices.push_back(fs->getIndexInMatrix() + 1);  // probably useless
             /* One might think it would be useful to account for PM
                parameters here, but it is just useless */
         } else {  // it is a measurement term.
