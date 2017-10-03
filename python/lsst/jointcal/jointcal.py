@@ -34,6 +34,12 @@ __all__ = ["JointcalConfig", "JointcalTask"]
 Photometry = collections.namedtuple('Photometry', ('fit', 'model'))
 Astrometry = collections.namedtuple('Astrometry', ('fit', 'model', 'sky_to_tan_projection'))
 
+# A hack to get outputs working in the minimum
+class ValMeasurement(validation.MeasurementBase):
+    def __init__(self, key, val):
+        validation.MeasurementBase.__init__(self)
+        self.metric = validation.Metric(key, key, '<')
+        self.quantity = val
 
 class JointcalRunner(pipeBase.ButlerInitializedTaskRunner):
     """Subclass of TaskRunner for jointcalTask
@@ -347,7 +353,8 @@ class JointcalTask(pipeBase.CmdLineTask):
             self._write_results(associations, astrometry.model, photometry.model, visit_ccd_to_dataRef)
 
         if validation is not None:
-            validation.output_measurements("jointcal", self.metrics)
+            job = validation.Job(measurements=[ValMeasurement(key, val) for key, val in self.metrics.iter_items()])
+            job.write_json('jointcal.json')
 
         return pipeBase.Struct(dataRefs=dataRefs, oldWcsList=oldWcsList, metrics=self.metrics)
 
