@@ -5,6 +5,7 @@ from builtins import str
 from builtins import range
 
 import collections
+import astropy.units as u
 
 import lsst.utils
 import lsst.pex.config as pexConfig
@@ -15,11 +16,7 @@ import lsst.afw.coord as afwCoord
 import lsst.pex.exceptions as pexExceptions
 import lsst.afw.table
 import lsst.meas.algorithms
-try:
-    # NOTE: Until DM-8477 is merged, this import will fail
-    import lsst.validate.base as validation
-except:
-    validation = None
+import lsst.verify as verify
 
 from lsst.meas.extensions.astrometryNet import LoadAstrometryNetObjectsTask
 from lsst.meas.algorithms.sourceSelector import sourceSelectorRegistry
@@ -34,12 +31,6 @@ __all__ = ["JointcalConfig", "JointcalTask"]
 Photometry = collections.namedtuple('Photometry', ('fit', 'model'))
 Astrometry = collections.namedtuple('Astrometry', ('fit', 'model', 'sky_to_tan_projection'))
 
-# A hack to get outputs working in the minimum
-class ValMeasurement(validation.MeasurementBase):
-    def __init__(self, key, val):
-        validation.MeasurementBase.__init__(self)
-        self.metric = validation.Metric(key, key, '<')
-        self.quantity = val
 
 class JointcalRunner(pipeBase.ButlerInitializedTaskRunner):
     """Subclass of TaskRunner for jointcalTask
@@ -353,8 +344,9 @@ class JointcalTask(pipeBase.CmdLineTask):
             self._write_results(associations, astrometry.model, photometry.model, visit_ccd_to_dataRef)
 
         if validation is not None:
-            job = validation.Job(measurements=[ValMeasurement(key, val) for key, val in self.metrics.iter_items()])
-            job.write_json('jointcal.json')
+            # HACK convert to unitless quantities
+            quant_dict = {key:val*u.dimensionless_unscaled for key, val in self.metrics.items()}
+            verify.output_quantities('jointcal', quant_dict)
 
         return pipeBase.Struct(dataRefs=dataRefs, oldWcsList=oldWcsList, metrics=self.metrics)
 
