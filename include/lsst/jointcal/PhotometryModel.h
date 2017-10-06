@@ -77,13 +77,11 @@ public:
     // }
 
     /// Return the number of parameters in the mapping of CcdImage
-    unsigned getNpar(CcdImage const &ccdImage) const {
-        return this->findMapping(ccdImage, "getNpar")->getNpar();
-    }
+    unsigned getNpar(CcdImage const &ccdImage) const { return findMapping(ccdImage, "getNpar")->getNpar(); }
 
     /// Get the mapping associated with ccdImage.
     PhotometryMappingBase const &getMapping(CcdImage const &ccdImage) const {
-        return *(this->findMapping(ccdImage, "getMapping"));
+        return *(findMapping(ccdImage, "getMapping"));
     }
 
     /// Dump the contents of the transfos, for debugging.

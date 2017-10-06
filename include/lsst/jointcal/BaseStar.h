@@ -59,8 +59,8 @@ public:
     }
 
     BaseStar &operator=(Point const &point) {
-        this->x = point.x;
-        this->y = point.y;
+        x = point.x;
+        y = point.y;
         return (*this);
     };
 

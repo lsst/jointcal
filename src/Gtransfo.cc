@@ -1071,10 +1071,10 @@ GtransfoLin GtransfoLin::operator*(const GtransfoLin &right) const {
     // So, for sake of efficiency, and since it is easy, we take a shortcut:
     GtransfoLin result;
     apply(right.Dx(), right.Dy(), result.dx(), result.dy());
-    result.a11() = this->A11() * right.A11() + this->A12() * right.A21();
-    result.a12() = this->A11() * right.A12() + this->A12() * right.A22();
-    result.a21() = this->A21() * right.A11() + this->A22() * right.A21();
-    result.a22() = this->A21() * right.A12() + this->A22() * right.A22();
+    result.a11() = A11() * right.A11() + A12() * right.A21();
+    result.a12() = A11() * right.A12() + A12() * right.A22();
+    result.a21() = A21() * right.A11() + A22() * right.A21();
+    result.a22() = A21() * right.A12() + A22() * right.A22();
     return result;
 }
 
@@ -1113,7 +1113,7 @@ GtransfoLin GtransfoLin::invert() const {
 }
 
 std::unique_ptr<Gtransfo> GtransfoLin::inverseTransfo(const double, const Frame &) const {
-    return std::unique_ptr<Gtransfo>(new GtransfoLin(this->invert()));
+    return std::unique_ptr<Gtransfo>(new GtransfoLin(invert()));
 }
 
 double GtransfoLinRot::fit(const StarMatchList &) {

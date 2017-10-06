@@ -82,7 +82,7 @@ SegmentList::SegmentList(const BaseStarList &list, const int nStars, const Gtran
         for (auto si2 = siStop; si2 != si1; --si2) {
             push_back(Segment(*si1, *si2, rank, gtransfo));
         }
-    this->sort(DecreasingLength); /* allows a break in loops */
+    sort(DecreasingLength); /* allows a break in loops */
 }
 
 //#include <pair>

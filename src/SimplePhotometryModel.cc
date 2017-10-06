@@ -46,13 +46,13 @@ void SimplePhotometryModel::offsetParams(Eigen::VectorXd const &delta) {
 
 double SimplePhotometryModel::transform(CcdImage const &ccdImage, MeasuredStar const &star,
                                         double instFlux) const {
-    auto mapping = this->findMapping(ccdImage, "transform");
+    auto mapping = findMapping(ccdImage, "transform");
     return mapping->transform(star, instFlux);
 }
 
 void SimplePhotometryModel::getMappingIndices(CcdImage const &ccdImage,
                                               std::vector<unsigned> &indices) const {
-    auto mapping = this->findMapping(ccdImage, "getMappingIndices");
+    auto mapping = findMapping(ccdImage, "getMappingIndices");
     if (indices.size() < mapping->getNpar()) indices.resize(mapping->getNpar());
     indices[0] = mapping->getIndex();
 }
@@ -60,12 +60,12 @@ void SimplePhotometryModel::getMappingIndices(CcdImage const &ccdImage,
 void SimplePhotometryModel::computeParameterDerivatives(MeasuredStar const &measuredStar,
                                                         CcdImage const &ccdImage,
                                                         Eigen::VectorXd &derivatives) const {
-    auto mapping = this->findMapping(ccdImage, "computeParameterDerivatives");
+    auto mapping = findMapping(ccdImage, "computeParameterDerivatives");
     mapping->computeParameterDerivatives(measuredStar, measuredStar.getInstFlux(), derivatives);
 }
 
 std::shared_ptr<afw::image::PhotoCalib> SimplePhotometryModel::toPhotoCalib(CcdImage const &ccdImage) const {
-    double calibration = (this->findMapping(ccdImage, "getMapping")->getParameters()[0]);
+    double calibration = (findMapping(ccdImage, "getMapping")->getParameters()[0]);
     auto oldPhotoCalib = ccdImage.getPhotoCalib();
     return std::unique_ptr<afw::image::PhotoCalib>(
             new afw::image::PhotoCalib(calibration, oldPhotoCalib->getCalibrationErr()));

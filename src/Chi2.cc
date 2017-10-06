@@ -35,8 +35,8 @@ std::pair<double, double> Chi2List::computeAverageAndSigma() {
         sum += i.chi2;
         sum2 += std::pow(i.chi2, 2);
     }
-    double average = sum / this->size();
-    double sigma = sqrt(sum2 / this->size() - std::pow(average, 2));
+    double average = sum / size();
+    double sigma = sqrt(sum2 / size() - std::pow(average, 2));
     return std::make_pair(average, sigma);
 }
 

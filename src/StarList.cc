@@ -43,7 +43,6 @@ void StarList<Star>::extractInFrame(StarList<Star> &out, const Frame &frame) con
 template <class Star>
 void StarList<Star>::copyTo(StarList<Star> &copy) const {
     copy.clearList();
-    //  copy.GlobVal() = this->GlobVal();
     for (auto const &si : *this) copy.push_back(std::make_shared<Star>(*si));
 }
 

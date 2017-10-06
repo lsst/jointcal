@@ -105,13 +105,13 @@ void ConstrainedPhotometryModel::offsetParams(Eigen::VectorXd const &delta) {
 
 double ConstrainedPhotometryModel::transform(CcdImage const &ccdImage, MeasuredStar const &measuredStar,
                                              double instFlux) const {
-    auto mapping = this->findMapping(ccdImage, "transform");
+    auto mapping = findMapping(ccdImage, "transform");
     return mapping->transform(measuredStar, instFlux);
 }
 
 void ConstrainedPhotometryModel::getMappingIndices(CcdImage const &ccdImage,
                                                    std::vector<unsigned> &indices) const {
-    auto mapping = this->findMapping(ccdImage, "getMappingIndices");
+    auto mapping = findMapping(ccdImage, "getMappingIndices");
     mapping->getMappingIndices(indices);
     // TODO: I think I need a for loop here, from the above value to that +mapping->getNpar()?
 }
@@ -119,7 +119,7 @@ void ConstrainedPhotometryModel::getMappingIndices(CcdImage const &ccdImage,
 void ConstrainedPhotometryModel::computeParameterDerivatives(MeasuredStar const &measuredStar,
                                                              CcdImage const &ccdImage,
                                                              Eigen::VectorXd &derivatives) const {
-    auto mapping = this->findMapping(ccdImage, "computeParameterDerivatives");
+    auto mapping = findMapping(ccdImage, "computeParameterDerivatives");
     mapping->computeParameterDerivatives(measuredStar, measuredStar.getInstFlux(), derivatives);
 }
 
@@ -150,7 +150,7 @@ std::shared_ptr<afw::image::PhotoCalib> ConstrainedPhotometryModel::toPhotoCalib
     auto detector = ccdImage.getDetector();
     auto ccdBBox = detector->getBBox();
     ChipVisitPhotometryMapping *mapping =
-            dynamic_cast<ChipVisitPhotometryMapping *>(this->findMapping(ccdImage, "toPhotoCalib"));
+            dynamic_cast<ChipVisitPhotometryMapping *>(findMapping(ccdImage, "toPhotoCalib"));
     // There should be no way in which we can get to this point and not have a ChipVisitMapping,
     // so blow up if we don't.
     assert(mapping != nullptr);

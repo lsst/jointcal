@@ -44,7 +44,7 @@ Frame Frame::operator*(const Frame &right) const {
 Frame &Frame::operator*=(const Frame &right) {
     Frame rightCopy = right;
     // make sure that coordinates are properly ordered
-    this->order();
+    order();
     rightCopy.order();
     xMin = max(xMin, rightCopy.xMin);
     xMax = min(xMax, right.xMax);
@@ -64,7 +64,7 @@ Frame Frame::operator+(const Frame &right) const {
 Frame &Frame::operator+=(const Frame &right) {
     Frame rightCopy = right;
     // make sure that coordinates are properly ordered
-    this->order();
+    order();
     rightCopy.order();
     xMin = min(xMin, rightCopy.xMin);
     xMax = max(xMax, right.xMax);
