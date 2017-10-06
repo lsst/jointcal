@@ -21,6 +21,7 @@ namespace jointcal {
 class PhotometryMappingBase {
 public:
     PhotometryMappingBase() : index(-1), fixed(false) {}
+    virtual ~PhotometryMappingBase(){};
 
     /// No copy or move: there is only ever one instance of a given mapping (i.e. per ccd+visit)
     PhotometryMappingBase(PhotometryMappingBase const &) = delete;
@@ -157,10 +158,6 @@ public:
             : PhotometryMappingBase(),
               _chipMapping(std::move(chipMapping)),
               _visitMapping(std::move(visitMapping)) {}
-
-    // std::shared_ptr<afw::image::PhotoCalib> toPhotoCalib() const {
-    //     return std::shared_ptr<afw::image::PhotoCalib>(new afw::image::PhotoCalib(0.0));
-    // }
 
     /// @copydoc PhotometryMappingBase::getNpar
     unsigned getNpar() const override { return _chipMapping->getNpar() + _visitMapping->getNpar(); }

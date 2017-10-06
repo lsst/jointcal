@@ -43,6 +43,14 @@ class PhotometryTransfoSpatiallyInvariantTestCase(PhotometryTransfoTestBase, lss
         delta -= 1
         self._test_offsetParams(delta, np.array(2.0))
 
+    def test_clone(self):
+        clone1 = self.transfo.clone()
+        self.assertEqual(self.transfo.getParameters(), clone1.getParameters())
+        transfo2 = lsst.jointcal.photometryTransfo.PhotometryTransfoSpatiallyInvariant(1234)
+        clone2 = transfo2.clone()
+        self.assertEqual(transfo2.getParameters(), clone2.getParameters())
+        self.assertNotEqual(clone1.getParameters(), clone2.getParameters())
+
     def test_computeParameterDerivatives(self):
         """The derivative of a spatially invariant transform is always the same.
         Should be indepdendent of position, flux, and value.
@@ -118,6 +126,16 @@ class PhotometryTransfoChebyshevTestCase(PhotometryTransfoTestBase, lsst.utils.t
         expect[2, 0] = 6
         self.transfo1.offsetParams(delta)
         self.assertFloatsAlmostEqual(expect, self.transfo1.getCoefficients())
+
+    def test_clone(self):
+        clone1 = self.transfo1.clone()
+        self.assertFloatsEqual(self.transfo1.getParameters(), clone1.getParameters())
+        self.assertEqual(self.transfo1.getDegree(), clone1.getDegree())
+        self.assertEqual(self.transfo1.getBBox(), clone1.getBBox())
+        clone2 = self.transfo2.clone()
+        self.assertFloatsEqual(self.transfo2.getParameters(), clone2.getParameters())
+        self.assertEqual(self.transfo2.getDegree(), clone2.getDegree())
+        self.assertEqual(self.transfo2.getBBox(), clone2.getBBox())
 
     def test_computeParameterDerivatives(self):
         cx = (self.bbox.getMinX() + self.bbox.getMaxX())/2.0

@@ -46,13 +46,13 @@ void SimplePhotometryModel::offsetParams(Eigen::VectorXd const &delta) {
 
 double SimplePhotometryModel::transform(CcdImage const &ccdImage, MeasuredStar const &star,
                                         double instFlux) const {
-    auto mapping = findMapping(ccdImage, "transform");
+    auto mapping = findMapping(ccdImage);
     return mapping->transform(star, instFlux);
 }
 
 void SimplePhotometryModel::getMappingIndices(CcdImage const &ccdImage,
                                               std::vector<unsigned> &indices) const {
-    auto mapping = findMapping(ccdImage, "getMappingIndices");
+    auto mapping = findMapping(ccdImage);
     if (indices.size() < mapping->getNpar()) indices.resize(mapping->getNpar());
     indices[0] = mapping->getIndex();
 }
@@ -60,12 +60,12 @@ void SimplePhotometryModel::getMappingIndices(CcdImage const &ccdImage,
 void SimplePhotometryModel::computeParameterDerivatives(MeasuredStar const &measuredStar,
                                                         CcdImage const &ccdImage,
                                                         Eigen::VectorXd &derivatives) const {
-    auto mapping = findMapping(ccdImage, "computeParameterDerivatives");
+    auto mapping = findMapping(ccdImage);
     mapping->computeParameterDerivatives(measuredStar, measuredStar.getInstFlux(), derivatives);
 }
 
 std::shared_ptr<afw::image::PhotoCalib> SimplePhotometryModel::toPhotoCalib(CcdImage const &ccdImage) const {
-    double calibration = (findMapping(ccdImage, "getMapping")->getParameters()[0]);
+    double calibration = (findMapping(ccdImage)->getParameters()[0]);
     auto oldPhotoCalib = ccdImage.getPhotoCalib();
     return std::unique_ptr<afw::image::PhotoCalib>(
             new afw::image::PhotoCalib(calibration, oldPhotoCalib->getCalibrationErr()));
@@ -77,11 +77,11 @@ void SimplePhotometryModel::dump(std::ostream &stream) const {
     }
 }
 
-PhotometryMappingBase *SimplePhotometryModel::findMapping(CcdImage const &ccdImage, std::string name) const {
+PhotometryMappingBase *SimplePhotometryModel::findMapping(CcdImage const &ccdImage) const {
     auto i = _myMap.find(ccdImage.getHashKey());
     if (i == _myMap.end())
         throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,
-                          "SimplePhotometryModel::" + name + ", cannot find CcdImage " + ccdImage.getName());
+                          "SimplePhotometryModel cannot find CcdImage " + ccdImage.getName());
     return i->second.get();
 }
 

@@ -64,7 +64,7 @@ public:
     void dump(std::ostream &stream = std::cout) const override;
 
 private:
-    PhotometryMappingBase *findMapping(CcdImage const &ccdImage, std::string name) const override;
+    PhotometryMappingBase *findMapping(CcdImage const &ccdImage) const override;
 
     typedef std::unordered_map<CcdImageKey, std::unique_ptr<ChipVisitPhotometryMapping>> MapType;
     MapType _myMap;

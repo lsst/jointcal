@@ -128,7 +128,6 @@ void PhotometryFit::accumulateStatImageList(CcdImageList const &ccdImageList, Ch
             if (!measuredStar->isValid()) continue;
             double sigma =
                     _photometryModel->transform(*ccdImage, *measuredStar, measuredStar->getInstFluxErr());
-// tweak the measurement errors
 #ifdef FUTURE
             TweakPhotomMeasurementErrors(inPos, measuredStar, _fluxError);
 #endif
@@ -218,12 +217,12 @@ void PhotometryFit::offsetParams(Eigen::VectorXd const &delta) {
 }
 
 void PhotometryFit::saveResultTuples(std::string const &tupleName) const {
-    std::ofstream tuple(tupleName.c_str());
+    std::ofstream ofile(tupleName.c_str());
     /* If we think the some coordinate on the focal plane is relevant in
        the ntuple, because thmodel relies on it, then we have to add
        some function to the model that returns this relevant
        coordinate. */
-    tuple << "#xccd: coordinate in CCD"
+    ofile << "#xccd: coordinate in CCD"
           << "\t"
           << "yccd: "
           << "\t"
@@ -280,7 +279,7 @@ void PhotometryFit::saveResultTuples(std::string const &tupleName) const {
             auto fs = measuredStar.getFittedStar();
             double residual = flux - fs->getFlux();
             double chi2Val = std::pow(residual / sigma, 2);
-            tuple << measuredStar.x << "\t" << measuredStar.y << "\t" << fs->getMag() << "\t"
+            ofile << measuredStar.x << "\t" << measuredStar.y << "\t" << fs->getMag() << "\t"
                   << measuredStar.getInstFlux() << "\t" << measuredStar.getInstFluxErr() << "\t"
                   << measuredStar.getFlux() << "\t" << measuredStar.getFluxErr() << "\t" << flux << "\t"
                   << fluxErr << "\t" << fs->getFlux() << "\t" << jd << "\t" << fs->color << "\t"

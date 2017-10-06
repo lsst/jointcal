@@ -291,7 +291,7 @@ class JointcalTask(pipeBase.CmdLineTask):
         load_cat_prof_file = 'jointcal_build_ccdImage.prof' if profile_jointcal else ''
         with pipeBase.cmdLineTask.profile(load_cat_prof_file):
             # We need the bounding-box of the focal plane for photometry visit models.
-            # NOTE: we only need to read it once, because its the same for all exposure of a camera.
+            # NOTE: we only need to read it once, because its the same for all exposures of a camera.
             camera = dataRefs[0].get('camera', immediate=True)
             self.focalPlaneBBox = camera.getFpBBox()
             for ref in dataRefs:

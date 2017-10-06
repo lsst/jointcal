@@ -57,8 +57,8 @@ private:
     typedef std::unordered_map<CcdImageKey, std::unique_ptr<PhotometryMapping>> MapType;
     MapType _myMap;
 
-    /// Return the mapping associated with this ccdImage. name is a descriptor for error messages.
-    PhotometryMappingBase *findMapping(CcdImage const &ccdImage, std::string name) const override;
+    /// Return the mapping associated with this ccdImage.
+    PhotometryMappingBase *findMapping(CcdImage const &ccdImage) const override;
 };
 
 }  // namespace jointcal

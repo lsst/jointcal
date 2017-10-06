@@ -72,16 +72,13 @@ public:
      * Return the mapping of ccdImage represented as a PhotoCalib.
      */
     virtual std::shared_ptr<afw::image::PhotoCalib> toPhotoCalib(CcdImage const &ccdImage) const = 0;
-    // {
-    //     return this->findMapping(ccdImage, "getMapping")->toPhotoCalib();
-    // }
 
     /// Return the number of parameters in the mapping of CcdImage
-    unsigned getNpar(CcdImage const &ccdImage) const { return findMapping(ccdImage, "getNpar")->getNpar(); }
+    unsigned getNpar(CcdImage const &ccdImage) const { return findMapping(ccdImage)->getNpar(); }
 
     /// Get the mapping associated with ccdImage.
     PhotometryMappingBase const &getMapping(CcdImage const &ccdImage) const {
-        return *(findMapping(ccdImage, "getMapping"));
+        return *(findMapping(ccdImage));
     }
 
     /// Dump the contents of the transfos, for debugging.
@@ -95,8 +92,8 @@ public:
     }
 
 protected:
-    /// Return a pointer to the mapping associated with this ccdImage. name is for describing error messages.
-    virtual PhotometryMappingBase *findMapping(CcdImage const &ccdImage, std::string name) const = 0;
+    /// Return a pointer to the mapping associated with this ccdImage.
+    virtual PhotometryMappingBase *findMapping(CcdImage const &ccdImage) const = 0;
 };
 }  // namespace jointcal
 }  // namespace lsst

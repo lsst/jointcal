@@ -45,12 +45,14 @@ ConstrainedPhotometryModel::ConstrainedPhotometryModel(CcdImageList const &ccdIm
             // Use the single-frame processing calibration from the PhotoCalib as the default.
             auto chipTransfo =
                     std::make_shared<PhotometryTransfoSpatiallyInvariant>(photoCalib->getCalibrationMean());
-            _chipMap[chip] = std::unique_ptr<PhotometryMapping>(new PhotometryMapping(chipTransfo));
+            _chipMap[chip] =
+                    std::unique_ptr<PhotometryMapping>(new PhotometryMapping(std::move(chipTransfo)));
         }
         // If the visit is not in the map, add it, otherwise continue.
         if (visitPair == _visitMap.end()) {
             auto visitTransfo = std::make_shared<PhotometryTransfoChebyshev>(visitDegree, focalPlaneBBox);
-            _visitMap[visit] = std::unique_ptr<PhotometryMapping>(new PhotometryMapping(visitTransfo));
+            _visitMap[visit] =
+                    std::unique_ptr<PhotometryMapping>(new PhotometryMapping(std::move(visitTransfo)));
         }
     }
 
@@ -73,7 +75,7 @@ ConstrainedPhotometryModel::ConstrainedPhotometryModel(CcdImageList const &ccdIm
 }
 
 unsigned ConstrainedPhotometryModel::assignIndices(std::string const &whatToFit, unsigned firstIndex) {
-    // TODO: currently ignoring whatToFit: eventually implement configurability.
+    // TODO DM-8046: currently ignoring whatToFit: eventually implement configurability.
     unsigned index = firstIndex;
     for (auto &i : _chipMap) {
         auto mapping = i.second.get();
@@ -105,21 +107,20 @@ void ConstrainedPhotometryModel::offsetParams(Eigen::VectorXd const &delta) {
 
 double ConstrainedPhotometryModel::transform(CcdImage const &ccdImage, MeasuredStar const &measuredStar,
                                              double instFlux) const {
-    auto mapping = findMapping(ccdImage, "transform");
+    auto mapping = findMapping(ccdImage);
     return mapping->transform(measuredStar, instFlux);
 }
 
 void ConstrainedPhotometryModel::getMappingIndices(CcdImage const &ccdImage,
                                                    std::vector<unsigned> &indices) const {
-    auto mapping = findMapping(ccdImage, "getMappingIndices");
+    auto mapping = findMapping(ccdImage);
     mapping->getMappingIndices(indices);
-    // TODO: I think I need a for loop here, from the above value to that +mapping->getNpar()?
 }
 
 void ConstrainedPhotometryModel::computeParameterDerivatives(MeasuredStar const &measuredStar,
                                                              CcdImage const &ccdImage,
                                                              Eigen::VectorXd &derivatives) const {
-    auto mapping = findMapping(ccdImage, "computeParameterDerivatives");
+    auto mapping = findMapping(ccdImage);
     mapping->computeParameterDerivatives(measuredStar, measuredStar.getInstFlux(), derivatives);
 }
 
@@ -132,7 +133,7 @@ ndarray::Array<double, 2, 2> toChebyMapCoeffs(std::shared_ptr<PhotometryTransfoC
     Eigen::VectorXd::Index k = 0;
     auto degree = transfo->getDegree();
     for (ndarray::Size j = 0; j <= degree; ++j) {
-        auto const iMax = degree - j;  // to save re-computing `i+j <= degree` every inner step.
+        ndarray::Size const iMax = degree - j;  // to save re-computing `i+j <= degree` every inner step.
         for (ndarray::Size i = 0; i <= iMax; ++i, ++k) {
             chebyCoeffs[k][0] = coeffs[j][i];
             chebyCoeffs[k][1] = 1;
@@ -149,8 +150,7 @@ std::shared_ptr<afw::image::PhotoCalib> ConstrainedPhotometryModel::toPhotoCalib
     auto oldPhotoCalib = ccdImage.getPhotoCalib();
     auto detector = ccdImage.getDetector();
     auto ccdBBox = detector->getBBox();
-    ChipVisitPhotometryMapping *mapping =
-            dynamic_cast<ChipVisitPhotometryMapping *>(findMapping(ccdImage, "toPhotoCalib"));
+    ChipVisitPhotometryMapping *mapping = dynamic_cast<ChipVisitPhotometryMapping *>(findMapping(ccdImage));
     // There should be no way in which we can get to this point and not have a ChipVisitMapping,
     // so blow up if we don't.
     assert(mapping != nullptr);
@@ -194,13 +194,11 @@ void ConstrainedPhotometryModel::dump(std::ostream &stream) const {
     }
 }
 
-PhotometryMappingBase *ConstrainedPhotometryModel::findMapping(CcdImage const &ccdImage,
-                                                               std::string name) const {
+PhotometryMappingBase *ConstrainedPhotometryModel::findMapping(CcdImage const &ccdImage) const {
     auto i = _myMap.find(ccdImage.getHashKey());
     if (i == _myMap.end())
-        throw LSST_EXCEPT(
-                pex::exceptions::InvalidParameterError,
-                "ConstrainedPhotometryModel::" + name + ", cannot find CcdImage " + ccdImage.getName());
+        throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,
+                          "ConstrainedPhotometryModel cannot find CcdImage " + ccdImage.getName());
     return i->second.get();
 }
 

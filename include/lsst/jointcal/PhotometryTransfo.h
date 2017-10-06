@@ -22,9 +22,11 @@ class Point;
 class PhotometryTransfoSpatiallyInvariant;
 
 /*
- * A photometric transform, defined as a scale factor of the input calibration.
+ * A photometric transform, defined as a scalar multiple of the input flux.
  *
- *     inputFlux (ADU or Maggies) * transfo(x,y) -> correctedFlux (Maggies)
+ * Unit agnostic: a higher level Model must keep track of the units going into and out of of its Transfos.
+ *
+ *     inputFlux * transfo(x,y) -> correctedFlux
  *
  * @seealso lsst::afw::image::PhotoCalib
  */
@@ -60,7 +62,7 @@ public:
     virtual void offsetParams(Eigen::VectorXd const &delta) = 0;
 
     /// return a copy (allocated by new) of the transformation.
-    virtual std::unique_ptr<PhotometryTransfo> clone() const = 0;
+    virtual std::shared_ptr<PhotometryTransfo> clone() const = 0;
 
     /**
      * Compute the derivatives with respect to the parameters (i.e. the coefficients).
@@ -80,7 +82,7 @@ public:
 /*
  * Photometric offset independent of position, defined as (fluxMag0)^-1.
  *
- * initialCalibFlux (Maggies) * SpatiallyInvariantTransfo -> correctedFlux (Maggies)
+ * initialCalibFlux * SpatiallyInvariantTransfo -> correctedFlux
  *
  */
 class PhotometryTransfoSpatiallyInvariant : public PhotometryTransfo {
@@ -100,8 +102,8 @@ public:
     void offsetParams(Eigen::VectorXd const &delta) override { _value -= delta[0]; };
 
     /// @copydoc PhotometryTransfo::clone
-    std::unique_ptr<PhotometryTransfo> clone() const override {
-        return std::unique_ptr<PhotometryTransfo>(new PhotometryTransfoSpatiallyInvariant(_value));
+    std::shared_ptr<PhotometryTransfo> clone() const override {
+        return std::make_shared<PhotometryTransfoSpatiallyInvariant>(_value);
     }
 
     /// @copydoc PhotometryTransfo::computeParameterDerivatives
@@ -148,17 +150,20 @@ private:
 class PhotometryTransfoChebyshev : public PhotometryTransfo {
 public:
     /**
-     * Create a Chebyshev transfo with terms up to degree in (x*y)
+     * Create an identity (a_0,0==1) Chebyshev transfo with terms up to degree in (x*y).
      *
      * @param[in]  degree  The maximum degree in (x*y).
+     * @param[in]  bbox    The bounding box it is valid within, to rescale it to [-1,1].
      */
     PhotometryTransfoChebyshev(size_t degree, afw::geom::Box2D const &bbox);
 
     /**
      * Create a Chebyshev transfo with the specified coefficients.
      *
+     * The polynomial degree is determined from the number of coefficients.
+     *
      * @param      coefficients  The polynomial coefficients.
-     * @param      bbox          The bounding box it is valid inside.
+     * @param[in]  bbox          The bounding box it is valid within, to rescale it to [-1,1].
      */
     PhotometryTransfoChebyshev(ndarray::Array<double, 2, 2> const &coefficients,
                                afw::geom::Box2D const &bbox);
@@ -176,16 +181,15 @@ public:
     void offsetParams(Eigen::VectorXd const &delta) override;
 
     /// @copydoc PhotometryTransfo::clone
-    std::unique_ptr<PhotometryTransfo> clone() const override {
-        return nullptr;
-        // return std::unique_ptr<PhotometryTransfo>(new PhotometryTransfoChebyshev());
+    std::shared_ptr<PhotometryTransfo> clone() const override {
+        return std::make_shared<PhotometryTransfoChebyshev>(_coefficients, _bbox);
     }
 
     /// @copydoc PhotometryTransfo::computeParameterDerivatives
     void computeParameterDerivatives(double x, double y, double instFlux,
                                      Eigen::Ref<Eigen::VectorXd> derivatives) const override;
 
-    /// Get a copy of the coefficients of the polynomials, as a 2d array (NOTE: degree is [y][x])
+    /// Get a copy of the coefficients of the polynomials, as a 2d array (NOTE: layout is [y][x])
     ndarray::Array<double, 2, 2> getCoefficients() { return ndarray::copy(_coefficients); }
 
     /// @copydoc PhotometryTransfo::getParameters

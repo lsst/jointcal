@@ -42,6 +42,7 @@ void declarePhotometryTransfo(py::module &mod) {
             (double (PhotometryTransfo::*)(double, double, double) const) & PhotometryTransfo::transform,
             "x"_a, "y"_a, "instFlux"_a);
     cls.def("offsetParams", &PhotometryTransfo::offsetParams);
+    cls.def("clone", &PhotometryTransfo::clone);
     cls.def("getNpar", &PhotometryTransfo::getNpar);
     cls.def("getParameters", &PhotometryTransfo::getParameters);
     cls.def("computeParameterDerivatives",
@@ -71,6 +72,8 @@ void declarePhotometryTransfoChebyshev(py::module &mod) {
             "bbox"_a);
 
     cls.def("getCoefficients", &PhotometryTransfoChebyshev::getCoefficients);
+    cls.def("getDegree", &PhotometryTransfoChebyshev::getDegree);
+    cls.def("getBBox", &PhotometryTransfoChebyshev::getBBox);
 }
 
 PYBIND11_PLUGIN(photometryTransfo) {

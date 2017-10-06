@@ -109,7 +109,7 @@ class ChipVisitPhotometryMappingTestCase(PhotometryMappingTestBase, lsst.utils.t
     def test_getNpar(self):
         result = self.mappingInvariants.getNpar()
         self.assertEqual(result, 2)
-        # degree 1 => 3 parameters, plus one for the chip mapping
+        # degree 1 implies 3 parameters, plus one for the chip mapping
         result = self.mappingCheby.getNpar()
         self.assertEqual(result, 4)
 
@@ -122,9 +122,9 @@ class ChipVisitPhotometryMappingTestCase(PhotometryMappingTestBase, lsst.utils.t
         sy = 2.0 / self.bbox.getHeight()
         result = 0
         for j in range(self.degree+1):
+            Ty = CHEBYSHEV_T[j](sy*(y - cy))
             for i in range(0, self.degree-j+1):
                 Tx = CHEBYSHEV_T[i](sx*(x - cx))
-                Ty = CHEBYSHEV_T[j](sy*(y - cy))
                 result += self.coefficients[j, i]*Tx*Ty
         return result
 
@@ -160,6 +160,7 @@ class ChipVisitPhotometryMappingTestCase(PhotometryMappingTestBase, lsst.utils.t
         expect[1] = self.coefficients[0, 0] - delta[1]
         expect[2] = self.coefficients[0, 1] - delta[2]
         expect[3] = self.coefficients[1, 0] - delta[3]
+        # coeff[1,1] is unused in a degree 1 Chebyshev (it would be a 2nd degree component)
         self.mappingCheby.offsetParams(delta)
         self.assertFloatsAlmostEqual(self.mappingCheby.getParameters(), expect)
 

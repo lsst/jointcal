@@ -87,7 +87,7 @@ void PhotometryTransfoChebyshev::offsetParams(Eigen::VectorXd const &delta) {
     // NOTE: the indexing in this method and computeParameterDerivatives must be kept consistent!
     Eigen::VectorXd::Index k = 0;
     for (ndarray::Size j = 0; j <= _degree; ++j) {
-        auto const iMax = _degree - j;  // to save re-computing `i+j <= degree` every inner step.
+        ndarray::Size const iMax = _degree - j;  // to save re-computing `i+j <= degree` every inner step.
         for (ndarray::Size i = 0; i <= iMax; ++i, ++k) {
             _coefficients[j][i] -= delta[k];
         }
@@ -101,7 +101,7 @@ double integrateTn(int n) {
     if (n % 2 == 1)
         return 0;
     else
-        return 2.0 / (1.0 - double(n * n));
+        return 2.0 / (1.0 - static_cast<double>(n * n));
 }
 }  // namespace
 
@@ -139,7 +139,7 @@ void PhotometryTransfoChebyshev::computeParameterDerivatives(double x, double y,
     // NOTE: the indexing in this method and offsetParams must be kept consistent!
     Eigen::VectorXd::Index k = 0;
     for (ndarray::Size j = 0; j <= _degree; ++j) {
-        auto const iMax = _degree - j;  // to save re-computing `i+j <= degree` every inner step.
+        ndarray::Size const iMax = _degree - j;  // to save re-computing `i+j <= degree` every inner step.
         for (ndarray::Size i = 0; i <= iMax; ++i, ++k) {
             derivatives[k] = instFlux * Tmy[j] * Tnx[i];
         }

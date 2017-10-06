@@ -24,6 +24,7 @@ typedef std::list<std::shared_ptr<CcdImage>> CcdImageList;
 
 typedef int VisitIdType;
 typedef int CcdIdType;
+/// For hashing a ccdImage: the pair of (visit, ccd) IDs should be unique to each ccdImage.
 typedef std::pair<VisitIdType, CcdIdType> CcdImageKey;
 
 /**
@@ -189,9 +190,16 @@ public:
 // Add our preferred hash of CcdImageKey to the std:: namespace, so it's always available "for free".
 namespace std {
 template <>
+/**
+ * Hash a ccdImage by its visit and ccd IDs.
+ *
+ * ccdId and visitId are both 32-bit ints, hash() returns a size_t, so put the ccdId in the
+ * most-significant-bit, and the visitId in the least for a simple, unique, hash per ccdImage.
+ */
 struct hash<lsst::jointcal::CcdImageKey> {
     size_t operator()(lsst::jointcal::CcdImageKey const &ccdImage) const {
-        return hash<size_t>()((size_t)(ccdImage.first) | ((size_t)(ccdImage.second) << 32));
+        return hash<size_t>()(static_cast<size_t>(ccdImage.first) |
+                              (static_cast<size_t>(ccdImage.second) << 32));
     }
 };
 }  // namespace std

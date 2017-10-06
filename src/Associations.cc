@@ -40,9 +40,9 @@ void Associations::addImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::S
                             lsst::afw::geom::Box2I const &bbox, std::string const &filter,
                             std::shared_ptr<afw::image::PhotoCalib> photoCalib,
                             std::shared_ptr<afw::cameraGeom::Detector> detector, int visit, int ccd,
-                            std::shared_ptr<lsst::jointcal::JointcalControl> control) {
+                            lsst::jointcal::JointcalControl const &control) {
     auto ccdImage = std::make_shared<CcdImage>(catalog, wcs, visitInfo, bbox, filter, photoCalib, detector,
-                                               visit, ccd, control->sourceFluxField);
+                                               visit, ccd, control.sourceFluxField);
     ccdImageList.push_back(ccdImage);
     LOGLS_DEBUG(_log, "Catalog " << ccdImage->getName() << " has " << ccdImage->getWholeCatalog().size()
                                  << " objects.");
