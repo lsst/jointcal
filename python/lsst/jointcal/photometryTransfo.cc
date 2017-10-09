@@ -52,7 +52,11 @@ void declarePhotometryTransfo(py::module &mod) {
                 return derivatives;
             });
 
-    cls.def("__str__", &PhotometryTransfo::__str__);
+    cls.def("__str__", [](PhotometryTransfo const &self) {
+        std::stringstream os;
+        os << self;
+        return os.str();
+    });
 }
 
 void declarePhotometryTransfoSpatiallyInvariant(py::module &mod) {

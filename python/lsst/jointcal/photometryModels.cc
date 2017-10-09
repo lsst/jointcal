@@ -56,7 +56,11 @@ void declarePhotometryModel(py::module &mod) {
 
     cls.def("getNpar", &PhotometryModel::getNpar);
     cls.def("toPhotoCalib", &PhotometryModel::toPhotoCalib);
-    cls.def("__str__", &PhotometryModel::__str__);
+    cls.def("__str__", [](PhotometryModel const &self) {
+        std::ostringstream os;
+        os << self;
+        return os.str();
+    });
 }
 
 void declareSimplePhotometryModel(py::module &mod) {

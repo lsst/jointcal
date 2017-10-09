@@ -48,12 +48,6 @@ public:
         return stream;
     }
 
-    virtual std::string __str__() const {
-        std::stringstream s;
-        dump(s);
-        return s.str();
-    }
-
     virtual void dump(std::ostream &stream = std::cout) const {
         stream << "x: " << x << " y: " << y << " flux: " << _flux << " fluxErr: " << _fluxErr;
     }

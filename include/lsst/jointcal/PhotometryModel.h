@@ -84,11 +84,9 @@ public:
     /// Dump the contents of the transfos, for debugging.
     virtual void dump(std::ostream &stream = std::cout) const = 0;
 
-    /// For python print().
-    std::string __str__() const {
-        std::stringstream s;
-        dump(s);
-        return s.str();
+    friend std::ostream &operator<<(std::ostream &s, PhotometryModel const &model) {
+        model.dump(s);
+        return s;
     }
 
 protected:

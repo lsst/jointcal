@@ -60,7 +60,11 @@ void declareBaseStar(py::module &mod) {
     // cls.def("getFlux", &BaseStar::getFlux);
     cls.def_property_readonly("flux", (double (BaseStar::*)() const) & BaseStar::getFlux);
 
-    cls.def("__str__", &BaseStar::__str__);
+    cls.def("__str__", [](BaseStar const &self) {
+        std::ostringstream os;
+        os << self;
+        return os.str();
+    });
 }
 
 void declareRefStar(py::module &mod) {

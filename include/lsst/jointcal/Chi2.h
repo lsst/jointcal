@@ -38,13 +38,6 @@ public:
         return s;
     }
 
-    //! this routine is the one called by the python print.
-    std::string __str__() {
-        std::stringstream s;
-        s << "Chi2/ndof : " << chi2 << '/' << ndof << '=' << chi2 / ndof;
-        return s.str();
-    }
-
     // Addentry has an ignored third argument in order to make it compatible with Chi2List.
     void addEntry(double inc, unsigned dof, std::shared_ptr<BaseStar>) override {
         chi2 += inc;

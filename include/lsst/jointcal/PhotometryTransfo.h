@@ -41,11 +41,9 @@ public:
     /// dumps the transfo coefficients to stream.
     virtual void dump(std::ostream &stream = std::cout) const = 0;
 
-    /// Return a string describing this transfo. For the pybind11/python layer.
-    std::string __str__() const {
-        std::stringstream s;
-        dump(s);
-        return s.str();
+    friend std::ostream &operator<<(std::ostream &s, PhotometryTransfo const &transfo) {
+        transfo.dump(s);
+        return s;
     }
 
     /// Return the number of parameters (used to compute chisq)

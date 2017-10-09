@@ -36,7 +36,12 @@ void declareChi2(py::module &mod) {
 
     cls.def(py::init<>());
 
-    cls.def("__str__", &Chi2Statistic::__str__);
+    cls.def("__str__", [](Chi2Statistic const &self) {
+        std::ostringstream os;
+        os << self;
+        return os.str();
+    });
+
     cls.def_readwrite("chi2", &Chi2Statistic::chi2);
     cls.def_readwrite("ndof", &Chi2Statistic::ndof);
 }
