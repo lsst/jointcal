@@ -6,6 +6,8 @@
 #include "assert.h"
 #include <sstream>
 
+#include "Eigen/Core"
+
 #include "lsst/log/Log.h"
 #include "lsst/jointcal/Gtransfo.h"
 #include "lsst/jointcal/Frame.h"
@@ -27,8 +29,6 @@ namespace jointcal {
 bool isIdentity(const Gtransfo *gtransfo) {
     return (dynamic_cast<const GtransfoIdentity *>(gtransfo) != nullptr);
 }
-
-static double sqr(double x) { return x * x; }
 
 bool isIntegerShift(const Gtransfo *gtransfo) {
     const GtransfoPoly *shift = dynamic_cast<const GtransfoPoly *>(gtransfo);
@@ -171,9 +171,9 @@ void Gtransfo::getParams(double *params) const {
     for (int i = 0; i < npar; ++i) params[i] = paramRef(i);
 }
 
-void Gtransfo::offsetParams(const double *params) {
+void Gtransfo::offsetParams(Eigen::VectorXd const &delta) {
     int npar = getNpar();
-    for (int i = 0; i < npar; ++i) paramRef(i) += params[i];
+    for (int i = 0; i < npar; ++i) paramRef(i) += delta[i];
 }
 
 double Gtransfo::paramRef(const int) const {
@@ -739,16 +739,16 @@ static GtransfoLin shiftAndNormalize(const StarMatchList &starMatchList) {
         const Point &point1 = a_match.point1;
         xav += point1.x;
         yav += point1.y;
-        x2 += sqr(point1.x);
-        y2 += sqr(point1.y);
+        x2 += std::pow(point1.x, 2);
+        y2 += std::pow(point1.y, 2);
         count++;
     }
     if (count == 0) return GtransfoLin();
     xav /= count;
     yav /= count;
     // 3.5 stands for sqrt(12).
-    double xspan = 3.5 * sqrt(x2 / count - sqr(xav));
-    double yspan = 3.5 * sqrt(y2 / count - sqr(yav));
+    double xspan = 3.5 * sqrt(x2 / count - std::pow(xav, 2));
+    double yspan = 3.5 * sqrt(y2 / count - std::pow(yav, 2));
     return GtransfoLinScale(2. / xspan, 2. / yspan) * GtransfoLinShift(-xav, -yav);
 }
 
@@ -1071,10 +1071,10 @@ GtransfoLin GtransfoLin::operator*(const GtransfoLin &right) const {
     // So, for sake of efficiency, and since it is easy, we take a shortcut:
     GtransfoLin result;
     apply(right.Dx(), right.Dy(), result.dx(), result.dy());
-    result.a11() = this->A11() * right.A11() + this->A12() * right.A21();
-    result.a12() = this->A11() * right.A12() + this->A12() * right.A22();
-    result.a21() = this->A21() * right.A11() + this->A22() * right.A21();
-    result.a22() = this->A21() * right.A12() + this->A22() * right.A22();
+    result.a11() = A11() * right.A11() + A12() * right.A21();
+    result.a12() = A11() * right.A12() + A12() * right.A22();
+    result.a21() = A21() * right.A11() + A22() * right.A21();
+    result.a22() = A21() * right.A12() + A22() * right.A22();
     return result;
 }
 
@@ -1113,7 +1113,7 @@ GtransfoLin GtransfoLin::invert() const {
 }
 
 std::unique_ptr<Gtransfo> GtransfoLin::inverseTransfo(const double, const Frame &) const {
-    return std::unique_ptr<Gtransfo>(new GtransfoLin(this->invert()));
+    return std::unique_ptr<Gtransfo>(new GtransfoLin(invert()));
 }
 
 double GtransfoLinRot::fit(const StarMatchList &) {

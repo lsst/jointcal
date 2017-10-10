@@ -69,8 +69,8 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
                    'selectedPhotometryCcdImageList': 6,
                    'astrometryFinalChi2': 691.12,
                    'astrometryFinalNdof': 1858,
-                   'photometryFinalChi2': 1525.03,
-                   'photometryFinalNdof': 965
+                   'photometryFinalChi2': 1553.2,
+                   'photometryFinalNdof': 968
                    }
         self._testJointcalTask(2, dist_rms_relative, self.dist_rms_absolute, pa1, metrics=metrics)
 
@@ -113,8 +113,8 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
                    'associatedPhotometryFittedStars': 1151,
                    'selectedPhotometryFittedStars': 770,
                    'selectedPhotometryCcdImageList': 6,
-                   'photometryFinalChi2': 1525.03,
-                   'photometryFinalNdof': 965
+                   'photometryFinalChi2': 1553.2,
+                   'photometryFinalNdof': 968
                    }
 
         self.config = lsst.jointcal.jointcal.JointcalConfig()
@@ -135,8 +135,8 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         self.assertLess(rms_result.pa1, pa1)
 
         for data_ref in data_refs:
-            wcs = data_ref.get('wcs').getWcs()
-            self.assertIsNone(wcs)
+            with self.assertRaises(lsst.daf.persistence.butlerExceptions.NoResults):
+                data_ref.get('wcs').getWcs()
 
     def testJointcalTask_2_visits_no_photometry(self):
         """Test turning off fitting photometry."""
@@ -194,8 +194,8 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
                    'selectedPhotometryCcdImageList': 6,
                    'astrometryFinalChi2': 435.01995,
                    'astrometryFinalNdof': 1412,
-                   'photometryFinalChi2': 1525.03,
-                   'photometryFinalNdof': 965
+                   'photometryFinalChi2': 1553.2,
+                   'photometryFinalNdof': 968
                    }
         # NOTE: The astrometry/photometry tests are computed using the a.net SDSS refcat,
         # so the absolute astrometry RMS will be larger (because GAIA is better, so
@@ -264,6 +264,7 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
 
 class MemoryTester(lsst.utils.tests.MemoryTestCase):
     pass
+
 
 if __name__ == "__main__":
     lsst.utils.tests.init()

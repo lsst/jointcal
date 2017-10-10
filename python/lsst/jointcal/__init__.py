@@ -7,6 +7,7 @@ from .fitter import *
 from .gtransfo import *
 from .jointcalControl import *
 from .mappings import *
+from .photometryMappings import *
 from .photometryModels import *
 from .photometryTransfo import *
 from .projectionHandler import *

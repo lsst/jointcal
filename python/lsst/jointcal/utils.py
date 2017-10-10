@@ -18,7 +18,8 @@ from astropy import units as u
 
 import lsst.log
 import lsst.afw.table
-from lsst.afw.image import fluxFromABMag, abMagFromFlux, bboxFromMetadata
+import lsst.afw.image
+from lsst.afw.image import abMagFromFlux
 from lsst.afw.geom import arcseconds
 
 MatchDict = collections.namedtuple('MatchDict', ['relative', 'absolute'])
@@ -86,7 +87,7 @@ class JointcalStatistics(object):
         self.filters = [ref.get('calexp').getInfo().getFilter().getName() for ref in data_refs]
         self.visits_per_dataRef = [ref.dataId['visit'] for ref in data_refs]
 
-        def compute(catalogs, calibs):
+        def compute(catalogs, photoCalibs):
             """Compute the relative and absolute matches in distance and flux."""
             visit_catalogs = self._make_visit_catalogs(catalogs, self.visits_per_dataRef)
             catalogs = [visit_catalogs[x] for x in self.visits_per_dataRef]
@@ -97,12 +98,14 @@ class JointcalStatistics(object):
             # will change if the data_refs are ordered differently.
             # All the more reason to use a proper n-way matcher here. See: DM-8664
             refcat = catalogs[0]
-            refcalib = calibs[0]
+            refcalib = photoCalibs[0] if photoCalibs != [] else None
             dist_rel, flux_rel, ref_flux_rel, source_rel = self._make_match_dict(refcat,
                                                                                  catalogs[1:],
-                                                                                 calibs[1:],
+                                                                                 photoCalibs[1:],
                                                                                  refcalib=refcalib)
-            dist_abs, flux_abs, ref_flux_abs, source_abs = self._make_match_dict(reference, catalogs, calibs)
+            dist_abs, flux_abs, ref_flux_abs, source_abs = self._make_match_dict(reference,
+                                                                                 catalogs,
+                                                                                 photoCalibs)
             dist = MatchDict(dist_rel, dist_abs)
             flux = MatchDict(flux_rel, flux_abs)
             ref_flux = MatchDict(ref_flux_rel, ref_flux_abs)
@@ -110,13 +113,25 @@ class JointcalStatistics(object):
             return dist, flux, ref_flux, source
 
         old_cats = [ref.get('src') for ref in data_refs]
-        old_calibs = [ref.get('calexp').getCalib() for ref in data_refs]
+        # NOTE: build photoCalibs from existing old Calib objects.
+        # TODO: we can make this a listcomp again once DM-10153 is finished.
+        old_calibs = []
+        if self.do_photometry:
+            for ref in data_refs:
+                calib = ref.get('calexp').getCalib()
+                fluxMag0 = calib.getFluxMag0()
+                old_calibs.append(lsst.afw.image.PhotoCalib(1.0/fluxMag0[0], fluxMag0[1]/fluxMag0[0]**2))
+
         self.old_dist, self.old_flux, self.old_ref_flux, self.old_source = compute(old_cats, old_calibs)
 
-        # Update coordinates with the new wcs, and get the new Calibs.
+        # Update coordinates with the new wcs, and get the new photoCalibs.
         new_cats = [ref.get('src') for ref in data_refs]
-        new_wcss = [ref.get('wcs') for ref in data_refs]
-        new_calibs = [wcs.getCalib() for wcs in new_wcss]
+        new_wcss = []
+        if self.do_astrometry:
+            new_wcss = [ref.get('wcs') for ref in data_refs]
+        new_calibs = []
+        if self.do_photometry:
+            new_calibs = [ref.get('photoCalib') for ref in data_refs]
         if self.do_astrometry:
             for wcs, cat in zip(new_wcss, new_cats):
                 # update in-place the object coordinates based on the new wcs
@@ -136,10 +151,6 @@ class JointcalStatistics(object):
 
         if self.do_photometry:
             self._photometric_rms()
-            if self.verbose:
-                print('"photometric factor" for each data ref:')
-                for ref, old, new in zip(data_refs, old_calibs, new_calibs):
-                    print(tuple(ref.dataId.values()), new.getFluxMag0()[0]/old.getFluxMag0()[0])
         else:
             self.new_PA1 = None
 
@@ -272,7 +283,7 @@ class JointcalStatistics(object):
         self.old_PA1 = np.median(self.old_weighted_rms[old_good])
         self.new_PA1 = np.median(self.new_weighted_rms[new_good])
 
-    def _make_match_dict(self, reference, visit_catalogs, calibs, refcalib=None):
+    def _make_match_dict(self, reference, visit_catalogs, photoCalibs, refcalib=None):
         """
         Return several dicts of sourceID:[values] over the catalogs, to be used in RMS calculations.
 
@@ -283,10 +294,11 @@ class JointcalStatistics(object):
         visit_catalogs : list of lsst.afw.table.SourceCatalog
             Visit source catalogs (values() produced by _make_visit_catalogs)
             to cross-match against reference.
-        calibs : list of lsst.afw.image.Calib
-            Exposure calibs, 1-1 coorespondent with visit_catalogs.
-        refcalib : lsst.afw.image.Calib or None
-            Pass a Calib here to use it to compute Janskys from the reference catalog ADU slot_flux.
+        photoCalibs : list of lsst.afw.image.PhotoCalib
+            Exposure PhotoCalibs, 1-1 coorespondent with visit_catalogs.
+        refcalib : lsst.afw.image.PhotoCalib or None
+            Pass a PhotoCalib here to use it to compute Janskys from the
+            reference catalog ADU slot_flux.
 
         Returns
         -------
@@ -297,35 +309,39 @@ class JointcalStatistics(object):
         ref_fluxes : dict
             dict of sourceID: flux (Jy) of the reference object
         sources : dict
-            dict of sourceID: list(each SourceRecord that was position-matched to this sourceID)
+            dict of sourceID: list(each SourceRecord that was position-matched
+            to this sourceID)
         """
+        # If we have no photoCalibs, make it the same length as the others for zipping.
+        if photoCalibs == []:
+            photoCalibs = [[]]*len(visit_catalogs)
 
         distances = collections.defaultdict(list)
         fluxes = collections.defaultdict(list)
         ref_fluxes = {}
         sources = collections.defaultdict(list)
         if 'slot_CalibFlux_flux' in reference.schema:
-            ref_flux_key = 'slot_CalibFlux_flux'
+            ref_flux_key = 'slot_CalibFlux'
         else:
             ref_flux_key = '{}_flux'
 
-        def get_fluxes(match):
+        def get_fluxes(photoCalib, match):
             """Return (flux, ref_flux) or None if either is invalid."""
             # NOTE: Protect against negative fluxes: ignore this match if we find one.
+            maggiesToJansky = 3631
             flux = match[1]['slot_CalibFlux_flux']
             if flux < 0:
                 return None
             else:
-                # convert to magnitudes and then Janskys, for a useable flux.
-                flux = fluxFromABMag(calib.getMagnitude(flux))
+                flux = maggiesToJansky * photoCalib.instFluxToMaggies(match[1], "slot_CalibFlux").value
 
             # NOTE: Have to protect against negative reference fluxes too.
             if 'slot' in ref_flux_key:
-                ref_flux = match[0][ref_flux_key]
+                ref_flux = match[0][ref_flux_key+'_flux']
                 if ref_flux < 0:
                     return None
                 else:
-                    ref_flux = fluxFromABMag(refcalib.getMagnitude(ref_flux))
+                    ref_flux = maggiesToJansky * photoCalib.instFluxToMaggies(match[0], ref_flux_key).value
             else:
                 # a.net fluxes are already in Janskys.
                 ref_flux = match[0][ref_flux_key.format(filt)]
@@ -335,14 +351,14 @@ class JointcalStatistics(object):
             Flux = collections.namedtuple('Flux', ('flux', 'ref_flux'))
             return Flux(flux, ref_flux)
 
-        for cat, calib, filt in zip(visit_catalogs, calibs, self.filters):
+        for cat, photoCalib, filt in zip(visit_catalogs, photoCalibs, self.filters):
             good = (cat.get('base_PsfFlux_flux')/cat.get('base_PsfFlux_fluxSigma')) > self.flux_limit
             # things the classifier called sources are not extended.
             good &= (cat.get('base_ClassificationExtendedness_value') == 0)
             matches = lsst.afw.table.matchRaDec(reference, cat[good], self.match_radius)
             for m in matches:
                 if self.do_photometry:
-                    flux = get_fluxes(m)
+                    flux = get_fluxes(photoCalib, m)
                     if flux is None:
                         continue
                     else:
@@ -482,7 +498,7 @@ def plot_all_wcs_deltas(plt, data_refs, visits, old_wcs_list, per_ccd_plot=False
     if per_ccd_plot:
         for i, ref in enumerate(data_refs):
             md = ref.get('calexp_md')
-            dims = bboxFromMetadata(md).getDimensions()
+            dims = lsst.afw.image.bboxFromMetadata(md).getDimensions()
             plot_wcs(plt, old_wcs_list[i], ref.get('wcs').getWcs(),
                      dims.getX(), dims.getY(),
                      center=(md.get('CRVAL1'), md.get('CRVAL2')), name='dataRef %d'%i,
@@ -538,7 +554,7 @@ def plot_all_wcs_quivers(plt, data_refs, visits, old_wcs_list, name, outdir='.pl
             if ref.dataId['visit'] != visit:
                 continue
             md = ref.get('calexp_md')
-            dims = bboxFromMetadata(md).getDimensions()
+            dims = lsst.afw.image.bboxFromMetadata(md).getDimensions()
             Q = plot_wcs_quivers(ax, old_wcs, ref.get('wcs').getWcs(),
                                  dims.getX(), dims.getY())
             # TODO: add CCD bounding boxes to plot once DM-5503 is finished.
@@ -607,7 +623,7 @@ def plot_wcs_magnitude(plt, data_refs, visits, old_wcs_list, name, outdir='.plot
             if ref.dataId['visit'] != visit:
                 continue
             md = ref.get('calexp_md')
-            dims = bboxFromMetadata(md).getDimensions()
+            dims = lsst.afw.image.bboxFromMetadata(md).getDimensions()
             x1, y1, x2, y2 = make_xy_wcs_grid(dims.getX(), dims.getY(),
                                               old_wcs, ref.get('wcs').getWcs())
             uu = x2 - x1

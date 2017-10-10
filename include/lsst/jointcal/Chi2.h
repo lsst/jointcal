@@ -38,13 +38,6 @@ public:
         return s;
     }
 
-    //! this routine is the one called by the python print.
-    std::string __str__() {
-        std::stringstream s;
-        s << "Chi2/ndof : " << chi2 << '/' << ndof << '=' << chi2 / ndof;
-        return s.str();
-    }
-
     // Addentry has an ignored third argument in order to make it compatible with Chi2List.
     void addEntry(double inc, unsigned dof, std::shared_ptr<BaseStar>) override {
         chi2 += inc;
@@ -84,7 +77,7 @@ struct Chi2Star {
 class Chi2List : public Chi2Accumulator, public std::vector<Chi2Star> {
 public:
     void addEntry(double chi2, unsigned ndof, std::shared_ptr<BaseStar> star) override {
-        this->push_back(Chi2Star(chi2, std::move(star)));
+        push_back(Chi2Star(chi2, std::move(star)));
     }
 
     /// Compute the average and std-deviation of these chisq values.

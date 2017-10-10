@@ -5,6 +5,7 @@
 #include <list>
 #include <string>
 
+#include "lsst/afw/cameraGeom/Detector.h"
 #include "lsst/afw/table/Source.h"
 #include "lsst/afw/image/TanWcs.h"
 #include "lsst/afw/image/PhotoCalib.h"
@@ -23,6 +24,8 @@ typedef std::list<std::shared_ptr<CcdImage>> CcdImageList;
 
 typedef int VisitIdType;
 typedef int CcdIdType;
+/// For hashing a ccdImage: the pair of (visit, ccd) IDs should be unique to each ccdImage.
+typedef std::pair<VisitIdType, CcdIdType> CcdImageKey;
 
 /**
  * Handler of an actual image from a single CCD.
@@ -54,6 +57,7 @@ private:
     double _airMass;  // airmass value.
     double _mjd;      // modified julian date
     std::shared_ptr<afw::image::PhotoCalib> _photoCalib;
+    std::shared_ptr<afw::cameraGeom::Detector> _detector;
     // refraction
     // eta : parallactic angle, z: zenithal angle (X = 1/cos(z))
     double _sineta, _coseta, _tgz;
@@ -70,8 +74,9 @@ private:
 public:
     CcdImage(afw::table::SourceCatalog &record, std::shared_ptr<lsst::afw::image::TanWcs> wcs,
              std::shared_ptr<lsst::afw::image::VisitInfo> visitInfo, afw::geom::Box2I const &bbox,
-             std::string const &filter, std::shared_ptr<afw::image::PhotoCalib> photoCalib, int visit,
-             int ccd, std::string const &fluxField);
+             std::string const &filter, std::shared_ptr<afw::image::PhotoCalib> photoCalib,
+             std::shared_ptr<afw::cameraGeom::Detector> detector, int visit, int ccd,
+             std::string const &fluxField);
 
     /// No move or copy: each CCD image is unique to that ccd+visit, and Associations holds all CcdImages.
     CcdImage(CcdImage const &) = delete;
@@ -129,10 +134,14 @@ public:
     Gtransfo const *getSky2TP() const { return _sky2TP.get(); }
 
     //! returns ccd ID
-    int getCcdId() const { return _ccdId; }
+    CcdIdType getCcdId() const { return _ccdId; }
 
     //! returns visit ID
     VisitIdType getVisit() const { return _visit; }
+
+    std::shared_ptr<afw::cameraGeom::Detector> getDetector() const { return _detector; }
+
+    CcdImageKey getHashKey() const { return CcdImageKey(_visit, _ccdId); }
 
     //!  Airmass
     double getAirMass() const { return _airMass; }
@@ -141,12 +150,12 @@ public:
     double getMjd() const { return _mjd; }
 
     //! Return the exposure's photometric calibration
-    std::shared_ptr<afw::image::PhotoCalib> getPhotoCalib() { return _photoCalib; }
+    std::shared_ptr<afw::image::PhotoCalib> getPhotoCalib() const { return _photoCalib; }
 
     /**
      * @brief      Gets the boresight RA/Dec.
      */
-    lsst::afw::coord::IcrsCoord getBoresightRaDec() { return _boresightRaDec; }
+    lsst::afw::coord::IcrsCoord getBoresightRaDec() const { return _boresightRaDec; }
 
     //!
     double getHourAngle() const { return _hourAngle; }
@@ -177,5 +186,22 @@ public:
 };
 }  // namespace jointcal
 }  // namespace lsst
+
+// Add our preferred hash of CcdImageKey to the std:: namespace, so it's always available "for free".
+namespace std {
+template <>
+/**
+ * Hash a ccdImage by its visit and ccd IDs.
+ *
+ * ccdId and visitId are both 32-bit ints, hash() returns a size_t, so put the ccdId in the
+ * most-significant-bit, and the visitId in the least for a simple, unique, hash per ccdImage.
+ */
+struct hash<lsst::jointcal::CcdImageKey> {
+    size_t operator()(lsst::jointcal::CcdImageKey const &ccdImage) const {
+        return hash<size_t>()(static_cast<size_t>(ccdImage.first) |
+                              (static_cast<size_t>(ccdImage.second) << 32));
+    }
+};
+}  // namespace std
 
 #endif  // LSST_JOINTCAL_CCD_IMAGE_H

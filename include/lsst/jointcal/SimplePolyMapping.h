@@ -60,7 +60,7 @@ public:
     }
 
     //!
-    void setMappingIndices(std::vector<unsigned> &indices) const {
+    void getMappingIndices(std::vector<unsigned> &indices) const {
         if (indices.size() < getNpar()) indices.resize(getNpar());
         for (unsigned k = 0; k < getNpar(); ++k) indices[k] = index + k;
     }
@@ -91,7 +91,7 @@ public:
     }
 
     //!
-    void offsetParams(double const *delta) { transfo->offsetParams(delta); }
+    void offsetParams(Eigen::VectorXd const &delta) { transfo->offsetParams(delta); }
 
     //! position of the parameters within the grand fitting scheme
     unsigned getIndex() const { return index; }

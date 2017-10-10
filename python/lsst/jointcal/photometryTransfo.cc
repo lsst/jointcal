@@ -21,6 +21,10 @@
  */
 
 #include "pybind11/pybind11.h"
+#include "numpy/arrayobject.h"
+#include "ndarray/pybind11.h"
+#include "ndarray/eigen.h"
+#include "Eigen/Core"
 
 #include "lsst/jointcal/PhotometryTransfo.h"
 
@@ -34,7 +38,25 @@ namespace {
 void declarePhotometryTransfo(py::module &mod) {
     py::class_<PhotometryTransfo, std::shared_ptr<PhotometryTransfo>> cls(mod, "PhotometryTransfo");
 
-    cls.def("__str__", &PhotometryTransfo::__str__);
+    cls.def("transform",
+            (double (PhotometryTransfo::*)(double, double, double) const) & PhotometryTransfo::transform,
+            "x"_a, "y"_a, "instFlux"_a);
+    cls.def("offsetParams", &PhotometryTransfo::offsetParams);
+    cls.def("clone", &PhotometryTransfo::clone);
+    cls.def("getNpar", &PhotometryTransfo::getNpar);
+    cls.def("getParameters", &PhotometryTransfo::getParameters);
+    cls.def("computeParameterDerivatives",
+            [](PhotometryTransfo const &self, double x, double y, double instFlux) {
+                Eigen::VectorXd derivatives(self.getNpar());
+                self.computeParameterDerivatives(x, y, instFlux, derivatives);
+                return derivatives;
+            });
+
+    cls.def("__str__", [](PhotometryTransfo const &self) {
+        std::stringstream os;
+        os << self;
+        return os.str();
+    });
 }
 
 void declarePhotometryTransfoSpatiallyInvariant(py::module &mod) {
@@ -45,11 +67,30 @@ void declarePhotometryTransfoSpatiallyInvariant(py::module &mod) {
     cls.def(py::init<double>(), "value"_a = 1);
 }
 
+void declarePhotometryTransfoChebyshev(py::module &mod) {
+    py::class_<PhotometryTransfoChebyshev, std::shared_ptr<PhotometryTransfoChebyshev>, PhotometryTransfo>
+            cls(mod, "PhotometryTransfoChebyshev");
+
+    cls.def(py::init<size_t, afw::geom::Box2D const &>(), "degree"_a, "bbox"_a);
+    cls.def(py::init<ndarray::Array<double, 2, 2> const &, afw::geom::Box2D const &>(), "coefficients"_a,
+            "bbox"_a);
+
+    cls.def("getCoefficients", &PhotometryTransfoChebyshev::getCoefficients);
+    cls.def("getDegree", &PhotometryTransfoChebyshev::getDegree);
+    cls.def("getBBox", &PhotometryTransfoChebyshev::getBBox);
+}
+
 PYBIND11_PLUGIN(photometryTransfo) {
     py::module mod("photometryTransfo");
 
+    if (_import_array() < 0) {
+        PyErr_SetString(PyExc_ImportError, "numpy.core.multiarray failed to import");
+        return nullptr;
+    }
+
     declarePhotometryTransfo(mod);
     declarePhotometryTransfoSpatiallyInvariant(mod);
+    declarePhotometryTransfoChebyshev(mod);
 
     return mod.ptr();
 }

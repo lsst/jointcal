@@ -25,8 +25,6 @@ namespace jointcal {
 
 // cuts.. limits, etc for combinatorial match
 
-static double sqr(double x) { return x * x; }
-
 /* a Segment is a pair of stars form the same image. it is used for matching starlists */
 
 struct Segment {
@@ -84,7 +82,7 @@ SegmentList::SegmentList(const BaseStarList &list, const int nStars, const Gtran
         for (auto si2 = siStop; si2 != si1; --si2) {
             push_back(Segment(*si1, *si2, rank, gtransfo));
         }
-    this->sort(DecreasingLength); /* allows a break in loops */
+    sort(DecreasingLength); /* allows a break in loops */
 }
 
 //#include <pair>
@@ -657,7 +655,7 @@ std::unique_ptr<Gtransfo> listMatchCombinatorial(const BaseStarList &List1, cons
     LOGLS_INFO(_log, "listMatchCombinatorial: find match between " << list1.size() << " and " << list2.size()
                                                                    << " stars...");
     auto match = matchSearchRotShiftFlip(list1, list2, conditions);
-    double pixSizeRatio2 = sqr(conditions.sizeRatio);
+    double pixSizeRatio2 = std::pow(conditions.sizeRatio, 2);
     size_t nmin =
             std::min(size_t(10), size_t(std::min(List1.size(), List2.size()) * conditions.minMatchRatio));
 

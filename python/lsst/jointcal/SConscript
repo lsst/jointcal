@@ -10,6 +10,7 @@ scripts.BasicSConscript.pybind11(
      'gtransfo',
      'jointcalControl',
      'mappings',
+     'photometryMappings',
      'photometryModels',
      'photometryTransfo',
      'projectionHandler',

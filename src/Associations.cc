@@ -24,8 +24,6 @@
 
 namespace jointcal = lsst::jointcal;
 
-static double sqr(double x) { return x * x; }
-
 namespace {
 LOG_LOGGER _log = LOG_GET("jointcal.Associations");
 }
@@ -40,10 +38,11 @@ void Associations::addImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::S
                             std::shared_ptr<lsst::afw::image::TanWcs> wcs,
                             std::shared_ptr<lsst::afw::image::VisitInfo> visitInfo,
                             lsst::afw::geom::Box2I const &bbox, std::string const &filter,
-                            std::shared_ptr<afw::image::PhotoCalib> photoCalib, int visit, int ccd,
-                            std::shared_ptr<lsst::jointcal::JointcalControl> control) {
-    auto ccdImage = std::make_shared<CcdImage>(catalog, wcs, visitInfo, bbox, filter, photoCalib, visit, ccd,
-                                               control->sourceFluxField);
+                            std::shared_ptr<afw::image::PhotoCalib> photoCalib,
+                            std::shared_ptr<afw::cameraGeom::Detector> detector, int visit, int ccd,
+                            lsst::jointcal::JointcalControl const &control) {
+    auto ccdImage = std::make_shared<CcdImage>(catalog, wcs, visitInfo, bbox, filter, photoCalib, detector,
+                                               visit, ccd, control.sourceFluxField);
     ccdImageList.push_back(ccdImage);
     LOGLS_DEBUG(_log, "Catalog " << ccdImage->getName() << " has " << ccdImage->getWholeCatalog().size()
                                  << " objects.");
@@ -159,7 +158,6 @@ void Associations::collectRefStars(lsst::afw::table::SortedCatalogT<lsst::afw::t
                                  << fluxField << "Sigma"
                                  << ") not found in reference catalog. Not using ref flux errors.");
     }
-    std::cout << "Error key: " << fluxErrKey << " valid: " << fluxErrKey.isValid() << std::endl;
     _filterMap.clear();
     _filterMap.reserve(refFluxMap.size());
     size_t nFilters = 0;
@@ -194,8 +192,8 @@ void Associations::collectRefStars(lsst::afw::table::SortedCatalogT<lsst::afw::t
         // TODO: Need to devise a way to check whether the refCat has position errors
         // TODO: and use them instead, if available.
         // cook up errors: 100 mas per cooordinate
-        star->vx = sqr(0.1 / 3600 / cos(coord.getLatitude()));
-        star->vy = sqr(0.1 / 3600);
+        star->vx = std::pow(0.1 / 3600 / cos(coord.getLatitude()), 2);
+        star->vy = std::pow(0.1 / 3600, 2);
         star->vxy = 0.;
 
         refStarList.push_back(star);

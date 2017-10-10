@@ -17,7 +17,6 @@ class CcdImage;
 class Point;
 
 //! Photometric response model which has a single photometric factor per CcdImage.
-/*! It considers a full exposure as reference. */
 class SimplePhotometryModel : public PhotometryModel {
 public:
     SimplePhotometryModel(CcdImageList const &ccdImageList);
@@ -28,48 +27,38 @@ public:
     SimplePhotometryModel &operator=(SimplePhotometryModel const &) = delete;
     SimplePhotometryModel &operator=(SimplePhotometryModel &&) = delete;
 
-    /**
-     * Assign indices to parameters involved in mappings, starting at firstIndex.
-     *
-     * @param[in]  whatToFit   Ignored.
-     * @param[in]  firstIndex  Index to start assigning at.
-     *
-     * @return     The highest assigned index.
-     */
+    /// @copydoc PhotometryModel::assignIndices
     unsigned assignIndices(std::string const &whatToFit, unsigned firstIndex) override;
 
-    /**
-     * Offset the parameters by the provided amounts.
-     *
-     * The shifts are applied according to the indices given in AssignIndices.a
-     *
-     * @param[in]  delta  vector of offsets to apply
-     */
+    /// @copydoc PhotometryModel::offsetParams
     void offsetParams(Eigen::VectorXd const &delta) override;
 
-    /**
-     * Return the "photometric factor" for this ccdImage.
-     *
-     * Multiply this by a Calib's flux/magnitude zero-point to get the updated fluxMag0.
-     *
-     * @param[in]  ccdImage  The ccdImage to get the photometric factor for.
-     * @param[in]  where     Ignored
-     *
-     * @return     The photometric factor at the given location on ccdImage.
-     */
-    double photomFactor(CcdImage const &ccdImage, Point const &where = Point()) const override;
+    /// @copydoc PhotometryModel::transform
+    double transform(CcdImage const &ccdImage, MeasuredStar const &star, double instFlux) const override;
 
-    void getMappingIndices(CcdImage const &ccdImage, std::vector<unsigned> &indices) override;
+    /// @copydoc PhotometryModel::getMappingIndices
+    void getMappingIndices(CcdImage const &ccdImage, std::vector<unsigned> &indices) const override;
 
+    /// @copydoc PhotometryModel::computeParameterDerivatives
     void computeParameterDerivatives(MeasuredStar const &measuredStar, CcdImage const &ccdImage,
-                                     Eigen::VectorXd &derivatives) override;
+                                     Eigen::VectorXd &derivatives) const override;
+
+    /**
+     * @copydoc PhotometryModel::toPhotoCalib
+     *
+     * @note SimplePhotometryModel uses a spatially-invariant transfo, so we can simplify the PhotoCalib.
+     */
+    std::shared_ptr<afw::image::PhotoCalib> toPhotoCalib(CcdImage const &ccdImage) const override;
+
+    /// @copydoc PhotometryModel::dump
+    void dump(std::ostream &stream = std::cout) const override;
 
 private:
-    typedef std::map<CcdImage const *, std::unique_ptr<PhotometryMapping>> MapType;
+    typedef std::unordered_map<CcdImageKey, std::unique_ptr<PhotometryMapping>> MapType;
     MapType _myMap;
 
-    /// Return the mapping associated with this ccdImage. name is a descriptor for error messages.
-    PhotometryMapping *findMapping(CcdImage const &ccdImage, std::string name) const override;
+    /// Return the mapping associated with this ccdImage.
+    PhotometryMappingBase *findMapping(CcdImage const &ccdImage) const override;
 };
 
 }  // namespace jointcal

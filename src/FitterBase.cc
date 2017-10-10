@@ -9,8 +9,6 @@
 #include "lsst/jointcal/FittedStar.h"
 #include "lsst/jointcal/MeasuredStar.h"
 
-static double sqr(double x) { return x * x; }
-
 namespace {
 LOG_LOGGER _log = LOG_GET("jointcal.Fitter");
 }
@@ -69,8 +67,9 @@ unsigned FitterBase::findOutliers(double nSigmaCut, MeasuredStarList &msOutliers
         if (!ms) {
             // it is reference term.
             fs = std::dynamic_pointer_cast<FittedStar>(chi2->star);
+            // NOTE: Stars contribute twice to astrometry (x,y), but once to photometry (flux),
+            // NOTE: but we only need to mark one index here because both will be removed with that star.
             indices.push_back(fs->getIndexInMatrix());
-            indices.push_back(fs->getIndexInMatrix() + 1);  // probably useless
             /* One might think it would be useful to account for PM
                parameters here, but it is just useless */
         } else {  // it is a measurement term.
@@ -138,7 +137,7 @@ MinimizeResult FitterBase::minimize(std::string const &whatToFit, double nSigmaC
 
     LOGLS_DEBUG(_log, "Starting factorization, hessian: dim="
                               << hessian.rows() << " non-zeros=" << hessian.nonZeros()
-                              << " filling-frac = " << hessian.nonZeros() / sqr(hessian.rows()));
+                              << " filling-frac = " << hessian.nonZeros() / std::pow(hessian.rows(), 2));
 
     CholmodSimplicialLDLT2<SpMat> chol(hessian);
     if (chol.info() != Eigen::Success) {

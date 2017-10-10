@@ -36,7 +36,7 @@ Histo2d::Histo2d(int nnx, float mminx, float mmaxx, int nny, float mminy, float 
 Histo2d::Histo2d(const Histo2d &other) {
     memcpy(this, &other, sizeof(Histo2d));
     data.reset(new float[nx * ny]);
-    memcpy((this->data).get(), other.data.get(), nx * ny * sizeof(float));
+    memcpy((data).get(), other.data.get(), nx * ny * sizeof(float));
 }
 
 bool Histo2d::indices(double x, double y, int &ix, int &iy) const {

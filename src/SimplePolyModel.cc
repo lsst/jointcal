@@ -92,10 +92,9 @@ unsigned SimplePolyModel::assignIndices(unsigned firstIndex, std::string const &
 }
 
 void SimplePolyModel::offsetParams(Eigen::VectorXd const &delta) {
-    for (auto i = _myMap.begin(); i != _myMap.end(); ++i) {
-        SimplePolyMapping *p = dynamic_cast<SimplePolyMapping *>(&*(i->second));
-        if (!p) continue;  // it should be GtransfoIdentity
-        p->offsetParams(&delta(p->getIndex()));
+    for (auto &i : _myMap) {
+        auto mapping = i.second.get();
+        mapping->offsetParams(delta.segment(mapping->getIndex(), mapping->getNpar()));
     }
 }
 

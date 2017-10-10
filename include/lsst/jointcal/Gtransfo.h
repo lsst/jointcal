@@ -7,6 +7,8 @@
 #include <sstream>
 #include <vector>
 
+#include "Eigen/Core"
+
 #include "lsst/pex/exceptions.h"
 #include "lsst/jointcal/FatPoint.h"
 
@@ -107,7 +109,7 @@ public:
     void getParams(double *params) const;
 
     //!
-    void offsetParams(const double *params);
+    void offsetParams(Eigen::VectorXd const &delta);
 
     //!
     virtual double paramRef(const int i) const;

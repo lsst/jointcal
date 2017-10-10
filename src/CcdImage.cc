@@ -3,6 +3,7 @@
 #include <sstream>
 #include <math.h>
 
+#include "lsst/afw/cameraGeom/CameraSys.h"
 #include "lsst/pex/exceptions.h"
 #include "lsst/afw/image/Image.h"
 #include "lsst/afw/image/PhotoCalib.h"
@@ -26,8 +27,6 @@ LOG_LOGGER _log = LOG_GET("jointcal.CcdImage");
 namespace lsst {
 namespace jointcal {
 
-static double sqr(double x) { return x * x; }
-
 void CcdImage::LoadCatalog(afw::table::SourceCatalog const &catalog, std::string const &fluxField) {
     auto xKey = catalog.getSchema().find<double>("slot_Centroid_x").key;
     auto yKey = catalog.getSchema().find<double>("slot_Centroid_y").key;
@@ -39,13 +38,19 @@ void CcdImage::LoadCatalog(afw::table::SourceCatalog const &catalog, std::string
     auto fluxKey = catalog.getSchema().find<double>(fluxField + "_flux").key;
     auto fluxErrKey = catalog.getSchema().find<double>(fluxField + "_fluxSigma").key;
 
+    auto transform = _detector->getTransform(afw::cameraGeom::PIXELS,
+                                             afw::cameraGeom::FOCAL_PLANE);
+
     _wholeCatalog.clear();
     for (auto const &record : catalog) {
         auto ms = std::make_shared<MeasuredStar>();
         ms->x = record.get(xKey);
         ms->y = record.get(yKey);
-        ms->vx = sqr(record.get(xsKey));
-        ms->vy = sqr(record.get(ysKey));
+        ms->vx = std::pow(record.get(xsKey), 2);
+        ms->vy = std::pow(record.get(ysKey), 2);
+        auto pointFocal = transform->applyForward(record.getCentroid());
+        ms->setXFocal(pointFocal.getX());
+        ms->setYFocal(pointFocal.getY());
         /* the xy covariance is not provided in the input catalog: we
         cook it up from the x and y position variance and the shape
          measurements: */
@@ -77,9 +82,10 @@ void CcdImage::LoadCatalog(afw::table::SourceCatalog const &catalog, std::string
 
 CcdImage::CcdImage(afw::table::SourceCatalog &catalog, std::shared_ptr<lsst::afw::image::TanWcs> wcs,
                    std::shared_ptr<lsst::afw::image::VisitInfo> visitInfo, afw::geom::Box2I const &bbox,
-                   std::string const &filter, std::shared_ptr<afw::image::PhotoCalib> photoCalib, int visit,
-                   int ccdId, std::string const &fluxField)
-        : _ccdId(ccdId), _visit(visit), _photoCalib(photoCalib), _filter(filter) {
+                   std::string const &filter, std::shared_ptr<afw::image::PhotoCalib> photoCalib,
+                   std::shared_ptr<afw::cameraGeom::Detector> detector, int visit, int ccdId,
+                   std::string const &fluxField)
+        : _ccdId(ccdId), _visit(visit), _photoCalib(photoCalib), _detector(detector), _filter(filter) {
     LoadCatalog(catalog, fluxField);
 
     Point lowerLeft(bbox.getMinX(), bbox.getMinY());
