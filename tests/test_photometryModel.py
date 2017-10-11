@@ -8,6 +8,7 @@ import lsst.afw.cameraGeom
 import lsst.afw.geom
 import lsst.afw.table
 import lsst.afw.image
+import lsst.afw.image.utils
 import lsst.daf.persistence
 import lsst.jointcal.ccdImage
 import lsst.jointcal.photometryModels
@@ -17,14 +18,20 @@ from lsst.afw.cameraGeom.testUtils import DetectorWrapper
 
 
 class PhotometryModelTestBase():
+    @classmethod
+    def setUpClass(cls):
+        try:
+            cls.data_dir = lsst.utils.getPackageDir('testdata_jointcal')
+        except lsst.pex.exceptions.NotFoundError:
+            raise unittest.SkipTest("testdata_jointcal not setup")
+
     def setUp(self):
         # Ensure that the filter list is reset for each test so that we avoid
         # confusion or contamination each time we create a cfht camera below.
         lsst.afw.image.utils.resetFilters()
 
         # Load or fake the necessary metadata for each CcdImage (using ccd=12)
-        data_dir = lsst.utils.getPackageDir('testdata_jointcal')
-        input_dir = os.path.join(data_dir, 'cfht_minimal')
+        input_dir = os.path.join(self.data_dir, 'cfht_minimal')
         visits = [849375, 850587]
         ccdId = 12
         self.butler = lsst.daf.persistence.Butler(input_dir)
