@@ -14,11 +14,6 @@ namespace jointcal {
 //! Objects used as position anchors, typically USNO stars. Coordinate system defined by user. The Common
 //! Tangent Plane seems a good idea.
 class RefStar : public BaseStar {
-private:
-    // on-sky flux, in Maggies, per filter
-    std::vector<double> _refFluxList;
-    std::vector<double> _refFluxErrList;
-
 public:
     RefStar(double xx, double yy, double defaultFlux, double defaultFluxErr, std::vector<double>& refFluxList,
             std::vector<double>& refFluxErrList)
@@ -47,6 +42,11 @@ public:
     double getFlux(size_t filter) const { return _refFluxList[filter]; }
     /// reference fluxErr in a given filter
     double getFluxErr(size_t filter) const { return _refFluxErrList[filter]; }
+
+private:
+    // on-sky flux, in Maggies, per filter
+    std::vector<double> _refFluxList;
+    std::vector<double> _refFluxErrList;
 };
 
 /****** RefStarList ***********/

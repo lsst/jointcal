@@ -21,21 +21,6 @@ public:
     double wmag;
     double chi2;
 
-private:
-    unsigned _id;  // id in original catalog
-
-    // on-chip flux, in ADU
-    double _instFlux;
-    double _instFluxErr;
-
-    const CcdImage *_ccdImage;
-    std::shared_ptr<const FittedStar> _fittedStar;
-    bool _valid;
-
-    double _xFocal, _yFocal;
-
-public:
-    //!
     MeasuredStar()
             : BaseStar(),
               mag(0.),
@@ -105,6 +90,19 @@ public:
     bool isValid() const { return _valid; }
     //! Fits may use that to discard outliers
     void setValid(bool v) { _valid = v; }
+
+private:
+    unsigned _id;  // id in original catalog
+
+    // on-chip flux, in ADU
+    double _instFlux;
+    double _instFluxErr;
+
+    const CcdImage *_ccdImage;
+    std::shared_ptr<const FittedStar> _fittedStar;
+    bool _valid;
+
+    double _xFocal, _yFocal;
 };
 
 /****** MeasuredStarList */

@@ -29,18 +29,6 @@ namespace jointcal {
  * is meant for set of images from a single mosaic imager.
  */
 class ConstrainedPolyModel : public AstrometryModel {
-private:
-    typedef std::map<const CcdImage *, std::unique_ptr<TwoTransfoMapping>> mappingMapType;
-    mappingMapType _mappings;
-    typedef std::map<CcdIdType, std::unique_ptr<SimpleGtransfoMapping>> chipMapType;
-    chipMapType _chipMap;
-    typedef std::map<VisitIdType, std::unique_ptr<SimpleGtransfoMapping>> visitMapType;
-    visitMapType _visitMap;
-    const ProjectionHandler *_sky2TP;
-    bool _fittingChips, _fittingVisits;
-
-    Frame _tpFrame;  // just for output of the chip transfos
-
 public:
     ConstrainedPolyModel(CcdImageList const &ccdImageList, ProjectionHandler const *projectionHandler,
                          bool initFromWCS, unsigned nNotFit = 0);
@@ -90,6 +78,18 @@ public:
     const Gtransfo *getSky2TP(CcdImage const &ccdImage) const { return _sky2TP->getSky2TP(ccdImage); }
 
     std::shared_ptr<TanSipPix2RaDec> produceSipWcs(CcdImage const &ccdImage) const;
+
+private:
+    typedef std::map<const CcdImage *, std::unique_ptr<TwoTransfoMapping>> mappingMapType;
+    mappingMapType _mappings;
+    typedef std::map<CcdIdType, std::unique_ptr<SimpleGtransfoMapping>> chipMapType;
+    chipMapType _chipMap;
+    typedef std::map<VisitIdType, std::unique_ptr<SimpleGtransfoMapping>> visitMapType;
+    visitMapType _visitMap;
+    const ProjectionHandler *_sky2TP;
+    bool _fittingChips, _fittingVisits;
+
+    Frame _tpFrame;  // just for output of the chip transfos
 };
 }  // namespace jointcal
 }  // namespace lsst

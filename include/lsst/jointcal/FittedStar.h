@@ -35,16 +35,6 @@ struct PmBlock {
  * MeasuredStars from different CcdImages that represent the same on-sky object all point to one FittedStar.
  */
 class FittedStar : public BaseStar, public PmBlock {
-private:
-    double _mag;
-    int _gen;
-    double _wmag;
-    unsigned _indexInMatrix;
-    int _measurementCount;
-    const RefStar* _refStar;
-
-    double _fluxErr;
-
 public:
     FittedStar()
             : BaseStar(),
@@ -113,6 +103,16 @@ public:
 
     //! Get the astrometric reference star associated with this star.
     const RefStar* getRefStar() const { return _refStar; };
+
+private:
+    double _mag;
+    int _gen;
+    double _wmag;
+    unsigned _indexInMatrix;
+    int _measurementCount;
+    const RefStar* _refStar;
+
+    double _fluxErr;
 };
 
 /****** FittedStarList */

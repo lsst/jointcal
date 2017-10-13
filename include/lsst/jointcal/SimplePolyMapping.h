@@ -17,18 +17,6 @@ namespace lsst {
 namespace jointcal {
 
 class SimpleGtransfoMapping : public Mapping {
-protected:
-    bool toFit;
-    unsigned index;
-    /* inheritance may also work. Perhaps with some trouble because
-       some routines in Mapping and Gtransfo have the same name */
-    std::shared_ptr<Gtransfo> transfo;
-
-    std::shared_ptr<Gtransfo> errorProp;
-    /* to avoid allocation at every call of positionDerivative.
-       use a pointer for constness */
-    std::unique_ptr<GtransfoLin> lin;
-
 public:
     SimpleGtransfoMapping(Gtransfo const &gtransfo, bool toFit = true)
             : toFit(toFit), transfo(gtransfo.clone()), errorProp(transfo), lin(new GtransfoLin) {
@@ -107,19 +95,22 @@ public:
 
     //! Access to the (fitted) transfo
     virtual Gtransfo const &getTransfo() const { return *transfo; }
+
+protected:
+    bool toFit;
+    unsigned index;
+    /* inheritance may also work. Perhaps with some trouble because
+       some routines in Mapping and Gtransfo have the same name */
+    std::shared_ptr<Gtransfo> transfo;
+
+    std::shared_ptr<Gtransfo> errorProp;
+    /* to avoid allocation at every call of positionDerivative.
+       use a pointer for constness */
+    std::unique_ptr<GtransfoLin> lin;
 };
 
 //! Mapping implementation for a polynomial transformation.
 class SimplePolyMapping : public SimpleGtransfoMapping {
-    /* to better condition the 2nd derivative matrix, the
-    transformed coordinates are mapped (roughly) on [-1,1].
-    We need both the transform and its derivative. */
-    GtransfoLin _centerAndScale;
-    Eigen::Matrix2d preDer;
-
-    /* Where we store the combination. */
-    mutable GtransfoPoly actualResult;
-
 public:
     ~SimplePolyMapping() {}
 
@@ -203,6 +194,16 @@ public:
         actualResult = (*fittedPoly) * _centerAndScale;
         return actualResult;
     }
+
+private:
+    /* to better condition the 2nd derivative matrix, the
+    transformed coordinates are mapped (roughly) on [-1,1].
+    We need both the transform and its derivative. */
+    GtransfoLin _centerAndScale;
+    Eigen::Matrix2d preDer;
+
+    /* Where we store the combination. */
+    mutable GtransfoPoly actualResult;
 };
 
 #ifdef STORAGE

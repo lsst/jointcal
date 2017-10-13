@@ -27,10 +27,6 @@ separate transfrom per CcdImage. One could chose other setups.
 //! this is the model used to fit independent CCDs, meaning that there is no instrument model.
 /* This modeling of distortions can even accommodate images set mixing instruments */
 class SimplePolyModel : public AstrometryModel {
-    typedef std::map<const CcdImage *, std::unique_ptr<SimpleGtransfoMapping>> mapType;
-    mapType _myMap;
-    const ProjectionHandler *_sky2TP;
-
 public:
     //! Sky2TP is just a name, it can be anything
     SimplePolyModel(CcdImageList const &ccdImageList, ProjectionHandler const *projectionHandler,
@@ -66,6 +62,11 @@ public:
     std::shared_ptr<TanSipPix2RaDec> produceSipWcs(CcdImage const &ccdImage) const;
 
     ~SimplePolyModel(){};
+
+private:
+    typedef std::map<const CcdImage *, std::unique_ptr<SimpleGtransfoMapping>> mapType;
+    mapType _myMap;
+    const ProjectionHandler *_sky2TP;
 };
 }  // namespace jointcal
 }  // namespace lsst

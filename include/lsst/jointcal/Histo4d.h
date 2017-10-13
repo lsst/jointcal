@@ -8,15 +8,6 @@ namespace jointcal {
 //! A class to histogram in 4 dimensions. Uses Sparse storage. The number of bin is limited to 256 per
 //! dimension. Used in ListMatch.cc
 class SparseHisto4d {
-private:
-    std::unique_ptr<int[]> _data;
-    int _ndata;
-    int _dataSize;
-    int _n[4];
-    double _minVal[4], _maxVal[4];
-    double _scale[4];
-    bool _sorted;
-
 public:
     SparseHisto4d() {}
     // obvious meanings. NEntries is used as the size of the primary allocation.
@@ -46,6 +37,15 @@ public:
     void inverse_code(const int code, double x[4]) const;
     void sort();
     void dump() const;
+
+private:
+    std::unique_ptr<int[]> _data;
+    int _ndata;
+    int _dataSize;
+    int _n[4];
+    double _minVal[4], _maxVal[4];
+    double _scale[4];
+    bool _sorted;
 };
 }  // namespace jointcal
 }  // namespace lsst

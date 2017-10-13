@@ -20,11 +20,6 @@ namespace jointcal {
 
 //! The base class for handling stars. Used by all matching routines.
 class BaseStar : public FatPoint {
-protected:
-    // on-sky flux, in Maggies
-    double _flux;
-    double _fluxErr;
-
 public:
     BaseStar() {
         x = 0;
@@ -68,6 +63,11 @@ public:
 
     double getFluxErr() const { return _fluxErr; }
     void setFluxErr(double fluxErr) { _fluxErr = fluxErr; }
+
+protected:
+    // on-sky flux, in Maggies
+    double _flux;
+    double _fluxErr;
 };
 
 //! enables to sort easily a starList (of anything that derives from BaseStar)

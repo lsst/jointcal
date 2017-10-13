@@ -40,7 +40,6 @@ public:
     double distance;
     double chi2;
 
-public:
     //! constructor.
     /*! gives 2 points (that contain the geometry), plus pointers to the Star objects
       (which are there for user convenience). */
@@ -125,12 +124,6 @@ capabilities.  NStarMatchList is a generalization of this 2-match to n-matches.
 std::ostream &operator<<(std::ostream &stream, const StarMatchList &starMatchList);
 
 class StarMatchList : public std::list<StarMatch> {
-private:
-    int _order;
-    double _chi2;
-    double _dist2;
-    std::shared_ptr<Gtransfo> _transfo;
-
 public:
     void refineTransfo(double nSigmas);
 
@@ -197,6 +190,11 @@ public:
 private:
     StarMatchList(const StarMatchList &);  // copies nor properly handled
     void operator=(const StarMatchList &);
+
+    int _order;
+    double _chi2;
+    double _dist2;
+    std::shared_ptr<Gtransfo> _transfo;
 };
 
 //! sum of distance squared

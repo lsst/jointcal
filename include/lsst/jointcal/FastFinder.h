@@ -29,7 +29,6 @@ namespace jointcal {
 
 //! Fast locator in starlists.
 class FastFinder {
-    //  private :
 public:
     const BaseStarList baselist;  // shallow copy of the initial list of stars (not used, acts as a
                                   // conservatory). The need is arguable.
@@ -47,7 +46,6 @@ public:
     typedef decltype(stars)::value_type stars_element;
     typedef decltype(stars)::const_iterator pstar;
 
-public:
     //! Constructor
     FastFinder(const BaseStarList &list, const unsigned nXSlice = 100);
 
