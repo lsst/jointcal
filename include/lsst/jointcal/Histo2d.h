@@ -6,14 +6,6 @@ namespace lsst {
 namespace jointcal {
 
 class Histo2d {
-private:
-    std::unique_ptr<float[]> data;
-    int nx, ny;
-    float minx, miny;
-    float scalex, scaley;
-
-    bool indices(double x, double y, int &ix, int &iy) const;
-
 public:
     Histo2d() : data() {}
     Histo2d(int nx, float minx, float maxx, int ny, float miny, float maxy);
@@ -37,6 +29,12 @@ public:
 
 private:
     void operator=(const Histo2d &right);
+    bool indices(double x, double y, int &ix, int &iy) const;
+
+    std::unique_ptr<float[]> data;
+    int nx, ny;
+    float minx, miny;
+    float scalex, scaley;
 };
 }  // namespace jointcal
 }  // namespace lsst

@@ -31,9 +31,6 @@ public:
     RefStarList refStarList;        // e.g. GAIA or SDSS reference stars
     FittedStarList fittedStarList;  // stars that are going to be fitted
 
-    Point _commonTangentPoint;
-
-public:
     // These are strictly speaking not needed anymore (after DM-4043),
     // but keeping them seems cleaner then exposing the lists themselves.
     size_t refStarListSize() { return refStarList.size(); }
@@ -144,6 +141,8 @@ private:
 
     // Map from filter name to index in each refStar's _refFlux/_refFluxErr vector.
     std::unordered_map<std::string, std::size_t> _filterMap;
+
+    Point _commonTangentPoint;
 };
 
 }  // namespace jointcal

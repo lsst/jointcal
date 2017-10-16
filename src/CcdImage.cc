@@ -27,7 +27,7 @@ LOG_LOGGER _log = LOG_GET("jointcal.CcdImage");
 namespace lsst {
 namespace jointcal {
 
-void CcdImage::LoadCatalog(afw::table::SourceCatalog const &catalog, std::string const &fluxField) {
+void CcdImage::loadCatalog(afw::table::SourceCatalog const &catalog, std::string const &fluxField) {
     auto xKey = catalog.getSchema().find<double>("slot_Centroid_x").key;
     auto yKey = catalog.getSchema().find<double>("slot_Centroid_y").key;
     auto xsKey = catalog.getSchema().find<float>("slot_Centroid_xSigma").key;
@@ -38,8 +38,7 @@ void CcdImage::LoadCatalog(afw::table::SourceCatalog const &catalog, std::string
     auto fluxKey = catalog.getSchema().find<double>(fluxField + "_flux").key;
     auto fluxErrKey = catalog.getSchema().find<double>(fluxField + "_fluxSigma").key;
 
-    auto transform = _detector->getTransform(afw::cameraGeom::PIXELS,
-                                             afw::cameraGeom::FOCAL_PLANE);
+    auto transform = _detector->getTransform(afw::cameraGeom::PIXELS, afw::cameraGeom::FOCAL_PLANE);
 
     _wholeCatalog.clear();
     for (auto const &record : catalog) {
@@ -59,7 +58,7 @@ void CcdImage::LoadCatalog(afw::table::SourceCatalog const &catalog, std::string
         double mxy = record.get(mxyKey);
         ms->vxy = mxy * (ms->vx + ms->vy) / (mxx + myy);
         if (ms->vx < 0 || ms->vy < 0 || (ms->vxy * ms->vxy) > (ms->vx * ms->vy)) {
-            LOGLS_WARN(_log, "Bad source detected in LoadCatalog : " << ms->vx << " " << ms->vy << " "
+            LOGLS_WARN(_log, "Bad source detected in loadCatalog : " << ms->vx << " " << ms->vy << " "
                                                                      << ms->vxy * ms->vxy << " "
                                                                      << ms->vx * ms->vy);
             continue;
@@ -86,7 +85,7 @@ CcdImage::CcdImage(afw::table::SourceCatalog &catalog, std::shared_ptr<lsst::afw
                    std::shared_ptr<afw::cameraGeom::Detector> detector, int visit, int ccdId,
                    std::string const &fluxField)
         : _ccdId(ccdId), _visit(visit), _photoCalib(photoCalib), _detector(detector), _filter(filter) {
-    LoadCatalog(catalog, fluxField);
+    loadCatalog(catalog, fluxField);
 
     Point lowerLeft(bbox.getMinX(), bbox.getMinY());
     Point upperRight(bbox.getMaxX(), bbox.getMaxY());

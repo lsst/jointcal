@@ -32,45 +32,6 @@ typedef std::pair<VisitIdType, CcdIdType> CcdImageKey;
  * NOTE: could possibly be replaced with a subclass of afw.image.Exposure?
  */
 class CcdImage {
-private:
-    Frame _imageFrame;  // in pixels
-
-    MeasuredStarList _wholeCatalog;  // the catalog of measured objets
-    MeasuredStarList _catalogForFit;
-
-    std::shared_ptr<BaseTanWcs> _readWcs;       // i.e. from pix to sky
-    std::shared_ptr<Gtransfo> _inverseReadWcs;  // i.e. from sky to pix
-
-    // The following ones should probably be mostly removed.
-    std::shared_ptr<Gtransfo> _CTP2TP;                  // go from CommonTangentPlane to this tangent plane.
-    std::shared_ptr<Gtransfo> _TP2CTP;                  // reverse one
-    std::shared_ptr<Gtransfo> _pix2CommonTangentPlane;  // pixels -> CTP
-    std::shared_ptr<Gtransfo> _pix2TP;
-
-    std::shared_ptr<Gtransfo> _sky2TP;
-
-    std::string _name;
-    CcdIdType _ccdId;
-    VisitIdType _visit;
-
-    lsst::afw::coord::IcrsCoord _boresightRaDec;
-    double _airMass;  // airmass value.
-    double _mjd;      // modified julian date
-    std::shared_ptr<afw::image::PhotoCalib> _photoCalib;
-    std::shared_ptr<afw::cameraGeom::Detector> _detector;
-    // refraction
-    // eta : parallactic angle, z: zenithal angle (X = 1/cos(z))
-    double _sineta, _coseta, _tgz;
-    // Local Sidereal Time and hour angle of observation
-    double _lstObs, _hourAngle;
-
-    std::string _filter;
-
-    Point _commonTangentPoint;
-
-    void LoadCatalog(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> const &Cat,
-                     std::string const &fluxField);
-
 public:
     CcdImage(afw::table::SourceCatalog &record, std::shared_ptr<lsst::afw::image::TanWcs> wcs,
              std::shared_ptr<lsst::afw::image::VisitInfo> visitInfo, afw::geom::Box2I const &bbox,
@@ -183,6 +144,45 @@ public:
 
     //! Frame in pixels
     Frame const &getImageFrame() const { return _imageFrame; }
+
+private:
+    void loadCatalog(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> const &Cat,
+                     std::string const &fluxField);
+
+    Frame _imageFrame;  // in pixels
+
+    MeasuredStarList _wholeCatalog;  // the catalog of measured objets
+    MeasuredStarList _catalogForFit;
+
+    std::shared_ptr<BaseTanWcs> _readWcs;       // i.e. from pix to sky
+    std::shared_ptr<Gtransfo> _inverseReadWcs;  // i.e. from sky to pix
+
+    // The following ones should probably be mostly removed.
+    std::shared_ptr<Gtransfo> _CTP2TP;                  // go from CommonTangentPlane to this tangent plane.
+    std::shared_ptr<Gtransfo> _TP2CTP;                  // reverse one
+    std::shared_ptr<Gtransfo> _pix2CommonTangentPlane;  // pixels -> CTP
+    std::shared_ptr<Gtransfo> _pix2TP;
+
+    std::shared_ptr<Gtransfo> _sky2TP;
+
+    std::string _name;
+    CcdIdType _ccdId;
+    VisitIdType _visit;
+
+    lsst::afw::coord::IcrsCoord _boresightRaDec;
+    double _airMass;  // airmass value.
+    double _mjd;      // modified julian date
+    std::shared_ptr<afw::image::PhotoCalib> _photoCalib;
+    std::shared_ptr<afw::cameraGeom::Detector> _detector;
+    // refraction
+    // eta : parallactic angle, z: zenithal angle (X = 1/cos(z))
+    double _sineta, _coseta, _tgz;
+    // Local Sidereal Time and hour angle of observation
+    double _lstObs, _hourAngle;
+
+    std::string _filter;
+
+    Point _commonTangentPoint;
 };
 }  // namespace jointcal
 }  // namespace lsst

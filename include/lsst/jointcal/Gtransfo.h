@@ -192,26 +192,6 @@ bool isIntegerShift(const Gtransfo *gtransfo);
 //! Polynomial transformation class.
 class GtransfoPoly : public Gtransfo {
 public:
-    using Gtransfo::apply;  // to unhide Gtransfo::apply(const Point &)
-
-private:
-    unsigned _degree;             // the degree
-    unsigned _nterms;             // number of parameters per coordinate
-    std::vector<double> _coeffs;  // the actual coefficients
-                                  // both polynomials in a single vector to speed up allocation and copies
-
-    /* use std::vector rather than double * to avoid
-       writing copy constructor and "operator =".
-       Vect would work as well but introduces a dependence
-       that can be avoided */
-
-    /* This routine take a double * for the vector because the array can
-       then be allocated on the execution stack, which speeds thing
-       up. However this uses Variable Length Array (VLA) which is not
-       part of C++, but gcc implements it. */
-    void computeMonomials(double xIn, double yIn, double *monomial) const;
-
-public:
     //! Default transfo : identity for all degrees (>=1 ). The degree refers to the highest total power (x+y)
     //! of monomials.
     GtransfoPoly(const unsigned degree = 1);
@@ -221,6 +201,8 @@ public:
 
     // sets the polynomial degree.
     void setDegree(const unsigned degree);
+
+    using Gtransfo::apply;  // to unhide Gtransfo::apply(const Point &)
 
     void apply(const double xIn, const double yIn, double &xOut, double &yOut) const;
 
@@ -281,6 +263,22 @@ public:
 
 private:
     double computeFit(const StarMatchList &starMatchList, const Gtransfo &InTransfo, const bool UseErrors);
+
+    unsigned _degree;             // the degree
+    unsigned _nterms;             // number of parameters per coordinate
+    std::vector<double> _coeffs;  // the actual coefficients
+                                  // both polynomials in a single vector to speed up allocation and copies
+
+    /* use std::vector rather than double * to avoid
+       writing copy constructor and "operator =".
+       Vect would work as well but introduces a dependence
+       that can be avoided */
+
+    /* This routine take a double * for the vector because the array can
+       then be allocated on the execution stack, which speeds thing
+       up. However this uses Variable Length Array (VLA) which is not
+       part of C++, but gcc implements it. */
+    void computeMonomials(double xIn, double yIn, double *monomial) const;
 };
 
 //! approximates the inverse by a polynomial, up to required precision.
@@ -397,12 +395,6 @@ public:
 /*==================WCS's transfo's =====================================*/
 
 class BaseTanWcs : public Gtransfo {
-protected:
-    GtransfoLin linPix2Tan;  // pixels to tangent plane (internally in radians)
-    std::unique_ptr<GtransfoPoly> corr;
-    double ra0, dec0;   // in radians
-    double cos0, sin0;  // cos(dec0), sin(dec0)
-
 public:
     using Gtransfo::apply;  // to unhide apply(const Point&)
 
@@ -437,6 +429,12 @@ public:
     virtual void pix2TP(double xPixel, double yPixel, double &xTangentPlane, double &yTangentPlane) const = 0;
 
     ~BaseTanWcs();
+
+protected:
+    GtransfoLin linPix2Tan;  // pixels to tangent plane (internally in radians)
+    std::unique_ptr<GtransfoPoly> corr;
+    double ra0, dec0;   // in radians
+    double cos0, sin0;  // cos(dec0), sin(dec0)
 };
 
 class TanRaDec2Pix;  // the inverse of TanPix2RaDec.
@@ -517,10 +515,6 @@ public:
 */
 
 class TanRaDec2Pix : public Gtransfo {
-    double ra0, dec0;  // tangent point (internally in radians)
-    double cos0, sin0;
-    GtransfoLin linTan2Pix;  // tangent plane to pixels (internally in radians)
-
 public:
     using Gtransfo::apply;  // to unhide apply(const Point&)
 
@@ -559,6 +553,11 @@ public:
     std::unique_ptr<Gtransfo> clone() const;
 
     double fit(const StarMatchList &starMatchList);
+
+private:
+    double ra0, dec0;  // tangent point (internally in radians)
+    double cos0, sin0;
+    GtransfoLin linTan2Pix;  // tangent plane to pixels (internally in radians)
 };
 
 //! signature of the user-provided routine that actually does the coordinate transfo for UserTransfo.
@@ -566,10 +565,6 @@ typedef void(GtransfoFun)(const double, const double, double &, double &, const 
 
 //! a run-time transfo that allows users to define a Gtransfo with minimal coding (just the transfo routine).
 class UserTransfo : public Gtransfo {
-private:
-    GtransfoFun *_userFun;
-    const void *_userData;
-
 public:
     using Gtransfo::apply;  // to unhide apply(const Point&)
 
@@ -583,6 +578,10 @@ public:
     double fit(const StarMatchList &starMatchList);
 
     std::unique_ptr<Gtransfo> clone() const;
+
+private:
+    GtransfoFun *_userFun;
+    const void *_userData;
 };
 
 //! The virtual constructor from a file
