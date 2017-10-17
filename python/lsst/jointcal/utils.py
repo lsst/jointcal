@@ -83,8 +83,8 @@ class JointcalStatistics(object):
                 Post-jointcal photometric repeatability (PA1 from the SRD).
         """
 
-        # DECAM doesn't have "filter" in its registry, so we have to get filter names from VisitInfo.
-        self.filters = [ref.get('calexp').getInfo().getFilter().getName() for ref in data_refs]
+        # DECAM doesn't have "filter" in its registry, so we have to get the filter names directly.
+        self.filters = [ref.get('calexp_filter').getName() for ref in data_refs]
         self.visits_per_dataRef = [ref.dataId['visit'] for ref in data_refs]
 
         def compute(catalogs, photoCalibs):
@@ -118,7 +118,7 @@ class JointcalStatistics(object):
         old_calibs = []
         if self.do_photometry:
             for ref in data_refs:
-                calib = ref.get('calexp').getCalib()
+                calib = ref.get('calexp_calib')
                 fluxMag0 = calib.getFluxMag0()
                 old_calibs.append(lsst.afw.image.PhotoCalib(1.0/fluxMag0[0], fluxMag0[1]/fluxMag0[0]**2))
 

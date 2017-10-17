@@ -232,16 +232,17 @@ class JointcalTask(pipeBase.CmdLineTask):
             visit = dataRef.dataId["visit"]
         else:
             visit = dataRef.getButler().queryMetadata("calexp", ("visit"), dataRef.dataId)[0]
-        src = dataRef.get("src", flags=lsst.afw.table.SOURCE_IO_NO_FOOTPRINTS, immediate=True)
-        calexp = dataRef.get("calexp", immediate=True)
-        visitInfo = calexp.getInfo().getVisitInfo()
-        detector = calexp.getDetector()
-        ccdname = detector.getId()
 
-        calib = calexp.getCalib()
-        tanWcs = calexp.getWcs()
-        bbox = calexp.getBBox()
-        filt = calexp.getInfo().getFilter().getName()
+        src = dataRef.get("src", flags=lsst.afw.table.SOURCE_IO_NO_FOOTPRINTS, immediate=True)
+
+        visitInfo = dataRef.get('calexp_visitInfo')
+        detector = dataRef.get('calexp_detector')
+        ccdname = detector.getId()
+        calib = dataRef.get('calexp_calib')
+        tanWcs = dataRef.get('calexp_wcs')
+        bbox = dataRef.get('calexp_bbox')
+        filt = dataRef.get('calexp_filter')
+        filterName = filt.getName()
         fluxMag0 = calib.getFluxMag0()
         photoCalib = afwImage.PhotoCalib(1.0/fluxMag0[0], fluxMag0[1]/fluxMag0[0]**2, bbox)
 
@@ -251,12 +252,12 @@ class JointcalTask(pipeBase.CmdLineTask):
             self.log.warn("no stars selected in ", visit, ccdname)
             return tanWcs
         self.log.info("%d stars selected in visit %d ccd %d", len(goodSrc.sourceCat), visit, ccdname)
-        associations.addImage(goodSrc.sourceCat, tanWcs, visitInfo, bbox, filt, photoCalib, detector,
+        associations.addImage(goodSrc.sourceCat, tanWcs, visitInfo, bbox, filterName, photoCalib, detector,
                               visit, ccdname, jointcalControl)
 
         Result = collections.namedtuple('Result_from_build_CcdImage', ('wcs', 'key', 'filter'))
         Key = collections.namedtuple('Key', ('visit', 'ccd'))
-        return Result(tanWcs, Key(visit, ccdname), filt)
+        return Result(tanWcs, Key(visit, ccdname), filterName)
 
     @pipeBase.timeMethod
     def run(self, dataRefs, profile_jointcal=False):
