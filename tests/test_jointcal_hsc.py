@@ -12,6 +12,7 @@ import lsst.afw.coord
 import lsst.afw.geom
 import lsst.utils
 import lsst.pex.exceptions
+from lsst.meas.extensions.astrometryNet import LoadAstrometryNetObjectsTask
 from lsst.meas.algorithms import LoadIndexedReferenceObjectsTask
 
 import jointcalTestBase
@@ -52,6 +53,10 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
                         do_plot=do_plot)
 
     def test_jointcalTask_2_visits(self):
+        self.config = lsst.jointcal.jointcal.JointcalConfig()
+        self.config.photometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
+        self.config.astrometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
+
         # NOTE: The relative RMS limit was empirically determined from the
         # first run of jointcal on this data. We should always do better than
         # this in the future!
@@ -80,6 +85,7 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         """
 
         self.config = lsst.jointcal.jointcal.JointcalConfig()
+        self.config.astrometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
         self.config.doPhotometry = False
         self.jointcalStatistics.do_photometry = False
 
@@ -118,6 +124,7 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
                    }
 
         self.config = lsst.jointcal.jointcal.JointcalConfig()
+        self.config.photometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
         self.config.doAstrometry = False
         self.jointcalStatistics.do_astrometry = False
 
@@ -151,6 +158,7 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
                    }
 
         self.config = lsst.jointcal.jointcal.JointcalConfig()
+        self.config.astrometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
         self.config.doPhotometry = False
         self.jointcalStatistics.do_photometry = False
 
@@ -175,6 +183,8 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
     def test_jointcalTask_2_visits_gaia_refcat(self):
         self.config = lsst.jointcal.jointcal.JointcalConfig()
         self.config.astrometryRefObjLoader.retarget(LoadIndexedReferenceObjectsTask)
+        # use the a.net refcat for photometry.
+        self.config.photometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
 
         test_config = os.path.join(lsst.utils.getPackageDir('jointcal'), 'tests/config/hsc-config.py')
         self.other_args.extend(['--configfile', test_config])
@@ -205,6 +215,7 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
 
     def test_jointcalTask_2_visits_no_photometry_match_cut_10(self):
         self.config = lsst.jointcal.jointcal.JointcalConfig()
+        self.config.astrometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
         self.config.matchCut = 10.0  # TODO: once DM-6885 is fixed, we need to put `*lsst.afw.geom.arcseconds`
         self.config.doPhotometry = False
         self.jointcalStatistics.do_photometry = False
@@ -224,6 +235,7 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
     def test_jointcalTask_3_visits_no_photometry(self):
         """3 visit, default config to compare with min_measurements_3 test."""
         self.config = lsst.jointcal.jointcal.JointcalConfig()
+        self.config.astrometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
         self.config.minMeasurements = 2
         self.config.doPhotometry = False
         self.jointcalStatistics.do_photometry = False
@@ -245,6 +257,7 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         fitted stars (and thus the chisq and Ndof), but should not change the
         other values."""
         self.config = lsst.jointcal.jointcal.JointcalConfig()
+        self.config.astrometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
         self.config.minMeasurements = 3
         self.config.doPhotometry = False
         self.jointcalStatistics.do_photometry = False

@@ -16,7 +16,7 @@ import lsst.pex.exceptions as pexExceptions
 import lsst.afw.table
 import lsst.meas.algorithms
 
-from lsst.meas.extensions.astrometryNet import LoadAstrometryNetObjectsTask
+from lsst.meas.algorithms import LoadIndexedReferenceObjectsTask
 from lsst.meas.algorithms.sourceSelector import sourceSelectorRegistry
 
 from .dataIds import PerTractCcdDataIdContainer
@@ -137,11 +137,11 @@ class JointcalConfig(pexConfig.Config):
         default=7,
     )
     astrometryRefObjLoader = pexConfig.ConfigurableField(
-        target=LoadAstrometryNetObjectsTask,
+        target=LoadIndexedReferenceObjectsTask,
         doc="Reference object loader for astrometric fit",
     )
     photometryRefObjLoader = pexConfig.ConfigurableField(
-        target=LoadAstrometryNetObjectsTask,
+        target=LoadIndexedReferenceObjectsTask,
         doc="Reference object loader for photometric fit",
     )
     sourceSelector = sourceSelectorRegistry.makeField(
@@ -181,8 +181,10 @@ class JointcalTask(pipeBase.CmdLineTask):
         pipeBase.CmdLineTask.__init__(self, **kwargs)
         self.profile_jointcal = profile_jointcal
         self.makeSubtask("sourceSelector")
-        self.makeSubtask('astrometryRefObjLoader', butler=butler)
-        self.makeSubtask('photometryRefObjLoader', butler=butler)
+        if self.config.doAstrometry:
+            self.makeSubtask('astrometryRefObjLoader', butler=butler)
+        if self.config.doPhotometry:
+            self.makeSubtask('photometryRefObjLoader', butler=butler)
 
         # To hold various computed metrics for use by tests
         self.metrics = {}
