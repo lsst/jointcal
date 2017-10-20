@@ -13,6 +13,7 @@ import lsst.afw.coord
 import lsst.afw.geom
 import lsst.utils
 import lsst.pex.exceptions
+from lsst.meas.extensions.astrometryNet import LoadAstrometryNetObjectsTask
 
 import jointcalTestBase
 
@@ -55,6 +56,10 @@ class JointcalTestDECAM(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Test
                         do_plot=do_plot)
 
     def test_jointcalTask_2_visits(self):
+        self.config = lsst.jointcal.jointcal.JointcalConfig()
+        self.config.photometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
+        self.config.astrometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
+
         # NOTE: The relative RMS limit was empirically determined from the
         # first run of jointcal on this data. We should always do better than
         # this in the future!
@@ -81,6 +86,8 @@ class JointcalTestDECAM(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Test
 
     def test_jointcalTask_2_visits_constrainedPoly(self):
         self.config = lsst.jointcal.jointcal.JointcalConfig()
+        self.config.photometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
+        self.config.astrometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
         self.config.astrometryModel = "constrainedPoly"
         self.config.doPhotometry = False
         self.jointcalStatistics.do_photometry = False
@@ -104,6 +111,7 @@ class JointcalTestDECAM(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Test
 
 class MemoryTester(lsst.utils.tests.MemoryTestCase):
     pass
+
 
 if __name__ == "__main__":
     lsst.utils.tests.init()

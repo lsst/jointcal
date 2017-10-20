@@ -5,12 +5,14 @@ from __future__ import division, absolute_import, print_function
 from lsst.pipe.tasks.makeCoaddTempExp import MakeCoaddTempExpTask
 from lsst.pipe.base import Struct
 
+
 class JointcalCoaddTaskConfig(MakeCoaddTempExpTask.ConfigClass):
     """Config for JointcalCoaddTask
     """
     def setDefaults(self):
         MakeCoaddTempExpTask.ConfigClass.setDefaults(self)
         self.doApplyUberCal = True
+
 
 class JointcalCoaddTask(MakeCoaddTempExpTask):
 

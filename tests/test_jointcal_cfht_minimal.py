@@ -9,6 +9,7 @@ import lsst.afw.coord
 import lsst.afw.geom
 import lsst.utils
 import lsst.pex.exceptions
+from lsst.meas.extensions.astrometryNet import LoadAstrometryNetObjectsTask
 
 import jointcalTestBase
 
@@ -46,6 +47,7 @@ class JointcalTestCFHTMinimal(jointcalTestBase.JointcalTestBase, lsst.utils.test
 
     def test_jointcalTask_2_visits_photometry(self):
         self.config = lsst.jointcal.jointcal.JointcalConfig()
+        self.config.photometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
         self.config.doAstrometry = False
         self.jointcalStatistics.do_astrometry = False
 
@@ -67,6 +69,7 @@ class JointcalTestCFHTMinimal(jointcalTestBase.JointcalTestBase, lsst.utils.test
 
 class MemoryTester(lsst.utils.tests.MemoryTestCase):
     pass
+
 
 if __name__ == "__main__":
     lsst.utils.tests.init()

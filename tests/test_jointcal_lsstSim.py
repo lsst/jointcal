@@ -14,6 +14,7 @@ import lsst.afw.image
 import lsst.afw.coord
 import lsst.utils
 import lsst.pex.exceptions
+from lsst.meas.extensions.astrometryNet import LoadAstrometryNetObjectsTask
 
 import jointcalTestBase
 import lsst.jointcal.jointcal
@@ -59,6 +60,10 @@ class JointcalTestLSSTSim(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Te
 
     @unittest.skip('jointcal currently fails (may segfault) if only given one catalog!')
     def testJointcalTask_1_visits(self):
+        self.config = lsst.jointcal.jointcal.JointcalConfig()
+        self.config.photometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
+        self.config.astrometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
+
         dist_rms_relative = 0*u.arcsecond  # there is no such thing as a "relative" test for 1 catalog.
         pa1 = 2.64e-3
         self._testJointcalTask(1, dist_rms_relative, self.dist_rms_absolute, pa1)
@@ -72,6 +77,8 @@ class JointcalTestLSSTSim(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Te
         # NOTE: the measured values of the metrics may change with the new fitter.
         pa1 = None
         self.config = lsst.jointcal.jointcal.JointcalConfig()
+        self.config.astrometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
+        self.config.photometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
         self.config.doPhotometry = False
         self.jointcalStatistics.do_photometry = False
         # pa1 = 2.64e-3
@@ -98,6 +105,8 @@ class JointcalTestLSSTSim(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Te
         # NOTE: the measured values of the metrics may change with the new fitter.
         pa1 = None
         self.config = lsst.jointcal.jointcal.JointcalConfig()
+        self.config.astrometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
+        self.config.photometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
         self.config.doPhotometry = False
         self.jointcalStatistics.do_photometry = False
         # pa1 = 2.64e-3
@@ -118,7 +127,7 @@ class JointcalTestLSSTSim(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Te
                    }
         self._testJointcalTask(10, dist_rms_relative, self.dist_rms_absolute, pa1, metrics=metrics)
 
-    @unittest.skip("A.net reference catalog missing flux errors. Unskip once DM-.")
+    @unittest.skip("A.net reference catalog missing flux errors. Unskip once DM-11397 is fixed.")
     def testJointcalTask_2_visits_no_astrometry(self):
         """Test turning off fitting astrometry."""
         pa1 = 2.64e-3
@@ -132,6 +141,7 @@ class JointcalTestLSSTSim(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Te
                    }
 
         self.config = lsst.jointcal.jointcal.JointcalConfig()
+        self.config.photometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
         self.config.doAstrometry = False
         self.jointcalStatistics.do_astrometry = False
 
@@ -165,6 +175,7 @@ class JointcalTestLSSTSim(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Te
                    }
 
         self.config = lsst.jointcal.jointcal.JointcalConfig()
+        self.config.astrometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
         self.config.doPhotometry = False
         self.jointcalStatistics.do_photometry = False
 

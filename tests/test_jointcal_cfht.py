@@ -11,6 +11,7 @@ import lsst.afw.coord
 import lsst.afw.geom
 import lsst.utils
 import lsst.pex.exceptions
+from lsst.meas.extensions.astrometryNet import LoadAstrometryNetObjectsTask
 
 import jointcalTestBase
 
@@ -53,6 +54,10 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
                         log_level="DEBUG")
 
     def test_jointcalTask_2_visits(self):
+        self.config = lsst.jointcal.jointcal.JointcalConfig()
+        self.config.photometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
+        self.config.astrometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
+
         # NOTE: The relative RMS limit was empirically determined from the
         # first run of jointcal on this data. We should always do better than
         # this in the future!
@@ -78,6 +83,7 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
 
     def test_jointcalTask_2_visits_constrainedPoly(self):
         self.config = lsst.jointcal.jointcal.JointcalConfig()
+        self.config.astrometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
         self.config.astrometryModel = "constrainedPoly"
         self.config.doPhotometry = False
         self.jointcalStatistics.do_photometry = False
@@ -100,6 +106,7 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
 
     def test_jointcalTask_2_visits_constrainedPhotometry_no_astrometry(self):
         self.config = lsst.jointcal.jointcal.JointcalConfig()
+        self.config.photometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
         self.config.photometryModel = "constrained"
         self.config.doAstrometry = False
         self.jointcalStatistics.do_astrometry = False
