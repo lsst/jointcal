@@ -5,6 +5,7 @@ from builtins import str
 from builtins import range
 
 import collections
+import numpy as np
 
 import lsst.utils
 import lsst.pex.config as pexConfig
@@ -496,6 +497,8 @@ class JointcalTask(pipeBase.CmdLineTask):
 
         fit = lsst.jointcal.PhotometryFit(associations, model)
         chi2 = fit.computeChi2()
+        if not np.isfinite(chi2.chi2):
+            raise FloatingPointError('Initial chi2 is invalid: %s'%chi2)
         self.log.info("Initialized: %s", str(chi2))
         fit.minimize("Model")
         chi2 = fit.computeChi2()
@@ -505,6 +508,8 @@ class JointcalTask(pipeBase.CmdLineTask):
         self.log.info(str(chi2))
         fit.minimize("Model Fluxes")
         chi2 = fit.computeChi2()
+        if not np.isfinite(chi2.chi2):
+            raise FloatingPointError('Pre-iteration chi2 is invalid: %s'%chi2)
         self.log.info("Fit prepared with %s", str(chi2))
 
         chi2 = self._iterate_fit(fit, model, 20, "photometry", "Model Fluxes")
@@ -552,6 +557,8 @@ class JointcalTask(pipeBase.CmdLineTask):
 
         fit = lsst.jointcal.AstrometryFit(associations, model, self.config.posError)
         chi2 = fit.computeChi2()
+        if not np.isfinite(chi2.chi2):
+            raise FloatingPointError('Initial chi2 is invalid: %s'%chi2)
         self.log.info("Initialized: %s", str(chi2))
         fit.minimize("Distortions")
         chi2 = fit.computeChi2()
@@ -562,6 +569,9 @@ class JointcalTask(pipeBase.CmdLineTask):
         fit.minimize("Distortions Positions")
         chi2 = fit.computeChi2()
         self.log.info(str(chi2))
+        if not np.isfinite(chi2.chi2):
+            raise FloatingPointError('Pre-iteration chi2 is invalid: %s'%chi2)
+        self.log.info("Fit prepared with %s", str(chi2))
 
         chi2 = self._iterate_fit(fit, model, 20, "astrometry", "Distortions Positions")
 
@@ -576,6 +586,8 @@ class JointcalTask(pipeBase.CmdLineTask):
         for i in range(max_steps):
             r = fit.minimize(whatToFit, 5)  # outlier removal at 5 sigma.
             chi2 = fit.computeChi2()
+            if not np.isfinite(chi2.chi2):
+                raise FloatingPointError('Fit iteration chi2 is invalid: %s'%chi2)
             self.log.info(str(chi2))
             if r == MinimizeResult.Converged:
                 self.log.debug("fit has converged - no more outliers - redo minimixation"
