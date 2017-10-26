@@ -65,17 +65,34 @@ class JointcalRunner(pipeBase.ButlerInitializedTaskRunner):
         @param args     Arguments for Task.run()
 
         @return
-        - None if self.doReturnResults is False
+        - A pipe.base.Struct containing these fields if self.doReturnResults is False:
+            - ``exitStatus`: 0 if the task completed successfully, 1 otherwise.
         - A pipe.base.Struct containing these fields if self.doReturnResults is True:
-            - dataRef: the provided data references, with update post-fit WCS's.
+            - ``result``: the result of calling jointcal.run()
+            - ``exitStatus`: 0 if the task completed successfully, 1 otherwise.
         """
+        exitStatus = 0  # exit status for shell
+
         # NOTE: cannot call self.makeTask because that assumes args[0] is a single dataRef.
         dataRefList, kwargs = args
         butler = kwargs.pop('butler')
         task = self.TaskClass(config=self.config, log=self.log, butler=butler)
-        result = task.run(dataRefList, **kwargs)
+        result = None
+        try:
+            result = task.run(dataRefList, **kwargs)
+            exitStatus = result.exitStatus
+        except Exception as e:  # catch everything, sort it out later.
+            if self.doRaise:
+                raise e
+            else:
+                exitStatus = 1
+                eName = type(e).__name__
+                task.log.fatal("Failed on dataIds=%s: %s: %s", dataRefList, eName, e)
+
         if self.doReturnResults:
-            return pipeBase.Struct(result=result)
+            return pipeBase.Struct(result=result, exitStatus=exitStatus)
+        else:
+            return pipeBase.Struct(exitStatus=exitStatus)
 
 
 class JointcalConfig(pexConfig.Config):
@@ -251,9 +268,9 @@ class JointcalTask(pipeBase.CmdLineTask):
         goodSrc = self.sourceSelector.selectSources(src)
 
         if len(goodSrc.sourceCat) == 0:
-            self.log.warn("no stars selected in ", visit, ccdname)
-            return tanWcs
-        self.log.info("%d stars selected in visit %d ccd %d", len(goodSrc.sourceCat), visit, ccdname)
+            self.log.warn("No stars selected in visit %s ccd %s", visit, ccdname)
+        else:
+            self.log.info("%d stars selected in visit %d ccd %d", len(goodSrc.sourceCat), visit, ccdname)
         associations.addImage(goodSrc.sourceCat, tanWcs, visitInfo, bbox, filterName, photoCalib, detector,
                               visit, ccdname, jointcalControl)
 
@@ -282,7 +299,9 @@ class JointcalTask(pipeBase.CmdLineTask):
             * metrics: dictionary of internally-computed metrics for testing/validation.
         """
         if len(dataRefs) == 0:
-            raise ValueError('Need a list of data references!')
+            raise ValueError('Need a non-empty list of data references!')
+
+        exitStatus = 0  # exit status for shell
 
         sourceFluxField = "slot_%sFlux" % (self.sourceSelector.config.sourceFluxType,)
         jointcalControl = lsst.jointcal.JointcalControl(sourceFluxField)
@@ -354,7 +373,10 @@ class JointcalTask(pipeBase.CmdLineTask):
         with pipeBase.cmdLineTask.profile(load_cat_prof_file):
             self._write_results(associations, astrometry.model, photometry.model, visit_ccd_to_dataRef)
 
-        return pipeBase.Struct(dataRefs=dataRefs, oldWcsList=oldWcsList, metrics=self.metrics)
+        return pipeBase.Struct(dataRefs=dataRefs,
+                               oldWcsList=oldWcsList,
+                               metrics=self.metrics,
+                               exitStatus=exitStatus)
 
     def _do_load_refcat_and_fit(self, associations, defaultFilter, center, radius,
                                 name="", refObjLoader=None, filters=[], fit_function=None,

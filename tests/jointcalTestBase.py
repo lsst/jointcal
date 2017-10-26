@@ -184,6 +184,7 @@ class JointcalTestBase(object):
         args.extend(self.other_args)
         result = jointcal.JointcalTask.parseAndRun(args=args, doReturnResults=True, config=self.config)
         self.assertNotEqual(result.resultList, [], 'resultList should not be empty')
+        self.assertEqual(result.resultList[0].exitStatus, 0)
 
         self._test_metrics(result.resultList[0].result.metrics, metrics)
 

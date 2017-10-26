@@ -12,6 +12,7 @@ import lsst.pex.exceptions
 from lsst.meas.extensions.astrometryNet import LoadAstrometryNetObjectsTask
 
 import jointcalTestBase
+from lsst.jointcal import jointcal
 
 
 # for MemoryTestCase
@@ -65,6 +66,69 @@ class JointcalTestCFHTMinimal(jointcalTestBase.JointcalTestBase, lsst.utils.test
         # the calling method is one step back on the stack: use it to specify the output repo.
         caller = inspect.stack()[1][3]  # NOTE: could be inspect.stack()[1].function in py3.5
         self._runJointcalTask(2, caller, metrics=metrics)
+
+    def test_jointcalTask_fails_raise(self):
+        """Raise an exception if there is no data to process."""
+        self.config = lsst.jointcal.jointcal.JointcalConfig()
+        self.config.setDefaults()
+        self.config.photometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
+        self.config.sourceSelector['astrometry'].minSnr = 10000
+        self.config.doAstrometry = False
+
+        # the calling method is one step back on the stack: use it to specify the output repo.
+        caller = inspect.stack()[1][3]  # NOTE: could be inspect.stack()[1].function in py3.5
+        nCatalogs = 2
+        visits = '^'.join(str(v) for v in self.all_visits[:nCatalogs])
+        output_dir = os.path.join('.test', self.__class__.__name__, caller)
+        args = [self.input_dir, '--output', output_dir,
+                '--clobber-versions', '--clobber-config',
+                '--doraise',
+                '--id', 'visit=%s'%visits]
+        args.extend(self.other_args)
+        with self.assertRaises(RuntimeError):
+            jointcal.JointcalTask.parseAndRun(args=args, doReturnResults=True, config=self.config)
+
+    def test_jointcalTask_fails_no_raise(self):
+        """exitStatus=1 if there is no data to process."""
+        self.config = lsst.jointcal.jointcal.JointcalConfig()
+        self.config.setDefaults()
+        self.config.photometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
+        self.config.sourceSelector['astrometry'].minSnr = 10000
+        self.config.doAstrometry = False
+
+        # the calling method is one step back on the stack: use it to specify the output repo.
+        caller = inspect.stack()[1][3]  # NOTE: could be inspect.stack()[1].function in py3.5
+        nCatalogs = 2
+        visits = '^'.join(str(v) for v in self.all_visits[:nCatalogs])
+        output_dir = os.path.join('.test', self.__class__.__name__, caller)
+        args = [self.input_dir, '--output', output_dir,
+                '--clobber-versions', '--clobber-config',
+                '--noExit',  # have to specify noExit, otherwise the test quits
+                '--id', 'visit=%s'%visits]
+        args.extend(self.other_args)
+        result = jointcal.JointcalTask.parseAndRun(args=args, doReturnResults=True, config=self.config)
+        self.assertEqual(result.resultList[0].exitStatus, 1)
+
+    def test_jointcalTask_fails_no_raise_no_return_results(self):
+        """exitStatus=1 if there is no data to process."""
+        self.config = lsst.jointcal.jointcal.JointcalConfig()
+        self.config.setDefaults()
+        self.config.photometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
+        self.config.sourceSelector['astrometry'].minSnr = 10000
+        self.config.doAstrometry = False
+
+        # the calling method is one step back on the stack: use it to specify the output repo.
+        caller = inspect.stack()[1][3]  # NOTE: could be inspect.stack()[1].function in py3.5
+        nCatalogs = 2
+        visits = '^'.join(str(v) for v in self.all_visits[:nCatalogs])
+        output_dir = os.path.join('.test', self.__class__.__name__, caller)
+        args = [self.input_dir, '--output', output_dir,
+                '--clobber-versions', '--clobber-config',
+                '--noExit',  # have to specify noExit, otherwise the test quits
+                '--id', 'visit=%s'%visits]
+        args.extend(self.other_args)
+        result = jointcal.JointcalTask.parseAndRun(args=args, config=self.config)
+        self.assertEqual(result.resultList[0].exitStatus, 1)
 
 
 class MemoryTester(lsst.utils.tests.MemoryTestCase):
