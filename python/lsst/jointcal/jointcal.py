@@ -166,6 +166,11 @@ class JointcalConfig(pexConfig.Config):
         doc="How to select sources for cross-matching",
         default="astrometry"
     )
+    writeChi2ContributionFiles = pexConfig.Field(
+        dtype=bool,
+        doc="Write initial/final fit files containing the contributions to chi2.",
+        default=False
+    )
 
     def setDefaults(self):
         sourceSelector = self.sourceSelector["astrometry"]
@@ -450,12 +455,14 @@ class JointcalTask(pipeBase.CmdLineTask):
         self.metrics['selected%sCcdImageList' % name] = associations.nCcdImagesValidForFit()
 
         load_cat_prof_file = 'jointcal_fit_%s.prof'%name if profile_jointcal else ''
+        dataName = "{}_{}".format(tract, defaultFilter)
         with pipeBase.cmdLineTask.profile(load_cat_prof_file):
-            result = fit_function(associations)
-        # TODO: this should probably be made optional and turned into a "butler save" somehow.
-        # Save reference and measurement n-tuples for each tract
-        tupleName = "{}_res_{}.list".format(name, tract)
-        result.fit.saveResultTuples(tupleName)
+            result = fit_function(associations, dataName)
+        # TODO DM-12446: turn this into a "butler save" somehow.
+        # Save reference and measurement chi2 contributions for this data
+        if self.config.writeChi2ContributionFiles:
+            baseName = "{}_final_chi2-{}.csv".format(name, dataName)
+            result.fit.saveChi2Contributions(baseName)
 
         return result
 
@@ -468,7 +475,7 @@ class JointcalTask(pipeBase.CmdLineTask):
         if associations.refStarListSize() == 0:
             raise RuntimeError('No stars in the {} reference star list!'.format(name))
 
-    def _fit_photometry(self, associations):
+    def _fit_photometry(self, associations, dataName=None):
         """
         Fit the photometric data.
 
@@ -476,6 +483,9 @@ class JointcalTask(pipeBase.CmdLineTask):
         ----------
         associations : lsst.jointcal.Associations
             The star/reference star associations to fit.
+        dataName : str
+            Name of the data being processed (e.g. "1234_HSC-Y"), for
+            identifying debugging files.
 
         Returns
         -------
@@ -497,6 +507,12 @@ class JointcalTask(pipeBase.CmdLineTask):
 
         fit = lsst.jointcal.PhotometryFit(associations, model)
         chi2 = fit.computeChi2()
+        # TODO DM-12446: turn this into a "butler save" somehow.
+        # Save reference and measurement chi2 contributions for this data
+        if self.config.writeChi2ContributionFiles:
+            baseName = "Photometry_initial_chi2-{}.csv".format(dataName)
+            fit.saveChi2Contributions(baseName)
+
         if not np.isfinite(chi2.chi2):
             raise FloatingPointError('Initial chi2 is invalid: %s'%chi2)
         self.log.info("Initialized: %s", str(chi2))
@@ -518,7 +534,7 @@ class JointcalTask(pipeBase.CmdLineTask):
         self.metrics['photometryFinalNdof'] = chi2.ndof
         return Photometry(fit, model)
 
-    def _fit_astrometry(self, associations):
+    def _fit_astrometry(self, associations, dataName=None):
         """
         Fit the astrometric data.
 
@@ -526,6 +542,9 @@ class JointcalTask(pipeBase.CmdLineTask):
         ----------
         associations : lsst.jointcal.Associations
             The star/reference star associations to fit.
+        dataName : str
+            Name of the data being processed (e.g. "1234_HSC-Y"), for
+            identifying debugging files.
 
         Returns
         -------
@@ -557,6 +576,12 @@ class JointcalTask(pipeBase.CmdLineTask):
 
         fit = lsst.jointcal.AstrometryFit(associations, model, self.config.posError)
         chi2 = fit.computeChi2()
+        # TODO DM-12446: turn this into a "butler save" somehow.
+        # Save reference and measurement chi2 contributions for this data
+        if self.config.writeChi2ContributionFiles:
+            baseName = "Astrometry_initial_chi2-{}.csv".format(dataName)
+            fit.saveChi2Contributions(baseName)
+
         if not np.isfinite(chi2.chi2):
             raise FloatingPointError('Initial chi2 is invalid: %s'%chi2)
         self.log.info("Initialized: %s", str(chi2))

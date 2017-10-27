@@ -58,6 +58,9 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
         self.config.photometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
         self.config.astrometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
 
+        # to test whether we got the expected chi2 contribution files.
+        self.other_args.extend(['--config', 'writeChi2ContributionFiles=True'])
+
         # NOTE: The relative RMS limit was empirically determined from the
         # first run of jointcal on this data. We should always do better than
         # this in the future!
@@ -80,6 +83,17 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
                    }
 
         self._testJointcalTask(2, dist_rms_relative, self.dist_rms_absolute, pa1, metrics=metrics)
+
+        # Check for the existence of the chi2 contribution files.
+        expected = ['Photometry_initial_chi2-0_r', 'Astrometry_initial_chi2-0_r',
+                    'Photometry_final_chi2-0_r', 'Astrometry_final_chi2-0_r']
+        for partial in expected:
+            name = partial+'-ref.csv'
+            self.assertTrue(os.path.exists(name), msg="Did not find file %s"%name)
+            os.remove(name)
+            name = partial+'-meas.csv'
+            self.assertTrue(os.path.exists(name), msg='Did not find file %s'%name)
+            os.remove(name)
 
     def test_jointcalTask_2_visits_constrainedPoly(self):
         self.config = lsst.jointcal.jointcal.JointcalConfig()

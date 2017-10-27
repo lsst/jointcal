@@ -95,13 +95,11 @@ public:
 
     void offsetParams(Eigen::VectorXd const &delta) override;
 
-    void saveResultTuples(std::string const &tupleName) const override;
+    /// @copydoc FitterBase::saveChi2MeasContributions
+    void saveChi2MeasContributions(std::string const &baseName) const override;
 
-    //! Produces a tuple containing residuals of measurement terms.
-    void makeMeasResTuple(std::string const &tupleName) const;
-
-    //! Produces a tuple containing residuals of reference terms.
-    void makeRefResTuple(std::string const &tupleName) const;
+    /// @copydoc FitterBase::saveChi2RefContributions
+    void saveChi2RefContributions(std::string const &baseName) const override;
 
     /**
      * DEBUGGING routine

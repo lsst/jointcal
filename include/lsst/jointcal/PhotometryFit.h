@@ -52,7 +52,11 @@ public:
 
     void offsetParams(Eigen::VectorXd const &delta) override;
 
-    void saveResultTuples(std::string const &tupleName) const override;
+    /// @copydoc FitterBase::saveChi2MeasContributions
+    void saveChi2MeasContributions(std::string const &baseName) const override;
+
+    /// @copydoc FitterBase::saveChi2RefContributions
+    void saveChi2RefContributions(std::string const &baseName) const override;
 
 private:
     bool _fittingModel, _fittingFluxes;
@@ -78,12 +82,6 @@ private:
                                          Eigen::VectorXd &grad) const override;
 
 #ifdef STORAGE
-    //! Produces a tuple containing residuals of measurement terms.
-    void makeMeasResTuple(std::string const &tupleName) const;
-
-    //! Produces a tuple containing residuals of reference terms.
-    void makeRefResTuple(std::string const &tupleName) const;
-
     Point transformFittedStar(FittedStar const &fittedStar, Gtransfo const *sky2TP,
                               Point const &refractionVector, double refractionCoeff, double mjd) const;
 #endif
