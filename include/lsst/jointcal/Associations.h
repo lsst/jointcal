@@ -93,11 +93,14 @@ public:
      * @param      fluxField      The field name in refCat to get the flux from.
      * @param      refFluxMap     fluxes per filter of corresponding refCat objects (can be empty)
      * @param      refFluxErrMap  flux errors per filter of corresponding refCat objects (can be empty)
+     * @param      rejectBadFluxes  Reject reference sources with flux=NaN or 0 and/or fluxErr=NaN or 0.
+     *                              Typically false for astrometry and true for photometry.
      */
     void collectRefStars(lsst::afw::table::SortedCatalogT<lsst::afw::table::SimpleRecord> &refCat,
                          afw::geom::Angle matchCut, std::string const &fluxField,
                          std::map<std::string, std::vector<double>> const &refFluxMap,
-                         std::map<std::string, std::vector<double>> const &refFluxErrMap);
+                         std::map<std::string, std::vector<double>> const &refFluxErrMap,
+                         bool rejectBadFluxes = false);
 
     //! Sends back the fitted stars coordinates on the sky FittedStarsList::inTangentPlaneCoordinates keeps
     //! track of that.

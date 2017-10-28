@@ -1,4 +1,5 @@
 // -*- C++ -*-
+#include <cmath>
 #include <iostream>
 #include <limits>
 #include <sstream>
@@ -141,7 +142,8 @@ void Associations::associateCatalogs(const double matchCutInArcSec, const bool u
 void Associations::collectRefStars(lsst::afw::table::SortedCatalogT<lsst::afw::table::SimpleRecord> &refCat,
                                    afw::geom::Angle matchCut, std::string const &fluxField,
                                    std::map<std::string, std::vector<double>> const &refFluxMap,
-                                   std::map<std::string, std::vector<double>> const &refFluxErrMap) {
+                                   std::map<std::string, std::vector<double>> const &refFluxErrMap,
+                                   bool rejectBadFluxes) {
     if (refCat.size() == 0) {
         throw(LSST_EXCEPT(pex::exceptions::InvalidParameterError,
                           " reference catalog is empty : stop here "));
@@ -196,6 +198,10 @@ void Associations::collectRefStars(lsst::afw::table::SortedCatalogT<lsst::afw::t
         star->vy = std::pow(0.1 / 3600, 2);
         star->vxy = 0.;
 
+        // Reject sources with non-finite fluxes and flux errors, and fluxErr=0 (which gives chi2=inf).
+        if (rejectBadFluxes &&
+            (!std::isfinite(defaultFlux) || !std::isfinite(defaultFluxErr) || defaultFluxErr == 0))
+            continue;
         refStarList.push_back(star);
     }
 

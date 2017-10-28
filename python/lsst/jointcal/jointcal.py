@@ -371,7 +371,8 @@ class JointcalTask(pipeBase.CmdLineTask):
                                                       fit_function=self._fit_photometry,
                                                       profile_jointcal=profile_jointcal,
                                                       tract=tract,
-                                                      filters=filters)
+                                                      filters=filters,
+                                                      reject_bad_fluxes=True)
         else:
             photometry = Photometry(None, None)
 
@@ -386,7 +387,8 @@ class JointcalTask(pipeBase.CmdLineTask):
 
     def _do_load_refcat_and_fit(self, associations, defaultFilter, center, radius,
                                 name="", refObjLoader=None, filters=[], fit_function=None,
-                                tract=None, profile_jointcal=False, match_cut=3.0):
+                                tract=None, profile_jointcal=False, match_cut=3.0,
+                                reject_bad_fluxes=False):
         """Load reference catalog, perform the fit, and return the result.
 
         Parameters
@@ -414,6 +416,8 @@ class JointcalTask(pipeBase.CmdLineTask):
         match_cut : float, optional
             Radius in arcseconds to find cross-catalog matches to during
             associations.associateCatalogs.
+        reject_bad_fluxes : bool, optional
+            Reject refCat sources with NaN/inf flux or NaN/0 fluxErr.
 
         Returns
         -------
@@ -445,7 +449,7 @@ class JointcalTask(pipeBase.CmdLineTask):
             refFluxErrs[filt] = refCat.get(filtKeys[1])
 
         associations.collectRefStars(refCat, self.config.matchCut*afwGeom.arcseconds,
-                                     skyCircle.fluxField, refFluxes, refFluxErrs)
+                                     skyCircle.fluxField, refFluxes, refFluxErrs, reject_bad_fluxes)
         self.metrics['collected%sRefStars' % name] = associations.refStarListSize()
 
         associations.selectFittedStars(self.config.minMeasurements)
