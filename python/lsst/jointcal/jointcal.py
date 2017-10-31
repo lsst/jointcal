@@ -274,9 +274,9 @@ class JointcalTask(pipeBase.CmdLineTask):
         goodSrc = self.sourceSelector.selectSources(src)
 
         if len(goodSrc.sourceCat) == 0:
-            self.log.warn("No stars selected in visit %s ccd %s", visit, ccdname)
+            self.log.warn("No sources selected in visit %s ccd %s", visit, ccdname)
         else:
-            self.log.info("%d stars selected in visit %d ccd %d", len(goodSrc.sourceCat), visit, ccdname)
+            self.log.info("%d sources selected in visit %d ccd %d", len(goodSrc.sourceCat), visit, ccdname)
         associations.addImage(goodSrc.sourceCat, tanWcs, visitInfo, bbox, filterName, photoCalib, detector,
                               visit, ccdname, jointcalControl)
 
