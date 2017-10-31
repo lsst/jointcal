@@ -399,7 +399,8 @@ void AstrometryFit::accumulateStatRefStars(Chi2Accumulator &accum) const {
         double wxx = rsProj.vy / det;
         double wyy = rsProj.vx / det;
         double wxy = -rsProj.vxy / det;
-        accum.addEntry(wxx * std::pow(rx, 2) + 2 * wxy * rx * ry + wyy * std::pow(ry, 2), 2, fs);
+        double chi2 = wxx * std::pow(rx, 2) + 2 * wxy * rx * ry + wyy * std::pow(ry, 2);
+        accum.addEntry(chi2, 2, fs);
     }
 }
 
