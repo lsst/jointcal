@@ -262,7 +262,7 @@ class JointcalTask(pipeBase.CmdLineTask):
 
         visitInfo = dataRef.get('calexp_visitInfo')
         detector = dataRef.get('calexp_detector')
-        ccdname = detector.getId()
+        ccdId = detector.getId()
         calib = dataRef.get('calexp_calib')
         tanWcs = dataRef.get('calexp_wcs')
         bbox = dataRef.get('calexp_bbox')
@@ -274,15 +274,15 @@ class JointcalTask(pipeBase.CmdLineTask):
         goodSrc = self.sourceSelector.selectSources(src)
 
         if len(goodSrc.sourceCat) == 0:
-            self.log.warn("No sources selected in visit %s ccd %s", visit, ccdname)
+            self.log.warn("No sources selected in visit %s ccd %s", visit, ccdId)
         else:
-            self.log.info("%d sources selected in visit %d ccd %d", len(goodSrc.sourceCat), visit, ccdname)
+            self.log.info("%d sources selected in visit %d ccd %d", len(goodSrc.sourceCat), visit, ccdId)
         associations.addImage(goodSrc.sourceCat, tanWcs, visitInfo, bbox, filterName, photoCalib, detector,
-                              visit, ccdname, jointcalControl)
+                              visit, ccdId, jointcalControl)
 
         Result = collections.namedtuple('Result_from_build_CcdImage', ('wcs', 'key', 'filter'))
         Key = collections.namedtuple('Key', ('visit', 'ccd'))
-        return Result(tanWcs, Key(visit, ccdname), filterName)
+        return Result(tanWcs, Key(visit, ccdId), filterName)
 
     @pipeBase.timeMethod
     def run(self, dataRefs, profile_jointcal=False):
