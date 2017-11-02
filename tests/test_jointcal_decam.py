@@ -67,9 +67,9 @@ class JointcalTestDECAM(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Test
         pa1 = 0.14
         # NOTE: decam fits are currently not converging; the chi2 jumps around, so skip that Metric.
         metrics = {'collectedAstrometryRefStars': 8194,
-                   'collectedPhotometryRefStars': 8194,
+                   'collectedPhotometryRefStars': 8190,
                    'selectedAstrometryRefStars': 8194,
-                   'selectedPhotometryRefStars': 8194,
+                   'selectedPhotometryRefStars': 8190,
                    'associatedAstrometryFittedStars': 8241,
                    'associatedPhotometryFittedStars': 8241,
                    'selectedAstrometryFittedStars': 2261,

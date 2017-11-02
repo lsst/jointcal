@@ -96,12 +96,18 @@ public:
     /**
      * Save the full chi2 term per star that was used in the minimization, for debugging.
      *
-     * Saves results to text files "tupleName-meas" and "tupleName-ref" for the
-     * MeasuredStar and RefStar tuples, respectively.
+     * Saves results to text files "baseName-meas.csv" and "baseName-ref.csv" for the
+     * MeasuredStar and RefStar contributions, respectively.
      * This method is mostly useful for debugging: we will probably want to create a better persistence
-     * system for jointcal's internal representations in the future.
+     * system for jointcal's internal representations in the future (see DM-12446).
      */
-    virtual void saveResultTuples(std::string const &tupleName) const = 0;
+    virtual void saveChi2Contributions(std::string const &baseName) const;
+
+    /// Save a CSV file containing residuals of measurement terms.
+    virtual void saveChi2MeasContributions(std::string const &baseName) const = 0;
+
+    /// Save a CSV file containing residuals of reference terms.
+    virtual void saveChi2RefContributions(std::string const &baseName) const = 0;
 
 protected:
     std::shared_ptr<Associations> _associations;

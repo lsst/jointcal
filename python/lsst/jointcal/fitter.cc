@@ -42,7 +42,7 @@ void declareFitterBase(py::module &mod) {
 
     cls.def("minimize", &FitterBase::minimize, "whatToFit"_a, "nSigRejCut"_a = 0);
     cls.def("computeChi2", &FitterBase::computeChi2);
-    cls.def("saveResultTuples", &FitterBase::saveResultTuples);
+    cls.def("saveChi2Contributions", &FitterBase::saveChi2Contributions);
 }
 
 void declareAstrometryFit(py::module &mod) {

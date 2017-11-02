@@ -220,5 +220,19 @@ void FitterBase::leastSquareDerivatives(TripletList &tripletList, Eigen::VectorX
     leastSquareDerivativesReference(_associations->fittedStarList, tripletList, grad);
 }
 
+void FitterBase::saveChi2Contributions(std::string const &baseName) const {
+    /* cook-up 2 different file names by inserting something just before
+   the dot (if any), and within the actual file name. */
+    size_t dot = baseName.rfind('.');
+    size_t slash = baseName.rfind('/');
+    if (dot == std::string::npos || (slash != std::string::npos && dot < slash)) dot = baseName.size();
+    std::string measTuple(baseName);
+    measTuple.insert(dot, "-meas");
+    saveChi2MeasContributions(measTuple);
+    std::string refTuple(baseName);
+    refTuple.insert(dot, "-ref");
+    saveChi2RefContributions(refTuple);
+}
+
 }  // namespace jointcal
 }  // namespace lsst

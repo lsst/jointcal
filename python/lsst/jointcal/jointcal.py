@@ -5,6 +5,7 @@ from builtins import str
 from builtins import range
 
 import collections
+import numpy as np
 
 import lsst.utils
 import lsst.pex.config as pexConfig
@@ -165,6 +166,11 @@ class JointcalConfig(pexConfig.Config):
         doc="How to select sources for cross-matching",
         default="astrometry"
     )
+    writeChi2ContributionFiles = pexConfig.Field(
+        dtype=bool,
+        doc="Write initial/final fit files containing the contributions to chi2.",
+        default=False
+    )
 
     def setDefaults(self):
         sourceSelector = self.sourceSelector["astrometry"]
@@ -268,9 +274,9 @@ class JointcalTask(pipeBase.CmdLineTask):
         goodSrc = self.sourceSelector.selectSources(src)
 
         if len(goodSrc.sourceCat) == 0:
-            self.log.warn("No stars selected in visit %s ccd %s", visit, ccdname)
+            self.log.warn("No sources selected in visit %s ccd %s", visit, ccdname)
         else:
-            self.log.info("%d stars selected in visit %d ccd %d", len(goodSrc.sourceCat), visit, ccdname)
+            self.log.info("%d sources selected in visit %d ccd %d", len(goodSrc.sourceCat), visit, ccdname)
         associations.addImage(goodSrc.sourceCat, tanWcs, visitInfo, bbox, filterName, photoCalib, detector,
                               visit, ccdname, jointcalControl)
 
@@ -365,7 +371,8 @@ class JointcalTask(pipeBase.CmdLineTask):
                                                       fit_function=self._fit_photometry,
                                                       profile_jointcal=profile_jointcal,
                                                       tract=tract,
-                                                      filters=filters)
+                                                      filters=filters,
+                                                      reject_bad_fluxes=True)
         else:
             photometry = Photometry(None, None)
 
@@ -380,7 +387,8 @@ class JointcalTask(pipeBase.CmdLineTask):
 
     def _do_load_refcat_and_fit(self, associations, defaultFilter, center, radius,
                                 name="", refObjLoader=None, filters=[], fit_function=None,
-                                tract=None, profile_jointcal=False, match_cut=3.0):
+                                tract=None, profile_jointcal=False, match_cut=3.0,
+                                reject_bad_fluxes=False):
         """Load reference catalog, perform the fit, and return the result.
 
         Parameters
@@ -408,6 +416,8 @@ class JointcalTask(pipeBase.CmdLineTask):
         match_cut : float, optional
             Radius in arcseconds to find cross-catalog matches to during
             associations.associateCatalogs.
+        reject_bad_fluxes : bool, optional
+            Reject refCat sources with NaN/inf flux or NaN/0 fluxErr.
 
         Returns
         -------
@@ -439,7 +449,7 @@ class JointcalTask(pipeBase.CmdLineTask):
             refFluxErrs[filt] = refCat.get(filtKeys[1])
 
         associations.collectRefStars(refCat, self.config.matchCut*afwGeom.arcseconds,
-                                     skyCircle.fluxField, refFluxes, refFluxErrs)
+                                     skyCircle.fluxField, refFluxes, refFluxErrs, reject_bad_fluxes)
         self.metrics['collected%sRefStars' % name] = associations.refStarListSize()
 
         associations.selectFittedStars(self.config.minMeasurements)
@@ -449,12 +459,14 @@ class JointcalTask(pipeBase.CmdLineTask):
         self.metrics['selected%sCcdImageList' % name] = associations.nCcdImagesValidForFit()
 
         load_cat_prof_file = 'jointcal_fit_%s.prof'%name if profile_jointcal else ''
+        dataName = "{}_{}".format(tract, defaultFilter)
         with pipeBase.cmdLineTask.profile(load_cat_prof_file):
-            result = fit_function(associations)
-        # TODO: this should probably be made optional and turned into a "butler save" somehow.
-        # Save reference and measurement n-tuples for each tract
-        tupleName = "{}_res_{}.list".format(name, tract)
-        result.fit.saveResultTuples(tupleName)
+            result = fit_function(associations, dataName)
+        # TODO DM-12446: turn this into a "butler save" somehow.
+        # Save reference and measurement chi2 contributions for this data
+        if self.config.writeChi2ContributionFiles:
+            baseName = "{}_final_chi2-{}.csv".format(name, dataName)
+            result.fit.saveChi2Contributions(baseName)
 
         return result
 
@@ -467,7 +479,7 @@ class JointcalTask(pipeBase.CmdLineTask):
         if associations.refStarListSize() == 0:
             raise RuntimeError('No stars in the {} reference star list!'.format(name))
 
-    def _fit_photometry(self, associations):
+    def _fit_photometry(self, associations, dataName=None):
         """
         Fit the photometric data.
 
@@ -475,6 +487,9 @@ class JointcalTask(pipeBase.CmdLineTask):
         ----------
         associations : lsst.jointcal.Associations
             The star/reference star associations to fit.
+        dataName : str
+            Name of the data being processed (e.g. "1234_HSC-Y"), for
+            identifying debugging files.
 
         Returns
         -------
@@ -496,6 +511,14 @@ class JointcalTask(pipeBase.CmdLineTask):
 
         fit = lsst.jointcal.PhotometryFit(associations, model)
         chi2 = fit.computeChi2()
+        # TODO DM-12446: turn this into a "butler save" somehow.
+        # Save reference and measurement chi2 contributions for this data
+        if self.config.writeChi2ContributionFiles:
+            baseName = "Photometry_initial_chi2-{}.csv".format(dataName)
+            fit.saveChi2Contributions(baseName)
+
+        if not np.isfinite(chi2.chi2):
+            raise FloatingPointError('Initial chi2 is invalid: %s'%chi2)
         self.log.info("Initialized: %s", str(chi2))
         fit.minimize("Model")
         chi2 = fit.computeChi2()
@@ -505,6 +528,8 @@ class JointcalTask(pipeBase.CmdLineTask):
         self.log.info(str(chi2))
         fit.minimize("Model Fluxes")
         chi2 = fit.computeChi2()
+        if not np.isfinite(chi2.chi2):
+            raise FloatingPointError('Pre-iteration chi2 is invalid: %s'%chi2)
         self.log.info("Fit prepared with %s", str(chi2))
 
         chi2 = self._iterate_fit(fit, model, 20, "photometry", "Model Fluxes")
@@ -513,7 +538,7 @@ class JointcalTask(pipeBase.CmdLineTask):
         self.metrics['photometryFinalNdof'] = chi2.ndof
         return Photometry(fit, model)
 
-    def _fit_astrometry(self, associations):
+    def _fit_astrometry(self, associations, dataName=None):
         """
         Fit the astrometric data.
 
@@ -521,6 +546,9 @@ class JointcalTask(pipeBase.CmdLineTask):
         ----------
         associations : lsst.jointcal.Associations
             The star/reference star associations to fit.
+        dataName : str
+            Name of the data being processed (e.g. "1234_HSC-Y"), for
+            identifying debugging files.
 
         Returns
         -------
@@ -552,6 +580,14 @@ class JointcalTask(pipeBase.CmdLineTask):
 
         fit = lsst.jointcal.AstrometryFit(associations, model, self.config.posError)
         chi2 = fit.computeChi2()
+        # TODO DM-12446: turn this into a "butler save" somehow.
+        # Save reference and measurement chi2 contributions for this data
+        if self.config.writeChi2ContributionFiles:
+            baseName = "Astrometry_initial_chi2-{}.csv".format(dataName)
+            fit.saveChi2Contributions(baseName)
+
+        if not np.isfinite(chi2.chi2):
+            raise FloatingPointError('Initial chi2 is invalid: %s'%chi2)
         self.log.info("Initialized: %s", str(chi2))
         fit.minimize("Distortions")
         chi2 = fit.computeChi2()
@@ -562,6 +598,9 @@ class JointcalTask(pipeBase.CmdLineTask):
         fit.minimize("Distortions Positions")
         chi2 = fit.computeChi2()
         self.log.info(str(chi2))
+        if not np.isfinite(chi2.chi2):
+            raise FloatingPointError('Pre-iteration chi2 is invalid: %s'%chi2)
+        self.log.info("Fit prepared with %s", str(chi2))
 
         chi2 = self._iterate_fit(fit, model, 20, "astrometry", "Distortions Positions")
 
@@ -576,6 +615,8 @@ class JointcalTask(pipeBase.CmdLineTask):
         for i in range(max_steps):
             r = fit.minimize(whatToFit, 5)  # outlier removal at 5 sigma.
             chi2 = fit.computeChi2()
+            if not np.isfinite(chi2.chi2):
+                raise FloatingPointError('Fit iteration chi2 is invalid: %s'%chi2)
             self.log.info(str(chi2))
             if r == MinimizeResult.Converged:
                 self.log.debug("fit has converged - no more outliers - redo minimixation"

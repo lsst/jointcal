@@ -117,9 +117,14 @@ CcdImage::CcdImage(afw::table::SourceCatalog &catalog, std::shared_ptr<lsst::afw
         double cosz = 1. / _airMass;
         double sinz = sqrt(1 - cosz * cosz);  // astronomers usually observe above the horizon
         _tgz = sinz / cosz;
-        _sineta = cos(latitude) * sin(_hourAngle) / sinz;
-        _coseta = sqrt(1 - _sineta * _sineta);
-        if (_boresightRaDec.getDec() > latitude) _coseta = -_coseta;
+        // TODO: as part of DM-12473, we can remove all of this and just call _visitInfo.getParallacticAngle()
+        double dec = _boresightRaDec.getLatitude();
+        // x/y components of refraction angle, eta.]
+        double yEta = sin(_hourAngle);
+        double xEta = cos(dec) * tan(latitude) - sin(dec) * cos(_hourAngle);
+        double eta = atan2(yEta, xEta);
+        _sineta = sin(eta);
+        _coseta = cos(eta);
     }
 }
 

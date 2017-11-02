@@ -399,7 +399,8 @@ void AstrometryFit::accumulateStatRefStars(Chi2Accumulator &accum) const {
         double wxx = rsProj.vy / det;
         double wyy = rsProj.vx / det;
         double wxy = -rsProj.vxy / det;
-        accum.addEntry(wxx * std::pow(rx, 2) + 2 * wxy * rx * ry + wyy * std::pow(ry, 2), 2, fs);
+        double chi2 = wxx * std::pow(rx, 2) + 2 * wxy * rx * ry + wyy * std::pow(ry, 2);
+        accum.addEntry(chi2, 2, fs);
     }
 }
 
@@ -548,58 +549,36 @@ void AstrometryFit::checkStuff() {
     }
 }
 
-void AstrometryFit::saveResultTuples(std::string const &tupleName) const {
-    /* cook-up 2 different file names by inserting something just before
-       the dot (if any), and within the actual file name. */
-    size_t dot = tupleName.rfind('.');
-    size_t slash = tupleName.rfind('/');
-    if (dot == std::string::npos || (slash != std::string::npos && dot < slash)) dot = tupleName.size();
-    std::string meas_tuple(tupleName);
-    meas_tuple.insert(dot, "-meas");
-    makeMeasResTuple(meas_tuple);
-    std::string ref_tuple(tupleName);
-    ref_tuple.insert(dot, "-ref");
-    makeRefResTuple(ref_tuple);
-}
-
-void AstrometryFit::makeMeasResTuple(std::string const &tupleName) const {
-    std::ofstream tuple(tupleName.c_str());
-    tuple << "#xccd: coordinate in CCD" << std::endl
-          << "#yccd: " << std::endl
-          << "#rx:   residual in degrees in TP" << std::endl
-          << "#ry:" << std::endl
-          << "#xtp: transformed coordinate in TP " << std::endl
-          << "#ytp:" << std::endl
-          << "#mag: rough mag" << std::endl
-          << "#jd: Julian date of the measurement" << std::endl
-          << "#rvx: transformed measurement uncertainty " << std::endl
-          << "#rvy:" << std::endl
-          << "#rvxy:" << std::endl
-          << "#color : " << std::endl
-          << "#fsindex: some unique index of the object" << std::endl
-          << "#ra: pos of fitted star" << std::endl
-          << "#dec: pos of fitted star" << std::endl
-          << "#chi2: contribution to Chi2 (2D dofs)" << std::endl
-          << "#nm: number of measurements of this FittedStar" << std::endl
-          << "#chip: chip number" << std::endl
-          << "#visit: visit id" << std::endl
-          << "#end" << std::endl;
-    const CcdImageList &L = _associations->getCcdImageList();
-    for (auto const &i : L) {
-        const CcdImage &im = *i;
-        const MeasuredStarList &cat = im.getCatalogForFit();
-        const Mapping *mapping = _astrometryModel->getMapping(im);
-        const Point &refractionVector = im.getRefractionVector();
-        double mjd = im.getMjd() - _JDRef;
-        for (auto const &is : cat) {
-            const MeasuredStar &ms = *is;
-            if (!ms.isValid()) continue;
+void AstrometryFit::saveChi2MeasContributions(std::string const &baseName) const {
+    std::ofstream ofile(baseName.c_str());
+    std::string separator = "\t";
+    ofile << "#xccd" << separator << "yccd " << separator << "rx" << separator << "ry" << separator << "xtp"
+          << separator << "ytp" << separator << "mag" << separator << "mjd" << separator << "rvx" << separator
+          << "rvy" << separator << "rvxy" << separator << "color" << separator << "fsindex" << separator
+          << "ra" << separator << "dec" << separator << "chi2" << separator << "nm" << separator << "chip"
+          << separator << "visit" << std::endl;
+    ofile << "#coordinates in CCD" << separator << separator << "residual in degrees in TP" << separator
+          << separator << "transformed coordinate in TP" << separator << separator << "rough mag" << separator
+          << "Modified Julian date of the measurement" << separator << "transformed measurement uncertainty"
+          << separator << separator << separator << "currently unused" << separator
+          << "unique index of the fittedStar" << separator << "on sky position of fittedStar" << separator
+          << separator << "contribution to Chi2 (2D dofs)" << separator
+          << "number of measurements of this fittedStar" << separator << "chip id" << separator << "visit id"
+          << std::endl;
+    const CcdImageList &ccdImageList = _associations->getCcdImageList();
+    for (auto const &ccdImage : ccdImageList) {
+        const MeasuredStarList &cat = ccdImage->getCatalogForFit();
+        const Mapping *mapping = _astrometryModel->getMapping(*ccdImage);
+        const Point &refractionVector = ccdImage->getRefractionVector();
+        double mjd = ccdImage->getMjd() - _JDRef;
+        for (auto const &ms : cat) {
+            if (!ms->isValid()) continue;
             FatPoint tpPos;
-            FatPoint inPos = ms;
-            tweakAstromMeasurementErrors(inPos, ms, _posError);
+            FatPoint inPos = *ms;
+            tweakAstromMeasurementErrors(inPos, *ms, _posError);
             mapping->transformPosAndErrors(inPos, tpPos);
-            const Gtransfo *sky2TP = _astrometryModel->getSky2TP(im);
-            auto fs = ms.getFittedStar();
+            const Gtransfo *sky2TP = _astrometryModel->getSky2TP(*ccdImage);
+            auto fs = ms->getFittedStar();
 
             Point fittedStarInTP =
                     transformFittedStar(*fs, sky2TP, refractionVector, _refractionCoefficient, mjd);
@@ -608,33 +587,30 @@ void AstrometryFit::makeMeasResTuple(std::string const &tupleName) const {
             double wxx = tpPos.vy / det;
             double wyy = tpPos.vx / det;
             double wxy = -tpPos.vxy / det;
-            //      double chi2 = rx*(wxx*rx+wxy*ry)+ry*(wxy*rx+wyy*ry);
             double chi2 = wxx * res.x * res.x + wyy * res.y * res.y + 2 * wxy * res.x * res.y;
-            tuple << std::setprecision(9);
-            tuple << ms.x << ' ' << ms.y << ' ' << res.x << ' ' << res.y << ' ' << tpPos.x << ' ' << tpPos.y
-                  << ' ' << fs->getMag() << ' ' << mjd << ' ' << tpPos.vx << ' ' << tpPos.vy << ' '
-                  << tpPos.vxy << ' ' << fs->color << ' ' << fs->getIndexInMatrix() << ' ' << fs->x << ' '
-                  << fs->y << ' ' << chi2 << ' ' << fs->getMeasurementCount() << ' ' << im.getCcdId() << ' '
-                  << im.getVisit() << std::endl;
+            ofile << std::setprecision(9);
+            ofile << ms->x << separator << ms->y << separator << res.x << separator << res.y << separator
+                  << tpPos.x << separator << tpPos.y << separator << fs->getMag() << separator << mjd
+                  << separator << tpPos.vx << separator << tpPos.vy << separator << tpPos.vxy << separator
+                  << fs->color << separator << fs->getIndexInMatrix() << separator << fs->x << separator
+                  << fs->y << separator << chi2 << separator << fs->getMeasurementCount() << separator
+                  << ccdImage->getCcdId() << separator << ccdImage->getVisit() << std::endl;
         }  // loop on measurements in image
     }      // loop on images
 }
 
-void AstrometryFit::makeRefResTuple(std::string const &tupleName) const {
-    std::ofstream tuple(tupleName.c_str());
-    tuple << "#ra: coordinates of FittedStar" << std::endl
-          << "#dec: " << std::endl
-          << "#rx:   residual in degrees in TP" << std::endl
-          << "#ry:" << std::endl
-          << "#mag: mag" << std::endl
-          << "#rvx: transformed measurement uncertainty " << std::endl
-          << "#rvy:" << std::endl
-          << "#rvxy:" << std::endl
-          << "#color : " << std::endl
-          << "#fsindex: some unique index of the object" << std::endl
-          << "#chi2: contribution to Chi2 (2D dofs)" << std::endl
-          << "#nm: number of measurements of this FittedStar" << std::endl
-          << "#end" << std::endl;
+void AstrometryFit::saveChi2RefContributions(std::string const &baseName) const {
+    std::ofstream ofile(baseName.c_str());
+    std::string separator = "\t";
+    ofile << "#ra" << separator << "dec " << separator << "rx" << separator << "ry" << separator << "mag"
+          << separator << "rvx" << separator << "rvy" << separator << "rvxy" << separator << "color"
+          << separator << "fsindex" << separator << "chi2" << separator << "nm" << std::endl;
+    ofile << "#coordinates of fittedStar" << separator << separator << "residual in degrees in TP"
+          << separator << separator << "magnitude" << separator
+          << "refStar transformed measurement uncertainty" << separator << separator << separator
+          << "currently unused" << separator << "unique index of the fittedStar" << separator
+          << "refStar contribution to Chi2 (2D dofs)" << separator
+          << "number of measurements of this FittedStar" << std::endl;
     // The following loop is heavily inspired from AstrometryFit::computeChi2()
     const FittedStarList &fittedStarList = _associations->fittedStarList;
     TanRaDec2Pix proj(GtransfoLin(), Point(0., 0.));
@@ -653,10 +629,11 @@ void AstrometryFit::makeRefResTuple(std::string const &tupleName) const {
         double wyy = rsProj.vx / det;
         double wxy = -rsProj.vxy / det;
         double chi2 = wxx * std::pow(rx, 2) + 2 * wxy * rx * ry + wyy * std::pow(ry, 2);
-        tuple << std::setprecision(9);
-        tuple << fs.x << ' ' << fs.y << ' ' << rx << ' ' << ry << ' ' << fs.getMag() << ' ' << rsProj.vx
-              << ' ' << rsProj.vy << ' ' << rsProj.vxy << ' ' << fs.color << ' ' << fs.getIndexInMatrix()
-              << ' ' << chi2 << ' ' << fs.getMeasurementCount() << std::endl;
+        ofile << std::setprecision(9);
+        ofile << fs.x << separator << fs.y << separator << rx << separator << ry << separator << fs.getMag()
+              << separator << rsProj.vx << separator << rsProj.vy << separator << rsProj.vxy << separator
+              << fs.color << separator << fs.getIndexInMatrix() << separator << chi2 << separator
+              << fs.getMeasurementCount() << std::endl;
     }  // loop on FittedStars
 }
 }  // namespace jointcal
