@@ -153,7 +153,7 @@ MinimizeResult FitterBase::minimize(std::string const &whatToFit, double nSigmaC
         offsetParams(delta);
         Chi2Statistic currentChi2(computeChi2());
         LOGLS_DEBUG(_log, currentChi2);
-        if (currentChi2.chi2 > oldChi2) {
+        if (currentChi2.chi2 > oldChi2 && totalOutliers != 0) {
             LOGL_WARN(_log, "chi2 went up, skipping outlier rejection loop");
             returnCode = MinimizeResult::Chi2Increased;
             break;
