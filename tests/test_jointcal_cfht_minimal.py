@@ -54,13 +54,13 @@ class JointcalTestCFHTMinimal(jointcalTestBase.JointcalTestBase, lsst.utils.test
 
         # NOTE: ndof==1 from 4 fit parameters (2 model, 2 fittedStar), and
         # 5 degrees-of-freedom (3 star measurements, with 2 reference stars).
-        metrics = {'collectedPhotometryRefStars': 183,
-                   'selectedPhotometryRefStars': 183,
-                   'associatedPhotometryFittedStars': 2,
-                   'selectedPhotometryFittedStars': 2,
-                   'selectedPhotometryCcdImageList': 2,
-                   'photometryFinalChi2': 2.336915,
-                   'photometryFinalNdof': 1
+        metrics = {'collected_photometry_refStars': 183,
+                   'selected_photometry_refStars': 183,
+                   'associated_photometry_fittedStars': 2,
+                   'selected_photometry_fittedStars': 2,
+                   'selected_photometry_ccdImages': 2,
+                   'photometry_final_chi2': 2.336915,
+                   'photometry_final_ndof': 1
                    }
 
         # the calling method is one step back on the stack: use it to specify the output repo.

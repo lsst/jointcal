@@ -185,8 +185,8 @@ class JointcalTestBase(object):
         result = jointcal.JointcalTask.parseAndRun(args=args, doReturnResults=True, config=self.config)
         self.assertNotEqual(result.resultList, [], 'resultList should not be empty')
         self.assertEqual(result.resultList[0].exitStatus, 0)
-
-        self._test_metrics(result.resultList[0].result.metrics, metrics)
+        job = result.resultList[0].result.job
+        self._test_metrics(job.measurements, metrics)
 
         return result
 
@@ -220,8 +220,9 @@ class JointcalTestBase(object):
             Expected metric dictionary; set a value to None to not test it.
         """
         for key in result:
-            if expect[key] is not None:
-                if type(result[key]) == float:
-                    self.assertFloatsAlmostEqual(result[key], expect[key], msg=key, rtol=1e-5)
+            if expect[key.metric] is not None:
+                value = result[key].quantity.value
+                if type(value) == float:
+                    self.assertFloatsAlmostEqual(value, expect[key.metric], msg=key.metric, rtol=1e-5)
                 else:
-                    self.assertEqual(result[key], expect[key], msg=key)
+                    self.assertEqual(value, expect[key.metric], msg=key.metric)
