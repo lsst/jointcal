@@ -200,7 +200,7 @@ std::shared_ptr<TanSipPix2RaDec> ConstrainedPolyModel::produceSipWcs(CcdImage co
     } catch (std::bad_cast &) {
         try {
             const GtransfoPoly &t2_poly = dynamic_cast<const GtransfoPoly &>(mapping->getTransfo2());
-            pix2Tp = t1 * t2_poly;
+            pix2Tp = t2_poly * t1;
         } catch (std::bad_cast &) {
             LOGLS_ERROR(_log, "Problem with transform 2 of ccd/visit " << ccdImage.getCcdId() << "/"
                                                                        << ccdImage.getVisit() << ": T2 "
