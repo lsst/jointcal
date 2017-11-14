@@ -88,7 +88,8 @@ class JointcalRunner(pipeBase.ButlerInitializedTaskRunner):
             else:
                 exitStatus = 1
                 eName = type(e).__name__
-                task.log.fatal("Failed on dataIds=%s: %s: %s", dataRefList, eName, e)
+                tract = dataRefList[0].dataId['tract']
+                task.log.fatal("Failed processing tract %s, %s: %s", tract, eName, e)
 
         if self.doReturnResults:
             return pipeBase.Struct(result=result, exitStatus=exitStatus)
@@ -638,14 +639,12 @@ class JointcalTask(pipeBase.CmdLineTask):
                 chi2 = fit.computeChi2()
                 self.log.info("Fit completed with: %s", str(chi2))
                 break
-            elif r == MinimizeResult.Failed:
-                self.log.warn("minimization failed")
-                break
             elif r == MinimizeResult.Chi2Increased:
                 self.log.warn("still some ouliers but chi2 increases - retry")
+            elif r == MinimizeResult.Failed:
+                raise RuntimeError("Chi2 minimization failure, cannot complete fit.")
             else:
-                self.log.error("unxepected return code from minimize")
-                break
+                raise RuntimeError("Unxepected return code from minimize().")
         else:
             self.log.error("%s failed to converge after %d steps"%(name, max_steps))
 
