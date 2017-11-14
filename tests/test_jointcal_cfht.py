@@ -105,18 +105,19 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
         # NOTE: The relative RMS limit was empirically determined from the
         # first run of jointcal on this data. We should always do better than
         # this in the future!
-        dist_rms_relative = 12e-3*u.arcsecond
+        dist_rms_relative = 16e-3*u.arcsecond
+        dist_rms_absolute = 54e-3*u.arcsecond
         pa1 = None
         metrics = {'collectedAstrometryRefStars': 825,
                    'selectedAstrometryRefStars': 825,
                    'associatedAstrometryFittedStars': 2269,
                    'selectedAstrometryFittedStars': 1239,
                    'selectedAstrometryCcdImageList': 12,
-                   'astrometryFinalChi2': 1241.6,
-                   'astrometryFinalNdof': 2640,
+                   'astrometryFinalChi2': 1376.24,
+                   'astrometryFinalNdof': 2630,
                    }
 
-        self._testJointcalTask(2, dist_rms_relative, self.dist_rms_absolute, pa1, metrics=metrics)
+        self._testJointcalTask(2, dist_rms_relative, dist_rms_absolute, pa1, metrics=metrics)
 
     def test_jointcalTask_2_visits_constrainedPhotometry_no_astrometry(self):
         self.config = lsst.jointcal.jointcal.JointcalConfig()
