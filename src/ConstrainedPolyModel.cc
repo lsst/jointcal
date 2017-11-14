@@ -25,20 +25,14 @@ routines AstrometryFit needs to what is needed for this two-transfo model.
 The two-transfo mappings are implemented using two one-transfo
 mappings.*/
 
-// TODO : separate the polynomial degrees for chip and visit transfos.
-// TODO propagate those into python:
-static int DistortionDegree = 3;
-
 using namespace std;
 
 ConstrainedPolyModel::ConstrainedPolyModel(CcdImageList const &ccdImageList,
                                            ProjectionHandler const *projectionHandler, bool initFromWCS,
-                                           unsigned nNotFit)
+                                           unsigned nNotFit, int chipDegree, int visitDegree)
         : _sky2TP(projectionHandler)
 
 {
-    // from datacards (or default)
-    unsigned degree = DistortionDegree;
     // first loop to initialize all visit  and chip transfos.
     for (auto &ccdImage : ccdImageList) {
         const CcdImage &im = *ccdImage;
@@ -51,7 +45,7 @@ ConstrainedPolyModel::ConstrainedPolyModel(CcdImageList const &ccdImageList,
                         std::unique_ptr<SimpleGtransfoMapping>(new SimpleGtransfoMapping(GtransfoIdentity()));
             } else {
                 _visitMap[visit] = std::unique_ptr<SimpleGtransfoMapping>(
-                        new SimplePolyMapping(GtransfoLin(), GtransfoPoly(degree)));
+                        new SimplePolyMapping(GtransfoLin(), GtransfoPoly(visitDegree)));
             }
         }
         auto chipp = _chipMap.find(chip);
@@ -59,7 +53,7 @@ ConstrainedPolyModel::ConstrainedPolyModel(CcdImageList const &ccdImageList,
             const Frame &frame = im.getImageFrame();
 
             _tpFrame += applyTransfo(frame, *im.getPix2CommonTangentPlane(), LargeFrame);
-            GtransfoPoly pol(im.getPix2TangentPlane(), frame, degree);
+            GtransfoPoly pol(im.getPix2TangentPlane(), frame, chipDegree);
             GtransfoLin shiftAndNormalize = normalizeCoordinatesTransfo(frame);
 
             _chipMap[chip] = std::unique_ptr<SimplePolyMapping>(
@@ -77,7 +71,7 @@ ConstrainedPolyModel::ConstrainedPolyModel(CcdImageList const &ccdImageList,
             LOGLS_WARN(_log, "Chip " << chip << " is missing in the reference exposure, expect troubles.");
             GtransfoLin norm = normalizeCoordinatesTransfo(im.getImageFrame());
             _chipMap[chip] =
-                    std::unique_ptr<SimplePolyMapping>(new SimplePolyMapping(norm, GtransfoPoly(degree)));
+                    std::unique_ptr<SimplePolyMapping>(new SimplePolyMapping(norm, GtransfoPoly(chipDegree)));
         }
         _mappings[&im] = std::unique_ptr<TwoTransfoMapping>(
                 new TwoTransfoMapping(_chipMap[chip].get(), _visitMap[visit].get()));

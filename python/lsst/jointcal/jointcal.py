@@ -130,8 +130,18 @@ class JointcalConfig(pexConfig.Config):
         dtype=int,
         default=2,
     )
-    polyOrder = pexConfig.Field(
-        doc="Polynomial order for fitting distorsion",
+    astrometrySimpleDegree = pexConfig.Field(
+        doc="Polynomial degree for fitting the simple astrometry model.",
+        dtype=int,
+        default=3,
+    )
+    astrometryChipDegree = pexConfig.Field(
+        doc="Degree of the per-chip transform for the constrained astrometry model.",
+        dtype=int,
+        default=2,
+    )
+    astrometryVisitDegree = pexConfig.Field(
+        doc="Degree of the per-visit transform for the constrained astrometry model.",
         dtype=int,
         default=3,
     )
@@ -572,11 +582,13 @@ class JointcalTask(pipeBase.CmdLineTask):
 
         if self.config.astrometryModel == "constrainedPoly":
             model = lsst.jointcal.ConstrainedPolyModel(associations.getCcdImageList(),
-                                                       sky_to_tan_projection, True, 0)
+                                                       sky_to_tan_projection, True, 0,
+                                                       chipDegree=self.config.astrometryChipDegree,
+                                                       visitDegree=self.config.astrometryVisitDegree)
         elif self.config.astrometryModel == "simplePoly":
             model = lsst.jointcal.SimplePolyModel(associations.getCcdImageList(),
                                                   sky_to_tan_projection,
-                                                  True, 0, self.config.polyOrder)
+                                                  True, 0, self.config.astrometrySimpleDegree)
 
         fit = lsst.jointcal.AstrometryFit(associations, model, self.config.posError)
         chi2 = fit.computeChi2()
