@@ -372,6 +372,7 @@ class JointcalTask(pipeBase.CmdLineTask):
                                                       fit_function=self._fit_astrometry,
                                                       profile_jointcal=profile_jointcal,
                                                       tract=tract)
+            self._write_astrometry_results(associations, astrometry.model, visit_ccd_to_dataRef)
         else:
             astrometry = Astrometry(None, None, None)
 
@@ -384,12 +385,9 @@ class JointcalTask(pipeBase.CmdLineTask):
                                                       tract=tract,
                                                       filters=filters,
                                                       reject_bad_fluxes=True)
+            self._write_photometry_results(associations, photometry.model, visit_ccd_to_dataRef)
         else:
             photometry = Photometry(None, None)
-
-        load_cat_prof_file = 'jointcal_write_results.prof' if profile_jointcal else ''
-        with pipeBase.cmdLineTask.profile(load_cat_prof_file):
-            self._write_results(associations, astrometry.model, photometry.model, visit_ccd_to_dataRef)
 
         return pipeBase.Struct(dataRefs=dataRefs,
                                oldWcsList=oldWcsList,
@@ -650,18 +648,16 @@ class JointcalTask(pipeBase.CmdLineTask):
 
         return chi2
 
-    def _write_results(self, associations, astrometry_model, photometry_model, visit_ccd_to_dataRef):
+    def _write_astrometry_results(self, associations, model, visit_ccd_to_dataRef):
         """
-        Write the fitted results (photometric and astrometric) to a new 'wcs' dataRef.
+        Write the fitted astrometric results to a new 'wcs' dataRef.
 
         Parameters
         ----------
         associations : lsst.jointcal.Associations
             The star/reference star associations to fit.
-        astrometry_model : lsst.jointcal.AstrometryModel
+        model : lsst.jointcal.AstrometryModel
             The astrometric model that was fit.
-        photometry_model : lsst.jointcal.PhotometryModel
-            The photometric model that was fit.
         visit_ccd_to_dataRef : dict of Key: lsst.daf.persistence.ButlerDataRef
             dict of ccdImage identifiers to dataRefs that were fit
         """
@@ -673,21 +669,40 @@ class JointcalTask(pipeBase.CmdLineTask):
             visit = ccdImage.visit
             dataRef = visit_ccd_to_dataRef[(visit, ccd)]
             exp = afwImage.ExposureI(0, 0)
-            if self.config.doAstrometry:
-                self.log.info("Updating WCS for visit: %d, ccd: %d", visit, ccd)
-                tanSip = astrometry_model.produceSipWcs(ccdImage)
-                tanWcs = lsst.jointcal.gtransfoToTanWcs(tanSip, ccdImage.imageFrame, False)
-                exp.setWcs(tanWcs)
-                try:
-                    dataRef.put(exp, 'wcs')
-                except pexExceptions.Exception as e:
-                    self.log.fatal('Failed to write updated Wcs: %s', str(e))
-                    raise e
-            if self.config.doPhotometry:
-                self.log.info("Updating PhotoCalib for visit: %d, ccd: %d", visit, ccd)
-                photoCalib = photometry_model.toPhotoCalib(ccdImage)
-                try:
-                    dataRef.put(photoCalib, 'photoCalib')
-                except pexExceptions.Exception as e:
-                    self.log.fatal('Failed to write updated PhotoCalib: %s', str(e))
-                    raise e
+            self.log.info("Updating WCS for visit: %d, ccd: %d", visit, ccd)
+            tanSip = model.produceSipWcs(ccdImage)
+            tanWcs = lsst.jointcal.gtransfoToTanWcs(tanSip, ccdImage.imageFrame, False)
+            exp.setWcs(tanWcs)
+            try:
+                dataRef.put(exp, 'wcs')
+            except pexExceptions.Exception as e:
+                self.log.fatal('Failed to write updated Wcs: %s', str(e))
+                raise e
+
+    def _write_photometry_results(self, associations, model, visit_ccd_to_dataRef):
+        """
+        Write the fitted photometric results to a new 'photoCalib' dataRef.
+
+        Parameters
+        ----------
+        associations : lsst.jointcal.Associations
+            The star/reference star associations to fit.
+        model : lsst.jointcal.PhotometryModel
+            The photoometric model that was fit.
+        visit_ccd_to_dataRef : dict of Key: lsst.daf.persistence.ButlerDataRef
+            dict of ccdImage identifiers to dataRefs that were fit
+        """
+
+        ccdImageList = associations.getCcdImageList()
+        for ccdImage in ccdImageList:
+            # TODO: there must be a better way to identify this ccdImage than a visit,ccd pair?
+            ccd = ccdImage.ccdId
+            visit = ccdImage.visit
+            dataRef = visit_ccd_to_dataRef[(visit, ccd)]
+            self.log.info("Updating PhotoCalib for visit: %d, ccd: %d", visit, ccd)
+            photoCalib = model.toPhotoCalib(ccdImage)
+            try:
+                dataRef.put(photoCalib, 'photoCalib')
+            except pexExceptions.Exception as e:
+                self.log.fatal('Failed to write updated PhotoCalib: %s', str(e))
+                raise e
