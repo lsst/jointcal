@@ -54,7 +54,8 @@ public:
     /**
      * Get how this set of parameters (of length Npar()) map into the "grand" fit.
      *
-     * @param[out]    indices   The indices of the mapping associated with ccdImage.
+     * @param[in]  ccdImage  The ccdImage to look up.
+     * @param[out] indices   The indices of the mapping associated with ccdImage.
      */
     virtual void getMappingIndices(CcdImage const &ccdImage, std::vector<unsigned> &indices) const = 0;
 
