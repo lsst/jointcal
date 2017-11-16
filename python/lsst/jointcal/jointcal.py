@@ -88,7 +88,8 @@ class JointcalRunner(pipeBase.ButlerInitializedTaskRunner):
             else:
                 exitStatus = 1
                 eName = type(e).__name__
-                task.log.fatal("Failed on dataIds=%s: %s: %s", dataRefList, eName, e)
+                tract = dataRefList[0].dataId['tract']
+                task.log.fatal("Failed processing tract %s, %s: %s", tract, eName, e)
 
         if self.doReturnResults:
             return pipeBase.Struct(result=result, exitStatus=exitStatus)
@@ -130,8 +131,18 @@ class JointcalConfig(pexConfig.Config):
         dtype=int,
         default=2,
     )
-    polyOrder = pexConfig.Field(
-        doc="Polynomial order for fitting distorsion",
+    astrometrySimpleDegree = pexConfig.Field(
+        doc="Polynomial degree for fitting the simple astrometry model.",
+        dtype=int,
+        default=3,
+    )
+    astrometryChipDegree = pexConfig.Field(
+        doc="Degree of the per-chip transform for the constrained astrometry model.",
+        dtype=int,
+        default=2,
+    )
+    astrometryVisitDegree = pexConfig.Field(
+        doc="Degree of the per-visit transform for the constrained astrometry model.",
         dtype=int,
         default=3,
     )
@@ -262,7 +273,7 @@ class JointcalTask(pipeBase.CmdLineTask):
 
         visitInfo = dataRef.get('calexp_visitInfo')
         detector = dataRef.get('calexp_detector')
-        ccdname = detector.getId()
+        ccdId = detector.getId()
         calib = dataRef.get('calexp_calib')
         tanWcs = dataRef.get('calexp_wcs')
         bbox = dataRef.get('calexp_bbox')
@@ -274,15 +285,15 @@ class JointcalTask(pipeBase.CmdLineTask):
         goodSrc = self.sourceSelector.selectSources(src)
 
         if len(goodSrc.sourceCat) == 0:
-            self.log.warn("No sources selected in visit %s ccd %s", visit, ccdname)
+            self.log.warn("No sources selected in visit %s ccd %s", visit, ccdId)
         else:
-            self.log.info("%d sources selected in visit %d ccd %d", len(goodSrc.sourceCat), visit, ccdname)
+            self.log.info("%d sources selected in visit %d ccd %d", len(goodSrc.sourceCat), visit, ccdId)
         associations.addImage(goodSrc.sourceCat, tanWcs, visitInfo, bbox, filterName, photoCalib, detector,
-                              visit, ccdname, jointcalControl)
+                              visit, ccdId, jointcalControl)
 
         Result = collections.namedtuple('Result_from_build_CcdImage', ('wcs', 'key', 'filter'))
         Key = collections.namedtuple('Key', ('visit', 'ccd'))
-        return Result(tanWcs, Key(visit, ccdname), filterName)
+        return Result(tanWcs, Key(visit, ccdId), filterName)
 
     @pipeBase.timeMethod
     def run(self, dataRefs, profile_jointcal=False):
@@ -361,6 +372,7 @@ class JointcalTask(pipeBase.CmdLineTask):
                                                       fit_function=self._fit_astrometry,
                                                       profile_jointcal=profile_jointcal,
                                                       tract=tract)
+            self._write_astrometry_results(associations, astrometry.model, visit_ccd_to_dataRef)
         else:
             astrometry = Astrometry(None, None, None)
 
@@ -373,12 +385,9 @@ class JointcalTask(pipeBase.CmdLineTask):
                                                       tract=tract,
                                                       filters=filters,
                                                       reject_bad_fluxes=True)
+            self._write_photometry_results(associations, photometry.model, visit_ccd_to_dataRef)
         else:
             photometry = Photometry(None, None)
-
-        load_cat_prof_file = 'jointcal_write_results.prof' if profile_jointcal else ''
-        with pipeBase.cmdLineTask.profile(load_cat_prof_file):
-            self._write_results(associations, astrometry.model, photometry.model, visit_ccd_to_dataRef)
 
         return pipeBase.Struct(dataRefs=dataRefs,
                                oldWcsList=oldWcsList,
@@ -572,11 +581,13 @@ class JointcalTask(pipeBase.CmdLineTask):
 
         if self.config.astrometryModel == "constrainedPoly":
             model = lsst.jointcal.ConstrainedPolyModel(associations.getCcdImageList(),
-                                                       sky_to_tan_projection, True, 0)
+                                                       sky_to_tan_projection, True, 0,
+                                                       chipDegree=self.config.astrometryChipDegree,
+                                                       visitDegree=self.config.astrometryVisitDegree)
         elif self.config.astrometryModel == "simplePoly":
             model = lsst.jointcal.SimplePolyModel(associations.getCcdImageList(),
                                                   sky_to_tan_projection,
-                                                  True, 0, self.config.polyOrder)
+                                                  True, 0, self.config.astrometrySimpleDegree)
 
         fit = lsst.jointcal.AstrometryFit(associations, model, self.config.posError)
         chi2 = fit.computeChi2()
@@ -626,31 +637,27 @@ class JointcalTask(pipeBase.CmdLineTask):
                 chi2 = fit.computeChi2()
                 self.log.info("Fit completed with: %s", str(chi2))
                 break
-            elif r == MinimizeResult.Failed:
-                self.log.warn("minimization failed")
-                break
             elif r == MinimizeResult.Chi2Increased:
                 self.log.warn("still some ouliers but chi2 increases - retry")
+            elif r == MinimizeResult.Failed:
+                raise RuntimeError("Chi2 minimization failure, cannot complete fit.")
             else:
-                self.log.error("unxepected return code from minimize")
-                break
+                raise RuntimeError("Unxepected return code from minimize().")
         else:
             self.log.error("%s failed to converge after %d steps"%(name, max_steps))
 
         return chi2
 
-    def _write_results(self, associations, astrometry_model, photometry_model, visit_ccd_to_dataRef):
+    def _write_astrometry_results(self, associations, model, visit_ccd_to_dataRef):
         """
-        Write the fitted results (photometric and astrometric) to a new 'wcs' dataRef.
+        Write the fitted astrometric results to a new 'wcs' dataRef.
 
         Parameters
         ----------
         associations : lsst.jointcal.Associations
             The star/reference star associations to fit.
-        astrometry_model : lsst.jointcal.AstrometryModel
+        model : lsst.jointcal.AstrometryModel
             The astrometric model that was fit.
-        photometry_model : lsst.jointcal.PhotometryModel
-            The photometric model that was fit.
         visit_ccd_to_dataRef : dict of Key: lsst.daf.persistence.ButlerDataRef
             dict of ccdImage identifiers to dataRefs that were fit
         """
@@ -662,21 +669,40 @@ class JointcalTask(pipeBase.CmdLineTask):
             visit = ccdImage.visit
             dataRef = visit_ccd_to_dataRef[(visit, ccd)]
             exp = afwImage.ExposureI(0, 0)
-            if self.config.doAstrometry:
-                self.log.info("Updating WCS for visit: %d, ccd: %d", visit, ccd)
-                tanSip = astrometry_model.produceSipWcs(ccdImage)
-                tanWcs = lsst.jointcal.gtransfoToTanWcs(tanSip, ccdImage.imageFrame, False)
-                exp.setWcs(tanWcs)
-                try:
-                    dataRef.put(exp, 'wcs')
-                except pexExceptions.Exception as e:
-                    self.log.fatal('Failed to write updated Wcs: %s', str(e))
-                    raise e
-            if self.config.doPhotometry:
-                self.log.info("Updating PhotoCalib for visit: %d, ccd: %d", visit, ccd)
-                photoCalib = photometry_model.toPhotoCalib(ccdImage)
-                try:
-                    dataRef.put(photoCalib, 'photoCalib')
-                except pexExceptions.Exception as e:
-                    self.log.fatal('Failed to write updated PhotoCalib: %s', str(e))
-                    raise e
+            self.log.info("Updating WCS for visit: %d, ccd: %d", visit, ccd)
+            tanSip = model.produceSipWcs(ccdImage)
+            tanWcs = lsst.jointcal.gtransfoToTanWcs(tanSip, ccdImage.imageFrame, False)
+            exp.setWcs(tanWcs)
+            try:
+                dataRef.put(exp, 'wcs')
+            except pexExceptions.Exception as e:
+                self.log.fatal('Failed to write updated Wcs: %s', str(e))
+                raise e
+
+    def _write_photometry_results(self, associations, model, visit_ccd_to_dataRef):
+        """
+        Write the fitted photometric results to a new 'photoCalib' dataRef.
+
+        Parameters
+        ----------
+        associations : lsst.jointcal.Associations
+            The star/reference star associations to fit.
+        model : lsst.jointcal.PhotometryModel
+            The photoometric model that was fit.
+        visit_ccd_to_dataRef : dict of Key: lsst.daf.persistence.ButlerDataRef
+            dict of ccdImage identifiers to dataRefs that were fit
+        """
+
+        ccdImageList = associations.getCcdImageList()
+        for ccdImage in ccdImageList:
+            # TODO: there must be a better way to identify this ccdImage than a visit,ccd pair?
+            ccd = ccdImage.ccdId
+            visit = ccdImage.visit
+            dataRef = visit_ccd_to_dataRef[(visit, ccd)]
+            self.log.info("Updating PhotoCalib for visit: %d, ccd: %d", visit, ccd)
+            photoCalib = model.toPhotoCalib(ccdImage)
+            try:
+                dataRef.put(photoCalib, 'photoCalib')
+            except pexExceptions.Exception as e:
+                self.log.fatal('Failed to write updated PhotoCalib: %s', str(e))
+                raise e

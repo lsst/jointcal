@@ -55,8 +55,9 @@ void declareConstrainedPolyModel(py::module &mod) {
     py::class_<ConstrainedPolyModel, std::shared_ptr<ConstrainedPolyModel>, AstrometryModel> cls(
             mod, "ConstrainedPolyModel");
 
-    cls.def(py::init<CcdImageList const &, const ProjectionHandler *, bool, unsigned>(), "ccdImageList"_a,
-            "projectionHandler"_a, "initFromWcs"_a, "nNotFit"_a = 0);
+    cls.def(py::init<CcdImageList const &, const ProjectionHandler *, bool, unsigned, int, int>(),
+            "ccdImageList"_a, "projectionHandler"_a, "initFromWcs"_a, "nNotFit"_a = 0, "chipDegree"_a = 3,
+            "visitDegree"_a = 2);
 }
 
 PYBIND11_PLUGIN(astrometryModels) {

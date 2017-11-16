@@ -69,6 +69,7 @@ public:
      * @param[in]  bbox       The bounding box of the exposure
      * @param[in]  filter     The exposure's filter
      * @param[in]  photoCalib The exposure's photometric calibration
+     * @param[in]  detector   The exposure's detector
      * @param[in]  visit      The visit identifier
      * @param[in]  ccd        The ccd identifier
      * @param[in]  control    The JointcalControl object

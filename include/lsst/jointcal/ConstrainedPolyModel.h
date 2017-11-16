@@ -26,12 +26,12 @@ namespace jointcal {
  * transformation depending on the chip number (instrument model) and a
  * transformation per visit (anamorphism). The two-transformation Mapping
  * required for this model is TwoTransfoMapping. This modeling of distortions
- * is meant for set of images from a single mosaic imager.
+ * is meant for a set of images from a single mosaic imager.
  */
 class ConstrainedPolyModel : public AstrometryModel {
 public:
     ConstrainedPolyModel(CcdImageList const &ccdImageList, ProjectionHandler const *projectionHandler,
-                         bool initFromWCS, unsigned nNotFit = 0);
+                         bool initFromWCS, unsigned nNotFit = 0, int chipDegree = 3, int visitDegree = 2);
 
     /// No copy or move: there is only ever one instance of a given model (i.e. per ccd+visit)
     ConstrainedPolyModel(ConstrainedPolyModel const &) = delete;

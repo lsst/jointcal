@@ -98,7 +98,8 @@ class PerTractCcdDataIdContainer(CoaddDataIdContainer):
                 tract = dataId.pop("tract")
                 # making a DataRef for src fills out any missing keys and allows us to iterate
                 for ref in namespace.butler.subset("src", dataId=dataId):
-                    self._addDataRef(namespace, ref.dataId, tract)
+                    if ref.datasetExists():
+                        self._addDataRef(namespace, ref.dataId, tract)
 
         # Ensure all components of a visit are kept together by putting them all in the same set of tracts
         # NOTE: sorted() here is to keep py2 and py3 dataRefs in the same order.

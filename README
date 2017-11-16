@@ -1,7 +1,0 @@
-=================
-Joint Calibration
-=================
-
-This package performs joint astrometry and photometry across multiple visits of the same field, fitting models for the astrometric distortions and photometric calibrations of the CCDs and focal plane.
-
-It was derived from lsst_france/meas_simastrom
