@@ -155,6 +155,11 @@ class JointcalConfig(pexConfig.Config):
         dtype=int,
         default=3,
     )
+    useInputWcs = pexConfig.Field(
+        doc="Use the input calexp WCSs to initialize the astrometryModel.",
+        dtype=bool,
+        default=True,
+    )
     astrometryModel = pexConfig.ChoiceField(
         doc="Type of model to fit to astrometry",
         dtype=str,
@@ -595,13 +600,13 @@ class JointcalTask(pipeBase.CmdLineTask):
 
         if self.config.astrometryModel == "constrainedPoly":
             model = lsst.jointcal.ConstrainedPolyModel(associations.getCcdImageList(),
-                                                       sky_to_tan_projection, True, 0,
+                                                       sky_to_tan_projection, self.config.useInputWcs, 0,
                                                        chipDegree=self.config.astrometryChipDegree,
                                                        visitDegree=self.config.astrometryVisitDegree)
         elif self.config.astrometryModel == "simplePoly":
             model = lsst.jointcal.SimplePolyModel(associations.getCcdImageList(),
-                                                  sky_to_tan_projection,
-                                                  True, 0, self.config.astrometrySimpleDegree)
+                                                  sky_to_tan_projection, self.config.useInputWcs, 0,
+                                                  self.config.astrometrySimpleDegree)
 
         fit = lsst.jointcal.AstrometryFit(associations, model, self.config.posError)
         chi2 = fit.computeChi2()
