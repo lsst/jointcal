@@ -66,20 +66,20 @@ class JointcalTestDECAM(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Test
         relative_error = 32e-3*u.arcsecond
         pa1 = 0.14
         # NOTE: decam fits are currently not converging; the chi2 jumps around, so skip that Metric.
-        metrics = {'collectedAstrometryRefStars': 8194,
-                   'collectedPhotometryRefStars': 8190,
-                   'selectedAstrometryRefStars': 8194,
-                   'selectedPhotometryRefStars': 8190,
-                   'associatedAstrometryFittedStars': 8241,
-                   'associatedPhotometryFittedStars': 8241,
-                   'selectedAstrometryFittedStars': 2261,
-                   'selectedPhotometryFittedStars': 2261,
-                   'selectedAstrometryCcdImageList': 17,
-                   'selectedPhotometryCcdImageList': 17,
-                   'astrometryFinalChi2': None,
-                   'astrometryFinalNdof': 4306,
-                   'photometryFinalChi2': None,
-                   'photometryFinalNdof': 2333,
+        metrics = {'collected_astrometry_refStars': 8194,
+                   'collected_photometry_refStars': 8190,
+                   'selected_astrometry_refStars': 8194,
+                   'selected_photometry_refStars': 8190,
+                   'associated_astrometry_fittedStars': 8241,
+                   'associated_photometry_fittedStars': 8241,
+                   'selected_astrometry_fittedStars': 2261,
+                   'selected_photometry_fittedStars': 2261,
+                   'selected_astrometry_ccdImages': 17,
+                   'selected_photometry_ccdImages': 17,
+                   'astrometry_final_chi2': None,
+                   'astrometry_final_ndof': 4306,
+                   'photometry_final_chi2': None,
+                   'photometry_final_ndof': 2333,
                    }
 
         # TODO DM-12653: decam fails due to factorization problems.
@@ -99,13 +99,13 @@ class JointcalTestDECAM(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Test
         # this in the future!
         relative_error = 20e-3*u.arcsecond
         pa1 = None
-        metrics = {'collectedAstrometryRefStars': 8194,
-                   'selectedAstrometryRefStars': 8194,
-                   'associatedAstrometryFittedStars': 8241,
-                   'selectedAstrometryFittedStars': 2261,
-                   'selectedAstrometryCcdImageList': 17,
-                   'astrometryFinalChi2': 5106.2,
-                   'astrometryFinalNdof': 4530,
+        metrics = {'collected_astrometry_refStars': 8194,
+                   'selected_astrometry_refStars': 8194,
+                   'associated_astrometry_fittedStars': 8241,
+                   'selected_astrometry_fittedStars': 2261,
+                   'selected_astrometry_ccdImages': 17,
+                   'astrometry_final_chi2': 5106.2,
+                   'astrometry_final_ndof': 4530,
                    }
 
         # TODO DM-12653: decam fails due to factorization problems.

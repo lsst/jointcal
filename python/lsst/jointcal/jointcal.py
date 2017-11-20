@@ -16,6 +16,7 @@ import lsst.afw.coord as afwCoord
 import lsst.pex.exceptions as pexExceptions
 import lsst.afw.table
 import lsst.meas.algorithms
+from lsst.verify import Job, Measurement
 
 from lsst.meas.algorithms import LoadIndexedReferenceObjectsTask
 from lsst.meas.algorithms.sourceSelector import sourceSelectorRegistry
@@ -29,6 +30,12 @@ __all__ = ["JointcalConfig", "JointcalTask"]
 
 Photometry = collections.namedtuple('Photometry', ('fit', 'model'))
 Astrometry = collections.namedtuple('Astrometry', ('fit', 'model', 'sky_to_tan_projection'))
+
+
+# TODO: move this to MeasurementSet in lsst.verify per DM-12655.
+def add_measurement(job, name, value):
+    meas = Measurement(job.metrics[name], value)
+    job.measurements.insert(meas)
 
 
 class JointcalRunner(pipeBase.ButlerInitializedTaskRunner):
@@ -82,6 +89,8 @@ class JointcalRunner(pipeBase.ButlerInitializedTaskRunner):
         try:
             result = task.run(dataRefList, **kwargs)
             exitStatus = result.exitStatus
+            job_path = butler.get('verify_job_filename')
+            result.job.write(job_path[0])
         except Exception as e:  # catch everything, sort it out later.
             if self.doRaise:
                 raise e
@@ -221,7 +230,7 @@ class JointcalTask(pipeBase.CmdLineTask):
             self.makeSubtask('photometryRefObjLoader', butler=butler)
 
         # To hold various computed metrics for use by tests
-        self.metrics = {}
+        self.job = Job.load_metrics_package(subset='jointcal')
 
     # We don't need to persist config and metadata at this stage.
     # In this way, we don't need to put a specific entry in the camera mapper policy file
@@ -367,7 +376,7 @@ class JointcalTask(pipeBase.CmdLineTask):
 
         if self.config.doAstrometry:
             astrometry = self._do_load_refcat_and_fit(associations, defaultFilter, center, radius,
-                                                      name="Astrometry",
+                                                      name="astrometry",
                                                       refObjLoader=self.astrometryRefObjLoader,
                                                       fit_function=self._fit_astrometry,
                                                       profile_jointcal=profile_jointcal,
@@ -378,7 +387,7 @@ class JointcalTask(pipeBase.CmdLineTask):
 
         if self.config.doPhotometry:
             photometry = self._do_load_refcat_and_fit(associations, defaultFilter, center, radius,
-                                                      name="Photometry",
+                                                      name="photometry",
                                                       refObjLoader=self.photometryRefObjLoader,
                                                       fit_function=self._fit_photometry,
                                                       profile_jointcal=profile_jointcal,
@@ -391,7 +400,7 @@ class JointcalTask(pipeBase.CmdLineTask):
 
         return pipeBase.Struct(dataRefs=dataRefs,
                                oldWcsList=oldWcsList,
-                               metrics=self.metrics,
+                               job=self.job,
                                exitStatus=exitStatus)
 
     def _do_load_refcat_and_fit(self, associations, defaultFilter, center, radius,
@@ -436,7 +445,8 @@ class JointcalTask(pipeBase.CmdLineTask):
         # TODO: this should not print "trying to invert a singular transformation:"
         # if it does that, something's not right about the WCS...
         associations.associateCatalogs(match_cut)
-        self.metrics['associated%sFittedStars' % name] = associations.fittedStarListSize()
+        add_measurement(self.job, 'jointcal.associated_%s_fittedStars' % name,
+                        associations.fittedStarListSize())
 
         skyCircle = refObjLoader.loadSkyCircle(center,
                                                afwGeom.Angle(radius, afwGeom.radians),
@@ -459,13 +469,17 @@ class JointcalTask(pipeBase.CmdLineTask):
 
         associations.collectRefStars(refCat, self.config.matchCut*afwGeom.arcseconds,
                                      skyCircle.fluxField, refFluxes, refFluxErrs, reject_bad_fluxes)
-        self.metrics['collected%sRefStars' % name] = associations.refStarListSize()
+        add_measurement(self.job, 'jointcal.collected_%s_refStars' % name,
+                        associations.refStarListSize())
 
         associations.selectFittedStars(self.config.minMeasurements)
         self._check_star_lists(associations, name)
-        self.metrics['selected%sRefStars' % name] = associations.refStarListSize()
-        self.metrics['selected%sFittedStars' % name] = associations.fittedStarListSize()
-        self.metrics['selected%sCcdImageList' % name] = associations.nCcdImagesValidForFit()
+        add_measurement(self.job, 'jointcal.selected_%s_refStars' % name,
+                        associations.refStarListSize())
+        add_measurement(self.job, 'jointcal.selected_%s_fittedStars' % name,
+                        associations.fittedStarListSize())
+        add_measurement(self.job, 'jointcal.selected_%s_ccdImages' % name,
+                        associations.nCcdImagesValidForFit())
 
         load_cat_prof_file = 'jointcal_fit_%s.prof'%name if profile_jointcal else ''
         dataName = "{}_{}".format(tract, defaultFilter)
@@ -523,7 +537,7 @@ class JointcalTask(pipeBase.CmdLineTask):
         # TODO DM-12446: turn this into a "butler save" somehow.
         # Save reference and measurement chi2 contributions for this data
         if self.config.writeChi2ContributionFiles:
-            baseName = "Photometry_initial_chi2-{}.csv".format(dataName)
+            baseName = "photometry_initial_chi2-{}.csv".format(dataName)
             fit.saveChi2Contributions(baseName)
 
         if not np.isfinite(chi2.chi2):
@@ -543,8 +557,8 @@ class JointcalTask(pipeBase.CmdLineTask):
 
         chi2 = self._iterate_fit(fit, model, 20, "photometry", "Model Fluxes")
 
-        self.metrics['photometryFinalChi2'] = chi2.chi2
-        self.metrics['photometryFinalNdof'] = chi2.ndof
+        add_measurement(self.job, 'jointcal.photometry_final_chi2', chi2.chi2)
+        add_measurement(self.job, 'jointcal.photometry_final_ndof', chi2.ndof)
         return Photometry(fit, model)
 
     def _fit_astrometry(self, associations, dataName=None):
@@ -594,7 +608,7 @@ class JointcalTask(pipeBase.CmdLineTask):
         # TODO DM-12446: turn this into a "butler save" somehow.
         # Save reference and measurement chi2 contributions for this data
         if self.config.writeChi2ContributionFiles:
-            baseName = "Astrometry_initial_chi2-{}.csv".format(dataName)
+            baseName = "astrometry_initial_chi2-{}.csv".format(dataName)
             fit.saveChi2Contributions(baseName)
 
         if not np.isfinite(chi2.chi2):
@@ -615,8 +629,8 @@ class JointcalTask(pipeBase.CmdLineTask):
 
         chi2 = self._iterate_fit(fit, model, 20, "astrometry", "Distortions Positions")
 
-        self.metrics['astrometryFinalChi2'] = chi2.chi2
-        self.metrics['astrometryFinalNdof'] = chi2.ndof
+        add_measurement(self.job, 'jointcal.astrometry_final_chi2', chi2.chi2)
+        add_measurement(self.job, 'jointcal.astrometry_final_ndof', chi2.ndof)
 
         return Astrometry(fit, model, sky_to_tan_projection)
 
