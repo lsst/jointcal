@@ -52,8 +52,11 @@ ConstrainedPolyModel::ConstrainedPolyModel(CcdImageList const &ccdImageList,
         if (chipp == _chipMap.end()) {
             const Frame &frame = im.getImageFrame();
 
-            _tpFrame += applyTransfo(frame, *im.getPix2CommonTangentPlane(), LargeFrame);
-            GtransfoPoly pol(im.getPix2TangentPlane(), frame, chipDegree);
+            GtransfoPoly pol(chipDegree);
+
+            if (initFromWCS) {
+                pol = GtransfoPoly(im.getPix2TangentPlane(), frame, chipDegree);
+            }
             GtransfoLin shiftAndNormalize = normalizeCoordinatesTransfo(frame);
 
             _chipMap[chip] = std::unique_ptr<SimplePolyMapping>(

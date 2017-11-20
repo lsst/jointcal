@@ -88,8 +88,6 @@ private:
     visitMapType _visitMap;
     const ProjectionHandler *_sky2TP;
     bool _fittingChips, _fittingVisits;
-
-    Frame _tpFrame;  // just for output of the chip transfos
 };
 }  // namespace jointcal
 }  // namespace lsst
