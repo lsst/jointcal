@@ -3,6 +3,7 @@
 #define LSST_JOINTCAL_GTRANSFO_H
 
 #include <iostream>
+#include <memory>
 #include <string>
 #include <sstream>
 #include <vector>
@@ -10,6 +11,7 @@
 #include "Eigen/Core"
 
 #include "lsst/pex/exceptions.h"
+#include "lsst/afw/geom/SkyWcs.h"
 #include "lsst/jointcal/FatPoint.h"
 
 namespace pexExcept = lsst::pex::exceptions;
@@ -392,6 +394,38 @@ public:
     int getNpar() const { return 2; }
 };
 
+/**
+ * A Gtransfo that holds a SkyWcs
+ *
+ * This is intended to hold the initial estimate for the WCS. It need not be TAN-SIP,
+ * nor exactly representable as a FITS WCS.
+ *
+ * GtransfoSkyWcs does not inherit from BaseTanWcs for two reasons:
+ * - There is no need.
+ * - It is not clear how to implement all of the BaseTanWcs interface, especially corrections.
+ */
+class GtransfoSkyWcs : public Gtransfo {
+public:
+    GtransfoSkyWcs(std::shared_ptr<afw::geom::SkyWcs> skyWcs);
+
+    using Gtransfo::apply;
+
+    // Input is x, y pixels; output is ICRS RA, Dec in degrees
+    void apply(const double xIn, const double yIn, double &xOut, double &yOut) const override;
+
+    void dump(std::ostream &stream = std::cout) const override;
+
+    /// Not implemented; throws pex::exceptions::LogicError
+    double fit(const StarMatchList &starMatchList) override;
+
+    std::unique_ptr<Gtransfo> clone() const override;
+
+    std::shared_ptr<afw::geom::SkyWcs> getSkyWcs() const { return _skyWcs; }
+
+private:
+    std::shared_ptr<afw::geom::SkyWcs> _skyWcs;
+};
+
 /*==================WCS's transfo's =====================================*/
 
 class BaseTanWcs : public Gtransfo {
@@ -405,6 +439,7 @@ public:
 
     void operator=(const BaseTanWcs &original);
 
+    /// input is pixels, output is RA, Dec radians
     void apply(const double xIn, const double yIn, double &xOut, double &yOut) const;
 
     //! The tangent point (in degrees)

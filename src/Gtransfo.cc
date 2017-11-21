@@ -9,6 +9,7 @@
 #include "Eigen/Core"
 
 #include "lsst/log/Log.h"
+#include "lsst/afw/geom/Point.h"
 #include "lsst/jointcal/Gtransfo.h"
 #include "lsst/jointcal/Frame.h"
 #include "lsst/jointcal/StarMatch.h"
@@ -1281,6 +1282,27 @@ Point BaseTanWcs::getCrPix() const {
 }
 
 BaseTanWcs::~BaseTanWcs() {}
+
+
+GtransfoSkyWcs::GtransfoSkyWcs(std::shared_ptr<afw::geom::SkyWcs> skyWcs) : _skyWcs(skyWcs) {}
+
+void GtransfoSkyWcs::apply(const double xIn, const double yIn, double &xOut, double &yOut) const {
+    auto const outCoord = _skyWcs->pixelToSky(afw::geom::Point2D(xIn, yIn));
+    xOut = outCoord[0].asDegrees();
+    yOut = outCoord[1].asDegrees();
+}
+
+void GtransfoSkyWcs::dump(std::ostream &stream) const {
+    stream << "GtransfoSkyWcs(" << *_skyWcs << ")";
+}
+
+double GtransfoSkyWcs::fit(const StarMatchList &starMatchList) {
+    throw LSST_EXCEPT(pex::exceptions::LogicError, "Not implemented");
+}
+
+std::unique_ptr<Gtransfo> GtransfoSkyWcs::clone() const {
+    return std::unique_ptr<GtransfoSkyWcs>(new GtransfoSkyWcs(getSkyWcs()));
+}
 
 /*************************** TanPix2RaDec ***************/
 

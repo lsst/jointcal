@@ -63,6 +63,11 @@ void declareGtransfoLinScale(py::module &mod) {
     py::class_<GtransfoLinScale, std::shared_ptr<GtransfoLinScale>, GtransfoLin> cls(mod, "GtransfoLinScale");
 }
 
+void declareGtransfoSkyWcs(py::module &mod) {
+    py::class_<GtransfoSkyWcs, std::shared_ptr<GtransfoSkyWcs>, Gtransfo> cls(mod, "GtransfoSkyWcs");
+    cls.def("getSkyWcs", &GtransfoSkyWcs::getSkyWcs);
+}
+
 void declareBaseTanWcs(py::module &mod) {
     py::class_<BaseTanWcs, std::shared_ptr<BaseTanWcs>, Gtransfo> cls(mod, "BaseTanWcs");
 }
@@ -90,6 +95,7 @@ PYBIND11_PLUGIN(gtransfo) {
     declareGtransfoLinShift(mod);
     declareGtransfoLinRot(mod);
     declareGtransfoLinScale(mod);
+    declareGtransfoSkyWcs(mod);
     declareBaseTanWcs(mod);
     declareTanPix2RaDec(mod);
     declareTanRaDec2Pix(mod);
