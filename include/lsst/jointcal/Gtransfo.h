@@ -318,7 +318,7 @@ public:
 
     // double fit(const StarMatchList &starMatchList);
 
-    //! the constructor that enables to set all parameters independently. Not very useful.
+    //! Construct a GtransfoLin from parameters
     GtransfoLin(const double ox, const double oy, const double aa11, const double aa12, const double aa21,
                 const double aa22);
 
@@ -439,36 +439,38 @@ public:
 
     void operator=(const BaseTanWcs &original);
 
-    /// input is pixels, output is RA, Dec radians
+    /// Transform pixels to ICRS RA, Dec in degrees
     void apply(const double xIn, const double yIn, double &xOut, double &yOut) const;
 
-    //! The tangent point (in degrees)
+    //! Get the sky origin (CRVAL in FITS WCS terminology) in degrees
     Point getTangentPoint() const;
 
     //! The Linear part (corresponding to CD's and CRPIX's)
     GtransfoLin getLinPart() const;
 
-    //! the "correction" (non-owning pointer)
+    //! Get a non-owning pointer to the correction transform polynomial
     const GtransfoPoly *getCorr() const { return corr.get(); }
 
     //! Assign the correction polynomial (what it means is left to derived classes)
     void setCorrections(std::unique_ptr<GtransfoPoly> corrections);
 
-    //! the CRPIX values (this is WCS jargon), in 0-based coordinates
+    //! Get the pixel origin of the WCS (CRPIX in FITS WCS terminology, but zero-based)
     Point getCrPix() const;
 
-    //! transfo from pix to tangent plane (defined by derived classes)
+    //! Get a transform from pixels to tangent plane (degrees)
+    //! This is a linear transform plus the effects of the correction
     virtual GtransfoPoly getPix2TangentPlane() const = 0;
 
-    //! Transforms from pixel space to tangent plane. deferred to actual implementations
+    //! Transform from pixels to tangent plane (degrees)
     virtual void pix2TP(double xPixel, double yPixel, double &xTangentPlane, double &yTangentPlane) const = 0;
 
     ~BaseTanWcs();
 
 protected:
-    GtransfoLin linPix2Tan;  // pixels to tangent plane (internally in radians)
+    GtransfoLin linPix2Tan;  // transform from pixels to tangent plane (degrees)
+                             // a linear approximation centered at the pixel and sky origins
     std::unique_ptr<GtransfoPoly> corr;
-    double ra0, dec0;   // in radians
+    double ra0, dec0;   // sky origin (radians)
     double cos0, sin0;  // cos(dec0), sin(dec0)
 };
 
@@ -478,15 +480,15 @@ class TanRaDec2Pix;  // the inverse of TanPix2RaDec.
 class TanPix2RaDec : public BaseTanWcs {
 public:
     using Gtransfo::apply;  // to unhide apply(const Point&)
-    //! pix2Tan describes the transfo from pix to tangent plane (in degrees). TangentPoint in degrees.
+    //! pix2Tan describes the transfo from pix to tangent plane (degrees). TangentPoint in degrees.
     //! Corrections are applied between Lin and deprojection parts (as in Swarp).
     TanPix2RaDec(const GtransfoLin &pix2Tan, const Point &tangentPoint,
                  const GtransfoPoly *corrections = nullptr);
 
-    //! the transformation from pixels to tangent plane (coordinates in degrees)
+    //! the transformation from pixels to tangent plane (degrees)
     GtransfoPoly getPix2TangentPlane() const;
 
-    //! transforms from pixel space to tangent plane
+    //! transforms from pixel space to tangent plane (degrees)
     virtual void pix2TP(double xPixel, double yPixel, double &xTangentPlane, double &yTangentPlane) const;
 
     TanPix2RaDec();
@@ -517,15 +519,15 @@ public:
 //! Implements the (forward) SIP distorsion scheme
 class TanSipPix2RaDec : public BaseTanWcs {
 public:
-    //! pix2Tan describes the transfo from pix to tangent plane (in degrees). TangentPoint in degrees.
+    //! pix2Tan describes the transfo from pix to tangent plane (degrees). TangentPoint in degrees.
     //! Corrections are applied before Lin.
     TanSipPix2RaDec(const GtransfoLin &pix2Tan, const Point &tangentPoint,
                     const GtransfoPoly *corrections = nullptr);
 
-    //! the transformation from pixels to tangent plane (coordinates in degrees)
+    //! the transformation from pixels to tangent plane (degrees)
     GtransfoPoly getPix2TangentPlane() const;
 
-    //! transforms from pixel space to tangent plane
+    //! transforms from pixel space to tangent plane (degrees)
     virtual void pix2TP(double xPixel, double yPixel, double &xTangentPlane, double &yTangentPlane) const;
 
     TanSipPix2RaDec();
@@ -565,7 +567,7 @@ public:
     //! Resets the projection (or tangent) point
     void setTangentPoint(const Point &tangentPoint);
 
-    //! tangent point coordinates (in degrees)
+    //! tangent point coordinates (degrees)
     Point getTangentPoint() const;
 
     //!
@@ -590,9 +592,9 @@ public:
     double fit(const StarMatchList &starMatchList);
 
 private:
-    double ra0, dec0;  // tangent point (internally in radians)
+    double ra0, dec0;  // tangent point (radians)
     double cos0, sin0;
-    GtransfoLin linTan2Pix;  // tangent plane to pixels (internally in radians)
+    GtransfoLin linTan2Pix;  // tangent plane (probably degrees) to pixels
 };
 
 //! signature of the user-provided routine that actually does the coordinate transfo for UserTransfo.
