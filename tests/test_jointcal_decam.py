@@ -76,15 +76,13 @@ class JointcalTestDECAM(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Test
                    'selected_photometry_fittedStars': 2261,
                    'selected_astrometry_ccdImages': 17,
                    'selected_photometry_ccdImages': 17,
-                   'astrometry_final_chi2': None,
-                   'astrometry_final_ndof': 4306,
-                   'photometry_final_chi2': None,
-                   'photometry_final_ndof': 2333,
+                   'astrometry_final_chi2': 2144.87,
+                   'astrometry_final_ndof': 4138,
+                   'photometry_final_chi2': 3707.15,
+                   'photometry_final_ndof': 2268,
                    }
 
-        # TODO DM-12653: decam fails due to factorization problems.
-        with self.assertRaises(RuntimeError):
-            self._testJointcalTask(2, relative_error, self.dist_rms_absolute, pa1, metrics=metrics)
+        self._testJointcalTask(2, relative_error, self.dist_rms_absolute, pa1, metrics=metrics)
 
     def test_jointcalTask_2_visits_constrainedPoly(self):
         self.config = lsst.jointcal.jointcal.JointcalConfig()
@@ -104,13 +102,11 @@ class JointcalTestDECAM(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Test
                    'associated_astrometry_fittedStars': 8241,
                    'selected_astrometry_fittedStars': 2261,
                    'selected_astrometry_ccdImages': 17,
-                   'astrometry_final_chi2': 5106.2,
-                   'astrometry_final_ndof': 4530,
+                   'astrometry_final_chi2': 2485.39,
+                   'astrometry_final_ndof': 4388,
                    }
 
-        # TODO DM-12653: decam fails due to factorization problems.
-        with self.assertRaises(RuntimeError):
-            self._testJointcalTask(2, relative_error, self.dist_rms_absolute, pa1, metrics=metrics)
+        self._testJointcalTask(2, relative_error, self.dist_rms_absolute, pa1, metrics=metrics)
 
 
 class MemoryTester(lsst.utils.tests.MemoryTestCase):
