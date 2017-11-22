@@ -11,6 +11,8 @@ config.log
 *.pyc
 *_wrap.cc
 *Lib.py
+.cache
+pytest_session.txt
 bin/*.py
 doc/html
 doc/xml
