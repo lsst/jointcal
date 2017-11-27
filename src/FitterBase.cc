@@ -77,12 +77,12 @@ unsigned FitterBase::findOutliers(double nSigmaCut, MeasuredStarList &msOutliers
             /* One might think it would be useful to account for PM
                parameters here, but it is just useless */
         } else {  // it is a measurement term.
-	     const FittedStar *fs = ms->getFittedStar();
-	     if (fs->getMeasurementCount() == 1 && fs->getRefStar() == nullptr) {
-	       LOGLS_INFO(_log," WARNING: FittedStar with 1 measurement and no ref found as an outlier" << *fs);
-	       continue;
-	     }
-	     getIndicesOfMeasuredStar(*ms, indices);
+      	     auto fs = std::const_pointer_cast<FittedStar>(ms->getFittedStar());
+      	     if (fs->getMeasurementCount() == 1 && fs->getRefStar() == nullptr) {
+      	       LOGLS_INFO(_log," WARNING: FittedStar with 1 measurement and no ref found as an outlier" << *fs);
+      	       continue;
+      	     }
+      	     getIndicesOfMeasuredStar(*ms, indices);
         }
 
         /* Find out if we already discarded a stronger outlier
