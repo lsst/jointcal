@@ -20,6 +20,10 @@ import lsst.meas.algorithms
 from lsst.meas.algorithms import LoadIndexedReferenceObjectsTask
 from lsst.meas.algorithms.sourceSelector import sourceSelectorRegistry
 
+from lsst.afw.image import abMagFromFlux, abMagErrFromFluxErr, fluxFromABMag
+
+from lsst.pipe.tasks.colorterms import ColortermLibrary
+
 from .dataIds import PerTractCcdDataIdContainer
 
 import lsst.jointcal
@@ -192,6 +196,34 @@ class JointcalConfig(pexConfig.Config):
         doc="Maximum magnitude for a reference source to be taken into account",
         default=23.
     )
+    applyColorTerms = pexConfig.Field(
+        dtype=bool,
+        default=None,
+        doc=("Apply photometric color terms to reference stars? One of:\n"
+             "None: apply if colorterms and photoCatName are not None;\n"
+             "      fail if color term data is not available for the specified ref catalog and filter.\n"
+             "True: always apply colorterms; fail if color term data is not available for the\n"
+             "      specified reference catalog and filter.\n"
+             "False: do not apply."),
+        optional=True,
+    )
+    colorterms = pexConfig.ConfigField(
+        dtype=ColortermLibrary,
+        doc="Library of photometric reference catalog name: color term dict",
+    )
+    photoCatName = pexConfig.Field(
+        dtype=str,
+        optional=True,
+        doc=("Name of photometric reference catalog; used to select a color term dict in colorterms."
+             " see also applyColorTerms"),
+    )
+
+    def validate(self):
+        pexConfig.Config.validate(self)
+        if self.applyColorTerms and self.photoCatName is None:
+            raise RuntimeError("applyColorTerms=True requires photoCatName is non-None")
+        if self.applyColorTerms and len(self.colorterms.data) == 0:
+            raise RuntimeError("applyColorTerms=True requires colorterms be provided")
 
     def setDefaults(self):
         sourceSelector = self.sourceSelector["astrometry"]
@@ -460,12 +492,75 @@ class JointcalTask(pipeBase.CmdLineTask):
 
         # load the reference catalog fluxes.
         # TODO: Simon will file a ticket for making this better (and making it use the color terms)
+
+        applyColorTerms = self.config.applyColorTerms
+        applyCTReason = "config.applyColorTerms is %s" % (self.config.applyColorTerms,)
+        if self.config.applyColorTerms is None:
+            # apply color terms if color term data is available and photoCatName specified
+            ctDataAvail = len(self.config.colorterms.data) > 0
+            photoCatSpecified = self.config.photoCatName is not None
+            applyCTReason += " and data %s available" % ("is" if ctDataAvail else "is not")
+            applyCTReason += " and photoRefCat %s None" % ("is not" if photoCatSpecified else "is")
+            applyColorTerms = ctDataAvail and photoCatSpecified
+
         refFluxes = {}
         refFluxErrs = {}
         for filt in filters:
-            filtKeys = lsst.meas.algorithms.getRefFluxKeys(refCat.schema, filt)
-            refFluxes[filt] = refCat.get(filtKeys[0])
-            refFluxErrs[filt] = refCat.get(filtKeys[1])
+
+            if applyColorTerms:
+                self.log.info("Applying color terms for filterName=%r, config.photoCatName=%s because %s",
+                              filt, self.config.photoCatName, applyCTReason)
+                ct = self.config.colorterms.getColorterm(
+                    filterName=filt, photoCatName=self.config.photoCatName, doRaise=True)
+            else:
+                self.log.info("Not applying color terms because %s", applyCTReason)
+                ct = None
+
+            if ct:                          # we have a color term to worry about
+                fluxFieldList = [lsst.meas.algorithms.getRefFluxField(refCat.schema, f) for f in (ct.primary, ct.secondary)]
+                missingFluxFieldList = []
+                for fluxField in fluxFieldList:
+                    try:
+                        refCat.schema.find(fluxField).key
+                    except KeyError:
+                        missingFluxFieldList.append(fluxField)
+
+                if missingFluxFieldList:
+                    self.log.warn("Source catalog does not have fluxes for %s; ignoring color terms",
+                                  " ".join(missingFluxFieldList))
+                    ct = None
+
+            if not ct:
+                fluxFieldList = [lsst.meas.algorithms.getRefFluxField(refCat.schema, filt)]
+
+            refFluxArrList = []  # list of ref arrays, one per flux field
+            refFluxErrArrList = []  # list of ref flux arrays, one per flux field
+            for fluxField in fluxFieldList:
+                fluxKey = refCat.schema.find(fluxField).key
+                refFluxArr = np.array([r.get(fluxKey) for r in refCat])
+                try:
+                    fluxErrKey = refCat.schema.find(fluxField + "Sigma").key
+                    refFluxErrArr = np.array([r.get(fluxErrKey) for r in refCat])
+                except KeyError:
+                    # Reference catalogue may not have flux uncertainties; HACK
+                    self.log.warn("Reference catalog does not have flux uncertainties for %s; using sqrt(flux).",
+                                  fluxField)
+                    refFluxErrArr = np.sqrt(refFluxArr)
+
+                refFluxArrList.append(refFluxArr)
+                refFluxErrArrList.append(refFluxErrArr)
+
+            if ct:                          # we have a color term to worry about
+                refMagArr1 = np.array([abMagFromFlux(rf1) for rf1 in refFluxArrList[0]])  # primary
+                refMagArr2 = np.array([abMagFromFlux(rf2) for rf2 in refFluxArrList[1]])  # secondary
+
+                refMagArr = ct.transformMags(refMagArr1, refMagArr2)
+                refFluxErrArr = ct.propagateFluxErrors(refFluxErrArrList[0], refFluxErrArrList[1])
+            else:
+                refMagArr = np.array([abMagFromFlux(rf) for rf in refFluxArrList[0]])
+
+            refFluxes[filt] = np.array([fluxFromABMag(rf) for rf in refMagArr])
+            refFluxErrs[filt] = refFluxErrArr
 
         associations.collectRefStars(refCat, self.config.matchCut*afwGeom.arcseconds,
                                      skyCircle.fluxField, refFluxes, refFluxErrs,
