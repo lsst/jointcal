@@ -182,6 +182,16 @@ class JointcalConfig(pexConfig.Config):
         doc="Write initial/final fit files containing the contributions to chi2.",
         default=False
     )
+    minRefSnr = pexConfig.Field(
+        dtype=float,
+        doc="Minimum SNR for a reference source to be taken into account",
+        default=20.
+    )
+    maxRefMag = pexConfig.Field(
+        dtype=float,
+        doc="Maximum magnitude for a reference source to be taken into account",
+        default=23.
+    )
 
     def setDefaults(self):
         sourceSelector = self.sourceSelector["astrometry"]
@@ -458,7 +468,9 @@ class JointcalTask(pipeBase.CmdLineTask):
             refFluxErrs[filt] = refCat.get(filtKeys[1])
 
         associations.collectRefStars(refCat, self.config.matchCut*afwGeom.arcseconds,
-                                     skyCircle.fluxField, refFluxes, refFluxErrs, reject_bad_fluxes)
+                                     skyCircle.fluxField, refFluxes, refFluxErrs,
+                                     self.config.minRefSnr, self.config.maxRefMag,
+                                     reject_bad_fluxes)
         self.metrics['collected%sRefStars' % name] = associations.refStarListSize()
 
         associations.selectFittedStars(self.config.minMeasurements)

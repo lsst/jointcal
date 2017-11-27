@@ -143,6 +143,7 @@ void Associations::collectRefStars(lsst::afw::table::SortedCatalogT<lsst::afw::t
                                    afw::geom::Angle matchCut, std::string const &fluxField,
                                    std::map<std::string, std::vector<double>> const &refFluxMap,
                                    std::map<std::string, std::vector<double>> const &refFluxErrMap,
+                                   double minRefSnr, double maxRefMag,
                                    bool rejectBadFluxes) {
     if (refCat.size() == 0) {
         throw(LSST_EXCEPT(pex::exceptions::InvalidParameterError,
@@ -173,6 +174,7 @@ void Associations::collectRefStars(lsst::afw::table::SortedCatalogT<lsst::afw::t
         auto const &record = refCat.get(i);
 
         afw::coord::Coord coord = record->get(coordKey);
+        double mag = record->get(fluxKey);
         double defaultFlux = record->get(fluxKey) / JanskyToMaggy;
         double defaultFluxErr;
         if (fluxErrKey.isValid()) {
@@ -200,7 +202,7 @@ void Associations::collectRefStars(lsst::afw::table::SortedCatalogT<lsst::afw::t
 
         // Reject sources with non-finite fluxes and flux errors, and fluxErr=0 (which gives chi2=inf).
         if (rejectBadFluxes &&
-            (!std::isfinite(defaultFlux) || !std::isfinite(defaultFluxErr) || defaultFluxErr == 0))
+            (!std::isfinite(defaultFlux) || !std::isfinite(defaultFluxErr) || defaultFluxErr == 0) || defaultFlux/defaultFluxErr < minRefSnr || mag > maxRefMag)
             continue;
         refStarList.push_back(star);
     }

@@ -101,6 +101,7 @@ public:
                          afw::geom::Angle matchCut, std::string const &fluxField,
                          std::map<std::string, std::vector<double>> const &refFluxMap,
                          std::map<std::string, std::vector<double>> const &refFluxErrMap,
+                         double minRefSnr, double maxRefMag,
                          bool rejectBadFluxes = false);
 
     //! Sends back the fitted stars coordinates on the sky FittedStarsList::inTangentPlaneCoordinates keeps
