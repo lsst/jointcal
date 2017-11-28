@@ -111,6 +111,24 @@ double ConstrainedPhotometryModel::transform(CcdImage const &ccdImage, MeasuredS
     return mapping->transform(measuredStar, instFlux);
 }
 
+
+double ConstrainedPhotometryModel::transformError(CcdImage const &ccdImage, MeasuredStar const &measuredStar,
+                                             double sigma) const {
+    auto mapping = findMapping(ccdImage);
+    return mapping->transformError(measuredStar, sigma);
+}
+
+ void ConstrainedPhotometryModel::freezeErrorScales() {
+    for (auto &i : _chipMap) {
+      i.second.get()->freezeErrorScales();
+    }
+    for (auto &i : _visitMap) {
+      i.second.get()->freezeErrorScales();
+    }
+}
+
+
+
 void ConstrainedPhotometryModel::getMappingIndices(CcdImage const &ccdImage,
                                                    std::vector<unsigned> &indices) const {
     auto mapping = findMapping(ccdImage);

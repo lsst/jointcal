@@ -52,6 +52,26 @@ public:
                              double instFlux) const = 0;
 
     /**
+     * Return the on-sky transformed flux *uncertainty* for measuredStar on ccdImage.
+     *
+     * @param[in]  ccdImage     The ccdImage where measuredStar resides.
+     * @param      measuredStar The measured star position to compute the transform at.
+     * @param[in]  instSigma     The instrument flux uncertainty to transform.
+     *
+     * @return     The on-sky flux transformed from instFlux at measuredStar's position.
+     */
+    virtual double transformError(CcdImage const &ccdImage, MeasuredStar const &measuredStar,
+				  double instSigma) const = 0;
+
+
+    /**
+     * Once this routine has been called, Errors no longer change when parameters are updated 
+     *
+     */
+    virtual void freezeErrorScales() = 0;
+
+
+    /**
      * Get how this set of parameters (of length Npar()) map into the "grand" fit.
      *
      * @param[in]  ccdImage  The ccdImage to look up.

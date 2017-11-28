@@ -647,6 +647,9 @@ class JointcalTask(pipeBase.CmdLineTask):
         if not np.isfinite(chi2.chi2):
             raise FloatingPointError('Pre-iteration chi2 is invalid: %s'%chi2)
         self.log.info("Fit prepared with %s", str(chi2))
+        
+        fit.freezeErrorScales()
+        self.log.info("errors scales are now frozen")
 
         chi2 = self._iterate_fit(fit, model, 20, "photometry", "Model Fluxes")
 

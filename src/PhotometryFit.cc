@@ -57,7 +57,7 @@ void PhotometryFit::leastSquareDerivativesMeasurement(CcdImage const &ccdImage, 
                           measuredStar->getFittedStar()->getFlux();
 
         double inverseSigma =
-                1.0 / _photometryModel->transform(ccdImage, *measuredStar, measuredStar->getInstFluxErr());
+                1.0 / _photometryModel->transformError(ccdImage, *measuredStar, measuredStar->getInstFluxErr());
         double W = std::pow(inverseSigma, 2);
 
         if (_fittingModel) {
@@ -127,7 +127,7 @@ void PhotometryFit::accumulateStatImageList(CcdImageList const &ccdImageList, Ch
         for (auto const &measuredStar : catalog) {
             if (!measuredStar->isValid()) continue;
             double sigma =
-                    _photometryModel->transform(*ccdImage, *measuredStar, measuredStar->getInstFluxErr());
+                    _photometryModel->transformError(*ccdImage, *measuredStar, measuredStar->getInstFluxErr());
 #ifdef FUTURE
             TweakPhotomMeasurementErrors(inPos, measuredStar, _fluxError);
 #endif
@@ -243,13 +243,13 @@ void PhotometryFit::saveChi2MeasContributions(std::string const &baseName) const
         for (auto const &measuredStar : cat) {
             if (!measuredStar->isValid()) continue;
             double sigma =
-                    _photometryModel->transform(*ccdImage, *measuredStar, measuredStar->getInstFluxErr());
+                    _photometryModel->transformError(*ccdImage, *measuredStar, measuredStar->getInstFluxErr());
 #ifdef FUTURE
             tweakPhotomMeasurementErrors(inPos, measuredStar, _fluxError);
 #endif
             double flux = _photometryModel->transform(*ccdImage, *measuredStar, measuredStar->getInstFlux());
             double fluxErr =
-                    _photometryModel->transform(*ccdImage, *measuredStar, measuredStar->getInstFluxErr());
+                    _photometryModel->transformError(*ccdImage, *measuredStar, measuredStar->getInstFluxErr());
             double jd = ccdImage->getMjd();
             auto fittedStar = measuredStar->getFittedStar();
             double residual = flux - fittedStar->getFlux();

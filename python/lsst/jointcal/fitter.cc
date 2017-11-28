@@ -50,6 +50,7 @@ void declareAstrometryFit(py::module &mod) {
 
     cls.def(py::init<std::shared_ptr<Associations>, std::shared_ptr<AstrometryModel>, double>(),
             "associations"_a, "astrometryModel"_a, "posError"_a);
+    cls.def("freezeErrorScales", &AstrometryFit::freezeErrorScales);
 }
 
 void declarePhotometryFit(py::module &mod) {
@@ -57,6 +58,8 @@ void declarePhotometryFit(py::module &mod) {
 
     cls.def(py::init<std::shared_ptr<Associations>, std::shared_ptr<PhotometryModel>>(), "associations"_a,
             "photometryModel"_a);
+
+    cls.def("freezeErrorScales", &PhotometryFit::freezeErrorScales);
 }
 
 PYBIND11_PLUGIN(fitter) {

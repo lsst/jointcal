@@ -50,6 +50,15 @@ public:
      */
     void assignIndices(std::string const &whatToFit) override;
 
+    /**
+     * The transformations used to propagate errors are freezed to the current
+     * state. The routine can be called when the mappings are roughly in place.
+     * After the call, the transformations used to propage errors are no longer
+     * affected when updating the mappings. This allows to have an exactly linear
+     * fit, which can be useful.
+     */
+    void freezeErrorScales() { _photometryModel->freezeErrorScales(); }
+
     void offsetParams(Eigen::VectorXd const &delta) override;
 
     /// @copydoc FitterBase::saveChi2MeasContributions

@@ -50,6 +50,19 @@ double SimplePhotometryModel::transform(CcdImage const &ccdImage, MeasuredStar c
     return mapping->transform(star, instFlux);
 }
 
+double SimplePhotometryModel::transformError(CcdImage const &ccdImage, MeasuredStar const &star,
+					     double instSigma) const {
+    auto mapping = findMapping(ccdImage);
+    return mapping->transformError(star, instSigma);
+}
+
+  void SimplePhotometryModel::freezeErrorScales (){
+    for (auto &i : _myMap) {
+      i.second->freezeErrorScales();
+    }
+}
+
+
 void SimplePhotometryModel::getMappingIndices(CcdImage const &ccdImage,
                                               std::vector<unsigned> &indices) const {
     auto mapping = findMapping(ccdImage);

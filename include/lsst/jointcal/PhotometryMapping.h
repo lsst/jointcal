@@ -43,6 +43,23 @@ public:
      */
     virtual double transform(MeasuredStar const &measuredStar, double instFlux) const = 0;
 
+
+    /**
+     * Return the on-sky transformed flux *uncertainty* at (x,y). Identical to
+     * "transform" until freezeErrorScales has been called.
+     * @param[in]  measuredStar  The measured star position to transform.
+     * @param[in]  instSigma      The instrument flux uncertainty to transform.
+     *
+     * @return     The on-sky flux transformed from instFlux at measuredStar's
+     *             position.
+     */
+    virtual double transformError(MeasuredStar const &measuredStar, double instSigma) const = 0;
+
+    /**
+     * After this routine has been called, errors are frozen.
+     */
+    virtual void freezeErrorScales() = 0;
+
     /**
      * Compute the derivatives with respect to the parameters (i.e. the coefficients).
      *
@@ -95,7 +112,8 @@ protected:
 class PhotometryMapping : public PhotometryMappingBase {
 public:
     explicit PhotometryMapping(std::shared_ptr<PhotometryTransfo> transfo)
-            : PhotometryMappingBase(), _transfo(std::move(transfo)) {}
+      : PhotometryMappingBase(), _transfo(transfo), _transfoErrors(transfo) {}
+    //  if the initialisation reads _transfo::(std::move(transfo)), then _transfoErrors receives a null pointer (?!)
 
     /// @copydoc PhotometryMappingBase::getNpar
     unsigned getNpar() const override {
@@ -109,6 +127,17 @@ public:
     /// @copydoc PhotometryMappingBase::transform
     double transform(MeasuredStar const &measuredStar, double instFlux) const override {
         return _transfo->transform(measuredStar.x, measuredStar.y, instFlux);
+    }
+
+    /// @copydoc PhotometryMappingBase::transformError
+    double transformError(MeasuredStar const &measuredStar, double sigma) const override {
+        return _transfoErrors->transform(measuredStar.x, measuredStar.y, sigma);
+    }
+
+
+    /// @copydoc PhotometryMappingBase::freezeErrorScales
+    void freezeErrorScales() override {
+      _transfoErrors = std::shared_ptr<PhotometryTransfo>(_transfo->clone());
     }
 
     /// @copydoc PhotometryMappingBase::computeParameterDerivatives
@@ -143,9 +172,13 @@ public:
 
     std::shared_ptr<PhotometryTransfo> getTransfo() const { return _transfo; }
 
+    std::shared_ptr<PhotometryTransfo> getTransfoErrors() const { return _transfoErrors; }
+
 private:
     // the actual transformation to be fit
     std::shared_ptr<PhotometryTransfo> _transfo;
+    // And the one used for errors
+    std::shared_ptr<PhotometryTransfo> _transfoErrors;
 };
 
 /**
@@ -168,6 +201,20 @@ public:
         return _visitMapping->getTransfo()->transform(measuredStar.getXFocal(), measuredStar.getYFocal(),
                                                       tempFlux);
     }
+
+
+    /// @copydoc PhotometryMappingBase::transformError
+    double transformError(MeasuredStar const &measuredStar, double sigma) const override {
+        double tempSigma = _chipMapping->transformError(measuredStar, sigma);
+        return _visitMapping->getTransfoErrors()->transform(measuredStar.getXFocal(), measuredStar.getYFocal(),
+					     tempSigma);
+    }
+
+    /// @copydoc PhotometryMappingBase::freezeErrorScales
+    void freezeErrorScales() override {
+      _chipMapping->freezeErrorScales(); _visitMapping->freezeErrorScales();}
+
+
 
     /// @copydoc PhotometryMappingBase::computeParameterDerivatives
     void computeParameterDerivatives(MeasuredStar const &measuredStar, double instFlux,
