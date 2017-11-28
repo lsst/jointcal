@@ -31,7 +31,7 @@ public:
     virtual void transformPosAndErrors(FatPoint const &where, FatPoint &outPoint) const = 0;
 
     //! Remember the error scale and freeze it
-    //  virtual void freezeErrorScales() = 0;
+    //  virtual void freezeErrorTransform() = 0;
 
     virtual void offsetParams(Eigen::VectorXd const &delta) = 0;
 

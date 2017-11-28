@@ -41,7 +41,7 @@ public:
     virtual std::shared_ptr<TanSipPix2RaDec> produceSipWcs(CcdImage const &ccdImage) const = 0;
 
     //!
-    virtual void freezeErrorScales() = 0;
+    virtual void freezeErrorTransform() = 0;
 
     virtual ~AstrometryModel(){};
 };

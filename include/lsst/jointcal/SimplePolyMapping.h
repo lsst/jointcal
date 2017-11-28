@@ -32,7 +32,7 @@ public:
     SimpleGtransfoMapping &operator=(SimpleGtransfoMapping const &) = delete;
     SimpleGtransfoMapping &operator=(SimpleGtransfoMapping &&) = delete;
 
-    virtual void freezeErrorScales() {
+    virtual void freezeErrorTransform() {
         // from there on, updating the transfo does not change the errors.
         errorProp = transfo->clone();
     }

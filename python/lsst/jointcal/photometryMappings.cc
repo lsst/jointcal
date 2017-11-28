@@ -43,6 +43,7 @@ void declarePhotometryMappingBase(py::module &mod) {
 
     cls.def("getNpar", &PhotometryMappingBase::getNpar);
     cls.def("transform", &PhotometryMappingBase::transform);
+    cls.def("transformError", &PhotometryMappingBase::transformError);
     cls.def("computeParameterDerivatives",
             [](PhotometryMappingBase const &self, MeasuredStar const &star, double instFlux) {
                 Eigen::VectorXd derivatives(self.getNpar());
@@ -69,6 +70,7 @@ void declarePhotometryMapping(py::module &mod) {
     cls.def(py::init<std::shared_ptr<PhotometryTransfo>>(), "transfo"_a);
 
     cls.def("getTransfo", &PhotometryMapping::getTransfo);
+    cls.def("getTransfoErrors", &PhotometryMapping::getTransfoErrors);
 }
 
 void declareChipVisitPhotometryMapping(py::module &mod) {
@@ -77,6 +79,9 @@ void declareChipVisitPhotometryMapping(py::module &mod) {
 
     cls.def(py::init<std::shared_ptr<PhotometryMapping>, std::shared_ptr<PhotometryMapping>>(),
             "chipMapping"_a, "visitMapping"_a);
+
+    cls.def("getChipMapping", &ChipVisitPhotometryMapping::getChipMapping);
+    cls.def("getVisitMapping", &ChipVisitPhotometryMapping::getVisitMapping);
 }
 
 PYBIND11_PLUGIN(photometryMappings) {

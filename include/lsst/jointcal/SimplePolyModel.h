@@ -54,7 +54,7 @@ public:
     const Gtransfo *getSky2TP(CcdImage const &ccdImage) const { return _sky2TP->getSky2TP(ccdImage); }
 
     //!
-    virtual void freezeErrorScales();
+    virtual void freezeErrorTransform();
 
     //! Access to mappings
     Gtransfo const &getTransfo(CcdImage const &ccdImage) const;

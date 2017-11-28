@@ -51,6 +51,13 @@ public:
     double transform(CcdImage const &ccdImage, MeasuredStar const &measuredStar,
                      double instFlux) const override;
 
+    /// @copydoc PhotometryModel::transformError
+    double transformError(CcdImage const &ccdImage, MeasuredStar const &measuredStar,
+                          double instFluxErr) const override;
+
+    /// @copydoc PhotometryModel::freezeErrorTransform
+    void freezeErrorTransform() override;
+
     /// @copydoc PhotometryModel::getMappingIndices
     void getMappingIndices(CcdImage const &ccdImage, std::vector<unsigned> &indices) const override;
 

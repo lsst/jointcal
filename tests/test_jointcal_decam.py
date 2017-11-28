@@ -78,8 +78,8 @@ class JointcalTestDECAM(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Test
                    'selected_photometry_ccdImages': 17,
                    'astrometry_final_chi2': 2144.87,
                    'astrometry_final_ndof': 4138,
-                   'photometry_final_chi2': 3707.15,
-                   'photometry_final_ndof': 2268,
+                   'photometry_final_chi2': 3809.64,
+                   'photometry_final_ndof': 2274,
                    }
 
         self._testJointcalTask(2, relative_error, self.dist_rms_absolute, pa1, metrics=metrics)

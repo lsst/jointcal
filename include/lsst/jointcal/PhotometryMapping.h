@@ -33,15 +33,34 @@ public:
     virtual unsigned getNpar() const = 0;
 
     /**
-     * Return the on-sky transformed flux at (x,y).
+     * Return the on-sky transformed flux for measuredStar on ccdImage.
      *
      * @param[in]  measuredStar  The measured star position to transform.
      * @param[in]  instFlux      The instrument flux to transform.
      *
-     * @return     The on-sky flux transformed from instFlux at measuredStar's
-     *             position.
+     * @return     The on-sky flux transformed from instFlux at measuredStar's position.
      */
     virtual double transform(MeasuredStar const &measuredStar, double instFlux) const = 0;
+
+    /**
+     * Return the on-sky transformed flux uncertainty for measuredStar on ccdImage.
+     * Identical to transform() until freezeErrorTransform() is called.
+     *
+     * @param[in]  measuredStar  The measured star position to transform.
+     * @param[in]  instFluxErr   The instrument flux error to transform.
+     *
+     * @return     The on-sky flux transformed from instFlux at measuredStar's position.
+     */
+    virtual double transformError(MeasuredStar const &measuredStar, double instFluxErr) const = 0;
+
+    /**
+     * Once this routine has been called, the error transform is not modified by offsetParams().
+     *
+     * The routine can be called when the mappings are roughly in place. After the call, the transformations
+     * used to propagate errors are no longer affected when updating the mappings. This allows an exactly
+     * linear fit, which can be necessary for some model+data combinations.
+     */
+    virtual void freezeErrorTransform() = 0;
 
     /**
      * Compute the derivatives with respect to the parameters (i.e. the coefficients).
@@ -94,8 +113,13 @@ protected:
  */
 class PhotometryMapping : public PhotometryMappingBase {
 public:
+    /**
+     * Value transform takes ownership of transfo, error transform aliases it.
+     *
+     * Call freezeErrorTransform() to unalias the error transform.
+     */
     explicit PhotometryMapping(std::shared_ptr<PhotometryTransfo> transfo)
-            : PhotometryMappingBase(), _transfo(std::move(transfo)) {}
+            : PhotometryMappingBase(), _transfo(std::move(transfo)), _transfoErrors(_transfo) {}
 
     /// @copydoc PhotometryMappingBase::getNpar
     unsigned getNpar() const override {
@@ -109,6 +133,16 @@ public:
     /// @copydoc PhotometryMappingBase::transform
     double transform(MeasuredStar const &measuredStar, double instFlux) const override {
         return _transfo->transform(measuredStar.x, measuredStar.y, instFlux);
+    }
+
+    /// @copydoc PhotometryMappingBase::transformError
+    double transformError(MeasuredStar const &measuredStar, double instFluxErr) const override {
+        return _transfoErrors->transform(measuredStar.x, measuredStar.y, instFluxErr);
+    }
+
+    /// @copydoc PhotometryMappingBase::freezeErrorTransform
+    void freezeErrorTransform() override {
+        _transfoErrors = std::shared_ptr<PhotometryTransfo>(_transfo->clone());
     }
 
     /// @copydoc PhotometryMappingBase::computeParameterDerivatives
@@ -143,9 +177,13 @@ public:
 
     std::shared_ptr<PhotometryTransfo> getTransfo() const { return _transfo; }
 
+    std::shared_ptr<PhotometryTransfo> getTransfoErrors() const { return _transfoErrors; }
+
 private:
     // the actual transformation to be fit
     std::shared_ptr<PhotometryTransfo> _transfo;
+    // the transformation used for errors
+    std::shared_ptr<PhotometryTransfo> _transfoErrors;
 };
 
 /**
@@ -167,6 +205,19 @@ public:
         double tempFlux = _chipMapping->getTransfo()->transform(measuredStar.x, measuredStar.y, instFlux);
         return _visitMapping->getTransfo()->transform(measuredStar.getXFocal(), measuredStar.getYFocal(),
                                                       tempFlux);
+    }
+
+    /// @copydoc PhotometryMappingBase::transformError
+    double transformError(MeasuredStar const &measuredStar, double instFluxErr) const override {
+        double tempFluxErr = _chipMapping->transformError(measuredStar, instFluxErr);
+        return _visitMapping->getTransfoErrors()->transform(measuredStar.getXFocal(),
+                                                            measuredStar.getYFocal(), tempFluxErr);
+    }
+
+    /// @copydoc PhotometryMappingBase::freezeErrorTransform
+    void freezeErrorTransform() override {
+        _chipMapping->freezeErrorTransform();
+        _visitMapping->freezeErrorTransform();
     }
 
     /// @copydoc PhotometryMappingBase::computeParameterDerivatives

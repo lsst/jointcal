@@ -91,10 +91,11 @@ void TwoTransfoMapping::positionDerivative(Point const &where, Eigen::Matrix2d &
     derivative = d1 * d2;
 }
 
-void TwoTransfoMapping::freezeErrorScales() {
-    throw LSST_EXCEPT(pexExcept::TypeError,
-                      " The routine  TwoTransfoMapping::freezeErrorScales() was thought to be useless and is "
-                      "not implemented (yet)");
+void TwoTransfoMapping::freezeErrorTransform() {
+    throw LSST_EXCEPT(
+            pexExcept::TypeError,
+            " The routine  TwoTransfoMapping::freezeErrorTransform() was thought to be useless and is "
+            "not implemented (yet)");
 }
 }  // namespace jointcal
 }  // namespace lsst

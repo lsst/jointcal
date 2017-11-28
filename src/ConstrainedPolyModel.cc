@@ -138,9 +138,9 @@ void ConstrainedPolyModel::offsetParams(Eigen::VectorXd const &delta) {
         }
 }
 
-void ConstrainedPolyModel::freezeErrorScales() {
-    for (auto i = _visitMap.begin(); i != _visitMap.end(); ++i) i->second->freezeErrorScales();
-    for (auto i = _chipMap.begin(); i != _chipMap.end(); ++i) i->second->freezeErrorScales();
+void ConstrainedPolyModel::freezeErrorTransform() {
+    for (auto i = _visitMap.begin(); i != _visitMap.end(); ++i) i->second->freezeErrorTransform();
+    for (auto i = _chipMap.begin(); i != _chipMap.end(); ++i) i->second->freezeErrorTransform();
 }
 
 const Gtransfo &ConstrainedPolyModel::getChipTransfo(CcdIdType const chip) const {

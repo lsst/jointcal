@@ -54,7 +54,7 @@ public:
     void positionDerivative(Point const &where, Eigen::Matrix2d &derivative, double epsilon) const;
 
     //! Currently not implemented
-    void freezeErrorScales();
+    void freezeErrorTransform();
 
 private:
     friend class ConstrainedPolyModel;

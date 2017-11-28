@@ -98,8 +98,8 @@ void SimplePolyModel::offsetParams(Eigen::VectorXd const &delta) {
     }
 }
 
-void SimplePolyModel::freezeErrorScales() {
-    for (auto i = _myMap.begin(); i != _myMap.end(); ++i) i->second->freezeErrorScales();
+void SimplePolyModel::freezeErrorTransform() {
+    for (auto i = _myMap.begin(); i != _myMap.end(); ++i) i->second->freezeErrorTransform();
 }
 
 const Gtransfo &SimplePolyModel::getTransfo(CcdImage const &ccdImage) const {

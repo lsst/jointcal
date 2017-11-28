@@ -44,8 +44,10 @@ void declarePhotometryModel(py::module &mod) {
     py::class_<PhotometryModel, std::shared_ptr<PhotometryModel>> cls(mod, "PhotometryModel");
 
     cls.def("assignIndices", &PhotometryModel::assignIndices);
+    cls.def("freezeErrorTransform", &PhotometryModel::freezeErrorTransform);
     cls.def("offsetParams", &PhotometryModel::offsetParams);
     cls.def("transform", &PhotometryModel::transform);
+    cls.def("transformError", &PhotometryModel::transformError);
     cls.def("getMappingIndices", &PhotometryModel::getMappingIndices);
     cls.def("computeParameterDerivatives",
             [](PhotometryModel const &self, MeasuredStar const &star, CcdImage const &ccdImage) {
@@ -56,6 +58,7 @@ void declarePhotometryModel(py::module &mod) {
 
     cls.def("getNpar", &PhotometryModel::getNpar);
     cls.def("toPhotoCalib", &PhotometryModel::toPhotoCalib);
+    cls.def("getMapping", &PhotometryModel::getMapping, py::return_value_policy::reference_internal);
     cls.def("__str__", [](PhotometryModel const &self) {
         std::ostringstream os;
         os << self;

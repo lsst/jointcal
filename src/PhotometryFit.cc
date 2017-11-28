@@ -56,8 +56,8 @@ void PhotometryFit::leastSquareDerivativesMeasurement(CcdImage const &ccdImage, 
         double residual = _photometryModel->transform(ccdImage, *measuredStar, measuredStar->getInstFlux()) -
                           measuredStar->getFittedStar()->getFlux();
 
-        double inverseSigma =
-                1.0 / _photometryModel->transform(ccdImage, *measuredStar, measuredStar->getInstFluxErr());
+        double inverseSigma = 1.0 / _photometryModel->transformError(ccdImage, *measuredStar,
+                                                                     measuredStar->getInstFluxErr());
         double W = std::pow(inverseSigma, 2);
 
         if (_fittingModel) {
@@ -126,8 +126,8 @@ void PhotometryFit::accumulateStatImageList(CcdImageList const &ccdImageList, Ch
 
         for (auto const &measuredStar : catalog) {
             if (!measuredStar->isValid()) continue;
-            double sigma =
-                    _photometryModel->transform(*ccdImage, *measuredStar, measuredStar->getInstFluxErr());
+            double sigma = _photometryModel->transformError(*ccdImage, *measuredStar,
+                                                            measuredStar->getInstFluxErr());
 #ifdef FUTURE
             TweakPhotomMeasurementErrors(inPos, measuredStar, _fluxError);
 #endif
@@ -242,14 +242,14 @@ void PhotometryFit::saveChi2MeasContributions(std::string const &baseName) const
         const MeasuredStarList &cat = ccdImage->getCatalogForFit();
         for (auto const &measuredStar : cat) {
             if (!measuredStar->isValid()) continue;
-            double sigma =
-                    _photometryModel->transform(*ccdImage, *measuredStar, measuredStar->getInstFluxErr());
+            double sigma = _photometryModel->transformError(*ccdImage, *measuredStar,
+                                                            measuredStar->getInstFluxErr());
 #ifdef FUTURE
             tweakPhotomMeasurementErrors(inPos, measuredStar, _fluxError);
 #endif
             double flux = _photometryModel->transform(*ccdImage, *measuredStar, measuredStar->getInstFlux());
-            double fluxErr =
-                    _photometryModel->transform(*ccdImage, *measuredStar, measuredStar->getInstFluxErr());
+            double fluxErr = _photometryModel->transformError(*ccdImage, *measuredStar,
+                                                              measuredStar->getInstFluxErr());
             double jd = ccdImage->getMjd();
             auto fittedStar = measuredStar->getFittedStar();
             double residual = flux - fittedStar->getFlux();

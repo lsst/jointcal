@@ -560,6 +560,9 @@ class JointcalTask(pipeBase.CmdLineTask):
             raise FloatingPointError('Pre-iteration chi2 is invalid: %s'%chi2)
         self.log.info("Fit prepared with %s", str(chi2))
 
+        model.freezeErrorTransform()
+        self.log.debug("Photometry error scales are frozen.")
+
         chi2 = self._iterate_fit(fit, model, 20, "photometry", "Model Fluxes")
 
         add_measurement(self.job, 'jointcal.photometry_final_chi2', chi2.chi2)
