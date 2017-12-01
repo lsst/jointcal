@@ -505,64 +505,74 @@ class JointcalTask(pipeBase.CmdLineTask):
 
         refFluxes = {}
         refFluxErrs = {}
-        for filt in filters:
 
-            if applyColorTerms:
-                self.log.info("Applying color terms for filterName=%r, config.photoCatName=%s because %s",
-                              filt, self.config.photoCatName, applyCTReason)
-                ct = self.config.colorterms.getColorterm(
-                    filterName=filt, photoCatName=self.config.photoCatName, doRaise=True)
-            else:
-                self.log.info("Not applying color terms because %s", applyCTReason)
+        if applyColorTerms:
+            self.log.info("Applying color terms for filterName=%r, config.photoCatName=%s because %s",
+                          defaultFilter, self.config.photoCatName, applyCTReason)
+            ct = self.config.colorterms.getColorterm(
+                filterName=defaultFilter, photoCatName=self.config.photoCatName, doRaise=True)
+        else:
+            self.log.info("Not applying color terms because %s", applyCTReason)
+            ct = None
+
+        if ct:                          # we have a color term to worry about
+            filters = [ct.primary, ct.secondary]
+            fluxFieldList = [lsst.meas.algorithms.getRefFluxField(refCat.schema, f) for f in (ct.primary, ct.secondary)]
+            missingFluxFieldList = []
+            for fluxField in fluxFieldList:
+                try:
+                    refCat.schema.find(fluxField).key
+                except KeyError:
+                    missingFluxFieldList.append(fluxField)
+
+            if missingFluxFieldList:
+                self.log.warn("Source catalog does not have fluxes for %s; ignoring color terms",
+                              " ".join(missingFluxFieldList))
                 ct = None
 
-            if ct:                          # we have a color term to worry about
-                fluxFieldList = [lsst.meas.algorithms.getRefFluxField(refCat.schema, f) for f in (ct.primary, ct.secondary)]
-                missingFluxFieldList = []
-                for fluxField in fluxFieldList:
-                    try:
-                        refCat.schema.find(fluxField).key
-                    except KeyError:
-                        missingFluxFieldList.append(fluxField)
+        if not ct:
+            filters = defaultFilter
+            fluxFieldList = [lsst.meas.algorithms.getRefFluxField(refCat.schema, defaultFilter)]
 
-                if missingFluxFieldList:
-                    self.log.warn("Source catalog does not have fluxes for %s; ignoring color terms",
-                                  " ".join(missingFluxFieldList))
-                    ct = None
+        refFluxArrList = {}  # dictionary of ref arrays, one per flux field / filter
+        refFluxErrArrList = {}  # dictionary of ref flux arrays, one per flux field / filter
+        for fluxField, filt in zip(fluxFieldList, filters):
+            fluxKey = refCat.schema.find(fluxField).key
+            refFluxArr = np.array([r.get(fluxKey) for r in refCat])
+            try:
+                fluxErrKey = refCat.schema.find(fluxField + "Sigma").key
+                refFluxErrArr = np.array([r.get(fluxErrKey) for r in refCat])
+            except KeyError:
+                # Reference catalogue may not have flux uncertainties; HACK
+                self.log.warn("Reference catalog does not have flux uncertainties for %s; using sqrt(flux).",
+                              fluxField)
+                refFluxErrArr = np.sqrt(refFluxArr)
 
-            if not ct:
-                fluxFieldList = [lsst.meas.algorithms.getRefFluxField(refCat.schema, filt)]
+            refFluxArrList[filt] = refFluxArr
+            refFluxErrArrList[filt] = refFluxErrArr
 
-            refFluxArrList = []  # list of ref arrays, one per flux field
-            refFluxErrArrList = []  # list of ref flux arrays, one per flux field
-            for fluxField in fluxFieldList:
-                fluxKey = refCat.schema.find(fluxField).key
-                refFluxArr = np.array([r.get(fluxKey) for r in refCat])
-                try:
-                    fluxErrKey = refCat.schema.find(fluxField + "Sigma").key
-                    refFluxErrArr = np.array([r.get(fluxErrKey) for r in refCat])
-                except KeyError:
-                    # Reference catalogue may not have flux uncertainties; HACK
-                    self.log.warn("Reference catalog does not have flux uncertainties for %s; using sqrt(flux).",
-                                  fluxField)
-                    refFluxErrArr = np.sqrt(refFluxArr)
+        refMagArr = {}
+        refMagArrErr = {}
+        if ct:
+            for filt in filters:                 # we have a color term to worry about
+                refMagArr[filt] = np.array([abMagFromFlux(rf1) for rf1 in refFluxArrList[filt]])
+                refMagArrErr[filt] = np.array([abMagErrFromFluxErr(rf1, erf1) for rf1, erf1 in zip(refFluxArrList[filt],refFluxErrArrList[filt])])
+            colCorrMagArr = ct.transformMags(refMagArr[filters[0]], refMagArr[filters[1]])
+            fluxErr = ct.propagateFluxErrors(refFluxErrArrList[filters[0]], refFluxErrArrList[filters[1]])
+            flux = np.array([fluxFromABMag(rf) for rf in colCorrMagArr])
+        else:
+            flux = refFluxArrList[defaultFilter]
+            fluxErr = refFluxErrArrList[defaultFilter]
 
-                refFluxArrList.append(refFluxArr)
-                refFluxErrArrList.append(refFluxErrArr)
+        if ct:
+            for filt in filters:
+                refFluxes[filt] = np.array([fluxFromABMag(rf) for rf in refMagArr[filt]])
+                refFluxErrs[filt] = refFluxErrArrList[filt]
+        else :
+            refFluxes[defaultFilter] = refFluxArrList[defaultFilter]
+            refFluxErrs[defaultFilter] = refFluxErrArrList[defaultFilter]
 
-            if ct:                          # we have a color term to worry about
-                refMagArr1 = np.array([abMagFromFlux(rf1) for rf1 in refFluxArrList[0]])  # primary
-                refMagArr2 = np.array([abMagFromFlux(rf2) for rf2 in refFluxArrList[1]])  # secondary
-
-                refMagArr = ct.transformMags(refMagArr1, refMagArr2)
-                refFluxErrArr = ct.propagateFluxErrors(refFluxErrArrList[0], refFluxErrArrList[1])
-            else:
-                refMagArr = np.array([abMagFromFlux(rf) for rf in refFluxArrList[0]])
-
-            refFluxes[filt] = np.array([fluxFromABMag(rf) for rf in refMagArr])
-            refFluxErrs[filt] = refFluxErrArr
-
-        associations.collectRefStars(refCat, self.config.matchCut*afwGeom.arcseconds,
+        associations.collectRefStars(refCat, flux, fluxErr, self.config.matchCut*afwGeom.arcseconds,
                                      skyCircle.fluxField, refFluxes, refFluxErrs,
                                      self.config.minRefSnr, self.config.maxRefMag,
                                      reject_bad_fluxes)
@@ -647,7 +657,7 @@ class JointcalTask(pipeBase.CmdLineTask):
         if not np.isfinite(chi2.chi2):
             raise FloatingPointError('Pre-iteration chi2 is invalid: %s'%chi2)
         self.log.info("Fit prepared with %s", str(chi2))
-        
+
         fit.freezeErrorScales()
         self.log.info("errors scales are now frozen")
 

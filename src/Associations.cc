@@ -140,6 +140,7 @@ void Associations::associateCatalogs(const double matchCutInArcSec, const bool u
 }
 
 void Associations::collectRefStars(lsst::afw::table::SortedCatalogT<lsst::afw::table::SimpleRecord> &refCat,
+                                   std::vector<double> const &flux, std::vector<double> const &fluxErr,
                                    afw::geom::Angle matchCut, std::string const &fluxField,
                                    std::map<std::string, std::vector<double>> const &refFluxMap,
                                    std::map<std::string, std::vector<double>> const &refFluxErrMap,
@@ -175,13 +176,13 @@ void Associations::collectRefStars(lsst::afw::table::SortedCatalogT<lsst::afw::t
 
         afw::coord::Coord coord = record->get(coordKey);
         double mag = record->get(fluxKey);
-        double defaultFlux = record->get(fluxKey) / JanskyToMaggy;
-        double defaultFluxErr;
-        if (fluxErrKey.isValid()) {
-            defaultFluxErr = record->get(fluxErrKey) / JanskyToMaggy;
-        } else {
-            defaultFluxErr = std::numeric_limits<double>::quiet_NaN();
-        }
+        double defaultFlux = flux[i] / JanskyToMaggy;
+        double defaultFluxErr = fluxErr[i] / JanskyToMaggy;
+//        if (fluxErrKey.isValid()) {
+//            defaultFluxErr = record->get(fluxErrKey) / JanskyToMaggy;
+//        } else {
+//            defaultFluxErr = std::numeric_limits<double>::quiet_NaN();
+//        }
         std::vector<double> fluxList(nFilters);
         std::vector<double> fluxErrList(nFilters);
         for (auto const &filter : _filterMap) {

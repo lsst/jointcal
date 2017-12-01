@@ -98,6 +98,7 @@ public:
      *                              Typically false for astrometry and true for photometry.
      */
     void collectRefStars(lsst::afw::table::SortedCatalogT<lsst::afw::table::SimpleRecord> &refCat,
+                         std::vector<double> const &flux, std::vector<double> const &fluxErr,
                          afw::geom::Angle matchCut, std::string const &fluxField,
                          std::map<std::string, std::vector<double>> const &refFluxMap,
                          std::map<std::string, std::vector<double>> const &refFluxErrMap,
