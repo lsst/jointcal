@@ -2,6 +2,7 @@
 #include <iomanip>
 #include <algorithm>
 #include <fstream>
+#include <utility>
 
 #include "Eigen/Sparse"
 
@@ -25,8 +26,8 @@ namespace jointcal {
 
 AstrometryFit::AstrometryFit(std::shared_ptr<Associations> associations,
                              std::shared_ptr<AstrometryModel> astrometryModel, double posError)
-        : FitterBase(associations),
-          _astrometryModel(astrometryModel),
+        : FitterBase(std::move(associations)),
+          _astrometryModel(std::move(astrometryModel)),
           _refractionCoefficient(0),
           _nParDistortions(0),
           _nParPositions(0),

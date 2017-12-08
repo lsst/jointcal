@@ -540,7 +540,7 @@ std::unique_ptr<StarMatchList> listMatchCollect(const BaseStarList &list1, const
     /****** Collect ***********/
     FastFinder finder(list2);
     for (const auto & si : list1) {
-        auto p1 = si;
+        const auto& p1 = si;
         Point p2 = guess->apply(*p1);
         auto neighbour = finder.findClosest(p2, maxDist);
         if (!neighbour) continue;
@@ -585,7 +585,7 @@ std::unique_ptr<StarMatchList> listMatchCollect(const BaseStarList &list1, const
     std::unique_ptr<StarMatchList> matches(new StarMatchList);
     FastFinder finder(list2);
     for (const auto & si : list1) {
-        auto p1 = si;
+        const auto& p1 = si;
         auto neighbour = finder.findClosest(*p1, maxDist);
         if (!neighbour) continue;
         double distance = p1->Distance(*neighbour);

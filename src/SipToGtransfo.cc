@@ -16,7 +16,7 @@ namespace jointcal {
 
 using GtPoly_Ptr = std::shared_ptr<jointcal::GtransfoPoly>;
 
-jointcal::TanSipPix2RaDec convertTanWcs(const std::shared_ptr<lsst::afw::image::TanWcs> wcs) {
+jointcal::TanSipPix2RaDec convertTanWcs(const std::shared_ptr<lsst::afw::image::TanWcs>& wcs) {
     GtPoly_Ptr sipCorr(new jointcal::GtransfoPoly(0));
 
     /* beware : Wcs::getPixelOrigin return crpix_fits - 1,
@@ -90,7 +90,7 @@ jointcal::TanSipPix2RaDec convertTanWcs(const std::shared_ptr<lsst::afw::image::
 /* The inverse transformation i.e. convert from the fit result to the SIP
    convention. */
 PTR(afwImg::TanWcs)
-gtransfoToTanWcs(const jointcal::TanSipPix2RaDec wcsTransfo, const jointcal::Frame &ccdFrame,
+gtransfoToTanWcs(const jointcal::TanSipPix2RaDec& wcsTransfo, const jointcal::Frame &ccdFrame,
                  const bool noLowOrderSipTerms) {
     GtransfoLin linPart = wcsTransfo.getLinPart();
     afwGeom::Point2D crpix_lsst;  // in LSST "frame"

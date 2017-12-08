@@ -2,6 +2,7 @@
 #include <string>
 #include <sstream>
 #include <cmath>
+#include <utility>
 
 #include "lsst/afw/cameraGeom/CameraSys.h"
 #include "lsst/pex/exceptions.h"
@@ -80,18 +81,18 @@ void CcdImage::loadCatalog(afw::table::SourceCatalog const &catalog, std::string
 }
 
 CcdImage::CcdImage(afw::table::SourceCatalog &catalog, std::shared_ptr<lsst::afw::image::TanWcs> wcs,
-                   std::shared_ptr<lsst::afw::image::VisitInfo> visitInfo, afw::geom::Box2I const &bbox,
+                   const std::shared_ptr<lsst::afw::image::VisitInfo>& visitInfo, afw::geom::Box2I const &bbox,
                    std::string const &filter, std::shared_ptr<afw::image::PhotoCalib> photoCalib,
                    std::shared_ptr<afw::cameraGeom::Detector> detector, int visit, int ccdId,
                    std::string const &fluxField)
-        : _ccdId(ccdId), _visit(visit), _photoCalib(photoCalib), _detector(detector), _filter(filter) {
+        : _ccdId(ccdId), _visit(visit), _photoCalib(std::move(photoCalib)), _detector(std::move(detector)), _filter(filter) {
     loadCatalog(catalog, fluxField);
 
     Point lowerLeft(bbox.getMinX(), bbox.getMinY());
     Point upperRight(bbox.getMaxX(), bbox.getMaxY());
     _imageFrame = Frame(lowerLeft, upperRight);
 
-    _readWcs.reset(new jointcal::TanSipPix2RaDec(jointcal::convertTanWcs(wcs)));
+    _readWcs.reset(new jointcal::TanSipPix2RaDec(jointcal::convertTanWcs(std::move(wcs))));
     _inverseReadWcs = _readWcs->inverseTransfo(0.01, _imageFrame);
 
     std::stringstream out;
