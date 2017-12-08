@@ -82,7 +82,7 @@ void TwoTransfoMapping::transformPosAndErrors(const FatPoint &where, FatPoint &o
 }
 
 void TwoTransfoMapping::positionDerivative(Point const &where, Eigen::Matrix2d &derivative,
-                                           double epsilon) const {
+                                           double  /*epsilon*/) const {
     Eigen::Matrix2d d1, d2;  // seems that it does not trigger dynamic allocation
     _m1->positionDerivative(where, d1, 1e-4);
     FatPoint pMid;

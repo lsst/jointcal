@@ -77,7 +77,7 @@ Point AstrometryFit::transformFittedStar(FittedStar const &fittedStar, Gtransfo 
 /*! This is the first implementation of an error "model".  We'll
   certainly have to upgrade it. MeasuredStar provides the mag in case
   we need it.  */
-static void tweakAstromMeasurementErrors(FatPoint &P, MeasuredStar const &Ms, double error) {
+static void tweakAstromMeasurementErrors(FatPoint &P, double error) {
     static bool called = false;
     static double increment = 0;
     if (!called) {
@@ -141,7 +141,7 @@ void AstrometryFit::leastSquareDerivativesMeasurement(CcdImage const &ccdImage, 
         if (!ms.isValid()) continue;
         // tweak the measurement errors
         FatPoint inPos = ms;
-        tweakAstromMeasurementErrors(inPos, ms, _posError);
+        tweakAstromMeasurementErrors(inPos, _posError);
         H.setZero();  // we cannot be sure that all entries will be overwritten.
         FatPoint outPos;
         // should *not* fill H if whatToFit excludes mapping parameters.
@@ -344,7 +344,7 @@ void AstrometryFit::accumulateStatImage(CcdImage const &ccdImage, Chi2Accumulato
         if (!ms->isValid()) continue;
         // tweak the measurement errors
         FatPoint inPos = *ms;
-        tweakAstromMeasurementErrors(inPos, *ms, _posError);
+        tweakAstromMeasurementErrors(inPos, _posError);
 
         FatPoint outPos;
         // should *not* fill H if whatToFit excludes mapping parameters.
@@ -576,7 +576,7 @@ void AstrometryFit::saveChi2MeasContributions(std::string const &baseName) const
             if (!ms->isValid()) continue;
             FatPoint tpPos;
             FatPoint inPos = *ms;
-            tweakAstromMeasurementErrors(inPos, *ms, _posError);
+            tweakAstromMeasurementErrors(inPos, _posError);
             mapping->transformPosAndErrors(inPos, tpPos);
             const Gtransfo *sky2TP = _astrometryModel->getSky2TP(*ccdImage);
             auto fs = ms->getFittedStar();

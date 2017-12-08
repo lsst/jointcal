@@ -30,7 +30,7 @@ using namespace std;
 
 ConstrainedPolyModel::ConstrainedPolyModel(CcdImageList const &ccdImageList,
                                            ProjectionHandler const *projectionHandler, bool initFromWCS,
-                                           unsigned nNotFit, int chipDegree, int visitDegree)
+                                           unsigned  /*nNotFit*/, int chipDegree, int visitDegree)
         : _sky2TP(projectionHandler)
 
 {

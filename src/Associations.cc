@@ -23,7 +23,6 @@
 #include "lsst/afw/coord/Coord.h"
 #include "lsst/afw/image/Calib.h"
 
-namespace jointcal = lsst::jointcal;
 
 namespace {
 LOG_LOGGER _log = LOG_GET("jointcal.Associations");

@@ -28,7 +28,7 @@ SimplePhotometryModel::SimplePhotometryModel(CcdImageList const &ccdImageList) {
     LOGLS_INFO(_log, "SimplePhotometryModel got " << _myMap.size() << " ccdImage mappings.");
 }
 
-unsigned SimplePhotometryModel::assignIndices(std::string const &whatToFit, unsigned firstIndex) {
+unsigned SimplePhotometryModel::assignIndices(std::string const & /*whatToFit*/, unsigned firstIndex) {
     unsigned ipar = firstIndex;
     for (auto const &i : _myMap) {
         auto mapping = i.second.get();

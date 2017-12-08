@@ -7,7 +7,6 @@
 #include "lsst/jointcal/Frame.h"
 #include "lsst/daf/base/PropertySet.h"
 
-namespace jointcal = lsst::jointcal;
 namespace afwImg = lsst::afw::image;
 namespace afwGeom = lsst::afw::geom;
 

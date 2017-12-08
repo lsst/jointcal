@@ -75,7 +75,7 @@ ConstrainedPhotometryModel::ConstrainedPhotometryModel(CcdImageList const &ccdIm
                                           << " buckets and a load factor of " << _myMap.load_factor());
 }
 
-unsigned ConstrainedPhotometryModel::assignIndices(std::string const &whatToFit, unsigned firstIndex) {
+unsigned ConstrainedPhotometryModel::assignIndices(std::string const & /*whatToFit*/, unsigned firstIndex) {
     // TODO DM-8046: currently ignoring whatToFit: eventually implement configurability.
     unsigned index = firstIndex;
     for (auto &i : _chipMap) {

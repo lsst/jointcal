@@ -6,7 +6,6 @@
 #include "lsst/jointcal/StarList.h"
 #include "lsst/pex/exceptions.h"
 
-namespace pexExcept = lsst::pex::exceptions;
 
 namespace lsst {
 namespace jointcal {

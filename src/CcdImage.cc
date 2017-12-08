@@ -18,8 +18,6 @@
 #include "lsst/jointcal/Gtransfo.h"
 #include "lsst/jointcal/Point.h"
 
-namespace jointcal = lsst::jointcal;
-namespace afwImg = lsst::afw::image;
 
 namespace {
 LOG_LOGGER _log = LOG_GET("jointcal.CcdImage");
@@ -92,7 +90,7 @@ CcdImage::CcdImage(afw::table::SourceCatalog &catalog, std::shared_ptr<lsst::afw
     Point upperRight(bbox.getMaxX(), bbox.getMaxY());
     _imageFrame = Frame(lowerLeft, upperRight);
 
-    _readWcs.reset(new jointcal::TanSipPix2RaDec(jointcal::convertTanWcs(std::move(wcs))));
+    _readWcs.reset(new jointcal::TanSipPix2RaDec(jointcal::convertTanWcs(wcs)));
     _inverseReadWcs = _readWcs->inverseTransfo(0.01, _imageFrame);
 
     std::stringstream out;

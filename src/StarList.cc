@@ -9,7 +9,6 @@
 #include "lsst/jointcal/FittedStar.h"
 #include "lsst/jointcal/MeasuredStar.h"
 
-namespace pexExcept = lsst::pex::exceptions;
 
 namespace lsst {
 namespace jointcal {

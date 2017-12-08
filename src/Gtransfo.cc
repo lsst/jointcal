@@ -206,7 +206,7 @@ void Gtransfo::write(const std::string &fileName) const {
                           "Gtransfo::write, something went wrong for file " + fileName);
 }
 
-void Gtransfo::write(ostream &stream) const {
+void Gtransfo::write(ostream & /*stream*/) const {
     throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,
                       "Gtransfo::write(ostream), should never be called. MEans that it is missing in some "
                       "derived class ");
@@ -506,7 +506,7 @@ void GtransfoPoly::apply(const double xIn, const double yIn, double &xOut, doubl
     for (int k = _nterms; k--;) yOut += (*(pm++)) * (*(c++));
 }
 
-void GtransfoPoly::computeDerivative(const Point &where, GtransfoLin &derivative, const double step)
+void GtransfoPoly::computeDerivative(const Point &where, GtransfoLin &derivative, const double  /*step*/)
         const { /* routine checked against numerical derivatives from Gtransfo::Derivative */
     if (_degree == 1) {
         derivative = GtransfoLin(*this);
