@@ -63,8 +63,8 @@ public:
     SegmentList(const BaseStarList &list, const int nStar, const Gtransfo &gtransfo = GtransfoIdentity());
 };
 
-typedef std::list<Segment>::iterator SegmentIterator;
-typedef std::list<Segment>::const_iterator SegmentCIterator;
+using SegmentIterator = std::list<Segment>::iterator;
+using SegmentCIterator = std::list<Segment>::const_iterator;
 
 static bool DecreasingLength(const Segment &first, const Segment &second) { return (first.r > second.r); }
 
@@ -91,9 +91,9 @@ struct SegmentPair : public std::pair<Segment *, Segment *> {
     SegmentPair(Segment *f, Segment *s) : std::pair<Segment *, Segment *>(f, s){};
 };
 
-typedef std::list<SegmentPair> SegmentPairList;
-typedef SegmentPairList::iterator SegmentPairListIterator;
-typedef SegmentPairList::const_iterator SegmentPairListCIterator;
+using SegmentPairList = std::list<SegmentPair>;
+using SegmentPairListIterator = SegmentPairList::iterator;
+using SegmentPairListCIterator = SegmentPairList::const_iterator;
 
 static std::unique_ptr<StarMatchList> MatchListExtract(const SegmentPairList &pairList, int rank1, int rank2,
                                                        const Gtransfo &gtransfo) {
@@ -102,8 +102,7 @@ static std::unique_ptr<StarMatchList> MatchListExtract(const SegmentPairList &pa
 
     std::unique_ptr<StarMatchList> matchList(new StarMatchList);
 
-    for (SegmentPairListCIterator spi = pairList.begin(); spi != pairList.end(); spi++) {
-        const SegmentPair &a_pair = *spi;
+    for (const auto & a_pair : pairList) {
         if (a_pair.first->s1rank != rank1 || a_pair.second->s1rank != rank2) continue;
         /* now we store as star matches both ends of segment pairs ,
            but only once the beginning of segments because they all have the same,
@@ -212,7 +211,7 @@ static std::unique_ptr<StarMatchList> ListMatchupRotShift_Old(BaseStarList &list
                 angle = seg1->relativeAngle(seg2);
                 if (angle > M_PI - angleOffset) angle -= 2. * M_PI;
                 if (angle < minAngle || angle > maxAngle) continue;
-                pairList.push_back(SegmentPair(seg1, seg2)); /* store the match */
+                pairList.emplace_back(seg1, seg2); /* store the match */
                 historank.fill(seg1->s1rank + 0.5, seg2->s1rank + 0.5);
             }
         }
@@ -323,8 +322,8 @@ static std::unique_ptr<StarMatchList> ListMatchupRotShift_New(BaseStarList &list
         }
         oldMaxContent = maxContent;
         /* reloop on segment pairs to select the ones in this specific bin */
-        int rank1L1 = int(pars[2]);
-        int rank1L2 = int(pars[3]);
+        auto rank1L1 = int(pars[2]);
+        auto rank1L2 = int(pars[3]);
         double minAngle, maxAngle;
         histo.binLimits(pars, 0, minRatio, maxRatio);
         histo.binLimits(pars, 1, minAngle, maxAngle);
@@ -540,8 +539,8 @@ std::unique_ptr<StarMatchList> listMatchCollect(const BaseStarList &list1, const
     std::unique_ptr<StarMatchList> matches(new StarMatchList);
     /****** Collect ***********/
     FastFinder finder(list2);
-    for (BaseStarCIterator si = list1.begin(); si != list1.end(); ++si) {
-        auto p1 = (*si);
+    for (const auto & si : list1) {
+        auto p1 = si;
         Point p2 = guess->apply(*p1);
         auto neighbour = finder.findClosest(p2, maxDist);
         if (!neighbour) continue;
@@ -585,8 +584,8 @@ std::unique_ptr<StarMatchList> listMatchCollect(const BaseStarList &list1, const
                                                 const double maxDist) {
     std::unique_ptr<StarMatchList> matches(new StarMatchList);
     FastFinder finder(list2);
-    for (BaseStarCIterator si = list1.begin(); si != list1.end(); ++si) {
-        auto p1 = (*si);
+    for (const auto & si : list1) {
+        auto p1 = si;
         auto neighbour = finder.findClosest(*p1, maxDist);
         if (!neighbour) continue;
         double distance = p1->Distance(*neighbour);
@@ -620,8 +619,8 @@ static double transfo_diff(const BaseStarList &List, const Gtransfo *T1, const G
     FatPoint tf1;
     Point tf2;
     int count = 0;
-    for (BaseStarCIterator it = List.begin(); it != List.end(); ++it) {
-        const BaseStar &s = **it;
+    for (const auto & it : List) {
+        const BaseStar &s = *it;
         T1->transformPosAndErrors(s, tf1);
         T2->apply(s, tf2);
         double dx = tf1.x - tf2.x;
@@ -637,7 +636,7 @@ static double transfo_diff(const BaseStarList &List, const Gtransfo *T1, const G
 static double median_distance(const StarMatchList *match, const Gtransfo *transfo) {
     size_t nstars = match->size();
     std::vector<double> resid(nstars);
-    std::vector<double>::iterator ir = resid.begin();
+    auto ir = resid.begin();
     for (auto it = match->begin(); it != match->end(); ++it, ++ir)
         *ir = sqrt(transfo->apply(it->point1).computeDist2(it->point2));
     sort(resid.begin(), resid.end());

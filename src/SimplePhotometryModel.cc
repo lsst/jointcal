@@ -1,4 +1,5 @@
 #include <iostream>
+#include <memory>
 
 #include "lsst/log/Log.h"
 #include "lsst/jointcal/PhotometryMapping.h"
@@ -22,7 +23,7 @@ SimplePhotometryModel::SimplePhotometryModel(CcdImageList const &ccdImageList) {
         auto transfo =
                 std::make_shared<PhotometryTransfoSpatiallyInvariant>(photoCalib->getCalibrationMean());
         _myMap.emplace(ccdImage->getHashKey(),
-                       std::unique_ptr<PhotometryMapping>(new PhotometryMapping(transfo)));
+                       std::make_unique<PhotometryMapping>(transfo));
     }
     LOGLS_INFO(_log, "SimplePhotometryModel got " << _myMap.size() << " ccdImage mappings.");
 }
@@ -67,8 +68,8 @@ void SimplePhotometryModel::computeParameterDerivatives(MeasuredStar const &meas
 std::shared_ptr<afw::image::PhotoCalib> SimplePhotometryModel::toPhotoCalib(CcdImage const &ccdImage) const {
     double calibration = (findMapping(ccdImage)->getParameters()[0]);
     auto oldPhotoCalib = ccdImage.getPhotoCalib();
-    return std::unique_ptr<afw::image::PhotoCalib>(
-            new afw::image::PhotoCalib(calibration, oldPhotoCalib->getCalibrationErr()));
+    return std::make_unique<afw::image::PhotoCalib>(
+            calibration, oldPhotoCalib->getCalibrationErr());
 }
 
 void SimplePhotometryModel::dump(std::ostream &stream) const {

@@ -1,6 +1,6 @@
-#include <assert.h>
+#include <cassert>
 #include <fstream>
-#include <string.h>  // strstr
+#include <cstring>  // strstr
 
 #include "lsst/jointcal/BaseStar.h"
 #include "lsst/jointcal/StarList.h"

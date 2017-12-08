@@ -1,7 +1,7 @@
-#include <assert.h>
+#include <cassert>
 #include <string>
 #include <sstream>
-#include <math.h>
+#include <cmath>
 
 #include "lsst/afw/cameraGeom/CameraSys.h"
 #include "lsst/pex/exceptions.h"

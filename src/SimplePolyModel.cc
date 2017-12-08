@@ -69,7 +69,7 @@ SimplePolyModel::SimplePolyModel(CcdImageList const &ccdImageList, ProjectionHan
 }
 
 const Mapping *SimplePolyModel::getMapping(CcdImage const &ccdImage) const {
-    mapType::const_iterator i = _myMap.find(&ccdImage);
+    auto i = _myMap.find(&ccdImage);
     if (i == _myMap.cend())
         throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,
                           "SimplePolyModel::GetMapping, never heard of CcdImage " + ccdImage.getName());
@@ -82,8 +82,8 @@ unsigned SimplePolyModel::assignIndices(unsigned firstIndex, std::string const &
         return 0;
     }
     unsigned index = firstIndex;
-    for (auto i = _myMap.begin(); i != _myMap.end(); ++i) {
-        SimplePolyMapping *p = dynamic_cast<SimplePolyMapping *>(&*(i->second));
+    for (auto & i : _myMap) {
+        auto *p = dynamic_cast<SimplePolyMapping *>(&*(i.second));
         if (!p) continue;  // it should be GtransfoIdentity
         p->setIndex(index);
         index += p->getNpar();
@@ -99,7 +99,7 @@ void SimplePolyModel::offsetParams(Eigen::VectorXd const &delta) {
 }
 
 void SimplePolyModel::freezeErrorScales() {
-    for (auto i = _myMap.begin(); i != _myMap.end(); ++i) i->second->freezeErrorScales();
+    for (auto & i : _myMap) i.second->freezeErrorScales();
 }
 
 const Gtransfo &SimplePolyModel::getTransfo(CcdImage const &ccdImage) const {
@@ -112,8 +112,8 @@ const Gtransfo &SimplePolyModel::getTransfo(CcdImage const &ccdImage) const {
 }
 
 std::shared_ptr<TanSipPix2RaDec> SimplePolyModel::produceSipWcs(CcdImage const &ccdImage) const {
-    const GtransfoPoly &pix2Tp = dynamic_cast<const GtransfoPoly &>(getTransfo(ccdImage));
-    const TanRaDec2Pix *proj = dynamic_cast<const TanRaDec2Pix *>(getSky2TP(ccdImage));
+    const auto &pix2Tp = dynamic_cast<const GtransfoPoly &>(getTransfo(ccdImage));
+    const auto *proj = dynamic_cast<const TanRaDec2Pix *>(getSky2TP(ccdImage));
     if (!proj) return nullptr;
 
     const GtransfoLin &projLinPart = proj->getLinPart();  // should be the identity, but who knows? So, let us

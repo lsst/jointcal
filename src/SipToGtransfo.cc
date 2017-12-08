@@ -14,7 +14,7 @@ namespace afwGeom = lsst::afw::geom;
 namespace lsst {
 namespace jointcal {
 
-typedef std::shared_ptr<jointcal::GtransfoPoly> GtPoly_Ptr;
+using GtPoly_Ptr = std::shared_ptr<jointcal::GtransfoPoly>;
 
 jointcal::TanSipPix2RaDec convertTanWcs(const std::shared_ptr<lsst::afw::image::TanWcs> wcs) {
     GtPoly_Ptr sipCorr(new jointcal::GtransfoPoly(0));
@@ -78,8 +78,8 @@ jointcal::TanSipPix2RaDec convertTanWcs(const std::shared_ptr<lsst::afw::image::
 
     //  lsst::afw::coord::Coord tp = wcs->getSkyOrigin()->getPosition(lsst::afw::geom::degrees);
     // the above line returns radians ?!
-    double ra = wcsMeta->get<double>("CRVAL1");
-    double dec = wcsMeta->get<double>("CRVAL2");
+    auto ra = wcsMeta->get<double>("CRVAL1");
+    auto dec = wcsMeta->get<double>("CRVAL2");
 
     jointcal::Point tangentPoint(ra, dec);
 

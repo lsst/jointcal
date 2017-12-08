@@ -1,6 +1,6 @@
 // -*- C++ -*-
 #include <algorithm>
-#include <assert.h>
+#include <cassert>
 #include <iomanip>
 
 #include "lsst/jointcal/RefStar.h"

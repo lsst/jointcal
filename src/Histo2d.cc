@@ -1,6 +1,7 @@
 #include <iostream>
-#include <math.h>   /* for floor */
-#include <string.h> /* for memset*/
+#include <memory>
+#include <cmath>   /* for floor */
+#include <cstring> /* for memset*/
 
 #include "lsst/log/Log.h"
 #include "lsst/jointcal/Histo2d.h"
@@ -29,13 +30,13 @@ Histo2d::Histo2d(int nnx, float mminx, float mmaxx, int nny, float mminy, float 
         LOGL_WARN(_log, "Histo2d: maxy = miny requested");
         scaley = 1.0;
     }
-    data.reset(new float[nx * ny]);
+    data = std::make_unique<float[]>(nx * ny);
     memset(data.get(), 0, nx * ny * sizeof(float));
 }
 
 Histo2d::Histo2d(const Histo2d &other) {
     memcpy(this, &other, sizeof(Histo2d));
-    data.reset(new float[nx * ny]);
+    data = std::make_unique<float[]>(nx * ny);
     memcpy((data).get(), other.data.get(), nx * ny * sizeof(float));
 }
 

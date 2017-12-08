@@ -96,7 +96,7 @@ Frame Frame::rescale(const double factor) const {
     double xcenter = 0.5 * (xMax + xMin);
     double hysize = fabs(factor * 0.5 * (yMax - yMin));
     double ycenter = 0.5 * (yMax + yMin);
-    return Frame(xcenter - hxsize, ycenter - hysize, xcenter + hxsize, ycenter + hysize);
+    return {xcenter - hxsize, ycenter - hysize, xcenter + hxsize, ycenter + hysize};
 }
 
 double Frame::getArea() const { return fabs((xMax - xMin) * (yMax - yMin)); }

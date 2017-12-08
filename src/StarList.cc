@@ -16,7 +16,7 @@ namespace jointcal {
 
 template <class Star>
 void StarList<Star>::fluxSort() {
-    typedef StarList<Star>::Element E;
+    using E = StarList<Star>::Element;
     this->sort([](const E &e1, const E &e2) { return (e1->getFlux() > e2->getFlux()); });
 }
 

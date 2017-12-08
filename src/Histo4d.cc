@@ -1,8 +1,9 @@
 #include <iostream>
-#include <math.h>    /* for floor */
-#include <string.h>  /* for memset*/
+#include <cmath>    /* for floor */
+#include <cstring>  /* for memset*/
 #include <algorithm> /* for sort */
-#include <limits.h>
+#include <memory>
+#include <climits>
 
 #include "lsst/log/Log.h"
 #include "lsst/jointcal/Histo4d.h"
@@ -35,7 +36,7 @@ SparseHisto4d::SparseHisto4d(const int n1, double min1, double max1, const int n
     _maxVal[3] = max4;
 
     for (int i = 0; i < 4; ++i) _scale[i] = _n[i] / (_maxVal[i] - _minVal[i]);
-    _data.reset(new int[nEntries]);
+    _data = std::make_unique<int[]>(nEntries);
     _dataSize = nEntries;
     _ndata = 0;
     _sorted = false;
@@ -44,7 +45,7 @@ SparseHisto4d::SparseHisto4d(const int n1, double min1, double max1, const int n
 int SparseHisto4d::code_value(const double x[4]) const {
     int index = 0;
     for (int idim = 0; idim < 4; ++idim) {
-        int i = (int)floor((x[idim] - _minVal[idim]) * _scale[idim]);
+        auto i = (int)floor((x[idim] - _minVal[idim]) * _scale[idim]);
         if (i < 0 || i >= _n[idim]) return -1;
         index = index * _n[idim] + i;
     }

@@ -529,8 +529,8 @@ void AstrometryFit::checkStuff() {
 #endif
     const char *what2fit[] = {"Positions", "Distortions", "Positions Distortions"};
     // DEBUG
-    for (unsigned k = 0; k < sizeof(what2fit) / sizeof(what2fit[0]); ++k) {
-        assignIndices(what2fit[k]);
+    for (auto & k : what2fit) {
+        assignIndices(k);
         TripletList tripletList(10000);
         Eigen::VectorXd grad(_nParTot);
         grad.setZero();
