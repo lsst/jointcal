@@ -199,10 +199,11 @@ void PhotometryFit::assignIndices(std::string const &whatToFit) {
 }
 
 void PhotometryFit::offsetParams(Eigen::VectorXd const &delta) {
-    if (delta.size() != _nParTot)
+    if (delta.size() != _nParTot) {
         throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,
                           "PhotometryFit::offsetParams : the provided vector length is not compatible with "
                           "the current whatToFit setting");
+}
     if (_fittingModel) _photometryModel->offsetParams(delta);
 
     if (_fittingFluxes) {

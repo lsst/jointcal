@@ -55,8 +55,9 @@ static unsigned chi2_cleanup(StarMatchList &starMatchList, const double chi2Cut,
         if (smi->chi2 > chi2Cut) {
             smi = starMatchList.erase(smi);
             erased++;
-        } else
+        } else {
             ++smi;
+}
     }
     return erased;
 }
@@ -131,12 +132,13 @@ unsigned StarMatchList::removeAmbiguities(const Gtransfo &gtransfo, int which) {
 }
 
 void StarMatchList::setTransfoOrder(int order) {
-    if (order == 0)
+    if (order == 0) {
         setTransfo(std::make_shared<GtransfoLinShift>());
-    else if (order == 1)
+    } else if (order == 1) {
         setTransfo(std::make_shared<GtransfoLin>());
-    else
+    } else {
         setTransfo(GtransfoPoly(order));
+}
     // might consider throwing if order does not make sense (e.g. >10)
     _order = order;
 }
@@ -164,8 +166,9 @@ std::unique_ptr<Gtransfo> StarMatchList::inverseTransfo() {
 void StarMatchList::cutTail(int nKeep) {
     iterator si;
     int count = 0;
-    for (si = begin(); si != end() && count < nKeep; ++count, ++si)
+    for (si = begin(); si != end() && count < nKeep; ++count, ++si) {
         ;
+}
     erase(si, end());
 }
 
@@ -211,8 +214,9 @@ void StarMatchList::dumpTransfo(std::ostream &stream) const {
 
 double computeDist2(const StarMatchList &starMatchList, const Gtransfo &gtransfo) {
     double dist2 = 0;
-    for (auto const &starMatch : starMatchList)
+    for (auto const &starMatch : starMatchList) {
         dist2 += gtransfo.apply(starMatch.point1).computeDist2(starMatch.point2);
+}
     return dist2;
 }
 

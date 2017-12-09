@@ -199,8 +199,9 @@ void Associations::collectRefStars(lsst::afw::table::SortedCatalogT<lsst::afw::t
 
         // Reject sources with non-finite fluxes and flux errors, and fluxErr=0 (which gives chi2=inf).
         if (rejectBadFluxes &&
-            (!std::isfinite(defaultFlux) || !std::isfinite(defaultFluxErr) || defaultFluxErr == 0))
+            (!std::isfinite(defaultFlux) || !std::isfinite(defaultFluxErr) || defaultFluxErr == 0)) {
             continue;
+}
         refStarList.push_back(star);
     }
 
@@ -218,10 +219,11 @@ const lsst::afw::geom::Box2D Associations::getRaDecBBox() {
     for (auto const &ccdImage : ccdImageList) {
         Frame CTPFrame =
                 applyTransfo(ccdImage->getImageFrame(), *(ccdImage->getPix2CommonTangentPlane()), LargeFrame);
-        if (tangentPlaneFrame.getArea() == 0)
+        if (tangentPlaneFrame.getArea() == 0) {
             tangentPlaneFrame = CTPFrame;
-        else
+        } else {
             tangentPlaneFrame += CTPFrame;
+}
     }
 
     // convert tangent plane coordinates to RaDec:
@@ -285,8 +287,9 @@ void Associations::selectFittedStars(int minMeasurements) {
                 auto f = std::const_pointer_cast<FittedStar>(fstar);
                 f->getMeasurementCount()--;
                 mi = catalog.erase(mi);
-            } else
+            } else {
                 ++mi;
+}
         }  // end loop on objects in catalog
     }      // end loop on catalogs
 
@@ -294,10 +297,11 @@ void Associations::selectFittedStars(int minMeasurements) {
        zero measurementCount; */
 
     for (auto fi = fittedStarList.begin(); fi != fittedStarList.end();) {
-        if ((*fi)->getMeasurementCount() == 0)
+        if ((*fi)->getMeasurementCount() == 0) {
             fi = fittedStarList.erase(fi);
-        else
+        } else {
             ++fi;
+}
     }
 
     LOGLS_INFO(_log, "Fitted stars after measurement # cut: " << fittedStarList.size());

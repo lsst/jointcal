@@ -46,8 +46,9 @@ SimplePolyModel::SimplePolyModel(CcdImageList const &ccdImageList, ProjectionHan
                 continue;
             }
             GtransfoPoly pol(degree);
-            if (pol.getDegree() > 0)  // if not, it cannot be decreased
+            if (pol.getDegree() > 0) {  // if not, it cannot be decreased
                 while (unsigned(pol.getNpar()) > 2 * nObj) pol.setDegree(pol.getDegree() - 1);
+}
             /* We have to center and normalize the coordinates so that
                the fit matrix is not too ill-conditionned. Basically, x
                and y in pixels are mapped to [-1,1]. When the
@@ -70,9 +71,10 @@ SimplePolyModel::SimplePolyModel(CcdImageList const &ccdImageList, ProjectionHan
 
 const Mapping *SimplePolyModel::getMapping(CcdImage const &ccdImage) const {
     auto i = _myMap.find(&ccdImage);
-    if (i == _myMap.cend())
+    if (i == _myMap.cend()) {
         throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,
                           "SimplePolyModel::GetMapping, never heard of CcdImage " + ccdImage.getName());
+}
     return (i->second.get());
 }
 
@@ -105,9 +107,10 @@ void SimplePolyModel::freezeErrorScales() {
 const Gtransfo &SimplePolyModel::getTransfo(CcdImage const &ccdImage) const {
     // return GetMapping(ccdImage)->Transfo(); // cannot do that
     auto p = _myMap.find(&ccdImage);
-    if (p == _myMap.end())
+    if (p == _myMap.end()) {
         throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,
                           "SimplePolyModel::getTransfo, never heard of CcdImage " + ccdImage.getName());
+}
     return p->second->getTransfo();
 }
 

@@ -20,8 +20,9 @@ SparseHisto4d::SparseHisto4d(const int n1, double min1, double max1, const int n
                              const int nEntries) {
     double indexMax = n1 * n2 * n3 * n4;
     _data.reset();
-    if (indexMax > double(INT_MAX))
+    if (indexMax > double(INT_MAX)) {
         LOGLS_WARN(_log, "Cannot hold a 4D histo with more than " << INT_MAX << " values.");
+}
     _n[0] = n1;
     _n[1] = n2;
     _n[2] = n3;
@@ -99,10 +100,11 @@ int SparseHisto4d::maxBin(double x[4]) {
     int oldval = _data[0];
     int currentCount = 1;
     for (int i = 1; i < _ndata; ++i) {
-        if (_data[i] == oldval)
+        if (_data[i] == oldval) {
             currentCount++;
-        else
+        } else {
             currentCount = 1;
+}
         if (currentCount > maxCount) {
             maxCount = currentCount;
             maxval = _data[i];
@@ -137,8 +139,9 @@ void SparseHisto4d::binLimits(const double x[4], const int iDim, double &xMin, d
 }
 
 void SparseHisto4d::dump() const {
-    for (int i = 0; i < _ndata; ++i)  // DEBUG
+    for (int i = 0; i < _ndata; ++i) {  // DEBUG
         std::cout << _data[i] << ' ';
+}
     std::cout << std::endl;
 }
 }  // namespace jointcal

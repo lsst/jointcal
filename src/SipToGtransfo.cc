@@ -38,10 +38,12 @@ jointcal::TanSipPix2RaDec convertTanWcs(const std::shared_ptr<lsst::afw::image::
         jointcal::GtransfoPoly sipPoly(sipOrder);
         for (int i = 0; i <= sipOrder; ++i) {
             for (int j = 0; j <= sipOrder; ++j) {
-                if (i < sipA.cols() && j < sipA.rows() && (i + j) <= sipOrder)
+                if (i < sipA.cols() && j < sipA.rows() && (i + j) <= sipOrder) {
                     sipPoly.coeff(i, j, 0) = sipA(i, j);
-                if (i < sipB.cols() && j < sipB.rows() && (i + j) <= sipOrder)
+}
+                if (i < sipB.cols() && j < sipB.rows() && (i + j) <= sipOrder) {
                     sipPoly.coeff(i, j, 1) = sipB(i, j);
+}
             }
         }
 
@@ -133,8 +135,9 @@ gtransfoToTanWcs(const jointcal::TanSipPix2RaDec& wcsTransfo, const jointcal::Fr
     cdMat(1, 0) = linPart.coeff(1, 0, 1);  // CD2_1
     cdMat(1, 1) = linPart.coeff(0, 1, 1);  // CD2_2
 
-    if (!wcsTransfo.getCorr())  // the WCS has no distortions
+    if (!wcsTransfo.getCorr()) {  // the WCS has no distortions
         return std::make_shared<afwImg::TanWcs>(crval, crpix_lsst, cdMat);
+}
 
     /* We are now given:
        - CRPIX
@@ -168,21 +171,23 @@ gtransfoToTanWcs(const jointcal::TanSipPix2RaDec& wcsTransfo, const jointcal::Fr
     int sipOrder = sipPoly.getDegree();
     Eigen::MatrixXd sipA(Eigen::MatrixXd::Zero(sipOrder + 1, sipOrder + 1));
     Eigen::MatrixXd sipB(Eigen::MatrixXd::Zero(sipOrder + 1, sipOrder + 1));
-    for (int i = 0; i <= sipOrder; ++i)
+    for (int i = 0; i <= sipOrder; ++i) {
         for (int j = 0; j <= sipOrder - i; ++j) {
             sipA(i, j) = sipPoly.coeff(i, j, 0);
             sipB(i, j) = sipPoly.coeff(i, j, 1);
         }
+}
 
     // now backwards coefficients
     sipOrder = sipPolyInv.getDegree();
     Eigen::MatrixXd sipAp(Eigen::MatrixXd::Zero(sipOrder + 1, sipOrder + 1));
     Eigen::MatrixXd sipBp(Eigen::MatrixXd::Zero(sipOrder + 1, sipOrder + 1));
-    for (int i = 0; i <= sipOrder; ++i)
+    for (int i = 0; i <= sipOrder; ++i) {
         for (int j = 0; j <= sipOrder - i; ++j) {
             sipAp(i, j) = sipPolyInv.coeff(i, j, 0);
             sipBp(i, j) = sipPolyInv.coeff(i, j, 1);
         }
+}
 
     return std::make_shared<afwImg::TanWcs>(crval, crpix_lsst, cdMat, sipA, sipB, sipAp, sipBp);
 }

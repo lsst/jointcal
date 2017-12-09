@@ -23,9 +23,9 @@ void TwoTransfoMapping::getMappingIndices(std::vector<unsigned> &indices) const 
     unsigned npar = getNpar();
     if (indices.size() < npar) indices.resize(npar);
     // in case we are only fitting one of the two transfos
-    if (_nPar1)
+    if (_nPar1) {
         _m1->getMappingIndices(indices);
-    else if (_nPar2) {
+    } else if (_nPar2) {
         _m2->getMappingIndices(indices);
         return;
     }
@@ -49,13 +49,15 @@ void TwoTransfoMapping::computeTransformAndDerivatives(FatPoint const &where, Fa
         // the last argument is epsilon and is not used for polynomials
         _m2->positionDerivative(pMid, tmp->dt2dx, 1e-4);
         H.block(0, 0, _nPar1, 2) = tmp->h1 * tmp->dt2dx;
-    } else
+    } else {
         _m1->transformPosAndErrors(where, pMid);
+}
     if (_nPar2) {
         _m2->computeTransformAndDerivatives(pMid, outPoint, tmp->h2);
         H.block(_nPar1, 0, _nPar2, 2) = tmp->h2;
-    } else
+    } else {
         _m2->transformPosAndErrors(pMid, outPoint);
+}
 }
 
 /*! Sets the _nPar{1,2} and allocates H matrices accordingly, to
@@ -66,13 +68,15 @@ void TwoTransfoMapping::setWhatToFit(const bool fittingT1, const bool fittingT2)
     if (fittingT1) {
         _nPar1 = _m1->getNpar();
         tmp->h1 = Eigen::MatrixX2d(_nPar1, 2);
-    } else
+    } else {
         _nPar1 = 0;
+}
     if (fittingT2) {
         _nPar2 = _m2->getNpar();
         tmp->h2 = Eigen::MatrixX2d(_nPar2, 2);
-    } else
+    } else {
         _nPar2 = 0;
+}
 }
 
 void TwoTransfoMapping::transformPosAndErrors(const FatPoint &where, FatPoint &outPoint) const {

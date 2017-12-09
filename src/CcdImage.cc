@@ -110,9 +110,9 @@ CcdImage::CcdImage(afw::table::SourceCatalog &catalog, std::shared_ptr<lsst::afw
         _hourAngle = 0;
     }
 
-    if (_airMass == 1)
+    if (_airMass == 1) {
         _sineta = _coseta = _tgz = 0;
-    else {
+    } else {
         double cosz = 1. / _airMass;
         double sinz = sqrt(1 - cosz * cosz);  // astronomers usually observe above the horizon
         _tgz = sinz / cosz;

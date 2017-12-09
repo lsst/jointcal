@@ -83,7 +83,7 @@ BOOST_AUTO_TEST_CASE(test_polyfit)
   jointcal::StarMatchList sml;
   jointcal::BaseStarList bsl1, bsl2;
 
-  for (double x=10; x<2000; x+= 120)
+  for (double x=10; x<2000; x+= 120) {
     for (double y=20; y<4000; y+=160)
       {
 	auto s1 = std::make_shared<jointcal::BaseStar>(x,y,1,0.01);
@@ -96,6 +96,7 @@ BOOST_AUTO_TEST_CASE(test_polyfit)
 	bsl2.push_back(s2);
 	sml.push_back(jointcal::StarMatch(*s1,*s2,s1,s2));
       }
+}
   jointcal::GtransfoPoly pol(3);
   double chi2 = pol.fit(sml);
   std::cout << " chi2/ndf " << chi2 << '/' << sml.size()-pol.getNpar() << std::endl;
