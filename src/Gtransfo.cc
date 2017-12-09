@@ -256,7 +256,7 @@ GtransfoInverse::GtransfoInverse(const Gtransfo *direct, const double precision,
     precision2 = precision * precision;
 }
 
-GtransfoInverse::GtransfoInverse(const GtransfoInverse &model) : {
+GtransfoInverse::GtransfoInverse(const GtransfoInverse &model) : Gtransfo() {
     _direct = model._direct->clone();
     _roughInverse = model._roughInverse->clone();
     precision2 = model.precision2;
@@ -1217,7 +1217,7 @@ BaseTanWcs::BaseTanWcs(const GtransfoLin &pix2Tan, const Point &tangentPoint,
    copy constructor, the operator = and the destructor */
 
 // ": Gtransfo" suppresses a warning
-BaseTanWcs::BaseTanWcs(const BaseTanWcs &original) : {
+BaseTanWcs::BaseTanWcs(const BaseTanWcs &original) : Gtransfo() {
     corr = nullptr;
     *this = original;
 }
@@ -1446,7 +1446,7 @@ void TanRaDec2Pix::setTangentPoint(const Point &tangentPoint) {
     sin0 = sin(dec0);
 }
 
-TanRaDec2Pix::TanRaDec2Pix() : {
+TanRaDec2Pix::TanRaDec2Pix() : linTan2Pix() {
     ra0 = dec0 = 0;
     cos0 = 1;
     sin0 = 0;
