@@ -34,8 +34,7 @@ public:
     void offsetParams(Eigen::VectorXd const &delta) override;
 
     /// @copydoc PhotometryModel::transform
-    double transform(CcdImage const &ccdImage, MeasuredStar const &star,
-                     double instFlux) const override;
+    double transform(CcdImage const &ccdImage, MeasuredStar const &star, double instFlux) const override;
 
     /// @copydoc PhotometryModel::getMappingIndices
     void getMappingIndices(CcdImage const &ccdImage, std::vector<unsigned> &indices) const override;

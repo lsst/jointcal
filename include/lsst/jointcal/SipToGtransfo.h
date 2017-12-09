@@ -17,7 +17,7 @@ TanSipPix2RaDec convertTanWcs(const std::shared_ptr<lsst::afw::image::TanWcs>& w
 
 //! Transform the other way around
 PTR(lsst::afw::image::TanWcs)
-gtransfoToTanWcs(const lsst::jointcal::TanSipPix2RaDec& wcsTransfo, const lsst::jointcal::Frame &ccdFrame,
+gtransfoToTanWcs(const lsst::jointcal::TanSipPix2RaDec& wcsTransfo, const lsst::jointcal::Frame& ccdFrame,
                  const bool noLowOrderSipTerms = false);
 }  // namespace jointcal
 }  // namespace lsst

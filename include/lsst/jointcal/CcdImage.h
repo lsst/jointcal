@@ -34,7 +34,7 @@ typedef std::pair<VisitIdType, CcdIdType> CcdImageKey;
 class CcdImage {
 public:
     CcdImage(afw::table::SourceCatalog &catalog, std::shared_ptr<lsst::afw::image::TanWcs> wcs,
-             const std::shared_ptr<lsst::afw::image::VisitInfo>& visitInfo, afw::geom::Box2I const &bbox,
+             const std::shared_ptr<lsst::afw::image::VisitInfo> &visitInfo, afw::geom::Box2I const &bbox,
              std::string const &filter, std::shared_ptr<afw::image::PhotoCalib> photoCalib,
              std::shared_ptr<afw::cameraGeom::Detector> detector, int visit, int ccdId,
              std::string const &fluxField);

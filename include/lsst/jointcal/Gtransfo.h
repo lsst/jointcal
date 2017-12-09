@@ -262,7 +262,8 @@ public:
     void read(std::istream &s);
 
 private:
-    double computeFit(const StarMatchList &starMatchList, const Gtransfo &shiftToCenter, const bool useErrors);
+    double computeFit(const StarMatchList &starMatchList, const Gtransfo &shiftToCenter,
+                      const bool useErrors);
 
     unsigned _degree;             // the degree
     unsigned _nterms;             // number of parameters per coordinate
