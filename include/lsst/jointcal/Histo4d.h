@@ -25,7 +25,7 @@ public:
     void zeroBin(double x[4]);
 
     //! return the bin limits of dimension idim (0<=idim<4), around point X.
-    void binLimits(const double x[4], const int idim, double &xMin, double &xMax) const;
+    void binLimits(const double x[4], const int iDim, double &xMin, double &xMax) const;
 
     //!
     int getNEntries() const { return _ndata; }

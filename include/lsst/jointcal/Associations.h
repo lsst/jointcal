@@ -82,7 +82,7 @@ public:
                   lsst::jointcal::JointcalControl const &control);
 
     //! incrementaly builds a merged catalog of all image catalogs
-    void associateCatalogs(const double matchCutInArcsec = 0, const bool useFittedList = false,
+    void associateCatalogs(const double matchCutInArcSec = 0, const bool useFittedList = false,
                            const bool enlargeFittedList = true);
 
     /**
@@ -139,7 +139,7 @@ public:
     }
 
 private:
-    void associateRefStars(double matchCutInArcsec, const Gtransfo *gtransfo);
+    void associateRefStars(double matchCutInArcSec, const Gtransfo *gtransfo);
 
     void assignMags();
 

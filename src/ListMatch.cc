@@ -60,7 +60,7 @@ struct Segment {
 class SegmentList : public std::list<Segment> {
 public:
     //  SegmentList(const BaseStarList &list, const int nStar);
-    SegmentList(const BaseStarList &list, int nStar, const Gtransfo &gtransfo = GtransfoIdentity());
+    SegmentList(const BaseStarList &list, int nStars, const Gtransfo &gtransfo = GtransfoIdentity());
 };
 
 using SegmentIterator = std::list<Segment>::iterator;

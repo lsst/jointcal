@@ -15,7 +15,7 @@ namespace jointcal {
 class TwoTransfoMapping : public Mapping {
 public:
     //!
-    TwoTransfoMapping(SimpleGtransfoMapping *chipMapping, SimpleGtransfoMapping *visitMapping);
+    TwoTransfoMapping(SimpleGtransfoMapping *mapping1, SimpleGtransfoMapping *mapping2);
 
     /// No copy or move: there is only ever one instance of a given model (i.e.. per ccd+visit)
     TwoTransfoMapping(TwoTransfoMapping const &) = delete;
