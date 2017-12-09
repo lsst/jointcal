@@ -30,7 +30,7 @@ using namespace std;
 
 ConstrainedPolyModel::ConstrainedPolyModel(CcdImageList const &ccdImageList,
                                            ProjectionHandler const *projectionHandler, bool initFromWCS,
-                                           unsigned  /*nNotFit*/, int chipDegree, int visitDegree)
+                                           unsigned /*nNotFit*/, int chipDegree, int visitDegree)
         : _sky2TP(projectionHandler)
 
 {
@@ -42,8 +42,7 @@ ConstrainedPolyModel::ConstrainedPolyModel(CcdImageList const &ccdImageList,
         auto visitp = _visitMap.find(visit);
         if (visitp == _visitMap.end()) {
             if (_visitMap.empty()) {
-                _visitMap[visit] =
-                        std::make_unique<SimpleGtransfoMapping>(GtransfoIdentity());
+                _visitMap[visit] = std::make_unique<SimpleGtransfoMapping>(GtransfoIdentity());
             } else {
                 _visitMap[visit] = std::unique_ptr<SimpleGtransfoMapping>(
                         new SimplePolyMapping(GtransfoLin(), GtransfoPoly(visitDegree)));
@@ -60,8 +59,8 @@ ConstrainedPolyModel::ConstrainedPolyModel(CcdImageList const &ccdImageList,
             }
             GtransfoLin shiftAndNormalize = normalizeCoordinatesTransfo(frame);
 
-            _chipMap[chip] = std::make_unique<SimplePolyMapping>(
-                    shiftAndNormalize, pol * shiftAndNormalize.invert());
+            _chipMap[chip] =
+                    std::make_unique<SimplePolyMapping>(shiftAndNormalize, pol * shiftAndNormalize.invert());
         }
     }
     // now, second loop to set the mappings of the CCdImages
@@ -74,11 +73,9 @@ ConstrainedPolyModel::ConstrainedPolyModel(CcdImageList const &ccdImageList,
         if (_chipMap.find(chip) == _chipMap.end()) {
             LOGLS_WARN(_log, "Chip " << chip << " is missing in the reference exposure, expect troubles.");
             GtransfoLin norm = normalizeCoordinatesTransfo(im.getImageFrame());
-            _chipMap[chip] =
-                    std::make_unique<SimplePolyMapping>(norm, GtransfoPoly(chipDegree));
+            _chipMap[chip] = std::make_unique<SimplePolyMapping>(norm, GtransfoPoly(chipDegree));
         }
-        _mappings[&im] = std::make_unique<TwoTransfoMapping>(
-                _chipMap[chip].get(), _visitMap[visit].get());
+        _mappings[&im] = std::make_unique<TwoTransfoMapping>(_chipMap[chip].get(), _visitMap[visit].get());
     }
     LOGLS_INFO(_log, "Constructor got " << _chipMap.size() << " chip mappings and " << _visitMap.size()
                                         << " visit mappings.");
@@ -114,13 +111,13 @@ unsigned ConstrainedPolyModel::assignIndices(unsigned firstIndex, std::string co
             i.second->setIndex(index);
             index += i.second->getNpar();
         }
-}
+    }
     if (_fittingVisits) {
         for (auto &i : _visitMap) {
             i.second->setIndex(index);
             index += i.second->getNpar();
         }
-}
+    }
     // Tell the mappings which derivatives they will have to fill:
     for (auto &i : _mappings) {
         i.second->setWhatToFit(_fittingChips, _fittingVisits);
@@ -134,18 +131,18 @@ void ConstrainedPolyModel::offsetParams(Eigen::VectorXd const &delta) {
             auto mapping = i.second.get();
             mapping->offsetParams(delta.segment(mapping->getIndex(), mapping->getNpar()));
         }
-}
+    }
     if (_fittingVisits) {
         for (auto &i : _visitMap) {
             auto mapping = i.second.get();
             mapping->offsetParams(delta.segment(mapping->getIndex(), mapping->getNpar()));
         }
-}
+    }
 }
 
 void ConstrainedPolyModel::freezeErrorScales() {
-    for (auto & i : _visitMap) i.second->freezeErrorScales();
-    for (auto & i : _chipMap) i.second->freezeErrorScales();
+    for (auto &i : _visitMap) i.second->freezeErrorScales();
+    for (auto &i : _chipMap) i.second->freezeErrorScales();
 }
 
 const Gtransfo &ConstrainedPolyModel::getChipTransfo(CcdIdType const chip) const {
@@ -162,7 +159,7 @@ const Gtransfo &ConstrainedPolyModel::getChipTransfo(CcdIdType const chip) const
 std::vector<VisitIdType> ConstrainedPolyModel::getVisits() const {
     std::vector<VisitIdType> res;
     res.reserve(_visitMap.size());
-    for (const auto & i : _visitMap) res.push_back(i.first);
+    for (const auto &i : _visitMap) res.push_back(i.first);
     return res;
 }
 

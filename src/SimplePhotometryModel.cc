@@ -22,8 +22,7 @@ SimplePhotometryModel::SimplePhotometryModel(CcdImageList const &ccdImageList) {
         // Use the single-frame processing calibration from the PhotoCalib as the default.
         auto transfo =
                 std::make_shared<PhotometryTransfoSpatiallyInvariant>(photoCalib->getCalibrationMean());
-        _myMap.emplace(ccdImage->getHashKey(),
-                       std::make_unique<PhotometryMapping>(transfo));
+        _myMap.emplace(ccdImage->getHashKey(), std::make_unique<PhotometryMapping>(transfo));
     }
     LOGLS_INFO(_log, "SimplePhotometryModel got " << _myMap.size() << " ccdImage mappings.");
 }
@@ -68,8 +67,7 @@ void SimplePhotometryModel::computeParameterDerivatives(MeasuredStar const &meas
 std::shared_ptr<afw::image::PhotoCalib> SimplePhotometryModel::toPhotoCalib(CcdImage const &ccdImage) const {
     double calibration = (findMapping(ccdImage)->getParameters()[0]);
     auto oldPhotoCalib = ccdImage.getPhotoCalib();
-    return std::make_unique<afw::image::PhotoCalib>(
-            calibration, oldPhotoCalib->getCalibrationErr());
+    return std::make_unique<afw::image::PhotoCalib>(calibration, oldPhotoCalib->getCalibrationErr());
 }
 
 void SimplePhotometryModel::dump(std::ostream &stream) const {
@@ -83,7 +81,7 @@ PhotometryMappingBase *SimplePhotometryModel::findMapping(CcdImage const &ccdIma
     if (i == _myMap.end()) {
         throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,
                           "SimplePhotometryModel cannot find CcdImage " + ccdImage.getName());
-}
+    }
     return i->second.get();
 }
 

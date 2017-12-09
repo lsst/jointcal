@@ -40,10 +40,10 @@ jointcal::TanSipPix2RaDec convertTanWcs(const std::shared_ptr<lsst::afw::image::
             for (int j = 0; j <= sipOrder; ++j) {
                 if (i < sipA.cols() && j < sipA.rows() && (i + j) <= sipOrder) {
                     sipPoly.coeff(i, j, 0) = sipA(i, j);
-}
+                }
                 if (i < sipB.cols() && j < sipB.rows() && (i + j) <= sipOrder) {
                     sipPoly.coeff(i, j, 1) = sipB(i, j);
-}
+                }
             }
         }
 
@@ -85,13 +85,13 @@ jointcal::TanSipPix2RaDec convertTanWcs(const std::shared_ptr<lsst::afw::image::
     jointcal::Point tangentPoint(ra, dec);
 
     // return jointcal::TanSipPix2RaDec(linPart, tangentPoint, sipCorr->get());
-    return jointcal::TanSipPix2RaDec(linPart, tangentPoint, (const jointcal::GtransfoPoly *)sipCorr.get());
+    return jointcal::TanSipPix2RaDec(linPart, tangentPoint, (const jointcal::GtransfoPoly*)sipCorr.get());
 }
 
 /* The inverse transformation i.e. convert from the fit result to the SIP
    convention. */
 PTR(afwImg::TanWcs)
-gtransfoToTanWcs(const jointcal::TanSipPix2RaDec& wcsTransfo, const jointcal::Frame &ccdFrame,
+gtransfoToTanWcs(const jointcal::TanSipPix2RaDec& wcsTransfo, const jointcal::Frame& ccdFrame,
                  const bool noLowOrderSipTerms) {
     GtransfoLin linPart = wcsTransfo.getLinPart();
     afwGeom::Point2D crpix_lsst;  // in LSST "frame"
@@ -137,7 +137,7 @@ gtransfoToTanWcs(const jointcal::TanSipPix2RaDec& wcsTransfo, const jointcal::Fr
 
     if (!wcsTransfo.getCorr()) {  // the WCS has no distortions
         return std::make_shared<afwImg::TanWcs>(crval, crpix_lsst, cdMat);
-}
+    }
 
     /* We are now given:
        - CRPIX
@@ -176,7 +176,7 @@ gtransfoToTanWcs(const jointcal::TanSipPix2RaDec& wcsTransfo, const jointcal::Fr
             sipA(i, j) = sipPoly.coeff(i, j, 0);
             sipB(i, j) = sipPoly.coeff(i, j, 1);
         }
-}
+    }
 
     // now backwards coefficients
     sipOrder = sipPolyInv.getDegree();
@@ -187,7 +187,7 @@ gtransfoToTanWcs(const jointcal::TanSipPix2RaDec& wcsTransfo, const jointcal::Fr
             sipAp(i, j) = sipPolyInv.coeff(i, j, 0);
             sipBp(i, j) = sipPolyInv.coeff(i, j, 1);
         }
-}
+    }
 
     return std::make_shared<afwImg::TanWcs>(crval, crpix_lsst, cdMat, sipA, sipB, sipAp, sipBp);
 }

@@ -57,7 +57,7 @@ static unsigned chi2_cleanup(StarMatchList &starMatchList, const double chi2Cut,
             erased++;
         } else {
             ++smi;
-}
+        }
     }
     return erased;
 }
@@ -138,7 +138,7 @@ void StarMatchList::setTransfoOrder(int order) {
         setTransfo(std::make_shared<GtransfoLin>());
     } else {
         setTransfo(GtransfoPoly(order));
-}
+    }
     // might consider throwing if order does not make sense (e.g. >10)
     _order = order;
 }
@@ -168,7 +168,7 @@ void StarMatchList::cutTail(int nKeep) {
     int count = 0;
     for (si = begin(); si != end() && count < nKeep; ++count, ++si) {
         ;
-}
+    }
     erase(si, end());
 }
 
@@ -216,7 +216,7 @@ double computeDist2(const StarMatchList &starMatchList, const Gtransfo &gtransfo
     double dist2 = 0;
     for (auto const &starMatch : starMatchList) {
         dist2 += gtransfo.apply(starMatch.point1).computeDist2(starMatch.point2);
-}
+    }
     return dist2;
 }
 

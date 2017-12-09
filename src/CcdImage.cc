@@ -18,7 +18,6 @@
 #include "lsst/jointcal/Gtransfo.h"
 #include "lsst/jointcal/Point.h"
 
-
 namespace {
 LOG_LOGGER _log = LOG_GET("jointcal.CcdImage");
 }
@@ -79,11 +78,16 @@ void CcdImage::loadCatalog(afw::table::SourceCatalog const &catalog, std::string
 }
 
 CcdImage::CcdImage(afw::table::SourceCatalog &catalog, std::shared_ptr<lsst::afw::image::TanWcs> wcs,
-                   const std::shared_ptr<lsst::afw::image::VisitInfo>& visitInfo, afw::geom::Box2I const &bbox,
-                   std::string const &filter, std::shared_ptr<afw::image::PhotoCalib> photoCalib,
+                   const std::shared_ptr<lsst::afw::image::VisitInfo> &visitInfo,
+                   afw::geom::Box2I const &bbox, std::string const &filter,
+                   std::shared_ptr<afw::image::PhotoCalib> photoCalib,
                    std::shared_ptr<afw::cameraGeom::Detector> detector, int visit, int ccdId,
                    std::string const &fluxField)
-        : _ccdId(ccdId), _visit(visit), _photoCalib(std::move(photoCalib)), _detector(std::move(detector)), _filter(filter) {
+        : _ccdId(ccdId),
+          _visit(visit),
+          _photoCalib(std::move(photoCalib)),
+          _detector(std::move(detector)),
+          _filter(filter) {
     loadCatalog(catalog, fluxField);
 
     Point lowerLeft(bbox.getMinX(), bbox.getMinY());

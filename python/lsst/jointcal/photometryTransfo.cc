@@ -39,7 +39,8 @@ void declarePhotometryTransfo(py::module &mod) {
     py::class_<PhotometryTransfo, std::shared_ptr<PhotometryTransfo>> cls(mod, "PhotometryTransfo");
 
     cls.def("transform",
-            static_cast<double (PhotometryTransfo::*)(double, double, double) const>(& PhotometryTransfo::transform),
+            static_cast<double (PhotometryTransfo::*)(double, double, double) const>(
+                    &PhotometryTransfo::transform),
             "x"_a, "y"_a, "instFlux"_a);
     cls.def("offsetParams", &PhotometryTransfo::offsetParams);
     cls.def("clone", &PhotometryTransfo::clone);

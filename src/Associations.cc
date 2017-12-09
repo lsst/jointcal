@@ -23,7 +23,6 @@
 #include "lsst/afw/coord/Coord.h"
 #include "lsst/afw/image/Calib.h"
 
-
 namespace {
 LOG_LOGGER _log = LOG_GET("jointcal.Associations");
 }
@@ -201,7 +200,7 @@ void Associations::collectRefStars(lsst::afw::table::SortedCatalogT<lsst::afw::t
         if (rejectBadFluxes &&
             (!std::isfinite(defaultFlux) || !std::isfinite(defaultFluxErr) || defaultFluxErr == 0)) {
             continue;
-}
+        }
         refStarList.push_back(star);
     }
 
@@ -223,7 +222,7 @@ const lsst::afw::geom::Box2D Associations::getRaDecBBox() {
             tangentPlaneFrame = CTPFrame;
         } else {
             tangentPlaneFrame += CTPFrame;
-}
+        }
     }
 
     // convert tangent plane coordinates to RaDec:
@@ -289,7 +288,7 @@ void Associations::selectFittedStars(int minMeasurements) {
                 mi = catalog.erase(mi);
             } else {
                 ++mi;
-}
+            }
         }  // end loop on objects in catalog
     }      // end loop on catalogs
 
@@ -301,7 +300,7 @@ void Associations::selectFittedStars(int minMeasurements) {
             fi = fittedStarList.erase(fi);
         } else {
             ++fi;
-}
+        }
     }
 
     LOGLS_INFO(_log, "Fitted stars after measurement # cut: " << fittedStarList.size());

@@ -36,7 +36,7 @@ void FittedStar::setRefStar(const RefStar *refStar) {
         LOGLS_WARN(_log, "new refStar: " << *refStar);
     } else {
         _refStar = refStar;
-}
+    }
 }
 
 void FittedStar::addMagMeasurement(double magValue, double magWeight) {
