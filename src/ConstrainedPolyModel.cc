@@ -41,7 +41,7 @@ ConstrainedPolyModel::ConstrainedPolyModel(CcdImageList const &ccdImageList,
         auto chip = im.getCcdId();
         auto visitp = _visitMap.find(visit);
         if (visitp == _visitMap.end()) {
-            if (_visitMap.size() == 0) {
+            if (_visitMap.empty()) {
                 _visitMap[visit] =
                         std::make_unique<SimpleGtransfoMapping>(GtransfoIdentity());
             } else {

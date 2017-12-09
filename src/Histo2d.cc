@@ -41,9 +41,9 @@ Histo2d::Histo2d(const Histo2d &other) {
 }
 
 bool Histo2d::indices(double x, double y, int &ix, int &iy) const {
-    ix = (int)floor((x - minx) * scalex);
+    ix = static_cast<int>(floor((x - minx) * scalex));
     if (ix < 0 || ix >= nx) return false;
-    iy = (int)floor((y - miny) * scaley);
+    iy = static_cast<int>(floor((y - miny) * scaley));
     return (iy >= 0 && iy < ny);
 }
 
@@ -65,8 +65,8 @@ double Histo2d::maxBin(double &x, double &y) const {
     }
     int ix = imax / ny;
     int iy = imax - ix * ny;
-    x = minx + ((float)ix + 0.5) / scalex;
-    y = miny + ((float)iy + 0.5) / scaley;
+    x = minx + (static_cast<float>(ix) + 0.5) / scalex;
+    y = miny + (static_cast<float>(iy) + 0.5) / scaley;
     return valmax;
 }
 

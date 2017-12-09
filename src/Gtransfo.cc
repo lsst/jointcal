@@ -41,16 +41,13 @@ bool isIntegerShift(const Gtransfo *gtransfo) {
     double dy = shift->coeff(0, 0, 1);
 
     static Point dumb(4000, 4000);
-    if (fabs(dx - int(floor(dx + 0.5))) < eps && fabs(dy - int(floor(dy + 0.5))) < eps &&
-        fabs(dumb.x + dx - shift->apply(dumb).x) < eps && fabs(dumb.y + dy - shift->apply(dumb).y) < eps)
-        return true;
-
-    return false;
+    return fabs(dx - int(floor(dx + 0.5))) < eps && fabs(dy - int(floor(dy + 0.5))) < eps &&
+        fabs(dumb.x + dx - shift->apply(dumb).x) < eps && fabs(dumb.y + dy - shift->apply(dumb).y) < eps;
 }
 
 /********* Gtransfo ***********************/
 
-std::unique_ptr<Gtransfo> Gtransfo::reduceCompo(const Gtransfo *) const {  // by default no way to compose
+std::unique_ptr<Gtransfo> Gtransfo::reduceCompo(const Gtransfo * /*unused*/) const {  // by default no way to compose
     return std::unique_ptr<Gtransfo>(nullptr);
 }
 
@@ -177,16 +174,16 @@ void Gtransfo::offsetParams(Eigen::VectorXd const &delta) {
     for (int i = 0; i < npar; ++i) paramRef(i) += delta[i];
 }
 
-double Gtransfo::paramRef(const int) const {
+double Gtransfo::paramRef(const int /*unused*/) const {
     throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,
                       std::string("Gtransfo::paramRef should never be called "));
 }
 
-double &Gtransfo::paramRef(const int) {
+double &Gtransfo::paramRef(const int /*unused*/) {
     throw LSST_EXCEPT(pex::exceptions::InvalidParameterError, "Gtransfo::paramRef should never be called ");
 }
 
-void Gtransfo::paramDerivatives(const Point &, double *, double *) const {
+void Gtransfo::paramDerivatives(const Point & /*unused*/, double * /*unused*/, double * /*unused*/) const {
     throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,
                       "Gtransfo::paramDerivatives() should never be called ");
 }
@@ -223,11 +220,11 @@ private:
     double precision2;
 
 public:
-    GtransfoInverse(const Gtransfo *direct, const double precision, const Frame &region);
+    GtransfoInverse(const Gtransfo *direct, double precision, const Frame &region);
 
     //! implements an iterative (Gauss-Newton) solver. It resorts to the Derivative function: 4 calls to the
     //! direct transfo per iteration.
-    void apply(const double xIn, const double yIn, double &xOut, double &yOut) const override;
+    void apply(double xIn, double yIn, double &xOut, double &yOut) const override;
 
     void dump(ostream &stream) const override;
 
@@ -235,18 +232,18 @@ public:
 
     std::unique_ptr<Gtransfo> clone() const override;
 
-    GtransfoInverse(const GtransfoInverse &);
+    GtransfoInverse(const GtransfoInverse & /*model*/);
 
     //! Overload the "generic routine"
-    std::unique_ptr<Gtransfo> roughInverse(const Frame &) const override { return _direct->clone(); }
+    std::unique_ptr<Gtransfo> roughInverse(const Frame & /*region*/) const override { return _direct->clone(); }
 
     //! Inverse transfo: returns the direct one!
-    std::unique_ptr<Gtransfo> inverseTransfo(double, const Frame &) const override { return _direct->clone(); }
+    std::unique_ptr<Gtransfo> inverseTransfo(double /*precision*/, const Frame & /*region*/) const override { return _direct->clone(); }
 
     ~GtransfoInverse() override;
 
 private:
-    void operator=(const GtransfoInverse &);
+    void operator=(const GtransfoInverse & /*model*/);
 };
 
 std::unique_ptr<Gtransfo> Gtransfo::inverseTransfo(const double precision, const Frame &region) const {
@@ -259,7 +256,7 @@ GtransfoInverse::GtransfoInverse(const Gtransfo *direct, const double precision,
     precision2 = precision * precision;
 }
 
-GtransfoInverse::GtransfoInverse(const GtransfoInverse &model) : Gtransfo() {
+GtransfoInverse::GtransfoInverse(const GtransfoInverse &model) : {
     _direct = model._direct->clone();
     _roughInverse = model._roughInverse->clone();
     precision2 = model.precision2;
@@ -300,7 +297,7 @@ void GtransfoInverse::dump(ostream &stream) const {
     stream << " GtransfoInverse of  :" << endl << *_direct << endl;
 }
 
-double GtransfoInverse::fit(const StarMatchList &) {
+double GtransfoInverse::fit(const StarMatchList & /*starMatchList*/) {
     throw pexExcept::RuntimeError("Cannot fit a GtransfoInverse. Use StarMatchList::inverseTransfo instead.");
 }
 
@@ -324,7 +321,7 @@ public:
     GtransfoComposition(const Gtransfo *second, const Gtransfo *first);
 
     //! return second(first(xIn,yIn))
-    void apply(const double xIn, const double yIn, double &xOut, double &yOut) const override;
+    void apply(double xIn, double yIn, double &xOut, double &yOut) const override;
     void dump(ostream &stream = cout) const override;
 
     //!
@@ -378,16 +375,16 @@ std::unique_ptr<Gtransfo> gtransfoCompose(const Gtransfo *left, const Gtransfo *
        that pipelines "left" and "right" */
     if (composition == nullptr)
         return std::unique_ptr<Gtransfo>(new GtransfoComposition(left, right));
-    else
+    
         return composition;
 }
 
 // just a speed up, to avoid useless numerical derivation.
-void GtransfoIdentity::computeDerivative(const Point &, GtransfoLin &derivative, const double) const {
+void GtransfoIdentity::computeDerivative(const Point & /*where*/, GtransfoLin &derivative, const double /*step*/) const {
     derivative = GtransfoLin();
 }
 
-GtransfoLin GtransfoIdentity::linearApproximation(const Point &, const double) const {
+GtransfoLin GtransfoIdentity::linearApproximation(const Point & /*where*/, const double /*step*/) const {
     GtransfoLin result;
     return result;  // rely on default Gtransfolin constructor;
 }
@@ -835,7 +832,7 @@ std::unique_ptr<Gtransfo> GtransfoPoly::reduceCompo(const Gtransfo *right) const
     if (p) {
         if (getDegree() == 1 && p->getDegree() == 1)
             return std::unique_ptr<Gtransfo>(new GtransfoLin((*this) * (*p)));  // does the composition
-        else
+        
             return std::unique_ptr<Gtransfo>(new GtransfoPoly((*this) * (*p)));  // does the composition
     } else
         return std::unique_ptr<Gtransfo>(nullptr);
@@ -969,7 +966,7 @@ GtransfoPoly GtransfoPoly::operator+(const GtransfoPoly &right) const {
                 res.coeff(i, j, 1) += right.coeff(i, j, 1);
             }
         return res;
-    } else
+    } 
         return (right + (*this));
 }
 
@@ -1077,13 +1074,13 @@ GtransfoLin GtransfoLin::operator*(const GtransfoLin &right) const {
     return result;
 }
 
-void GtransfoLin::computeDerivative(const Point &, GtransfoLin &derivative, const double) const {
+void GtransfoLin::computeDerivative(const Point & /*where*/, GtransfoLin &derivative, const double /*step*/) const {
     derivative = *this;
     derivative.coeff(0, 0, 0) = 0;
     derivative.coeff(0, 0, 1) = 0;
 }
 
-GtransfoLin GtransfoLin::linearApproximation(const Point &, const double) const { return *this; }
+GtransfoLin GtransfoLin::linearApproximation(const Point & /*where*/, const double /*step*/) const { return *this; }
 
 GtransfoLin GtransfoLin::invert() const {
     //
@@ -1111,11 +1108,11 @@ GtransfoLin GtransfoLin::invert() const {
     return result;
 }
 
-std::unique_ptr<Gtransfo> GtransfoLin::inverseTransfo(const double, const Frame &) const {
+std::unique_ptr<Gtransfo> GtransfoLin::inverseTransfo(const double /*precision*/, const Frame & /*region*/) const {
     return std::unique_ptr<Gtransfo>(new GtransfoLin(invert()));
 }
 
-double GtransfoLinRot::fit(const StarMatchList &) {
+double GtransfoLinRot::fit(const StarMatchList & /*starMatchList*/) {
     throw pexExcept::NotFoundError("GTransfoLinRot::fit not implemented! aborting");
 }
 
@@ -1220,7 +1217,7 @@ BaseTanWcs::BaseTanWcs(const GtransfoLin &pix2Tan, const Point &tangentPoint,
    copy constructor, the operator = and the destructor */
 
 // ": Gtransfo" suppresses a warning
-BaseTanWcs::BaseTanWcs(const BaseTanWcs &original) : Gtransfo() {
+BaseTanWcs::BaseTanWcs(const BaseTanWcs &original) : {
     corr = nullptr;
     *this = original;
 }
@@ -1310,21 +1307,21 @@ TanRaDec2Pix TanPix2RaDec::invert() const {
     return TanRaDec2Pix(getLinPart().invert(), getTangentPoint());
 }
 
-std::unique_ptr<Gtransfo> TanPix2RaDec::roughInverse(const Frame &) const {
+std::unique_ptr<Gtransfo> TanPix2RaDec::roughInverse(const Frame & /*region*/) const {
     return std::unique_ptr<Gtransfo>(new TanRaDec2Pix(getLinPart().invert(), getTangentPoint()));
 }
 
 std::unique_ptr<Gtransfo> TanPix2RaDec::inverseTransfo(const double precision, const Frame &region) const {
     if (!corr)
         return std::unique_ptr<Gtransfo>(new TanRaDec2Pix(getLinPart().invert(), getTangentPoint()));
-    else
+    
         return std::unique_ptr<Gtransfo>(new GtransfoInverse(this, precision, region));
 }
 
 GtransfoPoly TanPix2RaDec::getPix2TangentPlane() const {
     if (corr)
         return (*corr) * linPix2Tan;
-    else
+    
         return linPix2Tan;
 }
 
@@ -1351,7 +1348,7 @@ void TanPix2RaDec::dump(ostream &stream) const {
     if (corr) stream << "PV correction: " << endl << *corr;
 }
 
-double TanPix2RaDec::fit(const StarMatchList &) {
+double TanPix2RaDec::fit(const StarMatchList & /*starMatchList*/) {
     /* OK we could implement this routine, but it is
        probably useless since to do the match, we have to
        project from sky to tangent plane. When a match is
@@ -1392,7 +1389,7 @@ std::unique_ptr<Gtransfo> TanSipPix2RaDec::inverseTransfo(const double precision
 GtransfoPoly TanSipPix2RaDec::getPix2TangentPlane() const {
     if (corr)
         return GtransfoPoly(linPix2Tan) * (*corr);
-    else
+    
         return linPix2Tan;
 }
 
@@ -1420,7 +1417,7 @@ void TanSipPix2RaDec::dump(ostream &stream) const {
     if (corr) stream << "PV correction: " << endl << *corr;
 }
 
-double TanSipPix2RaDec::fit(const StarMatchList &) {
+double TanSipPix2RaDec::fit(const StarMatchList & /*starMatchList*/) {
     /* OK we could implement this routine, but it is
        probably useless since to do the match, we have to
        project from sky to tangent plane. When a match is
@@ -1449,7 +1446,7 @@ void TanRaDec2Pix::setTangentPoint(const Point &tangentPoint) {
     sin0 = sin(dec0);
 }
 
-TanRaDec2Pix::TanRaDec2Pix() : linTan2Pix() {
+TanRaDec2Pix::TanRaDec2Pix() : {
     ra0 = dec0 = 0;
     cos0 = 1;
     sin0 = 0;
@@ -1538,11 +1535,11 @@ void TanRaDec2Pix::dump(ostream &stream) const {
     stream << " tan2pix " << linTan2Pix << " tangent point " << tp.x << ' ' << tp.y << endl;
 }
 
-std::unique_ptr<Gtransfo> TanRaDec2Pix::roughInverse(const Frame &) const {
+std::unique_ptr<Gtransfo> TanRaDec2Pix::roughInverse(const Frame & /*region*/) const {
     return std::unique_ptr<Gtransfo>(new TanPix2RaDec(getLinPart().invert(), getTangentPoint()));
 }
 
-std::unique_ptr<Gtransfo> TanRaDec2Pix::inverseTransfo(const double, const Frame &) const {
+std::unique_ptr<Gtransfo> TanRaDec2Pix::inverseTransfo(const double /*precision*/, const Frame & /*region*/) const {
     return std::unique_ptr<Gtransfo>(new TanPix2RaDec(getLinPart().invert(), getTangentPoint()));
 }
 
@@ -1550,7 +1547,7 @@ std::unique_ptr<Gtransfo> TanRaDec2Pix::clone() const {
     return std::unique_ptr<Gtransfo>(new TanRaDec2Pix(*this));
 }
 
-double TanRaDec2Pix::fit(const StarMatchList &) {
+double TanRaDec2Pix::fit(const StarMatchList & /*starMatchList*/) {
     throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,
                       "TanRaDec2Pix::fit is NOT implemented (although it is doable)) ");
     return -1;
@@ -1570,7 +1567,7 @@ void UserTransfo::dump(ostream &stream) const {
     stream << "UserTransfo with user function @ " << _userFun << "and userData@ " << _userData << endl;
 }
 
-double UserTransfo::fit(const StarMatchList &) {
+double UserTransfo::fit(const StarMatchList & /*starMatchList*/) {
     throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,
                       "UserTransfo::fit is NOT implemented (and will never be)) ");
     return -1;
@@ -1606,7 +1603,7 @@ std::unique_ptr<Gtransfo> gtransfoRead(istream &s) {
         std::unique_ptr<GtransfoIdentity> res(new GtransfoIdentity());
         res->read(s);
         return std::move(res);
-    } else if (type == "GtransfoPoly") {
+    } if (type == "GtransfoPoly") {
         std::unique_ptr<GtransfoPoly> res(new GtransfoPoly());
         res->read(s);
         return std::move(res);

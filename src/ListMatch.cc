@@ -60,7 +60,7 @@ struct Segment {
 class SegmentList : public std::list<Segment> {
 public:
     //  SegmentList(const BaseStarList &list, const int nStar);
-    SegmentList(const BaseStarList &list, const int nStar, const Gtransfo &gtransfo = GtransfoIdentity());
+    SegmentList(const BaseStarList &list, int nStar, const Gtransfo &gtransfo = GtransfoIdentity());
 };
 
 using SegmentIterator = std::list<Segment>::iterator;
@@ -107,7 +107,7 @@ static std::unique_ptr<StarMatchList> MatchListExtract(const SegmentPairList &pa
         /* now we store as star matches both ends of segment pairs ,
            but only once the beginning of segments because they all have the same,
            given the selection 3 lines above  */
-        if (matchList->size() == 0)
+        if (matchList->empty())
             matchList->push_back(StarMatch(gtransfo.apply(*(a_pair.first->s1)), *(a_pair.second->s1),
                                            a_pair.first->s1, a_pair.second->s1));
         /* always store the match at end */
@@ -122,7 +122,7 @@ static bool DecreasingQuality(const std::unique_ptr<StarMatchList> &first,
     int idiff = first->size() - second->size();
     if (idiff != 0)
         return (idiff > 0);
-    else
+    
         return (first->getDist2() < second->getDist2());
 }
 
@@ -338,7 +338,7 @@ static std::unique_ptr<StarMatchList> ListMatchupRotShift_New(BaseStarList &list
                 seg2 = &(*segi2);
                 if (seg2->s1rank != rank1L2) continue;
                 // push in the list the match corresponding to end number 1 of segments
-                if (a_list->size() == 0)
+                if (a_list->empty())
                     a_list->push_back(StarMatch(*(seg1->s1), *(seg2->s1), seg1->s1, seg2->s1));
                 ratio = seg2->r / seg1->r;
                 if (ratio > maxRatio) continue;
@@ -367,7 +367,7 @@ static std::unique_ptr<StarMatchList> ListMatchupRotShift_New(BaseStarList &list
         Solutions.push_back(std::move(a_list));
     }
 
-    if (Solutions.size() == 0) {
+    if (Solutions.empty()) {
         LOGLS_ERROR(_log, "Error In ListMatchup : not a single pair match.");
         LOGLS_ERROR(_log, "Probably, the relative scale of lists is not within bounds.");
         LOGLS_ERROR(_log, "min/max ratios: " << minRatio << ' ' << maxRatio);
@@ -392,7 +392,7 @@ static std::unique_ptr<StarMatchList> ListMatchupRotShift(BaseStarList &list1, B
                                                           const MatchConditions &conditions) {
     if (conditions.algorithm == 1)
         return ListMatchupRotShift_Old(list1, list2, gtransfo, conditions);
-    else
+    
         return ListMatchupRotShift_New(list1, list2, gtransfo, conditions);
 }
 
@@ -425,10 +425,10 @@ std::unique_ptr<StarMatchList> matchSearchRotShiftFlip(BaseStarList &list1, Base
         // (even the flipped one) contains the actual coordinates of stars.
         // MatchListExtract is always called with GtransfoIdentity() as last parameter
         return flipped;
-    } else {
+    } 
         if (conditions.printLevel >= 1) LOGL_DEBUG(_log, "Keeping unflipped solution.");
         return unflipped;
-    }
+    
 }
 
 #ifdef STORAGE
@@ -468,7 +468,7 @@ std::unique_ptr<GtransfoLin> listMatchupShift(const BaseStarList &list1, const B
         if (ncomb > 10000)
             nx = 100;
         else
-            nx = (int)sqrt(double(ncomb));
+            nx = static_cast<int>(sqrt(double(ncomb)));
         if (!ncomb) return std::unique_ptr<GtransfoLin>(nullptr);
     } else
         nx = int(2 * maxShift / binSize + 0.5);

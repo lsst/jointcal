@@ -143,7 +143,7 @@ void Associations::collectRefStars(lsst::afw::table::SortedCatalogT<lsst::afw::t
                                    std::map<std::string, std::vector<double>> const &refFluxMap,
                                    std::map<std::string, std::vector<double>> const &refFluxErrMap,
                                    bool rejectBadFluxes) {
-    if (refCat.size() == 0) {
+    if (refCat.empty()) {
         throw(LSST_EXCEPT(pex::exceptions::InvalidParameterError,
                           " reference catalog is empty : stop here "));
     }

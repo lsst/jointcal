@@ -10,7 +10,7 @@ namespace jointcal {
 
 BaseStarList &Ref2Base(RefStarList &This) { return (BaseStarList &)This; }
 
-BaseStarList *Ref2Base(RefStarList *This) { return (BaseStarList *)This; }
+BaseStarList *Ref2Base(RefStarList *This) { return reinterpret_cast<BaseStarList *>(This); }
 
 const BaseStarList &Ref2Base(const RefStarList &This) { return (const BaseStarList &)This; }
 

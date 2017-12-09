@@ -245,7 +245,7 @@ void AstrometryFit::leastSquareDerivativesReference(FittedStarList const &fitted
     if (!_fittingPos) return;
     /* the other case where the accumulation of derivatives stops
        here is when there are no RefStars */
-    if (_associations->refStarList.size() == 0) return;
+    if (_associations->refStarList.empty()) return;
     Eigen::Matrix2d W(2, 2);
     Eigen::Matrix2d alpha(2, 2);
     Eigen::Matrix2d H(2, 2), halpha(2, 2), HW(2, 2);

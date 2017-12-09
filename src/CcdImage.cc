@@ -106,7 +106,7 @@ CcdImage::CcdImage(afw::table::SourceCatalog &catalog, std::shared_ptr<lsst::afw
 
     // lsstSim doesn't manage ERA (and thus Hour Angle) properly, so it's going to be NaN.
     // Because we need the refraction vector later, go with 0 HA to prevent crashes on that NaN.
-    if (std::isnan(_hourAngle) == true) {
+    if (std::isnan(_hourAngle)) {
         _hourAngle = 0;
     }
 

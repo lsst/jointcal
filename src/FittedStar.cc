@@ -47,7 +47,7 @@ void FittedStar::addMagMeasurement(double magValue, double magWeight) {
 
 BaseStarList &Fitted2Base(FittedStarList &This) { return (BaseStarList &)This; }
 
-BaseStarList *Fitted2Base(FittedStarList *This) { return (BaseStarList *)This; }
+BaseStarList *Fitted2Base(FittedStarList *This) { return reinterpret_cast<BaseStarList *>(This); }
 
 const BaseStarList &Fitted2Base(const FittedStarList &This) { return (const BaseStarList &)This; }
 

@@ -58,7 +58,7 @@ void declareBaseStar(py::module &mod) {
     cls.def_readonly("vxy", (double BaseStar::*)&BaseStar::vxy);
 
     // cls.def("getFlux", &BaseStar::getFlux);
-    cls.def_property_readonly("flux", (double (BaseStar::*)() const) & BaseStar::getFlux);
+    cls.def_property_readonly("flux", static_cast<double (BaseStar::*)() const>(& BaseStar::getFlux));
 
     cls.def("__str__", [](BaseStar const &self) {
         std::ostringstream os;

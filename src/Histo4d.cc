@@ -45,7 +45,7 @@ SparseHisto4d::SparseHisto4d(const int n1, double min1, double max1, const int n
 int SparseHisto4d::code_value(const double x[4]) const {
     int index = 0;
     for (int idim = 0; idim < 4; ++idim) {
-        auto i = (int)floor((x[idim] - _minVal[idim]) * _scale[idim]);
+        auto i = static_cast<int>(floor((x[idim] - _minVal[idim]) * _scale[idim]));
         if (i < 0 || i >= _n[idim]) return -1;
         index = index * _n[idim] + i;
     }
@@ -56,7 +56,7 @@ void SparseHisto4d::inverse_code(int code, double x[4]) const {
     for (int i = 3; i >= 0; --i) {
         int bin = code % _n[i];
         code /= _n[i];
-        x[i] = _minVal[i] + ((double)bin + 0.5) / _scale[i];
+        x[i] = _minVal[i] + (static_cast<double>(bin) + 0.5) / _scale[i];
     }
 }
 
