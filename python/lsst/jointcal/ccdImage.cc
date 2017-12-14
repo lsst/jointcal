@@ -35,7 +35,7 @@ namespace {
 void declareCcdImage(py::module &mod) {
     py::class_<CcdImage, std::shared_ptr<CcdImage>> cls(mod, "CcdImage");
 
-    cls.def(py::init<afw::table::SourceCatalog &, std::shared_ptr<lsst::afw::image::TanWcs>,
+    cls.def(py::init<afw::table::SourceCatalog &, std::shared_ptr<lsst::afw::geom::SkyWcs>,
                      std::shared_ptr<lsst::afw::image::VisitInfo>, afw::geom::Box2I const &,
                      std::string const &, std::shared_ptr<afw::image::PhotoCalib>,
                      std::shared_ptr<afw::cameraGeom::Detector>, int, int, std::string const &>(),

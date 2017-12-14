@@ -271,7 +271,7 @@ class JointcalTask(pipeBase.CmdLineTask):
         Returns
         ------
         namedtuple
-            wcs : lsst.afw.image.TanWcs
+            wcs : lsst.afw.geom.SkyWcs
                 the TAN WCS of this image, read from the calexp
             key : namedtuple
                 a key to identify this dataRef by its visit and ccd ids

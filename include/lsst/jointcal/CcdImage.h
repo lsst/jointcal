@@ -7,7 +7,7 @@
 
 #include "lsst/afw/cameraGeom/Detector.h"
 #include "lsst/afw/table/Source.h"
-#include "lsst/afw/image/TanWcs.h"
+#include "lsst/afw/geom/SkyWcs.h"
 #include "lsst/afw/image/PhotoCalib.h"
 #include "lsst/afw/image/VisitInfo.h"
 #include "lsst/afw/coord/Coord.h"
@@ -34,7 +34,7 @@ std::ostream &operator<<(std::ostream &out, CcdImageKey const &key);
  */
 class CcdImage {
 public:
-    CcdImage(afw::table::SourceCatalog &record, std::shared_ptr<lsst::afw::image::TanWcs> wcs,
+    CcdImage(afw::table::SourceCatalog &record, std::shared_ptr<lsst::afw::geom::SkyWcs> wcs,
              std::shared_ptr<lsst::afw::image::VisitInfo> visitInfo, afw::geom::Box2I const &bbox,
              std::string const &filter, std::shared_ptr<afw::image::PhotoCalib> photoCalib,
              std::shared_ptr<afw::cameraGeom::Detector> detector, int visit, int ccd,
@@ -140,9 +140,6 @@ public:
     //! the wcs read in the header. NOT updated when fitting.
     Gtransfo const *readWCS() const { return _readWcs.get(); }
 
-    //! the inverse of the one above.
-    Gtransfo const *getInverseReadWCS() const { return _inverseReadWcs.get(); }
-
     //! Frame in pixels
     Frame const &getImageFrame() const { return _imageFrame; }
 
@@ -155,8 +152,7 @@ private:
     MeasuredStarList _wholeCatalog;  // the catalog of measured objets
     MeasuredStarList _catalogForFit;
 
-    std::shared_ptr<BaseTanWcs> _readWcs;       // i.e. from pix to sky
-    std::shared_ptr<Gtransfo> _inverseReadWcs;  // i.e. from sky to pix
+    std::shared_ptr<GtransfoSkyWcs> _readWcs;  // apply goes from pix to sky
 
     // The following ones should probably be mostly removed.
     std::shared_ptr<Gtransfo> _CTP2TP;                  // go from CommonTangentPlane to this tangent plane.

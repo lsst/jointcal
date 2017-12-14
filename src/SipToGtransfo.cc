@@ -2,6 +2,9 @@
 
 #include "Eigen/Core"
 #include "lsst/jointcal/SipToGtransfo.h"
+#include "lsst/afw/coord/Coord.h"
+#include "lsst/afw/geom/Angle.h"
+#include "lsst/afw/geom/SkyWcs.h"
 #include "lsst/afw/image/ImageUtils.h"
 #include "lsst/jointcal/Point.h"
 #include "lsst/jointcal/Frame.h"
@@ -16,82 +19,11 @@ namespace jointcal {
 
 typedef std::shared_ptr<jointcal::GtransfoPoly> GtPoly_Ptr;
 
-jointcal::TanSipPix2RaDec convertTanWcs(const std::shared_ptr<lsst::afw::image::TanWcs> wcs) {
-    GtPoly_Ptr sipCorr(new jointcal::GtransfoPoly(0));
-
-    /* beware : Wcs::getPixelOrigin return crpix_fits - 1,
-     so all the algebra we perform here happens in the
-     "Lsst frame", i.e (0,0)-based. this algebra is justified in the
-     documentation of the package. */
-
-    lsst::afw::geom::Point2D crpix_lsst = wcs->getPixelOrigin();
-
-    lsst::daf::base::PropertyList::Ptr wcsMeta = wcs->getFitsMetadata();
-
-    if (wcs->hasDistortion()) {
-        Eigen::MatrixXd sipA;
-        Eigen::MatrixXd sipB;
-        lsst::afw::image::TanWcs::decodeSipHeader(*wcsMeta, "A", sipA);
-        lsst::afw::image::TanWcs::decodeSipHeader(*wcsMeta, "B", sipB);
-
-        int sipOrder = std::max(wcsMeta->get<int>("A_ORDER"), wcsMeta->get<int>("B_ORDER"));
-
-        jointcal::GtransfoPoly sipPoly(sipOrder);
-        for (int i = 0; i <= sipOrder; ++i) {
-            for (int j = 0; j <= sipOrder; ++j) {
-                if (i < sipA.cols() && j < sipA.rows() && (i + j) <= sipOrder)
-                    sipPoly.coeff(i, j, 0) = sipA(i, j);
-                if (i < sipB.cols() && j < sipB.rows() && (i + j) <= sipOrder)
-                    sipPoly.coeff(i, j, 1) = sipB(i, j);
-            }
-        }
-
-        jointcal::GtransfoLinShift s2(-crpix_lsst[0], -crpix_lsst[1]);
-
-        /* then the SIP correction (TanWcs::undistorPixel, last line)
-           returns pix + sipPoly*secondShift(pix) where secondShift
-           subtracts crpix_header from (1,1) based coordinates, i.e. the
-           same thing as subtracting crpix_lsst from (0,0-based
-           coordinates. So undistort pixel does:
-              id+sipPoly*s2
-        */
-
-        GtransfoLin id;  // identity is the default constructor.
-        // This is what is returned by TanWcs::undistortpixel
-        jointcal::GtransfoPoly actualSip = id + sipPoly * s2;
-
-        sipCorr.reset(new jointcal::GtransfoPoly(actualSip));
-    }
-
-    // now compute the lin part (nothing to do with SIP) */
-    Eigen::Matrix2d cdMat = wcs->getCDMatrix();
-    jointcal::GtransfoLin cdTrans;
-    cdTrans.coeff(1, 0, 0) = cdMat(0, 0);  // CD1_1
-    cdTrans.coeff(0, 1, 0) = cdMat(0, 1);  // CD1_2
-    cdTrans.coeff(1, 0, 1) = cdMat(1, 0);  // CD2_1
-    cdTrans.coeff(0, 1, 1) = cdMat(1, 1);  // CD2_1
-    // this is by chance equal to s2, but we will not rely on this fact:
-    jointcal::GtransfoLinShift crpixShift(-crpix_lsst[0], -crpix_lsst[1]);
-
-    // CD's apply to CRPIX-shifted coordinate
-    jointcal::GtransfoLin linPart = cdTrans * crpixShift;
-
-    //  lsst::afw::coord::Coord tp = wcs->getSkyOrigin()->getPosition(lsst::afw::geom::degrees);
-    // the above line returns radians ?!
-    double ra = wcsMeta->get<double>("CRVAL1");
-    double dec = wcsMeta->get<double>("CRVAL2");
-
-    jointcal::Point tangentPoint(ra, dec);
-
-    // return jointcal::TanSipPix2RaDec(linPart, tangentPoint, sipCorr->get());
-    return jointcal::TanSipPix2RaDec(linPart, tangentPoint, (const jointcal::GtransfoPoly *)sipCorr.get());
-}
-
 /* The inverse transformation i.e. convert from the fit result to the SIP
    convention. */
-PTR(afwImg::TanWcs)
-gtransfoToTanWcs(const jointcal::TanSipPix2RaDec wcsTransfo, const jointcal::Frame &ccdFrame,
-                 const bool noLowOrderSipTerms) {
+std::shared_ptr<afw::geom::SkyWcs> gtransfoToTanWcs(const jointcal::TanSipPix2RaDec wcsTransfo,
+                                                    const jointcal::Frame &ccdFrame,
+                                                    const bool noLowOrderSipTerms) {
     GtransfoLin linPart = wcsTransfo.getLinPart();
     afwGeom::Point2D crpix_lsst;  // in LSST "frame"
                                   /* In order to remove the low order sip terms, one has to
@@ -119,13 +51,11 @@ gtransfoToTanWcs(const jointcal::TanSipPix2RaDec wcsTransfo, const jointcal::Fra
     }
 
     /* At this stage, crpix should not be shifted from "LSST units" to
-       "FITS units" yet because the TanWcs constructors expect it in LSST
+       "FITS units" yet because the SkyWcs constructors expect it in LSST
        units */
 
-    // crval from type conversion
-    afwGeom::Point2D crval;
-    crval[0] = wcsTransfo.getTangentPoint().x;
-    crval[1] = wcsTransfo.getTangentPoint().y;
+    afw::coord::IcrsCoord const crval(wcsTransfo.getTangentPoint().x * afwGeom::degrees,
+                                      wcsTransfo.getTangentPoint().y * afwGeom::degrees);
 
     // CD matrix:
     Eigen::Matrix2d cdMat;
@@ -134,8 +64,9 @@ gtransfoToTanWcs(const jointcal::TanSipPix2RaDec wcsTransfo, const jointcal::Fra
     cdMat(1, 0) = linPart.coeff(1, 0, 1);  // CD2_1
     cdMat(1, 1) = linPart.coeff(0, 1, 1);  // CD2_2
 
-    if (!wcsTransfo.getCorr())  // the WCS has no distortions
-        return std::make_shared<afwImg::TanWcs>(crval, crpix_lsst, cdMat);
+    if (!wcsTransfo.getCorr()) {  // the WCS has no distortions
+        return afw::geom::makeSkyWcs(crpix_lsst, crval, cdMat);
+    }
 
     /* We are now given:
        - CRPIX
@@ -169,23 +100,26 @@ gtransfoToTanWcs(const jointcal::TanSipPix2RaDec wcsTransfo, const jointcal::Fra
     int sipOrder = sipPoly.getDegree();
     Eigen::MatrixXd sipA(Eigen::MatrixXd::Zero(sipOrder + 1, sipOrder + 1));
     Eigen::MatrixXd sipB(Eigen::MatrixXd::Zero(sipOrder + 1, sipOrder + 1));
-    for (int i = 0; i <= sipOrder; ++i)
+    for (int i = 0; i <= sipOrder; ++i) {
         for (int j = 0; j <= sipOrder - i; ++j) {
             sipA(i, j) = sipPoly.coeff(i, j, 0);
             sipB(i, j) = sipPoly.coeff(i, j, 1);
         }
+    }
 
     // now backwards coefficients
     sipOrder = sipPolyInv.getDegree();
     Eigen::MatrixXd sipAp(Eigen::MatrixXd::Zero(sipOrder + 1, sipOrder + 1));
     Eigen::MatrixXd sipBp(Eigen::MatrixXd::Zero(sipOrder + 1, sipOrder + 1));
-    for (int i = 0; i <= sipOrder; ++i)
+    for (int i = 0; i <= sipOrder; ++i) {
         for (int j = 0; j <= sipOrder - i; ++j) {
             sipAp(i, j) = sipPolyInv.coeff(i, j, 0);
             sipBp(i, j) = sipPolyInv.coeff(i, j, 1);
         }
+    }
 
-    return std::make_shared<afwImg::TanWcs>(crval, crpix_lsst, cdMat, sipA, sipB, sipAp, sipBp);
+    return makeTanSipWcs(crpix_lsst, crval, cdMat, sipA, sipB, sipAp, sipBp);
 }
+
 }  // namespace jointcal
 }  // namespace lsst
