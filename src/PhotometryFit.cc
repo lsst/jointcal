@@ -223,20 +223,20 @@ void PhotometryFit::saveChi2MeasContributions(std::string const &baseName) const
        some function to the model that returns this relevant
        coordinate. */
     std::string separator = "\t";
-    ofile << "#xccd" << separator << "yccd" << separator << "mag" << separator << "instFlux" << separator
-          << "instFluxError" << separator << "flux" << separator << "fluxError" << separator
-          << "transformedFlux" << separator << "transformedFluxErr" << separator << "fflux" << separator
-          << "mjd" << separator << "color" << separator << "fsindex" << separator << "ra" << separator
-          << "dec" << separator << "chi2" << separator << "nm" << separator << "chip" << separator << "visit"
-          << separator << std::endl;
-    ofile << "#coordinates in CCD" << separator << separator << "rough mag" << separator
-          << "measured instrument flux" << separator << "measured instrument flux error" << separator
-          << "measured flux" << separator << "measured flux error" << separator << separator << separator
-          << "fitted flux" << separator << "modified Julian date of the measurement" << separator
-          << "currently unused" << separator << "unique index of the fittedStar" << separator
-          << "pos of fitted star" << separator << separator << "contribution to Chi2 (1 dof)" << separator
-          << "number of measurements of this FittedStar" << separator << "chip id" << separator << "visit id"
-          << std::endl;
+    ofile << "#id" << separator << "#xccd" << separator << "yccd" << separator << "mag" << separator
+          << "instFlux" << separator << "instFluxError" << separator << "flux" << separator << "fluxError"
+          << separator << "transformedFlux" << separator << "transformedFluxErr" << separator << "fflux"
+          << separator << "mjd" << separator << "color" << separator << "fsindex" << separator << "ra"
+          << separator << "dec" << separator << "chi2" << separator << "nm" << separator << "chip"
+          << separator << "visit" << separator << std::endl;
+    ofile << "#id in source catalog" << separator << "#coordinates in CCD" << separator << separator
+          << "rough mag" << separator << "measured instrument flux" << separator
+          << "measured instrument flux error" << separator << "measured flux" << separator
+          << "measured flux error" << separator << separator << separator << "fitted flux" << separator
+          << "modified Julian date of the measurement" << separator << "currently unused" << separator
+          << "unique index of the fittedStar" << separator << "pos of fitted star" << separator << separator
+          << "contribution to Chi2 (1 dof)" << separator << "number of measurements of this FittedStar"
+          << separator << "chip id" << separator << "visit id" << std::endl;
     const CcdImageList &ccdImageList = _associations->getCcdImageList();
     for (auto const &ccdImage : ccdImageList) {
         const MeasuredStarList &cat = ccdImage->getCatalogForFit();
@@ -255,12 +255,12 @@ void PhotometryFit::saveChi2MeasContributions(std::string const &baseName) const
             double residual = flux - fittedStar->getFlux();
             double chi2Val = std::pow(residual / sigma, 2);
 
-            ofile << measuredStar->x << separator << measuredStar->y << separator << fittedStar->getMag()
-                  << separator << measuredStar->getInstFlux() << separator << measuredStar->getInstFluxErr()
-                  << separator << measuredStar->getFlux() << separator << measuredStar->getFluxErr()
-                  << separator << flux << separator << fluxErr << separator << fittedStar->getFlux()
-                  << separator << jd << separator << fittedStar->color << separator
-                  << fittedStar->getIndexInMatrix() << separator << fittedStar->x << separator
+            ofile << measuredStar->getId() << separator << measuredStar->x << separator << measuredStar->y
+                  << separator << fittedStar->getMag() << separator << measuredStar->getInstFlux()
+                  << separator << measuredStar->getInstFluxErr() << separator << measuredStar->getFlux()
+                  << separator << measuredStar->getFluxErr() << separator << flux << separator << fluxErr
+                  << separator << fittedStar->getFlux() << separator << jd << separator << fittedStar->color
+                  << separator << fittedStar->getIndexInMatrix() << separator << fittedStar->x << separator
                   << fittedStar->y << separator << chi2Val << separator << fittedStar->getMeasurementCount()
                   << separator << ccdImage->getCcdId() << separator << ccdImage->getVisit() << std::endl;
         }  // loop on measurements in image

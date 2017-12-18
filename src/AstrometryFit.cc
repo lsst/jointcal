@@ -552,19 +552,19 @@ void AstrometryFit::checkStuff() {
 void AstrometryFit::saveChi2MeasContributions(std::string const &baseName) const {
     std::ofstream ofile(baseName.c_str());
     std::string separator = "\t";
-    ofile << "#xccd" << separator << "yccd " << separator << "rx" << separator << "ry" << separator << "xtp"
-          << separator << "ytp" << separator << "mag" << separator << "mjd" << separator << "rvx" << separator
-          << "rvy" << separator << "rvxy" << separator << "color" << separator << "fsindex" << separator
-          << "ra" << separator << "dec" << separator << "chi2" << separator << "nm" << separator << "chip"
-          << separator << "visit" << std::endl;
-    ofile << "#coordinates in CCD" << separator << separator << "residual in degrees in TP" << separator
-          << separator << "transformed coordinate in TP" << separator << separator << "rough mag" << separator
-          << "Modified Julian date of the measurement" << separator << "transformed measurement uncertainty"
-          << separator << separator << separator << "currently unused" << separator
-          << "unique index of the fittedStar" << separator << "on sky position of fittedStar" << separator
-          << separator << "contribution to Chi2 (2D dofs)" << separator
-          << "number of measurements of this fittedStar" << separator << "chip id" << separator << "visit id"
-          << std::endl;
+    ofile << "#id" << separator << "xccd" << separator << "yccd " << separator << "rx" << separator << "ry"
+          << separator << "xtp" << separator << "ytp" << separator << "mag" << separator << "mjd" << separator
+          << "rvx" << separator << "rvy" << separator << "rvxy" << separator << "color" << separator
+          << "fsindex" << separator << "ra" << separator << "dec" << separator << "chi2" << separator << "nm"
+          << separator << "chip" << separator << "visit" << std::endl;
+    ofile << "#id in source catalog" << separator << "coordinates in CCD" << separator << separator
+          << "residual in degrees in TP" << separator << separator << "transformed coordinate in TP"
+          << separator << separator << "rough mag" << separator << "Modified Julian date of the measurement"
+          << separator << "transformed measurement uncertainty" << separator << separator << separator
+          << "currently unused" << separator << "unique index of the fittedStar" << separator
+          << "on sky position of fittedStar" << separator << separator << "contribution to Chi2 (2D dofs)"
+          << separator << "number of measurements of this fittedStar" << separator << "chip id" << separator
+          << "visit id" << std::endl;
     const CcdImageList &ccdImageList = _associations->getCcdImageList();
     for (auto const &ccdImage : ccdImageList) {
         const MeasuredStarList &cat = ccdImage->getCatalogForFit();
@@ -589,12 +589,13 @@ void AstrometryFit::saveChi2MeasContributions(std::string const &baseName) const
             double wxy = -tpPos.vxy / det;
             double chi2 = wxx * res.x * res.x + wyy * res.y * res.y + 2 * wxy * res.x * res.y;
             ofile << std::setprecision(9);
-            ofile << ms->x << separator << ms->y << separator << res.x << separator << res.y << separator
-                  << tpPos.x << separator << tpPos.y << separator << fs->getMag() << separator << mjd
-                  << separator << tpPos.vx << separator << tpPos.vy << separator << tpPos.vxy << separator
-                  << fs->color << separator << fs->getIndexInMatrix() << separator << fs->x << separator
-                  << fs->y << separator << chi2 << separator << fs->getMeasurementCount() << separator
-                  << ccdImage->getCcdId() << separator << ccdImage->getVisit() << std::endl;
+            ofile << ms->getId() << separator << ms->x << separator << ms->y << separator << res.x
+                  << separator << res.y << separator << tpPos.x << separator << tpPos.y << separator
+                  << fs->getMag() << separator << mjd << separator << tpPos.vx << separator << tpPos.vy
+                  << separator << tpPos.vxy << separator << fs->color << separator << fs->getIndexInMatrix()
+                  << separator << fs->x << separator << fs->y << separator << chi2 << separator
+                  << fs->getMeasurementCount() << separator << ccdImage->getCcdId() << separator
+                  << ccdImage->getVisit() << std::endl;
         }  // loop on measurements in image
     }      // loop on images
 }
