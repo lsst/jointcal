@@ -2,6 +2,7 @@
 #ifndef LSST_JOINTCAL_FITTER_BASE_H
 #define LSST_JOINTCAL_FITTER_BASE_H
 
+#include "lsst/log/Log.h"
 #include "lsst/jointcal/Associations.h"
 #include "lsst/jointcal/CcdImage.h"
 #include "lsst/jointcal/Chi2.h"
@@ -116,6 +117,9 @@ protected:
     int _lastNTrip;  // last triplet count, used to speed up allocation
     unsigned int _nParTot;
     unsigned _nMeasuredStars;
+
+    // lsst.logging instance, to be created by subclass so that messages have consistent name while fitting.
+    LOG_LOGGER _log;
 
     /**
      * Find Measurements and references contributing more than a cut, computed as

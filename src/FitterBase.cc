@@ -9,10 +9,6 @@
 #include "lsst/jointcal/FittedStar.h"
 #include "lsst/jointcal/MeasuredStar.h"
 
-namespace {
-LOG_LOGGER _log = LOG_GET("jointcal.Fitter");
-}
-
 namespace lsst {
 namespace jointcal {
 

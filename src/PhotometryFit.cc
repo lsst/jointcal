@@ -14,10 +14,6 @@
 #include "lsst/jointcal/Gtransfo.h"
 #include "lsst/jointcal/Tripletlist.h"
 
-namespace {
-LOG_LOGGER _log = LOG_GET("jointcal.PhotometryFit");
-}
-
 namespace lsst {
 namespace jointcal {
 

@@ -16,10 +16,6 @@
 #include "lsst/jointcal/Gtransfo.h"
 #include "lsst/jointcal/Tripletlist.h"
 
-namespace {
-LOG_LOGGER _log = LOG_GET("jointcal.AstrometryFit");
-}
-
 namespace lsst {
 namespace jointcal {
 
@@ -32,6 +28,7 @@ AstrometryFit::AstrometryFit(std::shared_ptr<Associations> associations,
           _nParPositions(0),
           _nParRefrac(_associations->getNFilters()),
           _posError(posError) {
+    _log = LOG_GET("jointcal.AstrometryFit");
     _JDRef = 0;
 
     _posError = posError;
