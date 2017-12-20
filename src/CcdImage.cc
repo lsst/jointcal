@@ -27,6 +27,11 @@ LOG_LOGGER _log = LOG_GET("jointcal.CcdImage");
 namespace lsst {
 namespace jointcal {
 
+std::ostream &operator<<(std::ostream &out, CcdImageKey const &key) {
+    out << "(visit: " << key.first << ", ccd: " << key.second << ")";
+    return out;
+}
+
 void CcdImage::loadCatalog(afw::table::SourceCatalog const &catalog, std::string const &fluxField) {
     auto xKey = catalog.getSchema().find<double>("slot_Centroid_x").key;
     auto yKey = catalog.getSchema().find<double>("slot_Centroid_y").key;

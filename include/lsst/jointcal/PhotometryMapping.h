@@ -171,7 +171,7 @@ public:
 
     /// @copydoc PhotometryMappingBase::dump
     void dump(std::ostream &stream = std::cout) const override {
-        stream << "index: " << index << " params: ";
+        stream << "index: " << index << " fixed: " << fixed << " transfo parameters: ";
         _transfo->dump(stream);
     }
 

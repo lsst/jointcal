@@ -85,7 +85,9 @@ std::shared_ptr<afw::image::PhotoCalib> SimplePhotometryModel::toPhotoCalib(CcdI
 
 void SimplePhotometryModel::dump(std::ostream &stream) const {
     for (auto &i : _myMap) {
+        stream << i.first << ": ";
         i.second->dump(stream);
+        stream << ", ";
     }
 }
 
