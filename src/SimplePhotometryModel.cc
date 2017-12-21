@@ -50,6 +50,18 @@ double SimplePhotometryModel::transform(CcdImage const &ccdImage, MeasuredStar c
     return mapping->transform(star, instFlux);
 }
 
+double SimplePhotometryModel::transformError(CcdImage const &ccdImage, MeasuredStar const &star,
+                                             double instFluxErr) const {
+    auto mapping = findMapping(ccdImage);
+    return mapping->transformError(star, instFluxErr);
+}
+
+void SimplePhotometryModel::freezeErrorTransform() {
+    for (auto &i : _myMap) {
+        i.second->freezeErrorTransform();
+    }
+}
+
 void SimplePhotometryModel::getMappingIndices(CcdImage const &ccdImage,
                                               std::vector<unsigned> &indices) const {
     auto mapping = findMapping(ccdImage);
@@ -73,7 +85,9 @@ std::shared_ptr<afw::image::PhotoCalib> SimplePhotometryModel::toPhotoCalib(CcdI
 
 void SimplePhotometryModel::dump(std::ostream &stream) const {
     for (auto &i : _myMap) {
+        stream << i.first << ": ";
         i.second->dump(stream);
+        stream << ", ";
     }
 }
 

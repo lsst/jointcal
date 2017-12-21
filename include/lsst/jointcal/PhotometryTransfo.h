@@ -180,7 +180,7 @@ public:
 
     /// @copydoc PhotometryTransfo::clone
     std::shared_ptr<PhotometryTransfo> clone() const override {
-        return std::make_shared<PhotometryTransfoChebyshev>(_coefficients, _bbox);
+        return std::make_shared<PhotometryTransfoChebyshev>(ndarray::copy(_coefficients), _bbox);
     }
 
     /// @copydoc PhotometryTransfo::computeParameterDerivatives

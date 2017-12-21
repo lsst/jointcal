@@ -52,6 +52,28 @@ public:
                              double instFlux) const = 0;
 
     /**
+     * Return the on-sky transformed flux uncertainty for measuredStar on ccdImage.
+     * Identical to transform() until freezeErrorTransform() is called.
+     *
+     * @param[in]  ccdImage     The ccdImage where measuredStar resides.
+     * @param      measuredStar The measured star position to compute the transform at.
+     * @param[in]  instFluxErr  The instrument flux error to transform.
+     *
+     * @return     The on-sky flux transformed from instFlux at measuredStar's position.
+     */
+    virtual double transformError(CcdImage const &ccdImage, MeasuredStar const &measuredStar,
+                                  double instFluxErr) const = 0;
+
+    /**
+     * Once this routine has been called, the error transform is not modified by offsetParams().
+     *
+     * The routine can be called when the mappings are roughly in place. After the call, the transformations
+     * used to propagate errors are no longer affected when updating the mappings. This allows an exactly
+     * linear fit, which can be necessary for some model+data combinations.
+     */
+    virtual void freezeErrorTransform() = 0;
+
+    /**
      * Get how this set of parameters (of length Npar()) map into the "grand" fit.
      *
      * @param[in]  ccdImage  The ccdImage to look up.

@@ -5,6 +5,7 @@
 #include <iostream>
 #include <sstream>
 
+#include "lsst/log/Log.h"
 #include "lsst/jointcal/Associations.h"
 #include "lsst/jointcal/CcdImage.h"
 #include "lsst/jointcal/Chi2.h"
@@ -27,7 +28,9 @@ public:
               _fittingFluxes(false),
               _photometryModel(photometryModel),
               _nParModel(0),
-              _nParFluxes(0) {}
+              _nParFluxes(0) {
+        _log = LOG_GET("jointcal.PhotometryFit");
+    }
 
     /// No copy or move: there is only ever one fitter of a given type.
     PhotometryFit(PhotometryFit const &) = delete;

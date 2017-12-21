@@ -59,7 +59,7 @@ public:
      * From there on, measurement errors are propagated using the current
      * transfos (and no longer evolve).
      */
-    void freezeErrorScales();
+    void freezeErrorTransform();
 
     //! Access to mappings
     Gtransfo const &getChipTransfo(CcdIdType const chip) const;

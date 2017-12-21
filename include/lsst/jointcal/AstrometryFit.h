@@ -91,7 +91,7 @@ public:
      * affected when updating the mappings. This allows to have an exactly linear
      * fit, which can be useful.
      */
-    void freezeErrorScales() { _astrometryModel->freezeErrorScales(); }
+    void freezeErrorTransform() { _astrometryModel->freezeErrorTransform(); }
 
     void offsetParams(Eigen::VectorXd const &delta) override;
 

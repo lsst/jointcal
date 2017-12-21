@@ -117,11 +117,29 @@ class PhotometryModelTestBase():
         point = lsst.afw.geom.Point2D(self.star1.x, self.star1.y)
         self.assertFloatsAlmostEqual(photoCalib.instFluxToMaggies(self.instFlux, point), expect)
 
+    def test_freezeErrorTransform(self):
+        """After calling freezeErrorTransform(), the error transform is unchanged
+        by offsetParams().
+        """
+        self.model.offsetParams(self.delta)
+        ccdImage = self.ccdImageList[0]
+        t1 = self.model.transform(ccdImage, self.star0, self.instFlux)
+        t1Err = self.model.transformError(ccdImage, self.star0, self.instFluxErr)
+        self.model.freezeErrorTransform()
+        self.model.offsetParams(self.delta)
+        t2 = self.model.transform(ccdImage, self.star0, self.instFlux)
+        t2Err = self.model.transformError(ccdImage, self.star0, self.instFluxErr)
+
+        self.assertFloatsNotEqual(t1, t2)
+        self.assertFloatsEqual(t1Err, t2Err)
+
 
 class SimplePhotometryModelTestCase(PhotometryModelTestBase, lsst.utils.tests.TestCase):
     def setUp(self):
         super(SimplePhotometryModelTestCase, self).setUp()
         self.model = lsst.jointcal.photometryModels.SimplePhotometryModel(self.ccdImageList)
+        self.model.assignIndices("", self.firstIndex)  # have to call this once to let offsetParams work.
+        self.delta = np.arange(len(self.ccdImageList), dtype=float)*-0.2 + 1
 
     def test_getNpar(self):
         result = self.model.getNpar(self.ccdImageList[0])
@@ -145,11 +163,11 @@ class ConstrainedPhotometryModelTestCase(PhotometryModelTestBase, lsst.utils.tes
         # have to call this once to let offsetParams work.
         self.model.assignIndices("", self.firstIndex)
         # tweak to get more than just a constant field for the second ccdImage
-        delta = np.arange(20, dtype=float)*-0.2 + 1
+        self.delta = np.arange(20, dtype=float)*-0.2 + 1
         # but keep the first ccdImage constant, to help distinguish test failures.
-        delta[:10] = 0
-        delta[0] = -5
-        self.model.offsetParams(delta)
+        self.delta[:10] = 0.0
+        self.delta[0] = -5.0
+        self.model.offsetParams(self.delta)
 
     def test_getNpar(self):
         """

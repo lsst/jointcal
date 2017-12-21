@@ -78,7 +78,7 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
                    'selected_photometry_ccdImages': 12,
                    'astrometry_final_chi2': 1150.62,
                    'astrometry_final_ndof': 2550,
-                   'photometry_final_chi2': 2820.84,
+                   'photometry_final_chi2': 2824.86,
                    'photometry_final_ndof': 1388
                    }
 
@@ -132,7 +132,7 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
                    'associated_photometry_fittedStars': 2269,
                    'selected_photometry_fittedStars': 1239,
                    'selected_photometry_ccdImages': 12,
-                   'photometry_final_chi2': 2640.74,
+                   'photometry_final_chi2': 2654.95,
                    'photometry_final_ndof': 1328
                    }
 

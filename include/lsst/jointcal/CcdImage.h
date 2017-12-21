@@ -26,6 +26,7 @@ typedef int VisitIdType;
 typedef int CcdIdType;
 /// For hashing a ccdImage: the pair of (visit, ccd) IDs should be unique to each ccdImage.
 typedef std::pair<VisitIdType, CcdIdType> CcdImageKey;
+std::ostream &operator<<(std::ostream &out, CcdImageKey const &key);
 
 /**
  * Handler of an actual image from a single CCD.

@@ -9,10 +9,6 @@
 #include "lsst/jointcal/FittedStar.h"
 #include "lsst/jointcal/MeasuredStar.h"
 
-namespace {
-LOG_LOGGER _log = LOG_GET("jointcal.Fitter");
-}
-
 namespace lsst {
 namespace jointcal {
 
@@ -60,20 +56,31 @@ unsigned FitterBase::findOutliers(double nSigmaCut, MeasuredStarList &msOutliers
         if (chi2->chi2 < cut) break;  // because the array is sorted.
         std::vector<unsigned> indices;
         /* now, we want to get the indices of the parameters this chi2
-        term depends on. We have to figure out which kind of term it
-         is; we use for that the type of the star attached to the Chi2Star. */
-        auto ms = std::dynamic_pointer_cast<MeasuredStar>(chi2->star);
-        std::shared_ptr<FittedStar> fs;
-        if (!ms) {
-            // it is reference term.
-            fs = std::dynamic_pointer_cast<FittedStar>(chi2->star);
+           term depends on. We have to figure out which kind of term it
+           is; we use for that the type of the star attached to the Chi2Star. */
+        auto measuredStar = std::dynamic_pointer_cast<MeasuredStar>(chi2->star);
+        std::shared_ptr<FittedStar> fittedStar;  // To add to fsOutliers if it is a reference outlier.
+        if (measuredStar == nullptr) {
+            // it is a reference outlier
+            fittedStar = std::dynamic_pointer_cast<FittedStar>(chi2->star);
+            if (fittedStar->getMeasurementCount() == 0) {
+                LOGLS_WARN(_log, "FittedStar with no measuredStars found as an outlier: " << *fittedStar);
+                continue;
+            }
             // NOTE: Stars contribute twice to astrometry (x,y), but once to photometry (flux),
             // NOTE: but we only need to mark one index here because both will be removed with that star.
-            indices.push_back(fs->getIndexInMatrix());
+            indices.push_back(fittedStar->getIndexInMatrix());
             /* One might think it would be useful to account for PM
                parameters here, but it is just useless */
-        } else {  // it is a measurement term.
-            getIndicesOfMeasuredStar(*ms, indices);
+        } else {
+            // it is a measurement outlier
+            auto tempFittedStar = measuredStar->getFittedStar();
+            if (tempFittedStar->getMeasurementCount() == 1 && tempFittedStar->getRefStar() == nullptr) {
+                LOGLS_WARN(_log, "FittedStar with 1 measuredStar and no refStar found as an outlier: "
+                                         << *tempFittedStar);
+                continue;
+            }
+            getIndicesOfMeasuredStar(*measuredStar, indices);
         }
 
         /* Find out if we already discarded a stronger outlier
@@ -89,12 +96,12 @@ unsigned FitterBase::findOutliers(double nSigmaCut, MeasuredStarList &msOutliers
 
         if (drop_it)  // store the outlier in one of the lists:
         {
-            if (ms) {
-                // measurement term
-                msOutliers.push_back(ms);
+            if (measuredStar == nullptr) {
+                // reference term
+                fsOutliers.push_back(fittedStar);
             } else {
-                // ref term
-                fsOutliers.push_back(fs);
+                // measurement term
+                msOutliers.push_back(measuredStar);
             }
             // mark the parameters as directly changed when we discard this chi2 term.
             for (auto const &i : indices) {
