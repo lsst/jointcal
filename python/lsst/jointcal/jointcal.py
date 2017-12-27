@@ -4,6 +4,9 @@ from __future__ import division, absolute_import, print_function
 from builtins import str
 from builtins import range
 
+import concurrent.futures
+import lsst.ctrl.pool.pool
+
 import collections
 import numpy as np
 
@@ -684,8 +687,7 @@ class JointcalTask(pipeBase.CmdLineTask):
             dict of ccdImage identifiers to dataRefs that were fit
         """
 
-        ccdImageList = associations.getCcdImageList()
-        for ccdImage in ccdImageList:
+        def _write_one(ccdImage):
             # TODO: there must be a better way to identify this ccdImage than a visit,ccd pair?
             ccd = ccdImage.ccdId
             visit = ccdImage.visit
@@ -701,6 +703,12 @@ class JointcalTask(pipeBase.CmdLineTask):
                 self.log.fatal('Failed to write updated Wcs: %s', str(e))
                 raise e
 
+        ccdImageList = associations.getCcdImageList()
+        with concurrent.futures.ProcessPoolExecutor() as executor:
+            executor.map(_write_one, ccdImageList)
+
+        # for ccdImage in ccdImageList:
+
     def _write_photometry_results(self, associations, model, visit_ccd_to_dataRef):
         """
         Write the fitted photometric results to a new 'photoCalib' dataRef.
@@ -715,8 +723,7 @@ class JointcalTask(pipeBase.CmdLineTask):
             dict of ccdImage identifiers to dataRefs that were fit
         """
 
-        ccdImageList = associations.getCcdImageList()
-        for ccdImage in ccdImageList:
+        def _write_one(ccdImage):
             # TODO: there must be a better way to identify this ccdImage than a visit,ccd pair?
             ccd = ccdImage.ccdId
             visit = ccdImage.visit
@@ -728,3 +735,10 @@ class JointcalTask(pipeBase.CmdLineTask):
             except pexExceptions.Exception as e:
                 self.log.fatal('Failed to write updated PhotoCalib: %s', str(e))
                 raise e
+
+        ccdImageList = associations.getCcdImageList()
+        with lsst.ctrl.pool.pool.pickleSniffer():
+            with concurrent.futures.ProcessPoolExecutor() as executor:
+                executor.map(_write_one, ccdImageList)
+        # for ccdImage in ccdImageList:
+        #     _write_one(ccdImage)
