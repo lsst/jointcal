@@ -5,7 +5,6 @@ from builtins import str
 from builtins import range
 
 import concurrent.futures
-import lsst.ctrl.pool.pool
 
 import collections
 import numpy as np
@@ -724,7 +723,6 @@ class JointcalTask(pipeBase.CmdLineTask):
         """
 
         ccdImageList = associations.getCcdImageList()
-        # with lsst.ctrl.pool.pool.pickleSniffer():
         with concurrent.futures.ProcessPoolExecutor() as executor:
             executor.map(self._write_one_photometry, ccdImageList)
         # for ccdImage in ccdImageList:
