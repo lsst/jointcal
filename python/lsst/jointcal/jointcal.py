@@ -7,6 +7,7 @@ from builtins import range
 import concurrent.futures
 
 import collections
+import itertools
 import numpy as np
 
 import lsst.utils
@@ -257,7 +258,7 @@ class JointcalTask(pipeBase.CmdLineTask):
                                ContainerClass=PerTractCcdDataIdContainer)
         return parser
 
-    def _build_ccdImage(self, dataRef, associations, jointcalControl):
+    def _build_ccdImage(self, dataRef):
         """
         Extract the necessary things from this dataRef to add a new ccdImage.
 
@@ -265,13 +266,11 @@ class JointcalTask(pipeBase.CmdLineTask):
         ----------
         dataRef : lsst.daf.persistence.ButlerDataRef
             dataRef to extract info from.
-        associations : lsst.jointcal.Associations
-            object to add the info to, to construct a new CcdImage
-        jointcalControl : jointcal.JointcalControl
-            control object for associations management
 
         Returns
         ------
+        tuple
+            The parameters to be passed to associations.addImage
         namedtuple
             wcs : lsst.afw.image.TanWcs
                 the TAN WCS of this image, read from the calexp
@@ -304,12 +303,12 @@ class JointcalTask(pipeBase.CmdLineTask):
             self.log.warn("No sources selected in visit %s ccd %s", visit, ccdId)
         else:
             self.log.info("%d sources selected in visit %d ccd %d", len(goodSrc.sourceCat), visit, ccdId)
-        associations.addImage(goodSrc.sourceCat, tanWcs, visitInfo, bbox, filterName, photoCalib, detector,
-                              visit, ccdId, jointcalControl)
+        addImage = (goodSrc.sourceCat, tanWcs, visitInfo, bbox, filterName, photoCalib, detector,
+                    visit, ccdId)
 
         Result = collections.namedtuple('Result_from_build_CcdImage', ('wcs', 'key', 'filter'))
         Key = collections.namedtuple('Key', ('visit', 'ccd'))
-        return Result(tanWcs, Key(visit, ccdId), filterName)
+        return addImage, Result(tanWcs, Key(visit, ccdId), filterName)
 
     @pipeBase.timeMethod
     def run(self, dataRefs, profile_jointcal=False):
@@ -349,8 +348,12 @@ class JointcalTask(pipeBase.CmdLineTask):
             # NOTE: we only need to read it once, because its the same for all exposures of a camera.
             camera = dataRefs[0].get('camera', immediate=True)
             self.focalPlaneBBox = camera.getFpBBox()
-            for ref in dataRefs:
-                result = self._build_ccdImage(ref, associations, jointcalControl)
+
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                mapped = executor.map(self._build_ccdImage, dataRefs)
+
+            for (stuff, result), ref in zip(mapped, dataRefs):
+                associations.addImage(*stuff, jointcalControl)
                 oldWcsList.append(result.wcs)
                 visit_ccd_to_dataRef[result.key] = ref
                 filters.append(result.filter)
@@ -686,7 +689,14 @@ class JointcalTask(pipeBase.CmdLineTask):
             dict of ccdImage identifiers to dataRefs that were fit
         """
 
-        def _write_one(ccdImage):
+        ccdImageList = associations.getCcdImageList()
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            executor.map(self._write_one_astrometry, ccdImageList,
+                         itertools.repeat(model), itertools.repeat(visit_ccd_to_dataRef))
+        # for ccdImage in ccdImageList:
+        #     _write_one_astrometry(ccdImage, model, visit_ccd_to_dataRef)
+
+    def _write_one_astrometry(self, ccdImage, model, visit_ccd_to_dataRef):
             # TODO: there must be a better way to identify this ccdImage than a visit,ccd pair?
             ccd = ccdImage.ccdId
             visit = ccdImage.visit
@@ -701,12 +711,6 @@ class JointcalTask(pipeBase.CmdLineTask):
             except pexExceptions.Exception as e:
                 self.log.fatal('Failed to write updated Wcs: %s', str(e))
                 raise e
-
-        ccdImageList = associations.getCcdImageList()
-        with concurrent.futures.ProcessPoolExecutor() as executor:
-            executor.map(_write_one, ccdImageList)
-
-        # for ccdImage in ccdImageList:
 
     def _write_photometry_results(self, associations, model, visit_ccd_to_dataRef):
         """
@@ -723,10 +727,11 @@ class JointcalTask(pipeBase.CmdLineTask):
         """
 
         ccdImageList = associations.getCcdImageList()
-        with concurrent.futures.ProcessPoolExecutor() as executor:
-            executor.map(self._write_one_photometry, ccdImageList)
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            executor.map(self._write_one_photometry, ccdImageList,
+                         itertools.repeat(model), itertools.repeat(visit_ccd_to_dataRef))
         # for ccdImage in ccdImageList:
-        #     _write_one(ccdImage)
+        #     _write_one(ccdImage, model, visit_ccd_to_dataRef)
 
     def _write_one_photometry(self, ccdImage, model, visit_ccd_to_dataRef):
             # TODO: there must be a better way to identify this ccdImage than a visit,ccd pair?
