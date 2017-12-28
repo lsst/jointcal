@@ -151,7 +151,7 @@ public:
     SimplePolyMapping(GtransfoLin const &CenterAndScale, GtransfoPoly const &gtransfo)
             : SimpleGtransfoMapping(gtransfo), _centerAndScale(CenterAndScale) {
         // We assume that the initialization was done properly, for example that
-        // gtransfo = pix2TP*CenterAndScale.inverted(), so we do not touch transfo.
+        // gtransfo = pixToTangentPlane*CenterAndScale.inverted(), so we do not touch transfo.
         /* store the (spatial) derivative of _centerAndScale. For the extra
            diagonal terms, just copied the ones in positionDerivatives */
         preDer(0, 0) = _centerAndScale.coeff(1, 0, 0);

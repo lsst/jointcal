@@ -139,19 +139,19 @@ CcdImage::CcdImage(afw::table::SourceCatalog &catalog, std::shared_ptr<lsst::afw
     }
 
     if (_airMass == 1)
-        _sineta = _coseta = _tgz = 0;
+        _sinEta = _cosEta = _tanZ = 0;
     else {
         double cosz = 1. / _airMass;
         double sinz = std::sqrt(1 - cosz * cosz);  // astronomers usually observe above the horizon
-        _tgz = sinz / cosz;
+        _tanZ = sinz / cosz;
         // TODO: as part of DM-12473, we can remove all of this and just call _visitInfo.getParallacticAngle()
         double dec = _boresightRaDec.getLatitude();
         // x/y components of refraction angle, eta.]
         double yEta = std::sin(_hourAngle);
         double xEta = std::cos(dec) * std::tan(latitude) - std::sin(dec) * std::cos(_hourAngle);
         double eta = std::atan2(yEta, xEta);
-        _sineta = std::sin(eta);
-        _coseta = std::cos(eta);
+        _sinEta = std::sin(eta);
+        _cosEta = std::cos(eta);
     }
 }
 
@@ -176,23 +176,23 @@ void CcdImage::setCommonTangentPoint(Point const &commonTangentPoint) {
     auto const crval = _readWcs->getSkyWcs()->getSkyOrigin();
     jointcal::Point tangentPoint(crval[0].asDegrees(), crval[1].asDegrees());
 
-    /* we don't assume here that we know the internals of TanPix2RaDec:
+    /* we don't assume here that we know the internals of TanPixelToRaDec:
        to construct pix->TP, we do pix->sky->TP, although pix->sky
        actually goes through TP */
     GtransfoLin identity;
-    TanRaDec2Pix raDec2TP(identity, tangentPoint);
-    _pix2TP = gtransfoCompose(raDec2TP, *_readWcs);
-    TanPix2RaDec CTP2RaDec(identity, commonTangentPoint);
-    _CTP2TP = gtransfoCompose(raDec2TP, CTP2RaDec);
+    TanRaDecToPixel raDecToTangentPlane(identity, tangentPoint);
+    _pixelToTangentPlane = gtransfoCompose(raDecToTangentPlane, *_readWcs);
+    TanPixelToRaDec CommonTangentPlane2RaDec(identity, commonTangentPoint);
+    _commonTangentPlaneToTangentPlane = gtransfoCompose(raDecToTangentPlane, CommonTangentPlane2RaDec);
 
     // jump from one TP to an other:
-    TanRaDec2Pix raDec2CTP(identity, commonTangentPoint);
-    TanPix2RaDec TP2RaDec(identity, tangentPoint);
-    _TP2CTP = gtransfoCompose(raDec2CTP, TP2RaDec);
-    _sky2TP.reset(new TanRaDec2Pix(identity, tangentPoint));
+    TanRaDecToPixel raDecToCommonTangentPlane(identity, commonTangentPoint);
+    TanPixelToRaDec TangentPlaneToRaDec(identity, tangentPoint);
+    _tangentPlaneToCommonTangentPlane = gtransfoCompose(raDecToCommonTangentPlane, TangentPlaneToRaDec);
+    _skyToTangentPlane.reset(new TanRaDecToPixel(identity, tangentPoint));
 
     // this one is needed for matches :
-    _pix2CommonTangentPlane = gtransfoCompose(raDec2CTP, *_readWcs);
+    _pixelToCommonTangentPlane = gtransfoCompose(raDecToCommonTangentPlane, *_readWcs);
 }
 }  // namespace jointcal
 }  // namespace lsst

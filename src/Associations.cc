@@ -101,7 +101,7 @@ void Associations::associateCatalogs(const double matchCutInArcSec, const bool u
     if (!useFittedList) fittedStarList.clear();
 
     for (auto &ccdImage : ccdImageList) {
-        const Gtransfo *toCommonTangentPlane = ccdImage->getPix2CommonTangentPlane();
+        std::shared_ptr<Gtransfo> toCommonTangentPlane = ccdImage->getPixelToCommonTangentPlane();
 
         // Clear the catalog to fit and copy the whole catalog into it.
         // This allows reassociating from scratch after a fit.
@@ -125,7 +125,7 @@ void Associations::associateCatalogs(const double matchCutInArcSec, const bool u
 
         // divide by 3600 because coordinates in CTP are in degrees.
         auto starMatchList = listMatchCollect(Measured2Base(catalog), Fitted2Base(toMatch),
-                                              toCommonTangentPlane, matchCutInArcSec / 3600.);
+                                              toCommonTangentPlane.get(), matchCutInArcSec / 3600.);
 
         /* should check what this removeAmbiguities does... */
         LOGLS_DEBUG(_log, "Measured-to-Fitted matches before removing ambiguities " << starMatchList->size());
@@ -240,9 +240,9 @@ void Associations::collectRefStars(afw::table::SimpleCatalog &refCat, afw::geom:
 
     // project on CTP (i.e. RaDec2CTP), in degrees
     GtransfoLin identity;
-    TanRaDec2Pix raDec2CTP(identity, _commonTangentPoint);
+    TanRaDecToPixel raDecToCommonTangentPlane(identity, _commonTangentPoint);
 
-    associateRefStars(matchCut.asArcseconds(), &raDec2CTP);
+    associateRefStars(matchCut.asArcseconds(), &raDecToCommonTangentPlane);
 }
 
 const lsst::afw::geom::Box2D Associations::getRaDecBBox() {
@@ -250,7 +250,7 @@ const lsst::afw::geom::Box2D Associations::getRaDecBBox() {
     Frame tangentPlaneFrame;
 
     for (auto const &ccdImage : ccdImageList) {
-        Frame CTPFrame = ccdImage->getPix2CommonTangentPlane()->apply(ccdImage->getImageFrame(), false);
+        Frame CTPFrame = ccdImage->getPixelToCommonTangentPlane()->apply(ccdImage->getImageFrame(), false);
         if (tangentPlaneFrame.getArea() == 0)
             tangentPlaneFrame = CTPFrame;
         else
@@ -259,8 +259,8 @@ const lsst::afw::geom::Box2D Associations::getRaDecBBox() {
 
     // convert tangent plane coordinates to RaDec:
     GtransfoLin identity;
-    TanPix2RaDec CTP2RaDec(identity, _commonTangentPoint);
-    Frame raDecFrame = CTP2RaDec.apply(tangentPlaneFrame, false);
+    TanPixelToRaDec commonTangentPlaneToRaDec(identity, _commonTangentPoint);
+    Frame raDecFrame = commonTangentPlaneToRaDec.apply(tangentPlaneFrame, false);
 
     lsst::afw::geom::Point<double> min(raDecFrame.xMin, raDecFrame.yMin);
     lsst::afw::geom::Point<double> max(raDecFrame.xMax, raDecFrame.yMax);
@@ -351,7 +351,7 @@ void Associations::normalizeFittedStars() const {
 
     // Iterate over measuredStars to add their values into their fittedStars
     for (auto const &ccdImage : ccdImageList) {
-        const Gtransfo *toCommonTangentPlane = ccdImage->getPix2CommonTangentPlane();
+        std::shared_ptr<Gtransfo> toCommonTangentPlane = ccdImage->getPixelToCommonTangentPlane();
         MeasuredStarList &catalog = ccdImage->getCatalogForFit();
         for (auto &mi : catalog) {
             auto fittedStar = mi->getFittedStar();
@@ -395,7 +395,7 @@ void Associations::deprojectFittedStars() {
         return;
     }
 
-    TanPix2RaDec ctp2Sky(GtransfoLin(), getCommonTangentPoint());
+    TanPixelToRaDec ctp2Sky(GtransfoLin(), getCommonTangentPoint());
     fittedStarList.applyTransfo(ctp2Sky);
     fittedStarList.inTangentPlaneCoordinates = false;
 }
@@ -476,7 +476,7 @@ void Associations::setFittedStarColors(std::string dicStarListName, std::string 
     // but FittedStar's may be still in this tangent plane.
     BaseStarList &l1 = (BaseStarList &)fittedStarList;
     GtransfoIdentity id;
-    TanRaDec2Pix proj(GtransfoLin(), getCommonTangentPoint());
+    TanRaDecToPixel proj(GtransfoLin(), getCommonTangentPoint());
     // project or not ?
     Gtransfo *id_or_proj = &proj;
     if (fittedStarList.inTangentPlaneCoordinates) id_or_proj = &id;

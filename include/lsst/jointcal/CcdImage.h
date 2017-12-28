@@ -123,22 +123,23 @@ public:
      *
      * @return     The common tangent point of all ccdImages (decimal degrees).
      */
-    Point const &getCommonTangentPoint() const { return _commonTangentPoint; }
+    jointcal::Point const &getCommonTangentPoint() const { return _commonTangentPoint; }
 
-    //!
-    Gtransfo const *getPix2CommonTangentPlane() const { return _pix2CommonTangentPlane.get(); }
+    std::shared_ptr<Gtransfo> const getPixelToCommonTangentPlane() const {
+        return _pixelToCommonTangentPlane;
+    }
 
-    //!
-    Gtransfo const *getCommonTangentPlane2TP() const { return _CTP2TP.get(); }
+    std::shared_ptr<Gtransfo> const getCommonTangentPlaneToTangentPlane() const {
+        return _commonTangentPlaneToTangentPlane;
+    }
 
-    //!
-    Gtransfo const *getTP2CommonTangentPlane() const { return _TP2CTP.get(); }
+    std::shared_ptr<Gtransfo> const getTangentPlaneToCommonTangentPlane() const {
+        return _tangentPlaneToCommonTangentPlane;
+    }
 
-    //!
-    Gtransfo const *getPix2TangentPlane() const { return _pix2TP.get(); }
+    std::shared_ptr<Gtransfo> const getPixelToTangentPlane() const { return _pixelToTangentPlane; }
 
-    //!
-    Gtransfo const *getSky2TP() const { return _sky2TP.get(); }
+    std::shared_ptr<Gtransfo> const getSkyToTangentPlane() const { return _skyToTangentPlane; }
 
     //! returns ccd ID
     CcdIdType getCcdId() const { return _ccdId; }
@@ -164,26 +165,27 @@ public:
      */
     lsst::afw::geom::SpherePoint getBoresightRaDec() const { return _boresightRaDec; }
 
-    //!
     double getHourAngle() const { return _hourAngle; }
 
-    //! Parallactic angle
-    double getSinEta() const { return _sineta; }
+    double getLstObs() const { return _lstObs; }
 
     //! Parallactic angle
-    double getCosEta() const { return _coseta; }
+    double getSinEta() const { return _sinEta; }
 
     //! Parallactic angle
-    double getTanZ() const { return _tgz; }
+    double getCosEta() const { return _cosEta; }
+
+    //! Parallactic angle
+    double getTanZ() const { return _tanZ; }
 
     //!
-    Point getRefractionVector() const { return Point(_tgz * _coseta, _tgz * _sineta); }
+    Point getRefractionVector() const { return Point(_tanZ * _cosEta, _tanZ * _sinEta); }
 
     //! return the CcdImage filter name
     std::string getFilter() const { return _filter; }
 
     //! the wcs read in the header. NOT updated when fitting.
-    Gtransfo const *readWCS() const { return _readWcs.get(); }
+    std::shared_ptr<Gtransfo> const getReadWcs() const { return _readWcs; }
 
     //! Frame in pixels
     Frame const &getImageFrame() const { return _imageFrame; }
@@ -192,7 +194,7 @@ private:
     void loadCatalog(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> const &Cat,
                      std::string const &fluxField);
 
-    Frame _imageFrame;  // in pixels
+    jointcal::Frame _imageFrame;  // in pixels
 
     MeasuredStarList _wholeCatalog;  // the catalog of measured objets
     MeasuredStarList _catalogForFit;
@@ -200,12 +202,13 @@ private:
     std::shared_ptr<GtransfoSkyWcs> _readWcs;  // apply goes from pix to sky
 
     // The following ones should probably be mostly removed.
-    std::shared_ptr<Gtransfo> _CTP2TP;                  // go from CommonTangentPlane to this tangent plane.
-    std::shared_ptr<Gtransfo> _TP2CTP;                  // reverse one
-    std::shared_ptr<Gtransfo> _pix2CommonTangentPlane;  // pixels -> CTP
-    std::shared_ptr<Gtransfo> _pix2TP;
+    // go from CommonTangentPlane to this tangent plane.
+    std::shared_ptr<Gtransfo> _commonTangentPlaneToTangentPlane;
+    std::shared_ptr<Gtransfo> _tangentPlaneToCommonTangentPlane;  // reverse one
+    std::shared_ptr<Gtransfo> _pixelToCommonTangentPlane;         // pixels -> CTP
+    std::shared_ptr<Gtransfo> _pixelToTangentPlane;
 
-    std::shared_ptr<Gtransfo> _sky2TP;
+    std::shared_ptr<Gtransfo> _skyToTangentPlane;
 
     std::string _name;
     CcdIdType _ccdId;
@@ -218,13 +221,13 @@ private:
     std::shared_ptr<afw::cameraGeom::Detector> _detector;
     // refraction
     // eta : parallactic angle, z: zenithal angle (X = 1/cos(z))
-    double _sineta, _coseta, _tgz;
+    double _sinEta, _cosEta, _tanZ;
     // Local Sidereal Time and hour angle of observation
     double _lstObs, _hourAngle;
 
     std::string _filter;
 
-    Point _commonTangentPoint;
+    jointcal::Point _commonTangentPoint;
 };
 }  // namespace jointcal
 }  // namespace lsst

@@ -41,7 +41,7 @@ class CcdImage;
  * (where they are compared to transformed measurements)
  */
 struct ProjectionHandler {
-    virtual const std::shared_ptr<const Gtransfo> getSky2TP(const CcdImage &ccdImage) const = 0;
+    virtual const std::shared_ptr<const Gtransfo> getSkyToTangentPlane(const CcdImage &ccdImage) const = 0;
 
     virtual ~ProjectionHandler(){};
 };
@@ -55,7 +55,7 @@ class IdentityProjectionHandler : public ProjectionHandler {
     std::shared_ptr<GtransfoIdentity> id;
 
 public:
-    const std::shared_ptr<const Gtransfo> getSky2TP(const CcdImage &ccdImage) const { return id; };
+    const std::shared_ptr<const Gtransfo> getSkyToTangentPlane(const CcdImage &ccdImage) const { return id; };
 };
 
 /**
@@ -72,7 +72,7 @@ class OneTPPerVisitHandler : public ProjectionHandler {
 public:
     OneTPPerVisitHandler(const CcdImageList &ccdImageList);
 
-    const std::shared_ptr<const Gtransfo> getSky2TP(const CcdImage &ccdImage) const;
+    const std::shared_ptr<const Gtransfo> getSkyToTangentPlane(const CcdImage &ccdImage) const;
 };
 }  // namespace jointcal
 }  // namespace lsst

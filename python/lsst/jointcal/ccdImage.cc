@@ -74,8 +74,9 @@ void declareCcdImage(py::module &mod) {
     cls.def_property("commonTangentPoint", &CcdImage::getCommonTangentPoint, &CcdImage::setCommonTangentPoint,
                      py::return_value_policy::reference_internal);
 
-    cls.def("getSky2TP", &CcdImage::getSky2TP, py::return_value_policy::reference_internal);
-    cls.def("readWCS", &CcdImage::readWCS, py::return_value_policy::reference_internal);
+    cls.def("getSkyToTangentPlane", &CcdImage::getSkyToTangentPlane,
+            py::return_value_policy::reference_internal);
+    cls.def("getReadWcs", &CcdImage::getReadWcs, py::return_value_policy::reference_internal);
 }
 
 PYBIND11_MODULE(ccdImage, mod) { declareCcdImage(mod); }

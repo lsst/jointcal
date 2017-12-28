@@ -45,7 +45,7 @@ namespace jointcal {
 SimpleAstrometryModel::SimpleAstrometryModel(CcdImageList const &ccdImageList,
                                              const std::shared_ptr<ProjectionHandler const> projectionHandler,
                                              bool initFromWcs, unsigned nNotFit, unsigned order)
-        : _sky2TP(projectionHandler)
+        : _skyToTangentPlane(projectionHandler)
 
 {
     unsigned count = 0;
@@ -87,7 +87,7 @@ SimpleAstrometryModel::SimpleAstrometryModel(CcdImageList const &ccdImageList,
             const Frame &frame = im.getImageFrame();
             GtransfoLin shiftAndNormalize = normalizeCoordinatesTransfo(frame);
             if (initFromWcs) {
-                pol = GtransfoPoly(im.getPix2TangentPlane(), frame, order);
+                pol = GtransfoPoly(im.getPixelToTangentPlane().get(), frame, order);
                 pol = pol * shiftAndNormalize.inverted();
             }
             _myMap[im.getHashKey()] =
@@ -139,7 +139,7 @@ const Gtransfo &SimpleAstrometryModel::getTransfo(CcdImage const &ccdImage) cons
 }
 
 std::shared_ptr<afw::geom::SkyWcs> SimpleAstrometryModel::makeSkyWcs(CcdImage const &ccdImage) const {
-    auto proj = std::dynamic_pointer_cast<const TanRaDec2Pix>(getSky2TP(ccdImage));
+    auto proj = std::dynamic_pointer_cast<const TanRaDecToPixel>(getSkyToTangentPlane(ccdImage));
     jointcal::Point tangentPoint(proj->getTangentPoint());
 
     auto polyMap = getTransfo(ccdImage).toAstMap(ccdImage.getImageFrame());
