@@ -55,7 +55,7 @@ ConstrainedPolyModel::ConstrainedPolyModel(CcdImageList const &ccdImageList,
             GtransfoPoly pol(chipDegree);
 
             if (initFromWCS) {
-                pol = GtransfoPoly(im.getPix2TangentPlane(), frame, chipDegree);
+                pol = GtransfoPoly(im.getPix2TangentPlane().get(), frame, chipDegree);
             }
             GtransfoLin shiftAndNormalize = normalizeCoordinatesTransfo(frame);
 

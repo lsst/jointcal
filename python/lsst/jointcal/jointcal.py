@@ -723,7 +723,14 @@ class JointcalTask(pipeBase.CmdLineTask):
             dict of ccdImage identifiers to dataRefs that were fit
         """
 
-        def _write_one(ccdImage):
+        ccdImageList = associations.getCcdImageList()
+        # with lsst.ctrl.pool.pool.pickleSniffer():
+        with concurrent.futures.ProcessPoolExecutor() as executor:
+            executor.map(self._write_one_photometry, ccdImageList)
+        # for ccdImage in ccdImageList:
+        #     _write_one(ccdImage)
+
+    def _write_one_photometry(self, ccdImage, model, visit_ccd_to_dataRef):
             # TODO: there must be a better way to identify this ccdImage than a visit,ccd pair?
             ccd = ccdImage.ccdId
             visit = ccdImage.visit
@@ -735,10 +742,3 @@ class JointcalTask(pipeBase.CmdLineTask):
             except pexExceptions.Exception as e:
                 self.log.fatal('Failed to write updated PhotoCalib: %s', str(e))
                 raise e
-
-        ccdImageList = associations.getCcdImageList()
-        with lsst.ctrl.pool.pool.pickleSniffer():
-            with concurrent.futures.ProcessPoolExecutor() as executor:
-                executor.map(_write_one, ccdImageList)
-        # for ccdImage in ccdImageList:
-        #     _write_one(ccdImage)

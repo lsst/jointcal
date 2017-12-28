@@ -67,7 +67,7 @@ void Associations::associateCatalogs(const double matchCutInArcSec, const bool u
     if (!useFittedList) fittedStarList.clear();
 
     for (auto &ccdImage : ccdImageList) {
-        const Gtransfo *toCommonTangentPlane = ccdImage->getPix2CommonTangentPlane();
+        std::shared_ptr<Gtransfo> toCommonTangentPlane = ccdImage->getPix2CommonTangentPlane();
 
         /* clear the catalog to fit and copy the whole catalog into it.
         this allows reassociating from scratch after a fit. */
@@ -96,7 +96,7 @@ void Associations::associateCatalogs(const double matchCutInArcSec, const bool u
 
         // divide by 3600 because coordinates in CTP are in degrees.
         auto starMatchList = listMatchCollect(Measured2Base(catalog), Fitted2Base(toMatch),
-                                              toCommonTangentPlane, matchCutInArcSec / 3600.);
+                                              toCommonTangentPlane.get(), matchCutInArcSec / 3600.);
 
         /* should check what this removeAmbiguities does... */
         LOGLS_DEBUG(_log, "Measured-to-Fitted matches before removing ambiguities " << starMatchList->size());

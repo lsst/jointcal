@@ -40,6 +40,42 @@ public:
              std::shared_ptr<afw::cameraGeom::Detector> detector, int visit, int ccd,
              std::string const &fluxField);
 
+    // For pickling
+    CcdImage(jointcal::Frame imageFrame, MeasuredStarList wholeCatalog, MeasuredStarList catalogForFit,
+             std::shared_ptr<BaseTanWcs> readWcs, std::shared_ptr<Gtransfo> inverseReadWcs,
+             std::shared_ptr<Gtransfo> commonTangentPlane2TP, std::shared_ptr<Gtransfo> TP2CommonTangentPlane,
+             std::shared_ptr<Gtransfo> pix2CommonTangentPlane, std::shared_ptr<Gtransfo> pix2TangentPlane,
+             std::shared_ptr<Gtransfo> sky2TP, std::string name, CcdIdType ccdId, VisitIdType visit,
+             afw::coord::IcrsCoord boresightRaDec, double airMass, double mjd,
+             std::shared_ptr<afw::image::PhotoCalib> photoCalib,
+             std::shared_ptr<afw::cameraGeom::Detector> detector, double sinEta, double cosEta, double tanZ,
+             double lstObs, double hourAngle, std::string filter, jointcal::Point commonTangentPoint)
+            : _imageFrame(imageFrame),
+              _wholeCatalog(wholeCatalog),
+              _catalogForFit(catalogForFit),
+              _readWcs(readWcs),
+              _inverseReadWcs(inverseReadWcs),
+              _commonTangentPlane2TP(commonTangentPlane2TP),
+              _TP2CommonTangentPlane(TP2CommonTangentPlane),
+              _pix2CommonTangentPlane(pix2CommonTangentPlane),
+              _pix2TangentPlane(pix2TangentPlane),
+              _sky2TP(sky2TP),
+              _name(name),
+              _ccdId(ccdId),
+              _visit(visit),
+              _boresightRaDec(boresightRaDec),
+              _airMass(airMass),
+              _mjd(mjd),
+              _photoCalib(photoCalib),
+              _detector(detector),
+              _sinEta(sinEta),
+              _cosEta(cosEta),
+              _tanZ(tanZ),
+              _lstObs(lstObs),
+              _hourAngle(hourAngle),
+              _filter(filter),
+              _commonTangentPoint(commonTangentPoint) {}
+
     /// No move or copy: each CCD image is unique to that ccd+visit, and Associations holds all CcdImages.
     CcdImage(CcdImage const &) = delete;
     CcdImage(CcdImage &&) = delete;
@@ -78,22 +114,17 @@ public:
      *
      * @return     The common tangent point of all ccdImages (decimal degrees).
      */
-    Point const &getCommonTangentPoint() const { return _commonTangentPoint; }
+    jointcal::Point const &getCommonTangentPoint() const { return _commonTangentPoint; }
 
-    //!
-    Gtransfo const *getPix2CommonTangentPlane() const { return _pix2CommonTangentPlane.get(); }
+    std::shared_ptr<Gtransfo> const getPix2CommonTangentPlane() const { return _pix2CommonTangentPlane; }
 
-    //!
-    Gtransfo const *getCommonTangentPlane2TP() const { return _CTP2TP.get(); }
+    std::shared_ptr<Gtransfo> const getCommonTangentPlane2TP() const { return _commonTangentPlane2TP; }
 
-    //!
-    Gtransfo const *getTP2CommonTangentPlane() const { return _TP2CTP.get(); }
+    std::shared_ptr<Gtransfo> const getTP2CommonTangentPlane() const { return _TP2CommonTangentPlane; }
 
-    //!
-    Gtransfo const *getPix2TangentPlane() const { return _pix2TP.get(); }
+    std::shared_ptr<Gtransfo> const getPix2TangentPlane() const { return _pix2TangentPlane; }
 
-    //!
-    Gtransfo const *getSky2TP() const { return _sky2TP.get(); }
+    std::shared_ptr<Gtransfo> const getSky2TP() const { return _sky2TP; }
 
     //! returns ccd ID
     CcdIdType getCcdId() const { return _ccdId; }
@@ -119,29 +150,30 @@ public:
      */
     lsst::afw::coord::IcrsCoord getBoresightRaDec() const { return _boresightRaDec; }
 
-    //!
     double getHourAngle() const { return _hourAngle; }
 
-    //! Parallactic angle
-    double getSinEta() const { return _sineta; }
+    double getLstObs() const { return _lstObs; }
 
     //! Parallactic angle
-    double getCosEta() const { return _coseta; }
+    double getSinEta() const { return _sinEta; }
 
     //! Parallactic angle
-    double getTanZ() const { return _tgz; }
+    double getCosEta() const { return _cosEta; }
+
+    //! Parallactic angle
+    double getTanZ() const { return _tanZ; }
 
     //!
-    Point getRefractionVector() const { return Point(_tgz * _coseta, _tgz * _sineta); }
+    Point getRefractionVector() const { return Point(_tanZ * _cosEta, _tanZ * _sinEta); }
 
     //! return the CcdImage filter name
     std::string getFilter() const { return _filter; }
 
     //! the wcs read in the header. NOT updated when fitting.
-    Gtransfo const *readWCS() const { return _readWcs.get(); }
+    std::shared_ptr<Gtransfo> const getReadWcs() const { return _readWcs; }
 
     //! the inverse of the one above.
-    Gtransfo const *getInverseReadWCS() const { return _inverseReadWcs.get(); }
+    std::shared_ptr<Gtransfo> const getInverseReadWcs() const { return _inverseReadWcs; }
 
     //! Frame in pixels
     Frame const &getImageFrame() const { return _imageFrame; }
@@ -150,7 +182,7 @@ private:
     void loadCatalog(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> const &Cat,
                      std::string const &fluxField);
 
-    Frame _imageFrame;  // in pixels
+    jointcal::Frame _imageFrame;  // in pixels
 
     MeasuredStarList _wholeCatalog;  // the catalog of measured objets
     MeasuredStarList _catalogForFit;
@@ -159,10 +191,11 @@ private:
     std::shared_ptr<Gtransfo> _inverseReadWcs;  // i.e. from sky to pix
 
     // The following ones should probably be mostly removed.
-    std::shared_ptr<Gtransfo> _CTP2TP;                  // go from CommonTangentPlane to this tangent plane.
-    std::shared_ptr<Gtransfo> _TP2CTP;                  // reverse one
+    // go from CommonTangentPlane to this tangent plane.
+    std::shared_ptr<Gtransfo> _commonTangentPlane2TP;
+    std::shared_ptr<Gtransfo> _TP2CommonTangentPlane;   // reverse one
     std::shared_ptr<Gtransfo> _pix2CommonTangentPlane;  // pixels -> CTP
-    std::shared_ptr<Gtransfo> _pix2TP;
+    std::shared_ptr<Gtransfo> _pix2TangentPlane;
 
     std::shared_ptr<Gtransfo> _sky2TP;
 
@@ -177,13 +210,13 @@ private:
     std::shared_ptr<afw::cameraGeom::Detector> _detector;
     // refraction
     // eta : parallactic angle, z: zenithal angle (X = 1/cos(z))
-    double _sineta, _coseta, _tgz;
+    double _sinEta, _cosEta, _tanZ;
     // Local Sidereal Time and hour angle of observation
     double _lstObs, _hourAngle;
 
     std::string _filter;
 
-    Point _commonTangentPoint;
+    jointcal::Point _commonTangentPoint;
 };
 }  // namespace jointcal
 }  // namespace lsst

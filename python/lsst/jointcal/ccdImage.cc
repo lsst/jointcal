@@ -65,6 +65,24 @@ void declareCcdImage(py::module &mod) {
     cls.def("setCommonTangentPoint", &CcdImage::setCommonTangentPoint);
     cls.def_property("commonTangentPoint", &CcdImage::getCommonTangentPoint, &CcdImage::setCommonTangentPoint,
                      py::return_value_policy::reference_internal);
+
+    // For pickling support
+    cls.def("__reduce__", [cls](CcdImage const &self) {
+        return py::make_tuple(
+                cls,
+                py::make_tuple(
+                        py::cast(self.getImageFrame()), py::cast(self.getWholeCatalog()),
+                        py::cast(self.getCatalogForFit()), py::cast(self.getReadWcs()),
+                        py::cast(self.getInverseReadWcs()), py::cast(self.getCommonTangentPlane2TP()),
+                        py::cast(self.getTP2CommonTangentPlane()), py::cast(self.getPix2CommonTangentPlane()),
+                        py::cast(self.getPix2TangentPlane()), py::cast(self.getSky2TP()),
+                        py::cast(self.getName()), py::cast(self.getCcdId()), py::cast(self.getVisit()),
+                        py::cast(self.getBoresightRaDec()), py::cast(self.getAirMass()),
+                        py::cast(self.getMjd()), py::cast(self.getPhotoCalib()), py::cast(self.getDetector()),
+                        py::cast(self.getSinEta()), py::cast(self.getCosEta()), py::cast(self.getTanZ()),
+                        py::cast(self.getLstObs()), py::cast(self.getHourAngle()), py::cast(self.getFilter()),
+                        py::cast(self.getHourAngle()), py::cast(self.getCommonTangentPoint())));
+    });
 }
 
 PYBIND11_PLUGIN(ccdImage) {

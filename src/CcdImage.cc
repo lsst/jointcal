@@ -117,19 +117,19 @@ CcdImage::CcdImage(afw::table::SourceCatalog &catalog, std::shared_ptr<lsst::afw
     }
 
     if (_airMass == 1)
-        _sineta = _coseta = _tgz = 0;
+        _sinEta = _cosEta = _tanZ = 0;
     else {
         double cosz = 1. / _airMass;
         double sinz = sqrt(1 - cosz * cosz);  // astronomers usually observe above the horizon
-        _tgz = sinz / cosz;
+        _tanZ = sinz / cosz;
         // TODO: as part of DM-12473, we can remove all of this and just call _visitInfo.getParallacticAngle()
         double dec = _boresightRaDec.getLatitude();
         // x/y components of refraction angle, eta.]
         double yEta = sin(_hourAngle);
         double xEta = cos(dec) * tan(latitude) - sin(dec) * cos(_hourAngle);
         double eta = atan2(yEta, xEta);
-        _sineta = sin(eta);
-        _coseta = cos(eta);
+        _sinEta = sin(eta);
+        _cosEta = cos(eta);
     }
 }
 
@@ -145,14 +145,14 @@ void CcdImage::setCommonTangentPoint(Point const &commonTangentPoint) {
        actually goes through TP */
     GtransfoLin identity;
     TanRaDec2Pix raDec2TP(identity, tanWcs->getTangentPoint());
-    _pix2TP = gtransfoCompose(&raDec2TP, tanWcs);
+    _pix2TangentPlane = gtransfoCompose(&raDec2TP, tanWcs);
     TanPix2RaDec CTP2RaDec(identity, commonTangentPoint);
-    _CTP2TP = gtransfoCompose(&raDec2TP, &CTP2RaDec);
+    _commonTangentPlane2TP = gtransfoCompose(&raDec2TP, &CTP2RaDec);
 
     // jump from one TP to an other:
     TanRaDec2Pix raDec2CTP(identity, commonTangentPoint);
     TanPix2RaDec TP2RaDec(identity, tanWcs->getTangentPoint());
-    _TP2CTP = gtransfoCompose(&raDec2CTP, &TP2RaDec);
+    _TP2CommonTangentPlane = gtransfoCompose(&raDec2CTP, &TP2RaDec);
     _sky2TP.reset(new TanRaDec2Pix(identity, tanWcs->getTangentPoint()));
 
     // this one is needed for matches :

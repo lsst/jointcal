@@ -59,7 +59,7 @@ SimplePolyModel::SimplePolyModel(CcdImageList const &ccdImageList, ProjectionHan
             const Frame &frame = im.getImageFrame();
             GtransfoLin shiftAndNormalize = normalizeCoordinatesTransfo(frame);
             if (initFromWcs) {
-                pol = GtransfoPoly(im.getPix2TangentPlane(), frame, degree);
+                pol = GtransfoPoly(im.getPix2TangentPlane().get(), frame, degree);
                 pol = pol * shiftAndNormalize.invert();
             }
             _myMap[&im] =
