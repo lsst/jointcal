@@ -76,16 +76,13 @@ void Associations::associateCatalogs(const double matchCutInArcSec, const bool u
         ccdImage->getWholeCatalog().copyTo(ccdImage->getCatalogForFit());
         MeasuredStarList &catalog = ccdImage->getCatalogForFit();
 
-        // associate with previous lists
-        /* to speed up the match (more precisely the contruction of the
-        FastFinder), select in the fittedStarList the objects that
-         are within reach of the current ccdImage
-            */
+        // Associate with previous lists.
+        /* To speed up the match (more precisely the contruction of the FastFinder), select in the
+         fittedStarList the objects that are within reach of the current ccdImage */
         Frame ccdImageFrameCPT = applyTransfo(ccdImage->getImageFrame(), *toCommonTangentPlane, LargeFrame);
         ccdImageFrameCPT = ccdImageFrameCPT.rescale(1.10);  // add 10 % margin.
-        /* we cannot use FittedStarList::ExtractInFrame, because it does an
-        actual copy, which we don't want here: we want the pointers in
-         the StarMatch to refer to fittedStarList elements. */
+        /* We cannot use FittedStarList::ExtractInFrame, because it does an actual copy, which we don't want
+         * here: we want the pointers in the StarMatch to refer to fittedStarList elements. */
         FittedStarList toMatch;
 
         for (auto const &fittedStar : fittedStarList) {
@@ -265,40 +262,55 @@ void Associations::associateRefStars(double matchCutInArcSec, const Gtransfo *gt
 
 void Associations::selectFittedStars(int minMeasurements) {
     LOGLS_INFO(_log, "Fitted stars before measurement # cut: " << fittedStarList.size());
-    /* first pass : remove objects that have less than a
-       certain number of measurements.
-    */
+
+    // Clear positions to make them the average of the measuredStars.
+    for (auto &fittedStar : fittedStarList) {
+        fittedStar->x = 0.0;
+        fittedStar->y = 0.0;
+    }
+
+    // first pass: remove objects that have less than a certain number of measurements.
     for (auto const &ccdImage : ccdImageList) {
+        std::shared_ptr<Gtransfo> toCommonTangentPlane = ccdImage->getPix2CommonTangentPlane();
         MeasuredStarList &catalog = ccdImage->getCatalogForFit();
+        // Iteration happens internal to the loop, as we may delete measuredStars from catalog.
         for (MeasuredStarIterator mi = catalog.begin(); mi != catalog.end();) {
             MeasuredStar &mstar = **mi;
 
             auto fstar = mstar.getFittedStar();
+            // measuredStar has no fittedStar: move on.
             if (!fstar) {
                 ++mi;
                 continue;
             }
 
-            /*  keep FittedStar's which either have a minimum number of
-                measurements, or are matched to a RefStar
-            */
+            // keep FittedStars which either have a minimum number of
+            // measurements, or are matched to a RefStar
             if (!fstar->getRefStar() && fstar->getMeasurementCount() < minMeasurements) {
                 auto f = std::const_pointer_cast<FittedStar>(fstar);
                 f->getMeasurementCount()--;
-                mi = catalog.erase(mi);
-            } else
+                mi = catalog.erase(mi);  // mi now points to the next measuredStar.
+            } else {
+                auto f = std::const_pointer_cast<FittedStar>(fstar);
+                auto point = toCommonTangentPlane->apply(mstar);
+                f->x += point.x;
+                f->y += point.y;
+                std::cout << f->x << " " << point.x << std::endl;
                 ++mi;
+            }
         }  // end loop on objects in catalog
     }      // end loop on catalogs
 
-    /* now FittedStars with less than minMeasurements should have
-       zero measurementCount; */
-
+    // now FittedStars with less than minMeasurements should have zero measurementCount.
     for (FittedStarIterator fi = fittedStarList.begin(); fi != fittedStarList.end();) {
-        if ((*fi)->getMeasurementCount() == 0)
+        if ((*fi)->getMeasurementCount() == 0) {
             fi = fittedStarList.erase(fi);
-        else
+        } else {
+            (*fi)->x /= (*fi)->getMeasurementCount();
+            (*fi)->y /= (*fi)->getMeasurementCount();
+            std::cout << "post: " << (*fi)->x << " " << (*fi)->y << std::endl;
             ++fi;
+        }
     }
 
     LOGLS_INFO(_log, "Fitted stars after measurement # cut: " << fittedStarList.size());
