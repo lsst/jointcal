@@ -33,7 +33,7 @@ class JointcalTestBase(object):
 
         Parameters
         ----------
-        center : lsst.afw.Coord
+        center : lsst.afw.IcrsCoord
             Center of the reference catalog.
         radius : lsst.afw.Angle
             Radius from center to load reference catalog objects inside.

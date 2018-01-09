@@ -363,8 +363,8 @@ class JointcalTask(pipeBase.CmdLineTask):
         # Get the bounding box overlapping all associated images
         # ==> This is probably a bad idea to do it this way <== To be improved
         bbox = associations.getRaDecBBox()
-        center = afwCoord.Coord(bbox.getCenter(), afwGeom.degrees)
-        corner = afwCoord.Coord(bbox.getMax(), afwGeom.degrees)
+        center = afwCoord.IcrsCoord(bbox.getCenter(), afwGeom.degrees)
+        corner = afwCoord.IcrsCoord(bbox.getMax(), afwGeom.degrees)
         radius = center.angularSeparation(corner).asRadians()
 
         # Get astrometry_net_data path
@@ -420,7 +420,7 @@ class JointcalTask(pipeBase.CmdLineTask):
             The star/reference star associations to fit.
         defaultFilter : str
             filter to load from reference catalog.
-        center : lsst.afw.coord.Coord
+        center : lsst.afw.coord.IcrsCoord
             Center of field to load from reference catalog.
         radius : lsst.afw.geom.Angle
             On-sky radius to load from reference catalog.

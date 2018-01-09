@@ -167,7 +167,7 @@ void Associations::collectRefStars(lsst::afw::table::SortedCatalogT<lsst::afw::t
     for (size_t i = 0; i < refCat.size(); i++) {
         auto const &record = refCat.get(i);
 
-        afw::coord::Coord coord = record->get(coordKey);
+        afw::coord::IcrsCoord coord = record->get(coordKey);
         double defaultFlux = record->get(fluxKey) / JanskyToMaggy;
         double defaultFluxErr;
         if (fluxErrKey.isValid()) {
