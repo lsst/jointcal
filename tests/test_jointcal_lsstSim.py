@@ -90,7 +90,7 @@ class JointcalTestLSSTSim(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Te
         # 'photometry_final_chi2': 2310.628,
         # 'photometry_final_ndof': 727
         metrics = {'collected_astrometry_refStars': 1686,
-                   'selected_astrometry_refStars': 1686,
+                   'selected_astrometry_refStars': 176,
                    'associated_astrometry_fittedStars': 1365,
                    'selected_astrometry_fittedStars': 789,
                    'selected_astrometry_ccdImages': 2,
@@ -118,7 +118,7 @@ class JointcalTestLSSTSim(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Te
         # 'photometry_final_chi2': 35321.947,
         # 'photometry_final_ndof': 9140
         metrics = {'collected_astrometry_refStars': 1686,
-                   'selected_astrometry_refStars': 1686,
+                   'selected_astrometry_refStars': 203,
                    'associated_astrometry_fittedStars': 1823,
                    'selected_astrometry_fittedStars': 1506,
                    'selected_astrometry_ccdImages': 10,
@@ -132,7 +132,7 @@ class JointcalTestLSSTSim(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Te
         """Test turning off fitting astrometry."""
         pa1 = 2.64e-3
         metrics = {'collected_photometry_refStars': 1686,
-                   'selected_photometry_refStars': 1686,
+                   'selected_photometry_refStars': 176,
                    'associated_photometry_fittedStars': 1365,
                    'selected_photometry_fittedStars': 789,
                    'selected_photometry_ccdImages': 2,
@@ -166,7 +166,7 @@ class JointcalTestLSSTSim(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Te
         """Test turning off fitting photometry."""
         dist_rms_relative = 9.7e-3*u.arcsecond
         metrics = {'collected_astrometry_refStars': 1686,
-                   'selected_astrometry_refStars': 1686,
+                   'selected_astrometry_refStars': 176,
                    'associated_astrometry_fittedStars': 1365,
                    'selected_astrometry_fittedStars': 789,
                    'selected_astrometry_ccdImages': 2,

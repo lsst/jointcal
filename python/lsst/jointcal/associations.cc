@@ -45,6 +45,7 @@ void declareAssociations(py::module &mod) {
     cls.def("collectRefStars", &Associations::collectRefStars);
     cls.def("deprojectFittedStars", &Associations::deprojectFittedStars);
     cls.def("nCcdImagesValidForFit", &Associations::nCcdImagesValidForFit);
+    cls.def("nFittedStarsWithAssociatedRefStar", &Associations::nFittedStarsWithAssociatedRefStar);
 
     cls.def("addImage", &Associations::addImage);
     cls.def("selectFittedStars", &Associations::selectFittedStars);

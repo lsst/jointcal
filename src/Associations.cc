@@ -331,6 +331,20 @@ void Associations::deprojectFittedStars() {
     fittedStarList.inTangentPlaneCoordinates = false;
 }
 
+int Associations::nCcdImagesValidForFit() const {
+    return std::count_if(ccdImageList.begin(), ccdImageList.end(), [](std::shared_ptr<CcdImage> const &item) {
+        return item->getCatalogForFit().size() > 0;
+    });
+}
+
+size_t Associations::nFittedStarsWithAssociatedRefStar() const {
+    size_t count = 0;
+    for (auto const &fittedStar : fittedStarList) {
+        if ((fittedStar != nullptr) & (fittedStar->getRefStar() != nullptr)) count++;
+    }
+    return count;
+}
+
 #ifdef TODO
 void Associations::collectMCStars(int realization) {
     CcdImageIterator I;
@@ -417,6 +431,6 @@ void Associations::setFittedStarColors(std::string dicStarListName, std::string 
     }
 }
 
-#endif /* STORAGE */
+#endif /* TODO */
 }  // namespace jointcal
 }  // namespace lsst
