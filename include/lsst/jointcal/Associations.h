@@ -132,11 +132,12 @@ public:
     /**
      * @brief      return the number of CcdImages with non-empty catalogs to-be-fit.
      */
-    int nCcdImagesValidForFit() const {
-        return std::count_if(
-                ccdImageList.begin(), ccdImageList.end(),
-                [](std::shared_ptr<CcdImage> const &item) { return item->getCatalogForFit().size() > 0; });
-    }
+    int nCcdImagesValidForFit() const;
+
+    /**
+     * @brief      Return the number of fittedStars that have an associated refStar.
+     */
+    size_t nFittedStarsWithAssociatedRefStar() const;
 
 private:
     void associateRefStars(double matchCutInArcsec, const Gtransfo *gtransfo);

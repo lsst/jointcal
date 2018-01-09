@@ -68,8 +68,8 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
         pa1 = 0.014
         metrics = {'collected_astrometry_refStars': 825,
                    'collected_photometry_refStars': 825,
-                   'selected_astrometry_refStars': 825,
-                   'selected_photometry_refStars': 825,
+                   'selected_astrometry_refStars': 350,
+                   'selected_photometry_refStars': 350,
                    'associated_astrometry_fittedStars': 2269,
                    'associated_photometry_fittedStars': 2269,
                    'selected_astrometry_fittedStars': 1239,
@@ -109,7 +109,7 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
         dist_rms_absolute = 54e-3*u.arcsecond
         pa1 = None
         metrics = {'collected_astrometry_refStars': 825,
-                   'selected_astrometry_refStars': 825,
+                   'selected_astrometry_refStars': 350,
                    'associated_astrometry_fittedStars': 2269,
                    'selected_astrometry_fittedStars': 1239,
                    'selected_astrometry_ccdImages': 12,
@@ -128,7 +128,7 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
 
         pa1 = 0.017
         metrics = {'collected_photometry_refStars': 825,
-                   'selected_photometry_refStars': 825,
+                   'selected_photometry_refStars': 350,
                    'associated_photometry_fittedStars': 2269,
                    'selected_photometry_fittedStars': 1239,
                    'selected_photometry_ccdImages': 12,

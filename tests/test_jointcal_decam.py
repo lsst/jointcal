@@ -68,8 +68,8 @@ class JointcalTestDECAM(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Test
         # NOTE: decam fits are currently not converging; the chi2 jumps around, so skip that Metric.
         metrics = {'collected_astrometry_refStars': 8194,
                    'collected_photometry_refStars': 8190,
-                   'selected_astrometry_refStars': 8194,
-                   'selected_photometry_refStars': 8190,
+                   'selected_astrometry_refStars': 773,
+                   'selected_photometry_refStars': 773,
                    'associated_astrometry_fittedStars': 8241,
                    'associated_photometry_fittedStars': 8241,
                    'selected_astrometry_fittedStars': 2261,
@@ -98,7 +98,7 @@ class JointcalTestDECAM(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Test
         relative_error = 20e-3*u.arcsecond
         pa1 = None
         metrics = {'collected_astrometry_refStars': 8194,
-                   'selected_astrometry_refStars': 8194,
+                   'selected_astrometry_refStars': 773,
                    'associated_astrometry_fittedStars': 8241,
                    'selected_astrometry_fittedStars': 2261,
                    'selected_astrometry_ccdImages': 17,

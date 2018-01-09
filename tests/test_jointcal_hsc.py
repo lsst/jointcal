@@ -64,8 +64,8 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         pa1 = 0.024
         metrics = {'collected_astrometry_refStars': 2187,
                    'collected_photometry_refStars': 2187,
-                   'selected_astrometry_refStars': 2187,
-                   'selected_photometry_refStars': 2187,
+                   'selected_astrometry_refStars': 515,
+                   'selected_photometry_refStars': 515,
                    'associated_astrometry_fittedStars': 1151,
                    'associated_photometry_fittedStars': 1151,
                    'selected_astrometry_fittedStars': 770,
@@ -95,19 +95,12 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         dist_rms_relative = 17e-3*u.arcsecond
         pa1 = None  # pa1 = 0.134
         metrics = {'collected_astrometry_refStars': 3649,
-                   'collected_photometry_refStars': 3649,
-                   'selected_astrometry_refStars': 3649,
-                   'selected_photometry_refStars': 3649,
+                   'selected_astrometry_refStars': 1038,
                    'associated_astrometry_fittedStars': 2908,
-                   'associated_photometry_fittedStars': 2908,
                    'selected_astrometry_fittedStars': 2203,
-                   'selected_photometry_fittedStars': 2203,
                    'selected_astrometry_ccdImages': 33,
-                   'selected_photometry_ccdImages': 33,
                    'astrometry_final_chi2': 7929.656,
                    'astrometry_final_ndof': 14262,
-                   'photometry_final_chi2': None,
-                   'photometry_final_ndof': None
                    }
         self._testJointcalTask(11, dist_rms_relative, self.dist_rms_absolute, pa1, metrics=metrics)
 
@@ -115,7 +108,7 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         """Test turning off fitting astrometry."""
         pa1 = 0.024
         metrics = {'collected_photometry_refStars': 2187,
-                   'selected_photometry_refStars': 2187,
+                   'selected_photometry_refStars': 515,
                    'associated_photometry_fittedStars': 1151,
                    'selected_photometry_fittedStars': 770,
                    'selected_photometry_ccdImages': 6,
@@ -149,7 +142,7 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         """Test turning off fitting photometry."""
         dist_rms_relative = 17e-3*u.arcsecond
         metrics = {'collected_astrometry_refStars': 2187,
-                   'selected_astrometry_refStars': 2187,
+                   'selected_astrometry_refStars': 515,
                    'associated_astrometry_fittedStars': 1151,
                    'selected_astrometry_fittedStars': 770,
                    'selected_astrometry_ccdImages': 6,
@@ -194,8 +187,8 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         pa1 = 0.02405
         metrics = {'collected_astrometry_refStars': 1425,
                    'collected_photometry_refStars': 2187,
-                   'selected_astrometry_refStars': 1425,
-                   'selected_photometry_refStars': 2187,
+                   'selected_astrometry_refStars': 271,
+                   'selected_photometry_refStars': 515,
                    'associated_astrometry_fittedStars': 1151,
                    'associated_photometry_fittedStars': 1151,
                    'selected_astrometry_fittedStars': 645,
@@ -222,7 +215,7 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
 
         dist_rms_relative = 17e-3*u.arcsecond
         metrics = {'collected_astrometry_refStars': 2187,
-                   'selected_astrometry_refStars': 2187,
+                   'selected_astrometry_refStars': 546,
                    'associated_astrometry_fittedStars': 1151,
                    'selected_astrometry_fittedStars': 790,
                    'selected_astrometry_ccdImages': 6,
@@ -242,7 +235,7 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
 
         dist_rms_relative = 17e-3*u.arcsecond
         metrics = {'collected_astrometry_refStars': 2187,
-                   'selected_astrometry_refStars': 2187,
+                   'selected_astrometry_refStars': 541,
                    'associated_astrometry_fittedStars': 1270,
                    'selected_astrometry_fittedStars': 946,
                    'selected_astrometry_ccdImages': 8,
@@ -264,7 +257,7 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
 
         dist_rms_relative = 17e-3*u.arcsecond
         metrics = {'collected_astrometry_refStars': 2187,
-                   'selected_astrometry_refStars': 2187,
+                   'selected_astrometry_refStars': 541,
                    'associated_astrometry_fittedStars': 1270,
                    'selected_astrometry_fittedStars': 696,
                    'selected_astrometry_ccdImages': 8,

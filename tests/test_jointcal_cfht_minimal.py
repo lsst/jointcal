@@ -55,7 +55,7 @@ class JointcalTestCFHTMinimal(jointcalTestBase.JointcalTestBase, lsst.utils.test
         # NOTE: ndof==1 from 4 fit parameters (2 model, 2 fittedStar), and
         # 5 degrees-of-freedom (3 star measurements, with 2 reference stars).
         metrics = {'collected_photometry_refStars': 183,
-                   'selected_photometry_refStars': 183,
+                   'selected_photometry_refStars': 2,
                    'associated_photometry_fittedStars': 2,
                    'selected_photometry_fittedStars': 2,
                    'selected_photometry_ccdImages': 2,
