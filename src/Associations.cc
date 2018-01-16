@@ -271,7 +271,7 @@ void Associations::selectFittedStars(int minMeasurements) {
 
     // first pass: remove objects that have less than a certain number of measurements.
     for (auto const &ccdImage : ccdImageList) {
-        std::shared_ptr<Gtransfo> toCommonTangentPlane = ccdImage->getPix2CommonTangentPlane();
+        const Gtransfo *toCommonTangentPlane = ccdImage->getPix2CommonTangentPlane();
         MeasuredStarList &catalog = ccdImage->getCatalogForFit();
         // Iteration happens internal to the loop, as we may delete measuredStars from catalog.
         for (MeasuredStarIterator mi = catalog.begin(); mi != catalog.end();) {
