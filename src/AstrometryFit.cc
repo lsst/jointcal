@@ -549,19 +549,28 @@ void AstrometryFit::checkStuff() {
 void AstrometryFit::saveChi2MeasContributions(std::string const &baseName) const {
     std::ofstream ofile(baseName.c_str());
     std::string separator = "\t";
-    ofile << "#id" << separator << "xccd" << separator << "yccd " << separator << "rx" << separator << "ry"
-          << separator << "xtp" << separator << "ytp" << separator << "mag" << separator << "mjd" << separator
-          << "rvx" << separator << "rvy" << separator << "rvxy" << separator << "color" << separator
-          << "fsindex" << separator << "ra" << separator << "dec" << separator << "chi2" << separator << "nm"
-          << separator << "chip" << separator << "visit" << std::endl;
-    ofile << "#id in source catalog" << separator << "coordinates in CCD" << separator << separator
-          << "residual in degrees in TP" << separator << separator << "transformed coordinate in TP"
-          << separator << separator << "rough mag" << separator << "Modified Julian date of the measurement"
-          << separator << "transformed measurement uncertainty" << separator << separator << separator
-          << "currently unused" << separator << "unique index of the fittedStar" << separator
-          << "on sky position of fittedStar" << separator << separator << "contribution to Chi2 (2D dofs)"
-          << separator << "number of measurements of this fittedStar" << separator << "chip id" << separator
-          << "visit id" << std::endl;
+
+    ofile << "#id" << separator << "xccd" << separator << "yccd " << separator;
+    ofile << "rx" << separator << "ry" << separator;
+    ofile << "xtp" << separator << "ytp" << separator;
+    ofile << "mag" << separator << "mjd" << separator;
+    ofile << "xErr" << separator << "yErr" << separator << "xyCov" << separator;
+    ofile << "color" << separator << "fsindex" << separator;
+    ofile << "ra" << separator << "dec" << separator;
+    ofile << "chi2" << separator << "nm" << separator;
+    ofile << "chip" << separator << "visit" << std::endl;
+
+    ofile << "#id in source catalog" << separator << "coordinates in CCD (pixels)" << separator << separator;
+    ofile << "residual on TP (degrees)" << separator << separator;
+    ofile << "transformed coordinate in TP (degrees)" << separator << separator;
+    ofile << "rough magnitude" << separator << "Modified Julian Date of the measurement" << separator;
+    ofile << "transformed measurement uncertainty (degrees)" << separator << separator << separator;
+    ofile << "currently unused" << separator << "unique index of the fittedStar" << separator;
+    ofile << "on sky position of fittedStar" << separator << separator;
+    ofile << "contribution to Chi2 (2D dofs)" << separator << "number of measurements of this fittedStar"
+          << separator;
+    ofile << "chip id" << separator << "visit id" << std::endl;
+
     const CcdImageList &ccdImageList = _associations->getCcdImageList();
     for (auto const &ccdImage : ccdImageList) {
         const MeasuredStarList &cat = ccdImage->getCatalogForFit();
@@ -585,14 +594,17 @@ void AstrometryFit::saveChi2MeasContributions(std::string const &baseName) const
             double wyy = tpPos.vx / det;
             double wxy = -tpPos.vxy / det;
             double chi2 = wxx * res.x * res.x + wyy * res.y * res.y + 2 * wxy * res.x * res.y;
+
             ofile << std::setprecision(9);
-            ofile << ms->getId() << separator << ms->x << separator << ms->y << separator << res.x
-                  << separator << res.y << separator << tpPos.x << separator << tpPos.y << separator
-                  << fs->getMag() << separator << mjd << separator << tpPos.vx << separator << tpPos.vy
-                  << separator << tpPos.vxy << separator << fs->color << separator << fs->getIndexInMatrix()
-                  << separator << fs->x << separator << fs->y << separator << chi2 << separator
-                  << fs->getMeasurementCount() << separator << ccdImage->getCcdId() << separator
-                  << ccdImage->getVisit() << std::endl;
+            ofile << ms->getId() << separator << ms->x << separator << ms->y << separator;
+            ofile << res.x << separator << res.y << separator;
+            ofile << tpPos.x << separator << tpPos.y << separator;
+            ofile << fs->getMag() << separator << mjd << separator;
+            ofile << tpPos.vx << separator << tpPos.vy << separator << tpPos.vxy << separator;
+            ofile << fs->color << separator << fs->getIndexInMatrix() << separator;
+            ofile << fs->x << separator << fs->y << separator;
+            ofile << chi2 << separator << fs->getMeasurementCount() << separator;
+            ofile << ccdImage->getCcdId() << separator << ccdImage->getVisit() << std::endl;
         }  // loop on measurements in image
     }      // loop on images
 }
@@ -600,15 +612,22 @@ void AstrometryFit::saveChi2MeasContributions(std::string const &baseName) const
 void AstrometryFit::saveChi2RefContributions(std::string const &baseName) const {
     std::ofstream ofile(baseName.c_str());
     std::string separator = "\t";
-    ofile << "#ra" << separator << "dec " << separator << "rx" << separator << "ry" << separator << "mag"
-          << separator << "rvx" << separator << "rvy" << separator << "rvxy" << separator << "color"
-          << separator << "fsindex" << separator << "chi2" << separator << "nm" << std::endl;
-    ofile << "#coordinates of fittedStar" << separator << separator << "residual in degrees in TP"
-          << separator << separator << "magnitude" << separator
-          << "refStar transformed measurement uncertainty" << separator << separator << separator
-          << "currently unused" << separator << "unique index of the fittedStar" << separator
-          << "refStar contribution to Chi2 (2D dofs)" << separator
+
+    ofile << "#ra" << separator << "dec " << separator;
+    ofile << "rx" << separator << "ry" << separator;
+    ofile << "mag" << separator;
+    ofile << "xErr" << separator << "yErr" << separator << "xyCov" << separator;
+    ofile << "color" << separator << "fsindex" << separator;
+    ofile << "chi2" << separator << "nm" << std::endl;
+
+    ofile << "#coordinates of fittedStar (degrees)" << separator << separator;
+    ofile << "residual on TP (degrees)" << separator << separator;
+    ofile << "magnitude" << separator;
+    ofile << "refStar transformed measurement uncertainty (degrees)" << separator << separator << separator;
+    ofile << "currently unused" << separator << "unique index of the fittedStar" << separator;
+    ofile << "refStar contribution to Chi2 (2D dofs)" << separator
           << "number of measurements of this FittedStar" << std::endl;
+
     // The following loop is heavily inspired from AstrometryFit::computeChi2()
     const FittedStarList &fittedStarList = _associations->fittedStarList;
     TanRaDec2Pix proj(GtransfoLin(), Point(0., 0.));
@@ -627,11 +646,14 @@ void AstrometryFit::saveChi2RefContributions(std::string const &baseName) const 
         double wyy = rsProj.vx / det;
         double wxy = -rsProj.vxy / det;
         double chi2 = wxx * std::pow(rx, 2) + 2 * wxy * rx * ry + wyy * std::pow(ry, 2);
+
         ofile << std::setprecision(9);
-        ofile << fs.x << separator << fs.y << separator << rx << separator << ry << separator << fs.getMag()
-              << separator << rsProj.vx << separator << rsProj.vy << separator << rsProj.vxy << separator
-              << fs.color << separator << fs.getIndexInMatrix() << separator << chi2 << separator
-              << fs.getMeasurementCount() << std::endl;
+        ofile << fs.x << separator << fs.y << separator;
+        ofile << rx << separator << ry << separator;
+        ofile << fs.getMag() << separator;
+        ofile << rsProj.vx << separator << rsProj.vy << separator << rsProj.vxy << separator;
+        ofile << fs.color << separator << fs.getIndexInMatrix() << separator;
+        ofile << chi2 << separator << fs.getMeasurementCount() << std::endl;
     }  // loop on FittedStars
 }
 }  // namespace jointcal

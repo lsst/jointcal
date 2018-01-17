@@ -215,6 +215,7 @@ void PhotometryFit::offsetParams(Eigen::VectorXd const &delta) {
 void PhotometryFit::saveChi2MeasContributions(std::string const &baseName) const {
     std::ofstream ofile(baseName.c_str());
     std::string separator = "\t";
+
     ofile << "#id" << separator << "xccd" << separator << "yccd" << separator;
     ofile << "mag" << separator;
     ofile << "instFlux" << separator << "instFluxErr" << separator;
@@ -258,6 +259,7 @@ void PhotometryFit::saveChi2MeasContributions(std::string const &baseName) const
             double residual = flux - fittedStar->getFlux();
             double chi2Val = std::pow(residual / sigma, 2);
 
+            ofile << std::setprecision(9);
             ofile << measuredStar->getId() << separator << measuredStar->x << separator << measuredStar->y
                   << separator;
             ofile << fittedStar->getMag() << separator;
