@@ -295,7 +295,6 @@ void Associations::selectFittedStars(int minMeasurements) {
                 auto point = toCommonTangentPlane->apply(mstar);
                 f->x += point.x;
                 f->y += point.y;
-                std::cout << f->x << " " << point.x << std::endl;
                 ++mi;
             }
         }  // end loop on objects in catalog
@@ -308,7 +307,6 @@ void Associations::selectFittedStars(int minMeasurements) {
         } else {
             (*fi)->x /= (*fi)->getMeasurementCount();
             (*fi)->y /= (*fi)->getMeasurementCount();
-            std::cout << "post: " << (*fi)->x << " " << (*fi)->y << std::endl;
             ++fi;
         }
     }
