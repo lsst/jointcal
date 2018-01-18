@@ -555,6 +555,7 @@ void AstrometryFit::saveChi2MeasContributions(std::string const &baseName) const
     ofile << "xtp" << separator << "ytp" << separator;
     ofile << "mag" << separator << "mjd" << separator;
     ofile << "xErr" << separator << "yErr" << separator << "xyCov" << separator;
+    ofile << "xtpi" << separator << "ytpi" << separator;
     ofile << "rxi" << separator << "ryi" << separator;
     ofile << "color" << separator << "fsindex" << separator;
     ofile << "ra" << separator << "dec" << separator;
@@ -566,6 +567,7 @@ void AstrometryFit::saveChi2MeasContributions(std::string const &baseName) const
     ofile << "transformed coordinate in TP (degrees)" << separator << separator;
     ofile << "rough magnitude" << separator << "Modified Julian Date of the measurement" << separator;
     ofile << "transformed measurement uncertainty (degrees)" << separator << separator << separator;
+    ofile << "as-read position on TP (degrees)" << separator << separator;
     ofile << "as-read residual on TP (degrees)" << separator << separator;
     ofile << "currently unused" << separator << "unique index of the fittedStar" << separator;
     ofile << "on sky position of fittedStar" << separator << separator;
@@ -577,24 +579,25 @@ void AstrometryFit::saveChi2MeasContributions(std::string const &baseName) const
     for (auto const &ccdImage : ccdImageList) {
         const MeasuredStarList &cat = ccdImage->getCatalogForFit();
         const Mapping *mapping = _astrometryModel->getMapping(*ccdImage);
-        const auto readTransfo = ccdImage->getPix2CommonTangentPlane();
+        const auto readTransfo = ccdImage->readWCS();
         const Point &refractionVector = ccdImage->getRefractionVector();
         double mjd = ccdImage->getMjd() - _JDRef;
         for (auto const &ms : cat) {
             if (!ms->isValid()) continue;
             FatPoint tpPos;
             FatPoint inPos = *ms;
-            FatPoint inputPos;
+            FatPoint inputTpPos;
             tweakAstromMeasurementErrors(inPos, *ms, _posError);
             mapping->transformPosAndErrors(inPos, tpPos);
-            readTransfo->apply(inPos, inputPos);
             const Gtransfo *sky2TP = _astrometryModel->getSky2TP(*ccdImage);
+            const std::unique_ptr<Gtransfo> readPix2TP = gtransfoCompose(sky2TP, readTransfo);
+            readPix2TP->apply(inPos, inputTpPos);
             auto fs = ms->getFittedStar();
 
             Point fittedStarInTP =
                     transformFittedStar(*fs, sky2TP, refractionVector, _refractionCoefficient, mjd);
             Point res = tpPos - fittedStarInTP;
-            Point inputRes = inputPos - fittedStarInTP;
+            Point inputRes = inputTpPos - fittedStarInTP;
             double det = tpPos.vx * tpPos.vy - std::pow(tpPos.vxy, 2);
             double wxx = tpPos.vy / det;
             double wyy = tpPos.vx / det;
@@ -607,6 +610,7 @@ void AstrometryFit::saveChi2MeasContributions(std::string const &baseName) const
             ofile << tpPos.x << separator << tpPos.y << separator;
             ofile << fs->getMag() << separator << mjd << separator;
             ofile << tpPos.vx << separator << tpPos.vy << separator << tpPos.vxy << separator;
+            ofile << inputTpPos.x << separator << inputTpPos.y << separator;
             ofile << inputRes.x << separator << inputRes.y << separator;
             ofile << fs->color << separator << fs->getIndexInMatrix() << separator;
             ofile << fs->x << separator << fs->y << separator;
