@@ -85,7 +85,7 @@ ConstrainedAstrometryModel::ConstrainedAstrometryModel(CcdImageList const &ccdIm
     for (auto i = _visitMap.begin(); i != _visitMap.end(); ++i) LOGLS_DEBUG(_log, i->first);
 }
 
-const Mapping *ConstrainedAstrometryModel::getMapping(CcdImage const &ccdImage) const {
+const AstrometryMapping *ConstrainedAstrometryModel::getMapping(CcdImage const &ccdImage) const {
     mappingMapType::const_iterator i = _mappings.find(&ccdImage);
     if (i == _mappings.end()) return nullptr;
     return (i->second.get());

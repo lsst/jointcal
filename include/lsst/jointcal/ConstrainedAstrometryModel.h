@@ -1,6 +1,6 @@
 // -*- LSST-C++ -*-
-#ifndef LSST_JOINTCAL_CONSTRAINED_POLY_MODEL_H
-#define LSST_JOINTCAL_CONSTRAINED_POLY_MODEL_H
+#ifndef LSST_JOINTCAL_CONSTRAINED_ASTROMETRY_MODEL_H
+#define LSST_JOINTCAL_CONSTRAINED_ASTROMETRY_MODEL_H
 
 #include "memory"  // for std::*_ptr
 
@@ -11,7 +11,7 @@ class CcdImage;
 #include "lsst/jointcal/AstrometryModel.h"
 #include "lsst/jointcal/Gtransfo.h"
 #include "lsst/jointcal/Frame.h"
-#include "lsst/jointcal/SimplePolyMapping.h"
+#include "lsst/jointcal/SimpleAstrometryMapping.h"
 #include "lsst/jointcal/ProjectionHandler.h"
 #include "lsst/jointcal/TwoTransfoMapping.h"
 #include "lsst/jointcal/CcdImage.h"
@@ -41,7 +41,7 @@ public:
 
     // The following routines are the interface to AstrometryFit
     //!
-    Mapping const *getMapping(CcdImage const &) const;
+    AstrometryMapping const *getMapping(CcdImage const &) const;
 
     /**
      * Positions the various parameter sets into the parameter vector, starting at
@@ -92,4 +92,4 @@ private:
 }  // namespace jointcal
 }  // namespace lsst
 
-#endif  // LSST_JOINTCAL_CONSTRAINED_POLY_MODEL_H
+#endif  // LSST_JOINTCAL_CONSTRAINED_ASTROMETRY_MODEL_H

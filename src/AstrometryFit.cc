@@ -12,7 +12,7 @@
 #include "lsst/jointcal/Chi2.h"
 #include "lsst/jointcal/Eigenstuff.h"
 #include "lsst/jointcal/FitterBase.h"
-#include "lsst/jointcal/Mapping.h"
+#include "lsst/jointcal/AstrometryMapping.h"
 #include "lsst/jointcal/Gtransfo.h"
 #include "lsst/jointcal/Tripletlist.h"
 
@@ -101,7 +101,7 @@ void AstrometryFit::leastSquareDerivativesMeasurement(CcdImage const &ccdImage, 
     if (msList) assert(&(msList->front()->getCcdImage()) == &ccdImage);
 
     // get the Mapping
-    const Mapping *mapping = _astrometryModel->getMapping(ccdImage);
+    const AstrometryMapping *mapping = _astrometryModel->getMapping(ccdImage);
     // count parameters
     unsigned npar_mapping = (_fittingDistortions) ? mapping->getNpar() : 0;
     unsigned npar_pos = (_fittingPos) ? 2 : 0;
@@ -325,7 +325,7 @@ void AstrometryFit::accumulateStatImage(CcdImage const &ccdImage, Chi2Accumulato
     /**********************************************************************/
     /* Setup */
     // 1 : get the Mapping's
-    const Mapping *mapping = _astrometryModel->getMapping(ccdImage);
+    const AstrometryMapping *mapping = _astrometryModel->getMapping(ccdImage);
     // proper motion stuff
     double mjd = ccdImage.getMjd() - _JDRef;
     // refraction stuff
@@ -407,7 +407,7 @@ void AstrometryFit::accumulateStatRefStars(Chi2Accumulator &accum) const {
 void AstrometryFit::getIndicesOfMeasuredStar(MeasuredStar const &measuredStar,
                                              std::vector<unsigned> &indices) const {
     if (_fittingDistortions) {
-        const Mapping *mapping = _astrometryModel->getMapping(measuredStar.getCcdImage());
+        const AstrometryMapping *mapping = _astrometryModel->getMapping(measuredStar.getCcdImage());
         mapping->getMappingIndices(indices);
     }
     std::shared_ptr<FittedStar const> const fs = measuredStar.getFittedStar();
@@ -578,7 +578,7 @@ void AstrometryFit::saveChi2MeasContributions(std::string const &baseName) const
     const CcdImageList &ccdImageList = _associations->getCcdImageList();
     for (auto const &ccdImage : ccdImageList) {
         const MeasuredStarList &cat = ccdImage->getCatalogForFit();
-        const Mapping *mapping = _astrometryModel->getMapping(*ccdImage);
+        const AstrometryMapping *mapping = _astrometryModel->getMapping(*ccdImage);
         const auto readTransfo = ccdImage->readWCS();
         const Point &refractionVector = ccdImage->getRefractionVector();
         double mjd = ccdImage->getMjd() - _JDRef;

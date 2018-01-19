@@ -62,7 +62,7 @@ void declareConstrainedAstrometryModel(py::module &mod) {
 PYBIND11_PLUGIN(astrometryModels) {
     py::module::import("lsst.jointcal.ccdImage");
     py::module::import("lsst.jointcal.gtransfo");
-    py::module::import("lsst.jointcal.mappings");
+    py::module::import("lsst.jointcal.astrometryMappings");
     py::module mod("astrometryModels");
 
     declareAstrometryModel(mod);

@@ -6,7 +6,7 @@
 
 #include "lsst/jointcal/Gtransfo.h"
 #include "lsst/jointcal/Eigenstuff.h"
-#include "lsst/jointcal/Mapping.h"
+#include "lsst/jointcal/AstrometryMapping.h"
 
 namespace lsst {
 namespace jointcal {
@@ -21,7 +21,7 @@ the top of simplepolymodel.h */
 class AstrometryModel {
 public:
     //! Mapping associated to a given CcdImage
-    virtual const Mapping *getMapping(CcdImage const &) const = 0;
+    virtual const AstrometryMapping *getMapping(CcdImage const &) const = 0;
 
     //! Assign indices to parameters involved in mappings, starting at firstIndex. Returns the highest
     //! assigned index.
@@ -44,6 +44,8 @@ public:
     virtual void freezeErrorTransform() = 0;
 
     virtual ~AstrometryModel(){};
+
+protected:
 };
 }  // namespace jointcal
 }  // namespace lsst

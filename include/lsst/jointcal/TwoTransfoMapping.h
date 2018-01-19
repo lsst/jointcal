@@ -4,15 +4,15 @@
 
 #include "memory"
 
-#include "lsst/jointcal/Mapping.h"
+#include "lsst/jointcal/AstrometryMapping.h"
 #include "lsst/jointcal/Eigenstuff.h"
-#include "lsst/jointcal/SimplePolyMapping.h"
+#include "lsst/jointcal/SimpleAstrometryMapping.h"
 
 namespace lsst {
 namespace jointcal {
 
 //! The mapping with two transfos in a row.
-class TwoTransfoMapping : public Mapping {
+class TwoTransfoMapping : public AstrometryMapping {
 public:
     //!
     TwoTransfoMapping(SimpleGtransfoMapping *chipMapping, SimpleGtransfoMapping *visitMapping);
@@ -34,7 +34,7 @@ public:
     void transformPosAndErrors(FatPoint const &where, FatPoint &outPoint) const;
 
     /**
-     * @copydoc Mapping::offsetParams
+     * @copydoc AstrometryMapping::offsetParams
      *
      * @note  this routine is not used when fitting (the Model manages the mappings separately),
      *        but can be useful for debugging

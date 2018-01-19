@@ -3,7 +3,7 @@
 #include "lsst/log/Log.h"
 #include "lsst/jointcal/Eigenstuff.h"
 #include "lsst/jointcal/SimpleAstrometryModel.h"
-#include "lsst/jointcal/SimplePolyMapping.h"
+#include "lsst/jointcal/SimpleAstrometryMapping.h"
 #include "lsst/jointcal/CcdImage.h"
 #include "lsst/jointcal/ProjectionHandler.h"
 #include "lsst/pex/exceptions.h"
@@ -69,7 +69,7 @@ SimpleAstrometryModel::SimpleAstrometryModel(CcdImageList const &ccdImageList,
     }
 }
 
-const Mapping *SimpleAstrometryModel::getMapping(CcdImage const &ccdImage) const {
+const AstrometryMapping *SimpleAstrometryModel::getMapping(CcdImage const &ccdImage) const {
     mapType::const_iterator i = _myMap.find(&ccdImage);
     if (i == _myMap.cend())
         throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,

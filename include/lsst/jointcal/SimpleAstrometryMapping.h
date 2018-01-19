@@ -1,10 +1,10 @@
 // -*- LSST-C++ -*-
-#ifndef LSST_JOINTCAL_SIMPLE_POLY_MAPPING_H
-#define LSST_JOINTCAL_SIMPLE_POLY_MAPPING_H
+#ifndef LSST_JOINTCAL_SIMPLE_ASTROMETRY_MAPPING_H
+#define LSST_JOINTCAL_SIMPLE_ASTROMETRY_MAPPING_H
 
 #include <memory>  // for unique_ptr
 
-#include "lsst/jointcal/Mapping.h"
+#include "lsst/jointcal/AstrometryMapping.h"
 #include "lsst/jointcal/Gtransfo.h"
 #include "lsst/jointcal/CcdImage.h"
 
@@ -16,7 +16,7 @@ simplePolyMapping overloads a few routines. */
 namespace lsst {
 namespace jointcal {
 
-class SimpleGtransfoMapping : public Mapping {
+class SimpleGtransfoMapping : public AstrometryMapping {
 public:
     SimpleGtransfoMapping(Gtransfo const &gtransfo, bool toFit = true)
             : toFit(toFit), transfo(gtransfo.clone()), errorProp(transfo), lin(new GtransfoLin) {
@@ -221,4 +221,4 @@ public:
 }  // namespace jointcal
 }  // namespace lsst
 
-#endif  // LSST_JOINTCAL_SIMPLE_POLY_MAPPING_H
+#endif  // LSST_JOINTCAL_SIMPLE_ASTROMETRY_MAPPING_H
