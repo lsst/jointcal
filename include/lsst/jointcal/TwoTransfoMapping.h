@@ -57,7 +57,7 @@ public:
     void freezeErrorTransform();
 
 private:
-    friend class ConstrainedPolyModel;
+    friend class ConstrainedAstrometryModel;
     //!
     void setWhatToFit(const bool fittingT1, const bool fittingT2);
 

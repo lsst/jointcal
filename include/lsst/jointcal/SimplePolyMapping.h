@@ -69,7 +69,7 @@ public:
         derivative(0, 0) = lin->coeff(1, 0, 0);
         //
         /* This does not work : it was proved by rotating the frame
-           see the compilation switch ROTATE_T2 in constrainedpolymodel.cc
+           see the compilation switch ROTATE_T2 in constrainedAstrometryModel.cc
         derivative(1,0) = lin->coeff(1,0,1);
         derivative(0,1) = lin->coeff(0,1,0);
         */
@@ -148,7 +148,7 @@ public:
         derivative(0, 0) = lin->coeff(1, 0, 0);
         //
         /* This does not work : it was proved by rotating the frame
-           see the compilation switch ROTATE_T2 in constrainedpolymodel.cc
+           see the compilation switch ROTATE_T2 in constrainedAstrometryModel.cc
         derivative(1,0) = lin->coeff(1,0,1);
         derivative(0,1) = lin->coeff(0,1,0);
         */

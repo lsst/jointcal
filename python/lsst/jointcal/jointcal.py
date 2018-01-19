@@ -613,14 +613,17 @@ class JointcalTask(pipeBase.CmdLineTask):
         sky_to_tan_projection = lsst.jointcal.OneTPPerVisitHandler(associations.getCcdImageList())
 
         if self.config.astrometryModel == "constrainedPoly":
-            model = lsst.jointcal.ConstrainedPolyModel(associations.getCcdImageList(),
-                                                       sky_to_tan_projection, self.config.useInputWcs, 0,
-                                                       chipDegree=self.config.astrometryChipDegree,
-                                                       visitDegree=self.config.astrometryVisitDegree)
+            model = lsst.jointcal.ConstrainedAstrometryModel(associations.getCcdImageList(),
+                                                             sky_to_tan_projection,
+                                                             self.config.useInputWcs,
+                                                             chipDegree=self.config.astrometryChipDegree,
+                                                             visitDegree=self.config.astrometryVisitDegree)
         elif self.config.astrometryModel == "simplePoly":
-            model = lsst.jointcal.SimplePolyModel(associations.getCcdImageList(),
-                                                  sky_to_tan_projection, self.config.useInputWcs, 0,
-                                                  self.config.astrometrySimpleDegree)
+            model = lsst.jointcal.SimpleAstrometryModel(associations.getCcdImageList(),
+                                                        sky_to_tan_projection,
+                                                        self.config.useInputWcs,
+                                                        nNotFit=0,
+                                                        degree=self.config.astrometrySimpleDegree)
 
         fit = lsst.jointcal.AstrometryFit(associations, model, self.config.posError)
         chi2 = fit.computeChi2()

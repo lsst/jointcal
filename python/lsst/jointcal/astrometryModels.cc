@@ -25,8 +25,8 @@
 
 #include "lsst/jointcal/CcdImage.h"
 #include "lsst/jointcal/AstrometryModel.h"
-#include "lsst/jointcal/SimplePolyModel.h"
-#include "lsst/jointcal/ConstrainedPolyModel.h"
+#include "lsst/jointcal/SimpleAstrometryModel.h"
+#include "lsst/jointcal/ConstrainedAstrometryModel.h"
 #include "lsst/jointcal/Gtransfo.h"
 
 namespace py = pybind11;
@@ -43,21 +43,20 @@ void declareAstrometryModel(py::module &mod) {
     cls.def("getMapping", &AstrometryModel::getMapping, py::return_value_policy::reference_internal);
 }
 
-void declareSimplePolyModel(py::module &mod) {
-    py::class_<SimplePolyModel, std::shared_ptr<SimplePolyModel>, AstrometryModel> cls(mod,
-                                                                                       "SimplePolyModel");
+void declareSimpleAstrometryModel(py::module &mod) {
+    py::class_<SimpleAstrometryModel, std::shared_ptr<SimpleAstrometryModel>, AstrometryModel> cls(
+            mod, "SimpleAstrometryModel");
 
     cls.def(py::init<CcdImageList const &, const ProjectionHandler *, bool, unsigned, unsigned>(),
             "ccdImageList"_a, "projectionHandler"_a, "initFromWcs"_a, "nNotFit"_a = 0, "degree"_a = 3);
 }
 
-void declareConstrainedPolyModel(py::module &mod) {
-    py::class_<ConstrainedPolyModel, std::shared_ptr<ConstrainedPolyModel>, AstrometryModel> cls(
-            mod, "ConstrainedPolyModel");
+void declareConstrainedAstrometryModel(py::module &mod) {
+    py::class_<ConstrainedAstrometryModel, std::shared_ptr<ConstrainedAstrometryModel>, AstrometryModel> cls(
+            mod, "ConstrainedAstrometryModel");
 
-    cls.def(py::init<CcdImageList const &, const ProjectionHandler *, bool, unsigned, int, int>(),
-            "ccdImageList"_a, "projectionHandler"_a, "initFromWcs"_a, "nNotFit"_a = 0, "chipDegree"_a = 3,
-            "visitDegree"_a = 2);
+    cls.def(py::init<CcdImageList const &, const ProjectionHandler *, bool, int, int>(), "ccdImageList"_a,
+            "projectionHandler"_a, "initFromWcs"_a, "chipDegree"_a = 3, "visitDegree"_a = 2);
 }
 
 PYBIND11_PLUGIN(astrometryModels) {
@@ -67,8 +66,8 @@ PYBIND11_PLUGIN(astrometryModels) {
     py::module mod("astrometryModels");
 
     declareAstrometryModel(mod);
-    declareSimplePolyModel(mod);
-    declareConstrainedPolyModel(mod);
+    declareSimpleAstrometryModel(mod);
+    declareConstrainedAstrometryModel(mod);
 
     return mod.ptr();
 }

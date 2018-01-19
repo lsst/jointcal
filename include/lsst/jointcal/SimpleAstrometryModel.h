@@ -18,7 +18,7 @@ namespace jointcal {
 class CcdImage;
 
 /* We deal here with coordinate transforms which are fitted
-   and/or necessary to AstrometryFit. The classes SimplePolyModel
+   and/or necessary to AstrometryFit. The classes SimpleAstrometryModel
 and SimplePolyMapping implement a model where  there is one
 separate transfrom per CcdImage. One could chose other setups.
 
@@ -26,17 +26,17 @@ separate transfrom per CcdImage. One could chose other setups.
 
 //! this is the model used to fit independent CCDs, meaning that there is no instrument model.
 /* This modeling of distortions can even accommodate images set mixing instruments */
-class SimplePolyModel : public AstrometryModel {
+class SimpleAstrometryModel : public AstrometryModel {
 public:
     //! Sky2TP is just a name, it can be anything
-    SimplePolyModel(CcdImageList const &ccdImageList, ProjectionHandler const *projectionHandler,
-                    bool initFromWCS, unsigned nNotFit = 0, unsigned degree = 3);
+    SimpleAstrometryModel(CcdImageList const &ccdImageList, ProjectionHandler const *projectionHandler,
+                          bool initFromWCS, unsigned nNotFit = 0, unsigned degree = 3);
 
     /// No copy or move: there is only ever one instance of a given model (i.e.. per ccd+visit)
-    SimplePolyModel(SimplePolyModel const &) = delete;
-    SimplePolyModel(SimplePolyModel &&) = delete;
-    SimplePolyModel &operator=(SimplePolyModel const &) = delete;
-    SimplePolyModel &operator=(SimplePolyModel &&) = delete;
+    SimpleAstrometryModel(SimpleAstrometryModel const &) = delete;
+    SimpleAstrometryModel(SimpleAstrometryModel &&) = delete;
+    SimpleAstrometryModel &operator=(SimpleAstrometryModel const &) = delete;
+    SimpleAstrometryModel &operator=(SimpleAstrometryModel &&) = delete;
 
     // The following routines are the interface to AstrometryFit
     //!
@@ -61,7 +61,7 @@ public:
 
     std::shared_ptr<TanSipPix2RaDec> produceSipWcs(CcdImage const &ccdImage) const;
 
-    ~SimplePolyModel(){};
+    ~SimpleAstrometryModel(){};
 
 private:
     typedef std::map<const CcdImage *, std::unique_ptr<SimpleGtransfoMapping>> mapType;

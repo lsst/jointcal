@@ -1,6 +1,6 @@
 #include "lsst/log/Log.h"
 #include "lsst/jointcal/Eigenstuff.h"
-#include "lsst/jointcal/ConstrainedPolyModel.h"
+#include "lsst/jointcal/ConstrainedAstrometryModel.h"
 #include "lsst/jointcal/CcdImage.h"
 #include "lsst/jointcal/AstrometryModel.h"
 #include "lsst/jointcal/Gtransfo.h"
@@ -14,7 +14,7 @@ namespace pexExcept = lsst::pex::exceptions;
 #include <iostream>
 
 namespace {
-LOG_LOGGER _log = LOG_GET("jointcal.ConstrainedPolyModel");
+LOG_LOGGER _log = LOG_GET("jointcal.ConstrainedAstrometryModel");
 }
 
 namespace lsst {
@@ -27,9 +27,9 @@ mappings.*/
 
 using namespace std;
 
-ConstrainedPolyModel::ConstrainedPolyModel(CcdImageList const &ccdImageList,
-                                           ProjectionHandler const *projectionHandler, bool initFromWCS,
-                                           unsigned nNotFit, int chipDegree, int visitDegree)
+ConstrainedAstrometryModel::ConstrainedAstrometryModel(CcdImageList const &ccdImageList,
+                                                       ProjectionHandler const *projectionHandler,
+                                                       bool initFromWCS, int chipDegree, int visitDegree)
         : _sky2TP(projectionHandler)
 
 {
@@ -85,7 +85,7 @@ ConstrainedPolyModel::ConstrainedPolyModel(CcdImageList const &ccdImageList,
     for (auto i = _visitMap.begin(); i != _visitMap.end(); ++i) LOGLS_DEBUG(_log, i->first);
 }
 
-const Mapping *ConstrainedPolyModel::getMapping(CcdImage const &ccdImage) const {
+const Mapping *ConstrainedAstrometryModel::getMapping(CcdImage const &ccdImage) const {
     mappingMapType::const_iterator i = _mappings.find(&ccdImage);
     if (i == _mappings.end()) return nullptr;
     return (i->second.get());
@@ -95,7 +95,7 @@ const Mapping *ConstrainedPolyModel::getMapping(CcdImage const &ccdImage) const 
   whatToFit. If whatToFit contains "Distortions" and not
   Distortions<Something>, it is understood as both chips and
   visits. */
-unsigned ConstrainedPolyModel::assignIndices(unsigned firstIndex, std::string const &whatToFit) {
+unsigned ConstrainedAstrometryModel::assignIndices(unsigned firstIndex, std::string const &whatToFit) {
     unsigned index = firstIndex;
     if (whatToFit.find("Distortions") == std::string::npos) {
         LOGLS_ERROR(_log, "assignIndices was called and Distortions is *not* in whatToFit");
@@ -125,7 +125,7 @@ unsigned ConstrainedPolyModel::assignIndices(unsigned firstIndex, std::string co
     return index;
 }
 
-void ConstrainedPolyModel::offsetParams(Eigen::VectorXd const &delta) {
+void ConstrainedAstrometryModel::offsetParams(Eigen::VectorXd const &delta) {
     if (_fittingChips)
         for (auto &i : _chipMap) {
             auto mapping = i.second.get();
@@ -138,12 +138,12 @@ void ConstrainedPolyModel::offsetParams(Eigen::VectorXd const &delta) {
         }
 }
 
-void ConstrainedPolyModel::freezeErrorTransform() {
+void ConstrainedAstrometryModel::freezeErrorTransform() {
     for (auto i = _visitMap.begin(); i != _visitMap.end(); ++i) i->second->freezeErrorTransform();
     for (auto i = _chipMap.begin(); i != _chipMap.end(); ++i) i->second->freezeErrorTransform();
 }
 
-const Gtransfo &ConstrainedPolyModel::getChipTransfo(CcdIdType const chip) const {
+const Gtransfo &ConstrainedAstrometryModel::getChipTransfo(CcdIdType const chip) const {
     auto chipp = _chipMap.find(chip);
     if (chipp == _chipMap.end()) {
         std::stringstream errMsg;
@@ -154,14 +154,14 @@ const Gtransfo &ConstrainedPolyModel::getChipTransfo(CcdIdType const chip) const
 }
 
 // Array of visits involved in the solution.
-std::vector<VisitIdType> ConstrainedPolyModel::getVisits() const {
+std::vector<VisitIdType> ConstrainedAstrometryModel::getVisits() const {
     std::vector<VisitIdType> res;
     res.reserve(_visitMap.size());
     for (auto i = _visitMap.begin(); i != _visitMap.end(); ++i) res.push_back(i->first);
     return res;
 }
 
-const Gtransfo &ConstrainedPolyModel::getVisitTransfo(VisitIdType const &visit) const {
+const Gtransfo &ConstrainedAstrometryModel::getVisitTransfo(VisitIdType const &visit) const {
     auto visitp = _visitMap.find(visit);
     if (visitp == _visitMap.end()) {
         std::stringstream errMsg;
@@ -171,13 +171,14 @@ const Gtransfo &ConstrainedPolyModel::getVisitTransfo(VisitIdType const &visit) 
     return visitp->second->getTransfo();
 }
 
-std::shared_ptr<TanSipPix2RaDec> ConstrainedPolyModel::produceSipWcs(CcdImage const &ccdImage) const {
+std::shared_ptr<TanSipPix2RaDec> ConstrainedAstrometryModel::produceSipWcs(CcdImage const &ccdImage) const {
     const TwoTransfoMapping *mapping;
     try {
         mapping = _mappings.at(&ccdImage).get();
     } catch (std::out_of_range &) {
-        LOGLS_ERROR(_log, "CcdImage with ccd/visit " << ccdImage.getCcdId() << "/" << ccdImage.getVisit()
-                                                     << " not found in constrainedPolyModel mapping list.");
+        LOGLS_ERROR(_log, "CcdImage with ccd/visit "
+                                  << ccdImage.getCcdId() << "/" << ccdImage.getVisit()
+                                  << " not found in constrainedAstrometryModel mapping list.");
         std::ostringstream os;
         for (auto const &i : _mappings) os << i.first << ",";
         LOGLS_ERROR(_log, "Available CcdImages: " << os.str());

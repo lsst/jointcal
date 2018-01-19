@@ -28,16 +28,16 @@ namespace jointcal {
  * required for this model is TwoTransfoMapping. This modeling of distortions
  * is meant for a set of images from a single mosaic imager.
  */
-class ConstrainedPolyModel : public AstrometryModel {
+class ConstrainedAstrometryModel : public AstrometryModel {
 public:
-    ConstrainedPolyModel(CcdImageList const &ccdImageList, ProjectionHandler const *projectionHandler,
-                         bool initFromWCS, unsigned nNotFit = 0, int chipDegree = 3, int visitDegree = 2);
+    ConstrainedAstrometryModel(CcdImageList const &ccdImageList, ProjectionHandler const *projectionHandler,
+                               bool initFromWCS, int chipDegree = 3, int visitDegree = 2);
 
     /// No copy or move: there is only ever one instance of a given model (i.e. per ccd+visit)
-    ConstrainedPolyModel(ConstrainedPolyModel const &) = delete;
-    ConstrainedPolyModel(ConstrainedPolyModel &&) = delete;
-    ConstrainedPolyModel &operator=(ConstrainedPolyModel const &) = delete;
-    ConstrainedPolyModel &operator=(ConstrainedPolyModel &&) = delete;
+    ConstrainedAstrometryModel(ConstrainedAstrometryModel const &) = delete;
+    ConstrainedAstrometryModel(ConstrainedAstrometryModel &&) = delete;
+    ConstrainedAstrometryModel &operator=(ConstrainedAstrometryModel const &) = delete;
+    ConstrainedAstrometryModel &operator=(ConstrainedAstrometryModel &&) = delete;
 
     // The following routines are the interface to AstrometryFit
     //!

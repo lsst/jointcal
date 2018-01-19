@@ -2,7 +2,7 @@
 
 #include "lsst/log/Log.h"
 #include "lsst/jointcal/Eigenstuff.h"
-#include "lsst/jointcal/SimplePolyModel.h"
+#include "lsst/jointcal/SimpleAstrometryModel.h"
 #include "lsst/jointcal/SimplePolyMapping.h"
 #include "lsst/jointcal/CcdImage.h"
 #include "lsst/jointcal/ProjectionHandler.h"
@@ -12,15 +12,16 @@
 // const int distortionDegree=3;
 
 namespace {
-LOG_LOGGER _log = LOG_GET("jointcal.SimplePolyModel");
+LOG_LOGGER _log = LOG_GET("jointcal.SimpleAstrometryModel");
 }
 
 namespace lsst {
 namespace jointcal {
 
 // need a way to propagate the requested degree !
-SimplePolyModel::SimplePolyModel(CcdImageList const &ccdImageList, ProjectionHandler const *projectionHandler,
-                                 bool initFromWcs, unsigned nNotFit, unsigned degree)
+SimpleAstrometryModel::SimpleAstrometryModel(CcdImageList const &ccdImageList,
+                                             ProjectionHandler const *projectionHandler, bool initFromWcs,
+                                             unsigned nNotFit, unsigned degree)
         : _sky2TP(projectionHandler)
 
 {
@@ -68,15 +69,15 @@ SimplePolyModel::SimplePolyModel(CcdImageList const &ccdImageList, ProjectionHan
     }
 }
 
-const Mapping *SimplePolyModel::getMapping(CcdImage const &ccdImage) const {
+const Mapping *SimpleAstrometryModel::getMapping(CcdImage const &ccdImage) const {
     mapType::const_iterator i = _myMap.find(&ccdImage);
     if (i == _myMap.cend())
         throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,
-                          "SimplePolyModel::GetMapping, never heard of CcdImage " + ccdImage.getName());
+                          "SimpleAstrometryModel::GetMapping, never heard of CcdImage " + ccdImage.getName());
     return (i->second.get());
 }
 
-unsigned SimplePolyModel::assignIndices(unsigned firstIndex, std::string const &whatToFit) {
+unsigned SimpleAstrometryModel::assignIndices(unsigned firstIndex, std::string const &whatToFit) {
     if (whatToFit.find("Distortions") == std::string::npos) {
         LOGLS_ERROR(_log, "AssignIndices was called and Distortions is *not* in whatToFit.");
         return 0;
@@ -91,27 +92,27 @@ unsigned SimplePolyModel::assignIndices(unsigned firstIndex, std::string const &
     return index;
 }
 
-void SimplePolyModel::offsetParams(Eigen::VectorXd const &delta) {
+void SimpleAstrometryModel::offsetParams(Eigen::VectorXd const &delta) {
     for (auto &i : _myMap) {
         auto mapping = i.second.get();
         mapping->offsetParams(delta.segment(mapping->getIndex(), mapping->getNpar()));
     }
 }
 
-void SimplePolyModel::freezeErrorTransform() {
+void SimpleAstrometryModel::freezeErrorTransform() {
     for (auto i = _myMap.begin(); i != _myMap.end(); ++i) i->second->freezeErrorTransform();
 }
 
-const Gtransfo &SimplePolyModel::getTransfo(CcdImage const &ccdImage) const {
+const Gtransfo &SimpleAstrometryModel::getTransfo(CcdImage const &ccdImage) const {
     // return GetMapping(ccdImage)->Transfo(); // cannot do that
     auto p = _myMap.find(&ccdImage);
     if (p == _myMap.end())
         throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,
-                          "SimplePolyModel::getTransfo, never heard of CcdImage " + ccdImage.getName());
+                          "SimpleAstrometryModel::getTransfo, never heard of CcdImage " + ccdImage.getName());
     return p->second->getTransfo();
 }
 
-std::shared_ptr<TanSipPix2RaDec> SimplePolyModel::produceSipWcs(CcdImage const &ccdImage) const {
+std::shared_ptr<TanSipPix2RaDec> SimpleAstrometryModel::produceSipWcs(CcdImage const &ccdImage) const {
     const GtransfoPoly &pix2Tp = dynamic_cast<const GtransfoPoly &>(getTransfo(ccdImage));
     const TanRaDec2Pix *proj = dynamic_cast<const TanRaDec2Pix *>(getSky2TP(ccdImage));
     if (!proj) return nullptr;
