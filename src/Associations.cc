@@ -70,8 +70,7 @@ void Associations::associateCatalogs(const double matchCutInArcSec, const bool u
 
         // Clear the catalog to fit and copy the whole catalog into it.
         // This allows reassociating from scratch after a fit.
-        ccdImage->getCatalogForFit().clear();
-        ccdImage->getWholeCatalog().copyTo(ccdImage->getCatalogForFit());
+        ccdImage->resetCatalogForFit();
         MeasuredStarList &catalog = ccdImage->getCatalogForFit();
 
         // Associate with previous lists.

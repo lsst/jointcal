@@ -44,6 +44,8 @@ void declareCcdImage(py::module &mod) {
 
     cls.def("getPhotoCalib", &CcdImage::getPhotoCalib);
 
+    cls.def("resetCatalogForFit", &CcdImage::resetCatalogForFit);
+
     cls.def("getBoresightRaDec", &CcdImage::getBoresightRaDec);
     cls.def_property_readonly("boresightRaDec", &CcdImage::getBoresightRaDec);
 

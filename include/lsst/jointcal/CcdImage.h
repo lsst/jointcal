@@ -66,6 +66,12 @@ public:
     MeasuredStarList &getCatalogForFit() { return _catalogForFit; }
     //@}
 
+    /// Clear the catalog for fitting and set it to a copy of the whole catalog.
+    void resetCatalogForFit() {
+        getCatalogForFit().clear();
+        getWholeCatalog().copyTo(getCatalogForFit());
+    }
+
     /**
      * @brief      Sets the common tangent point and computes necessary transforms.
      *
