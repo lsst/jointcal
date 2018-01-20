@@ -25,8 +25,6 @@ SimpleAstrometryModel::SimpleAstrometryModel(CcdImageList const &ccdImageList,
         : _sky2TP(projectionHandler)
 
 {
-    // from datacards (or default)
-    //  unsigned degree = distortionDegree;
     unsigned count = 0;
 
     for (auto i = ccdImageList.cbegin(); i != ccdImageList.cend(); ++i, ++count) {
@@ -36,11 +34,10 @@ SimpleAstrometryModel::SimpleAstrometryModel(CcdImageList const &ccdImageList,
             id->setIndex(-1);  // non sense, because it has no parameters
             _myMap[im.getHashKey()] = std::move(id);
         } else
-        // Given how AssignIndices works, only the SimplePolyMapping's
+        // Given how AssignIndices works, only the SimplePolyMappings
         // will actually be fitted, as nNotFit requests.
         {
-            /* first check that there are enough measurements for the
-      requested polynomial degree */
+            // first check that there are enough measurements for the requested polynomial degree.
             size_t nObj = im.getCatalogForFit().size();
             if (nObj == 0) {
                 LOGLS_WARN(_log, "Empty catalog from image: " << im.getName());
@@ -48,7 +45,14 @@ SimpleAstrometryModel::SimpleAstrometryModel(CcdImageList const &ccdImageList,
             }
             GtransfoPoly pol(degree);
             if (pol.getDegree() > 0)  // if not, it cannot be decreased
-                while (unsigned(pol.getNpar()) > 2 * nObj) pol.setDegree(pol.getDegree() - 1);
+            {
+                while (unsigned(pol.getNpar()) > 2 * nObj) {
+                    LOGLS_WARN(_log, "Reducing polynomial degree from "
+                                             << pol.getDegree() << ", due to too few sources (" << nObj
+                                             << " vs. " << pol.getNpar() << " parameters)");
+                    pol.setDegree(pol.getDegree() - 1);
+                }
+            }
             /* We have to center and normalize the coordinates so that
                the fit matrix is not too ill-conditionned. Basically, x
                and y in pixels are mapped to [-1,1]. When the
