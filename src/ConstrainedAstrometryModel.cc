@@ -10,6 +10,7 @@
 #include "lsst/pex/exceptions.h"
 namespace pexExcept = lsst::pex::exceptions;
 
+#include <memory>
 #include <string>
 #include <iostream>
 
@@ -27,12 +28,10 @@ mappings.*/
 
 using namespace std;
 
-ConstrainedAstrometryModel::ConstrainedAstrometryModel(CcdImageList const &ccdImageList,
-                                                       ProjectionHandler const *projectionHandler,
-                                                       bool initFromWCS, int chipDegree, int visitDegree)
-        : _sky2TP(projectionHandler)
-
-{
+ConstrainedAstrometryModel::ConstrainedAstrometryModel(
+        CcdImageList const &ccdImageList, std::shared_ptr<ProjectionHandler const> projectionHandler,
+        bool initFromWCS, int chipDegree, int visitDegree)
+        : _sky2TP(projectionHandler) {
     // first loop to initialize all visit  and chip transfos.
     for (auto &ccdImage : ccdImageList) {
         const CcdImage &im = *ccdImage;
@@ -199,7 +198,7 @@ std::shared_ptr<TanSipPix2RaDec> ConstrainedAstrometryModel::produceSipWcs(CcdIm
             return nullptr;
         }
     }
-    const TanRaDec2Pix *proj = dynamic_cast<const TanRaDec2Pix *>(getSky2TP(ccdImage));
+    auto proj = std::dynamic_pointer_cast<const TanRaDec2Pix>(getSky2TP(ccdImage));
     if (!proj) {
         LOGLS_ERROR(_log, "Problem with projection of ccd/visit " << ccdImage.getCcdId() << "/"
                                                                   << ccdImage.getVisit() << ": projection "

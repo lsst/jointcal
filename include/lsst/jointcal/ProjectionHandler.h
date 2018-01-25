@@ -18,7 +18,7 @@ class CcdImage;
  * (where they are compared to transformed measurements)
  */
 struct ProjectionHandler {
-    virtual const Gtransfo *getSky2TP(const CcdImage &ccdImage) const = 0;
+    virtual const std::shared_ptr<const Gtransfo> getSky2TP(const CcdImage &ccdImage) const = 0;
 
     virtual ~ProjectionHandler(){};
 };
@@ -29,10 +29,10 @@ struct ProjectionHandler {
  * is useful for fitting transfo rms between images.
  */
 class IdentityProjectionHandler : public ProjectionHandler {
-    GtransfoIdentity id;
+    std::shared_ptr<GtransfoIdentity> id;
 
 public:
-    const Gtransfo *getSky2TP(const CcdImage &ccdImage) const { return &id; };
+    const std::shared_ptr<const Gtransfo> getSky2TP(const CcdImage &ccdImage) const { return id; };
 };
 
 /**
@@ -43,13 +43,13 @@ public:
  * point.
  */
 class OneTPPerVisitHandler : public ProjectionHandler {
-    typedef std::map<const unsigned, std::shared_ptr<const Gtransfo>> TransfoMap;
+    typedef std::map<const VisitIdType, std::shared_ptr<const Gtransfo>> TransfoMap;
     TransfoMap tMap;
 
 public:
     OneTPPerVisitHandler(const CcdImageList &ccdImageList);
 
-    const Gtransfo *getSky2TP(const CcdImage &ccdImage) const;
+    const std::shared_ptr<const Gtransfo> getSky2TP(const CcdImage &ccdImage) const;
 };
 }  // namespace jointcal
 }  // namespace lsst

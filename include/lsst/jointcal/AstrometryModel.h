@@ -38,7 +38,7 @@ public:
     //! The transformation used to project the positions of FittedStars.
     /*! This defines the coordinate system into which the Mapping of
         this Ccdimage maps the pixel coordinates. */
-    virtual const Gtransfo *getSky2TP(CcdImage const &ccdImage) const = 0;
+    virtual const std::shared_ptr<Gtransfo const> getSky2TP(CcdImage const &ccdImage) const = 0;
 
     //! Cook up a SIP WCS.
     virtual std::shared_ptr<TanSipPix2RaDec> produceSipWcs(CcdImage const &ccdImage) const = 0;

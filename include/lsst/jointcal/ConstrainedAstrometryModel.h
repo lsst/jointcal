@@ -30,8 +30,9 @@ namespace jointcal {
  */
 class ConstrainedAstrometryModel : public AstrometryModel {
 public:
-    ConstrainedAstrometryModel(CcdImageList const &ccdImageList, ProjectionHandler const *projectionHandler,
-                               bool initFromWCS, int chipDegree = 3, int visitDegree = 2);
+    ConstrainedAstrometryModel(CcdImageList const &ccdImageList,
+                               std::shared_ptr<ProjectionHandler const> projectionHandler, bool initFromWCS,
+                               int chipDegree = 3, int visitDegree = 2);
 
     /// No copy or move: there is only ever one instance of a given model (i.e. per ccd+visit)
     ConstrainedAstrometryModel(ConstrainedAstrometryModel const &) = delete;
@@ -75,7 +76,9 @@ public:
      * stars are reported) onto the Tangent plane (into which the pixel coordinates
      * are transformed).
      */
-    const Gtransfo *getSky2TP(CcdImage const &ccdImage) const { return _sky2TP->getSky2TP(ccdImage); }
+    const std::shared_ptr<Gtransfo const> getSky2TP(CcdImage const &ccdImage) const {
+        return _sky2TP->getSky2TP(ccdImage);
+    }
 
     std::shared_ptr<TanSipPix2RaDec> produceSipWcs(CcdImage const &ccdImage) const;
 
@@ -83,7 +86,7 @@ private:
     std::unordered_map<CcdImageKey, std::unique_ptr<TwoTransfoMapping>> _mappings;
     std::map<CcdIdType, std::shared_ptr<SimpleGtransfoMapping>> _chipMap;
     std::map<VisitIdType, std::shared_ptr<SimpleGtransfoMapping>> _visitMap;
-    const ProjectionHandler *_sky2TP;
+    const std::shared_ptr<ProjectionHandler const> _sky2TP;
     bool _fittingChips, _fittingVisits;
 
     /// @copydoc AstrometryModel::findMapping

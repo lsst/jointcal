@@ -1,3 +1,4 @@
+#include <memory>
 #include <string>
 
 #include "lsst/log/Log.h"
@@ -20,8 +21,8 @@ namespace jointcal {
 
 // need a way to propagate the requested degree !
 SimpleAstrometryModel::SimpleAstrometryModel(CcdImageList const &ccdImageList,
-                                             ProjectionHandler const *projectionHandler, bool initFromWcs,
-                                             unsigned nNotFit, unsigned degree)
+                                             const std::shared_ptr<ProjectionHandler const> projectionHandler,
+                                             bool initFromWcs, unsigned nNotFit, unsigned degree)
         : _sky2TP(projectionHandler)
 
 {
@@ -109,7 +110,7 @@ const Gtransfo &SimpleAstrometryModel::getTransfo(CcdImage const &ccdImage) cons
 
 std::shared_ptr<TanSipPix2RaDec> SimpleAstrometryModel::produceSipWcs(CcdImage const &ccdImage) const {
     const GtransfoPoly &pix2Tp = dynamic_cast<const GtransfoPoly &>(getTransfo(ccdImage));
-    const TanRaDec2Pix *proj = dynamic_cast<const TanRaDec2Pix *>(getSky2TP(ccdImage));
+    auto proj = std::dynamic_pointer_cast<const TanRaDec2Pix>(getSky2TP(ccdImage));
     if (!proj) return nullptr;
 
     const GtransfoLin &projLinPart = proj->getLinPart();  // should be the identity, but who knows? So, let us

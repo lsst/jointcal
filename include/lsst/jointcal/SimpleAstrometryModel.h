@@ -29,8 +29,9 @@ separate transfrom per CcdImage. One could chose other setups.
 class SimpleAstrometryModel : public AstrometryModel {
 public:
     //! Sky2TP is just a name, it can be anything
-    SimpleAstrometryModel(CcdImageList const &ccdImageList, ProjectionHandler const *projectionHandler,
-                          bool initFromWCS, unsigned nNotFit = 0, unsigned degree = 3);
+    SimpleAstrometryModel(CcdImageList const &ccdImageList,
+                          const std::shared_ptr<ProjectionHandler const> projectionHandler, bool initFromWCS,
+                          unsigned nNotFit = 0, unsigned degree = 3);
 
     /// No copy or move: there is only ever one instance of a given model (i.e.. per ccd+visit)
     SimpleAstrometryModel(SimpleAstrometryModel const &) = delete;
@@ -51,7 +52,9 @@ public:
     /*! the mapping of sky coordinates (i.e. the coordinate system
     in which fitted stars are reported) onto the Tangent plane
     (into which the pixel coordinates are transformed) */
-    const Gtransfo *getSky2TP(CcdImage const &ccdImage) const { return _sky2TP->getSky2TP(ccdImage); }
+    const std::shared_ptr<Gtransfo const> getSky2TP(CcdImage const &ccdImage) const {
+        return _sky2TP->getSky2TP(ccdImage);
+    }
 
     //!
     virtual void freezeErrorTransform();
@@ -65,7 +68,7 @@ public:
 
 private:
     std::map<CcdImageKey, std::unique_ptr<SimpleGtransfoMapping>> _myMap;
-    const ProjectionHandler *_sky2TP;
+    const std::shared_ptr<ProjectionHandler const> _sky2TP;
 
     /// @copydoc AstrometryModel::findMapping
     AstrometryMapping *findMapping(CcdImage const &ccdImage) const;
