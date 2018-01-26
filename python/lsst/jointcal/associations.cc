@@ -48,7 +48,7 @@ void declareAssociations(py::module &mod) {
     cls.def("nFittedStarsWithAssociatedRefStar", &Associations::nFittedStarsWithAssociatedRefStar);
 
     cls.def("addImage", &Associations::addImage);
-    cls.def("selectFittedStars", &Associations::selectFittedStars);
+    cls.def("prepareFittedStars", &Associations::prepareFittedStars);
 
     cls.def("getCcdImageList", &Associations::getCcdImageList, py::return_value_policy::reference_internal);
     cls.def_property_readonly("ccdImageList", &Associations::getCcdImageList,

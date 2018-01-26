@@ -132,7 +132,7 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
                    'associated_photometry_fittedStars': 2269,
                    'selected_photometry_fittedStars': 1239,
                    'selected_photometry_ccdImages': 12,
-                   'photometry_final_chi2': 2654.95,
+                   'photometry_final_chi2': 2655.86,
                    'photometry_final_ndof': 1328
                    }
 
