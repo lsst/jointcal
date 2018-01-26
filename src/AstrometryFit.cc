@@ -166,7 +166,7 @@ void AstrometryFit::leastSquareDerivativesMeasurement(CcdImage const &ccdImage, 
         alpha(1, 1) = 1. / sqrt(det * transW(0, 0));
         alpha(0, 1) = 0;
 
-        auto fs = ms.getFittedStar();
+        std::shared_ptr<FittedStar const> const fs = ms.getFittedStar();
 
         Point fittedStarInTP =
                 transformFittedStar(*fs, sky2TP, refractionVector, _refractionCoefficient, mjd);
@@ -355,7 +355,7 @@ void AstrometryFit::accumulateStatImage(CcdImage const &ccdImage, Chi2Accumulato
         transW(1, 1) = outPos.vx / det;
         transW(0, 1) = transW(1, 0) = -outPos.vxy / det;
 
-        auto fs = ms->getFittedStar();
+        std::shared_ptr<FittedStar const> const fs = ms->getFittedStar();
         Point fittedStarInTP =
                 transformFittedStar(*fs, sky2TP, refractionVector, _refractionCoefficient, mjd);
 
@@ -410,7 +410,7 @@ void AstrometryFit::getIndicesOfMeasuredStar(MeasuredStar const &measuredStar,
         const Mapping *mapping = _astrometryModel->getMapping(measuredStar.getCcdImage());
         mapping->getMappingIndices(indices);
     }
-    auto fs = measuredStar.getFittedStar();
+    std::shared_ptr<FittedStar const> const fs = measuredStar.getFittedStar();
     unsigned fsIndex = fs->getIndexInMatrix();
     if (_fittingPos) {
         indices.push_back(fsIndex);
@@ -591,7 +591,7 @@ void AstrometryFit::saveChi2MeasContributions(std::string const &baseName) const
             const Gtransfo *sky2TP = _astrometryModel->getSky2TP(*ccdImage);
             const std::unique_ptr<Gtransfo> readPix2TP = gtransfoCompose(sky2TP, readTransfo);
             FatPoint inputTpPos = readPix2TP->apply(inPos);
-            const std::shared_ptr<FittedStar const> fs = ms->getFittedStar();
+            std::shared_ptr<FittedStar const> const fs = ms->getFittedStar();
 
             Point fittedStarInTP =
                     transformFittedStar(*fs, sky2TP, refractionVector, _refractionCoefficient, mjd);

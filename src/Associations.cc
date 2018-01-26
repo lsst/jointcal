@@ -283,8 +283,7 @@ void Associations::selectFittedStars(int minMeasurements) {
             // keep FittedStars which either have a minimum number of
             // measurements, or are matched to a RefStar
             if (!fittedStar->getRefStar() && fittedStar->getMeasurementCount() < minMeasurements) {
-                auto f = std::const_pointer_cast<FittedStar>(fstar);
-                f->getMeasurementCount()--;
+                fittedStar->getMeasurementCount()--;
                 mi = catalog.erase(mi);  // mi now points to the next measuredStar.
             } else {
                 ++mi;
@@ -343,8 +342,7 @@ void Associations::assignMags() {
         for (auto const &mstar : catalog) {
             auto fstar = mstar->getFittedStar();
             if (!fstar) continue;
-            auto f = std::const_pointer_cast<FittedStar>(fstar);
-            f->addMagMeasurement(mstar->getMag(), mstar->getMagWeight());
+            fstar->addMagMeasurement(mstar->getMag(), mstar->getMagWeight());
         }
     }
 }

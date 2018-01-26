@@ -80,7 +80,7 @@ public:
     double getYFocal() const { return _yFocal; }
     void setYFocal(double yFocal) { _yFocal = yFocal; }
 
-    std::shared_ptr<const FittedStar> getFittedStar() const { return _fittedStar; };
+    std::shared_ptr<FittedStar> getFittedStar() const { return _fittedStar; };
 
     CcdImage const &getCcdImage() const { return *_ccdImage; };
 
@@ -99,7 +99,8 @@ private:
     double _instFluxErr;
 
     const CcdImage *_ccdImage;
-    std::shared_ptr<const FittedStar> _fittedStar;
+    // Note: _fittedStar is not const, but measuredStar won't modify it.
+    std::shared_ptr<FittedStar> _fittedStar;
     bool _valid;
 
     double _xFocal, _yFocal;

@@ -162,7 +162,7 @@ void PhotometryFit::getIndicesOfMeasuredStar(MeasuredStar const &measuredStar,
         _photometryModel->getMappingIndices(measuredStar.getCcdImage(), indices);
     }
     if (_fittingFluxes) {
-        auto fs = measuredStar.getFittedStar();
+        std::shared_ptr<FittedStar const> const fs = measuredStar.getFittedStar();
         unsigned fsIndex = fs->getIndexInMatrix();
         indices.push_back(fsIndex);
     }
@@ -255,7 +255,7 @@ void PhotometryFit::saveChi2MeasContributions(std::string const &baseName) const
             double fluxErr = _photometryModel->transformError(*ccdImage, *measuredStar,
                                                               measuredStar->getInstFluxErr());
             double jd = ccdImage->getMjd();
-            auto fittedStar = measuredStar->getFittedStar();
+            std::shared_ptr<FittedStar const> const fittedStar = measuredStar->getFittedStar();
             double residual = flux - fittedStar->getFlux();
             double chi2Val = std::pow(residual / sigma, 2);
 
