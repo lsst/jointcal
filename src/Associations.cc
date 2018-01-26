@@ -69,23 +69,19 @@ void Associations::associateCatalogs(const double matchCutInArcSec, const bool u
     for (auto &ccdImage : ccdImageList) {
         const Gtransfo *toCommonTangentPlane = ccdImage->getPix2CommonTangentPlane();
 
-        /* clear the catalog to fit and copy the whole catalog into it.
-        this allows reassociating from scratch after a fit. */
-
+        // Clear the catalog to fit and copy the whole catalog into it.
+        // This allows reassociating from scratch after a fit.
         ccdImage->getCatalogForFit().clear();
         ccdImage->getWholeCatalog().copyTo(ccdImage->getCatalogForFit());
         MeasuredStarList &catalog = ccdImage->getCatalogForFit();
 
-        // associate with previous lists
-        /* to speed up the match (more precisely the contruction of the
-        FastFinder), select in the fittedStarList the objects that
-         are within reach of the current ccdImage
-            */
+        // Associate with previous lists.
+        /* To speed up the match (more precisely the contruction of the FastFinder), select in the
+         fittedStarList the objects that are within reach of the current ccdImage */
         Frame ccdImageFrameCPT = applyTransfo(ccdImage->getImageFrame(), *toCommonTangentPlane, LargeFrame);
         ccdImageFrameCPT = ccdImageFrameCPT.rescale(1.10);  // add 10 % margin.
-        /* we cannot use FittedStarList::ExtractInFrame, because it does an
-        actual copy, which we don't want here: we want the pointers in
-         the StarMatch to refer to fittedStarList elements. */
+        // We cannot use FittedStarList::ExtractInFrame, because it does an actual copy, which we don't want
+        // here: we want the pointers in the StarMatch to refer to fittedStarList elements.
         FittedStarList toMatch;
 
         for (auto const &fittedStar : fittedStarList) {
@@ -103,8 +99,7 @@ void Associations::associateCatalogs(const double matchCutInArcSec, const bool u
         starMatchList->removeAmbiguities(*toCommonTangentPlane);
         LOGLS_DEBUG(_log, "Measured-to-Fitted matches after removing ambiguities " << starMatchList->size());
 
-        /* associate MeasuredStar -> FittedStar using the
-        surviving matches */
+        // Associate MeasuredStar -> FittedStar using the surviving matches.
 
         int matchedCount = 0;
         for (auto const &starMatch : *starMatchList) {
@@ -317,9 +312,8 @@ void Associations::assignMags() {
 }
 
 void Associations::deprojectFittedStars() {
-    /* by default, Associations::fittedStarList is expressed on the
-       Associations::commonTangentPlane. For AstrometryFit, we need it on
-       the sky */
+    // By default, Associations::fittedStarList is expressed on the Associations::commonTangentPlane.
+    // For AstrometryFit, we need it on the sky.
     if (!fittedStarList.inTangentPlaneCoordinates) {
         LOGLS_WARN(_log,
                    "DeprojectFittedStars: Fitted stars are already in sidereal coordinates, nothing done ");
