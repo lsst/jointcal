@@ -25,7 +25,7 @@ public:
 
     //! Assign indices to parameters involved in mappings, starting at firstIndex. Returns the highest
     //! assigned index.
-    virtual unsigned assignIndices(unsigned firstIndex, std::string const &whatToFit) = 0;
+    virtual unsigned assignIndices(std::string const &whatToFit, unsigned firstIndex) = 0;
 
     //! Offset the parameters by the provided amounts.
     /*! The shifts are applied according to the indices given in

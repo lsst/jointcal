@@ -95,7 +95,7 @@ const AstrometryMapping *ConstrainedAstrometryModel::getMapping(CcdImage const &
   whatToFit. If whatToFit contains "Distortions" and not
   Distortions<Something>, it is understood as both chips and
   visits. */
-unsigned ConstrainedAstrometryModel::assignIndices(unsigned firstIndex, std::string const &whatToFit) {
+unsigned ConstrainedAstrometryModel::assignIndices(std::string const &whatToFit, unsigned firstIndex) {
     unsigned index = firstIndex;
     if (whatToFit.find("Distortions") == std::string::npos) {
         LOGLS_ERROR(_log, "assignIndices was called and Distortions is *not* in whatToFit");

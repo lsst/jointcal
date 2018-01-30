@@ -77,7 +77,7 @@ const AstrometryMapping *SimpleAstrometryModel::getMapping(CcdImage const &ccdIm
     return (i->second.get());
 }
 
-unsigned SimpleAstrometryModel::assignIndices(unsigned firstIndex, std::string const &whatToFit) {
+unsigned SimpleAstrometryModel::assignIndices(std::string const &whatToFit, unsigned firstIndex) {
     if (whatToFit.find("Distortions") == std::string::npos) {
         LOGLS_ERROR(_log, "AssignIndices was called and Distortions is *not* in whatToFit.");
         return 0;

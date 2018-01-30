@@ -43,7 +43,7 @@ public:
     const AstrometryMapping *getMapping(CcdImage const &) const;
 
     //! Positions the various parameter sets into the parameter vector, starting at firstIndex
-    unsigned assignIndices(unsigned firstIndex, std::string const &whatToFit);
+    unsigned assignIndices(std::string const &whatToFit, unsigned firstIndex);
 
     // dispaches the offsets after a fit step into the actual locations of parameters
     void offsetParams(Eigen::VectorXd const &delta);

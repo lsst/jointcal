@@ -439,7 +439,7 @@ void AstrometryFit::assignIndices(std::string const &whatToFit) {
     // When entering here, we assume that whatToFit has already been interpreted.
 
     _nParDistortions = 0;
-    if (_fittingDistortions) _nParDistortions = _astrometryModel->assignIndices(0, _whatToFit);
+    if (_fittingDistortions) _nParDistortions = _astrometryModel->assignIndices(_whatToFit, 0);
     unsigned ipar = _nParDistortions;
 
     if (_fittingPos) {
