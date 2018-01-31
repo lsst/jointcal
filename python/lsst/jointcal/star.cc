@@ -25,6 +25,8 @@
 
 #include <list>
 
+#include "lsst/utils/python.h"
+
 #include "lsst/jointcal/Point.h"
 #include "lsst/jointcal/FatPoint.h"
 #include "lsst/jointcal/BaseStar.h"
@@ -60,11 +62,7 @@ void declareBaseStar(py::module &mod) {
     // cls.def("getFlux", &BaseStar::getFlux);
     cls.def_property_readonly("flux", (double (BaseStar::*)() const) & BaseStar::getFlux);
 
-    cls.def("__str__", [](BaseStar const &self) {
-        std::ostringstream os;
-        os << self;
-        return os.str();
-    });
+    utils::python::addOutputOp(cls, "__str__");
 }
 
 void declareRefStar(py::module &mod) {

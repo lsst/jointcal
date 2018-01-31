@@ -26,6 +26,8 @@
 #include "ndarray/eigen.h"
 #include "Eigen/Core"
 
+#include "lsst/utils/python.h"
+
 #include "lsst/jointcal/PhotometryTransfo.h"
 
 namespace py = pybind11;
@@ -52,11 +54,7 @@ void declarePhotometryTransfo(py::module &mod) {
                 return derivatives;
             });
 
-    cls.def("__str__", [](PhotometryTransfo const &self) {
-        std::stringstream os;
-        os << self;
-        return os.str();
-    });
+    utils::python::addOutputOp(cls, "__str__");
 }
 
 void declarePhotometryTransfoSpatiallyInvariant(py::module &mod) {
