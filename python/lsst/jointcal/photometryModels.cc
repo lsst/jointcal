@@ -27,6 +27,8 @@
 #include "ndarray/eigen.h"
 #include "Eigen/Core"
 
+#include "lsst/utils/python.h"
+
 #include "lsst/jointcal/CcdImage.h"
 #include "lsst/jointcal/PhotometryModel.h"
 #include "lsst/jointcal/Point.h"
@@ -59,11 +61,7 @@ void declarePhotometryModel(py::module &mod) {
     cls.def("getNpar", &PhotometryModel::getNpar);
     cls.def("toPhotoCalib", &PhotometryModel::toPhotoCalib);
     cls.def("getMapping", &PhotometryModel::getMapping, py::return_value_policy::reference_internal);
-    cls.def("__str__", [](PhotometryModel const &self) {
-        std::ostringstream os;
-        os << self;
-        return os.str();
-    });
+    utils::python::addOutputOp(cls, "__str__");
 }
 
 void declareSimplePhotometryModel(py::module &mod) {

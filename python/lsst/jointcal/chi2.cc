@@ -22,6 +22,8 @@
 
 #include "pybind11/pybind11.h"
 
+#include "lsst/utils/python.h"
+
 #include "lsst/jointcal/Chi2.h"
 
 namespace py = pybind11;
@@ -36,11 +38,7 @@ void declareChi2(py::module &mod) {
 
     cls.def(py::init<>());
 
-    cls.def("__str__", [](Chi2Statistic const &self) {
-        std::ostringstream os;
-        os << self;
-        return os.str();
-    });
+    utils::python::addOutputOp(cls, "__str__");
 
     cls.def_readwrite("chi2", &Chi2Statistic::chi2);
     cls.def_readwrite("ndof", &Chi2Statistic::ndof);
