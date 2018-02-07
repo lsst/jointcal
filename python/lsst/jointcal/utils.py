@@ -135,7 +135,7 @@ class JointcalStatistics(object):
         if self.do_astrometry:
             for wcs, cat in zip(new_wcss, new_cats):
                 # update in-place the object coordinates based on the new wcs
-                lsst.afw.table.utils.updateSourceCoords(wcs.getWcs(), cat)
+                lsst.afw.table.updateSourceCoords(wcs.getWcs(), cat)
 
         self.new_dist, self.new_flux, self.new_ref_flux, self.new_source = compute(new_cats, new_calibs)
 
