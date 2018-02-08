@@ -4,6 +4,7 @@
 
 #include <iostream>
 
+#include "lsst/afw/table/misc.h"
 #include "lsst/jointcal/BaseStar.h"
 #include "lsst/jointcal/FittedStar.h"
 #include "lsst/jointcal/StarList.h"
@@ -69,8 +70,8 @@ public:
     double getInstFluxErr() const { return _instFluxErr; }
     double getMag() const { return mag; }
 
-    void setId(unsigned id) { _id = id; }
-    unsigned getId() { return _id; }
+    void setId(afw::table::RecordId id) { _id = id; }
+    afw::table::RecordId getId() { return _id; }
 
     //! the inverse of the mag variance
     double getMagWeight() const { return (_instFlux * _instFlux / (_instFluxErr * _instFluxErr)); }
@@ -92,7 +93,7 @@ public:
     void setValid(bool v) { _valid = v; }
 
 private:
-    unsigned _id;  // id in original catalog
+    afw::table::RecordId _id;  // id in original catalog
 
     // on-chip flux, in ADU
     double _instFlux;
