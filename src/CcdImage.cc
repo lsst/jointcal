@@ -48,6 +48,7 @@ void CcdImage::loadCatalog(afw::table::SourceCatalog const &catalog, std::string
     _wholeCatalog.clear();
     for (auto const &record : catalog) {
         auto ms = std::make_shared<MeasuredStar>();
+        ms->setId(record.getId());
         ms->x = record.get(xKey);
         ms->y = record.get(yKey);
         ms->vx = std::pow(record.get(xsKey), 2);
@@ -62,13 +63,12 @@ void CcdImage::loadCatalog(afw::table::SourceCatalog const &catalog, std::string
         double myy = record.get(myyKey);
         double mxy = record.get(mxyKey);
         ms->vxy = mxy * (ms->vx + ms->vy) / (mxx + myy);
-        if (ms->vx < 0 || ms->vy < 0 || (ms->vxy * ms->vxy) > (ms->vx * ms->vy)) {
-            LOGLS_WARN(_log, "Bad source detected in loadCatalog : " << ms->vx << " " << ms->vy << " "
-                                                                     << ms->vxy * ms->vxy << " "
-                                                                     << ms->vx * ms->vy);
+        if (std::isnan(ms->vxy) || ms->vx < 0 || ms->vy < 0 || (ms->vxy * ms->vxy) > (ms->vx * ms->vy)) {
+            LOGLS_WARN(_log, "Bad source detected during loadCatalog id: "
+                                     << ms->getId() << " with vx,vy: " << ms->vx << "," << ms->vy
+                                     << " vxy^2: " << ms->vxy * ms->vxy << " vx*vy: " << ms->vx * ms->vy);
             continue;
         }
-        ms->setId(record.getId());
         ms->setInstFlux(record.get(fluxKey));
         ms->setInstFluxErr(record.get(fluxErrKey));
         // TODO: the below lines will be less clumsy once DM-4044 is cleaned up and we can say:
