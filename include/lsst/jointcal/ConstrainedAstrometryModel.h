@@ -83,8 +83,6 @@ public:
     /// @copydoc AstrometryModel::makeSkyWcs
     std::shared_ptr<afw::geom::SkyWcs> makeSkyWcs(CcdImage const &ccdImage) const;
 
-    std::shared_ptr<TanSipPix2RaDec> produceSipWcs(CcdImage const &ccdImage) const;
-
 private:
     std::unordered_map<CcdImageKey, std::unique_ptr<TwoTransfoMapping>> _mappings;
     std::map<CcdIdType, std::shared_ptr<SimpleGtransfoMapping>> _chipMap;

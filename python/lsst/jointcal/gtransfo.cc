@@ -32,7 +32,6 @@
 #include "lsst/jointcal/Frame.h"
 #include "lsst/jointcal/Gtransfo.h"
 #include "lsst/jointcal/Point.h"
-#include "lsst/jointcal/SipToGtransfo.h"
 
 namespace py = pybind11;
 using namespace pybind11::literals;
@@ -137,7 +136,6 @@ PYBIND11_PLUGIN(gtransfo) {
     declareTanSipPix2RaDec(mod);
 
     // utility functions
-    mod.def("gtransfoToTanWcs", &gtransfoToTanWcs, py::return_value_policy::move);  // from SipToGtransfo.h
     mod.def("inversePolyTransfo", &inversePolyTransfo, "forward"_a, "domain"_a, "precision"_a,
             "maxDegree"_a = 9, "nSteps"_a = 50);
 

@@ -65,8 +65,6 @@ public:
     /// @copydoc AstrometryModel::makeSkyWcs
     std::shared_ptr<afw::geom::SkyWcs> makeSkyWcs(CcdImage const &ccdImage) const;
 
-    std::shared_ptr<TanSipPix2RaDec> produceSipWcs(CcdImage const &ccdImage) const;
-
     ~SimpleAstrometryModel(){};
 
 private:

@@ -12,7 +12,6 @@
 
 #include "lsst/log/Log.h"
 #include "lsst/jointcal/CcdImage.h"
-#include "lsst/jointcal/SipToGtransfo.h"
 #include "lsst/jointcal/AstroUtils.h"
 #include "lsst/jointcal/Gtransfo.h"
 #include "lsst/jointcal/Point.h"

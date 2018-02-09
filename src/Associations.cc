@@ -7,7 +7,6 @@
 #include "lsst/log/Log.h"
 #include "lsst/jointcal/Associations.h"
 #include "lsst/jointcal/CcdImage.h"
-#include "lsst/jointcal/SipToGtransfo.h"
 #include "lsst/jointcal/StarMatch.h"
 #include "lsst/jointcal/ListMatch.h"
 #include "lsst/jointcal/Frame.h"

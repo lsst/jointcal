@@ -130,24 +130,6 @@ std::shared_ptr<afw::geom::SkyWcs> SimpleAstrometryModel::makeSkyWcs(CcdImage co
     return std::make_shared<afw::geom::SkyWcs>(frameDict);
 }
 
-std::shared_ptr<TanSipPix2RaDec> SimpleAstrometryModel::produceSipWcs(CcdImage const &ccdImage) const {
-    const GtransfoPoly &pix2Tp = dynamic_cast<const GtransfoPoly &>(getTransfo(ccdImage));
-    auto proj = std::dynamic_pointer_cast<const TanRaDec2Pix>(getSky2TP(ccdImage));
-    if (!proj) return nullptr;
-
-    const GtransfoLin &projLinPart = proj->getLinPart();  // should be the identity, but who knows? So, let us
-                                                          // incorporate it into the pix2TP part.
-    GtransfoPoly wcsPix2Tp = GtransfoPoly(projLinPart.invert()) * pix2Tp;
-
-    // compute a decent approximation, if higher order corrections get ignored
-    GtransfoLin cdStuff = wcsPix2Tp.linearApproximation(ccdImage.getImageFrame().getCenter());
-
-    // wcsPix2TP = cdStuff*sip , so
-    GtransfoPoly sip = GtransfoPoly(cdStuff.invert()) * wcsPix2Tp;
-    Point tangentPoint(proj->getTangentPoint());
-    return std::make_shared<TanSipPix2RaDec>(cdStuff, tangentPoint, &sip);
-}
-
 AstrometryMapping *SimpleAstrometryModel::findMapping(CcdImage const &ccdImage) const {
     auto i = _myMap.find(ccdImage.getHashKey());
     if (i == _myMap.end())

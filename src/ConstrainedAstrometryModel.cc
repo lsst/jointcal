@@ -214,57 +214,6 @@ std::shared_ptr<afw::geom::SkyWcs> ConstrainedAstrometryModel::makeSkyWcs(CcdIma
     return std::make_shared<afw::geom::SkyWcs>(frameDict);
 }
 
-std::shared_ptr<TanSipPix2RaDec> ConstrainedAstrometryModel::produceSipWcs(CcdImage const &ccdImage) const {
-    const TwoTransfoMapping *mapping = dynamic_cast<const TwoTransfoMapping *>(findMapping(ccdImage));
-
-    GtransfoPoly pix2Tp;
-    const GtransfoPoly &t1 = dynamic_cast<const GtransfoPoly &>(mapping->getTransfo1());
-    // TODO: This line produces a warning on clang (t1 is always valid: a failed dynamic_cast of a reference
-    // raises bad_cast instead of returning nullptr like a failed pointer cast), but I'll deal with it as
-    // part of DM-10524 (hopefully removing the necessity of the casts).
-    if (!(&t1)) {
-        LOGLS_ERROR(_log, "Problem with transform 1 of ccd/visit " << ccdImage.getCcdId() << "/"
-                                                                   << ccdImage.getVisit() << ": T1 "
-                                                                   << mapping->getTransfo1());
-        return nullptr;
-    }
-    // NOTE: we currently expect T2 to be an identity for the first visit, so we have to treat it separately.
-    // TODO: We are aware that this is a hack, but it will be fixed as part of DM-10524.
-    try {
-        const GtransfoIdentity &t2 = dynamic_cast<const GtransfoIdentity &>(mapping->getTransfo2());
-        pix2Tp = t1;
-    } catch (std::bad_cast &) {
-        try {
-            const GtransfoPoly &t2_poly = dynamic_cast<const GtransfoPoly &>(mapping->getTransfo2());
-            pix2Tp = t2_poly * t1;
-        } catch (std::bad_cast &) {
-            LOGLS_ERROR(_log, "Problem with transform 2 of ccd/visit " << ccdImage.getCcdId() << "/"
-                                                                       << ccdImage.getVisit() << ": T2 "
-                                                                       << mapping->getTransfo2());
-            return nullptr;
-        }
-    }
-    auto proj = std::dynamic_pointer_cast<const TanRaDec2Pix>(getSky2TP(ccdImage));
-    if (!proj) {
-        LOGLS_ERROR(_log, "Problem with projection of ccd/visit " << ccdImage.getCcdId() << "/"
-                                                                  << ccdImage.getVisit() << ": projection "
-                                                                  << getSky2TP(ccdImage));
-        return nullptr;
-    }
-
-    // should be the identity, but who knows? So, let us incorporate it into the pix2TP part.
-    const GtransfoLin &projLinPart = proj->getLinPart();
-    GtransfoPoly wcsPix2Tp = GtransfoPoly(projLinPart.invert()) * pix2Tp;
-
-    // compute a decent approximation, if higher order corrections get ignored
-    GtransfoLin cdStuff = wcsPix2Tp.linearApproximation(ccdImage.getImageFrame().getCenter());
-
-    // wcsPix2TP = cdStuff*sip , so
-    GtransfoPoly sip = GtransfoPoly(cdStuff.invert()) * wcsPix2Tp;
-    Point tangentPoint(proj->getTangentPoint());
-    return std::make_shared<TanSipPix2RaDec>(cdStuff, tangentPoint, &sip);
-}
-
 AstrometryMapping *ConstrainedAstrometryModel::findMapping(CcdImage const &ccdImage) const {
     auto i = _mappings.find(ccdImage.getHashKey());
     if (i == _mappings.end())

@@ -705,10 +705,9 @@ class JointcalTask(pipeBase.CmdLineTask):
             visit = ccdImage.visit
             dataRef = visit_ccd_to_dataRef[(visit, ccd)]
             self.log.info("Updating WCS for visit: %d, ccd: %d", visit, ccd)
-            tanSip = model.produceSipWcs(ccdImage)
-            wcs = lsst.jointcal.gtransfoToTanWcs(tanSip, ccdImage.imageFrame, False)
+            skyWcs = model.makeSkyWcs(ccdImage)
             try:
-                dataRef.put(wcs, 'jointcal_wcs')
+                dataRef.put(skyWcs, 'jointcal_wcs')
             except pexExceptions.Exception as e:
                 self.log.fatal('Failed to write updated Wcs: %s', str(e))
                 raise e
