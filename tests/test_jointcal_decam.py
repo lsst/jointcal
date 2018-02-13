@@ -84,11 +84,11 @@ class JointcalTestDECAM(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Test
 
         self._testJointcalTask(2, relative_error, self.dist_rms_absolute, pa1, metrics=metrics)
 
-    def test_jointcalTask_2_visits_constrainedPoly(self):
+    def test_jointcalTask_2_visits_constrainedAstrometry_no_photometry(self):
         self.config = lsst.jointcal.jointcal.JointcalConfig()
         self.config.photometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
         self.config.astrometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
-        self.config.astrometryModel = "constrainedPoly"
+        self.config.astrometryModel = "constrained"
         self.config.doPhotometry = False
         self.config.sourceSelector['astrometry'].badFlags.append("base_PixelFlags_flag_interpolated")
         self.jointcalStatistics.do_photometry = False

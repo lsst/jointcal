@@ -95,10 +95,10 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
             self.assertTrue(os.path.exists(name), msg='Did not find file %s'%name)
             os.remove(name)
 
-    def test_jointcalTask_2_visits_constrainedPoly(self):
+    def test_jointcalTask_2_visits_constrainedAstrometry_no_photometry(self):
         self.config = lsst.jointcal.jointcal.JointcalConfig()
         self.config.astrometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
-        self.config.astrometryModel = "constrainedPoly"
+        self.config.astrometryModel = "constrained"
         self.config.doPhotometry = False
         self.config.sourceSelector['astrometry'].badFlags.append("base_PixelFlags_flag_interpolated")
         self.jointcalStatistics.do_photometry = False

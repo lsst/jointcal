@@ -170,9 +170,9 @@ class JointcalConfig(pexConfig.Config):
     astrometryModel = pexConfig.ChoiceField(
         doc="Type of model to fit to astrometry",
         dtype=str,
-        default="simplePoly",
-        allowed={"simplePoly": "One polynomial per ccd",
-                 "constrainedPoly": "One polynomial per ccd, and one polynomial per visit"}
+        default="simple",
+        allowed={"simple": "One polynomial per ccd",
+                 "constrained": "One polynomial per ccd, and one polynomial per visit"}
     )
     photometryModel = pexConfig.ChoiceField(
         doc="Type of model to fit to photometry",
@@ -612,13 +612,13 @@ class JointcalTask(pipeBase.CmdLineTask):
         # them so carefully?
         sky_to_tan_projection = lsst.jointcal.OneTPPerVisitHandler(associations.getCcdImageList())
 
-        if self.config.astrometryModel == "constrainedPoly":
+        if self.config.astrometryModel == "constrained":
             model = lsst.jointcal.ConstrainedAstrometryModel(associations.getCcdImageList(),
                                                              sky_to_tan_projection,
                                                              self.config.useInputWcs,
                                                              chipDegree=self.config.astrometryChipDegree,
                                                              visitDegree=self.config.astrometryVisitDegree)
-        elif self.config.astrometryModel == "simplePoly":
+        elif self.config.astrometryModel == "simple":
             model = lsst.jointcal.SimpleAstrometryModel(associations.getCcdImageList(),
                                                         sky_to_tan_projection,
                                                         self.config.useInputWcs,
