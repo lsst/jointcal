@@ -115,11 +115,11 @@ public:
 #endif
 
     /**
-     * @brief      Apply quality cuts on potential FittedStars
+     * Prepare the fittedStar list by making quality cuts and normalizing measurements.
      *
      * @param[in]  minMeasurements  The minimum number of measuredStars for a FittedStar to be included.
      */
-    void selectFittedStars(int minMeasurements);
+    void prepareFittedStars(int minMeasurements);
 
     CcdImageList const &getCcdImageList() const { return ccdImageList; }
 
@@ -143,6 +143,21 @@ private:
     void associateRefStars(double matchCutInArcsec, const Gtransfo *gtransfo);
 
     void assignMags();
+
+    /**
+     * Apply quality cuts on potential FittedStars
+     *
+     * @param[in]  minMeasurements  The minimum number of measuredStars for a FittedStar to be included.
+     */
+    void selectFittedStars(int minMeasurements);
+
+    /**
+     * Make fitted star positions and fluxes be the average of their measured stars.
+     *
+     * Only call after selectFittedStars() has been called: it assumes that each measuredStar points to a
+     * fittedStar, and that the measurementCount for each fittedStar is correct.
+     */
+    void normalizeFittedStars() const;
 
     // Map from filter name to index in each refStar's _refFlux/_refFluxErr vector.
     std::unordered_map<std::string, std::size_t> _filterMap;

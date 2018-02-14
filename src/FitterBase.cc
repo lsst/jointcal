@@ -207,7 +207,7 @@ void FitterBase::outliersContributions(MeasuredStarList &msOutliers, FittedStarL
 
 void FitterBase::removeMeasOutliers(MeasuredStarList &outliers) {
     for (auto &measuredStar : outliers) {
-        auto fittedStar = std::const_pointer_cast<FittedStar>(measuredStar->getFittedStar());
+        auto fittedStar = measuredStar->getFittedStar();
         measuredStar->setValid(false);
         fittedStar->getMeasurementCount()--;  // could be put in setValid
     }

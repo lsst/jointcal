@@ -477,7 +477,8 @@ class JointcalTask(pipeBase.CmdLineTask):
         add_measurement(self.job, 'jointcal.collected_%s_refStars' % name,
                         associations.refStarListSize())
 
-        associations.selectFittedStars(self.config.minMeasurements)
+        associations.prepareFittedStars(self.config.minMeasurements)
+
         self._check_star_lists(associations, name)
         add_measurement(self.job, 'jointcal.selected_%s_refStars' % name,
                         associations.nFittedStarsWithAssociatedRefStar())
