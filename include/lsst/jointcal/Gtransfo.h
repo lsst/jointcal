@@ -79,9 +79,23 @@ public:
     //! returns a copy (allocated by new) of the transformation.
     virtual std::unique_ptr<Gtransfo> clone() const = 0;
 
-    //! to be overloaded by derived classes if they can really "reduce" the composition (e.g. composition of
-    //! Polynomial can be reduced)
-    virtual std::unique_ptr<Gtransfo> reduceCompo(const Gtransfo *right) const;
+    /**
+     * Return a reduced composition of newTransfo = this(right()), or nullptr if it cannot be reduced.
+     *
+     * "Reduced" in this context means that they are capable of being merged into a single transform,
+     * for example, for two polynomials:
+     * @f[
+     *     f(x) = 1 + x^2, g(x) = -1 + 3x
+     * @f]
+     * we would have `h = f.composeAndReduce(g) == 2 - 6x + 9x^2`.
+     *
+     * To be overloaded by derived classes if they can properly reduce the composition.
+     *
+     * @param  right  The transform to apply first.
+     *
+     * @returns The new reduced and composed gtransfo, or nullptr if no such reduction is possible.
+     */
+    virtual std::unique_ptr<Gtransfo> composeAndReduce(Gtransfo const &right) const;
 
     //! returns the local jacobian.
     virtual double getJacobian(const double x, const double y) const;
@@ -141,10 +155,18 @@ public:
 //! allows 'stream << Transfo;' (by calling gtransfo.dump(stream)).
 std::ostream &operator<<(std::ostream &stream, const Gtransfo &gtransfo);
 
-//! Returns a pointer to a composition. if left->reduceCompo(right) return NULL, builds a GtransfoComposition
-//! and returns it. deletion of returned value to be done by caller
-
-std::unique_ptr<Gtransfo> gtransfoCompose(const Gtransfo *left, const Gtransfo *right);
+/**
+ * Returns a pointer to a composition of gtransfos, representing `left(right())`.
+ *
+ * Deletion of returned value to be done by caller.
+ *
+ * If `left->composeAndReduce(right)` returns NULL, build a GtransfoComposition and return it.
+ * This routine implements "run-time" compositions. When there is a possible "reduction" (e.g. compositions
+ * of polynomials), gtransfoCompose detects it and returns a genuine Gtransfo.
+ *
+ * @returns The composed gtransfo.
+ */
+std::unique_ptr<Gtransfo> gtransfoCompose(Gtransfo const &left, Gtransfo const &right);
 
 /*=============================================================*/
 //! A do-nothing transformation. It anyway has dummy routines to mimick a Gtransfo
@@ -165,10 +187,13 @@ public:
                 "GtransfoIdentity is the identity transformation: it cannot be fit to anything.");
     }
 
-    std::unique_ptr<Gtransfo> reduceCompo(const Gtransfo *right) const { return right->clone(); }
-    void dump(std::ostream &stream = std::cout) const { stream << "x' = x\ny' = y" << std::endl; }
+    /// @copydoc Gtransfo::composeAndReduce
+    std::unique_ptr<Gtransfo> composeAndReduce(Gtransfo const &right) const override { return right.clone(); }
+
+    void dump(std::ostream &stream = std::cout) const override { stream << "x' = x\ny' = y" << std::endl; }
 
     int getNpar() const { return 0; }
+
     std::unique_ptr<Gtransfo> clone() const { return std::unique_ptr<Gtransfo>(new GtransfoIdentity); }
 
     void computeDerivative(const Point &where, GtransfoLin &derivative, const double step = 0.01) const;
@@ -183,8 +208,13 @@ public:
     //    ClassDef(GtransfoIdentity,1)
 };
 
-//! Shorthand test to tell if a transfo belongs to the GtransfoIdentity class.
-bool isIdentity(const Gtransfo *gtransfo);
+/**
+ * @overload gtransfoCompose(Gtransfo const &, Gtransfo const &)
+ *
+ * @note If instead left is Identity, this method does the correct thing via
+ *       GtransfoIdentity::composeAndReduce().
+ */
+std::unique_ptr<Gtransfo> gtransfoCompose(Gtransfo const &left, GtransfoIdentity const &right);
 
 //! Shorthand test to tell if a transfo is a simple integer shift
 bool isIntegerShift(const Gtransfo *gtransfo);
@@ -235,7 +265,9 @@ public:
     //! Subtraction
     GtransfoPoly operator-(const GtransfoPoly &right) const;
 
-    std::unique_ptr<Gtransfo> reduceCompo(const Gtransfo *right) const;
+    using Gtransfo::composeAndReduce;  // to unhide Gtransfo::composeAndReduce(Gtransfo const &)
+    /// @copydoc Gtransfo::composeAndReduce
+    std::unique_ptr<Gtransfo> composeAndReduce(GtransfoPoly const &right) const;
 
     std::unique_ptr<Gtransfo> clone() const { return std::unique_ptr<Gtransfo>(new GtransfoPoly(*this)); }
 
@@ -496,7 +528,9 @@ public:
     //! composition with GtransfoLin
     TanPix2RaDec operator*(const GtransfoLin &right) const;
 
-    std::unique_ptr<Gtransfo> reduceCompo(const Gtransfo *right) const;
+    using Gtransfo::composeAndReduce;  // to unhide Gtransfo::composeAndReduce(Gtransfo const &)
+    /// @copydoc Gtransfo::composeAndReduce
+    std::unique_ptr<Gtransfo> composeAndReduce(GtransfoLin const &right) const;
 
     //! approximate inverse : it ignores corrections;
     TanRaDec2Pix invert() const;

@@ -135,28 +135,26 @@ CcdImage::CcdImage(afw::table::SourceCatalog &catalog, std::shared_ptr<lsst::afw
 void CcdImage::setCommonTangentPoint(Point const &commonTangentPoint) {
     _commonTangentPoint = commonTangentPoint;
 
-    // use some other variable in case we later have to actually convert the
-    // as-read wcs:
     auto const crval = _readWcs->getSkyWcs()->getSkyOrigin();
-    Point tangentPoint(crval[0].asDegrees(), crval[1].asDegrees());
+    jointcal::Point tangentPoint(crval[0].asDegrees(), crval[1].asDegrees());
 
     /* we don't assume here that we know the internals of TanPix2RaDec:
        to construct pix->TP, we do pix->sky->TP, although pix->sky
        actually goes through TP */
     GtransfoLin identity;
     TanRaDec2Pix raDec2TP(identity, tangentPoint);
-    _pix2TP = gtransfoCompose(&raDec2TP, _readWcs.get());
+    _pix2TP = gtransfoCompose(raDec2TP, *_readWcs);
     TanPix2RaDec CTP2RaDec(identity, commonTangentPoint);
-    _CTP2TP = gtransfoCompose(&raDec2TP, &CTP2RaDec);
+    _CTP2TP = gtransfoCompose(raDec2TP, CTP2RaDec);
 
     // jump from one TP to an other:
     TanRaDec2Pix raDec2CTP(identity, commonTangentPoint);
     TanPix2RaDec TP2RaDec(identity, tangentPoint);
-    _TP2CTP = gtransfoCompose(&raDec2CTP, &TP2RaDec);
+    _TP2CTP = gtransfoCompose(raDec2CTP, TP2RaDec);
     _sky2TP.reset(new TanRaDec2Pix(identity, tangentPoint));
 
     // this one is needed for matches :
-    _pix2CommonTangentPlane = gtransfoCompose(&raDec2CTP, _readWcs.get());
+    _pix2CommonTangentPlane = gtransfoCompose(raDec2CTP, *_readWcs);
 }
 }  // namespace jointcal
 }  // namespace lsst

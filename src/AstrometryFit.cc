@@ -589,7 +589,7 @@ void AstrometryFit::saveChi2MeasContributions(std::string const &baseName) const
             tweakAstromMeasurementErrors(inPos, *ms, _posError);
             mapping->transformPosAndErrors(inPos, tpPos);
             auto sky2TP = _astrometryModel->getSky2TP(*ccdImage);
-            const std::unique_ptr<Gtransfo> readPix2TP = gtransfoCompose(sky2TP, readTransfo);
+            const std::unique_ptr<Gtransfo> readPix2TP = gtransfoCompose(*sky2TP, *readTransfo);
             FatPoint inputTpPos = readPix2TP->apply(inPos);
             std::shared_ptr<FittedStar const> const fs = ms->getFittedStar();
 

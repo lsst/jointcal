@@ -27,10 +27,6 @@ LOG_LOGGER _log = LOG_GET("jointcal.Gtransfo");
 namespace lsst {
 namespace jointcal {
 
-bool isIdentity(const Gtransfo *gtransfo) {
-    return (dynamic_cast<const GtransfoIdentity *>(gtransfo) != nullptr);
-}
-
 bool isIntegerShift(const Gtransfo *gtransfo) {
     const GtransfoPoly *shift = dynamic_cast<const GtransfoPoly *>(gtransfo);
     if (shift == nullptr) return false;
@@ -50,7 +46,8 @@ bool isIntegerShift(const Gtransfo *gtransfo) {
 
 /********* Gtransfo ***********************/
 
-std::unique_ptr<Gtransfo> Gtransfo::reduceCompo(const Gtransfo *) const {  // by default no way to compose
+std::unique_ptr<Gtransfo> Gtransfo::composeAndReduce(
+        Gtransfo const &) const {  // by default no way to compose
     return std::unique_ptr<Gtransfo>(nullptr);
 }
 
@@ -321,7 +318,7 @@ private:
 
 public:
     //! will pipe transfos
-    GtransfoComposition(const Gtransfo *second, const Gtransfo *first);
+    GtransfoComposition(Gtransfo const &second, Gtransfo const &first);
 
     //! return second(first(xIn,yIn))
     void apply(const double xIn, const double yIn, double &xOut, double &yOut) const;
@@ -334,9 +331,9 @@ public:
     ~GtransfoComposition();
 };
 
-GtransfoComposition::GtransfoComposition(const Gtransfo *second, const Gtransfo *first) {
-    _first = first->clone();
-    _second = second->clone();
+GtransfoComposition::GtransfoComposition(Gtransfo const &second, Gtransfo const &first) {
+    _first = first.clone();
+    _second = second.clone();
 }
 
 void GtransfoComposition::apply(const double xIn, const double yIn, double &xOut, double &yOut) const {
@@ -356,28 +353,22 @@ double GtransfoComposition::fit(const StarMatchList &starMatchList) {
 }
 
 std::unique_ptr<Gtransfo> GtransfoComposition::clone() const {
-    return std::unique_ptr<Gtransfo>(new GtransfoComposition(_second.get(), _first.get()));
+    return std::make_unique<GtransfoComposition>(*_second, *_first);
 }
 
 GtransfoComposition::~GtransfoComposition() {}
 
-/*!  This routine implements "run-time" compositions. When
- there is a possible "reduction" (e.g. compositions of polynomials),
- gtransfoCompose detects it and returns a genuine Gtransfo.
- */
-std::unique_ptr<Gtransfo> gtransfoCompose(const Gtransfo *left, const Gtransfo *right) {
-    /* is right Identity ? if left is Identity , GtransfoIdentity::reduceCompo does the right job */
-    if (isIdentity(right)) {
-        return left->clone();
-    }
-    /* Try to use the reduceCompo method from left. If absent,
-       Gtransfo::reduceCompo return NULL. reduceCompo is non trivial for
-       polynomials */
-    std::unique_ptr<Gtransfo> composition(left->reduceCompo(right));
-    /* composition == NULL means no reduction : just build a Composition
-       that pipelines "left" and "right" */
+std::unique_ptr<Gtransfo> gtransfoCompose(Gtransfo const &left, GtransfoIdentity const &right) {
+    return left.clone();
+}
+
+std::unique_ptr<Gtransfo> gtransfoCompose(Gtransfo const &left, Gtransfo const &right) {
+    // Try to use the composeAndReduce method from left. If absent, Gtransfo::composeAndReduce returns NULL.
+    // composeAndReduce is non trivial for polynomials.
+    std::unique_ptr<Gtransfo> composition(left.composeAndReduce(right));
+    // composition == NULL means no reduction: just build a Composition that pipelines "left" and "right".
     if (composition == nullptr)
-        return std::unique_ptr<Gtransfo>(new GtransfoComposition(left, right));
+        return std::make_unique<GtransfoComposition>(left, right);
     else
         return composition;
 }
@@ -832,15 +823,11 @@ double GtransfoPoly::fit(const StarMatchList &starMatchList) {
     return chi2;
 }
 
-std::unique_ptr<Gtransfo> GtransfoPoly::reduceCompo(const Gtransfo *right) const {
-    const GtransfoPoly *p = dynamic_cast<const GtransfoPoly *>(right);
-    if (p) {
-        if (getDegree() == 1 && p->getDegree() == 1)
-            return std::unique_ptr<Gtransfo>(new GtransfoLin((*this) * (*p)));  // does the composition
-        else
-            return std::unique_ptr<Gtransfo>(new GtransfoPoly((*this) * (*p)));  // does the composition
-    } else
-        return std::unique_ptr<Gtransfo>(nullptr);
+std::unique_ptr<Gtransfo> GtransfoPoly::composeAndReduce(GtransfoPoly const &right) const {
+    if (getDegree() == 1 && right.getDegree() == 1)
+        return std::make_unique<GtransfoLin>((*this) * (right));  // does the composition
+    else
+        return std::make_unique<GtransfoPoly>((*this) * (right));  // does the composition
 }
 
 /*  PolyXY the class used to perform polynomial algebra (and in
@@ -1313,10 +1300,12 @@ TanPix2RaDec::TanPix2RaDec(const GtransfoLin &pix2Tan, const Point &tangentPoint
 // ": Gtransfo" suppresses a warning
 TanPix2RaDec::TanPix2RaDec() : BaseTanWcs(GtransfoLin(), Point(0, 0), nullptr) {}
 
-std::unique_ptr<Gtransfo> TanPix2RaDec::reduceCompo(const Gtransfo *right) const {
-    const GtransfoLin *lin = dynamic_cast<const GtransfoLin *>(right);
-    if (lin && lin->getDegree() == 1) return std::unique_ptr<Gtransfo>(new TanPix2RaDec((*this) * (*lin)));
-    return std::unique_ptr<Gtransfo>(nullptr);
+std::unique_ptr<Gtransfo> TanPix2RaDec::composeAndReduce(GtransfoLin const &right) const {
+    if (right.getDegree() == 1) {
+        return std::make_unique<TanPix2RaDec>((*this) * (right));
+    } else {
+        return std::unique_ptr<Gtransfo>(nullptr);
+    }
 }
 
 TanPix2RaDec TanPix2RaDec::operator*(const GtransfoLin &right) const {

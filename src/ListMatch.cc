@@ -495,7 +495,7 @@ std::unique_ptr<GtransfoLin> listMatchupShift(const BaseStarList &list1, const B
         double count = histo.maxBin(dx, dy);
         histo.fill(dx, dy, -count);  // zero the maxbin
         GtransfoLinShift shift(dx, dy);
-        auto newGuess = gtransfoCompose(&shift, &gtransfo);
+        auto newGuess = gtransfoCompose(shift, gtransfo);
         auto raw_matches = listMatchCollect(list1, list2, newGuess.get(), binSizeNew);
         std::unique_ptr<StarMatchList> matches(new StarMatchList);
         raw_matches->applyTransfo(*matches, &gtransfo);
