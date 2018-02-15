@@ -22,6 +22,10 @@
 
 #include "pybind11/pybind11.h"
 #include "pybind11/stl.h"
+#include "numpy/arrayobject.h"
+#include "ndarray/pybind11.h"
+#include "ndarray/eigen.h"
+#include "Eigen/Core"
 
 #include "lsst/jointcal/CcdImage.h"
 #include "lsst/jointcal/AstrometryModel.h"
@@ -39,15 +43,20 @@ namespace {
 void declareAstrometryModel(py::module &mod) {
     py::class_<AstrometryModel, std::shared_ptr<AstrometryModel>> cls(mod, "AstrometryModel");
 
-    cls.def("produceSipWcs", &AstrometryModel::produceSipWcs);
+    cls.def("getNpar", &AstrometryModel::getNpar);
     cls.def("getMapping", &AstrometryModel::getMapping, py::return_value_policy::reference_internal);
+    cls.def("assignIndices", &AstrometryModel::assignIndices);
+    cls.def("offsetParams", &AstrometryModel::offsetParams);
+    cls.def("getSky2TP", &AstrometryModel::getSky2TP);
+    cls.def("produceSipWcs", &AstrometryModel::produceSipWcs, py::return_value_policy::take_ownership);
 }
 
 void declareSimpleAstrometryModel(py::module &mod) {
     py::class_<SimpleAstrometryModel, std::shared_ptr<SimpleAstrometryModel>, AstrometryModel> cls(
             mod, "SimpleAstrometryModel");
 
-    cls.def(py::init<CcdImageList const &, const ProjectionHandler *, bool, unsigned, unsigned>(),
+    cls.def(py::init<CcdImageList const &, const std::shared_ptr<ProjectionHandler const>, bool, unsigned,
+                     unsigned>(),
             "ccdImageList"_a, "projectionHandler"_a, "initFromWcs"_a, "nNotFit"_a = 0, "degree"_a = 3);
 }
 
@@ -55,8 +64,14 @@ void declareConstrainedAstrometryModel(py::module &mod) {
     py::class_<ConstrainedAstrometryModel, std::shared_ptr<ConstrainedAstrometryModel>, AstrometryModel> cls(
             mod, "ConstrainedAstrometryModel");
 
-    cls.def(py::init<CcdImageList const &, const ProjectionHandler *, bool, int, int>(), "ccdImageList"_a,
-            "projectionHandler"_a, "initFromWcs"_a, "chipDegree"_a = 3, "visitDegree"_a = 2);
+    cls.def(py::init<CcdImageList const &, const std::shared_ptr<ProjectionHandler const>, bool, int, int>(),
+            "ccdImageList"_a, "projectionHandler"_a, "initFromWcs"_a, "chipDegree"_a = 3,
+            "visitDegree"_a = 2);
+
+    cls.def("getChipTransfo", &ConstrainedAstrometryModel::getChipTransfo,
+            py::return_value_policy::reference_internal);
+    cls.def("getVisitTransfo", &ConstrainedAstrometryModel::getVisitTransfo,
+            py::return_value_policy::reference_internal);
 }
 
 PYBIND11_PLUGIN(astrometryModels) {
@@ -64,6 +79,11 @@ PYBIND11_PLUGIN(astrometryModels) {
     py::module::import("lsst.jointcal.gtransfo");
     py::module::import("lsst.jointcal.astrometryMappings");
     py::module mod("astrometryModels");
+
+    if (_import_array() < 0) {
+        PyErr_SetString(PyExc_ImportError, "numpy.core.multiarray failed to import");
+        return nullptr;
+    }
 
     declareAstrometryModel(mod);
     declareSimpleAstrometryModel(mod);

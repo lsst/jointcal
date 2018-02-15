@@ -24,6 +24,7 @@
 
 #include "lsst/jointcal/Frame.h"
 #include "lsst/jointcal/Gtransfo.h"
+#include "lsst/jointcal/Point.h"
 #include "lsst/jointcal/SipToGtransfo.h"
 
 namespace py = pybind11;
@@ -37,6 +38,8 @@ void declareGtransfo(py::module &mod) {
     py::class_<Gtransfo, std::shared_ptr<Gtransfo>> cls(mod, "Gtransfo");
 
     cls.def("__str__", &Gtransfo::__str__);
+    cls.def("apply", (jointcal::Point(Gtransfo::*)(const jointcal::Point &) const) & Gtransfo::apply,
+            "inPos"_a);
 }
 
 void declareGtransfoIdentity(py::module &mod) {
@@ -86,6 +89,7 @@ void declareTanSipPix2RaDec(py::module &mod) {
 
 PYBIND11_PLUGIN(gtransfo) {
     py::module::import("lsst.jointcal.frame");
+    py::module::import("lsst.jointcal.star");
     py::module mod("gtransfo");
 
     declareGtransfo(mod);

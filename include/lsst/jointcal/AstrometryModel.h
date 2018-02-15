@@ -20,6 +20,9 @@ class Gtransfo;
 the top of simplepolymodel.h */
 class AstrometryModel {
 public:
+    /// Return the number of parameters in the mapping of CcdImage
+    int getNpar(CcdImage const &ccdImage) const { return findMapping(ccdImage)->getNpar(); }
+
     //! Mapping associated to a given CcdImage
     virtual const AstrometryMapping *getMapping(CcdImage const &) const = 0;
 
@@ -46,6 +49,8 @@ public:
     virtual ~AstrometryModel(){};
 
 protected:
+    /// Return a pointer to the mapping associated with this ccdImage.
+    virtual AstrometryMapping *findMapping(CcdImage const &ccdImage) const = 0;
 };
 }  // namespace jointcal
 }  // namespace lsst

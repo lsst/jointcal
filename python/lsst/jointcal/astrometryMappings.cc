@@ -37,6 +37,11 @@ void declareAstrometryMapping(py::module &mod) {
     py::class_<AstrometryMapping, std::shared_ptr<AstrometryMapping>> cls(mod, "AstrometryMapping");
 
     cls.def("getNpar", &AstrometryMapping::getNpar);
+    cls.def("transformPosAndErrors", [](AstrometryMapping const &self, jointcal::FatPoint &inPos) {
+        jointcal::FatPoint outPos;
+        self.transformPosAndErrors(inPos, outPos);
+        return outPos;
+    });
 }
 
 void declareTwoTransfoMapping(py::module &mod) {

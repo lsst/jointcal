@@ -64,9 +64,11 @@ public:
     ~SimpleAstrometryModel(){};
 
 private:
-    typedef std::map<const CcdImage *, std::unique_ptr<SimpleGtransfoMapping>> mapType;
-    mapType _myMap;
+    std::map<CcdImageKey, std::unique_ptr<SimpleGtransfoMapping>> _myMap;
     const ProjectionHandler *_sky2TP;
+
+    /// @copydoc AstrometryModel::findMapping
+    AstrometryMapping *findMapping(CcdImage const &ccdImage) const;
 };
 }  // namespace jointcal
 }  // namespace lsst

@@ -76,7 +76,7 @@ ConstrainedAstrometryModel::ConstrainedAstrometryModel(CcdImageList const &ccdIm
             _chipMap[chip] =
                     std::unique_ptr<SimplePolyMapping>(new SimplePolyMapping(norm, GtransfoPoly(chipDegree)));
         }
-        _mappings[&im] = std::unique_ptr<TwoTransfoMapping>(
+        _mappings[ccdImage->getHashKey()] = std::unique_ptr<TwoTransfoMapping>(
                 new TwoTransfoMapping(_chipMap[chip].get(), _visitMap[visit].get()));
     }
     LOGLS_INFO(_log, "Constructor got " << _chipMap.size() << " chip mappings and " << _visitMap.size()
@@ -86,9 +86,7 @@ ConstrainedAstrometryModel::ConstrainedAstrometryModel(CcdImageList const &ccdIm
 }
 
 const AstrometryMapping *ConstrainedAstrometryModel::getMapping(CcdImage const &ccdImage) const {
-    mappingMapType::const_iterator i = _mappings.find(&ccdImage);
-    if (i == _mappings.end()) return nullptr;
-    return (i->second.get());
+    return findMapping(ccdImage);
 }
 
 /*! This routine decodes "DistortionsChip" and "DistortionsVisit" in
@@ -172,18 +170,7 @@ const Gtransfo &ConstrainedAstrometryModel::getVisitTransfo(VisitIdType const &v
 }
 
 std::shared_ptr<TanSipPix2RaDec> ConstrainedAstrometryModel::produceSipWcs(CcdImage const &ccdImage) const {
-    const TwoTransfoMapping *mapping;
-    try {
-        mapping = _mappings.at(&ccdImage).get();
-    } catch (std::out_of_range &) {
-        LOGLS_ERROR(_log, "CcdImage with ccd/visit "
-                                  << ccdImage.getCcdId() << "/" << ccdImage.getVisit()
-                                  << " not found in constrainedAstrometryModel mapping list.");
-        std::ostringstream os;
-        for (auto const &i : _mappings) os << i.first << ",";
-        LOGLS_ERROR(_log, "Available CcdImages: " << os.str());
-        return nullptr;
-    }
+    const TwoTransfoMapping *mapping = dynamic_cast<const TwoTransfoMapping *>(findMapping(ccdImage));
 
     GtransfoPoly pix2Tp;
     const GtransfoPoly &t1 = dynamic_cast<const GtransfoPoly &>(mapping->getTransfo1());
@@ -232,5 +219,14 @@ std::shared_ptr<TanSipPix2RaDec> ConstrainedAstrometryModel::produceSipWcs(CcdIm
     Point tangentPoint(proj->getTangentPoint());
     return std::make_shared<TanSipPix2RaDec>(cdStuff, tangentPoint, &sip);
 }
+
+AstrometryMapping *ConstrainedAstrometryModel::findMapping(CcdImage const &ccdImage) const {
+    auto i = _mappings.find(ccdImage.getHashKey());
+    if (i == _mappings.end())
+        throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,
+                          "ConstrainedAstrometryModel cannot find CcdImage " + ccdImage.getName());
+    return i->second.get();
+}
+
 }  // namespace jointcal
 }  // namespace lsst

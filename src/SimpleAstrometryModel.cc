@@ -34,7 +34,7 @@ SimpleAstrometryModel::SimpleAstrometryModel(CcdImageList const &ccdImageList,
         if (count < nNotFit) {
             std::unique_ptr<SimpleGtransfoMapping> id(new SimpleGtransfoMapping(GtransfoIdentity()));
             id->setIndex(-1);  // non sense, because it has no parameters
-            _myMap[&im] = std::move(id);
+            _myMap[im.getHashKey()] = std::move(id);
         } else
         // Given how AssignIndices works, only the SimplePolyMapping's
         // will actually be fitted, as nNotFit requests.
@@ -63,18 +63,14 @@ SimpleAstrometryModel::SimpleAstrometryModel(CcdImageList const &ccdImageList,
                 pol = GtransfoPoly(im.getPix2TangentPlane(), frame, degree);
                 pol = pol * shiftAndNormalize.invert();
             }
-            _myMap[&im] =
+            _myMap[im.getHashKey()] =
                     std::unique_ptr<SimpleGtransfoMapping>(new SimplePolyMapping(shiftAndNormalize, pol));
         }
     }
 }
 
 const AstrometryMapping *SimpleAstrometryModel::getMapping(CcdImage const &ccdImage) const {
-    mapType::const_iterator i = _myMap.find(&ccdImage);
-    if (i == _myMap.cend())
-        throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,
-                          "SimpleAstrometryModel::GetMapping, never heard of CcdImage " + ccdImage.getName());
-    return (i->second.get());
+    return findMapping(ccdImage);
 }
 
 unsigned SimpleAstrometryModel::assignIndices(std::string const &whatToFit, unsigned firstIndex) {
@@ -100,16 +96,11 @@ void SimpleAstrometryModel::offsetParams(Eigen::VectorXd const &delta) {
 }
 
 void SimpleAstrometryModel::freezeErrorTransform() {
-    for (auto i = _myMap.begin(); i != _myMap.end(); ++i) i->second->freezeErrorTransform();
+    for (auto &i : _myMap) i.second->freezeErrorTransform();
 }
 
 const Gtransfo &SimpleAstrometryModel::getTransfo(CcdImage const &ccdImage) const {
-    // return GetMapping(ccdImage)->Transfo(); // cannot do that
-    auto p = _myMap.find(&ccdImage);
-    if (p == _myMap.end())
-        throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,
-                          "SimpleAstrometryModel::getTransfo, never heard of CcdImage " + ccdImage.getName());
-    return p->second->getTransfo();
+    return dynamic_cast<const SimplePolyMapping *>(findMapping(ccdImage))->getTransfo();
 }
 
 std::shared_ptr<TanSipPix2RaDec> SimpleAstrometryModel::produceSipWcs(CcdImage const &ccdImage) const {
@@ -129,5 +120,14 @@ std::shared_ptr<TanSipPix2RaDec> SimpleAstrometryModel::produceSipWcs(CcdImage c
     Point tangentPoint(proj->getTangentPoint());
     return std::make_shared<TanSipPix2RaDec>(cdStuff, tangentPoint, &sip);
 }
+
+AstrometryMapping *SimpleAstrometryModel::findMapping(CcdImage const &ccdImage) const {
+    auto i = _myMap.find(ccdImage.getHashKey());
+    if (i == _myMap.end())
+        throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,
+                          "SimpleAstrometryModel cannot find CcdImage " + ccdImage.getName());
+    return i->second.get();
+}
+
 }  // namespace jointcal
 }  // namespace lsst

@@ -80,14 +80,14 @@ public:
     std::shared_ptr<TanSipPix2RaDec> produceSipWcs(CcdImage const &ccdImage) const;
 
 private:
-    typedef std::map<const CcdImage *, std::unique_ptr<TwoTransfoMapping>> mappingMapType;
-    mappingMapType _mappings;
-    typedef std::map<CcdIdType, std::unique_ptr<SimpleGtransfoMapping>> chipMapType;
-    chipMapType _chipMap;
-    typedef std::map<VisitIdType, std::unique_ptr<SimpleGtransfoMapping>> visitMapType;
-    visitMapType _visitMap;
+    std::unordered_map<CcdImageKey, std::unique_ptr<TwoTransfoMapping>> _mappings;
+    std::map<CcdIdType, std::shared_ptr<SimpleGtransfoMapping>> _chipMap;
+    std::map<VisitIdType, std::shared_ptr<SimpleGtransfoMapping>> _visitMap;
     const ProjectionHandler *_sky2TP;
     bool _fittingChips, _fittingVisits;
+
+    /// @copydoc AstrometryModel::findMapping
+    AstrometryMapping *findMapping(CcdImage const &ccdImage) const;
 };
 }  // namespace jointcal
 }  // namespace lsst
