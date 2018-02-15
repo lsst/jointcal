@@ -114,8 +114,8 @@ def makePhotoCalibImages(visit, butler, step=8, chips=[], tract=None,
         detector = butler.get('calexp_detector', ccd=int(ccd))
         bbox = detector.getBBox()
 
-        xx = np.linspace(0, bbox.getWidth(), int(np.floor(bbox.getWidth()/step)))
-        yy = np.linspace(0, bbox.getHeight(), int(np.floor(bbox.getHeight()/step)))
+        xx = np.linspace(bbox.getMinX(), bbox.getMaxX(), int(np.floor(bbox.getWidth()/step)))
+        yy = np.linspace(bbox.getMinY(), bbox.getMaxY(), int(np.floor(bbox.getHeight()/step)))
         xgrid, ygrid = np.meshgrid(xx, yy)
 
         calibScaling = 1
