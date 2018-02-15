@@ -70,7 +70,7 @@ double Gtransfo::getJacobian(const double x, const double y) const {
 /*! the Derivative is represented by a GtransfoLin, in which
   (hopefully), the offset terms are zero. Derivative should
   transform a vector of offsets into a vector of offsets. */
-void Gtransfo::computeDerivative(const Point &where, GtransfoLin &derivative, const double step) const {
+void Gtransfo::computeDerivative(Point const &where, GtransfoLin &derivative, const double step) const {
     double x = where.x;
     double y = where.y;
     double xp0, yp0;
@@ -87,14 +87,14 @@ void Gtransfo::computeDerivative(const Point &where, GtransfoLin &derivative, co
     derivative.dy() = 0;
 }
 
-GtransfoLin Gtransfo::linearApproximation(const Point &where, const double step) const {
+GtransfoLin Gtransfo::linearApproximation(Point const &where, const double step) const {
     Point outwhere = apply(where);
     GtransfoLin der;
     computeDerivative(where, der, step);
     return GtransfoLinShift(outwhere.x, outwhere.y) * der * GtransfoLinShift(-where.x, -where.y);
 }
 
-void Gtransfo::transformPosAndErrors(const FatPoint &in, FatPoint &out) const {
+void Gtransfo::transformPosAndErrors(FatPoint const &in, FatPoint &out) const {
     FatPoint res;  // in case in and out are the same address...
     res = apply(in);
     GtransfoLin der;
@@ -111,7 +111,7 @@ void Gtransfo::transformPosAndErrors(const FatPoint &in, FatPoint &out) const {
     out = res;
 }
 
-void Gtransfo::transformErrors(const Point &where, const double *vIn, double *vOut) const {
+void Gtransfo::transformErrors(Point const &where, const double *vIn, double *vOut) const {
     GtransfoLin der;
     computeDerivative(where, der, 0.01);
     double a11 = der.A11();
@@ -183,12 +183,12 @@ double &Gtransfo::paramRef(const int) {
     throw LSST_EXCEPT(pex::exceptions::InvalidParameterError, "Gtransfo::paramRef should never be called ");
 }
 
-void Gtransfo::paramDerivatives(const Point &, double *, double *) const {
+void Gtransfo::paramDerivatives(Point const &, double *, double *) const {
     throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,
                       "Gtransfo::paramDerivatives() should never be called ");
 }
 
-ostream &operator<<(ostream &stream, const Gtransfo &gtransfo) {
+ostream &operator<<(ostream &stream, Gtransfo const &gtransfo) {
     gtransfo.dump(stream);
     return stream;
 }
@@ -228,11 +228,11 @@ public:
 
     void dump(ostream &stream) const;
 
-    double fit(const StarMatchList &starMatchList);
+    double fit(StarMatchList const &starMatchList);
 
     virtual std::unique_ptr<Gtransfo> clone() const;
 
-    GtransfoInverse(const GtransfoInverse &);
+    GtransfoInverse(GtransfoInverse const &);
 
     //! Overload the "generic routine"
     std::unique_ptr<Gtransfo> roughInverse(const Frame &) const { return _direct->clone(); }
@@ -243,7 +243,7 @@ public:
     ~GtransfoInverse();
 
 private:
-    void operator=(const GtransfoInverse &);
+    void operator=(GtransfoInverse const &);
 };
 
 std::unique_ptr<Gtransfo> Gtransfo::inverseTransfo(const double precision, const Frame &region) const {
@@ -256,7 +256,7 @@ GtransfoInverse::GtransfoInverse(const Gtransfo *direct, const double precision,
     precision2 = precision * precision;
 }
 
-GtransfoInverse::GtransfoInverse(const GtransfoInverse &model) : Gtransfo() {
+GtransfoInverse::GtransfoInverse(GtransfoInverse const &model) : Gtransfo() {
     _direct = model._direct->clone();
     _roughInverse = model._roughInverse->clone();
     precision2 = model.precision2;
@@ -264,7 +264,7 @@ GtransfoInverse::GtransfoInverse(const GtransfoInverse &model) : Gtransfo() {
 
 GtransfoInverse::~GtransfoInverse() {}
 
-void GtransfoInverse::operator=(const GtransfoInverse &model) {
+void GtransfoInverse::operator=(GtransfoInverse const &model) {
     _direct = model._direct->clone();
     _roughInverse = model._roughInverse->clone();
     precision2 = model.precision2;
@@ -297,7 +297,7 @@ void GtransfoInverse::dump(ostream &stream) const {
     stream << " GtransfoInverse of  :" << endl << *_direct << endl;
 }
 
-double GtransfoInverse::fit(const StarMatchList &) {
+double GtransfoInverse::fit(StarMatchList const &) {
     throw pexExcept::RuntimeError("Cannot fit a GtransfoInverse. Use StarMatchList::inverseTransfo instead.");
 }
 
@@ -325,7 +325,7 @@ public:
     void dump(ostream &stream = cout) const;
 
     //!
-    double fit(const StarMatchList &starMatchList);
+    double fit(StarMatchList const &starMatchList);
 
     std::unique_ptr<Gtransfo> clone() const;
     ~GtransfoComposition();
@@ -347,7 +347,7 @@ void GtransfoComposition::dump(ostream &stream) const {
     _second->dump(stream);
 }
 
-double GtransfoComposition::fit(const StarMatchList &starMatchList) {
+double GtransfoComposition::fit(StarMatchList const &starMatchList) {
     /* fits only one of them. could check that first can actually be fitted... */
     return _first->fit(starMatchList);
 }
@@ -374,11 +374,11 @@ std::unique_ptr<Gtransfo> gtransfoCompose(Gtransfo const &left, Gtransfo const &
 }
 
 // just a speed up, to avoid useless numerical derivation.
-void GtransfoIdentity::computeDerivative(const Point &, GtransfoLin &derivative, const double) const {
+void GtransfoIdentity::computeDerivative(Point const &, GtransfoLin &derivative, const double) const {
     derivative = GtransfoLin();
 }
 
-GtransfoLin GtransfoIdentity::linearApproximation(const Point &, const double) const {
+GtransfoLin GtransfoIdentity::linearApproximation(Point const &, const double) const {
     GtransfoLin result;
     return result;  // rely on default Gtransfolin constructor;
 }
@@ -497,7 +497,7 @@ void GtransfoPoly::apply(const double xIn, const double yIn, double &xOut, doubl
     for (int k = _nterms; k--;) yOut += (*(pm++)) * (*(c++));
 }
 
-void GtransfoPoly::computeDerivative(const Point &where, GtransfoLin &derivative, const double step)
+void GtransfoPoly::computeDerivative(Point const &where, GtransfoLin &derivative, const double step)
         const { /* routine checked against numerical derivatives from Gtransfo::Derivative */
     if (_degree == 1) {
         derivative = GtransfoLin(*this);
@@ -555,7 +555,7 @@ void GtransfoPoly::computeDerivative(const Point &where, GtransfoLin &derivative
     derivative.a22() = a22;
 }
 
-void GtransfoPoly::transformPosAndErrors(const FatPoint &in, FatPoint &out) const {
+void GtransfoPoly::transformPosAndErrors(FatPoint const &in, FatPoint &out) const {
     /*
        The results from this routine were compared to what comes out
        from apply and transformErrors. The Derivative routine was
@@ -671,7 +671,7 @@ double &GtransfoPoly::paramRef(const int i) {
     return _coeffs[i];
 }
 
-void GtransfoPoly::paramDerivatives(const Point &where, double *dx, double *dy)
+void GtransfoPoly::paramDerivatives(Point const &where, double *dx, double *dy)
         const { /* first half : dxout/dpar, second half : dyout/dpar */
     computeMonomials(where.x, where.y, dx);
     for (unsigned k = 0; k < _nterms; ++k) {
@@ -720,7 +720,7 @@ GtransfoLin normalizeCoordinatesTransfo(const Frame &frame) {
 }
 
 /*utility for the GtransfoPoly::fit() routine */
-static GtransfoLin shiftAndNormalize(const StarMatchList &starMatchList) {
+static GtransfoLin shiftAndNormalize(StarMatchList const &starMatchList) {
     double xav = 0;
     double x2 = 0;
     double yav = 0;
@@ -728,7 +728,7 @@ static GtransfoLin shiftAndNormalize(const StarMatchList &starMatchList) {
     double count = 0;
     for (auto it = starMatchList.begin(); it != starMatchList.end(); ++it) {
         const StarMatch &a_match = *it;
-        const Point &point1 = a_match.point1;
+        Point const &point1 = a_match.point1;
         xav += point1.x;
         yav += point1.y;
         x2 += std::pow(point1.x, 2);
@@ -746,7 +746,7 @@ static GtransfoLin shiftAndNormalize(const StarMatchList &starMatchList) {
 
 static double sq(double x) { return x * x; }
 
-double GtransfoPoly::computeFit(const StarMatchList &starMatchList, const Gtransfo &shiftToCenter,
+double GtransfoPoly::computeFit(StarMatchList const &starMatchList, Gtransfo const &shiftToCenter,
                                 const bool useErrors) {
     Eigen::MatrixXd A(2 * _nterms, 2 * _nterms);
     A.setZero();
@@ -758,7 +758,7 @@ double GtransfoPoly::computeFit(const StarMatchList &starMatchList, const Gtrans
         const StarMatch &a_match = *it;
         Point tmp = shiftToCenter.apply(a_match.point1);
         FatPoint point1(tmp, a_match.point1.vx, a_match.point1.vy, a_match.point1.vxy);
-        const FatPoint &point2 = a_match.point2;
+        FatPoint const &point2 = a_match.point2;
         double wxx, wyy, wxy;
         FatPoint tr1;
         computeMonomials(point1.x, point1.y, monomials);
@@ -805,7 +805,7 @@ double GtransfoPoly::computeFit(const StarMatchList &starMatchList, const Gtrans
     return (sumr2 - B.dot(sol));
 }
 
-double GtransfoPoly::fit(const StarMatchList &starMatchList) {
+double GtransfoPoly::fit(StarMatchList const &starMatchList) {
     if (starMatchList.size() < _nterms) {
         LOGLS_FATAL(_log, "GtransfoPoly::fit trying to fit a polynomial transfo of degree "
                                   << _degree << " with only " << starMatchList.size() << " matches.");
@@ -852,7 +852,7 @@ public:
 
     unsigned getDegree() const { return degree; }
 
-    PolyXY(const GtransfoPoly &gtransfoPoly, const unsigned whichCoord)
+    PolyXY(GtransfoPoly const &gtransfoPoly, const unsigned whichCoord)
             : degree(gtransfoPoly.getDegree()), nterms((degree + 1) * (degree + 2) / 2), coeffs(nterms, 0L) {
         for (unsigned px = 0; px <= degree; ++px)
             for (unsigned py = 0; py <= degree - px; ++py)
@@ -928,7 +928,7 @@ static PolyXY composition(const PolyXY &polyXY, const PolyXY &polyX, const PolyX
 
 /* reducing polynomial composition is the reason for PolyXY stuff : */
 
-GtransfoPoly GtransfoPoly::operator*(const GtransfoPoly &right) const {
+GtransfoPoly GtransfoPoly::operator*(GtransfoPoly const &right) const {
     // split each transfo into 2d polynomials
     PolyXY plx(*this, 0);
     PolyXY ply(*this, 1);
@@ -949,7 +949,7 @@ GtransfoPoly GtransfoPoly::operator*(const GtransfoPoly &right) const {
     return result;
 }
 
-GtransfoPoly GtransfoPoly::operator+(const GtransfoPoly &right) const {
+GtransfoPoly GtransfoPoly::operator+(GtransfoPoly const &right) const {
     if (_degree >= right._degree) {
         GtransfoPoly res(*this);
         for (unsigned i = 0; i <= right._degree; ++i)
@@ -962,7 +962,7 @@ GtransfoPoly GtransfoPoly::operator+(const GtransfoPoly &right) const {
         return (right + (*this));
 }
 
-GtransfoPoly GtransfoPoly::operator-(const GtransfoPoly &right) const {
+GtransfoPoly GtransfoPoly::operator-(GtransfoPoly const &right) const {
     GtransfoPoly res(std::max(_degree, right._degree));
     for (unsigned i = 0; i <= res._degree; ++i)
         for (unsigned j = 0; j <= res._degree - i; ++j) {
@@ -997,7 +997,7 @@ void GtransfoPoly::read(istream &s) {
     for (unsigned k = 0; k < 2 * _nterms; ++k) s >> _coeffs[k];
 }
 
-std::unique_ptr<GtransfoPoly> inversePolyTransfo(const Gtransfo &direct, const Frame &frame,
+std::unique_ptr<GtransfoPoly> inversePolyTransfo(Gtransfo const &direct, const Frame &frame,
                                                  const double precision) {
     StarMatchList sm;
     unsigned nx = 50;
@@ -1044,14 +1044,14 @@ GtransfoLin::GtransfoLin(const double Dx, const double Dy, const double A11, con
     a22() = A22;
 }
 
-GtransfoLin::GtransfoLin(const GtransfoPoly &gtransfoPoly) : GtransfoPoly(1) {
+GtransfoLin::GtransfoLin(GtransfoPoly const &gtransfoPoly) : GtransfoPoly(1) {
     if (gtransfoPoly.getDegree() != 1)
         throw pexExcept::InvalidParameterError(
                 "Trying to build a GtransfoLin from a higher order transfo. Aborting. ");
     (GtransfoPoly &)(*this) = gtransfoPoly;
 }
 
-GtransfoLin GtransfoLin::operator*(const GtransfoLin &right) const {
+GtransfoLin GtransfoLin::operator*(GtransfoLin const &right) const {
     // There is a general routine in GtransfoPoly that would do the job:
     //  return GtransfoLin(GtransfoPoly::operator*(right));
     // however, we are using this composition of linear stuff heavily in
@@ -1066,13 +1066,13 @@ GtransfoLin GtransfoLin::operator*(const GtransfoLin &right) const {
     return result;
 }
 
-void GtransfoLin::computeDerivative(const Point &, GtransfoLin &derivative, const double) const {
+void GtransfoLin::computeDerivative(Point const &, GtransfoLin &derivative, const double) const {
     derivative = *this;
     derivative.coeff(0, 0, 0) = 0;
     derivative.coeff(0, 0, 1) = 0;
 }
 
-GtransfoLin GtransfoLin::linearApproximation(const Point &, const double) const { return *this; }
+GtransfoLin GtransfoLin::linearApproximation(Point const &, const double) const { return *this; }
 
 GtransfoLin GtransfoLin::invert() const {
     //
@@ -1104,11 +1104,11 @@ std::unique_ptr<Gtransfo> GtransfoLin::inverseTransfo(const double, const Frame 
     return std::unique_ptr<Gtransfo>(new GtransfoLin(invert()));
 }
 
-double GtransfoLinRot::fit(const StarMatchList &) {
+double GtransfoLinRot::fit(StarMatchList const &) {
     throw pexExcept::NotFoundError("GTransfoLinRot::fit not implemented! aborting");
 }
 
-double GtransfoLinShift::fit(const StarMatchList &starMatchList) {
+double GtransfoLinShift::fit(StarMatchList const &starMatchList) {
     int npairs = starMatchList.size();
     if (npairs < 3) {
         LOGLS_FATAL(_log, "GtransfoLinShift::fit trying to fit a linear transfo with only " << npairs
@@ -1124,8 +1124,8 @@ double GtransfoLinShift::fit(const StarMatchList &starMatchList) {
     A.setZero();
 
     for (auto const &it : starMatchList) {
-        const FatPoint &point1 = it.point1;
-        const FatPoint &point2 = it.point2;
+        FatPoint const &point1 = it.point1;
+        FatPoint const &point2 = it.point2;
         double deltax = point2.x - point1.x;
         double deltay = point2.y - point1.y;
         double vxx = point1.vx + point2.vx;
@@ -1192,7 +1192,7 @@ static double rad2deg(double rad) { return rad * 180. / M_PI; }
    done in apply (for TanPix2RaDec and TanRaDec2Pix).
    This is a minor concern though....
 */
-BaseTanWcs::BaseTanWcs(const GtransfoLin &pix2Tan, const Point &tangentPoint,
+BaseTanWcs::BaseTanWcs(GtransfoLin const &pix2Tan, Point const &tangentPoint,
                        const GtransfoPoly *corrections) {
     /* the angles returned by linPix2Tan should be in
        degrees. */
@@ -1293,7 +1293,7 @@ std::unique_ptr<Gtransfo> GtransfoSkyWcs::clone() const {
 
 /*************************** TanPix2RaDec ***************/
 
-TanPix2RaDec::TanPix2RaDec(const GtransfoLin &pix2Tan, const Point &tangentPoint,
+TanPix2RaDec::TanPix2RaDec(GtransfoLin const &pix2Tan, Point const &tangentPoint,
                            const GtransfoPoly *corrections)
         : BaseTanWcs(pix2Tan, tangentPoint, corrections) {}
 
@@ -1308,7 +1308,7 @@ std::unique_ptr<Gtransfo> TanPix2RaDec::composeAndReduce(GtransfoLin const &righ
     }
 }
 
-TanPix2RaDec TanPix2RaDec::operator*(const GtransfoLin &right) const {
+TanPix2RaDec TanPix2RaDec::operator*(GtransfoLin const &right) const {
     TanPix2RaDec result(*this);
     result.linPix2Tan = result.linPix2Tan * right;
     return result;
@@ -1363,7 +1363,7 @@ void TanPix2RaDec::dump(ostream &stream) const {
     if (corr) stream << "PV correction: " << endl << *corr;
 }
 
-double TanPix2RaDec::fit(const StarMatchList &) {
+double TanPix2RaDec::fit(StarMatchList const &) {
     /* OK we could implement this routine, but it is
        probably useless since to do the match, we have to
        project from sky to tangent plane. When a match is
@@ -1379,7 +1379,7 @@ double TanPix2RaDec::fit(const StarMatchList &) {
 
 /*************************** TanSipPix2RaDec ***************/
 
-TanSipPix2RaDec::TanSipPix2RaDec(const GtransfoLin &pix2Tan, const Point &tangentPoint,
+TanSipPix2RaDec::TanSipPix2RaDec(GtransfoLin const &pix2Tan, Point const &tangentPoint,
                                  const GtransfoPoly *corrections)
         : BaseTanWcs(pix2Tan, tangentPoint, corrections) {}
 
@@ -1432,7 +1432,7 @@ void TanSipPix2RaDec::dump(ostream &stream) const {
     if (corr) stream << "PV correction: " << endl << *corr;
 }
 
-double TanSipPix2RaDec::fit(const StarMatchList &) {
+double TanSipPix2RaDec::fit(StarMatchList const &) {
     /* OK we could implement this routine, but it is
        probably useless since to do the match, we have to
        project from sky to tangent plane. When a match is
@@ -1448,11 +1448,11 @@ double TanSipPix2RaDec::fit(const StarMatchList &) {
 
 /***************  reverse transfo of TanPix2RaDec: TanRaDec2Pix ********/
 
-TanRaDec2Pix::TanRaDec2Pix(const GtransfoLin &tan2Pix, const Point &tangentPoint) : linTan2Pix(tan2Pix) {
+TanRaDec2Pix::TanRaDec2Pix(GtransfoLin const &tan2Pix, Point const &tangentPoint) : linTan2Pix(tan2Pix) {
     setTangentPoint(tangentPoint);
 }
 
-void TanRaDec2Pix::setTangentPoint(const Point &tangentPoint) {
+void TanRaDec2Pix::setTangentPoint(Point const &tangentPoint) {
     /* the radian to degrees conversion after projection
         is handled in apply */
     ra0 = deg2rad(tangentPoint.x);
@@ -1472,7 +1472,7 @@ Point TanRaDec2Pix::getTangentPoint() const { return Point(rad2deg(ra0), rad2deg
 GtransfoLin TanRaDec2Pix::getLinPart() const { return linTan2Pix; }
 
 // Use analytic derivatives, computed at the same time as the transform itself
-void TanRaDec2Pix::transformPosAndErrors(const FatPoint &in, FatPoint &out) const {
+void TanRaDec2Pix::transformPosAndErrors(FatPoint const &in, FatPoint &out) const {
     /* this routine is very similar to apply, but also propagates errors.
        The deg2rad and rad2deg are ignored for errors because they act as
        2 global scalings that cancel each other.
@@ -1562,7 +1562,7 @@ std::unique_ptr<Gtransfo> TanRaDec2Pix::clone() const {
     return std::unique_ptr<Gtransfo>(new TanRaDec2Pix(*this));
 }
 
-double TanRaDec2Pix::fit(const StarMatchList &) {
+double TanRaDec2Pix::fit(StarMatchList const &) {
     throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,
                       "TanRaDec2Pix::fit is NOT implemented (although it is doable)) ");
     return -1;
@@ -1582,7 +1582,7 @@ void UserTransfo::dump(ostream &stream) const {
     stream << "UserTransfo with user function @ " << _userFun << "and userData@ " << _userData << endl;
 }
 
-double UserTransfo::fit(const StarMatchList &) {
+double UserTransfo::fit(StarMatchList const &) {
     throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,
                       "UserTransfo::fit is NOT implemented (and will never be)) ");
     return -1;
