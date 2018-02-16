@@ -29,7 +29,7 @@ import lsst.daf.persistence
 matplotlib.rcParams['figure.dpi'] = 300
 
 
-def getValidDataIds(butler, tract, dataset_type='photoCalib'):
+def getValidDataIds(butler, tract, dataset_type='jointcal_photoCalib'):
     """Return a list of all dataIds that exist in this butler.
 
     This exists here because the butler doesn't provide this functionality.
@@ -125,7 +125,7 @@ def makePhotoCalibImages(visit, butler, step=8, chips=[], tract=None,
             if verbose:
                 print('calib ccd %s: %s' % (ccd, calibScaling))
 
-        photoCalib = butler.get('photoCalib', dataId=dict(visit=int(visit), ccd=int(ccd), tract=0))
+        photoCalib = butler.get('jointcal_photoCalib', dataId=dict(visit=int(visit), ccd=int(ccd), tract=0))
         if verbose:
             print("photoCalib mean ccd %s: %s" % (ccd, photoCalib.getCalibrationMean()))
         scaled = photoCalib.computeScaledCalibration()
@@ -243,7 +243,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("repo", metavar="repo",
-                        help="Directory to butler repository containing `photoCalib` datasets.")
+                        help="Directory to butler repository containing `jointcal_photoCalib` datasets.")
     parser.add_argument("--step", default=8, type=int,
                         help="Steps between samples per image (i.e. larger number = coarser image).")
     parser.add_argument("--tract", default=0, type=int,
