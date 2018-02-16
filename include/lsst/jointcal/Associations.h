@@ -7,7 +7,7 @@
 #include <list>
 
 #include "lsst/afw/table/Source.h"
-#include "lsst/afw/image/TanWcs.h"
+#include "lsst/afw/geom/SkyWcs.h"
 #include "lsst/afw/image/Calib.h"
 #include "lsst/afw/image/VisitInfo.h"
 #include "lsst/daf/base/PropertySet.h"
@@ -75,7 +75,7 @@ public:
      * @param[in]  control    The JointcalControl object
      */
     void addImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &catalog,
-                  std::shared_ptr<lsst::afw::image::TanWcs> wcs,
+                  std::shared_ptr<lsst::afw::geom::SkyWcs> wcs,
                   std::shared_ptr<lsst::afw::image::VisitInfo> visitInfo, lsst::afw::geom::Box2I const &bbox,
                   std::string const &filter, std::shared_ptr<afw::image::PhotoCalib> photoCalib,
                   std::shared_ptr<afw::cameraGeom::Detector> detector, int visit, int ccd,

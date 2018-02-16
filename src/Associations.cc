@@ -36,7 +36,7 @@ namespace lsst {
 namespace jointcal {
 
 void Associations::addImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &catalog,
-                            std::shared_ptr<lsst::afw::image::TanWcs> wcs,
+                            std::shared_ptr<lsst::afw::geom::SkyWcs> wcs,
                             std::shared_ptr<lsst::afw::image::VisitInfo> visitInfo,
                             lsst::afw::geom::Box2I const &bbox, std::string const &filter,
                             std::shared_ptr<afw::image::PhotoCalib> photoCalib,
@@ -167,7 +167,7 @@ void Associations::collectRefStars(lsst::afw::table::SortedCatalogT<lsst::afw::t
     for (size_t i = 0; i < refCat.size(); i++) {
         auto const &record = refCat.get(i);
 
-        afw::coord::Coord coord = record->get(coordKey);
+        afw::coord::IcrsCoord coord = record->get(coordKey);
         double defaultFlux = record->get(fluxKey) / JanskyToMaggy;
         double defaultFluxErr;
         if (fluxErrKey.isValid()) {

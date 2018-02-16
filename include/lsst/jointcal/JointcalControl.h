@@ -10,11 +10,6 @@
 
 #include "lsst/pex/config.h"
 #include "lsst/afw/table/Source.h"
-#include "lsst/afw/image/Wcs.h"
-#include "lsst/afw/image/Calib.h"
-#include "lsst/afw/image/VisitInfo.h"
-#include "lsst/afw/geom/Box.h"
-#include "lsst/daf/base/PropertySet.h"
 
 namespace lsst {
 namespace jointcal {

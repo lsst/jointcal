@@ -9,7 +9,7 @@
 #include "lsst/jointcal/Gtransfo.h"
 #include "lsst/jointcal/SipToGtransfo.h"
 #include "lsst/jointcal/Frame.h"
-#include "lsst/afw/image/TanWcs.h"
+#include "lsst/afw/geom/SkyWcs.h"
 #include "lsst/afw/image/Utils.h"
 #include "lsst/afw/image/Image.h"
 #include "lsst/afw/fits.h"
@@ -44,24 +44,21 @@ BOOST_AUTO_TEST_CASE(test_wcs)
   std::string fileName = "tests/header_only.fits";
 
   lsst::afw::fits::Fits file(fileName, "r",0);
-  PTR(lsst::daf::base::PropertySet) propSet = afwImg::readMetadata(fileName);
-  PTR(afwImg::Wcs) wcs = afwImg::makeWcs(propSet);
+  auto propSet = lsst::afw::fits::readMetadata(fileName);
+  auto skyWcs = lsst::afw::geom::makeSkyWcs(*propSet);
+  jointcal::GtransfoSkyWcs gtransfoWcs(skyWcs);
 
-  const PTR(afwImg::TanWcs) tanWcs = std::dynamic_pointer_cast<afwImg::TanWcs>(wcs);
-
-  jointcal::TanSipPix2RaDec gtransfoWcs = jointcal::convertTanWcs(tanWcs);
   jointcal::Point where(100.,200.);
   jointcal::Point outPol = gtransfoWcs.apply(where);
   std::cout << std::setprecision(12) << "Poloka : " << outPol.x << ' ' << outPol.y << std::endl;
 
   lsst::afw::geom::Point2D whereSame(100.,200.);
-  PTR(lsst::afw::coord::Coord) coord = wcs->pixelToSky(whereSame);
-  lsst::afw::geom::Point2D outDeg = coord->getPosition(lsst::afw::geom::degrees);
+  auto skyPos = skyWcs->pixelToSky(whereSame);
+  lsst::afw::geom::Point2D outDeg = skyPos.getPosition(lsst::afw::geom::degrees);
   std::cout << "Stack : " << outDeg[0] << ' ' << outDeg[1] << std::endl;
 
   BOOST_CHECK_CLOSE(outPol.x, outDeg[0], .000001);
   BOOST_CHECK_CLOSE(outPol.y, outDeg[1], .000001);
-
 }
 
 
@@ -73,12 +70,9 @@ BOOST_AUTO_TEST_CASE(test_polyfit)
   std::string fileName = "tests/header_only.fits";
 
   lsst::afw::fits::Fits file(fileName, "r",0);
-  PTR(lsst::daf::base::PropertySet) propSet = afwImg::readMetadata(fileName);
-  PTR(afwImg::Wcs) wcs = afwImg::makeWcs(propSet);
-
-  const PTR(afwImg::TanWcs) tanWcs = std::dynamic_pointer_cast<afwImg::TanWcs>(wcs);
-
-  jointcal::TanSipPix2RaDec gtransfoWcs = jointcal::convertTanWcs(tanWcs);
+  auto propSet = lsst::afw::fits::readMetadata(fileName);
+  auto skyWcs = lsst::afw::geom::makeSkyWcs(*propSet);
+  jointcal::GtransfoSkyWcs gtransfoWcs(skyWcs);
 
   jointcal::StarMatchList sml;
   jointcal::BaseStarList bsl1, bsl2;
@@ -101,59 +95,6 @@ BOOST_AUTO_TEST_CASE(test_polyfit)
   std::cout << " chi2/ndf " << chi2 << '/' << sml.size()-pol.getNpar() << std::endl;
   // since there is no noise, the chi2 should be very very small:
   BOOST_CHECK( fabs(chi2)<1e-8);
-}
-
-
-/* this routine checks that converting a WCS from afs to jointcal and
-   back to afw does not change anything. It checks both that pix2sky and
-   sky2pix transformations are preserved. */
-BOOST_AUTO_TEST_CASE(test_wcs_convertions)
-{
-  std::string fileName = "tests/header_only.fits";
-
-  lsst::afw::fits::Fits file(fileName, "r",0);
-  PTR(lsst::daf::base::PropertySet) propSet = afwImg::readMetadata(fileName);
-  PTR(afwImg::Wcs) wcs = afwImg::makeWcs(propSet);
-
-  const PTR(afwImg::TanWcs) tanWcs = std::dynamic_pointer_cast<afwImg::TanWcs>(wcs);
-
-  jointcal::TanSipPix2RaDec gtransfoWcs = jointcal::convertTanWcs(tanWcs);
-  auto const bbox = lsst::afw::image::bboxFromMetadata(*propSet);
-  jointcal::Frame const imageFrame(bbox.getMinX(), bbox.getMinY(), bbox.getMaxX(), bbox.getMaxY());
-
-  // test the back conversion, in two cases
-  for (int noLowOrderSipTerm  = 0; noLowOrderSipTerm <=1; noLowOrderSipTerm++) {
-    PTR(afwImg::TanWcs) tanWcs2 = gtransfoToTanWcs(gtransfoWcs,
-						   imageFrame,
-						   noLowOrderSipTerm);
-    lsst::afw::geom::Point2D where(1000.,200.);
-
-    PTR(lsst::afw::coord::Coord) coord = wcs->pixelToSky(where);
-    /* one afw check : if we use pix->sky->pix with an afw WCS, how
-       close do we get back ?  */
-
-    lsst::afw::geom::Point2D whereBack = wcs->skyToPixel((*coord)[0], (*coord)[1]);
-    BOOST_CHECK_CLOSE(where[0], whereBack[0], 1e-3);
-    BOOST_CHECK_CLOSE(where[1], whereBack[1], 1e-3);
-
-
-    lsst::afw::geom::Point2D outDeg = coord->getPosition(lsst::afw::geom::degrees);
-
-    PTR(lsst::afw::coord::Coord) coord2 = tanWcs2->pixelToSky(where);
-    lsst::afw::geom::Point2D outDeg2 = coord2->getPosition(lsst::afw::geom::degrees);
-    // Check the proximity on sky
-    BOOST_CHECK_CLOSE(outDeg[0], outDeg2[0], 1e-7);
-    BOOST_CHECK_CLOSE(outDeg[1], outDeg2[1], 1e-7);
-
-    // sky to pixels
-    lsst::afw::geom::Point2D whereBack2 = tanWcs2->skyToPixel((*coord2)[0], (*coord2)[1]);
-
-
-    BOOST_CHECK_CLOSE(whereBack[0], whereBack2[0], 1e-4);
-    BOOST_CHECK_CLOSE(whereBack[1], whereBack2[1], 1e-4);
-  }
-
-
 }
 
 

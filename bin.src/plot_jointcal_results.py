@@ -46,9 +46,8 @@ def get_old_wcs_list(data_refs):
     """Return a list of the original WCSs of the data_refs."""
     result = []
     for data_ref in data_refs:
-        md = data_ref.get("calexp_md", immediate=True)
-        tanwcs = lsst.afw.image.TanWcs.cast(lsst.afw.image.makeWcs(md))
-        result.append(tanwcs)
+        wcs = data_ref.get("calexp_wcs", immediate=True)
+        result.append(wcs)
     return result
 
 
