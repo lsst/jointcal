@@ -80,6 +80,9 @@ public:
         return _sky2TP->getSky2TP(ccdImage);
     }
 
+    /// @copydoc AstrometryModel::makeSkyWcs
+    std::shared_ptr<afw::geom::SkyWcs> makeSkyWcs(CcdImage const &ccdImage) const;
+
     std::shared_ptr<TanSipPix2RaDec> produceSipWcs(CcdImage const &ccdImage) const;
 
 private:

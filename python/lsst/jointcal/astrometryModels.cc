@@ -49,6 +49,7 @@ void declareAstrometryModel(py::module &mod) {
     cls.def("offsetParams", &AstrometryModel::offsetParams);
     cls.def("getSky2TP", &AstrometryModel::getSky2TP);
     cls.def("produceSipWcs", &AstrometryModel::produceSipWcs, py::return_value_policy::take_ownership);
+    cls.def("makeSkyWcs", &AstrometryModel::makeSkyWcs, py::return_value_policy::take_ownership);
 }
 
 void declareSimpleAstrometryModel(py::module &mod) {
@@ -58,6 +59,8 @@ void declareSimpleAstrometryModel(py::module &mod) {
     cls.def(py::init<CcdImageList const &, const std::shared_ptr<ProjectionHandler const>, bool, unsigned,
                      unsigned>(),
             "ccdImageList"_a, "projectionHandler"_a, "initFromWcs"_a, "nNotFit"_a = 0, "degree"_a = 3);
+
+    cls.def("getTransfo", &SimpleAstrometryModel::getTransfo, py::return_value_policy::reference_internal);
 }
 
 void declareConstrainedAstrometryModel(py::module &mod) {

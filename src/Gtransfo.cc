@@ -1,7 +1,8 @@
 #include <iostream>
 #include <iomanip>
 #include <iterator> /* for ostream_iterator */
-#include <math.h>   // for sin and cos and may be others
+#include <limits>
+#include <math.h>  // for sin and cos and may be others
 #include <fstream>
 #include "assert.h"
 #include <sstream>
@@ -383,6 +384,10 @@ GtransfoLin GtransfoIdentity::linearApproximation(Point const &, const double) c
     return result;  // rely on default Gtransfolin constructor;
 }
 
+std::shared_ptr<ast::Mapping> GtransfoIdentity::toAstMap(jointcal::Frame const &) const {
+    return std::make_shared<ast::UnitMap>(2);  // a GtransfoIdentity is identically ast::UnitMap(2)
+}
+
 void GtransfoIdentity::write(ostream &stream) const { stream << "GtransfoIdentity 1" << endl; }
 
 void GtransfoIdentity::read(istream &stream) {
@@ -692,6 +697,8 @@ static string monomialString(const unsigned powX, const unsigned powY) {
 }
 
 void GtransfoPoly::dump(ostream &stream) const {
+    auto oldPrecision = stream.precision();
+    stream.precision(12);
     for (unsigned ic = 0; ic < 2; ++ic) {
         if (ic == 0)
             stream << "newx = ";
@@ -705,6 +712,7 @@ void GtransfoPoly::dump(ostream &stream) const {
         stream << endl;
     }
     if (_degree > 0) stream << " Linear determinant = " << determinant() << endl;
+    stream.precision(oldPrecision);
 }
 
 double GtransfoPoly::determinant() const {
@@ -972,6 +980,11 @@ GtransfoPoly GtransfoPoly::operator-(GtransfoPoly const &right) const {
     return res;
 }
 
+std::shared_ptr<ast::Mapping> GtransfoPoly::toAstMap(jointcal::Frame const &domain) const {
+    auto inverse = inversePolyTransfo(*this, domain, 1e-7, _degree + 2, 100);
+    return std::make_shared<ast::PolyMap>(toAstPolyMapCoefficients(), inverse->toAstPolyMapCoefficients());
+}
+
 void GtransfoPoly::write(ostream &s) const {
     s << " GtransfoPoly 1" << endl;
     s << "degree " << _degree << endl;
@@ -997,34 +1010,82 @@ void GtransfoPoly::read(istream &s) {
     for (unsigned k = 0; k < 2 * _nterms; ++k) s >> _coeffs[k];
 }
 
-std::unique_ptr<GtransfoPoly> inversePolyTransfo(Gtransfo const &direct, const Frame &frame,
-                                                 const double precision) {
+ndarray::Array<double, 2, 2> GtransfoPoly::toAstPolyMapCoefficients() const {
+    int nCoeffs = _coeffs.size();
+    ndarray::Array<double, 2, 2> result = ndarray::allocate(ndarray::makeVector(nCoeffs, 4));
+
+    ndarray::Size k = 0;
+    for (unsigned iCoord = 0; iCoord < 2; ++iCoord) {
+        for (unsigned p = 0; p <= _degree; ++p) {
+            for (unsigned py = 0; py <= p; ++py, ++k) {
+                result[k][0] = coeff(p - py, py, iCoord);
+                result[k][1] = iCoord + 1;
+                result[k][2] = p - py;
+                result[k][3] = py;
+            }
+        }
+    }
+
+    return result;
+}
+
+std::shared_ptr<GtransfoPoly> inversePolyTransfo(Gtransfo const &forward, Frame const &domain,
+                                                 double const precision, int const maxDegree,
+                                                 unsigned const nSteps) {
     StarMatchList sm;
-    unsigned nx = 50;
-    double stepx = frame.getWidth() / (nx + 1);
-    unsigned ny = 50;
-    double stepy = frame.getHeight() / (ny + 1);
-    for (unsigned i = 0; i < nx; ++i)
-        for (unsigned j = 0; j < ny; ++j) {
-            Point in((i + 0.5) * stepx, (j + 0.5) * stepy);
-            Point out(direct.apply(in));
+    double xStart = domain.xMin;
+    double yStart = domain.yMin;
+    double xStep = domain.getWidth() / (nSteps - 1);
+    double yStep = domain.getHeight() / (nSteps - 1);
+    for (unsigned i = 0; i < nSteps; ++i) {
+        for (unsigned j = 0; j < nSteps; ++j) {
+            Point in(xStart + i * xStep, yStart + j * yStep);
+            Point out(forward.apply(in));
             sm.push_back(StarMatch(out, in, nullptr, nullptr));
         }
-    unsigned npairs = sm.size();
-    int maxdeg = 9;
-    int degree;
-    std::unique_ptr<GtransfoPoly> poly;
-    for (degree = 1; degree <= maxdeg; ++degree) {
-        poly.reset(new GtransfoPoly(degree));
-        poly->fit(sm);
-        // compute the chi2 ignoring errors:
-        double chi2 = 0;
-        for (auto const &i : sm) chi2 += i.point2.computeDist2(poly->apply((i.point1)));
-        if (chi2 / npairs < precision * precision) break;
     }
-    if (degree > maxdeg)
+    unsigned npairs = sm.size();
+    int degree;
+    std::shared_ptr<GtransfoPoly> poly;
+    std::shared_ptr<GtransfoPoly> oldPoly;
+    double chi2 = 0;
+    double oldChi2 = std::numeric_limits<double>::infinity();
+    for (degree = 1; degree <= maxDegree; ++degree) {
+        poly.reset(new GtransfoPoly(degree));
+        auto success = poly->fit(sm);
+        if (success == -1) {
+            std::stringstream errMsg;
+            errMsg << "Cannot fit a polynomial of degree " << degree << " with " << nSteps << "^2 points";
+            throw pexExcept::RuntimeError(errMsg.str());
+        }
+        // compute the chi2 ignoring errors:
+        chi2 = 0;
+        for (auto const &i : sm) chi2 += i.point2.computeDist2(poly->apply((i.point1)));
+        LOGLS_TRACE(_log, "inversePoly degree " << degree << ": " << chi2 << " / " << npairs << " = "
+                                                << chi2 / npairs << " < " << precision * precision);
+
+        if (chi2 / npairs < precision * precision) break;
+
+        // If this triggers, we know we did not reach the required precision.
+        if (chi2 > oldChi2) {
+            LOGLS_WARN(_log, "inversePolyTransfo: chi2 increases ("
+                                     << chi2 << " > " << oldChi2 << "); ending fit with degree: " << degree);
+            LOGLS_WARN(_log, "inversePolyTransfo: requested precision not reached: "
+                                     << chi2 << " / " << npairs << " = " << chi2 / npairs << " < "
+                                     << precision * precision);
+            poly = std::move(oldPoly);
+            degree--;
+            break;
+        } else {
+            oldChi2 = chi2;
+            // Clone it so we don't lose it in the next iteration.
+            oldPoly = dynamic_pointer_cast<GtransfoPoly>(std::shared_ptr<Gtransfo>(poly->clone()));
+        }
+    }
+    if (degree > maxDegree)
         LOGLS_WARN(_log, "inversePolyTransfo: Reached max degree without reaching requested precision: "
-                                 << precision);
+                                 << chi2 << " / " << npairs << " = " << chi2 / npairs << " < "
+                                 << precision * precision);
     return poly;
 }
 
@@ -1270,7 +1331,6 @@ Point BaseTanWcs::getCrPix() const {
 
 BaseTanWcs::~BaseTanWcs() {}
 
-
 GtransfoSkyWcs::GtransfoSkyWcs(std::shared_ptr<afw::geom::SkyWcs> skyWcs) : _skyWcs(skyWcs) {}
 
 void GtransfoSkyWcs::apply(const double xIn, const double yIn, double &xOut, double &yOut) const {
@@ -1279,9 +1339,7 @@ void GtransfoSkyWcs::apply(const double xIn, const double yIn, double &xOut, dou
     yOut = outCoord[1].asDegrees();
 }
 
-void GtransfoSkyWcs::dump(std::ostream &stream) const {
-    stream << "GtransfoSkyWcs(" << *_skyWcs << ")";
-}
+void GtransfoSkyWcs::dump(std::ostream &stream) const { stream << "GtransfoSkyWcs(" << *_skyWcs << ")"; }
 
 double GtransfoSkyWcs::fit(const StarMatchList &starMatchList) {
     throw LSST_EXCEPT(pex::exceptions::LogicError, "Not implemented");

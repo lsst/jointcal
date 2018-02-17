@@ -1,3 +1,4 @@
+#include "astshim.h"
 #include "lsst/log/Log.h"
 #include "lsst/jointcal/Eigenstuff.h"
 #include "lsst/jointcal/ConstrainedAstrometryModel.h"
@@ -18,10 +19,26 @@ namespace {
 LOG_LOGGER _log = LOG_GET("jointcal.ConstrainedAstrometryModel");
 }
 
+namespace {
+// Append the keys of this map into a comma-separated string.
+template <typename KeyType, typename ValueType>
+void outputMapKeys(std::map<KeyType, ValueType> const &map, std::ostream &os) {
+    bool first = true;
+    os << "[";
+    for (auto const &i : map) {
+        if (first)
+            first = false;
+        else
+            os << ", ";
+        os << i.first;
+    }
+    os << "]";
+}
+}  // namespace
+
 namespace lsst {
 namespace jointcal {
 
-using namespace std;
 ConstrainedAstrometryModel::ConstrainedAstrometryModel(
         CcdImageList const &ccdImageList, std::shared_ptr<ProjectionHandler const> projectionHandler,
         bool initFromWCS, int chipDegree, int visitDegree)
@@ -138,7 +155,9 @@ const Gtransfo &ConstrainedAstrometryModel::getChipTransfo(CcdIdType const chip)
     auto chipp = _chipMap.find(chip);
     if (chipp == _chipMap.end()) {
         std::stringstream errMsg;
-        errMsg << "No such chipId: '" << chip << "' found in chipMap of:  " << this;
+        errMsg << "No such chipId: " << chip << " among ";
+        outputMapKeys(_chipMap, errMsg);
+        std::cout << std::endl;
         throw pexExcept::InvalidParameterError(errMsg.str());
     }
     return chipp->second->getTransfo();
@@ -156,10 +175,43 @@ const Gtransfo &ConstrainedAstrometryModel::getVisitTransfo(VisitIdType const &v
     auto visitp = _visitMap.find(visit);
     if (visitp == _visitMap.end()) {
         std::stringstream errMsg;
-        errMsg << "No such visitId: '" << visit << "' found in visitMap of: " << this;
+        errMsg << "No such visitId: " << visit << " among ";
+        outputMapKeys(_visitMap, errMsg);
+        std::cout << std::endl;
         throw pexExcept::InvalidParameterError(errMsg.str());
     }
     return visitp->second->getTransfo();
+}
+
+std::shared_ptr<afw::geom::SkyWcs> ConstrainedAstrometryModel::makeSkyWcs(CcdImage const &ccdImage) const {
+    auto proj = std::dynamic_pointer_cast<const TanRaDec2Pix>(getSky2TP(ccdImage));
+    jointcal::Point tangentPoint(proj->getTangentPoint());
+
+    auto imageFrame = ccdImage.getImageFrame();
+    auto pixelsToFocal = getChipTransfo(ccdImage.getCcdId()).toAstMap(imageFrame);
+    jointcal::Point lowerLeft(imageFrame.xMin, imageFrame.yMin);
+    jointcal::Point upperRight(imageFrame.xMax, imageFrame.yMax);
+    jointcal::Frame focalBox(getChipTransfo(ccdImage.getCcdId()).apply(lowerLeft),
+                             getChipTransfo(ccdImage.getCcdId()).apply(upperRight));
+    auto focalToIwc = getVisitTransfo(ccdImage.getVisit()).toAstMap(focalBox);
+
+    ast::Frame pixelFrame(2, "Domain=PIXELS");
+    ast::Frame focalFrame(2, "Domain=FOCAL");
+    ast::Frame iwcFrame(2, "Domain=IWC");
+
+    // make a basic SkyWcs and extract the IWC portion
+    auto iwcToSkyWcs = afw::geom::makeSkyWcs(
+            afw::geom::Point2D(0, 0),
+            afw::geom::SpherePoint(tangentPoint.x, tangentPoint.y, afw::geom::degrees),
+            afw::geom::makeCdMatrix(1.0 * afw::geom::degrees, 0 * afw::geom::degrees, true));
+    auto iwcToSkyMap = iwcToSkyWcs->getFrameDict()->getMapping("PIXELS", "SKY");
+    auto skyFrame = iwcToSkyWcs->getFrameDict()->getFrame("SKY");
+
+    ast::FrameDict frameDict(pixelFrame);
+    frameDict.addFrame("PIXELS", *pixelsToFocal, focalFrame);
+    frameDict.addFrame("FOCAL", *focalToIwc, iwcFrame);
+    frameDict.addFrame("IWC", *iwcToSkyMap, *skyFrame);
+    return std::make_shared<afw::geom::SkyWcs>(frameDict);
 }
 
 std::shared_ptr<TanSipPix2RaDec> ConstrainedAstrometryModel::produceSipWcs(CcdImage const &ccdImage) const {

@@ -1,6 +1,7 @@
 #include <memory>
 #include <string>
 
+#include "astshim.h"
 #include "lsst/log/Log.h"
 #include "lsst/jointcal/Eigenstuff.h"
 #include "lsst/jointcal/SimpleAstrometryModel.h"
@@ -106,6 +107,27 @@ void SimpleAstrometryModel::freezeErrorTransform() {
 
 const Gtransfo &SimpleAstrometryModel::getTransfo(CcdImage const &ccdImage) const {
     return dynamic_cast<const SimplePolyMapping *>(findMapping(ccdImage))->getTransfo();
+}
+
+std::shared_ptr<afw::geom::SkyWcs> SimpleAstrometryModel::makeSkyWcs(CcdImage const &ccdImage) const {
+    auto proj = std::dynamic_pointer_cast<const TanRaDec2Pix>(getSky2TP(ccdImage));
+    jointcal::Point tangentPoint(proj->getTangentPoint());
+
+    auto polyMap = getTransfo(ccdImage).toAstMap(ccdImage.getImageFrame());
+    ast::Frame pixelFrame(2, "Domain=PIXELS");
+    ast::Frame iwcFrame(2, "Domain=IWC");
+
+    // make a basic SkyWcs and extract the IWC portion
+    auto iwcToSkyWcs = afw::geom::makeSkyWcs(
+            afw::geom::Point2D(0, 0),
+            afw::geom::SpherePoint(tangentPoint.x, tangentPoint.y, afw::geom::degrees),
+            afw::geom::makeCdMatrix(1.0 * afw::geom::degrees, 0 * afw::geom::degrees, true));
+    auto iwcToSkyMap = iwcToSkyWcs->getFrameDict()->getMapping("PIXELS", "SKY");
+    auto skyFrame = iwcToSkyWcs->getFrameDict()->getFrame("SKY");
+
+    ast::FrameDict frameDict(pixelFrame, *polyMap, iwcFrame);
+    frameDict.addFrame("IWC", *iwcToSkyMap, *skyFrame);
+    return std::make_shared<afw::geom::SkyWcs>(frameDict);
 }
 
 std::shared_ptr<TanSipPix2RaDec> SimpleAstrometryModel::produceSipWcs(CcdImage const &ccdImage) const {

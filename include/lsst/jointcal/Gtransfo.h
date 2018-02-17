@@ -145,6 +145,17 @@ public:
     //! returns the number of parameters (to compute chi2's)
     virtual int getNpar() const { return 0; }
 
+    /**
+     * Create an equivalent AST mapping for this transformation, including an analytic inverse if possible.
+     *
+     * @param   domain The domain of the transfo, to help find an inverse.
+     *
+     * @return  An AST Mapping that represents this transformation.
+     */
+    virtual std::shared_ptr<ast::Mapping> toAstMap(jointcal::Frame const &domain) const {
+        throw std::logic_error("toAstMap is not implemented for this class.");
+    }
+
     void write(const std::string &fileName) const;
 
     virtual void write(std::ostream &stream) const;
@@ -200,6 +211,9 @@ public:
 
     //! linear approximation.
     virtual GtransfoLin linearApproximation(Point const &where, const double step = 0.01) const;
+
+    /// @copydoc Gtransfo::toAstMap
+    std::shared_ptr<ast::Mapping> toAstMap(jointcal::Frame const &domain) const override;
 
     void write(std::ostream &s) const;
 
@@ -292,6 +306,9 @@ public:
     //! for y.
     void paramDerivatives(Point const &where, double *dx, double *dy) const;
 
+    /// @copydoc Gtransfo::toAstMap
+    std::shared_ptr<ast::Mapping> toAstMap(jointcal::Frame const &domain) const override;
+
     void write(std::ostream &s) const;
     void read(std::istream &s);
 
@@ -313,11 +330,29 @@ private:
        up. However this uses Variable Length Array (VLA) which is not
        part of C++, but gcc implements it. */
     void computeMonomials(double xIn, double yIn, double *monomial) const;
+
+    /**
+     * Return the sparse coefficients matrix that ast::PolyMap requires.
+     *
+     * @see ast::PolyMap for details of the structure of this matrix.
+     */
+    ndarray::Array<double, 2, 2> toAstPolyMapCoefficients() const;
 };
 
-//! approximates the inverse by a polynomial, up to required precision.
-std::unique_ptr<GtransfoPoly> inversePolyTransfo(Gtransfo const &Direct, const Frame &frame,
-                                                 const double Prec);
+/**
+ * Approximate the inverse by a polynomial, to some precision.
+ *
+ * @param      forward    Transform to be inverted.
+ * @param[in]  domain     The domain of forward.
+ * @param[in]  precision  Require that \f$chi2 / (nsteps^2) < precision^2\f$.
+ * @param[in]  maxDegree  The maximum degree allowed of the inverse polynomial.
+ * @param[in]  nSteps     The number of sample points per axis (nSteps^2 total points).
+ *
+ * @return  A polynomial that best approximates forward.
+ */
+std::shared_ptr<GtransfoPoly> inversePolyTransfo(Gtransfo const &forward, Frame const &domain,
+                                                 double const precision, int const maxDegree = 9,
+                                                 unsigned const nSteps = 50);
 
 GtransfoLin normalizeCoordinatesTransfo(const Frame &frame);
 

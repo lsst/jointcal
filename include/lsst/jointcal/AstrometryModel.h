@@ -40,6 +40,15 @@ public:
         this Ccdimage maps the pixel coordinates. */
     virtual const std::shared_ptr<Gtransfo const> getSky2TP(CcdImage const &ccdImage) const = 0;
 
+    /**
+     * Make a SkyWcs that contains this model.
+     *
+     * @param      ccdImage  The exposure to create the SkyWcs for.
+     *
+     * @return     SkyWcs containing this model.
+     */
+    virtual std::shared_ptr<afw::geom::SkyWcs> makeSkyWcs(CcdImage const &ccdImage) const = 0;
+
     //! Cook up a SIP WCS.
     virtual std::shared_ptr<TanSipPix2RaDec> produceSipWcs(CcdImage const &ccdImage) const = 0;
 
