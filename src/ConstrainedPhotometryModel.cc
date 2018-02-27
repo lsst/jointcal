@@ -36,7 +36,7 @@ ConstrainedPhotometryModel::ConstrainedPhotometryModel(CcdImageList const &ccdIm
         // If the chip is not in the map, add it, otherwise continue.
         if (chipPair == _chipMap.end()) {
             auto center = ccdImage->getDetector()->getCenter(afw::cameraGeom::FOCAL_PLANE);
-            double radius2 = std::pow(center.getPoint().getX(), 2) + std::pow(center.getPoint().getY(), 2);
+            double radius2 = std::pow(center.getX(), 2) + std::pow(center.getY(), 2);
             if (radius2 < minRadius2) {
                 minRadius2 = radius2;
                 constrainedChip = chip;
