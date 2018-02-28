@@ -188,12 +188,12 @@ public:
     GtransfoIdentity() {}
 
     //! xOut = xIn; yOut = yIn !
-    void apply(const double xIn, const double yIn, double &xOut, double &yOut) const {
+    void apply(const double xIn, const double yIn, double &xOut, double &yOut) const override {
         xOut = xIn;
         yOut = yIn;
-    };  // to speed up
+    }  // to speed up
 
-    double fit(StarMatchList const &starMatchList) {
+    double fit(StarMatchList const &starMatchList) override {
         throw pexExcept::TypeError(
                 "GtransfoIdentity is the identity transformation: it cannot be fit to anything.");
     }
@@ -203,19 +203,22 @@ public:
 
     void dump(std::ostream &stream = std::cout) const override { stream << "x' = x\ny' = y" << std::endl; }
 
-    int getNpar() const { return 0; }
+    int getNpar() const override { return 0; }
 
-    std::unique_ptr<Gtransfo> clone() const { return std::unique_ptr<Gtransfo>(new GtransfoIdentity); }
+    std::unique_ptr<Gtransfo> clone() const override {
+        return std::unique_ptr<Gtransfo>(new GtransfoIdentity);
+    }
 
-    void computeDerivative(Point const &where, GtransfoLin &derivative, const double step = 0.01) const;
+    void computeDerivative(Point const &where, GtransfoLin &derivative,
+                           const double step = 0.01) const override;
 
     //! linear approximation.
-    virtual GtransfoLin linearApproximation(Point const &where, const double step = 0.01) const;
+    virtual GtransfoLin linearApproximation(Point const &where, const double step = 0.01) const override;
 
     /// @copydoc Gtransfo::toAstMap
     std::shared_ptr<ast::Mapping> toAstMap(jointcal::Frame const &domain) const override;
 
-    void write(std::ostream &s) const;
+    void write(std::ostream &s) const override;
 
     void read(std::istream &s);
 
@@ -250,25 +253,26 @@ public:
 
     using Gtransfo::apply;  // to unhide Gtransfo::apply(Point const &)
 
-    void apply(const double xIn, const double yIn, double &xOut, double &yOut) const;
+    void apply(const double xIn, const double yIn, double &xOut, double &yOut) const override;
 
     //! specialised analytic routine
-    void computeDerivative(Point const &where, GtransfoLin &derivative, const double step = 0.01) const;
+    void computeDerivative(Point const &where, GtransfoLin &derivative,
+                           const double step = 0.01) const override;
 
     //! a mix of apply and Derivative
-    virtual void transformPosAndErrors(const FatPoint &in, FatPoint &out) const;
+    virtual void transformPosAndErrors(const FatPoint &in, FatPoint &out) const override;
 
     //! returns degree
     unsigned getDegree() const { return _degree; }
 
     //! total number of parameters
-    int getNpar() const { return 2 * _nterms; }
+    int getNpar() const override { return 2 * _nterms; }
 
     //! print out of coefficients in a readable form.
-    void dump(std::ostream &stream = std::cout) const;
+    void dump(std::ostream &stream = std::cout) const override;
 
     //! guess what
-    double fit(StarMatchList const &starMatchList);
+    double fit(StarMatchList const &starMatchList) override;
 
     //! Composition (internal stuff in quadruple precision)
     GtransfoPoly operator*(GtransfoPoly const &right) const;
@@ -283,7 +287,9 @@ public:
     /// @copydoc Gtransfo::composeAndReduce
     std::unique_ptr<Gtransfo> composeAndReduce(GtransfoPoly const &right) const;
 
-    std::unique_ptr<Gtransfo> clone() const { return std::unique_ptr<Gtransfo>(new GtransfoPoly(*this)); }
+    std::unique_ptr<Gtransfo> clone() const override {
+        return std::unique_ptr<Gtransfo>(new GtransfoPoly(*this));
+    }
 
     //! access to coefficients (read only)
     double coeff(const unsigned powX, const unsigned powY, const unsigned whichCoord) const;
@@ -297,19 +303,19 @@ public:
     double determinant() const;
 
     //!
-    double paramRef(const int i) const;
+    double paramRef(const int i) const override;
 
     //!
-    double &paramRef(const int i);
+    double &paramRef(const int i) override;
 
     //! Derivative w.r.t parameters. Derivatives should be al least 2*NPar long. first Npar, for x, last Npar
     //! for y.
-    void paramDerivatives(Point const &where, double *dx, double *dy) const;
+    void paramDerivatives(Point const &where, double *dx, double *dy) const override;
 
     /// @copydoc Gtransfo::toAstMap
     std::shared_ptr<ast::Mapping> toAstMap(jointcal::Frame const &domain) const override;
 
-    void write(std::ostream &s) const;
+    void write(std::ostream &s) const override;
     void read(std::istream &s);
 
 private:
