@@ -48,6 +48,8 @@ void declarePoint(py::module &mod) {
 
     cls.def_readonly("x", &Point::x);
     cls.def_readonly("y", &Point::y);
+
+    utils::python::addOutputOp(cls, "__str__");
 }
 
 void declareFatPoint(py::module &mod) {
@@ -69,8 +71,6 @@ void declareBaseStar(py::module &mod) {
 
     // cls.def("getFlux", &BaseStar::getFlux);
     cls.def_property_readonly("flux", (double (BaseStar::*)() const) & BaseStar::getFlux);
-
-    utils::python::addOutputOp(cls, "__str__");
 }
 
 void declareRefStar(py::module &mod) {

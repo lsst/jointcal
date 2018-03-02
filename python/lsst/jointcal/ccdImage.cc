@@ -62,6 +62,8 @@ void declareCcdImage(py::module &mod) {
     cls.def("getVisit", &CcdImage::getVisit);
     cls.def_property_readonly("visit", &CcdImage::getVisit);
 
+    cls.def("getDetector", &CcdImage::getDetector, py::return_value_policy::reference_internal);
+
     cls.def("getCommonTangentPoint", &CcdImage::getCommonTangentPoint,
             py::return_value_policy::reference_internal);
     cls.def("setCommonTangentPoint", &CcdImage::setCommonTangentPoint);
