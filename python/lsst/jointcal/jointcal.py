@@ -673,7 +673,7 @@ class JointcalTask(pipeBase.CmdLineTask):
 
     def _write_astrometry_results(self, associations, model, visit_ccd_to_dataRef):
         """
-        Write the fitted astrometric results to a new 'wcs' dataRef.
+        Write the fitted astrometric results to a new 'jointcal_wcs' dataRef.
 
         Parameters
         ----------
@@ -691,20 +691,18 @@ class JointcalTask(pipeBase.CmdLineTask):
             ccd = ccdImage.ccdId
             visit = ccdImage.visit
             dataRef = visit_ccd_to_dataRef[(visit, ccd)]
-            exp = afwImage.ExposureI(0, 0)
             self.log.info("Updating WCS for visit: %d, ccd: %d", visit, ccd)
             tanSip = model.produceSipWcs(ccdImage)
-            tanWcs = lsst.jointcal.gtransfoToTanWcs(tanSip, ccdImage.imageFrame, False)
-            exp.setWcs(tanWcs)
+            wcs = lsst.jointcal.gtransfoToTanWcs(tanSip, ccdImage.imageFrame, False)
             try:
-                dataRef.put(exp, 'wcs')
+                dataRef.put(wcs, 'jointcal_wcs')
             except pexExceptions.Exception as e:
                 self.log.fatal('Failed to write updated Wcs: %s', str(e))
                 raise e
 
     def _write_photometry_results(self, associations, model, visit_ccd_to_dataRef):
         """
-        Write the fitted photometric results to a new 'photoCalib' dataRef.
+        Write the fitted photometric results to a new 'jointcal_photoCalib' dataRef.
 
         Parameters
         ----------
@@ -725,7 +723,7 @@ class JointcalTask(pipeBase.CmdLineTask):
             self.log.info("Updating PhotoCalib for visit: %d, ccd: %d", visit, ccd)
             photoCalib = model.toPhotoCalib(ccdImage)
             try:
-                dataRef.put(photoCalib, 'photoCalib')
+                dataRef.put(photoCalib, 'jointcal_photoCalib')
             except pexExceptions.Exception as e:
                 self.log.fatal('Failed to write updated PhotoCalib: %s', str(e))
                 raise e

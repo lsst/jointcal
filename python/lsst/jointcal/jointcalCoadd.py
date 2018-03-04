@@ -52,7 +52,7 @@ class JointcalCoaddTask(MakeCoaddTempExpTask):
         if calexp is None:
             calexp = dataRef.get("calexp")
 
-        wcsCont = dataRef.get("wcs")
-        calexp.setWcs(wcsCont.getWcs())
+        wcsCont = dataRef.get("jointcal_wcs")
+        calexp.setWcs(wcsCont)
 
         return Struct(exposure=calexp)

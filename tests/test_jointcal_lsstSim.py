@@ -159,8 +159,8 @@ class JointcalTestLSSTSim(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Te
         self.assertLess(rms_result.pa1, pa1)
 
         for data_ref in data_refs:
-            wcs = data_ref.get('wcs').getWcs()
-            self.assertIsNone(wcs)
+            with self.assertRaises(lsst.daf.persistence.butlerExceptions.NoResults):
+                data_ref.get('jointcal_wcs')
 
     def testJointcalTask_2_visits_no_photometry(self):
         """Test turning off fitting photometry."""
@@ -193,9 +193,8 @@ class JointcalTestLSSTSim(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Te
         self.assertIsNone(rms_result.pa1)
 
         for data_ref in data_refs:
-            calib = data_ref.get('wcs').getCalib()
-            blank_calib = lsst.afw.image.Calib()
-            self.assertEqual(calib, blank_calib)
+            with self.assertRaises(lsst.daf.persistence.butlerExceptions.NoResults):
+                data_ref.get('jointcal_photoCalib')
 
 
 class MemoryTester(lsst.utils.tests.MemoryTestCase):

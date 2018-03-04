@@ -128,14 +128,14 @@ class JointcalStatistics(object):
         new_cats = [ref.get('src') for ref in data_refs]
         new_wcss = []
         if self.do_astrometry:
-            new_wcss = [ref.get('wcs') for ref in data_refs]
+            new_wcss = [ref.get('jointcal_wcs') for ref in data_refs]
         new_calibs = []
         if self.do_photometry:
-            new_calibs = [ref.get('photoCalib') for ref in data_refs]
+            new_calibs = [ref.get('jointcal_photoCalib') for ref in data_refs]
         if self.do_astrometry:
             for wcs, cat in zip(new_wcss, new_cats):
                 # update in-place the object coordinates based on the new wcs
-                lsst.afw.table.updateSourceCoords(wcs.getWcs(), cat)
+                lsst.afw.table.updateSourceCoords(wcs, cat)
 
         self.new_dist, self.new_flux, self.new_ref_flux, self.new_source = compute(new_cats, new_calibs)
 
@@ -499,7 +499,7 @@ def plot_all_wcs_deltas(plt, data_refs, visits, old_wcs_list, per_ccd_plot=False
         for i, ref in enumerate(data_refs):
             md = ref.get('calexp_md')
             dims = lsst.afw.image.bboxFromMetadata(md).getDimensions()
-            plot_wcs(plt, old_wcs_list[i], ref.get('wcs').getWcs(),
+            plot_wcs(plt, old_wcs_list[i], ref.get('jointcal_wcs'),
                      dims.getX(), dims.getY(),
                      center=(md.get('CRVAL1'), md.get('CRVAL2')), name='dataRef %d'%i,
                      outdir=outdir)
@@ -555,7 +555,7 @@ def plot_all_wcs_quivers(plt, data_refs, visits, old_wcs_list, name, outdir='.pl
                 continue
             md = ref.get('calexp_md')
             dims = lsst.afw.image.bboxFromMetadata(md).getDimensions()
-            Q = plot_wcs_quivers(ax, old_wcs, ref.get('wcs').getWcs(),
+            Q = plot_wcs_quivers(ax, old_wcs, ref.get('jointcal_wcs'),
                                  dims.getX(), dims.getY())
             # TODO: add CCD bounding boxes to plot once DM-5503 is finished.
             # TODO: add a circle for the full focal plane.
@@ -625,7 +625,7 @@ def plot_wcs_magnitude(plt, data_refs, visits, old_wcs_list, name, outdir='.plot
             md = ref.get('calexp_md')
             dims = lsst.afw.image.bboxFromMetadata(md).getDimensions()
             x1, y1, x2, y2 = make_xy_wcs_grid(dims.getX(), dims.getY(),
-                                              old_wcs, ref.get('wcs').getWcs())
+                                              old_wcs, ref.get('jointcal_wcs'))
             uu = x2 - x1
             vv = y2 - y1
             extent = (x1[0, 0], x1[-1, -1], y1[0, 0], y1[-1, -1])
