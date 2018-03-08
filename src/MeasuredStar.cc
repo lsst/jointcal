@@ -8,7 +8,7 @@
 
 //#include "preferences.h"
 //#include "ccdimage.h"
-#include "assert.h"  // for assert
+#include <cassert>  // for assert
 
 namespace lsst {
 namespace jointcal {
@@ -34,7 +34,7 @@ for fluxes, we might use :
 
 BaseStarList &Measured2Base(MeasuredStarList &This) { return (BaseStarList &)This; }
 
-BaseStarList *Measured2Base(MeasuredStarList *This) { return (BaseStarList *)This; }
+BaseStarList *Measured2Base(MeasuredStarList *This) { return reinterpret_cast<BaseStarList *>(This); }
 
 const BaseStarList &Measured2Base(const MeasuredStarList &This) { return (const BaseStarList &)This; }
 

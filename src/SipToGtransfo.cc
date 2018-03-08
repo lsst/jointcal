@@ -17,11 +17,11 @@ namespace afwGeom = lsst::afw::geom;
 namespace lsst {
 namespace jointcal {
 
-typedef std::shared_ptr<jointcal::GtransfoPoly> GtPoly_Ptr;
+using GtPoly_Ptr = std::shared_ptr<jointcal::GtransfoPoly>;
 
 /* The inverse transformation i.e. convert from the fit result to the SIP
    convention. */
-std::shared_ptr<afw::geom::SkyWcs> gtransfoToTanWcs(const jointcal::TanSipPix2RaDec wcsTransfo,
+std::shared_ptr<afw::geom::SkyWcs> gtransfoToTanWcs(const jointcal::TanSipPix2RaDec& wcsTransfo,
                                                     const jointcal::Frame &ccdFrame,
                                                     const bool noLowOrderSipTerms) {
     GtransfoLin linPart = wcsTransfo.getLinPart();

@@ -1,5 +1,6 @@
 #include <map>
 #include <limits>
+#include <memory>
 
 #include "lsst/log/Log.h"
 
@@ -46,13 +47,13 @@ ConstrainedPhotometryModel::ConstrainedPhotometryModel(CcdImageList const &ccdIm
             auto chipTransfo =
                     std::make_shared<PhotometryTransfoSpatiallyInvariant>(photoCalib->getCalibrationMean());
             _chipMap[chip] =
-                    std::unique_ptr<PhotometryMapping>(new PhotometryMapping(std::move(chipTransfo)));
+                    std::make_unique<PhotometryMapping>(std::move(chipTransfo));
         }
         // If the visit is not in the map, add it, otherwise continue.
         if (visitPair == _visitMap.end()) {
             auto visitTransfo = std::make_shared<PhotometryTransfoChebyshev>(visitDegree, focalPlaneBBox);
             _visitMap[visit] =
-                    std::unique_ptr<PhotometryMapping>(new PhotometryMapping(std::move(visitTransfo)));
+                    std::make_unique<PhotometryMapping>(std::move(visitTransfo));
         }
     }
 
@@ -65,8 +66,8 @@ ConstrainedPhotometryModel::ConstrainedPhotometryModel(CcdImageList const &ccdIm
         auto visit = ccdImage->getVisit();
         auto chip = ccdImage->getCcdId();
         _myMap.emplace(ccdImage->getHashKey(),
-                       std::unique_ptr<ChipVisitPhotometryMapping>(
-                               new ChipVisitPhotometryMapping(_chipMap[chip], _visitMap[visit])));
+                       std::make_unique<ChipVisitPhotometryMapping>(
+                               _chipMap[chip], _visitMap[visit]));
     }
     LOGLS_INFO(_log, "Got " << _chipMap.size() << " chip mappings and " << _visitMap.size()
                             << " visit mappings; holding chip " << constrainedChip << " fixed.");
@@ -141,7 +142,7 @@ void ConstrainedPhotometryModel::computeParameterDerivatives(MeasuredStar const 
 
 namespace {
 // Convert photoTransfo's way of storing Chebyshev coefficients into the format wanted by ChebyMap.
-ndarray::Array<double, 2, 2> toChebyMapCoeffs(std::shared_ptr<PhotometryTransfoChebyshev> transfo) {
+ndarray::Array<double, 2, 2> toChebyMapCoeffs(const std::shared_ptr<PhotometryTransfoChebyshev>& transfo) {
     auto coeffs = transfo->getCoefficients();
     // 4 x nPar: ChebyMap wants rows that look like (a_ij, 1, i, j) for out += a_ij*T_i(x)*T_j(y)
     ndarray::Array<double, 2, 2> chebyCoeffs = allocate(ndarray::makeVector(transfo->getNpar(), 4));
@@ -165,7 +166,7 @@ std::shared_ptr<afw::image::PhotoCalib> ConstrainedPhotometryModel::toPhotoCalib
     auto oldPhotoCalib = ccdImage.getPhotoCalib();
     auto detector = ccdImage.getDetector();
     auto ccdBBox = detector->getBBox();
-    ChipVisitPhotometryMapping *mapping = dynamic_cast<ChipVisitPhotometryMapping *>(findMapping(ccdImage));
+    auto *mapping = dynamic_cast<ChipVisitPhotometryMapping *>(findMapping(ccdImage));
     // There should be no way in which we can get to this point and not have a ChipVisitMapping,
     // so blow up if we don't.
     assert(mapping != nullptr);

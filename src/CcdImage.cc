@@ -1,7 +1,8 @@
-#include <assert.h>
+#include <cassert>
 #include <string>
 #include <sstream>
-#include <math.h>
+#include <utility>
+#include <cmath>
 
 #include "lsst/afw/cameraGeom/CameraSys.h"
 #include "lsst/pex/exceptions.h"
@@ -85,11 +86,11 @@ void CcdImage::loadCatalog(afw::table::SourceCatalog const &catalog, std::string
 }
 
 CcdImage::CcdImage(afw::table::SourceCatalog &catalog, std::shared_ptr<lsst::afw::geom::SkyWcs> wcs,
-                   std::shared_ptr<lsst::afw::image::VisitInfo> visitInfo, afw::geom::Box2I const &bbox,
+                   const std::shared_ptr<lsst::afw::image::VisitInfo>& visitInfo, afw::geom::Box2I const &bbox,
                    std::string const &filter, std::shared_ptr<afw::image::PhotoCalib> photoCalib,
                    std::shared_ptr<afw::cameraGeom::Detector> detector, int visit, int ccdId,
                    std::string const &fluxField)
-        : _ccdId(ccdId), _visit(visit), _photoCalib(photoCalib), _detector(detector), _filter(filter) {
+        : _ccdId(ccdId), _visit(visit), _photoCalib(std::move(photoCalib)), _detector(std::move(detector)), _filter(filter) {
     loadCatalog(catalog, fluxField);
 
     Point lowerLeft(bbox.getMinX(), bbox.getMinY());
@@ -111,7 +112,7 @@ CcdImage::CcdImage(afw::table::SourceCatalog &catalog, std::shared_ptr<lsst::afw
 
     // lsstSim doesn't manage ERA (and thus Hour Angle) properly, so it's going to be NaN.
     // Because we need the refraction vector later, go with 0 HA to prevent crashes on that NaN.
-    if (std::isnan(_hourAngle) == true) {
+    if (std::isnan(_hourAngle)) {
         _hourAngle = 0;
     }
 

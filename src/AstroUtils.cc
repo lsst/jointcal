@@ -1,8 +1,8 @@
-#include <math.h>
+#include <cmath>
 #include <iostream>
 #include <fstream>
-#include <stdio.h>
-#include <string.h>
+#include <cstdio>
+#include <cstring>
 
 #include "lsst/jointcal/BaseStar.h"
 #include "lsst/jointcal/AstroUtils.h"

@@ -86,7 +86,7 @@ void PhotometryFit::leastSquareDerivativesReference(FittedStarList const &fitted
     // Derivatives of terms involving fitted and refstars only contribute if we are fitting fluxes.
     if (!_fittingFluxes) return;
     // Can't compute anything if there are no refStars.
-    if (_associations->refStarList.size() == 0) return;
+    if (_associations->refStarList.empty()) return;
 
     unsigned kTriplets = tripletList.getNextFreeIndex();
 

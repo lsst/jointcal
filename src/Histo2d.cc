@@ -1,6 +1,7 @@
 #include <iostream>
-#include <math.h>   /* for floor */
-#include <string.h> /* for memset*/
+#include <memory>
+#include <cmath>   /* for floor */
+#include <cstring> /* for memset*/
 
 #include "lsst/log/Log.h"
 #include "lsst/jointcal/Histo2d.h"
@@ -29,20 +30,20 @@ Histo2d::Histo2d(int nnx, float mminx, float mmaxx, int nny, float mminy, float 
         LOGL_WARN(_log, "Histo2d: maxy = miny requested");
         scaley = 1.0;
     }
-    data.reset(new float[nx * ny]);
+    data = std::make_unique<float[]>(nx * ny);
     memset(data.get(), 0, nx * ny * sizeof(float));
 }
 
 Histo2d::Histo2d(const Histo2d &other) {
     memcpy(this, &other, sizeof(Histo2d));
-    data.reset(new float[nx * ny]);
+    data = std::make_unique<float[]>(nx * ny);
     memcpy((data).get(), other.data.get(), nx * ny * sizeof(float));
 }
 
 bool Histo2d::indices(double x, double y, int &ix, int &iy) const {
-    ix = (int)floor((x - minx) * scalex);
+    ix = static_cast<int>(floor((x - minx) * scalex));
     if (ix < 0 || ix >= nx) return false;
-    iy = (int)floor((y - miny) * scaley);
+    iy = static_cast<int>(floor((y - miny) * scaley));
     return (iy >= 0 && iy < ny);
 }
 
@@ -64,8 +65,8 @@ double Histo2d::maxBin(double &x, double &y) const {
     }
     int ix = imax / ny;
     int iy = imax - ix * ny;
-    x = minx + ((float)ix + 0.5) / scalex;
-    y = miny + ((float)iy + 0.5) / scaley;
+    x = minx + (static_cast<float>(ix) + 0.5) / scalex;
+    y = miny + (static_cast<float>(iy) + 0.5) / scaley;
     return valmax;
 }
 

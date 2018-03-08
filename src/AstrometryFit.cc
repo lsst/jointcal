@@ -2,6 +2,7 @@
 #include <iomanip>
 #include <algorithm>
 #include <fstream>
+#include <utility>
 
 #include "Eigen/Sparse"
 
@@ -21,8 +22,8 @@ namespace jointcal {
 
 AstrometryFit::AstrometryFit(std::shared_ptr<Associations> associations,
                              std::shared_ptr<AstrometryModel> astrometryModel, double posError)
-        : FitterBase(associations),
-          _astrometryModel(astrometryModel),
+        : FitterBase(std::move(associations)),
+          _astrometryModel(std::move(astrometryModel)),
           _refractionCoefficient(0),
           _nParDistortions(0),
           _nParPositions(0),
@@ -241,7 +242,7 @@ void AstrometryFit::leastSquareDerivativesReference(FittedStarList const &fitted
     if (!_fittingPos) return;
     /* the other case where the accumulation of derivatives stops
        here is when there are no RefStars */
-    if (_associations->refStarList.size() == 0) return;
+    if (_associations->refStarList.empty()) return;
     Eigen::Matrix2d W(2, 2);
     Eigen::Matrix2d alpha(2, 2);
     Eigen::Matrix2d H(2, 2), halpha(2, 2), HW(2, 2);
@@ -526,8 +527,8 @@ void AstrometryFit::checkStuff() {
 #endif
     const char *what2fit[] = {"Positions", "Distortions", "Positions Distortions"};
     // DEBUG
-    for (unsigned k = 0; k < sizeof(what2fit) / sizeof(what2fit[0]); ++k) {
-        assignIndices(what2fit[k]);
+    for (auto & k : what2fit) {
+        assignIndices(k);
         TripletList tripletList(10000);
         Eigen::VectorXd grad(_nParTot);
         grad.setZero();
