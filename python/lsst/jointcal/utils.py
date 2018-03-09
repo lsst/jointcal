@@ -2,10 +2,13 @@
 """
 Statistics of jointcal vs. single-frame procesing and diagnostic plots.
 
-NOTE: some of the algorithms and data structures in this code are temporary
+Notes
+-----
+Some of the algorithms and data structures in this code are temporary
 kludges and will no longer be necessary once the following are available:
- * a composite data structure that contains all ccds from a single visit
- * an n-way matching system that preserves the separations between sources
+
+- a composite data structure that contains all ccds from a single visit
+- an n-way matching system that preserves the separations between sources
 """
 from __future__ import division, print_function, absolute_import
 from builtins import zip
@@ -21,6 +24,8 @@ import lsst.afw.table
 import lsst.afw.image
 from lsst.afw.image import abMagFromFlux
 from lsst.afw.geom import arcseconds
+
+__all__ = ['JointcalStatistics']
 
 MatchDict = collections.namedtuple('MatchDict', ['relative', 'absolute'])
 
@@ -72,8 +77,8 @@ class JointcalStatistics(object):
         reference : lsst reference catalog
             reference catalog to do absolute matching against.
 
-        Return
-        ------
+        Returns
+        -------
         namedtuple:
             astropy.Quantity
                 Post-jointcal relative RMS of the matched sources.

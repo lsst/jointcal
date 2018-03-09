@@ -26,7 +26,7 @@ from .dataIds import PerTractCcdDataIdContainer
 import lsst.jointcal
 from lsst.jointcal import MinimizeResult
 
-__all__ = ["JointcalConfig", "JointcalTask"]
+__all__ = ["JointcalConfig", "JointcalRunner", "JointcalTask"]
 
 Photometry = collections.namedtuple('Photometry', ('fit', 'model'))
 Astrometry = collections.namedtuple('Astrometry', ('fit', 'model', 'sky_to_tan_projection'))
@@ -70,14 +70,22 @@ class JointcalRunner(pipeBase.ButlerInitializedTaskRunner):
 
     def __call__(self, args):
         """
-        @param args     Arguments for Task.run()
+        Parameters
+        ----------
+        args
+            Arguments for Task.run()
 
-        @return
-        - A pipe.base.Struct containing these fields if self.doReturnResults is False:
-            - ``exitStatus`: 0 if the task completed successfully, 1 otherwise.
-        - A pipe.base.Struct containing these fields if self.doReturnResults is True:
+        Returns
+        -------
+        pipe.base.Struct
+            if self.doReturnResults is False:
+
+            - ``exitStatus``: 0 if the task completed successfully, 1 otherwise.
+
+            if self.doReturnResults is True:
+
             - ``result``: the result of calling jointcal.run()
-            - ``exitStatus`: 0 if the task completed successfully, 1 otherwise.
+            - ``exitStatus``: 0 if the task completed successfully, 1 otherwise.
         """
         exitStatus = 0  # exit status for shell
 
@@ -107,7 +115,7 @@ class JointcalRunner(pipeBase.ButlerInitializedTaskRunner):
 
 
 class JointcalConfig(pexConfig.Config):
-    """Config for jointcalTask"""
+    """Config for JointcalTask"""
 
     doAstrometry = pexConfig.Field(
         doc="Fit astrometry and write the fitted result.",
@@ -207,7 +215,7 @@ class JointcalConfig(pexConfig.Config):
 
 
 class JointcalTask(pipeBase.CmdLineTask):
-    """Jointly astrometrically (photometrically later) calibrate a group of images."""
+    """Jointly astrometrically and photometrically calibrate a group of images."""
 
     ConfigClass = JointcalConfig
     RunnerClass = JointcalRunner
