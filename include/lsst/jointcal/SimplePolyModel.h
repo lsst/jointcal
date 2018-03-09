@@ -30,7 +30,7 @@ class SimplePolyModel : public AstrometryModel {
 public:
     //! Sky2TP is just a name, it can be anything
     SimplePolyModel(CcdImageList const &ccdImageList, ProjectionHandler const *projectionHandler,
-                    bool initFromWCS, unsigned nNotFit = 0, unsigned degree = 3);
+                    bool initFromWcs, unsigned nNotFit = 0, unsigned degree = 3);
 
     /// No copy or move: there is only ever one instance of a given model (i.e.. per ccd+visit)
     SimplePolyModel(SimplePolyModel const &) = delete;

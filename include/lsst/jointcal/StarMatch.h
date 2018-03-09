@@ -71,7 +71,7 @@ public:
     /* comparison that ensures that after a sort, duplicates are next one another */
     explicit StarMatch(){};
 
-    friend std::ostream &operator<<(std::ostream &stream, StarMatch const &Match);
+    friend std::ostream &operator<<(std::ostream &stream, StarMatch const &match);
 
     ~StarMatch() {}
 
@@ -198,10 +198,10 @@ private:
 };
 
 //! sum of distance squared
-double computeDist2(StarMatchList const &S, Gtransfo const &gtransfo);
+double computeDist2(StarMatchList const &starMatchList, Gtransfo const &gtransfo);
 
 //! the actual chi2
-double computeChi2(StarMatchList const &L, Gtransfo const &gtransfo);
+double computeChi2(StarMatchList const &starMatchList, Gtransfo const &gtransfo);
 }  // namespace jointcal
 }  // namespace lsst
 

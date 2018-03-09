@@ -8,7 +8,7 @@ namespace jointcal {
 class Histo2d {
 public:
     Histo2d() : data() {}
-    Histo2d(int nx, float minx, float maxx, int ny, float miny, float maxy);
+    Histo2d(int nnx, float mminx, float mmaxx, int nny, float mminy, float mmaxy);
 
     Histo2d(Histo2d const &other);
 

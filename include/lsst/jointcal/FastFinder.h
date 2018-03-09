@@ -77,7 +77,7 @@ public:
         void check() const;
 
     public:
-        Iterator(FastFinder const &f, Point const &where, double maxDist);
+        Iterator(FastFinder const &F, Point const &where, double maxDist);
         void operator++();
         stars_element operator*() const;
     };

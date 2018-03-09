@@ -34,10 +34,10 @@ std::ostream &operator<<(std::ostream &out, CcdImageKey const &key);
  */
 class CcdImage {
 public:
-    CcdImage(afw::table::SourceCatalog &record, std::shared_ptr<lsst::afw::geom::SkyWcs> wcs,
+    CcdImage(afw::table::SourceCatalog &catalog, std::shared_ptr<lsst::afw::geom::SkyWcs> wcs,
              const std::shared_ptr<lsst::afw::image::VisitInfo> &visitInfo, afw::geom::Box2I const &bbox,
              std::string const &filter, std::shared_ptr<afw::image::PhotoCalib> photoCalib,
-             std::shared_ptr<afw::cameraGeom::Detector> detector, int visit, int ccd,
+             std::shared_ptr<afw::cameraGeom::Detector> detector, int visit, int ccdId,
              std::string const &fluxField);
 
     /// No move or copy: each CCD image is unique to that ccd+visit, and Associations holds all CcdImages.
@@ -144,7 +144,7 @@ public:
     Frame const &getImageFrame() const { return _imageFrame; }
 
 private:
-    void loadCatalog(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> const &Cat,
+    void loadCatalog(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> const &catalog,
                      std::string const &fluxField);
 
     Frame _imageFrame;  // in pixels

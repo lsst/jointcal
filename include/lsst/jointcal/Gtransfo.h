@@ -176,9 +176,9 @@ public:
     //! linear approximation.
     virtual GtransfoLin linearApproximation(Point const &where, const double step = 0.01) const;
 
-    void write(std::ostream &s) const;
+    void write(std::ostream &stream) const;
 
-    void read(std::istream &s);
+    void read(std::istream &stream);
 
     //    ClassDef(GtransfoIdentity,1)
 };
@@ -240,13 +240,13 @@ public:
     std::unique_ptr<Gtransfo> clone() const { return std::unique_ptr<Gtransfo>(new GtransfoPoly(*this)); }
 
     //! access to coefficients (read only)
-    double coeff(const unsigned powX, const unsigned powY, const unsigned whichCoord) const;
+    double coeff(const unsigned degX, const unsigned degY, const unsigned whichCoord) const;
 
     //! write access
-    double &coeff(const unsigned powX, const unsigned powY, const unsigned whichCoord);
+    double &coeff(const unsigned degX, const unsigned degY, const unsigned whichCoord);
 
     //! read access, zero if beyond degree
-    double coeffOrZero(const unsigned powX, const unsigned powY, const unsigned whichCoord) const;
+    double coeffOrZero(const unsigned degX, const unsigned degY, const unsigned whichCoord) const;
 
     double determinant() const;
 
@@ -264,7 +264,8 @@ public:
     void read(std::istream &s);
 
 private:
-    double computeFit(StarMatchList const &starMatchList, Gtransfo const &InTransfo, const bool UseErrors);
+    double computeFit(StarMatchList const &starMatchList, Gtransfo const &shiftToCenter,
+                      const bool useErrors);
 
     unsigned _degree;             // the degree
     unsigned _nterms;             // number of parameters per coordinate
@@ -284,8 +285,8 @@ private:
 };
 
 //! approximates the inverse by a polynomial, up to required precision.
-std::unique_ptr<GtransfoPoly> inversePolyTransfo(Gtransfo const &Direct, Frame const &frame,
-                                                 const double Prec);
+std::unique_ptr<GtransfoPoly> inversePolyTransfo(Gtransfo const &direct, Frame const &frame,
+                                                 const double precision);
 
 GtransfoLin normalizeCoordinatesTransfo(Frame const &frame);
 
@@ -319,8 +320,8 @@ public:
     // double fit(StarMatchList const &starMatchList);
 
     //! Construct a GtransfoLin from parameters
-    GtransfoLin(const double ox, const double oy, const double aa11, const double aa12, const double aa21,
-                const double aa22);
+    GtransfoLin(const double Dx, const double Dy, const double A11, const double A12, const double A21,
+                const double A22);
 
     //! Handy converter:
     GtransfoLin(GtransfoIdentity const &) : GtransfoPoly(1){};
@@ -606,7 +607,7 @@ public:
     using Gtransfo::apply;  // to unhide apply(Point const &)
 
     //! the transfo routine and extra data that it may need.
-    UserTransfo(GtransfoFun &fun, void const *userData);
+    UserTransfo(GtransfoFun &userFun, void const *userData);
 
     void apply(const double xIn, const double yIn, double &xOut, double &yOut) const;
 

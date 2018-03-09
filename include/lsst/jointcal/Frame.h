@@ -26,7 +26,7 @@ public:
 
     //! this one is dangerous: you may swap the 2 middle arguments.
     //! Prefer next one
-    Frame(double xMin, double yMin, double xMax, double yMax);
+    Frame(double xmin, double ymin, double xmax, double ymax);
 
     //! typical use: Frame(Point(xmin,ymin),Point(xmax,ymax))
     Frame(Point const &lowerLeft, Point const &upperRight);

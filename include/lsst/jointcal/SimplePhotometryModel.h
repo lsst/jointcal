@@ -34,11 +34,10 @@ public:
     void offsetParams(Eigen::VectorXd const &delta) override;
 
     /// @copydoc PhotometryModel::transform
-    double transform(CcdImage const &ccdImage, MeasuredStar const &measuredStar,
-                     double instFlux) const override;
+    double transform(CcdImage const &ccdImage, MeasuredStar const &star, double instFlux) const override;
 
     /// @copydoc PhotometryModel::transformError
-    double transformError(CcdImage const &ccdImage, MeasuredStar const &measuredStar,
+    double transformError(CcdImage const &ccdImage, MeasuredStar const &star,
                           double instFluxErr) const override;
 
     /// @copydoc PhotometryModel::freezeErrorTransform

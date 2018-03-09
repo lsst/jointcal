@@ -113,7 +113,7 @@ class MeasuredStarList : public StarList<MeasuredStar> {
 public:
     MeasuredStarList(){};
 
-    void setCcdImage(CcdImage const *_ccdImage);
+    void setCcdImage(CcdImage const *ccdImage);
 };
 
 typedef MeasuredStarList::const_iterator MeasuredStarCIterator;

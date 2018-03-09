@@ -122,11 +122,11 @@ private:
     double _posError;  // constant term on error on position (in pixel unit)
 
     void leastSquareDerivativesMeasurement(CcdImage const &ccdImage, TripletList &tripletList,
-                                           Eigen::VectorXd &grad,
+                                           Eigen::VectorXd &fullGrad,
                                            MeasuredStarList const *msList = nullptr) const override;
 
     void leastSquareDerivativesReference(FittedStarList const &fittedStarList, TripletList &tripletList,
-                                         Eigen::VectorXd &grad) const override;
+                                         Eigen::VectorXd &fullGrad) const override;
 
     void accumulateStatImageList(CcdImageList const &ccdImageList, Chi2Accumulator &accum) const override;
 

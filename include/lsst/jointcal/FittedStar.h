@@ -99,7 +99,7 @@ public:
     int getIndexInMatrix() const { return _indexInMatrix; }
 
     //! Set the astrometric reference star associated with this star.
-    void setRefStar(RefStar const* _refStar);
+    void setRefStar(RefStar const* refStar);
 
     //! Get the astrometric reference star associated with this star.
     RefStar const* getRefStar() const { return _refStar; };

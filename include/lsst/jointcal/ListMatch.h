@@ -83,9 +83,9 @@ std::unique_ptr<StarMatchList> listMatchCollect(BaseStarList const &list1, BaseS
 std::unique_ptr<GtransfoLin> listMatchupShift(BaseStarList const &list1, BaseStarList const &list2,
                                               Gtransfo const &gtransfo, double maxShift, double binSize = 0);
 
-std::unique_ptr<Gtransfo> listMatchCombinatorial(BaseStarList const &list1, BaseStarList const &list2,
+std::unique_ptr<Gtransfo> listMatchCombinatorial(BaseStarList const &List1, BaseStarList const &List2,
                                                  MatchConditions const &conditions = MatchConditions());
-std::unique_ptr<Gtransfo> listMatchRefine(BaseStarList const &list1, BaseStarList const &list2,
+std::unique_ptr<Gtransfo> listMatchRefine(BaseStarList const &List1, BaseStarList const &List2,
                                           std::unique_ptr<Gtransfo> transfo, const int maxOrder = 3);
 
 #ifdef DO_WE_NEED_THAT
