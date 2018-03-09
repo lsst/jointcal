@@ -109,16 +109,18 @@ unsigned ConstrainedPolyModel::assignIndices(unsigned firstIndex, std::string co
     if ((!_fittingChips) && (!_fittingVisits)) {
         _fittingChips = _fittingVisits = true;
     }
-    if (_fittingChips)
+    if (_fittingChips) {
         for (auto &i : _chipMap) {
             i.second->setIndex(index);
             index += i.second->getNpar();
         }
-    if (_fittingVisits)
+}
+    if (_fittingVisits) {
         for (auto &i : _visitMap) {
             i.second->setIndex(index);
             index += i.second->getNpar();
         }
+}
     // Tell the mappings which derivatives they will have to fill:
     for (auto &i : _mappings) {
         i.second->setWhatToFit(_fittingChips, _fittingVisits);
@@ -127,16 +129,18 @@ unsigned ConstrainedPolyModel::assignIndices(unsigned firstIndex, std::string co
 }
 
 void ConstrainedPolyModel::offsetParams(Eigen::VectorXd const &delta) {
-    if (_fittingChips)
+    if (_fittingChips) {
         for (auto &i : _chipMap) {
             auto mapping = i.second.get();
             mapping->offsetParams(delta.segment(mapping->getIndex(), mapping->getNpar()));
         }
-    if (_fittingVisits)
+}
+    if (_fittingVisits) {
         for (auto &i : _visitMap) {
             auto mapping = i.second.get();
             mapping->offsetParams(delta.segment(mapping->getIndex(), mapping->getNpar()));
         }
+}
 }
 
 void ConstrainedPolyModel::freezeErrorTransform() {

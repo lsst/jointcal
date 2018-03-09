@@ -18,15 +18,15 @@ Histo2d::Histo2d(int nnx, float mminx, float mmaxx, int nny, float mminy, float 
     ny = nny;
     minx = mminx;
     miny = mminy;
-    if (mmaxx != mminx)
+    if (mmaxx != mminx) {
         scalex = nx / (mmaxx - mminx);
-    else {
+    } else {
         LOGL_WARN(_log, "Histo2d: minx = maxx requested");
         scalex = 1.0;
     }
-    if (mmaxy != mminy)
+    if (mmaxy != mminy) {
         scaley = ny / (mmaxy - mminy);
-    else {
+    } else {
         LOGL_WARN(_log, "Histo2d: maxy = miny requested");
         scaley = 1.0;
     }

@@ -34,8 +34,9 @@ void FittedStar::setRefStar(RefStar const *refStar) {
                    "FittedStar: " << *this << " is already matched to another RefStar. Clean up your lists.");
         LOGLS_WARN(_log, "old refStar: " << *_refStar);
         LOGLS_WARN(_log, "new refStar: " << *refStar);
-    } else
+    } else {
         _refStar = refStar;
+}
 }
 
 void FittedStar::addMagMeasurement(double magValue, double magWeight) {

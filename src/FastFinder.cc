@@ -187,7 +187,7 @@ FastFinder::stars_element Iterator::operator*() const {
 void Iterator::operator++() {
     if (current != pend) {
         current++;
-    } else
+    } else {
         do {
             currentSlice++;
             if (currentSlice >= endSlice) {
@@ -196,6 +196,7 @@ void Iterator::operator++() {
             }
             finder.findRangeInSlice(currentSlice, yStart, yEnd, current, pend);
         } while (current == null_value);
+}
     check();
 }
 

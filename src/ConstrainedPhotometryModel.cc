@@ -212,9 +212,10 @@ void ConstrainedPhotometryModel::dump(std::ostream &stream) const {
 
 PhotometryMappingBase *ConstrainedPhotometryModel::findMapping(CcdImage const &ccdImage) const {
     auto i = _myMap.find(ccdImage.getHashKey());
-    if (i == _myMap.end())
+    if (i == _myMap.end()) {
         throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,
                           "ConstrainedPhotometryModel cannot find CcdImage " + ccdImage.getName());
+}
     return i->second.get();
 }
 

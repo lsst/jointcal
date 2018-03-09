@@ -195,8 +195,9 @@ void Associations::collectRefStars(lsst::afw::table::SortedCatalogT<lsst::afw::t
 
         // Reject sources with non-finite fluxes and flux errors, and fluxErr=0 (which gives chi2=inf).
         if (rejectBadFluxes &&
-            (!std::isfinite(defaultFlux) || !std::isfinite(defaultFluxErr) || defaultFluxErr == 0))
+            (!std::isfinite(defaultFlux) || !std::isfinite(defaultFluxErr) || defaultFluxErr == 0)) {
             continue;
+}
         refStarList.push_back(star);
     }
 
@@ -214,10 +215,11 @@ const lsst::afw::geom::Box2D Associations::getRaDecBBox() {
     for (auto const &ccdImage : ccdImageList) {
         Frame CTPFrame =
                 applyTransfo(ccdImage->getImageFrame(), *(ccdImage->getPix2CommonTangentPlane()), LargeFrame);
-        if (tangentPlaneFrame.getArea() == 0)
+        if (tangentPlaneFrame.getArea() == 0) {
             tangentPlaneFrame = CTPFrame;
-        else
+        } else {
             tangentPlaneFrame += CTPFrame;
+}
     }
 
     // convert tangent plane coordinates to RaDec:
@@ -317,10 +319,11 @@ void Associations::normalizeFittedStars() const {
         MeasuredStarList &catalog = ccdImage->getCatalogForFit();
         for (auto &mi : catalog) {
             auto fittedStar = mi->getFittedStar();
-            if (fittedStar == nullptr)
+            if (fittedStar == nullptr) {
                 throw(LSST_EXCEPT(
                         pex::exceptions::RuntimeError,
                         "All measuredStars must have a fittedStar: did you call selectFittedStars()?"));
+}
             auto point = toCommonTangentPlane->apply(*mi);
             fittedStar->x += point.x;
             fittedStar->y += point.y;

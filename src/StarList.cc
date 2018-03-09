@@ -24,8 +24,9 @@ template <class Star>
 void StarList<Star>::cutTail(const int nKeep) {
     int count = 0;
     auto si = this->begin();
-    for (; si != this->end() && count < nKeep; ++count, ++si)
+    for (; si != this->end() && count < nKeep; ++count, ++si) {
         ;
+}
     while (si != this->end()) {
         si = this->erase(si);
     }

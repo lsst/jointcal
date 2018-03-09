@@ -94,9 +94,10 @@ void SimplePhotometryModel::dump(std::ostream &stream) const {
 
 PhotometryMappingBase *SimplePhotometryModel::findMapping(CcdImage const &ccdImage) const {
     auto i = _myMap.find(ccdImage.getHashKey());
-    if (i == _myMap.end())
+    if (i == _myMap.end()) {
         throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,
                           "SimplePhotometryModel cannot find CcdImage " + ccdImage.getName());
+}
     return i->second.get();
 }
 

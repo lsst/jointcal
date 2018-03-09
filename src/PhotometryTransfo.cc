@@ -98,8 +98,9 @@ namespace {
 // The integral of T_n(x) over [-1,1]:
 // https://en.wikipedia.org/wiki/Chebyshev_polynomials#Differentiation_and_integration
 double integrateTn(int n) {
-    if (n % 2 == 1)
+    if (n % 2 == 1) {
         return 0;
+}
     
         return 2.0 / (1.0 - static_cast<double>(n * n));
 }
