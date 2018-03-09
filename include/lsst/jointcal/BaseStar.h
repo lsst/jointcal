@@ -53,7 +53,7 @@ public:
         return (*this);
     };
 
-    static const char *typeName() { return "BaseStar"; }
+    static char const *typeName() { return "BaseStar"; }
 
     virtual ~BaseStar(){};
 

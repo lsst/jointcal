@@ -35,7 +35,7 @@ struct Segment {
 
     /* constructor (could set last argument to identity by default)  */
     Segment(std::shared_ptr<const BaseStar> star1, std::shared_ptr<const BaseStar> star2, const int star1Rank,
-            const Gtransfo &gtransfo) {
+            Gtransfo const &gtransfo) {
         s1rank = star1Rank;
         s1 = std::move(star1);
         s2 = std::move(star2);
@@ -51,7 +51,7 @@ struct Segment {
         return atan2(other->dx * dy - dx * other->dy, dx * other->dx + dy * other->dy);
     }
 
-    friend std::ostream &operator<<(std::ostream &stream, const Segment &segment) {
+    friend std::ostream &operator<<(std::ostream &stream, Segment const &segment) {
         stream << " dx " << segment.dx << " dy " << segment.dy << " r " << segment.r << std::endl;
         return stream;
     }
@@ -59,16 +59,16 @@ struct Segment {
 
 class SegmentList : public std::list<Segment> {
 public:
-    //  SegmentList(const BaseStarList &list, const int nStar);
-    SegmentList(const BaseStarList &list, int nStar, const Gtransfo &gtransfo = GtransfoIdentity());
+    //  SegmentList(BaseStarList const &list, const int nStar);
+    SegmentList(BaseStarList const &list, int nStar, Gtransfo const &gtransfo = GtransfoIdentity());
 };
 
 using SegmentIterator = std::list<Segment>::iterator;
 using SegmentCIterator = std::list<Segment>::const_iterator;
 
-static bool DecreasingLength(const Segment &first, const Segment &second) { return (first.r > second.r); }
+static bool DecreasingLength(Segment const &first, Segment const &second) { return (first.r > second.r); }
 
-SegmentList::SegmentList(const BaseStarList &list, const int nStars, const Gtransfo &gtransfo) {
+SegmentList::SegmentList(BaseStarList const &list, const int nStars, Gtransfo const &gtransfo) {
     BaseStarCIterator siStop;
 
     /* find the fence */
@@ -95,14 +95,14 @@ using SegmentPairList = std::list<SegmentPair>;
 using SegmentPairListIterator = SegmentPairList::iterator;
 using SegmentPairListCIterator = SegmentPairList::const_iterator;
 
-static std::unique_ptr<StarMatchList> MatchListExtract(const SegmentPairList &pairList, int rank1, int rank2,
-                                                       const Gtransfo &gtransfo) {
+static std::unique_ptr<StarMatchList> MatchListExtract(SegmentPairList const &pairList, int rank1, int rank2,
+                                                       Gtransfo const &gtransfo) {
     /* first Select in the segment pairs list the ones which make use of star rank1 in segment1
   and star s2 in segment2 */
 
     std::unique_ptr<StarMatchList> matchList(new StarMatchList);
 
-    for (const auto & a_pair : pairList) {
+    for (auto const & a_pair : pairList) {
         if (a_pair.first->s1rank != rank1 || a_pair.second->s1rank != rank2) continue;
         /* now we store as star matches both ends of segment pairs ,
            but only once the beginning of segments because they all have the same,
@@ -134,8 +134,8 @@ using SolList = std::list<std::unique_ptr<StarMatchList>>;
 of star pairs ( Segment's) built from the 2 lists */
 
 static std::unique_ptr<StarMatchList> ListMatchupRotShift_Old(BaseStarList &list1, BaseStarList &list2,
-                                                              const Gtransfo &gtransfo,
-                                                              const MatchConditions &conditions) {
+                                                              Gtransfo const &gtransfo,
+                                                              MatchConditions const &conditions) {
     SegmentList sList1(list1, conditions.nStarsList1, gtransfo);
     SegmentList sList2(list2, conditions.nStarsList2, GtransfoIdentity());
 
@@ -248,8 +248,8 @@ static std::unique_ptr<StarMatchList> ListMatchupRotShift_Old(BaseStarList &list
 */
 
 static std::unique_ptr<StarMatchList> ListMatchupRotShift_New(BaseStarList &list1, BaseStarList &list2,
-                                                              const Gtransfo &gtransfo,
-                                                              const MatchConditions &conditions) {
+                                                              Gtransfo const &gtransfo,
+                                                              MatchConditions const &conditions) {
     if (list1.size() <= 4 || list2.size() <= 4) {
         LOGL_FATAL(_log, "ListMatchupRotShift_New : (at least) one of the lists is too short.");
         return nullptr;
@@ -388,8 +388,8 @@ static std::unique_ptr<StarMatchList> ListMatchupRotShift_New(BaseStarList &list
 }
 
 static std::unique_ptr<StarMatchList> ListMatchupRotShift(BaseStarList &list1, BaseStarList &list2,
-                                                          const Gtransfo &gtransfo,
-                                                          const MatchConditions &conditions) {
+                                                          Gtransfo const &gtransfo,
+                                                          MatchConditions const &conditions) {
     if (conditions.algorithm == 1)
         return ListMatchupRotShift_Old(list1, list2, gtransfo, conditions);
     
@@ -397,7 +397,7 @@ static std::unique_ptr<StarMatchList> ListMatchupRotShift(BaseStarList &list1, B
 }
 
 std::unique_ptr<StarMatchList> matchSearchRotShift(BaseStarList &list1, BaseStarList &list2,
-                                                   const MatchConditions &conditions) {
+                                                   MatchConditions const &conditions) {
     list1.fluxSort();
     list2.fluxSort();
 
@@ -405,7 +405,7 @@ std::unique_ptr<StarMatchList> matchSearchRotShift(BaseStarList &list1, BaseStar
 }
 
 std::unique_ptr<StarMatchList> matchSearchRotShiftFlip(BaseStarList &list1, BaseStarList &list2,
-                                                       const MatchConditions &conditions) {
+                                                       MatchConditions const &conditions) {
     list1.fluxSort();
     list2.fluxSort();
 
@@ -433,8 +433,8 @@ std::unique_ptr<StarMatchList> matchSearchRotShiftFlip(BaseStarList &list1, Base
 
 #ifdef STORAGE
 // timing : 2.5 s for l1 of 1862 objects  and l2 of 2617 objects
-std::unique_ptr<GtransfoLin> listMatchupShift(const BaseStarList &list1, const BaseStarList &list2,
-                                              const Gtransfo &gtransfo, double maxShift) {
+std::unique_ptr<GtransfoLin> listMatchupShift(BaseStarList const &list1, BaseStarList const &list2,
+                                              Gtransfo const &gtransfo, double maxShift) {
     int ncomb = list1.size() * list2.size();
     if (!ncomb) return nullptr;
     int nx;
@@ -460,8 +460,8 @@ std::unique_ptr<GtransfoLin> listMatchupShift(const BaseStarList &list1, const B
 #endif /*STORAGE*/
 
 // timing : 140 ms for l1 of 1862 objects  and l2 of 2617 objects (450 MHz, "-O4") maxShift = 200.
-std::unique_ptr<GtransfoLin> listMatchupShift(const BaseStarList &list1, const BaseStarList &list2,
-                                              const Gtransfo &gtransfo, double maxShift, double binSize) {
+std::unique_ptr<GtransfoLin> listMatchupShift(BaseStarList const &list1, BaseStarList const &list2,
+                                              Gtransfo const &gtransfo, double maxShift, double binSize) {
     int nx;
     if (binSize == 0) {
         int ncomb = list1.size() * list2.size();
@@ -512,14 +512,14 @@ std::unique_ptr<GtransfoLin> listMatchupShift(const BaseStarList &list1, const B
 
 // this is the old fashioned way...
 
-std::unique_ptr<StarMatchList> listMatchCollect_Slow(const BaseStarList &list1, const BaseStarList &list2,
-                                                     const Gtransfo *guess, const double maxDist) {
+std::unique_ptr<StarMatchList> listMatchCollect_Slow(BaseStarList const &list1, BaseStarList const &list2,
+                                                     Gtransfo const *guess, const double maxDist) {
     std::unique_ptr<StarMatchList> matches(new StarMatchList);
     /****** Collect ***********/
     for (BaseStarCIterator si = list1.begin(); si != list1.end(); ++si) {
-        const Point *p1 = (*si);
+        Point const *p1 = (*si);
         const Point p2 = guess->apply(*p1);
-        const BaseStar *neighbour = list2.findClosest(p2);
+        BaseStar const *neighbour = list2.findClosest(p2);
         if (!neighbour) continue;
         double distance = p2.Distance(*neighbour);
         if (distance < maxDist) {
@@ -534,12 +534,12 @@ std::unique_ptr<StarMatchList> listMatchCollect_Slow(const BaseStarList &list1, 
 
 // here is the real active routine:
 
-std::unique_ptr<StarMatchList> listMatchCollect(const BaseStarList &list1, const BaseStarList &list2,
-                                                const Gtransfo *guess, const double maxDist) {
+std::unique_ptr<StarMatchList> listMatchCollect(BaseStarList const &list1, BaseStarList const &list2,
+                                                Gtransfo const *guess, const double maxDist) {
     std::unique_ptr<StarMatchList> matches(new StarMatchList);
     /****** Collect ***********/
     FastFinder finder(list2);
-    for (const auto & si : list1) {
+    for (auto const & si : list1) {
         auto p1 = si;
         Point p2 = guess->apply(*p1);
         auto neighbour = finder.findClosest(p2, maxDist);
@@ -559,9 +559,9 @@ std::unique_ptr<StarMatchList> listMatchCollect(const BaseStarList &list1, const
 #ifdef STORAGE
 // unused
 //! iteratively collect and fits, with the same transfo kind, until the residual increases
-std::unique_ptr<StarMatchList> CollectAndFit(const BaseStarList &list1, const BaseStarList &list2,
-                                             const Gtransfo *guess, const double maxDist) {
-    const Gtransfo *bestTransfo = guess;
+std::unique_ptr<StarMatchList> CollectAndFit(BaseStarList const &list1, BaseStarList const &list2,
+                                             Gtransfo const *guess, const double maxDist) {
+    Gtransfo const *bestTransfo = guess;
     std::unique_ptr<StarMatchList> prevMatch;
     while (true) {
         auto m = listMatchCollect(list1, list2, bestTransfo, maxDist);
@@ -580,11 +580,11 @@ std::unique_ptr<StarMatchList> CollectAndFit(const BaseStarList &list1, const Ba
 }
 #endif
 
-std::unique_ptr<StarMatchList> listMatchCollect(const BaseStarList &list1, const BaseStarList &list2,
+std::unique_ptr<StarMatchList> listMatchCollect(BaseStarList const &list1, BaseStarList const &list2,
                                                 const double maxDist) {
     std::unique_ptr<StarMatchList> matches(new StarMatchList);
     FastFinder finder(list2);
-    for (const auto & si : list1) {
+    for (auto const & si : list1) {
         auto p1 = si;
         auto neighbour = finder.findClosest(*p1, maxDist);
         if (!neighbour) continue;
@@ -601,7 +601,7 @@ std::unique_ptr<StarMatchList> listMatchCollect(const BaseStarList &list1, const
     return matches;
 }
 
-static bool is_transfo_ok(const StarMatchList *match, double pixSizeRatio2, const size_t nmin) {
+static bool is_transfo_ok(StarMatchList const *match, double pixSizeRatio2, const size_t nmin) {
     if ((fabs(fabs(std::dynamic_pointer_cast<const GtransfoLin>(match->getTransfo())->determinant()) -
               pixSizeRatio2) /
                  pixSizeRatio2 <
@@ -614,13 +614,13 @@ static bool is_transfo_ok(const StarMatchList *match, double pixSizeRatio2, cons
 }
 
 // utility to check current transfo difference
-static double transfo_diff(const BaseStarList &List, const Gtransfo *T1, const Gtransfo *T2) {
+static double transfo_diff(BaseStarList const &List, Gtransfo const *T1, Gtransfo const *T2) {
     double diff2 = 0;
     FatPoint tf1;
     Point tf2;
     int count = 0;
-    for (const auto & it : List) {
-        const BaseStar &s = *it;
+    for (auto const & it : List) {
+        BaseStar const &s = *it;
         T1->transformPosAndErrors(s, tf1);
         T2->apply(s, tf2);
         double dx = tf1.x - tf2.x;
@@ -633,7 +633,7 @@ static double transfo_diff(const BaseStarList &List, const Gtransfo *T1, const G
     return 0;
 }
 
-static double median_distance(const StarMatchList *match, const Gtransfo *transfo) {
+static double median_distance(StarMatchList const *match, Gtransfo const *transfo) {
     size_t nstars = match->size();
     std::vector<double> resid(nstars);
     auto ir = resid.begin();
@@ -643,8 +643,8 @@ static double median_distance(const StarMatchList *match, const Gtransfo *transf
     return (nstars & 1) ? resid[nstars / 2] : (resid[nstars / 2 - 1] + resid[nstars / 2]) * 0.5;
 }
 
-std::unique_ptr<Gtransfo> listMatchCombinatorial(const BaseStarList &List1, const BaseStarList &List2,
-                                                 const MatchConditions &conditions) {
+std::unique_ptr<Gtransfo> listMatchCombinatorial(BaseStarList const &List1, BaseStarList const &List2,
+                                                 MatchConditions const &conditions) {
     BaseStarList list1, list2;
     List1.copyTo(list1);
     list1.fluxSort();
@@ -682,7 +682,7 @@ std::unique_ptr<Gtransfo> listMatchCombinatorial(const BaseStarList &List1, cons
     return transfo;
 }
 
-std::unique_ptr<Gtransfo> listMatchRefine(const BaseStarList &List1, const BaseStarList &List2,
+std::unique_ptr<Gtransfo> listMatchRefine(BaseStarList const &List1, BaseStarList const &List2,
                                           std::unique_ptr<Gtransfo> transfo, const int maxOrder) {
     if (!transfo) {
         return std::unique_ptr<Gtransfo>(nullptr);

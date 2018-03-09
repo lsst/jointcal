@@ -190,7 +190,7 @@ public:
     //! Access to the (fitted) transfo
     Gtransfo const &getTransfo() const {
         // Cannot fail given the contructor:
-        const GtransfoPoly *fittedPoly = dynamic_cast<const GtransfoPoly *>(&(*transfo));
+        GtransfoPoly const *fittedPoly = dynamic_cast<GtransfoPoly const *>(&(*transfo));
         actualResult = (*fittedPoly) * _centerAndScale;
         return actualResult;
     }

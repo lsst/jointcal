@@ -36,7 +36,7 @@ ConstrainedPolyModel::ConstrainedPolyModel(CcdImageList const &ccdImageList,
 {
     // first loop to initialize all visit  and chip transfos.
     for (auto &ccdImage : ccdImageList) {
-        const CcdImage &im = *ccdImage;
+        CcdImage const &im = *ccdImage;
         auto visit = im.getVisit();
         auto chip = im.getCcdId();
         auto visitp = _visitMap.find(visit);
@@ -51,7 +51,7 @@ ConstrainedPolyModel::ConstrainedPolyModel(CcdImageList const &ccdImageList,
         }
         auto chipp = _chipMap.find(chip);
         if (chipp == _chipMap.end()) {
-            const Frame &frame = im.getImageFrame();
+            Frame const &frame = im.getImageFrame();
 
             GtransfoPoly pol(chipDegree);
 
@@ -66,7 +66,7 @@ ConstrainedPolyModel::ConstrainedPolyModel(CcdImageList const &ccdImageList,
     }
     // now, second loop to set the mappings of the CCdImages
     for (auto &ccdImage : ccdImageList) {
-        const CcdImage &im = *ccdImage;
+        CcdImage const &im = *ccdImage;
         auto visit = im.getVisit();
         auto chip = im.getCcdId();
         // check that the chip_indexed part was indeed assigned
@@ -86,7 +86,7 @@ ConstrainedPolyModel::ConstrainedPolyModel(CcdImageList const &ccdImageList,
     for (auto i = _visitMap.begin(); i != _visitMap.end(); ++i) LOGLS_DEBUG(_log, i->first);
 }
 
-const Mapping *ConstrainedPolyModel::getMapping(CcdImage const &ccdImage) const {
+Mapping const *ConstrainedPolyModel::getMapping(CcdImage const &ccdImage) const {
     auto i = _mappings.find(&ccdImage);
     if (i == _mappings.end()) return nullptr;
     return (i->second.get());
@@ -144,7 +144,7 @@ void ConstrainedPolyModel::freezeErrorTransform() {
     for (auto & i : _chipMap) i.second->freezeErrorTransform();
 }
 
-const Gtransfo &ConstrainedPolyModel::getChipTransfo(CcdIdType const chip) const {
+Gtransfo const &ConstrainedPolyModel::getChipTransfo(CcdIdType const chip) const {
     auto chipp = _chipMap.find(chip);
     if (chipp == _chipMap.end()) {
         std::stringstream errMsg;
@@ -158,11 +158,11 @@ const Gtransfo &ConstrainedPolyModel::getChipTransfo(CcdIdType const chip) const
 std::vector<VisitIdType> ConstrainedPolyModel::getVisits() const {
     std::vector<VisitIdType> res;
     res.reserve(_visitMap.size());
-    for (const auto & i : _visitMap) res.push_back(i.first);
+    for (auto const & i : _visitMap) res.push_back(i.first);
     return res;
 }
 
-const Gtransfo &ConstrainedPolyModel::getVisitTransfo(VisitIdType const &visit) const {
+Gtransfo const &ConstrainedPolyModel::getVisitTransfo(VisitIdType const &visit) const {
     auto visitp = _visitMap.find(visit);
     if (visitp == _visitMap.end()) {
         std::stringstream errMsg;
@@ -173,7 +173,7 @@ const Gtransfo &ConstrainedPolyModel::getVisitTransfo(VisitIdType const &visit) 
 }
 
 std::shared_ptr<TanSipPix2RaDec> ConstrainedPolyModel::produceSipWcs(CcdImage const &ccdImage) const {
-    const TwoTransfoMapping *mapping;
+    TwoTransfoMapping const *mapping;
     try {
         mapping = _mappings.at(&ccdImage).get();
     } catch (std::out_of_range &) {
@@ -186,7 +186,7 @@ std::shared_ptr<TanSipPix2RaDec> ConstrainedPolyModel::produceSipWcs(CcdImage co
     }
 
     GtransfoPoly pix2Tp;
-    const auto &t1 = dynamic_cast<const GtransfoPoly &>(mapping->getTransfo1());
+    auto const &t1 = dynamic_cast<GtransfoPoly const &>(mapping->getTransfo1());
     // TODO: This line produces a warning on clang (t1 is always valid: a failed dynamic_cast of a reference
     // raises bad_cast instead of returning nullptr like a failed pointer cast), but I'll deal with it as
     // part of DM-10524 (hopefully removing the necessity of the casts).
@@ -199,11 +199,11 @@ std::shared_ptr<TanSipPix2RaDec> ConstrainedPolyModel::produceSipWcs(CcdImage co
     // NOTE: we currently expect T2 to be an identity for the first visit, so we have to treat it separately.
     // TODO: We are aware that this is a hack, but it will be fixed as part of DM-10524.
     try {
-        const auto &t2 = dynamic_cast<const GtransfoIdentity &>(mapping->getTransfo2());
+        auto const &t2 = dynamic_cast<GtransfoIdentity const &>(mapping->getTransfo2());
         pix2Tp = t1;
     } catch (std::bad_cast &) {
         try {
-            const auto &t2_poly = dynamic_cast<const GtransfoPoly &>(mapping->getTransfo2());
+            auto const &t2_poly = dynamic_cast<GtransfoPoly const &>(mapping->getTransfo2());
             pix2Tp = t2_poly * t1;
         } catch (std::bad_cast &) {
             LOGLS_ERROR(_log, "Problem with transform 2 of ccd/visit " << ccdImage.getCcdId() << "/"
@@ -212,7 +212,7 @@ std::shared_ptr<TanSipPix2RaDec> ConstrainedPolyModel::produceSipWcs(CcdImage co
             return nullptr;
         }
     }
-    const auto *proj = dynamic_cast<const TanRaDec2Pix *>(getSky2TP(ccdImage));
+    auto const *proj = dynamic_cast<TanRaDec2Pix const *>(getSky2TP(ccdImage));
     if (!proj) {
         LOGLS_ERROR(_log, "Problem with projection of ccd/visit " << ccdImage.getCcdId() << "/"
                                                                   << ccdImage.getVisit() << ": projection "
@@ -221,7 +221,7 @@ std::shared_ptr<TanSipPix2RaDec> ConstrainedPolyModel::produceSipWcs(CcdImage co
     }
 
     // should be the identity, but who knows? So, let us incorporate it into the pix2TP part.
-    const GtransfoLin &projLinPart = proj->getLinPart();
+    GtransfoLin const &projLinPart = proj->getLinPart();
     GtransfoPoly wcsPix2Tp = GtransfoPoly(projLinPart.invert()) * pix2Tp;
 
     // compute a decent approximation, if higher order corrections get ignored

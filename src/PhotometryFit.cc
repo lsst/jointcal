@@ -39,7 +39,7 @@ void PhotometryFit::leastSquareDerivativesMeasurement(CcdImage const &ccdImage, 
     Eigen::VectorXd H(nparTotal);  // derivative matrix
     // current position in the Jacobian
     unsigned kTriplets = tripletList.getNextFreeIndex();
-    const MeasuredStarList &catalog = (measuredStarList) ? *measuredStarList : ccdImage.getCatalogForFit();
+    MeasuredStarList const &catalog = (measuredStarList) ? *measuredStarList : ccdImage.getCatalogForFit();
 
     for (auto const &measuredStar : catalog) {
         if (!measuredStar->isValid()) continue;
@@ -241,9 +241,9 @@ void PhotometryFit::saveChi2MeasContributions(std::string const &baseName) const
           << separator;
     ofile << "chip id" << separator << "visit id" << std::endl;
 
-    const CcdImageList &ccdImageList = _associations->getCcdImageList();
+    CcdImageList const &ccdImageList = _associations->getCcdImageList();
     for (auto const &ccdImage : ccdImageList) {
-        const MeasuredStarList &cat = ccdImage->getCatalogForFit();
+        MeasuredStarList const &cat = ccdImage->getCatalogForFit();
         for (auto const &measuredStar : cat) {
             if (!measuredStar->isValid()) continue;
             double sigma = _photometryModel->transformError(*ccdImage, *measuredStar,
@@ -293,9 +293,9 @@ void PhotometryFit::saveChi2RefContributions(std::string const &baseName) const 
           << separator << "number of measurements of this FittedStar" << std::endl;
 
     // The following loop is heavily inspired from PhotometryFit::computeChi2()
-    const FittedStarList &fittedStarList = _associations->fittedStarList;
+    FittedStarList const &fittedStarList = _associations->fittedStarList;
     for (auto const &fittedStar : fittedStarList) {
-        const RefStar *refStar = fittedStar->getRefStar();
+        RefStar const *refStar = fittedStar->getRefStar();
         if (refStar == nullptr) continue;
 
         double chi2 = std::pow(((fittedStar->getFlux() - refStar->getFlux()) / refStar->getFluxErr()), 2);

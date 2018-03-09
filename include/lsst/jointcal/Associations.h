@@ -140,7 +140,7 @@ public:
     size_t nFittedStarsWithAssociatedRefStar() const;
 
 private:
-    void associateRefStars(double matchCutInArcsec, const Gtransfo *gtransfo);
+    void associateRefStars(double matchCutInArcsec, Gtransfo const *gtransfo);
 
     void assignMags();
 

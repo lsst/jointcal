@@ -10,7 +10,7 @@ namespace jointcal {
 class Frame;
 class Gtransfo;
 //! Transform a Frame through a Transfo.
-Frame applyTransfo(const Frame& inputframe, const Gtransfo& gtransfo, const WhichTransformed which);
+Frame applyTransfo(Frame const & inputframe, Gtransfo const & gtransfo, const WhichTransformed which);
 }  // namespace jointcal
 }  // namespace lsst
 

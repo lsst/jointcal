@@ -60,7 +60,7 @@ public:
     void cutTail(const int nKeep);
 
     //! copy the part of the std::list which is included in the frame at the end of another std::list
-    void extractInFrame(StarList<Star> &out, const Frame &frame) const;
+    void extractInFrame(StarList<Star> &out, Frame const &frame) const;
 
     //! clears copy and makes a copy of the std::list to copy
     void copyTo(StarList<Star> &copy) const;
@@ -72,7 +72,7 @@ public:
     /*! could be extended to other type of transformations. */
 
     template <class Operator>
-    void applyTransfo(const Operator &op) {
+    void applyTransfo(Operator const &op) {
         for (auto &p : *this) op.transformStar(*(p));
     }
 };

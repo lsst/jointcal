@@ -199,7 +199,7 @@ void FitterBase::outliersContributions(MeasuredStarList &msOutliers, FittedStarL
     for (auto &outlier : msOutliers) {
         MeasuredStarList tmp;
         tmp.push_back(outlier);
-        const CcdImage &ccdImage = outlier->getCcdImage();
+        CcdImage const &ccdImage = outlier->getCcdImage();
         leastSquareDerivativesMeasurement(ccdImage, tripletList, grad, &tmp);
     }
     leastSquareDerivativesReference(fsOutliers, tripletList, grad);

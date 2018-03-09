@@ -67,7 +67,7 @@ void Associations::associateCatalogs(const double matchCutInArcSec, const bool u
     if (!useFittedList) fittedStarList.clear();
 
     for (auto &ccdImage : ccdImageList) {
-        const Gtransfo *toCommonTangentPlane = ccdImage->getPix2CommonTangentPlane();
+        Gtransfo const *toCommonTangentPlane = ccdImage->getPix2CommonTangentPlane();
 
         // Clear the catalog to fit and copy the whole catalog into it.
         // This allows reassociating from scratch after a fit.
@@ -232,7 +232,7 @@ const lsst::afw::geom::Box2D Associations::getRaDecBBox() {
     return box;
 }
 
-void Associations::associateRefStars(double matchCutInArcSec, const Gtransfo *gtransfo) {
+void Associations::associateRefStars(double matchCutInArcSec, Gtransfo const *gtransfo) {
     // associate with FittedStars
     // 3600 because coordinates are in degrees (in CTP).
     auto starMatchList = listMatchCollect(Ref2Base(refStarList), Fitted2Base(fittedStarList), gtransfo,
@@ -244,11 +244,11 @@ void Associations::associateRefStars(double matchCutInArcSec, const Gtransfo *gt
 
     // actually associate things
     for (auto const &starMatch : *starMatchList) {
-        const BaseStar &bs = *starMatch.s1;
-        const auto &rs_const = dynamic_cast<const RefStar &>(bs);
+        BaseStar const &bs = *starMatch.s1;
+        auto const &rs_const = dynamic_cast<RefStar const &>(bs);
         auto &rs = const_cast<RefStar &>(rs_const);
-        const BaseStar &bs2 = *starMatch.s2;
-        const auto &fs_const = dynamic_cast<const FittedStar &>(bs2);
+        BaseStar const &bs2 = *starMatch.s2;
+        auto const &fs_const = dynamic_cast<FittedStar const &>(bs2);
         auto &fs = const_cast<FittedStar &>(fs_const);
         // rs->setFittedStar(*fs);
         fs.setRefStar(&rs);
@@ -313,7 +313,7 @@ void Associations::normalizeFittedStars() const {
 
     // Iterate over measuredStars to add their values into their fittedStars
     for (auto const &ccdImage : ccdImageList) {
-        const Gtransfo *toCommonTangentPlane = ccdImage->getPix2CommonTangentPlane();
+        Gtransfo const *toCommonTangentPlane = ccdImage->getPix2CommonTangentPlane();
         MeasuredStarList &catalog = ccdImage->getCatalogForFit();
         for (auto &mi : catalog) {
             auto fittedStar = mi->getFittedStar();
@@ -444,7 +444,7 @@ void Associations::setFittedStarColors(std::string dicStarListName, std::string 
     // The color List is to be projected:
     TStarList projected_cList((BaseStarList &)cList, proj);
     // Associate
-    auto starMatchList = listMatchCollect(Fitted2Base(fittedStarList), (const BaseStarList &)projected_cList,
+    auto starMatchList = listMatchCollect(Fitted2Base(fittedStarList), (BaseStarList const &)projected_cList,
                                           id_or_proj, matchCutArcSec / 3600);
 
     LOGLS_INFO(_log, "Matched " << starMatchList->size() << '/' << fittedStarList.size()
@@ -454,8 +454,8 @@ void Associations::setFittedStarColors(std::string dicStarListName, std::string 
         BaseStar *s1 = i->s1;
         FittedStar *fs = dynamic_cast<FittedStar *>(s1);
         BaseStar *s2 = i->s2;
-        const TStar *ts = dynamic_cast<const TStar *>(s2);
-        const DicStar *ds = dynamic_cast<const DicStar *>(ts->get_original());
+        TStar const *ts = dynamic_cast<TStar const *>(s2);
+        DicStar const *ds = dynamic_cast<DicStar const *>(ts->get_original());
         fs->color = ds->getval(c1);
         if (compute_diff) fs->color -= ds->getval(c2);
     }

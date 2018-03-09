@@ -40,7 +40,7 @@ public:
 
     // The following routines are the interface to AstrometryFit
     //!
-    const Mapping *getMapping(CcdImage const &) const;
+    Mapping const *getMapping(CcdImage const &) const;
 
     //! Positions the various parameter sets into the parameter vector, starting at firstIndex
     unsigned assignIndices(unsigned firstIndex, std::string const &whatToFit);
@@ -51,7 +51,7 @@ public:
     /*! the mapping of sky coordinates (i.e. the coordinate system
     in which fitted stars are reported) onto the Tangent plane
     (into which the pixel coordinates are transformed) */
-    const Gtransfo *getSky2TP(CcdImage const &ccdImage) const { return _sky2TP->getSky2TP(ccdImage); }
+    Gtransfo const *getSky2TP(CcdImage const &ccdImage) const { return _sky2TP->getSky2TP(ccdImage); }
 
     //!
     virtual void freezeErrorTransform();
@@ -64,9 +64,9 @@ public:
     ~SimplePolyModel(){};
 
 private:
-    typedef std::map<const CcdImage *, std::unique_ptr<SimpleGtransfoMapping>> mapType;
+    typedef std::map<CcdImage const *, std::unique_ptr<SimpleGtransfoMapping>> mapType;
     mapType _myMap;
-    const ProjectionHandler *_sky2TP;
+    ProjectionHandler const *_sky2TP;
 };
 }  // namespace jointcal
 }  // namespace lsst

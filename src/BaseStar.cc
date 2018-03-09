@@ -23,7 +23,7 @@ bool increasingMag(BaseStar const *star1, BaseStar const *star2) {
 
 int decodeFormat(char const *formatLine, char const *starName) {
     if (!formatLine || !starName) return 0;
-    const char *p = strstr(formatLine, starName);
+    char const *p = strstr(formatLine, starName);
     if (!p) return 0;
     return atoi(p + strlen(starName));
 }

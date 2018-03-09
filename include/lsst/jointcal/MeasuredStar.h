@@ -84,7 +84,7 @@ public:
 
     CcdImage const &getCcdImage() const { return *_ccdImage; };
 
-    void setCcdImage(const CcdImage *ccdImage) { _ccdImage = ccdImage; };
+    void setCcdImage(CcdImage const *ccdImage) { _ccdImage = ccdImage; };
 
     //! Fits may use that to discard outliers
     bool isValid() const { return _valid; }
@@ -98,7 +98,7 @@ private:
     double _instFlux;
     double _instFluxErr;
 
-    const CcdImage *_ccdImage;
+    CcdImage const *_ccdImage;
     // Note: _fittedStar is not const, but measuredStar won't modify it.
     std::shared_ptr<FittedStar> _fittedStar;
     bool _valid;
@@ -113,7 +113,7 @@ class MeasuredStarList : public StarList<MeasuredStar> {
 public:
     MeasuredStarList(){};
 
-    void setCcdImage(const CcdImage *_ccdImage);
+    void setCcdImage(CcdImage const *_ccdImage);
 };
 
 typedef MeasuredStarList::const_iterator MeasuredStarCIterator;
@@ -121,8 +121,8 @@ typedef MeasuredStarList::iterator MeasuredStarIterator;
 
 BaseStarList &Measured2Base(MeasuredStarList &This);
 BaseStarList *Measured2Base(MeasuredStarList *This);
-const BaseStarList &Measured2Base(const MeasuredStarList &This);
-const BaseStarList *Measured2Base(const MeasuredStarList *This);
+BaseStarList const &Measured2Base(MeasuredStarList const &This);
+BaseStarList const *Measured2Base(MeasuredStarList const *This);
 }  // namespace jointcal
 }  // namespace lsst
 

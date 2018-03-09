@@ -11,7 +11,7 @@ LOG_LOGGER _log = LOG_GET("jointcal.FastFinder");
 namespace lsst {
 namespace jointcal {
 
-FastFinder::FastFinder(const BaseStarList &list, const unsigned nXSlice)
+FastFinder::FastFinder(BaseStarList const &list, const unsigned nXSlice)
         : baselist(list), count(list.size()), stars(count), nslice(nXSlice), index(nslice + 1) {
     if (count == 0) return;
 
@@ -57,8 +57,8 @@ void FastFinder::dump() const {
     }
 }
 
-std::shared_ptr<const BaseStar> FastFinder::findClosest(const Point &where, const double maxDist,
-                                                        bool (*SkipIt)(const BaseStar &)) const {
+std::shared_ptr<const BaseStar> FastFinder::findClosest(Point const &where, const double maxDist,
+                                                        bool (*SkipIt)(BaseStar const &)) const {
     if (count == 0) return nullptr;
     FastFinder::Iterator it = beginScan(where, maxDist);
     if (*it == nullptr) return nullptr;
@@ -75,9 +75,9 @@ std::shared_ptr<const BaseStar> FastFinder::findClosest(const Point &where, cons
     return pbest;
 }
 
-std::shared_ptr<const BaseStar> FastFinder::secondClosest(const Point &where, const double maxDist,
+std::shared_ptr<const BaseStar> FastFinder::secondClosest(Point const &where, const double maxDist,
                                                           std::shared_ptr<const BaseStar> &closest,
-                                                          bool (*SkipIt)(const BaseStar &)) const {
+                                                          bool (*SkipIt)(BaseStar const &)) const {
     closest = nullptr;
     if (count == 0) return nullptr;
     FastFinder::Iterator it = beginScan(where, maxDist);
@@ -148,13 +148,13 @@ void FastFinder::findRangeInSlice(const int iSlice, const double yStart, const d
     end = locateYEnd(start, stars.begin() + index[iSlice + 1], yEnd);
 }
 
-FastFinder::Iterator FastFinder::beginScan(const Point &where, double maxDist) const {
+FastFinder::Iterator FastFinder::beginScan(Point const &where, double maxDist) const {
     return FastFinder::Iterator(*this, where, maxDist);
 }
 
 using Iterator = FastFinder::Iterator;
 
-Iterator::Iterator(const FastFinder &F, const Point &where, double maxDist)
+Iterator::Iterator(FastFinder const &F, Point const &where, double maxDist)
         : finder(F), null_value(F.stars.end()) {
     current = pend = null_value;  // does not iterate
     int startSlice = 0;

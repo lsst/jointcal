@@ -16,7 +16,7 @@ namespace lsst {
 namespace jointcal {
 
 // cannot be in fittedstar.h, because of "crossed includes"
-FittedStar::FittedStar(const MeasuredStar &measuredStar)
+FittedStar::FittedStar(MeasuredStar const &measuredStar)
         : BaseStar(measuredStar),
           _mag(measuredStar.getMag()),
           _gen(-1),
@@ -27,7 +27,7 @@ FittedStar::FittedStar(const MeasuredStar &measuredStar)
     _fluxErr = measuredStar.getInstFluxErr();
 }
 
-void FittedStar::setRefStar(const RefStar *refStar) {
+void FittedStar::setRefStar(RefStar const *refStar) {
     if ((_refStar != nullptr) && (refStar != nullptr)) {
         // TODO: should we raise an Exception in this case?
         LOGLS_WARN(_log,
@@ -49,8 +49,8 @@ BaseStarList &Fitted2Base(FittedStarList &This) { return (BaseStarList &)This; }
 
 BaseStarList *Fitted2Base(FittedStarList *This) { return reinterpret_cast<BaseStarList *>(This); }
 
-const BaseStarList &Fitted2Base(const FittedStarList &This) { return (const BaseStarList &)This; }
+BaseStarList const &Fitted2Base(FittedStarList const &This) { return (BaseStarList const &)This; }
 
-const BaseStarList *Fitted2Base(const FittedStarList *This) { return (BaseStarList *)This; }
+BaseStarList const *Fitted2Base(FittedStarList const *This) { return (BaseStarList *)This; }
 }  // namespace jointcal
 }  // namespace lsst

@@ -16,7 +16,7 @@ namespace jointcal {
 using namespace std;
 
 /****************** Frame class methods ***********************/
-Frame::Frame(const Point &lowerLeft, const Point &upperRight) {
+Frame::Frame(Point const &lowerLeft, Point const &upperRight) {
     *this = Frame(lowerLeft.x, lowerLeft.y, upperRight.x, upperRight.y);
 }
 
@@ -30,18 +30,18 @@ Frame::Frame(double xmin, double ymin, double xmax, double ymax) {
 Frame::Frame() { xMin = xMax = yMin = yMax = 0; }
 
 /* positive if inside, negative if outside */
-double Frame::minDistToEdges(const Point &point) const {
+double Frame::minDistToEdges(Point const &point) const {
     return min(min(point.x - xMin, xMax - point.x) /* minx */,
                min(point.y - yMin, yMax - point.y) /* miny */);
 }
 
-Frame Frame::operator*(const Frame &right) const {
+Frame Frame::operator*(Frame const &right) const {
     Frame result = *this;
     result *= right;
     return result;
 }
 
-Frame &Frame::operator*=(const Frame &right) {
+Frame &Frame::operator*=(Frame const &right) {
     Frame rightCopy = right;
     // make sure that coordinates are properly ordered
     order();
@@ -55,13 +55,13 @@ Frame &Frame::operator*=(const Frame &right) {
     return *this;
 }
 
-Frame Frame::operator+(const Frame &right) const {
+Frame Frame::operator+(Frame const &right) const {
     Frame result = *this;
     result += right;
     return result;
 }
 
-Frame &Frame::operator+=(const Frame &right) {
+Frame &Frame::operator+=(Frame const &right) {
     Frame rightCopy = right;
     // make sure that coordinates are properly ordered
     order();
@@ -78,7 +78,7 @@ void Frame::order() {
     if (yMin > yMax) swap(yMin, yMax);
 }
 
-bool Frame::operator==(const Frame &right) const {
+bool Frame::operator==(Frame const &right) const {
     return ((xMin == right.xMin) && (xMax == right.xMax) && (yMin == right.yMin) && (yMax == right.yMax));
 }
 

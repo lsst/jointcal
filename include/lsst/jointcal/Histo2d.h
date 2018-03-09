@@ -10,7 +10,7 @@ public:
     Histo2d() : data() {}
     Histo2d(int nx, float minx, float maxx, int ny, float miny, float maxy);
 
-    Histo2d(const Histo2d &other);
+    Histo2d(Histo2d const &other);
 
     void fill(float x, float y, float weight = 1.);
 
@@ -28,7 +28,7 @@ public:
     ~Histo2d() {}
 
 private:
-    void operator=(const Histo2d &right);
+    void operator=(Histo2d const &right);
     bool indices(double x, double y, int &ix, int &iy) const;
 
     std::unique_ptr<float[]> data;

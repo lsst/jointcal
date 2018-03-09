@@ -75,18 +75,18 @@ public:
      * stars are reported) onto the Tangent plane (into which the pixel coordinates
      * are transformed).
      */
-    const Gtransfo *getSky2TP(CcdImage const &ccdImage) const { return _sky2TP->getSky2TP(ccdImage); }
+    Gtransfo const *getSky2TP(CcdImage const &ccdImage) const { return _sky2TP->getSky2TP(ccdImage); }
 
     std::shared_ptr<TanSipPix2RaDec> produceSipWcs(CcdImage const &ccdImage) const;
 
 private:
-    typedef std::map<const CcdImage *, std::unique_ptr<TwoTransfoMapping>> mappingMapType;
+    typedef std::map<CcdImage const *, std::unique_ptr<TwoTransfoMapping>> mappingMapType;
     mappingMapType _mappings;
     typedef std::map<CcdIdType, std::unique_ptr<SimpleGtransfoMapping>> chipMapType;
     chipMapType _chipMap;
     typedef std::map<VisitIdType, std::unique_ptr<SimpleGtransfoMapping>> visitMapType;
     visitMapType _visitMap;
-    const ProjectionHandler *_sky2TP;
+    ProjectionHandler const *_sky2TP;
     bool _fittingChips, _fittingVisits;
 };
 }  // namespace jointcal

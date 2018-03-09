@@ -75,7 +75,7 @@ void TwoTransfoMapping::setWhatToFit(const bool fittingT1, const bool fittingT2)
         _nPar2 = 0;
 }
 
-void TwoTransfoMapping::transformPosAndErrors(const FatPoint &where, FatPoint &outPoint) const {
+void TwoTransfoMapping::transformPosAndErrors(FatPoint const &where, FatPoint &outPoint) const {
     FatPoint pMid;
     _m1->transformPosAndErrors(where, pMid);
     _m2->transformPosAndErrors(pMid, outPoint);

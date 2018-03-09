@@ -17,7 +17,7 @@ namespace jointcal {
 
 static double sq(double x) { return x * x; }
 
-double StarMatch::computeChi2(const Gtransfo &gtransfo) const {
+double StarMatch::computeChi2(Gtransfo const &gtransfo) const {
     FatPoint tr;
     gtransfo.transformPosAndErrors(point1, tr);
     double vxx = tr.vx + point2.vx;
@@ -29,19 +29,19 @@ double StarMatch::computeChi2(const Gtransfo &gtransfo) const {
            det;
 }
 
-std::ostream &operator<<(std::ostream &stream, const StarMatch &match) {
+std::ostream &operator<<(std::ostream &stream, StarMatch const &match) {
     stream << match.point1.x << ' ' << match.point1.y << ' ' << match.point2.x << ' ' << match.point2.y << ' '
            << match.distance << std::endl;
     return stream;
 }
 
-std::ostream &operator<<(std::ostream &stream, const StarMatchList &starMatchList) {
+std::ostream &operator<<(std::ostream &stream, StarMatchList const &starMatchList) {
     stream << " number of elements " << starMatchList.size() << std::endl;
     copy(starMatchList.begin(), starMatchList.end(), std::ostream_iterator<StarMatch>(stream));
     return stream;
 }
 
-static std::unique_ptr<double[]> chi2_array(const StarMatchList &starMatchList, const Gtransfo &gtransfo) {
+static std::unique_ptr<double[]> chi2_array(StarMatchList const &starMatchList, Gtransfo const &gtransfo) {
     unsigned s = starMatchList.size();
     auto res = std::unique_ptr<double[]>(new double[s]);
     unsigned count = 0;
@@ -49,7 +49,7 @@ static std::unique_ptr<double[]> chi2_array(const StarMatchList &starMatchList, 
     return res;
 }
 
-static unsigned chi2_cleanup(StarMatchList &starMatchList, const double chi2Cut, const Gtransfo &gtransfo) {
+static unsigned chi2_cleanup(StarMatchList &starMatchList, const double chi2Cut, Gtransfo const &gtransfo) {
     unsigned erased = starMatchList.removeAmbiguities(gtransfo);
     for (auto smi = starMatchList.begin(); smi != starMatchList.end();) {
         if (smi->chi2 > chi2Cut) {
@@ -111,11 +111,11 @@ double StarMatchList::computeResidual() const {
     return (deno > 0) ? sqrt(_dist2 / deno) : -1;  // is -1 a good idea?
 }
 
-void StarMatchList::setDistance(const Gtransfo &gtransfo) {
+void StarMatchList::setDistance(Gtransfo const &gtransfo) {
     for (auto &smi : *this) smi.setDistance(gtransfo);  // c'est compact
 }
 
-unsigned StarMatchList::removeAmbiguities(const Gtransfo &gtransfo, int which) {
+unsigned StarMatchList::removeAmbiguities(Gtransfo const &gtransfo, int which) {
     if (!which) return 0;
     setDistance(gtransfo);
     int initial_count = size();
@@ -184,12 +184,12 @@ int StarMatchList::recoveredNumber(double mindist) const {
     return (n);
 }
 
-void StarMatchList::applyTransfo(StarMatchList &transformed, const Gtransfo *priorTransfo,
-                                 const Gtransfo *posteriorTransfo) const {
+void StarMatchList::applyTransfo(StarMatchList &transformed, Gtransfo const *priorTransfo,
+                                 Gtransfo const *posteriorTransfo) const {
     transformed.clear();
     GtransfoIdentity id;
-    const Gtransfo &T1 = (priorTransfo) ? *priorTransfo : id;
-    const Gtransfo &T2 = (posteriorTransfo) ? *posteriorTransfo : id;
+    Gtransfo const &T1 = (priorTransfo) ? *priorTransfo : id;
+    Gtransfo const &T2 = (posteriorTransfo) ? *posteriorTransfo : id;
 
     for (auto const &starMatch : *this) {
         FatPoint p1;
@@ -209,14 +209,14 @@ void StarMatchList::dumpTransfo(std::ostream &stream) const {
            << " ================================================================" << std::endl;
 }
 
-double computeDist2(const StarMatchList &starMatchList, const Gtransfo &gtransfo) {
+double computeDist2(StarMatchList const &starMatchList, Gtransfo const &gtransfo) {
     double dist2 = 0;
     for (auto const &starMatch : starMatchList)
         dist2 += gtransfo.apply(starMatch.point1).computeDist2(starMatch.point2);
     return dist2;
 }
 
-double computeChi2(const StarMatchList &starMatchList, const Gtransfo &gtransfo) {
+double computeChi2(StarMatchList const &starMatchList, Gtransfo const &gtransfo) {
     unsigned s = starMatchList.size();
     std::unique_ptr<double[]> chi2s(chi2_array(starMatchList, gtransfo));
     double chi2 = 0;

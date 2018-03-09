@@ -47,16 +47,16 @@ public:
     typedef decltype(stars)::const_iterator pstar;
 
     //! Constructor
-    FastFinder(const BaseStarList &list, const unsigned nXSlice = 100);
+    FastFinder(BaseStarList const &list, const unsigned nXSlice = 100);
 
     //! Find the closest with some rejection capability
-    std::shared_ptr<const BaseStar> findClosest(const Point &where, const double maxDist,
-                                                bool (*SkipIt)(const BaseStar &) = nullptr) const;
+    std::shared_ptr<const BaseStar> findClosest(Point const &where, const double maxDist,
+                                                bool (*SkipIt)(BaseStar const &) = nullptr) const;
 
     //!
-    std::shared_ptr<const BaseStar> secondClosest(const Point &where, const double maxDist,
+    std::shared_ptr<const BaseStar> secondClosest(Point const &where, const double maxDist,
                                                   std::shared_ptr<const BaseStar> &closest,
-                                                  bool (*SkipIt)(const BaseStar &) = nullptr) const;
+                                                  bool (*SkipIt)(BaseStar const &) = nullptr) const;
 
     //! mostly for debugging
     void dump() const;
@@ -66,7 +66,7 @@ public:
 
     class Iterator {
     public:  // could be made private, but what for??
-        const FastFinder &finder;
+        FastFinder const &finder;
         int currentSlice, endSlice;
         double yStart, yEnd;  // Y limits ( for all stripes)
         /* pointers to the first and beyond last stars in the y range for
@@ -77,12 +77,12 @@ public:
         void check() const;
 
     public:
-        Iterator(const FastFinder &f, const Point &where, double maxDist);
+        Iterator(FastFinder const &f, Point const &where, double maxDist);
         void operator++();
         stars_element operator*() const;
     };
 
-    Iterator beginScan(const Point &where, double maxDist) const;
+    Iterator beginScan(Point const &where, double maxDist) const;
 
     void findRangeInSlice(const int iSlice, const double yStart, const double yEnd, pstar &start,
                           pstar &end) const;

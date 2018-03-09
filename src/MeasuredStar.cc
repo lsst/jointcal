@@ -36,13 +36,13 @@ BaseStarList &Measured2Base(MeasuredStarList &This) { return (BaseStarList &)Thi
 
 BaseStarList *Measured2Base(MeasuredStarList *This) { return reinterpret_cast<BaseStarList *>(This); }
 
-const BaseStarList &Measured2Base(const MeasuredStarList &This) { return (const BaseStarList &)This; }
+BaseStarList const &Measured2Base(MeasuredStarList const &This) { return (BaseStarList const &)This; }
 
-const BaseStarList *Measured2Base(const MeasuredStarList *This) { return (BaseStarList *)This; }
+BaseStarList const *Measured2Base(MeasuredStarList const *This) { return (BaseStarList *)This; }
 
 /******* MeasuredStarList *********/
 
-void MeasuredStarList::setCcdImage(const CcdImage *ccdImage) {
+void MeasuredStarList::setCcdImage(CcdImage const *ccdImage) {
     for (auto &i : *this) i->setCcdImage(ccdImage);
 }
 }  // namespace jointcal

@@ -17,7 +17,7 @@ namespace jointcal {
 template <class Star>
 void StarList<Star>::fluxSort() {
     using E = StarList<Star>::Element;
-    this->sort([](const E &e1, const E &e2) { return (e1->getFlux() > e2->getFlux()); });
+    this->sort([](E const &e1, E const &e2) { return (e1->getFlux() > e2->getFlux()); });
 }
 
 template <class Star>
@@ -32,7 +32,7 @@ void StarList<Star>::cutTail(const int nKeep) {
 }
 
 template <class Star>
-void StarList<Star>::extractInFrame(StarList<Star> &out, const Frame &frame) const {
+void StarList<Star>::extractInFrame(StarList<Star> &out, Frame const &frame) const {
     for (auto const &star : *this) {
         if (frame.inFrame(*star)) {
             out.push_back(std::make_shared<Star>(*star));

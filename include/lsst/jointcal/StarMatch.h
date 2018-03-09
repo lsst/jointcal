@@ -43,7 +43,7 @@ public:
     //! constructor.
     /*! gives 2 points (that contain the geometry), plus pointers to the Star objects
       (which are there for user convenience). */
-    StarMatch(const FatPoint &point1, const FatPoint &point2, std::shared_ptr<const BaseStar> star1,
+    StarMatch(FatPoint const &point1, FatPoint const &point2, std::shared_ptr<const BaseStar> star1,
               std::shared_ptr<const BaseStar> star2)
             : point1(point1), point2(point2), s1(std::move(star1)), s2(std::move(star2)), distance(0.){};
 
@@ -51,15 +51,15 @@ public:
     // StarMatch(BaseStar *star1, BaseStar *star2) : point1(*star1), point2(*star2), s1(star1), s2(star2) {};
 
     //! returns the distance from gtransfo(point1) to point2.
-    double computeDistance(const Gtransfo &gtransfo) const {
+    double computeDistance(Gtransfo const &gtransfo) const {
         return point2.Distance(gtransfo.apply(point1));
     };
 
     //! returns the chi2 (using errors in the FatPoint's)
-    double computeChi2(const Gtransfo &gtransfo) const;
+    double computeChi2(Gtransfo const &gtransfo) const;
 
     //! to be used before sorting on distances.
-    void setDistance(const Gtransfo &gtransfo) { distance = computeDistance(gtransfo); };
+    void setDistance(Gtransfo const &gtransfo) { distance = computeDistance(gtransfo); };
     //! returns the value computed by the above one.
     double getDistance() const { return distance; }
 
@@ -71,40 +71,40 @@ public:
     /* comparison that ensures that after a sort, duplicates are next one another */
     explicit StarMatch(){};
 
-    friend std::ostream &operator<<(std::ostream &stream, const StarMatch &Match);
+    friend std::ostream &operator<<(std::ostream &stream, StarMatch const &Match);
 
     ~StarMatch() {}
 
 private:
-    //  bool operator <  (const StarMatch & other) const { return (s1 > other.s1) ? s1 > other.s1 : s2 >
+    //  bool operator <  (StarMatch const & other) const { return (s1 > other.s1) ? s1 > other.s1 : s2 >
     //  other.s2;}
 
     /* for unique to remove duplicates */
-    bool operator==(const StarMatch &other) const { return (s1 == other.s1 && s2 == other.s2); };
-    bool operator!=(const StarMatch &other) const { return (s1 != other.s1 || s2 != other.s2); };
+    bool operator==(StarMatch const &other) const { return (s1 == other.s1 && s2 == other.s2); };
+    bool operator!=(StarMatch const &other) const { return (s1 != other.s1 || s2 != other.s2); };
 
-    friend bool compareStar1(const StarMatch &one, const StarMatch &two);
-    friend bool sameStar1(const StarMatch &one, const StarMatch &two);
-    friend bool compareStar2(const StarMatch &one, const StarMatch &two);
-    friend bool sameStar2(const StarMatch &one, const StarMatch &two);
+    friend bool compareStar1(StarMatch const &one, StarMatch const &two);
+    friend bool sameStar1(StarMatch const &one, StarMatch const &two);
+    friend bool compareStar2(StarMatch const &one, StarMatch const &two);
+    friend bool sameStar2(StarMatch const &one, StarMatch const &two);
 };
 
-inline bool compareStar1(const StarMatch &one, const StarMatch &two) {
+inline bool compareStar1(StarMatch const &one, StarMatch const &two) {
     return ((one.s1 == two.s1) ? (one.distance < two.distance) : (&(*one.s1) > &(*two.s1)));
 }
 
-inline bool sameStar1(const StarMatch &one, const StarMatch &two) { return (one.s1 == two.s1); }
+inline bool sameStar1(StarMatch const &one, StarMatch const &two) { return (one.s1 == two.s1); }
 
-inline bool compareStar2(const StarMatch &one, const StarMatch &two) {
+inline bool compareStar2(StarMatch const &one, StarMatch const &two) {
     return ((one.s2 == two.s2) ? (one.distance < two.distance) : (&(*one.s2) > &(*two.s2)));
 }
 
-inline bool sameStar2(const StarMatch &one, const StarMatch &two) { return (one.s2 == two.s2); }
+inline bool sameStar2(StarMatch const &one, StarMatch const &two) { return (one.s2 == two.s2); }
 
 /* =================================== StarMatchList
  * ============================================================ */
 
-std::ostream &operator<<(std::ostream &stream, const StarMatch &match);
+std::ostream &operator<<(std::ostream &stream, StarMatch const &match);
 
 //#ifdef TO_BE_FIXED
 typedef ::std::list<StarMatch>::iterator StarMatchIterator;
@@ -121,7 +121,7 @@ utilities such as listMatchCollect. StarMatchList's have write
 capabilities.  NStarMatchList is a generalization of this 2-match to n-matches.
 */
 
-std::ostream &operator<<(std::ostream &stream, const StarMatchList &starMatchList);
+std::ostream &operator<<(std::ostream &stream, StarMatchList const &starMatchList);
 
 class StarMatchList : public std::list<StarMatch> {
 public:
@@ -129,8 +129,8 @@ public:
 
     //! enables to get a transformed StarMatchList. Only positions are transformed, not attached stars. const
     //! routine: "this" remains unchanged.
-    void applyTransfo(StarMatchList &transformed, const Gtransfo *priorTransfo,
-                      const Gtransfo *posteriorTransfo = nullptr) const;
+    void applyTransfo(StarMatchList &transformed, Gtransfo const *priorTransfo,
+                      Gtransfo const *posteriorTransfo = nullptr) const;
 
     /* constructor */
     StarMatchList() : _order(0), _chi2(0){};
@@ -158,12 +158,12 @@ public:
     /*! cleans up the std::list of pairs for pairs that share one of their stars, keeping the closest one.
        The distance is computed using gtransfo. which = 1 (2) removes ambiguities
        on the first (second) term of the match. which=3 does both.*/
-    unsigned removeAmbiguities(const Gtransfo &gtransfo, int which = 3);
+    unsigned removeAmbiguities(Gtransfo const &gtransfo, int which = 3);
 
     //! sets a transfo between the 2 std::lists and deletes the previous or default one.  No fit.
-    void setTransfo(const Gtransfo *gtransfo) { _transfo = gtransfo->clone(); }
+    void setTransfo(Gtransfo const *gtransfo) { _transfo = gtransfo->clone(); }
     //!
-    void setTransfo(const Gtransfo &gtransfo) { _transfo = gtransfo.clone(); }
+    void setTransfo(Gtransfo const &gtransfo) { _transfo = gtransfo.clone(); }
     void setTransfo(std::shared_ptr<Gtransfo> gtransfo) { _transfo = std::move(gtransfo); }
 
     //! set transfo according to the given order.
@@ -174,7 +174,7 @@ public:
     std::unique_ptr<Gtransfo> inverseTransfo();
 
     //! Sets the distance (residual) field of all std::list elements. Mandatory before sorting on distances
-    void setDistance(const Gtransfo &gtransfo);
+    void setDistance(Gtransfo const &gtransfo);
 
     //! deletes the tail of the match std::list
     void cutTail(int nKeep);
@@ -188,8 +188,8 @@ public:
     ~StarMatchList(){/* should delete the transfo.... or use counted refs*/};
 
 private:
-    StarMatchList(const StarMatchList &);  // copies nor properly handled
-    void operator=(const StarMatchList &);
+    StarMatchList(StarMatchList const &);  // copies nor properly handled
+    void operator=(StarMatchList const &);
 
     int _order;
     double _chi2;
@@ -198,10 +198,10 @@ private:
 };
 
 //! sum of distance squared
-double computeDist2(const StarMatchList &S, const Gtransfo &gtransfo);
+double computeDist2(StarMatchList const &S, Gtransfo const &gtransfo);
 
 //! the actual chi2
-double computeChi2(const StarMatchList &L, const Gtransfo &gtransfo);
+double computeChi2(StarMatchList const &L, Gtransfo const &gtransfo);
 }  // namespace jointcal
 }  // namespace lsst
 

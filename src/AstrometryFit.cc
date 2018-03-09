@@ -102,7 +102,7 @@ void AstrometryFit::leastSquareDerivativesMeasurement(CcdImage const &ccdImage, 
     if (msList) assert(&(msList->front()->getCcdImage()) == &ccdImage);
 
     // get the Mapping
-    const Mapping *mapping = _astrometryModel->getMapping(ccdImage);
+    Mapping const *mapping = _astrometryModel->getMapping(ccdImage);
     // count parameters
     unsigned npar_mapping = (_fittingDistortions) ? mapping->getNpar() : 0;
     unsigned npar_pos = (_fittingPos) ? 2 : 0;
@@ -120,7 +120,7 @@ void AstrometryFit::leastSquareDerivativesMeasurement(CcdImage const &ccdImage, 
     // refraction stuff
     Point refractionVector = ccdImage.getRefractionVector();
     // transformation from sky to TP
-    const Gtransfo *sky2TP = _astrometryModel->getSky2TP(ccdImage);
+    Gtransfo const *sky2TP = _astrometryModel->getSky2TP(ccdImage);
     // reserve matrices once for all measurements
     GtransfoLin dypdy;
     // the shape of H (et al) is required this way in order to be able to
@@ -131,10 +131,10 @@ void AstrometryFit::leastSquareDerivativesMeasurement(CcdImage const &ccdImage, 
     Eigen::VectorXd grad(npar_tot);
     // current position in the Jacobian
     unsigned kTriplets = tripletList.getNextFreeIndex();
-    const MeasuredStarList &catalog = (msList) ? *msList : ccdImage.getCatalogForFit();
+    MeasuredStarList const &catalog = (msList) ? *msList : ccdImage.getCatalogForFit();
 
     for (auto &i : catalog) {
-        const MeasuredStar &ms = *i;
+        MeasuredStar const &ms = *i;
         if (!ms.isValid()) continue;
         // tweak the measurement errors
         FatPoint inPos = ms;
@@ -258,8 +258,8 @@ void AstrometryFit::leastSquareDerivativesReference(FittedStarList const &fitted
        projection point at every object */
     TanRaDec2Pix proj(GtransfoLin(), Point(0., 0.));
     for (auto const &i : fittedStarList) {
-        const FittedStar &fs = *i;
-        const RefStar *rs = fs.getRefStar();
+        FittedStar const &fs = *i;
+        RefStar const *rs = fs.getRefStar();
         if (rs == nullptr) continue;
         proj.setTangentPoint(fs);
         // fs projects to (0,0), no need to compute its transform.
@@ -326,13 +326,13 @@ void AstrometryFit::accumulateStatImage(CcdImage const &ccdImage, Chi2Accumulato
     /**********************************************************************/
     /* Setup */
     // 1 : get the Mapping's
-    const Mapping *mapping = _astrometryModel->getMapping(ccdImage);
+    Mapping const *mapping = _astrometryModel->getMapping(ccdImage);
     // proper motion stuff
     double mjd = ccdImage.getMjd() - _JDRef;
     // refraction stuff
     Point refractionVector = ccdImage.getRefractionVector();
     // transformation from sky to TP
-    const Gtransfo *sky2TP = _astrometryModel->getSky2TP(ccdImage);
+    Gtransfo const *sky2TP = _astrometryModel->getSky2TP(ccdImage);
     // reserve matrix once for all measurements
     Eigen::Matrix2Xd transW(2, 2);
 
@@ -384,7 +384,7 @@ void AstrometryFit::accumulateStatRefStars(Chi2Accumulator &accum) const {
     FittedStarList &fittedStarList = _associations->fittedStarList;
     TanRaDec2Pix proj(GtransfoLin(), Point(0., 0.));
     for (auto const &fs : fittedStarList) {
-        const RefStar *rs = fs->getRefStar();
+        RefStar const *rs = fs->getRefStar();
         if (rs == nullptr) continue;
         proj.setTangentPoint(*fs);
         // fs projects to (0,0), no need to compute its transform.
@@ -408,7 +408,7 @@ void AstrometryFit::accumulateStatRefStars(Chi2Accumulator &accum) const {
 void AstrometryFit::getIndicesOfMeasuredStar(MeasuredStar const &measuredStar,
                                              std::vector<unsigned> &indices) const {
     if (_fittingDistortions) {
-        const Mapping *mapping = _astrometryModel->getMapping(measuredStar.getCcdImage());
+        Mapping const *mapping = _astrometryModel->getMapping(measuredStar.getCcdImage());
         mapping->getMappingIndices(indices);
     }
     std::shared_ptr<FittedStar const> const fs = measuredStar.getFittedStar();
@@ -517,7 +517,7 @@ static void write_vect_in_fits(Eigen::VectorXd const &vectorXd, std::string cons
 
 void AstrometryFit::checkStuff() {
 #if (0)
-    const char *what2fit[] = {"Positions",
+    char const *what2fit[] = {"Positions",
                               "Distortions",
                               "Refrac",
                               "Positions Distortions",
@@ -525,7 +525,7 @@ void AstrometryFit::checkStuff() {
                               "Distortions Refrac",
                               "Positions Distortions Refrac"};
 #endif
-    const char *what2fit[] = {"Positions", "Distortions", "Positions Distortions"};
+    char const *what2fit[] = {"Positions", "Distortions", "Positions Distortions"};
     // DEBUG
     for (auto & k : what2fit) {
         assignIndices(k);
@@ -576,12 +576,12 @@ void AstrometryFit::saveChi2MeasContributions(std::string const &baseName) const
           << separator;
     ofile << "chip id" << separator << "visit id" << std::endl;
 
-    const CcdImageList &ccdImageList = _associations->getCcdImageList();
+    CcdImageList const &ccdImageList = _associations->getCcdImageList();
     for (auto const &ccdImage : ccdImageList) {
-        const MeasuredStarList &cat = ccdImage->getCatalogForFit();
-        const Mapping *mapping = _astrometryModel->getMapping(*ccdImage);
+        MeasuredStarList const &cat = ccdImage->getCatalogForFit();
+        Mapping const *mapping = _astrometryModel->getMapping(*ccdImage);
         const auto readTransfo = ccdImage->readWCS();
-        const Point &refractionVector = ccdImage->getRefractionVector();
+        Point const &refractionVector = ccdImage->getRefractionVector();
         double mjd = ccdImage->getMjd() - _JDRef;
         for (auto const &ms : cat) {
             if (!ms->isValid()) continue;
@@ -589,7 +589,7 @@ void AstrometryFit::saveChi2MeasContributions(std::string const &baseName) const
             FatPoint inPos = *ms;
             tweakAstromMeasurementErrors(inPos, *ms, _posError);
             mapping->transformPosAndErrors(inPos, tpPos);
-            const Gtransfo *sky2TP = _astrometryModel->getSky2TP(*ccdImage);
+            Gtransfo const *sky2TP = _astrometryModel->getSky2TP(*ccdImage);
             const std::unique_ptr<Gtransfo> readPix2TP = gtransfoCompose(sky2TP, readTransfo);
             FatPoint inputTpPos = readPix2TP->apply(inPos);
             std::shared_ptr<FittedStar const> const fs = ms->getFittedStar();
@@ -640,11 +640,11 @@ void AstrometryFit::saveChi2RefContributions(std::string const &baseName) const 
           << "number of measurements of this FittedStar" << std::endl;
 
     // The following loop is heavily inspired from AstrometryFit::computeChi2()
-    const FittedStarList &fittedStarList = _associations->fittedStarList;
+    FittedStarList const &fittedStarList = _associations->fittedStarList;
     TanRaDec2Pix proj(GtransfoLin(), Point(0., 0.));
     for (auto const &i : fittedStarList) {
-        const FittedStar &fs = *i;
-        const RefStar *rs = fs.getRefStar();
+        FittedStar const &fs = *i;
+        RefStar const *rs = fs.getRefStar();
         if (rs == nullptr) continue;
         proj.setTangentPoint(fs);
         // fs projects to (0,0), no need to compute its transform.

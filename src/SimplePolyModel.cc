@@ -29,7 +29,7 @@ SimplePolyModel::SimplePolyModel(CcdImageList const &ccdImageList, ProjectionHan
     unsigned count = 0;
 
     for (auto i = ccdImageList.cbegin(); i != ccdImageList.cend(); ++i, ++count) {
-        const CcdImage &im = **i;
+        CcdImage const &im = **i;
         if (count < nNotFit) {
             std::unique_ptr<SimpleGtransfoMapping> id(new SimpleGtransfoMapping(GtransfoIdentity()));
             id->setIndex(-1);  // non sense, because it has no parameters
@@ -56,7 +56,7 @@ SimplePolyModel::SimplePolyModel(CcdImageList const &ccdImageList, ProjectionHan
                fitted transformation is returned, so that the trick
                remains hidden
              */
-            const Frame &frame = im.getImageFrame();
+            Frame const &frame = im.getImageFrame();
             GtransfoLin shiftAndNormalize = normalizeCoordinatesTransfo(frame);
             if (initFromWcs) {
                 pol = GtransfoPoly(im.getPix2TangentPlane(), frame, degree);
@@ -68,7 +68,7 @@ SimplePolyModel::SimplePolyModel(CcdImageList const &ccdImageList, ProjectionHan
     }
 }
 
-const Mapping *SimplePolyModel::getMapping(CcdImage const &ccdImage) const {
+Mapping const *SimplePolyModel::getMapping(CcdImage const &ccdImage) const {
     auto i = _myMap.find(&ccdImage);
     if (i == _myMap.cend())
         throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,
@@ -102,7 +102,7 @@ void SimplePolyModel::freezeErrorTransform() {
     for (auto & i : _myMap) i.second->freezeErrorTransform();
 }
 
-const Gtransfo &SimplePolyModel::getTransfo(CcdImage const &ccdImage) const {
+Gtransfo const &SimplePolyModel::getTransfo(CcdImage const &ccdImage) const {
     // return GetMapping(ccdImage)->Transfo(); // cannot do that
     auto p = _myMap.find(&ccdImage);
     if (p == _myMap.end())
@@ -112,11 +112,11 @@ const Gtransfo &SimplePolyModel::getTransfo(CcdImage const &ccdImage) const {
 }
 
 std::shared_ptr<TanSipPix2RaDec> SimplePolyModel::produceSipWcs(CcdImage const &ccdImage) const {
-    const auto &pix2Tp = dynamic_cast<const GtransfoPoly &>(getTransfo(ccdImage));
-    const auto *proj = dynamic_cast<const TanRaDec2Pix *>(getSky2TP(ccdImage));
+    auto const &pix2Tp = dynamic_cast<GtransfoPoly const &>(getTransfo(ccdImage));
+    auto const *proj = dynamic_cast<TanRaDec2Pix const *>(getSky2TP(ccdImage));
     if (!proj) return nullptr;
 
-    const GtransfoLin &projLinPart = proj->getLinPart();  // should be the identity, but who knows? So, let us
+    GtransfoLin const &projLinPart = proj->getLinPart();  // should be the identity, but who knows? So, let us
                                                           // incorporate it into the pix2TP part.
     GtransfoPoly wcsPix2Tp = GtransfoPoly(projLinPart.invert()) * pix2Tp;
 

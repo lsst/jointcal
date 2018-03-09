@@ -34,7 +34,7 @@ Histo2d::Histo2d(int nnx, float mminx, float mmaxx, int nny, float mminy, float 
     memset(data.get(), 0, nx * ny * sizeof(float));
 }
 
-Histo2d::Histo2d(const Histo2d &other) {
+Histo2d::Histo2d(Histo2d const &other) {
     memcpy(this, &other, sizeof(Histo2d));
     data = std::make_unique<float[]>(nx * ny);
     memcpy((data).get(), other.data.get(), nx * ny * sizeof(float));
