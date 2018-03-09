@@ -139,7 +139,7 @@ void ConstrainedPhotometryModel::computeParameterDerivatives(MeasuredStar const 
 
 namespace {
 // Convert photoTransfo's way of storing Chebyshev coefficients into the format wanted by ChebyMap.
-ndarray::Array<double, 2, 2> toChebyMapCoeffs(const std::shared_ptr<PhotometryTransfoChebyshev> &transfo) {
+ndarray::Array<double, 2, 2> toChebyMapCoeffs(std::shared_ptr<PhotometryTransfoChebyshev> transfo) {
     auto coeffs = transfo->getCoefficients();
     // 4 x nPar: ChebyMap wants rows that look like (a_ij, 1, i, j) for out += a_ij*T_i(x)*T_j(y)
     ndarray::Array<double, 2, 2> chebyCoeffs = allocate(ndarray::makeVector(transfo->getNpar(), 4));
