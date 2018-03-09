@@ -196,7 +196,7 @@ void Iterator::operator++() {
             }
             finder.findRangeInSlice(currentSlice, yStart, yEnd, current, pend);
         } while (current == null_value);
-}
+    }
     check();
 }
 

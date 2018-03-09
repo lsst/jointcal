@@ -1,7 +1,7 @@
 #include <iostream>
 #include <iomanip>
 #include <iterator> /* for ostream_iterator */
-#include <cmath>   // for sin and cos and may be others
+#include <cmath>    // for sin and cos and may be others
 #include <fstream>
 #include <cassert>
 #include <memory>
@@ -44,7 +44,7 @@ bool isIntegerShift(Gtransfo const *gtransfo) {
 
     static Point dumb(4000, 4000);
     return fabs(dx - int(floor(dx + 0.5))) < eps && fabs(dy - int(floor(dy + 0.5))) < eps &&
-        fabs(dumb.x + dx - shift->apply(dumb).x) < eps && fabs(dumb.y + dy - shift->apply(dumb).y) < eps;
+           fabs(dumb.x + dx - shift->apply(dumb).x) < eps && fabs(dumb.y + dy - shift->apply(dumb).y) < eps;
 }
 
 /********* Gtransfo ***********************/
@@ -203,7 +203,7 @@ void Gtransfo::write(const std::string &fileName) const {
     if (!ok) {
         throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,
                           "Gtransfo::write, something went wrong for file " + fileName);
-}
+    }
 }
 
 void Gtransfo::write(ostream &stream) const {
@@ -241,7 +241,9 @@ public:
     std::unique_ptr<Gtransfo> roughInverse(Frame const &) const override { return _direct->clone(); }
 
     //! Inverse transfo: returns the direct one!
-    std::unique_ptr<Gtransfo> inverseTransfo(double, Frame const &) const override { return _direct->clone(); }
+    std::unique_ptr<Gtransfo> inverseTransfo(double, Frame const &) const override {
+        return _direct->clone();
+    }
 
     ~GtransfoInverse() override;
 
@@ -378,9 +380,9 @@ std::unique_ptr<Gtransfo> gtransfoCompose(Gtransfo const *left, Gtransfo const *
        that pipelines "left" and "right" */
     if (composition == nullptr) {
         return std::unique_ptr<Gtransfo>(new GtransfoComposition(left, right));
-}
-    
-        return composition;
+    }
+
+    return composition;
 }
 
 // just a speed up, to avoid useless numerical derivation.
@@ -401,7 +403,7 @@ void GtransfoIdentity::read(istream &stream) {
     if (format != 1) {
         throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,
                           " GtransfoIdentity::read : format is not 1 ");
-}
+    }
 }
 
 /***************  GtransfoPoly **************************************/
@@ -435,7 +437,7 @@ GtransfoPoly::GtransfoPoly(Gtransfo const *gtransfo, Frame const &frame, unsigne
                all errors (and weights) will be equal : */
             sm.push_back(StarMatch(*pix, *tp, pix, tp));
         }
-}
+    }
     GtransfoPoly ret(degree);
     ret.fit(sm);
     *this = ret;
@@ -669,7 +671,7 @@ double GtransfoPoly::coeffOrZero(const unsigned degX, const unsigned degY, const
     assert(whichCoord < 2);
     if (degX + degY <= _degree) {
         return _coeffs[(degX + degY) * (degX + degY + 1) / 2 + degY + whichCoord * _nterms];
-}
+    }
     return 0;
 }
 
@@ -710,13 +712,13 @@ void GtransfoPoly::dump(ostream &stream) const {
             stream << "newx = ";
         } else {
             stream << "newy = ";
-}
+        }
         for (unsigned p = 0; p <= _degree; ++p) {
             for (unsigned py = 0; py <= p; ++py) {
                 if (p + py != 0) stream << " + ";
                 stream << coeff(p - py, py, ic) << monomialString(p - py, py);
             }
-}
+        }
         stream << endl;
     }
     if (_degree > 0) stream << " Linear determinant = " << determinant() << endl;
@@ -741,7 +743,7 @@ static GtransfoLin shiftAndNormalize(StarMatchList const &starMatchList) {
     double yav = 0;
     double y2 = 0;
     double count = 0;
-    for (auto const & a_match : starMatchList) {
+    for (auto const &a_match : starMatchList) {
         Point const &point1 = a_match.point1;
         xav += point1.x;
         yav += point1.y;
@@ -768,7 +770,7 @@ double GtransfoPoly::computeFit(StarMatchList const &starMatchList, Gtransfo con
     B.setZero();
     double sumr2 = 0;
     double monomials[_nterms];
-    for (auto const & a_match : starMatchList) {
+    for (auto const &a_match : starMatchList) {
         Point tmp = shiftToCenter.apply(a_match.point1);
         FatPoint point1(tmp, a_match.point1.vx, a_match.point1.vy, a_match.point1.vxy);
         FatPoint const &point2 = a_match.point2;
@@ -841,12 +843,12 @@ std::unique_ptr<Gtransfo> GtransfoPoly::reduceCompo(Gtransfo const *right) const
     if (p) {
         if (getDegree() == 1 && p->getDegree() == 1) {
             return std::unique_ptr<Gtransfo>(new GtransfoLin((*this) * (*p)));  // does the composition
-}
-        
-            return std::unique_ptr<Gtransfo>(new GtransfoPoly((*this) * (*p)));  // does the composition
+        }
+
+        return std::unique_ptr<Gtransfo>(new GtransfoPoly((*this) * (*p)));  // does the composition
     } else {
         return std::unique_ptr<Gtransfo>(nullptr);
-}
+    }
 }
 
 /*  PolyXY the class used to perform polynomial algebra (and in
@@ -876,9 +878,9 @@ public:
         for (unsigned px = 0; px <= degree; ++px) {
             for (unsigned py = 0; py <= degree - px; ++py) {
                 coeff(px, py) = gtransfoPoly.coeff(px, py, whichCoord);
-}
+            }
+        }
     }
-}
 
     long double coeff(const unsigned powX, const unsigned powY) const {
         assert(powX + powY <= degree);
@@ -898,7 +900,7 @@ static void operator+=(PolyXY &left, PolyXY const &right) {
     assert(left.getDegree() >= rdeg);
     for (unsigned i = 0; i <= rdeg; ++i) {
         for (unsigned j = 0; j <= rdeg - i; ++j) left.coeff(i, j) += right.coeff(i, j);
-}
+    }
 }
 
 /* multiplication by a scalar */
@@ -908,7 +910,7 @@ static PolyXY operator*(const long double &a, PolyXY const &polyXY) {
     unsigned degree = polyXY.getDegree();
     for (unsigned i = 0; i <= degree; ++i) {
         for (unsigned j = 0; j <= degree - i; ++j) result.coeff(i, j) *= a;
-}
+    }
     return result;
 }
 
@@ -922,10 +924,10 @@ static PolyXY product(PolyXY const &p1, PolyXY const &p2) {
             for (unsigned i2 = 0; i2 <= deg2; ++i2) {
                 for (unsigned j2 = 0; j2 <= deg2 - i2; ++j2) {
                     result.coeff(i1 + i2, j1 + j2) += p1.coeff(i1, j1) * p2.coeff(i2, j2);
-}
-}
-}
-}
+                }
+            }
+        }
+    }
     return result;
 }
 
@@ -948,8 +950,8 @@ static PolyXY composition(PolyXY const &polyXY, PolyXY const &polyX, PolyXY cons
     for (unsigned px = 0; px <= pdeg; ++px) {
         for (unsigned py = 0; py <= pdeg - px; ++py) {
             result += polyXY.coeff(px, py) * product(pXPowers.at(px), pYPowers.at(py));
-}
-}
+        }
+    }
     return result;
 }
 
@@ -975,7 +977,7 @@ GtransfoPoly GtransfoPoly::operator*(GtransfoPoly const &right) const {
             result.coeff(px, py, 0) = rx.coeff(px, py);
             result.coeff(px, py, 1) = ry.coeff(px, py);
         }
-}
+    }
     return result;
 }
 
@@ -987,10 +989,10 @@ GtransfoPoly GtransfoPoly::operator+(GtransfoPoly const &right) const {
                 res.coeff(i, j, 0) += right.coeff(i, j, 0);
                 res.coeff(i, j, 1) += right.coeff(i, j, 1);
             }
-}
+        }
         return res;
-    } 
-        return (right + (*this));
+    }
+    return (right + (*this));
 }
 
 GtransfoPoly GtransfoPoly::operator-(GtransfoPoly const &right) const {
@@ -1000,7 +1002,7 @@ GtransfoPoly GtransfoPoly::operator-(GtransfoPoly const &right) const {
             res.coeff(i, j, 0) = coeffOrZero(i, j, 0) - right.coeffOrZero(i, j, 0);
             res.coeff(i, j, 1) = coeffOrZero(i, j, 1) - right.coeffOrZero(i, j, 1);
         }
-}
+    }
     return res;
 }
 
@@ -1019,14 +1021,14 @@ void GtransfoPoly::read(istream &s) {
     s >> format;
     if (format != 1) {
         throw LSST_EXCEPT(pex::exceptions::InvalidParameterError, " GtransfoPoly::read : format is not 1 ");
-}
+    }
 
     string degree;
     s >> degree >> _degree;
     if (degree != "degree") {
         throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,
                           " GtransfoPoly::read : expecting \"degree\" and found " + degree);
-}
+    }
     setDegree(_degree);
     for (unsigned k = 0; k < 2 * _nterms; ++k) s >> _coeffs[k];
 }
@@ -1044,7 +1046,7 @@ std::unique_ptr<GtransfoPoly> inversePolyTransfo(Gtransfo const &direct, Frame c
             Point out(direct.apply(in));
             sm.push_back(StarMatch(out, in, nullptr, nullptr));
         }
-}
+    }
     unsigned npairs = sm.size();
     int maxdeg = 9;
     int degree;
@@ -1060,7 +1062,7 @@ std::unique_ptr<GtransfoPoly> inversePolyTransfo(Gtransfo const &direct, Frame c
     if (degree > maxdeg) {
         LOGLS_WARN(_log, "inversePolyTransfo: Reached max degree without reaching requested precision: "
                                  << precision);
-}
+    }
     return poly;
 }
 
@@ -1084,7 +1086,7 @@ GtransfoLin::GtransfoLin(GtransfoPoly const &gtransfoPoly) : GtransfoPoly(1) {
     if (gtransfoPoly.getDegree() != 1) {
         throw pexExcept::InvalidParameterError(
                 "Trying to build a GtransfoLin from a higher order transfo. Aborting. ");
-}
+    }
     (GtransfoPoly &)(*this) = gtransfoPoly;
 }
 
@@ -1307,7 +1309,6 @@ Point BaseTanWcs::getCrPix() const {
 
 BaseTanWcs::~BaseTanWcs() = default;
 
-
 GtransfoSkyWcs::GtransfoSkyWcs(std::shared_ptr<afw::geom::SkyWcs> skyWcs) : _skyWcs(std::move(skyWcs)) {}
 
 void GtransfoSkyWcs::apply(const double xIn, const double yIn, double &xOut, double &yOut) const {
@@ -1316,9 +1317,7 @@ void GtransfoSkyWcs::apply(const double xIn, const double yIn, double &xOut, dou
     yOut = outCoord[1].asDegrees();
 }
 
-void GtransfoSkyWcs::dump(std::ostream &stream) const {
-    stream << "GtransfoSkyWcs(" << *_skyWcs << ")";
-}
+void GtransfoSkyWcs::dump(std::ostream &stream) const { stream << "GtransfoSkyWcs(" << *_skyWcs << ")"; }
 
 double GtransfoSkyWcs::fit(StarMatchList const &starMatchList) {
     throw LSST_EXCEPT(pex::exceptions::LogicError, "Not implemented");
@@ -1364,17 +1363,17 @@ std::unique_ptr<Gtransfo> TanPix2RaDec::roughInverse(Frame const &) const {
 std::unique_ptr<Gtransfo> TanPix2RaDec::inverseTransfo(const double precision, Frame const &region) const {
     if (!corr) {
         return std::unique_ptr<Gtransfo>(new TanRaDec2Pix(getLinPart().invert(), getTangentPoint()));
-}
-    
-        return std::unique_ptr<Gtransfo>(new GtransfoInverse(this, precision, region));
+    }
+
+    return std::unique_ptr<Gtransfo>(new GtransfoInverse(this, precision, region));
 }
 
 GtransfoPoly TanPix2RaDec::getPix2TangentPlane() const {
     if (corr) {
         return (*corr) * linPix2Tan;
-}
-    
-        return linPix2Tan;
+    }
+
+    return linPix2Tan;
 }
 
 void TanPix2RaDec::pix2TP(double xPixel, double yPixel, double &xTangentPlane, double &yTangentPlane) const {
@@ -1441,9 +1440,9 @@ std::unique_ptr<Gtransfo> TanSipPix2RaDec::inverseTransfo(const double precision
 GtransfoPoly TanSipPix2RaDec::getPix2TangentPlane() const {
     if (corr) {
         return GtransfoPoly(linPix2Tan) * (*corr);
-}
-    
-        return linPix2Tan;
+    }
+
+    return linPix2Tan;
 }
 
 void TanSipPix2RaDec::pix2TP(double xPixel, double yPixel, double &xTangentPlane,
@@ -1455,7 +1454,7 @@ void TanSipPix2RaDec::pix2TP(double xPixel, double yPixel, double &xTangentPlane
         linPix2Tan.apply(xtmp, ytmp, xTangentPlane, yTangentPlane);
     } else {
         linPix2Tan.apply(xPixel, yPixel, xTangentPlane, yTangentPlane);
-}
+    }
 }
 
 std::unique_ptr<Gtransfo> TanSipPix2RaDec::clone() const {
@@ -1637,7 +1636,7 @@ std::unique_ptr<Gtransfo> gtransfoRead(const std::string &fileName) {
     ifstream s(fileName.c_str());
     if (!s) {
         throw LSST_EXCEPT(pex::exceptions::InvalidParameterError, " gtransfoRead : cannot open " + fileName);
-}
+    }
     try {
         std::unique_ptr<Gtransfo> res(gtransfoRead(s));
         s.close();
@@ -1654,19 +1653,20 @@ std::unique_ptr<Gtransfo> gtransfoRead(istream &s) {
     if (s.fail()) {
         throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,
                           "gtransfoRead : could not find a Gtransfotype");
-}
+    }
     if (type == "GtransfoIdentity") {
         std::unique_ptr<GtransfoIdentity> res(new GtransfoIdentity());
         res->read(s);
         return std::move(res);
-    } if (type == "GtransfoPoly") {
+    }
+    if (type == "GtransfoPoly") {
         std::unique_ptr<GtransfoPoly> res(new GtransfoPoly());
         res->read(s);
         return std::move(res);
     } else {
         throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,
                           " gtransfoRead : No reader for Gtransfo type " + type);
-}
+    }
 }
 }  // namespace jointcal
 }  // namespace lsst

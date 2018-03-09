@@ -45,7 +45,7 @@ public:
               _measurementCount(0),
               _refStar(nullptr) {}
 
-    FittedStar(BaseStar const & baseStar)
+    FittedStar(BaseStar const& baseStar)
             : BaseStar(baseStar),
               _mag(-1),
               _gen(-1),
@@ -55,7 +55,7 @@ public:
               _refStar(nullptr) {}
 
     //!
-    FittedStar(MeasuredStar const & measuredStar);
+    FittedStar(MeasuredStar const& measuredStar);
 
     /// No move, allow copy constructor: we may copy the fitted StarLists when associating and matching
     /// catalogs, otherwise Stars should be managed by shared_ptr only.
@@ -93,16 +93,16 @@ public:
     void addMagMeasurement(double magValue, double magWeight);
 
     //! index is a value that a fit can set and reread....
-    void setIndexInMatrix(unsigned const & index) { _indexInMatrix = index; };
+    void setIndexInMatrix(unsigned const& index) { _indexInMatrix = index; };
 
     //!
     int getIndexInMatrix() const { return _indexInMatrix; }
 
     //! Set the astrometric reference star associated with this star.
-    void setRefStar(RefStar const * _refStar);
+    void setRefStar(RefStar const* _refStar);
 
     //! Get the astrometric reference star associated with this star.
-    RefStar const * getRefStar() const { return _refStar; };
+    RefStar const* getRefStar() const { return _refStar; };
 
 private:
     double _mag;
@@ -110,7 +110,7 @@ private:
     double _wmag;
     unsigned _indexInMatrix;
     int _measurementCount;
-    RefStar const * _refStar;
+    RefStar const* _refStar;
 
     double _fluxErr;
 };
@@ -131,8 +131,8 @@ typedef FittedStarList::iterator FittedStarIterator;
 
 BaseStarList& Fitted2Base(FittedStarList& This);
 BaseStarList* Fitted2Base(FittedStarList* This);
-BaseStarList const & Fitted2Base(FittedStarList const & This);
-BaseStarList const * Fitted2Base(FittedStarList const * This);
+BaseStarList const& Fitted2Base(FittedStarList const& This);
+BaseStarList const* Fitted2Base(FittedStarList const* This);
 }  // namespace jointcal
 }  // namespace lsst
 

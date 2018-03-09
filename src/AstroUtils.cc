@@ -12,7 +12,7 @@
 namespace lsst {
 namespace jointcal {
 
-Frame applyTransfo(Frame const & inputframe, Gtransfo const & gtransfo, const WhichTransformed which) {
+Frame applyTransfo(Frame const& inputframe, Gtransfo const& gtransfo, const WhichTransformed which) {
     // 2 opposite corners
     double xtmin1, xtmax1, ytmin1, ytmax1;
     gtransfo.apply(inputframe.xMin, inputframe.yMin, xtmin1, ytmin1);

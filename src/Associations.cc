@@ -197,7 +197,7 @@ void Associations::collectRefStars(lsst::afw::table::SortedCatalogT<lsst::afw::t
         if (rejectBadFluxes &&
             (!std::isfinite(defaultFlux) || !std::isfinite(defaultFluxErr) || defaultFluxErr == 0)) {
             continue;
-}
+        }
         refStarList.push_back(star);
     }
 
@@ -219,7 +219,7 @@ const lsst::afw::geom::Box2D Associations::getRaDecBBox() {
             tangentPlaneFrame = CTPFrame;
         } else {
             tangentPlaneFrame += CTPFrame;
-}
+        }
     }
 
     // convert tangent plane coordinates to RaDec:
@@ -323,7 +323,7 @@ void Associations::normalizeFittedStars() const {
                 throw(LSST_EXCEPT(
                         pex::exceptions::RuntimeError,
                         "All measuredStars must have a fittedStar: did you call selectFittedStars()?"));
-}
+            }
             auto point = toCommonTangentPlane->apply(*mi);
             fittedStar->x += point.x;
             fittedStar->y += point.y;

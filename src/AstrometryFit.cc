@@ -146,7 +146,7 @@ void AstrometryFit::leastSquareDerivativesMeasurement(CcdImage const &ccdImage, 
             mapping->computeTransformAndDerivatives(inPos, outPos, H);
         } else {
             mapping->transformPosAndErrors(inPos, outPos);
-}
+        }
 
         unsigned ipar = npar_mapping;
         double det = outPos.vx * outPos.vy - std::pow(outPos.vxy, 2);
@@ -469,7 +469,7 @@ void AstrometryFit::offsetParams(Eigen::VectorXd const &delta) {
         throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,
                           "AstrometryFit::offsetParams : the provided vector length is not compatible with "
                           "the current whatToFit setting");
-}
+    }
     if (_fittingDistortions) _astrometryModel->offsetParams(delta);
 
     if (_fittingPos) {
@@ -529,7 +529,7 @@ void AstrometryFit::checkStuff() {
 #endif
     char const *what2fit[] = {"Positions", "Distortions", "Positions Distortions"};
     // DEBUG
-    for (auto & k : what2fit) {
+    for (auto &k : what2fit) {
         assignIndices(k);
         TripletList tripletList(10000);
         Eigen::VectorXd grad(_nParTot);

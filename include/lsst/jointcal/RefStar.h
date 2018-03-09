@@ -61,8 +61,8 @@ typedef RefStarList::iterator RefStarIterator;
 
 BaseStarList& Ref2Base(RefStarList& This);
 BaseStarList* Ref2Base(RefStarList* This);
-BaseStarList const & Ref2Base(RefStarList const & This);
-BaseStarList const * Ref2Base(RefStarList const * This);
+BaseStarList const& Ref2Base(RefStarList const& This);
+BaseStarList const* Ref2Base(RefStarList const* This);
 }  // namespace jointcal
 }  // namespace lsst
 

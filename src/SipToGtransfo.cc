@@ -22,7 +22,7 @@ using GtPoly_Ptr = std::shared_ptr<jointcal::GtransfoPoly>;
 /* The inverse transformation i.e. convert from the fit result to the SIP
    convention. */
 std::shared_ptr<afw::geom::SkyWcs> gtransfoToTanWcs(const jointcal::TanSipPix2RaDec& wcsTransfo,
-                                                    const jointcal::Frame &ccdFrame,
+                                                    const jointcal::Frame& ccdFrame,
                                                     const bool noLowOrderSipTerms) {
     GtransfoLin linPart = wcsTransfo.getLinPart();
     afwGeom::Point2D crpix_lsst;  // in LSST "frame"

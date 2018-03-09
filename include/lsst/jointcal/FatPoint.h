@@ -17,7 +17,7 @@ public:
         vxy = 0;
     };
 
-    FatPoint(Point const & P, double Vx = 1, double Vy = 1, double Vxy = 0)
+    FatPoint(Point const& P, double Vx = 1, double Vy = 1, double Vxy = 0)
             : Point(P), vx(Vx), vy(Vy), vxy(Vxy){};
 
     FatPoint(const double X, const double Y, const double Vx = 1, const double Vy = 1, const double Vxy = 0)

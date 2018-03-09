@@ -13,9 +13,9 @@ namespace jointcal {
 class Frame;
 
 //! Transform the other way around
-std::shared_ptr<lsst::afw::geom::SkyWcs>
-gtransfoToTanWcs(const lsst::jointcal::TanSipPix2RaDec& wcsTransfo, const lsst::jointcal::Frame &ccdFrame,
-                 const bool noLowOrderSipTerms = false);
+std::shared_ptr<lsst::afw::geom::SkyWcs> gtransfoToTanWcs(const lsst::jointcal::TanSipPix2RaDec& wcsTransfo,
+                                                          const lsst::jointcal::Frame& ccdFrame,
+                                                          const bool noLowOrderSipTerms = false);
 }  // namespace jointcal
 }  // namespace lsst
 

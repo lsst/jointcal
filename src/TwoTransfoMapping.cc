@@ -51,13 +51,13 @@ void TwoTransfoMapping::computeTransformAndDerivatives(FatPoint const &where, Fa
         H.block(0, 0, _nPar1, 2) = tmp->h1 * tmp->dt2dx;
     } else {
         _m1->transformPosAndErrors(where, pMid);
-}
+    }
     if (_nPar2) {
         _m2->computeTransformAndDerivatives(pMid, outPoint, tmp->h2);
         H.block(_nPar1, 0, _nPar2, 2) = tmp->h2;
     } else {
         _m2->transformPosAndErrors(pMid, outPoint);
-}
+    }
 }
 
 /*! Sets the _nPar{1,2} and allocates H matrices accordingly, to
@@ -70,13 +70,13 @@ void TwoTransfoMapping::setWhatToFit(const bool fittingT1, const bool fittingT2)
         tmp->h1 = Eigen::MatrixX2d(_nPar1, 2);
     } else {
         _nPar1 = 0;
-}
+    }
     if (fittingT2) {
         _nPar2 = _m2->getNpar();
         tmp->h2 = Eigen::MatrixX2d(_nPar2, 2);
     } else {
         _nPar2 = 0;
-}
+    }
 }
 
 void TwoTransfoMapping::transformPosAndErrors(FatPoint const &where, FatPoint &outPoint) const {

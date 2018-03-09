@@ -26,7 +26,7 @@ void StarList<Star>::cutTail(const int nKeep) {
     auto si = this->begin();
     for (; si != this->end() && count < nKeep; ++count, ++si) {
         ;
-}
+    }
     while (si != this->end()) {
         si = this->erase(si);
     }

@@ -24,32 +24,32 @@ public:
     Point(double xx, double yy) : x(xx), y(yy){};
 
     //! -
-    double Distance(Point const & other) const {
+    double Distance(Point const& other) const {
         return sqrt((x - other.x) * (x - other.x) + (y - other.y) * (y - other.y));
     };
 
     //! distance squared to other
-    double computeDist2(Point const & other) const {
+    double computeDist2(Point const& other) const {
         return ((x - other.x) * (x - other.x) + (y - other.y) * (y - other.y));
     };
 
     //! Sum
-    Point operator+(Point const & Right) const { return Point(x + Right.x, y + Right.y); }
+    Point operator+(Point const& Right) const { return Point(x + Right.x, y + Right.y); }
 
     //! Difference
-    Point operator-(Point const & Right) const { return Point(x - Right.x, y - Right.y); }
+    Point operator-(Point const& Right) const { return Point(x - Right.x, y - Right.y); }
 
     //! utility
     virtual void dump(std::ostream& s = std::cout) const { s << " x " << x << " y " << y; }
 
     //! -
-    friend std::ostream& operator<<(std::ostream& stream, Point const & point) {
+    friend std::ostream& operator<<(std::ostream& stream, Point const& point) {
         point.dump(stream);
         return stream;
     }
 };
 
-std::ostream& operator<<(std::ostream& stream, Point const & point);
+std::ostream& operator<<(std::ostream& stream, Point const& point);
 }  // namespace jointcal
 }  // namespace lsst
 
