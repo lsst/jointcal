@@ -15,7 +15,8 @@ namespace jointcal {
 class TwoTransfoMapping : public AstrometryMapping {
 public:
     //!
-    TwoTransfoMapping(SimpleGtransfoMapping *chipMapping, SimpleGtransfoMapping *visitMapping);
+    TwoTransfoMapping(std::shared_ptr<SimpleGtransfoMapping> chipMapping,
+                      std::shared_ptr<SimpleGtransfoMapping> visitMapping);
 
     /// No copy or move: there is only ever one instance of a given model (i.e.. per ccd+visit)
     TwoTransfoMapping(TwoTransfoMapping const &) = delete;
@@ -61,7 +62,7 @@ private:
     //!
     void setWhatToFit(const bool fittingT1, const bool fittingT2);
 
-    SimpleGtransfoMapping *_m1, *_m2;
+    std::shared_ptr<SimpleGtransfoMapping> _m1, _m2;
     unsigned _nPar1, _nPar2;
     struct tmpVars  // just there to get around constness issues
     {

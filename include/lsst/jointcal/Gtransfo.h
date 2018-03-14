@@ -248,6 +248,17 @@ public:
     //! Constructs a "polynomial image" from an existing transfo, over a specified domain
     GtransfoPoly(const Gtransfo *gtransfo, const Frame &frame, unsigned degree, unsigned nPoint = 1000);
 
+    /**
+     * Constructs a polynomial approximation to an afw::geom::TransformPoint2ToPoint2.
+     *
+     * @param[in] transform The transform to be approximated.
+     * @param[in] domain The valid domain of the transform.
+     * @param[in] degree The polynomial degree to use when approximating.
+     * @param[in] nSteps The number of sample points per axis (nSteps^2 total points).
+     */
+    GtransfoPoly(std::shared_ptr<afw::geom::TransformPoint2ToPoint2> transform, jointcal::Frame const &domain,
+                 unsigned const degree, unsigned const nSteps = 50);
+
     // sets the polynomial degree.
     void setDegree(const unsigned degree);
 

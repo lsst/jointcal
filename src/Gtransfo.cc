@@ -435,6 +435,28 @@ GtransfoPoly::GtransfoPoly(const Gtransfo *gtransfo, const Frame &frame, unsigne
 }
 //#endif
 
+GtransfoPoly::GtransfoPoly(std::shared_ptr<afw::geom::TransformPoint2ToPoint2> transform,
+                           jointcal::Frame const &domain, unsigned const degree, unsigned const nSteps) {
+    jointcal::StarMatchList starMatchList;
+    double xStart = domain.xMin;
+    double yStart = domain.yMin;
+    double xStep = domain.getWidth() / (nSteps + 1);
+    double yStep = domain.getHeight() / (nSteps + 1);
+    for (unsigned i = 0; i < nSteps; ++i) {
+        for (unsigned j = 0; j < nSteps; ++j) {
+            // TODO: once DM-4044 is done, we can remove the redundancy in `Point`/`Point2D` here
+            jointcal::Point in(xStart + i * xStep, yStart + j * yStep);
+            afw::geom::Point2D inAfw(in.x, in.y);
+            afw::geom::Point2D outAfw = transform->applyForward(inAfw);
+            jointcal::Point out(outAfw.getX(), outAfw.getY());
+            starMatchList.emplace_back(in, out, nullptr, nullptr);
+        }
+    }
+    GtransfoPoly poly(degree);
+    poly.fit(starMatchList);
+    *this = poly;
+}
+
 void GtransfoPoly::computeMonomials(double xIn, double yIn, double *monomial) const {
     /* The ordering of monomials is implemented here.
        You may not change it without updating the "mapping" routines

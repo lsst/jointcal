@@ -6,8 +6,9 @@ namespace pexExcept = lsst::pex::exceptions;
 namespace lsst {
 namespace jointcal {
 
-TwoTransfoMapping::TwoTransfoMapping(SimpleGtransfoMapping *mapping1, SimpleGtransfoMapping *mapping2)
-        : _m1(mapping1), _m2(mapping2) {
+TwoTransfoMapping::TwoTransfoMapping(std::shared_ptr<SimpleGtransfoMapping> chipMapping,
+                                     std::shared_ptr<SimpleGtransfoMapping> visitMapping)
+        : _m1(chipMapping), _m2(visitMapping) {
     /* Allocate the record of temporary variables, so that they are not
        allocated at every call. This is hidden behind a pointer in order
        to be allowed to alter them in a const routine. */

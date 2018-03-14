@@ -155,15 +155,15 @@ class JointcalConfig(pexConfig.Config):
     astrometryChipDegree = pexConfig.Field(
         doc="Degree of the per-chip transform for the constrained astrometry model.",
         dtype=int,
-        default=2,
+        default=1,
     )
     astrometryVisitDegree = pexConfig.Field(
         doc="Degree of the per-visit transform for the constrained astrometry model.",
         dtype=int,
-        default=3,
+        default=5,
     )
     useInputWcs = pexConfig.Field(
-        doc="Use the input calexp WCSs to initialize the astrometryModel.",
+        doc="Use the input calexp WCSs to initialize a SimpleAstrometryModel.",
         dtype=bool,
         default=True,
     )
@@ -559,6 +559,13 @@ class JointcalTask(pipeBase.CmdLineTask):
         if not np.isfinite(chi2.chi2):
             raise FloatingPointError('Initial chi2 is invalid: %s'%chi2)
         self.log.info("Initialized: %s", str(chi2))
+        # The constrained model needs the visit transfo fit first; the chip
+        # transfo is initialized from the singleFrame PhotoCalib, so it's close.
+        if self.config.photometryModel == "constrained":
+            # TODO: (related to DM-8046): implement Visit/Chip choice
+            fit.minimize("ModelVisit")
+            chi2 = fit.computeChi2()
+            self.log.info(str(chi2))
         fit.minimize("Model")
         chi2 = fit.computeChi2()
         self.log.info(str(chi2))
@@ -615,7 +622,6 @@ class JointcalTask(pipeBase.CmdLineTask):
         if self.config.astrometryModel == "constrained":
             model = lsst.jointcal.ConstrainedAstrometryModel(associations.getCcdImageList(),
                                                              sky_to_tan_projection,
-                                                             self.config.useInputWcs,
                                                              chipDegree=self.config.astrometryChipDegree,
                                                              visitDegree=self.config.astrometryVisitDegree)
         elif self.config.astrometryModel == "simple":
@@ -636,6 +642,12 @@ class JointcalTask(pipeBase.CmdLineTask):
         if not np.isfinite(chi2.chi2):
             raise FloatingPointError('Initial chi2 is invalid: %s'%chi2)
         self.log.info("Initialized: %s", str(chi2))
+        # The constrained model needs the visit transfo fit first; the chip
+        # transfo is initialized from the detector's cameraGeom, so it's close.
+        if self.config.astrometryModel == "constrained":
+            fit.minimize("DistortionsVisit")
+            chi2 = fit.computeChi2()
+            self.log.info(str(chi2))
         fit.minimize("Distortions")
         chi2 = fit.computeChi2()
         self.log.info(str(chi2))

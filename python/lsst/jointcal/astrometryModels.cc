@@ -66,9 +66,8 @@ void declareConstrainedAstrometryModel(py::module &mod) {
     py::class_<ConstrainedAstrometryModel, std::shared_ptr<ConstrainedAstrometryModel>, AstrometryModel> cls(
             mod, "ConstrainedAstrometryModel");
 
-    cls.def(py::init<CcdImageList const &, std::shared_ptr<ProjectionHandler const>, bool, int, int>(),
-            "ccdImageList"_a, "projectionHandler"_a, "initFromWcs"_a, "chipDegree"_a = 3,
-            "visitDegree"_a = 2);
+    cls.def(py::init<CcdImageList const &, std::shared_ptr<ProjectionHandler const>, int, int>(),
+            "ccdImageList"_a, "projectionHandler"_a, "chipDegree"_a, "visitDegree"_a);
 
     cls.def("getChipTransfo", &ConstrainedAstrometryModel::getChipTransfo,
             py::return_value_policy::reference_internal);

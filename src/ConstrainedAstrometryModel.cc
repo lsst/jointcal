@@ -1,4 +1,5 @@
 #include "astshim.h"
+#include "lsst/afw/geom.h"
 #include "lsst/log/Log.h"
 #include "lsst/jointcal/Eigenstuff.h"
 #include "lsst/jointcal/ConstrainedAstrometryModel.h"
@@ -7,6 +8,7 @@
 #include "lsst/jointcal/Gtransfo.h"
 #include "lsst/jointcal/ProjectionHandler.h"
 #include "lsst/jointcal/AstroUtils.h"  // applyTransfo(Frame)
+#include "lsst/jointcal/StarMatch.h"
 
 #include "lsst/pex/exceptions.h"
 namespace pexExcept = lsst::pex::exceptions;
@@ -41,58 +43,65 @@ namespace jointcal {
 
 ConstrainedAstrometryModel::ConstrainedAstrometryModel(
         CcdImageList const &ccdImageList, std::shared_ptr<ProjectionHandler const> projectionHandler,
-        bool initFromWCS, int chipDegree, int visitDegree)
+        int chipDegree, int visitDegree)
         : _sky2TP(projectionHandler) {
-    // first loop to initialize all visit  and chip transfos.
+    // keep track of which chip we want to hold fixed (the one closest to the middle of the focal plane)
+    double minRadius2 = std::numeric_limits<double>::infinity();
+    CcdIdType constrainedChip = -1;
+
+    // first loop to initialize all visit and chip transfos.
     for (auto &ccdImage : ccdImageList) {
         const CcdImage &im = *ccdImage;
         auto visit = im.getVisit();
         auto chip = im.getCcdId();
         auto visitp = _visitMap.find(visit);
         if (visitp == _visitMap.end()) {
-            if (_visitMap.size() == 0) {
-                _visitMap[visit] =
-                        std::unique_ptr<SimpleGtransfoMapping>(new SimpleGtransfoMapping(GtransfoIdentity()));
-            } else {
-                _visitMap[visit] = std::unique_ptr<SimpleGtransfoMapping>(
-                        new SimplePolyMapping(GtransfoLin(), GtransfoPoly(visitDegree)));
-            }
+            _visitMap[visit] = std::make_shared<SimplePolyMapping>(GtransfoLin(), GtransfoPoly(visitDegree));
         }
         auto chipp = _chipMap.find(chip);
         if (chipp == _chipMap.end()) {
-            const Frame &frame = im.getImageFrame();
-
-            GtransfoPoly pol(chipDegree);
-
-            if (initFromWCS) {
-                pol = GtransfoPoly(im.getPix2TangentPlane(), frame, chipDegree);
+            auto center = ccdImage->getDetector()->getCenter(afw::cameraGeom::FOCAL_PLANE);
+            double radius2 = std::pow(center.getX(), 2) + std::pow(center.getY(), 2);
+            if (radius2 < minRadius2) {
+                minRadius2 = radius2;
+                constrainedChip = chip;
             }
-            GtransfoLin shiftAndNormalize = normalizeCoordinatesTransfo(frame);
 
-            _chipMap[chip] = std::unique_ptr<SimplePolyMapping>(
-                    new SimplePolyMapping(shiftAndNormalize, pol * shiftAndNormalize.invert()));
+            auto pixelsToFocal =
+                    im.getDetector()->getTransform(afw::cameraGeom::PIXELS, afw::cameraGeom::FOCAL_PLANE);
+            Frame const &frame = im.getImageFrame();
+            // construct the chip gtransfo by approximating the pixel->Focal afw::geom::Transform.
+            GtransfoPoly pol = GtransfoPoly(pixelsToFocal, frame, chipDegree);
+            GtransfoLin shiftAndNormalize = normalizeCoordinatesTransfo(frame);
+            _chipMap[chip] =
+                    std::make_shared<SimplePolyMapping>(shiftAndNormalize, pol * shiftAndNormalize.invert());
         }
     }
+
+    // Hold the "central" chip map fixed and don't fit it, to remove a degeneracy.
+    _chipMap.at(constrainedChip)->setToBeFit(false);
+
     // now, second loop to set the mappings of the CCdImages
     for (auto &ccdImage : ccdImageList) {
         const CcdImage &im = *ccdImage;
         auto visit = im.getVisit();
         auto chip = im.getCcdId();
+
         // check that the chip_indexed part was indeed assigned
         // (i.e. the reference visit was complete)
         if (_chipMap.find(chip) == _chipMap.end()) {
             LOGLS_WARN(_log, "Chip " << chip << " is missing in the reference exposure, expect troubles.");
             GtransfoLin norm = normalizeCoordinatesTransfo(im.getImageFrame());
-            _chipMap[chip] =
-                    std::unique_ptr<SimplePolyMapping>(new SimplePolyMapping(norm, GtransfoPoly(chipDegree)));
+            _chipMap[chip] = std::make_shared<SimplePolyMapping>(norm, GtransfoPoly(chipDegree));
         }
-        _mappings[ccdImage->getHashKey()] = std::unique_ptr<TwoTransfoMapping>(
-                new TwoTransfoMapping(_chipMap[chip].get(), _visitMap[visit].get()));
+        _mappings[ccdImage->getHashKey()] =
+                std::make_unique<TwoTransfoMapping>(_chipMap[chip], _visitMap[visit]);
     }
-    LOGLS_INFO(_log, "Constructor got " << _chipMap.size() << " chip mappings and " << _visitMap.size()
-                                        << " visit mappings.");
-    // DEBUG
-    for (auto i = _visitMap.begin(); i != _visitMap.end(); ++i) LOGLS_DEBUG(_log, i->first);
+    LOGLS_INFO(_log, "Got " << _chipMap.size() << " chip mappings and " << _visitMap.size()
+                            << " visit mappings; holding chip " << constrainedChip << " fixed.");
+    LOGLS_DEBUG(_log, "CcdImage map has " << _mappings.size() << " mappings, with "
+                                          << _mappings.bucket_count() << " buckets and a load factor of "
+                                          << _mappings.load_factor());
 }
 
 const AstrometryMapping *ConstrainedAstrometryModel::getMapping(CcdImage const &ccdImage) const {

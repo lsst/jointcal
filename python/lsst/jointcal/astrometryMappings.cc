@@ -60,6 +60,8 @@ void declareTwoTransfoMapping(py::module &mod) {
 void declareSimpleGtransfoMapping(py::module &mod) {
     py::class_<SimpleGtransfoMapping, std::shared_ptr<SimpleGtransfoMapping>, AstrometryMapping> cls(
             mod, "SimpleGtransfoMapping");
+    cls.def("getToBeFit", &SimpleGtransfoMapping::getToBeFit);
+    cls.def("setToBeFit", &SimpleGtransfoMapping::setToBeFit);
 }
 
 void declareSimplePolyMapping(py::module &mod) {
