@@ -21,13 +21,7 @@ LOG_LOGGER _log = LOG_GET("jointcal.ConstrainedAstrometryModel");
 namespace lsst {
 namespace jointcal {
 
-/* This code does not contain anything involved. It just maps the
-routines AstrometryFit needs to what is needed for this two-transfo model.
-The two-transfo mappings are implemented using two one-transfo
-mappings.*/
-
 using namespace std;
-
 ConstrainedAstrometryModel::ConstrainedAstrometryModel(
         CcdImageList const &ccdImageList, std::shared_ptr<ProjectionHandler const> projectionHandler,
         bool initFromWCS, int chipDegree, int visitDegree)
