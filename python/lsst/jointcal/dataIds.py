@@ -14,6 +14,8 @@ from lsst.geom import convexHull
 
 from lsst.coadd.utils import CoaddDataIdContainer
 
+__all__ = ["PerTractCcdDataIdContainer", "overlapsTract"]
+
 
 class PerTractCcdDataIdContainer(CoaddDataIdContainer):
     """A version of lsst.pipe.base.DataIdContainer that combines raw data IDs (defined as whatever we use
@@ -22,7 +24,11 @@ class PerTractCcdDataIdContainer(CoaddDataIdContainer):
 
     def castDataIds(self, butler):
         """Validate data IDs and cast them to the correct type (modify idList in place).
-        @param butler: data butler
+
+        Parameters
+        ----------
+        butler
+            data butler
         """
         try:
             idKeyTypeDict = butler.getKeys(datasetType="src", level=self.level)
@@ -116,10 +122,20 @@ class PerTractCcdDataIdContainer(CoaddDataIdContainer):
 
 def overlapsTract(tract, imageWcs, imageBox):
     """Return whether the image (specified by Wcs and bounding box) overlaps the tract
-    @param tract: TractInfo specifying a tract
-    @param imageWcs: Wcs for image
-    @param imageBox: Bounding box for image
-    @return bool
+
+    Parameters
+    ----------
+    tract
+        TractInfo specifying a tract
+    imageWcs
+        Wcs for image
+    imageBox
+        Bounding box for image
+
+    Returns
+    -------
+    bool
+        True if the image overlaps the tract, False otherwise.
     """
     tractWcs = tract.getWcs()
     tractCorners = [tractWcs.pixelToSky(lsst.afw.geom.Point2D(coord)).getVector() for

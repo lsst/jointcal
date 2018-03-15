@@ -5,6 +5,8 @@ from __future__ import division, absolute_import, print_function
 from lsst.pipe.tasks.makeCoaddTempExp import MakeCoaddTempExpTask
 from lsst.pipe.base import Struct
 
+__all__ = ["JointcalCoaddTaskConfig", "JointcalCoaddTask"]
+
 
 class JointcalCoaddTaskConfig(MakeCoaddTempExpTask.ConfigClass):
     """Config for JointcalCoaddTask
@@ -19,15 +21,22 @@ class JointcalCoaddTask(MakeCoaddTempExpTask):
     ConfigClass = JointcalCoaddTaskConfig
 
     def getCalExp(self, dataRef, bgSubtracted):
-        """!Return one "calexp" calibrated exposure
+        """Return one "calexp" calibrated exposure
 
-        @param[in] dataRef        a sensor-level data reference
-        @param[in] bgSubtracted   return calexp with background subtracted? If False get the
-                                  calexp's background background model and add it to the calexp.
-        @return calibrated exposure
+        Parameters
+        ----------
+        dataRef
+            a sensor-level data reference
+        bgSubtracted
+            return calexp with background subtracted? If False get the
+            calexp's background background model and add it to the calexp.
 
-        If config.doApplyUberCal, meas_mosaic calibrations will be applied to
-        the returned exposure using applyMosaicResults.
+        Returns
+        -------
+        afw.image.ExposureF
+            The calibrated exposure. If config.doApplyUberCal, jointcal
+            calibrations will be applied to the returned exposure using
+            applyMosaicResults.
         """
         exposure = dataRef.get("calexp")
 
