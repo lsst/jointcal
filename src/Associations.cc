@@ -10,8 +10,8 @@
 #include "lsst/jointcal/StarMatch.h"
 #include "lsst/jointcal/ListMatch.h"
 #include "lsst/jointcal/Frame.h"
-#include "lsst/jointcal/AstroUtils.h"
 #include "lsst/jointcal/FatPoint.h"
+#include "lsst/jointcal/Gtransfo.h"
 #include "lsst/afw/image/Image.h"
 #include "lsst/afw/image/VisitInfo.h"
 #include "lsst/daf/base/PropertySet.h"
@@ -75,7 +75,7 @@ void Associations::associateCatalogs(const double matchCutInArcSec, const bool u
         // Associate with previous lists.
         /* To speed up the match (more precisely the contruction of the FastFinder), select in the
          fittedStarList the objects that are within reach of the current ccdImage */
-        Frame ccdImageFrameCPT = applyTransfo(ccdImage->getImageFrame(), *toCommonTangentPlane, LargeFrame);
+        Frame ccdImageFrameCPT = toCommonTangentPlane->apply(ccdImage->getImageFrame(), false);
         ccdImageFrameCPT = ccdImageFrameCPT.rescale(1.10);  // add 10 % margin.
         // We cannot use FittedStarList::ExtractInFrame, because it does an actual copy, which we don't want
         // here: we want the pointers in the StarMatch to refer to fittedStarList elements.
@@ -209,8 +209,7 @@ const lsst::afw::geom::Box2D Associations::getRaDecBBox() {
     Frame tangentPlaneFrame;
 
     for (auto const &ccdImage : ccdImageList) {
-        Frame CTPFrame =
-                applyTransfo(ccdImage->getImageFrame(), *(ccdImage->getPix2CommonTangentPlane()), LargeFrame);
+        Frame CTPFrame = ccdImage->getPix2CommonTangentPlane()->apply(ccdImage->getImageFrame(), false);
         if (tangentPlaneFrame.getArea() == 0)
             tangentPlaneFrame = CTPFrame;
         else
@@ -220,7 +219,7 @@ const lsst::afw::geom::Box2D Associations::getRaDecBBox() {
     // convert tangent plane coordinates to RaDec:
     GtransfoLin identity;
     TanPix2RaDec CTP2RaDec(identity, _commonTangentPoint);
-    Frame raDecFrame = applyTransfo(tangentPlaneFrame, CTP2RaDec, LargeFrame);
+    Frame raDecFrame = CTP2RaDec.apply(tangentPlaneFrame, false);
 
     lsst::afw::geom::Point<double> min(raDecFrame.xMin, raDecFrame.yMin);
     lsst::afw::geom::Point<double> max(raDecFrame.xMax, raDecFrame.yMax);

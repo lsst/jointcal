@@ -45,6 +45,8 @@ void declareGtransfo(py::module &mod) {
 
     cls.def("apply", (jointcal::Point(Gtransfo::*)(const jointcal::Point &) const) & Gtransfo::apply,
             "inPos"_a);
+    cls.def("apply", (jointcal::Frame(Gtransfo::*)(Frame const &, bool) const) & Gtransfo::apply,
+            "inputframe"_a, "inscribed"_a);
     cls.def("getNpar", &GtransfoPoly::getNpar);
     cls.def("offsetParams", &GtransfoPoly::offsetParams);
     cls.def("toAstMap", &GtransfoPoly::toAstMap);

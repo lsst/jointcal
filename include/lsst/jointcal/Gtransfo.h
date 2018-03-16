@@ -13,6 +13,7 @@
 #include "lsst/pex/exceptions.h"
 #include "lsst/afw/geom/SkyWcs.h"
 #include "lsst/jointcal/FatPoint.h"
+#include "lsst/jointcal/Frame.h"
 
 namespace pexExcept = lsst::pex::exceptions;
 
@@ -53,6 +54,16 @@ public:
         apply(in.x, in.y, xout, yout);
         return Point(xout, yout);
     }
+
+    /**
+     * Transform a bounding box, taking either the inscribed or circumscribed box.
+     *
+     * @param[in] inputframe The frame to be transformed.
+     * @param[in] which Return the inscribed (true) or circumscribed (false) box.
+     *
+     * @return The transformed frame.
+     */
+    Frame apply(Frame const &inputframe, bool inscribed) const;
 
     //! dumps the transfo coefficients to stream.
     virtual void dump(std::ostream &stream = std::cout) const = 0;

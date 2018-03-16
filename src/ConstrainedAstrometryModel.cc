@@ -7,7 +7,6 @@
 #include "lsst/jointcal/AstrometryModel.h"
 #include "lsst/jointcal/Gtransfo.h"
 #include "lsst/jointcal/ProjectionHandler.h"
-#include "lsst/jointcal/AstroUtils.h"  // applyTransfo(Frame)
 #include "lsst/jointcal/StarMatch.h"
 
 #include "lsst/pex/exceptions.h"
@@ -198,10 +197,7 @@ std::shared_ptr<afw::geom::SkyWcs> ConstrainedAstrometryModel::makeSkyWcs(CcdIma
 
     auto imageFrame = ccdImage.getImageFrame();
     auto pixelsToFocal = getChipTransfo(ccdImage.getCcdId()).toAstMap(imageFrame);
-    jointcal::Point lowerLeft(imageFrame.xMin, imageFrame.yMin);
-    jointcal::Point upperRight(imageFrame.xMax, imageFrame.yMax);
-    jointcal::Frame focalBox(getChipTransfo(ccdImage.getCcdId()).apply(lowerLeft),
-                             getChipTransfo(ccdImage.getCcdId()).apply(upperRight));
+    jointcal::Frame focalBox = getChipTransfo(ccdImage.getCcdId()).apply(imageFrame, false);
     auto focalToIwc = getVisitTransfo(ccdImage.getVisit()).toAstMap(focalBox);
 
     ast::Frame pixelFrame(2, "Domain=PIXELS");

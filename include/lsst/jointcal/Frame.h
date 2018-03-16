@@ -8,10 +8,6 @@
 namespace lsst {
 namespace jointcal {
 
-typedef enum { WholeSizeFrame, ClippedSizeFrame } WhichFrame;
-
-typedef enum { LargeFrame, SmallFrame } WhichTransformed;
-
 //! rectangle with sides parallel to axes.
 /*! when Frame's are used to define subparts of images, xMin and xMax refer
   to the first and last pixels in the subimage */
