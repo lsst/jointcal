@@ -32,9 +32,9 @@ def prep_reference_loader(center, radius):
 
     Parameters
     ----------
-    center: afw.coord
+    center: lsst.afw.SpherePoint
         The center of the field you're testing on.
-    radius: afw.geom.angle
+    radius: lsst.afw.geom.angle
         The radius to load objects around center.
     """
     refLoader = LoadAstrometryNetObjectsTask(LoadAstrometryNetObjectsConfig())

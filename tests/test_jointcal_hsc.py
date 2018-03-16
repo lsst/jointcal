@@ -8,7 +8,6 @@ import os
 
 from astropy import units as u
 
-import lsst.afw.coord
 import lsst.afw.geom
 import lsst.utils
 import lsst.pex.exceptions
@@ -41,7 +40,7 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         do_plot = False
 
         # center of the hsc validation_data catalog
-        center = lsst.afw.coord.IcrsCoord(320.367492*lsst.afw.geom.degrees, 0.3131554*lsst.afw.geom.degrees)
+        center = lsst.afw.geom.SpherePoint(320.367492, 0.3131554, lsst.afw.geom.degrees)
         radius = 5*lsst.afw.geom.degrees
 
         input_dir = os.path.join(self.data_dir, 'hsc')

@@ -47,7 +47,7 @@ class JointcalStatistics(object):
         """
         Parameters
         ----------
-        match_radius : lsst.afw.Angle
+        match_radius : lsst.afw.geom.Angle
             match sources within this radius for RMS statistics
         flux_limit : float
             Signal/Noise (flux/fluxSigma) for sources to be included in the RMS cross-match.

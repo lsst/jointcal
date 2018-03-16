@@ -7,7 +7,6 @@ import os
 
 from astropy import units as u
 
-import lsst.afw.coord
 import lsst.afw.geom
 import lsst.utils
 import lsst.pex.exceptions
@@ -41,7 +40,7 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
         do_plot = False
 
         # center of the cfht validation_data catalog
-        center = lsst.afw.coord.IcrsCoord(214.884832*lsst.afw.geom.degrees, 52.6622199*lsst.afw.geom.degrees)
+        center = lsst.afw.geom.SpherePoint(214.884832, 52.6622199, lsst.afw.geom.degrees)
         radius = 3*lsst.afw.geom.degrees
 
         input_dir = os.path.join(self.data_dir, 'cfht')

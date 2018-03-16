@@ -20,7 +20,6 @@
 #include "lsst/pex/exceptions.h"
 #include "lsst/afw/geom/Box.h"
 #include "lsst/afw/geom/Point.h"
-#include "lsst/afw/coord/Coord.h"
 #include "lsst/afw/image/Calib.h"
 
 namespace jointcal = lsst::jointcal;
@@ -167,7 +166,7 @@ void Associations::collectRefStars(lsst::afw::table::SortedCatalogT<lsst::afw::t
     for (size_t i = 0; i < refCat.size(); i++) {
         auto const &record = refCat.get(i);
 
-        afw::coord::IcrsCoord coord = record->get(coordKey);
+        auto coord = record->get(coordKey);
         double defaultFlux = record->get(fluxKey) / JanskyToMaggy;
         double defaultFluxErr;
         if (fluxErrKey.isValid()) {

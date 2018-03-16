@@ -33,11 +33,11 @@ class JointcalTestBase(object):
 
         Parameters
         ----------
-        center : lsst.afw.IcrsCoord
+        center : lsst.afw.geom.SpherePoint
             Center of the reference catalog.
-        radius : lsst.afw.Angle
+        radius : lsst.afw.geom.Angle
             Radius from center to load reference catalog objects inside.
-        match_radius : lsst.afw.Angle
+        match_radius : lsst.afw.geom.Angle
             matching radius when calculating RMS of result.
         input_dir : str
             Directory of input butler repository.
@@ -94,9 +94,9 @@ class JointcalTestBase(object):
         Parameters
         ----------
 
-        center : afw.coord
+        center : lsst.afw.SpherePoint
             The center of the field you're testing on.
-        radius : afw.geom.angle
+        radius : lsst.afw.geom.angle
             The radius to load objects around center.
         """
         refLoader = LoadAstrometryNetObjectsTask(LoadAstrometryNetObjectsConfig())
