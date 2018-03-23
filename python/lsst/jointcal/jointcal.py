@@ -12,7 +12,6 @@ import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 import lsst.afw.image as afwImage
 import lsst.afw.geom as afwGeom
-import lsst.afw.coord as afwCoord
 import lsst.pex.exceptions as pexExceptions
 import lsst.afw.table
 import lsst.meas.algorithms
@@ -363,17 +362,20 @@ class JointcalTask(pipeBase.CmdLineTask):
         filters = collections.Counter(filters)
 
         centers = [ccdImage.getBoresightRaDec() for ccdImage in associations.getCcdImageList()]
-        commonTangentPoint = lsst.afw.coord.averageCoord(centers)
-        self.log.debug("Using common tangent point: %s", commonTangentPoint.getPosition())
-        associations.setCommonTangentPoint(commonTangentPoint.getPosition())
+        commonTangentPoint = afwGeom.averageSpherePoint(centers)
+        self.log.debug("Using common tangent point: %s", commonTangentPoint.getPosition(afwGeom.degrees))
+        associations.setCommonTangentPoint(commonTangentPoint.getPosition(afwGeom.degrees))
 
         # Use external reference catalogs handled by LSST stack mechanism
         # Get the bounding box overlapping all associated images
         # ==> This is probably a bad idea to do it this way <== To be improved
         bbox = associations.getRaDecBBox()
-        center = afwCoord.IcrsCoord(bbox.getCenter(), afwGeom.degrees)
-        corner = afwCoord.IcrsCoord(bbox.getMax(), afwGeom.degrees)
-        radius = center.angularSeparation(corner).asRadians()
+        # with Python 3 this can be simplified to afwGeom.SpherePoint(*bbox.getCenter(), afwGeom.degrees)
+        bboxCenter = bbox.getCenter()
+        center = afwGeom.SpherePoint(bboxCenter[0], bboxCenter[1], afwGeom.degrees)
+        bboxMax = bbox.getMax()
+        corner = afwGeom.SpherePoint(bboxMax[0], bboxMax[1], afwGeom.degrees)
+        radius = center.separation(corner).asRadians()
 
         # Get astrometry_net_data path
         anDir = lsst.utils.getPackageDir('astrometry_net_data')
@@ -428,8 +430,8 @@ class JointcalTask(pipeBase.CmdLineTask):
             The star/reference star associations to fit.
         defaultFilter : str
             filter to load from reference catalog.
-        center : lsst.afw.coord.IcrsCoord
-            Center of field to load from reference catalog.
+        center : lsst.afw.geom.SpherePoint
+            ICRS center of field to load from reference catalog.
         radius : lsst.afw.geom.Angle
             On-sky radius to load from reference catalog.
         name : str

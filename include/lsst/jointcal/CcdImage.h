@@ -10,9 +10,9 @@
 #include "lsst/afw/geom/SkyWcs.h"
 #include "lsst/afw/image/PhotoCalib.h"
 #include "lsst/afw/image/VisitInfo.h"
-#include "lsst/afw/coord/Coord.h"
 #include "lsst/daf/base/PropertySet.h"
 #include "lsst/afw/geom/Box.h"
+#include "lsst/afw/geom/SpherePoint.h"
 #include "lsst/jointcal/MeasuredStar.h"
 #include "lsst/jointcal/Gtransfo.h"
 #include "lsst/jointcal/Frame.h"
@@ -117,7 +117,7 @@ public:
     /**
      * @brief      Gets the boresight RA/Dec.
      */
-    lsst::afw::coord::IcrsCoord getBoresightRaDec() const { return _boresightRaDec; }
+    lsst::afw::geom::SpherePoint getBoresightRaDec() const { return _boresightRaDec; }
 
     //!
     double getHourAngle() const { return _hourAngle; }
@@ -166,7 +166,7 @@ private:
     CcdIdType _ccdId;
     VisitIdType _visit;
 
-    lsst::afw::coord::IcrsCoord _boresightRaDec;
+    lsst::afw::geom::SpherePoint _boresightRaDec;
     double _airMass;  // airmass value.
     double _mjd;      // modified julian date
     std::shared_ptr<afw::image::PhotoCalib> _photoCalib;

@@ -2,9 +2,9 @@
 
 #include "Eigen/Core"
 #include "lsst/jointcal/SipToGtransfo.h"
-#include "lsst/afw/coord/Coord.h"
 #include "lsst/afw/geom/Angle.h"
 #include "lsst/afw/geom/SkyWcs.h"
+#include "lsst/afw/geom/SpherePoint.h"
 #include "lsst/afw/image/ImageUtils.h"
 #include "lsst/jointcal/Point.h"
 #include "lsst/jointcal/Frame.h"
@@ -54,8 +54,8 @@ std::shared_ptr<afw::geom::SkyWcs> gtransfoToTanWcs(const jointcal::TanSipPix2Ra
        "FITS units" yet because the SkyWcs constructors expect it in LSST
        units */
 
-    afw::coord::IcrsCoord const crval(wcsTransfo.getTangentPoint().x * afwGeom::degrees,
-                                      wcsTransfo.getTangentPoint().y * afwGeom::degrees);
+    afw::geom::SpherePoint const crval(wcsTransfo.getTangentPoint().x * afwGeom::degrees,
+                                       wcsTransfo.getTangentPoint().y * afwGeom::degrees);
 
     // CD matrix:
     Eigen::Matrix2d cdMat;

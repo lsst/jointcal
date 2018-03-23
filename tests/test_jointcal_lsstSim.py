@@ -11,7 +11,6 @@ from astropy import units as u
 
 import lsst.afw.geom
 import lsst.afw.image
-import lsst.afw.coord
 import lsst.utils
 import lsst.pex.exceptions
 from lsst.meas.extensions.astrometryNet import LoadAstrometryNetObjectsTask
@@ -45,7 +44,7 @@ class JointcalTestLSSTSim(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Te
         do_plot = False
 
         # position of the Twinkles run 1 catalog
-        center = lsst.afw.coord.IcrsCoord(53.00914*lsst.afw.geom.degrees, -27.43895*lsst.afw.geom.degrees)
+        center = lsst.afw.geom.SpherePoint(53.00914, -27.43895, lsst.afw.geom.degrees)
         radius = 3*lsst.afw.geom.degrees
 
         input_dir = os.path.join(self.data_dir, 'twinkles1')
