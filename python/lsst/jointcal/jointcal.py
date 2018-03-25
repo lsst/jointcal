@@ -663,8 +663,8 @@ class JointcalTask(pipeBase.CmdLineTask):
                 raise FloatingPointError('Fit iteration chi2 is invalid: %s'%chi2)
             self.log.info(str(chi2))
             if r == MinimizeResult.Converged:
-                self.log.debug("fit has converged - no more outliers - redo minimixation"
-                               "one more time in case we have lost accuracy in rank update")
+                self.log.debug("fit has converged - no more outliers - redo minimization "
+                               "one more time in case we have lost accuracy in rank update.")
                 # Redo minimization one more time in case we have lost accuracy in rank update
                 r = fit.minimize(whatToFit, 5)  # outliers removal at 5 sigma.
                 chi2 = fit.computeChi2()
