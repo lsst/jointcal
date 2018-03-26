@@ -47,7 +47,8 @@ class JointcalTestDECAM(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Test
                         input_dir=input_dir,
                         all_visits=all_visits,
                         other_args=other_args,
-                        do_plot=do_plot)
+                        do_plot=do_plot,
+                        log_level="DEBUG")
 
     def test_jointcalTask_2_visits(self):
         self.config = lsst.jointcal.jointcal.JointcalConfig()
@@ -76,7 +77,9 @@ class JointcalTestDECAM(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Test
 
         self._testJointcalTask(2, relative_error, self.dist_rms_absolute, pa1, metrics=metrics)
 
-    def test_jointcalTask_2_visits_constrainedAstrometry_no_photometry(self):
+    def setup_jointcalTask_2_visits_constrainedAstrometry_no_photometry(self):
+        """Help keep the two constrainedAstrometry tests consistent and make
+        the difference between them more obvious."""
         self.config = lsst.jointcal.jointcal.JointcalConfig()
         self.config.photometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
         self.config.astrometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
@@ -96,6 +99,18 @@ class JointcalTestDECAM(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Test
                    'astrometry_final_chi2': 2072.89,
                    'astrometry_final_ndof': 3970,
                    }
+        return relative_error, pa1, metrics
+
+    def test_jointcalTask_2_visits_constrainedAstrometry_no_photometry(self):
+        relative_error, pa1, metrics = self.setup_jointcalTask_2_visits_constrainedAstrometry_no_photometry()
+
+        self._testJointcalTask(2, relative_error, self.dist_rms_absolute, pa1, metrics=metrics)
+
+    def test_jointcalTask_2_visits_constrainedAstrometry_no_rank_update(self):
+        """Demonstrate that skipping the rank update doesn't significantly affect astrometry.
+        """
+        relative_error, pa1, metrics = self.setup_jointcalTask_2_visits_constrainedAstrometry_no_photometry()
+        self.config.astrometryDoRankUpdate = False
 
         self._testJointcalTask(2, relative_error, self.dist_rms_absolute, pa1, metrics=metrics)
 
@@ -145,6 +160,13 @@ class JointcalTestDECAM(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Test
                    'photometry_final_chi2': 817.124,
                    'photometry_final_ndof': 607,
                    }
+
+        self._testJointcalTask(2, None, None, pa1, metrics=metrics)
+
+    @unittest.skip("DM-14439 : This test produces different chi2/ndof on Linux and macOS.")
+    def test_jointcalTask_2_visits_constrainedPhotometry_no_rank_update(self):
+        pa1, metrics = self.setup_jointcalTask_2_visits_constrainedPhotometry_no_astrometry()
+        self.config.photometryDoRankUpdate = False
 
         self._testJointcalTask(2, None, None, pa1, metrics=metrics)
 

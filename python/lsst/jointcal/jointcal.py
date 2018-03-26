@@ -191,6 +191,28 @@ class JointcalConfig(pexConfig.Config):
         dtype=int,
         default=7,
     )
+    photometryDoRankUpdate = pexConfig.Field(
+        doc="Do the rank update step during minimization. "
+        "Skipping this can help deal with models that are too non-linear.",
+        dtype=bool,
+        default=True,
+    )
+    astrometryDoRankUpdate = pexConfig.Field(
+        doc="Do the rank update step during minimization (should not change the astrometry fit). "
+        "Skipping this can help deal with models that are too non-linear.",
+        dtype=bool,
+        default=True,
+    )
+    maxPhotometrySteps = pexConfig.Field(
+        doc="Maximum number of minimize iterations to take when fitting photometry.",
+        dtype=int,
+        default=20,
+    )
+    maxAstrometrySteps = pexConfig.Field(
+        doc="Maximum number of minimize iterations to take when fitting photometry.",
+        dtype=int,
+        default=20,
+    )
     astrometryRefObjLoader = pexConfig.ConfigurableField(
         target=LoadIndexedReferenceObjectsTask,
         doc="Reference object loader for astrometric fit",
@@ -596,7 +618,13 @@ class JointcalTask(pipeBase.CmdLineTask):
         model.freezeErrorTransform()
         self.log.debug("Photometry error scales are frozen.")
 
-        chi2 = self._iterate_fit(associations, fit, model, 20, "photometry", "Model Fluxes")
+        chi2 = self._iterate_fit(associations,
+                                 fit,
+                                 model,
+                                 self.config.maxPhotometrySteps,
+                                 "photometry",
+                                 "Model Fluxes",
+                                 doRankUpdate=self.config.photometryDoRankUpdate)
 
         add_measurement(self.job, 'jointcal.photometry_final_chi2', chi2.chi2)
         add_measurement(self.job, 'jointcal.photometry_final_ndof', chi2.ndof)
@@ -676,7 +704,13 @@ class JointcalTask(pipeBase.CmdLineTask):
             raise FloatingPointError('Pre-iteration chi2 is invalid: %s'%chi2)
         self.log.info("Fit prepared with %s", str(chi2))
 
-        chi2 = self._iterate_fit(associations, fit, model, 20, "astrometry", "Distortions Positions")
+        chi2 = self._iterate_fit(associations,
+                                 fit,
+                                 model,
+                                 self.config.maxAstrometrySteps,
+                                 "astrometry",
+                                 "Distortions Positions",
+                                 doRankUpdate=self.config.astrometryDoRankUpdate)
 
         add_measurement(self.job, 'jointcal.astrometry_final_chi2', chi2.chi2)
         add_measurement(self.job, 'jointcal.astrometry_final_ndof', chi2.ndof)
@@ -696,21 +730,23 @@ class JointcalTask(pipeBase.CmdLineTask):
                 self.log.warn("ccdImage %s has only %s RefStars (desired %s)",
                               ccdImage.getName(), nRefStars, self.config.minRefStarsPerCcd)
 
-    def _iterate_fit(self, associations, fit, model, max_steps, name, whatToFit):
+    def _iterate_fit(self, associations, fit, model, max_steps, name, whatToFit, doRankUpdate=True):
         """Run fit.minimize up to max_steps times, returning the final chi2."""
 
         for i in range(max_steps):
-            r = fit.minimize(whatToFit, 5)  # outlier removal at 5 sigma.
+            # outlier removal at 5 sigma.
+            r = fit.minimize(whatToFit, 5, doRankUpdate=doRankUpdate)
             chi2 = fit.computeChi2()
             self._check_stars(associations)
             if not np.isfinite(chi2.chi2):
                 raise FloatingPointError('Fit iteration chi2 is invalid: %s'%chi2)
             self.log.info(str(chi2))
             if r == MinimizeResult.Converged:
-                self.log.debug("fit has converged - no more outliers - redo minimization "
-                               "one more time in case we have lost accuracy in rank update.")
-                # Redo minimization one more time in case we have lost accuracy in rank update
-                r = fit.minimize(whatToFit, 5)  # outliers removal at 5 sigma.
+                if doRankUpdate:
+                    self.log.debug("fit has converged - no more outliers - redo minimization "
+                                   "one more time in case we have lost accuracy in rank update.")
+                    # Redo minimization one more time in case we have lost accuracy in rank update
+                    r = fit.minimize(whatToFit, 5)  # outliers removal at 5 sigma.
                 chi2 = fit.computeChi2()
                 self.log.info("Fit completed with: %s", str(chi2))
                 break
