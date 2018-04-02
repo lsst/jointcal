@@ -8,7 +8,7 @@
 
 typedef Eigen::Matrix<double, Eigen::Dynamic, 2> MatrixX2d;
 
-typedef Eigen::SparseMatrix<double> SpMat;
+typedef Eigen::SparseMatrix<double> SparseMatrixD;
 
 /* Cholesky factorization class using cholmod, with the small-rank update capability.
  *
@@ -38,7 +38,7 @@ public:
     }
 
     // this routine is the one we added
-    int update(SpMat const &H, bool UpOrDown) {
+    int update(SparseMatrixD const &H, bool UpOrDown) {
         // check size
         Index const size = Base::m_cholmodFactor->n;
         EIGEN_UNUSED_VARIABLE(size);

@@ -133,9 +133,9 @@ MinimizeResult FitterBase::minimize(std::string const &whatToFit, double nSigmaC
 
     LOGLS_DEBUG(_log, "End of triplet filling, ntrip = " << tripletList.size());
 
-    SpMat hessian;
+    SparseMatrixD hessian;
     {
-        SpMat jacobian(_nParTot, tripletList.getNextFreeIndex());
+        SparseMatrixD jacobian(_nParTot, tripletList.getNextFreeIndex());
         jacobian.setFromTriplets(tripletList.begin(), tripletList.end());
         // release memory shrink_to_fit is C++11
         tripletList.clear();  // tripletList.shrink_to_fit();
@@ -146,7 +146,7 @@ MinimizeResult FitterBase::minimize(std::string const &whatToFit, double nSigmaC
                               << hessian.rows() << " non-zeros=" << hessian.nonZeros()
                               << " filling-frac = " << hessian.nonZeros() / std::pow(hessian.rows(), 2));
 
-    CholmodSimplicialLDLT2<SpMat> chol(hessian);
+    CholmodSimplicialLDLT2<SparseMatrixD> chol(hessian);
     if (chol.info() != Eigen::Success) {
         LOGLS_ERROR(_log, "minimize: factorization failed ");
         return MinimizeResult::Failed;
@@ -184,7 +184,7 @@ MinimizeResult FitterBase::minimize(std::string const &whatToFit, double nSigmaC
         removeMeasOutliers(msOutliers);
         removeRefOutliers(fsOutliers);
         // convert triplet list to eigen internal format
-        SpMat H(_nParTot, tripletList.getNextFreeIndex());
+        SparseMatrixD H(_nParTot, tripletList.getNextFreeIndex());
         H.setFromTriplets(tripletList.begin(), tripletList.end());
         int update_status = chol.update(H, false /* means downdate */);
         LOGLS_DEBUG(_log, "cholmod update_status " << update_status);
