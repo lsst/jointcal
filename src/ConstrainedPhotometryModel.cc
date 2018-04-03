@@ -182,17 +182,18 @@ std::shared_ptr<afw::image::PhotoCalib> ConstrainedPhotometryModel::toPhotoCalib
     // Bounds are the bbox
     std::vector<double> lowerBound = {focalBBox.getMinX(), focalBBox.getMinY()};
     std::vector<double> upperBound = {focalBBox.getMaxX(), focalBBox.getMaxY()};
-    ast::ChebyMap chebyMap(coeff_f, 1, lowerBound, upperBound);
+
+    afw::geom::TransformPoint2ToGeneric chebyTransform(ast::ChebyMap(coeff_f, 1, lowerBound, upperBound));
 
     // The chip part is easy: zoom map with the single value as the "zoom" factor.
-    ast::ZoomMap zoomMap(1, mapping->getChipMapping()->getParameters()[0]);
+    afw::geom::Transform<afw::geom::GenericEndpoint, afw::geom::GenericEndpoint> zoomTransform(
+            ast::ZoomMap(1, mapping->getChipMapping()->getParameters()[0]));
 
     // Now stitch them all together.
-    auto transform =
-            afw::geom::TransformPoint2ToGeneric(pixToFocal->getFrameSet()->then(chebyMap).then(zoomMap));
+    auto transform = pixToFocal->then(chebyTransform)->then(zoomTransform);
     // NOTE: TransformBoundedField does not yet implement mean(), so we have to compute it here.
     double mean = mapping->getChipMapping()->getParameters()[0] * visitTransfo->mean();
-    auto boundedField = std::make_shared<afw::math::TransformBoundedField>(ccdBBox, transform);
+    auto boundedField = std::make_shared<afw::math::TransformBoundedField>(ccdBBox, *transform);
     return std::make_shared<afw::image::PhotoCalib>(mean, oldPhotoCalib->getCalibrationErr(), boundedField,
                                                     false);
 }
