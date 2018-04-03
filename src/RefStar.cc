@@ -8,12 +8,12 @@
 namespace lsst {
 namespace jointcal {
 
-BaseStarList &Ref2Base(RefStarList &This) { return (BaseStarList &)This; }
+BaseStarList &Ref2Base(RefStarList &starList) { return (BaseStarList &)starList; }
 
-BaseStarList *Ref2Base(RefStarList *This) { return (BaseStarList *)This; }
+BaseStarList *Ref2Base(RefStarList *starList) { return (BaseStarList *)starList; }
 
-const BaseStarList &Ref2Base(const RefStarList &This) { return (const BaseStarList &)This; }
+const BaseStarList &Ref2Base(const RefStarList &starList) { return (const BaseStarList &)starList; }
 
-const BaseStarList *Ref2Base(const RefStarList *This) { return (BaseStarList *)This; }
+const BaseStarList *Ref2Base(const RefStarList *starList) { return (BaseStarList *)starList; }
 }  // namespace jointcal
 }  // namespace lsst

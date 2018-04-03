@@ -45,12 +45,12 @@ void FittedStar::addMagMeasurement(double magValue, double magWeight) {
 
 /************* FittedStarList ************************/
 
-BaseStarList &Fitted2Base(FittedStarList &This) { return (BaseStarList &)This; }
+BaseStarList &Fitted2Base(FittedStarList &starList) { return (BaseStarList &)starList; }
 
-BaseStarList *Fitted2Base(FittedStarList *This) { return (BaseStarList *)This; }
+BaseStarList *Fitted2Base(FittedStarList *starList) { return (BaseStarList *)starList; }
 
-const BaseStarList &Fitted2Base(const FittedStarList &This) { return (const BaseStarList &)This; }
+const BaseStarList &Fitted2Base(const FittedStarList &starList) { return (const BaseStarList &)starList; }
 
-const BaseStarList *Fitted2Base(const FittedStarList *This) { return (BaseStarList *)This; }
+const BaseStarList *Fitted2Base(const FittedStarList *starList) { return (BaseStarList *)starList; }
 }  // namespace jointcal
 }  // namespace lsst

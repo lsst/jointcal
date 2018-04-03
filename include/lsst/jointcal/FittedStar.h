@@ -129,10 +129,10 @@ public:
 typedef FittedStarList::const_iterator FittedStarCIterator;
 typedef FittedStarList::iterator FittedStarIterator;
 
-BaseStarList& Fitted2Base(FittedStarList& This);
-BaseStarList* Fitted2Base(FittedStarList* This);
-const BaseStarList& Fitted2Base(const FittedStarList& This);
-const BaseStarList* Fitted2Base(const FittedStarList* This);
+BaseStarList& Fitted2Base(FittedStarList& starList);
+BaseStarList* Fitted2Base(FittedStarList* starList);
+const BaseStarList& Fitted2Base(const FittedStarList& starList);
+const BaseStarList* Fitted2Base(const FittedStarList* starList);
 }  // namespace jointcal
 }  // namespace lsst
 

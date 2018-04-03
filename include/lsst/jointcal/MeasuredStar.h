@@ -119,10 +119,10 @@ public:
 typedef MeasuredStarList::const_iterator MeasuredStarCIterator;
 typedef MeasuredStarList::iterator MeasuredStarIterator;
 
-BaseStarList &Measured2Base(MeasuredStarList &This);
-BaseStarList *Measured2Base(MeasuredStarList *This);
-const BaseStarList &Measured2Base(const MeasuredStarList &This);
-const BaseStarList *Measured2Base(const MeasuredStarList *This);
+BaseStarList &Measured2Base(MeasuredStarList &starList);
+BaseStarList *Measured2Base(MeasuredStarList *starList);
+const BaseStarList &Measured2Base(const MeasuredStarList &starList);
+const BaseStarList *Measured2Base(const MeasuredStarList *starList);
 }  // namespace jointcal
 }  // namespace lsst
 

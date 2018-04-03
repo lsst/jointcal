@@ -32,13 +32,13 @@ for fluxes, we might use :
  where the '2' should be read from the environment.
 */
 
-BaseStarList &Measured2Base(MeasuredStarList &This) { return (BaseStarList &)This; }
+BaseStarList &Measured2Base(MeasuredStarList &starList) { return (BaseStarList &)starList; }
 
-BaseStarList *Measured2Base(MeasuredStarList *This) { return (BaseStarList *)This; }
+BaseStarList *Measured2Base(MeasuredStarList *starList) { return (BaseStarList *)starList; }
 
-const BaseStarList &Measured2Base(const MeasuredStarList &This) { return (const BaseStarList &)This; }
+const BaseStarList &Measured2Base(const MeasuredStarList &starList) { return (const BaseStarList &)starList; }
 
-const BaseStarList *Measured2Base(const MeasuredStarList *This) { return (BaseStarList *)This; }
+const BaseStarList *Measured2Base(const MeasuredStarList *starList) { return (BaseStarList *)starList; }
 
 /******* MeasuredStarList *********/
 
