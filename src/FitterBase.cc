@@ -152,7 +152,8 @@ MinimizeResult FitterBase::minimize(std::string const &whatToFit, double nSigmaC
         return MinimizeResult::Failed;
     }
 
-    unsigned totalOutliers = 0;
+    unsigned totalMeasOutliers = 0;
+    unsigned totalRefOutliers = 0;
     double oldChi2 = computeChi2().chi2;
 
     while (true) {
@@ -160,7 +161,7 @@ MinimizeResult FitterBase::minimize(std::string const &whatToFit, double nSigmaC
         offsetParams(delta);
         Chi2Statistic currentChi2(computeChi2());
         LOGLS_DEBUG(_log, currentChi2);
-        if (currentChi2.chi2 > oldChi2 && totalOutliers != 0) {
+        if (currentChi2.chi2 > oldChi2 && totalMeasOutliers + totalRefOutliers != 0) {
             LOGL_WARN(_log, "chi2 went up, skipping outlier rejection loop");
             returnCode = MinimizeResult::Chi2Increased;
             break;
@@ -170,8 +171,10 @@ MinimizeResult FitterBase::minimize(std::string const &whatToFit, double nSigmaC
         if (nSigmaCut == 0) break;  // no rejection step to perform
         MeasuredStarList msOutliers;
         FittedStarList fsOutliers;
+        // keep nOutliers so we don't have to sum msOutliers.size()+fsOutliers.size() twice below.
         int nOutliers = findOutliers(nSigmaCut, msOutliers, fsOutliers);
-        totalOutliers += nOutliers;
+        totalMeasOutliers += msOutliers.size();
+        totalRefOutliers += fsOutliers.size();
         if (nOutliers == 0) break;
         TripletList tripletList(nOutliers);
         grad.setZero();  // recycle the gradient
@@ -190,7 +193,12 @@ MinimizeResult FitterBase::minimize(std::string const &whatToFit, double nSigmaC
         grad *= -1;
     }
 
-    LOGLS_INFO(_log, "Total number of outliers " << totalOutliers);
+    // only print the outlier summary if outlier rejection was turned on.
+    if (nSigmaCut != 0) {
+        LOGLS_INFO(_log, "Number of outliers (Measured + Reference = Total): "
+                                 << totalMeasOutliers << " + " << totalRefOutliers << " = "
+                                 << totalMeasOutliers + totalRefOutliers);
+    }
     return returnCode;
 }
 
