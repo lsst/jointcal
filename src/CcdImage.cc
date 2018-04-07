@@ -21,7 +21,7 @@ namespace jointcal = lsst::jointcal;
 namespace afwImg = lsst::afw::image;
 
 namespace {
-LOG_LOGGER _log = LOG_GET("jointcal.CcdImage");
+LOG_LOGGER log = LOG_GET("jointcal.CcdImage");
 }
 
 namespace lsst {
@@ -32,7 +32,7 @@ std::ostream &operator<<(std::ostream &out, CcdImageKey const &key) {
     return out;
 }
 
-void CcdImage::loadCatalog(afw::table::SourceCatalog const &catalog, std::string const &fluxField) {
+void CcdImage::_loadCatalog(afw::table::SourceCatalog const &catalog, std::string const &fluxField) {
     auto xKey = catalog.getSchema().find<double>("slot_Centroid_x").key;
     auto yKey = catalog.getSchema().find<double>("slot_Centroid_y").key;
     auto xsKey = catalog.getSchema().find<float>("slot_Centroid_xSigma").key;
@@ -63,7 +63,7 @@ void CcdImage::loadCatalog(afw::table::SourceCatalog const &catalog, std::string
         double mxy = record.get(mxyKey);
         ms->vxy = mxy * (ms->vx + ms->vy) / (mxx + myy);
         if (ms->vx < 0 || ms->vy < 0 || (ms->vxy * ms->vxy) > (ms->vx * ms->vy)) {
-            LOGLS_WARN(_log, "Bad source detected in loadCatalog : " << ms->vx << " " << ms->vy << " "
+            LOGLS_WARN(log, "Bad source detected in loadCatalog : " << ms->vx << " " << ms->vy << " "
                                                                      << ms->vxy * ms->vxy << " "
                                                                      << ms->vx * ms->vy);
             continue;
@@ -146,13 +146,13 @@ void CcdImage::setCommonTangentPoint(Point const &commonTangentPoint) {
     GtransfoLin identity;
     TanRaDec2Pix raDec2TP(identity, tangentPoint);
     _pix2TP = gtransfoCompose(&raDec2TP, _readWcs.get());
-    TanPix2RaDec CTP2RaDec(identity, commonTangentPoint);
-    _CTP2TP = gtransfoCompose(&raDec2TP, &CTP2RaDec);
+    TanPix2RaDec ctP2RaDec(identity, commonTangentPoint);
+    _CTP2TP = gtransfoCompose(&raDec2TP, &ctP2RaDec);
 
     // jump from one TP to an other:
     TanRaDec2Pix raDec2CTP(identity, commonTangentPoint);
-    TanPix2RaDec TP2RaDec(identity, tangentPoint);
-    _TP2CTP = gtransfoCompose(&raDec2CTP, &TP2RaDec);
+    TanPix2RaDec tP2RaDec(identity, tangentPoint);
+    _TP2CTP = gtransfoCompose(&raDec2CTP, &tP2RaDec);
     _sky2TP.reset(new TanRaDec2Pix(identity, tangentPoint));
 
     // this one is needed for matches :

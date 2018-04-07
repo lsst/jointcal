@@ -144,7 +144,7 @@ public:
     Frame const &getImageFrame() const { return _imageFrame; }
 
 private:
-    void loadCatalog(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> const &Cat,
+    void _loadCatalog(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> const &cat,
                      std::string const &fluxField);
 
     Frame _imageFrame;  // in pixels

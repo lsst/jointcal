@@ -26,7 +26,7 @@ Frame applyTransfo(const Frame& inputframe, const Gtransfo& gtransfo, const Whic
     Frame fr2(std::min(xtmin2, xtmax2), std::min(ytmin2, ytmax2), std::max(xtmin2, xtmax2),
               std::max(ytmin2, ytmax2));
 
-    if (which == SmallFrame) return fr1 * fr2;
+    if (which == SMALL_FRAME) return fr1 * fr2;
     return fr1 + fr2;
 }
 }  // namespace jointcal

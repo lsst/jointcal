@@ -59,10 +59,10 @@ class RefStarList : public StarList<RefStar> {};
 typedef RefStarList::const_iterator RefStarCIterator;
 typedef RefStarList::iterator RefStarIterator;
 
-BaseStarList& Ref2Base(RefStarList& starList);
-BaseStarList* Ref2Base(RefStarList* starList);
-const BaseStarList& Ref2Base(const RefStarList& starList);
-const BaseStarList* Ref2Base(const RefStarList* starList);
+BaseStarList& ref2Base(RefStarList& starList);
+BaseStarList* ref2Base(RefStarList* starList);
+const BaseStarList& ref2Base(const RefStarList& starList);
+const BaseStarList* ref2Base(const RefStarList* starList);
 }  // namespace jointcal
 }  // namespace lsst
 

@@ -24,7 +24,7 @@ public:
     Point(double xx, double yy) : x(xx), y(yy){};
 
     //! -
-    double Distance(const Point& other) const {
+    double distance(const Point& other) const {
         return sqrt((x - other.x) * (x - other.x) + (y - other.y) * (y - other.y));
     };
 
@@ -34,10 +34,10 @@ public:
     };
 
     //! Sum
-    Point operator+(const Point& Right) const { return Point(x + Right.x, y + Right.y); }
+    Point operator+(const Point& right) const { return Point(x + right.x, y + right.y); }
 
     //! Difference
-    Point operator-(const Point& Right) const { return Point(x - Right.x, y - Right.y); }
+    Point operator-(const Point& right) const { return Point(x - right.x, y - right.y); }
 
     //! utility
     virtual void dump(std::ostream& s = std::cout) const { s << " x " << x << " y " << y; }

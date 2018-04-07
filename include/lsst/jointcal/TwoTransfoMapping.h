@@ -29,7 +29,7 @@ public:
     void getMappingIndices(std::vector<unsigned> &indices) const;
 
     //!
-    void computeTransformAndDerivatives(FatPoint const &where, FatPoint &outPoint, Eigen::MatrixX2d &H) const;
+    void computeTransformAndDerivatives(FatPoint const &where, FatPoint &outPoint, Eigen::MatrixX2d &h) const;
     //!
     void transformPosAndErrors(FatPoint const &where, FatPoint &outPoint) const;
 
@@ -59,17 +59,17 @@ public:
 private:
     friend class ConstrainedPolyModel;
     //!
-    void setWhatToFit(const bool fittingT1, const bool fittingT2);
+    void _setWhatToFit(const bool fittingT1, const bool fittingT2);
 
     SimpleGtransfoMapping *_m1, *_m2;
     unsigned _nPar1, _nPar2;
-    struct tmpVars  // just there to get around constness issues
+    struct TmpVars  // just there to get around constness issues
     {
         Eigen::MatrixX2d h1, h2;
         Eigen::Matrix2d dt2dx;
     };
 
-    std::unique_ptr<tmpVars> tmp;
+    std::unique_ptr<TmpVars> _tmp;
 };
 }  // namespace jointcal
 }  // namespace lsst

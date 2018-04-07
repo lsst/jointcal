@@ -6,7 +6,7 @@
 #include "lsst/jointcal/Histo2d.h"
 
 namespace {
-LOG_LOGGER _log = LOG_GET("jointcal.Histo2d");
+LOG_LOGGER log = LOG_GET("jointcal.Histo2d");
 }
 
 namespace lsst {
@@ -20,13 +20,13 @@ Histo2d::Histo2d(int nnx, float mminx, float mmaxx, int nny, float mminy, float 
     if (mmaxx != mminx)
         scalex = nx / (mmaxx - mminx);
     else {
-        LOGL_WARN(_log, "Histo2d: minx = maxx requested");
+        LOGL_WARN(log, "Histo2d: minx = maxx requested");
         scalex = 1.0;
     }
     if (mmaxy != mminy)
         scaley = ny / (mmaxy - mminy);
     else {
-        LOGL_WARN(_log, "Histo2d: maxy = miny requested");
+        LOGL_WARN(log, "Histo2d: maxy = miny requested");
         scaley = 1.0;
     }
     data.reset(new float[nx * ny]);
@@ -39,7 +39,7 @@ Histo2d::Histo2d(const Histo2d &other) {
     memcpy((data).get(), other.data.get(), nx * ny * sizeof(float));
 }
 
-bool Histo2d::indices(double x, double y, int &ix, int &iy) const {
+bool Histo2d::_indices(double x, double y, int &ix, int &iy) const {
     ix = (int)floor((x - minx) * scalex);
     if (ix < 0 || ix >= nx) return false;
     iy = (int)floor((y - miny) * scaley);
@@ -77,7 +77,7 @@ void Histo2d::zeroBin(double x, double y) {
 double Histo2d::binContent(double x, double y) const {
     int ix, iy;
     if (indices(x, y, ix, iy)) return data[iy + ny * ix];
-    LOGL_WARN(_log, "Histo2D::binContent outside limits requested");
+    LOGL_WARN(log, "Histo2D::binContent outside limits requested");
     return -1e30;
 }
 }  // namespace jointcal

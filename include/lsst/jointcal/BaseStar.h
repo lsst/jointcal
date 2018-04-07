@@ -28,9 +28,9 @@ public:
     };
     //! constructor
     BaseStar(double xx, double yy, double flux, double fluxErr)
-            : FatPoint(xx, yy), _flux(flux), _fluxErr(fluxErr){};
+            : FatPoint(xx, yy), flux(flux), fluxErr(fluxErr){};
     BaseStar(Point const &point, double flux, double fluxErr)
-            : FatPoint(point), _flux(flux), _fluxErr(fluxErr){};
+            : FatPoint(point), flux(flux), fluxErr(fluxErr){};
 
     //! access stuff.
     double getX() const { return x; }
@@ -66,8 +66,8 @@ public:
 
 protected:
     // on-sky flux, in Maggies
-    double _flux;
-    double _fluxErr;
+    double flux;
+    double fluxErr;
 };
 
 //! enables to sort easily a starList (of anything that derives from BaseStar)

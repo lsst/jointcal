@@ -17,11 +17,11 @@ public:
         vxy = 0;
     };
 
-    FatPoint(const Point& P, double Vx = 1, double Vy = 1, double Vxy = 0)
-            : Point(P), vx(Vx), vy(Vy), vxy(Vxy){};
+    FatPoint(const Point& p, double vx = 1, double vy = 1, double vxy = 0)
+            : Point(p), vx(vx), vy(vy), vxy(vxy){};
 
-    FatPoint(const double X, const double Y, const double Vx = 1, const double Vy = 1, const double Vxy = 0)
-            : Point(X, Y), vx(Vx), vy(Vy), vxy(Vxy){};
+    FatPoint(const double x, const double y, const double vx = 1, const double vy = 1, const double vxy = 0)
+            : Point(x, y), vx(vx), vy(vy), vxy(vxy){};
 
     void dump(std::ostream& s = std::cout) const {
         Point::dump(s);

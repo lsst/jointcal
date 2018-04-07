@@ -81,7 +81,7 @@ public:
     virtual void offsetParams(Eigen::VectorXd const &delta) = 0;
 
     /// Make this mapping's parameters fixed (i.e. not varied during fitting).
-    void setFixed(bool _fixed) { fixed = _fixed; }
+    void setFixed(bool fixed) { fixed = fixed; }
     bool isFixed() { return fixed; }
 
     virtual Eigen::VectorXd getParameters() = 0;

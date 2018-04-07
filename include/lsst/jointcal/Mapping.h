@@ -26,7 +26,7 @@ public:
         evaluating the derivatives w.r.T parameters is not much longer
         than just transforming */
     virtual void computeTransformAndDerivatives(FatPoint const &where, FatPoint &outPoint,
-                                                Eigen::MatrixX2d &H) const = 0;
+                                                Eigen::MatrixX2d &h) const = 0;
     //! The same as above but without the parameter derivatives (used to evaluate chi^2)
     virtual void transformPosAndErrors(FatPoint const &where, FatPoint &outPoint) const = 0;
 

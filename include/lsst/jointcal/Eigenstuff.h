@@ -19,14 +19,14 @@ typedef Eigen::SparseMatrix<double> SpMat;
  *
  * @Seealso Eigen::CholmodSimplicialLDLT
  */
-template <typename _MatrixType, int _UpLo = Eigen::Lower>
+template <typename MatrixType, int UpLo = Eigen::Lower>
 class CholmodSimplicialLDLT2
-        : public Eigen::CholmodBase<_MatrixType, _UpLo, CholmodSimplicialLDLT2<_MatrixType, _UpLo>> {
-    typedef Eigen::CholmodBase<_MatrixType, _UpLo, CholmodSimplicialLDLT2> Base;
+        : public Eigen::CholmodBase<MatrixType, UpLo, CholmodSimplicialLDLT2<MatrixType, UpLo>> {
+    typedef Eigen::CholmodBase<MatrixType, UpLo, CholmodSimplicialLDLT2> Base;
     using Base::m_cholmod;
 
 public:
-    typedef _MatrixType MatrixType;
+    typedef MatrixType MatrixType;
     typedef typename MatrixType::Index Index;
     typedef typename MatrixType::RealScalar RealScalar;
 
@@ -38,21 +38,21 @@ public:
     }
 
     // this routine is the one we added
-    int update(SpMat const &H, bool UpOrDown) {
+    int update(SpMat const &h, bool upOrDown) {
         // check size
         Index const size = Base::m_cholmodFactor->n;
         EIGEN_UNUSED_VARIABLE(size);
-        eigen_assert(size == H.rows());
+        eigen_assert(size == h.rows());
 
-        cholmod_sparse C_cs = viewAsCholmod(H);
+        cholmod_sparse cCs = viewAsCholmod(h);
         /* We have to apply the magic permutation to the update matrix,
         read page 117 of Cholmod UserGuide.pdf */
-        cholmod_sparse *C_cs_perm =
-                cholmod_submatrix(&C_cs, (int *)Base::m_cholmodFactor->Perm, Base::m_cholmodFactor->n,
+        cholmod_sparse *cCsPerm =
+                cholmod_submatrix(&cCs, (int *)Base::m_cholmodFactor->Perm, Base::m_cholmodFactor->n,
                                   nullptr, -1, true, true, &this->cholmod());
-        assert(C_cs_perm);
-        int ret = cholmod_updown(UpOrDown, C_cs_perm, Base::m_cholmodFactor, &this->cholmod());
-        cholmod_free_sparse(&C_cs_perm, &this->cholmod());
+        assert(cCsPerm);
+        int ret = cholmod_updown(upOrDown, cCsPerm, Base::m_cholmodFactor, &this->cholmod());
+        cholmod_free_sparse(&cCsPerm, &this->cholmod());
         assert(ret != 0);
         return ret;
     }

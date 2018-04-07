@@ -15,9 +15,9 @@ namespace jointcal {
 
 /// Return value of minimize()
 enum class MinimizeResult {
-    Converged,      // fit has converged - no more outliers
-    Chi2Increased,  // still some ouliers but chi2 increases
-    Failed          // factorization failed
+    CONVERGED,      // fit has converged - no more outliers
+    CHI2_INCREASED,  // still some ouliers but chi2 increases
+    FAILED          // factorization failed
 };
 
 /**
@@ -29,7 +29,7 @@ enum class MinimizeResult {
 class FitterBase {
 public:
     explicit FitterBase(std::shared_ptr<Associations> associations)
-            : _associations(associations), _whatToFit(""), _lastNTrip(0), _nParTot(0), _nMeasuredStars(0) {}
+            : associations(associations), whatToFit(""), lastNTrip(0), nParTot(0), nMeasuredStars(0) {}
 
     /// No copy or move: there is only ever one fitter of a given type.
     FitterBase(FitterBase const &) = delete;
@@ -111,15 +111,15 @@ public:
     virtual void saveChi2RefContributions(std::string const &baseName) const = 0;
 
 protected:
-    std::shared_ptr<Associations> _associations;
-    std::string _whatToFit;
+    std::shared_ptr<Associations> associations;
+    std::string whatToFit;
 
-    int _lastNTrip;  // last triplet count, used to speed up allocation
-    unsigned int _nParTot;
-    unsigned _nMeasuredStars;
+    int lastNTrip;  // last triplet count, used to speed up allocation
+    unsigned int nParTot;
+    unsigned nMeasuredStars;
 
     // lsst.logging instance, to be created by subclass so that messages have consistent name while fitting.
-    LOG_LOGGER _log;
+    LOG_LOGGER log;
 
     /**
      * Find Measurements and references contributing more than a cut, computed as

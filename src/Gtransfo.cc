@@ -21,7 +21,7 @@ namespace pexExcept = lsst::pex::exceptions;
 using namespace std;
 
 namespace {
-LOG_LOGGER _log = LOG_GET("jointcal.Gtransfo");
+LOG_LOGGER log = LOG_GET("jointcal.Gtransfo");
 }
 
 namespace lsst {
@@ -220,7 +220,7 @@ class GtransfoInverse : public Gtransfo {
 private:
     std::unique_ptr<Gtransfo> _direct;
     std::unique_ptr<Gtransfo> _roughInverse;
-    double precision2;
+    double _precision2;
 
 public:
     GtransfoInverse(const Gtransfo *direct, const double precision, const Frame &region);
@@ -291,7 +291,7 @@ void GtransfoInverse::apply(const double xIn, const double yIn, double &xOut, do
         outGuess.y += yShift;
         move2 = xShift * xShift + yShift * yShift;
     } while ((move2 > precision2) && (loop < maxloop));
-    if (loop == maxloop) LOGLS_WARN(_log, "Problems applying GtransfoInverse at " << in);
+    if (loop == maxloop) LOGLS_WARN(log, "Problems applying GtransfoInverse at " << in);
     xOut = outGuess.x;
     yOut = outGuess.y;
 }
@@ -439,7 +439,7 @@ GtransfoPoly::GtransfoPoly(const Gtransfo *gtransfo, const Frame &frame, unsigne
 }
 //#endif
 
-void GtransfoPoly::computeMonomials(double xIn, double yIn, double *monomial) const {
+void GtransfoPoly::_computeMonomials(double xIn, double yIn, double *monomial) const {
     /* The ordering of monomials is implemented here.
        You may not change it without updating the "mapping" routines
       coeff(unsigned, unsigned, unsigned).
@@ -464,21 +464,21 @@ void GtransfoPoly::computeMonomials(double xIn, double yIn, double *monomial) co
 
 void GtransfoPoly::setDegree(const unsigned degree) {
     _degree = degree;
-    unsigned old_nterms = _nterms;
+    unsigned oldNterms = _nterms;
     _nterms = (_degree + 1) * (_degree + 2) / 2;
 
     // temporarily save coefficients
-    vector<double> old_coeffs = _coeffs;
+    vector<double> oldCoeffs = _coeffs;
     // reallocate enough size
     _coeffs.resize(2 * _nterms);
     // reassign to zero (this is necessary because ycoeffs
     // are after xcoeffs and so their meaning changes
     for (unsigned k = 0; k < _nterms; ++k) _coeffs[k] = 0;
     // put back what we had before
-    unsigned kmax = min(old_nterms, _nterms);
+    unsigned kmax = min(oldNterms, _nterms);
     for (unsigned k = 0; k < kmax; ++k) {
-        _coeffs[k] = old_coeffs[k];                         // x terms
-        _coeffs[k + _nterms] = old_coeffs[k + old_nterms];  // y terms
+        _coeffs[k] = oldCoeffs[k];                         // x terms
+        _coeffs[k + _nterms] = oldCoeffs[k + oldNterms];  // y terms
     }
 }
 
@@ -736,8 +736,8 @@ static GtransfoLin shiftAndNormalize(const StarMatchList &starMatchList) {
     double y2 = 0;
     double count = 0;
     for (auto it = starMatchList.begin(); it != starMatchList.end(); ++it) {
-        const StarMatch &a_match = *it;
-        const Point &point1 = a_match.point1;
+        const StarMatch &aMatch = *it;
+        const Point &point1 = aMatch.point1;
         xav += point1.x;
         yav += point1.y;
         x2 += std::pow(point1.x, 2);
@@ -755,19 +755,19 @@ static GtransfoLin shiftAndNormalize(const StarMatchList &starMatchList) {
 
 static double sq(double x) { return x * x; }
 
-double GtransfoPoly::computeFit(const StarMatchList &starMatchList, const Gtransfo &shiftToCenter,
+double GtransfoPoly::_computeFit(const StarMatchList &starMatchList, const Gtransfo &shiftToCenter,
                                 const bool useErrors) {
-    Eigen::MatrixXd A(2 * _nterms, 2 * _nterms);
-    A.setZero();
-    Eigen::VectorXd B(2 * _nterms);
-    B.setZero();
+    Eigen::MatrixXd a(2 * _nterms, 2 * _nterms);
+    a.setZero();
+    Eigen::VectorXd b(2 * _nterms);
+    b.setZero();
     double sumr2 = 0;
     double monomials[_nterms];
     for (auto it = starMatchList.begin(); it != starMatchList.end(); ++it) {
-        const StarMatch &a_match = *it;
-        Point tmp = shiftToCenter.apply(a_match.point1);
-        FatPoint point1(tmp, a_match.point1.vx, a_match.point1.vy, a_match.point1.vxy);
-        const FatPoint &point2 = a_match.point2;
+        const StarMatch &aMatch = *it;
+        Point tmp = shiftToCenter.apply(aMatch.point1);
+        FatPoint point1(tmp, aMatch.point1.vx, aMatch.point1.vy, aMatch.point1.vxy);
+        const FatPoint &point2 = aMatch.point2;
         double wxx, wyy, wxy;
         FatPoint tr1;
         computeMonomials(point1.x, point1.y, monomials);
@@ -793,30 +793,30 @@ double GtransfoPoly::computeFit(const StarMatchList &starMatchList, const Gtrans
         double bycoeff = wyy * resy + wxy * resx;
         for (unsigned j = 0; j < _nterms; ++j) {
             for (unsigned i = j; i < _nterms; ++i) {
-                A(i, j) += wxx * monomials[i] * monomials[j];
-                A(i + _nterms, j + _nterms) += wyy * monomials[i] * monomials[j];
-                A(j, i + _nterms) = A(i, j + _nterms) += wxy * monomials[i] * monomials[j];
+                a(i, j) += wxx * monomials[i] * monomials[j];
+                a(i + _nterms, j + _nterms) += wyy * monomials[i] * monomials[j];
+                a(j, i + _nterms) = a(i, j + _nterms) += wxy * monomials[i] * monomials[j];
             }
-            B(j) += bxcoeff * monomials[j];
-            B(j + _nterms) += bycoeff * monomials[j];
+            b(j) += bxcoeff * monomials[j];
+            b(j + _nterms) += bycoeff * monomials[j];
         }
     }  // end loop on points
-    Eigen::LDLT<Eigen::MatrixXd, Eigen::Lower> factor(A);
+    Eigen::LDLT<Eigen::MatrixXd, Eigen::Lower> factor(a);
     // should probably throw
     if (factor.info() != Eigen::Success) {
-        LOGL_ERROR(_log, "GtransfoPoly::fit could not factorize");
+        LOGL_ERROR(log, "GtransfoPoly::fit could not factorize");
         return -1;
     }
 
-    Eigen::VectorXd sol = factor.solve(B);
+    Eigen::VectorXd sol = factor.solve(b);
     for (unsigned k = 0; k < 2 * _nterms; ++k) _coeffs[k] += sol(k);
     if (starMatchList.size() == _nterms) return 0;
-    return (sumr2 - B.dot(sol));
+    return (sumr2 - b.dot(sol));
 }
 
 double GtransfoPoly::fit(const StarMatchList &starMatchList) {
     if (starMatchList.size() < _nterms) {
-        LOGLS_FATAL(_log, "GtransfoPoly::fit trying to fit a polynomial transfo of degree "
+        LOGLS_FATAL(log, "GtransfoPoly::fit trying to fit a polynomial transfo of degree "
                                   << _degree << " with only " << starMatchList.size() << " matches.");
         return -1;
     }
@@ -853,12 +853,12 @@ std::unique_ptr<Gtransfo> GtransfoPoly::reduceCompo(const Gtransfo *right) const
 */
 
 class PolyXY {
-    unsigned degree;
-    unsigned nterms;
-    vector<long double> coeffs;
+    unsigned _degree;
+    unsigned _nterms;
+    vector<long double> _coeffs;
 
 public:
-    PolyXY(const int degree) : degree(degree), nterms((degree + 1) * (degree + 2) / 2) {
+    PolyXY(const int degree) : _degree(degree), _nterms((degree + 1) * (degree + 2) / 2) {
         coeffs.reserve(nterms);
         coeffs.insert(coeffs.begin(), nterms, 0L);  // fill & initialize to 0.
     }
@@ -866,7 +866,7 @@ public:
     unsigned getDegree() const { return degree; }
 
     PolyXY(const GtransfoPoly &gtransfoPoly, const unsigned whichCoord)
-            : degree(gtransfoPoly.getDegree()), nterms((degree + 1) * (degree + 2) / 2), coeffs(nterms, 0L) {
+            : _degree(gtransfoPoly.getDegree()), _nterms((degree + 1) * (degree + 2) / 2), _coeffs(nterms, 0L) {
         for (unsigned px = 0; px <= degree; ++px)
             for (unsigned py = 0; py <= degree - px; ++py)
                 coeff(px, py) = gtransfoPoly.coeff(px, py, whichCoord);
@@ -1036,7 +1036,7 @@ std::unique_ptr<GtransfoPoly> inversePolyTransfo(const Gtransfo &direct, const F
         if (chi2 / npairs < precision * precision) break;
     }
     if (degree > maxdeg)
-        LOGLS_WARN(_log, "inversePolyTransfo: Reached max degree without reaching requested precision: "
+        LOGLS_WARN(log, "inversePolyTransfo: Reached max degree without reaching requested precision: "
                                  << precision);
     return poly;
 }
@@ -1046,15 +1046,15 @@ std::unique_ptr<GtransfoPoly> inversePolyTransfo(const Gtransfo &direct, const F
    May be it could just disappear ??
 */
 
-GtransfoLin::GtransfoLin(const double Dx, const double Dy, const double A11, const double A12,
-                         const double A21, const double A22)
+GtransfoLin::GtransfoLin(const double dx, const double dy, const double a11, const double a12,
+                         const double a21, const double a22)
         : GtransfoPoly(1) {
-    dx() = Dx;
-    a11() = A11;
-    a12() = A12;
-    dy() = Dy;
-    a21() = A21;
-    a22() = A22;
+    dx() = dx;
+    a11() = a11;
+    a12() = a12;
+    dy() = dy;
+    a21() = a21;
+    a22() = a22;
 }
 
 GtransfoLin::GtransfoLin(const GtransfoPoly &gtransfoPoly) : GtransfoPoly(1) {
@@ -1100,7 +1100,7 @@ GtransfoLin GtransfoLin::invert() const {
     double a22 = A22();
     double d = (a11 * a22 - a12 * a21);
     if (d == 0) {
-        LOGL_FATAL(_log,
+        LOGL_FATAL(log,
                    "GtransfoLin::invert singular transformation: transfo contents will be dumped to stderr.");
         dump(cerr);
     }
@@ -1124,17 +1124,17 @@ double GtransfoLinRot::fit(const StarMatchList &) {
 double GtransfoLinShift::fit(const StarMatchList &starMatchList) {
     int npairs = starMatchList.size();
     if (npairs < 3) {
-        LOGLS_FATAL(_log, "GtransfoLinShift::fit trying to fit a linear transfo with only " << npairs
+        LOGLS_FATAL(log, "GtransfoLinShift::fit trying to fit a linear transfo with only " << npairs
                                                                                             << " matches.");
         return -1;
     }
 
     double sumr2 = 0; /* used to compute chi2 without relooping */
     /* loop on pairs  and fill */
-    Eigen::VectorXd B(2);
-    B.setZero();
-    Eigen::MatrixXd A(2, 2);
-    A.setZero();
+    Eigen::VectorXd b(2);
+    b.setZero();
+    Eigen::MatrixXd a(2, 2);
+    a.setZero();
 
     for (auto const &it : starMatchList) {
         const FatPoint &point1 = it.point1;
@@ -1148,22 +1148,22 @@ double GtransfoLinShift::fit(const StarMatchList &starMatchList) {
         double wxx = vyy / det;
         double wyy = vxx / det;
         double wxy = -vxy / det;
-        B(0) += deltax * wxx + wxy * deltay;
-        B(1) += deltay * wyy + wxy * deltax;
-        A(0, 0) += wxx;
-        A(1, 1) += wyy;
-        A(0, 1) += wxy;
+        b(0) += deltax * wxx + wxy * deltay;
+        b(1) += deltay * wyy + wxy * deltax;
+        a(0, 0) += wxx;
+        a(1, 1) += wyy;
+        a(0, 1) += wxy;
         sumr2 += deltax * deltax * wxx + deltay * deltay * wyy + 2. * wxy * deltax * deltay;
     }
-    double det = A(0, 0) * A(1, 1) - A(0, 1) * A(1, 0);
+    double det = a(0, 0) * a(1, 1) - a(0, 1) * a(1, 0);
     if (det <= 0) return -1;
-    double tmp = A(0, 0);
-    A(0, 0) = A(1, 1) / det;
-    A(1, 1) = tmp / det;
-    A(0, 1) = A(1, 0) = -A(0, 1) / det;
-    Eigen::VectorXd sol = A * B;
+    double tmp = a(0, 0);
+    a(0, 0) = a(1, 1) / det;
+    a(1, 1) = tmp / det;
+    a(0, 1) = a(1, 0) = -a(0, 1) / det;
+    Eigen::VectorXd sol = a * b;
     (*this) = GtransfoLinShift(sol(0), sol(1));
-    return (sumr2 - sol.dot(B));  // chi2 compact form
+    return (sumr2 - sol.dot(b));  // chi2 compact form
 }
 
 GtransfoLinRot::GtransfoLinRot(const double angleRad, const Point *center, const double scaleFactor) {
@@ -1174,13 +1174,13 @@ GtransfoLinRot::GtransfoLinRot(const double angleRad, const Point *center, const
     a12() = -s;
 
     // we want that the center does not move : gtransfo+M*C = C ==> gtransfo = C - M*C
-    Point a_point(0., 0.);
-    if (center) a_point = *center;
+    Point aPoint(0., 0.);
+    if (center) aPoint = *center;
 
     dx() = dy() = 0;
-    GtransfoPoly::apply(a_point.x, a_point.y, dx(), dy());  // compute M*C
-    dx() = a_point.x - Dx();
-    dy() = a_point.y - dy();
+    GtransfoPoly::apply(aPoint.x, aPoint.y, dx(), dy());  // compute M*C
+    dx() = aPoint.x - Dx();
+    dy() = aPoint.y - dy();
 }
 
 static double deg2rad(double degree) { return degree * M_PI / 180.; }
@@ -1248,7 +1248,7 @@ void BaseTanWcs::apply(const double xIn, const double yIn, double &xOut, double 
                         operations. */
     double dect = cos0 - m * sin0;
     if (dect == 0) {
-        LOGL_WARN(_log, "No sidereal coordinates at pole!");
+        LOGL_WARN(log, "No sidereal coordinates at pole!");
         xOut = 0;
         yOut = 0;
         return;
@@ -1327,8 +1327,8 @@ TanPix2RaDec TanPix2RaDec::operator*(const GtransfoLin &right) const {
 
 TanRaDec2Pix TanPix2RaDec::invert() const {
     if (corr != nullptr) {
-        LOGL_WARN(_log, "You are inverting a TanPix2RaDec with corrections.");
-        LOGL_WARN(_log, "The inverse you get ignores the corrections!");
+        LOGL_WARN(log, "You are inverting a TanPix2RaDec with corrections.");
+        LOGL_WARN(log, "The inverse you get ignores the corrections!");
     }
     return TanRaDec2Pix(getLinPart().invert(), getTangentPoint());
 }
@@ -1459,7 +1459,7 @@ double TanSipPix2RaDec::fit(const StarMatchList &) {
 
 /***************  reverse transfo of TanPix2RaDec: TanRaDec2Pix ********/
 
-TanRaDec2Pix::TanRaDec2Pix(const GtransfoLin &tan2Pix, const Point &tangentPoint) : linTan2Pix(tan2Pix) {
+TanRaDec2Pix::TanRaDec2Pix(const GtransfoLin &tan2Pix, const Point &tangentPoint) : _linTan2Pix(tan2Pix) {
     setTangentPoint(tangentPoint);
 }
 
@@ -1472,7 +1472,7 @@ void TanRaDec2Pix::setTangentPoint(const Point &tangentPoint) {
     sin0 = sin(dec0);
 }
 
-TanRaDec2Pix::TanRaDec2Pix() : linTan2Pix() {
+TanRaDec2Pix::TanRaDec2Pix() : _linTan2Pix() {
     ra0 = dec0 = 0;
     cos0 = 1;
     sin0 = 0;

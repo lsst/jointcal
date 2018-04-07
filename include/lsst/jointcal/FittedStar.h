@@ -99,7 +99,7 @@ public:
     int getIndexInMatrix() const { return _indexInMatrix; }
 
     //! Set the astrometric reference star associated with this star.
-    void setRefStar(const RefStar* _refStar);
+    void setRefStar(const RefStar* refStar);
 
     //! Get the astrometric reference star associated with this star.
     const RefStar* getRefStar() const { return _refStar; };
@@ -129,10 +129,10 @@ public:
 typedef FittedStarList::const_iterator FittedStarCIterator;
 typedef FittedStarList::iterator FittedStarIterator;
 
-BaseStarList& Fitted2Base(FittedStarList& starList);
-BaseStarList* Fitted2Base(FittedStarList* starList);
-const BaseStarList& Fitted2Base(const FittedStarList& starList);
-const BaseStarList* Fitted2Base(const FittedStarList* starList);
+BaseStarList& fitted2Base(FittedStarList& starList);
+BaseStarList* fitted2Base(FittedStarList* starList);
+const BaseStarList& fitted2Base(const FittedStarList& starList);
+const BaseStarList* fitted2Base(const FittedStarList* starList);
 }  // namespace jointcal
 }  // namespace lsst
 

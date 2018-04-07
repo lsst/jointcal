@@ -36,7 +36,7 @@ namespace {
 void declareGtransfo(py::module &mod) {
     py::class_<Gtransfo, std::shared_ptr<Gtransfo>> cls(mod, "Gtransfo");
 
-    cls.def("__str__", &Gtransfo::__str__);
+    cls.def("__str__", &Gtransfo::str);
 }
 
 void declareGtransfoIdentity(py::module &mod) {

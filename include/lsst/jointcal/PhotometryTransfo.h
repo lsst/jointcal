@@ -209,7 +209,7 @@ private:
     ndarray::Size _nParameters;
 
     // Compute the integral of this function over its bounding-box.
-    double integrate() const;
+    double _integrate() const;
 };
 
 }  // namespace jointcal

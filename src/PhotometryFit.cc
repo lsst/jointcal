@@ -36,7 +36,7 @@ void PhotometryFit::leastSquareDerivativesMeasurement(CcdImage const &ccdImage, 
     std::vector<unsigned> indices(nparModel, -1);
     if (_fittingModel) _photometryModel->getMappingIndices(ccdImage, indices);
 
-    Eigen::VectorXd H(nparTotal);  // derivative matrix
+    Eigen::VectorXd h(nparTotal);  // derivative matrix
     // current position in the Jacobian
     unsigned kTriplets = tripletList.getNextFreeIndex();
     const MeasuredStarList &catalog = (measuredStarList) ? *measuredStarList : ccdImage.getCatalogForFit();
@@ -47,28 +47,28 @@ void PhotometryFit::leastSquareDerivativesMeasurement(CcdImage const &ccdImage, 
 #ifdef FUTURE
         TweakPhotomMeasurementErrors(inPos, *measuredStar, _fluxError);
 #endif
-        H.setZero();  // we cannot be sure that all entries will be overwritten.
+        h.setZero();  // we cannot be sure that all entries will be overwritten.
 
         double residual = _photometryModel->transform(ccdImage, *measuredStar, measuredStar->getInstFlux()) -
                           measuredStar->getFittedStar()->getFlux();
 
         double inverseSigma = 1.0 / _photometryModel->transformError(ccdImage, *measuredStar,
                                                                      measuredStar->getInstFluxErr());
-        double W = std::pow(inverseSigma, 2);
+        double w = std::pow(inverseSigma, 2);
 
         if (_fittingModel) {
-            _photometryModel->computeParameterDerivatives(*measuredStar, ccdImage, H);
+            _photometryModel->computeParameterDerivatives(*measuredStar, ccdImage, h);
             for (unsigned k = 0; k < indices.size(); k++) {
                 unsigned l = indices[k];
-                tripletList.addTriplet(l, kTriplets, H[k] * inverseSigma);
-                grad[l] += H[k] * W * residual;
+                tripletList.addTriplet(l, kTriplets, h[k] * inverseSigma);
+                grad[l] += h[k] * w * residual;
             }
         }
         if (_fittingFluxes) {
             unsigned index = measuredStar->getFittedStar()->getIndexInMatrix();
             // Note: H = dR/dFittedStarFlux == -1
             tripletList.addTriplet(index, kTriplets, -1.0 * inverseSigma);
-            grad[index] += -1.0 * W * residual;
+            grad[index] += -1.0 * w * residual;
         }
         kTriplets += 1;  // each measurement contributes 1 column in the Jacobian
     }

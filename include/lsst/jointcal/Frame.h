@@ -8,9 +8,9 @@
 namespace lsst {
 namespace jointcal {
 
-typedef enum { WholeSizeFrame, ClippedSizeFrame } WhichFrame;
+typedef enum { WHOLE_SIZE_FRAME, CLIPPED_SIZE_FRAME } WhichFrame;
 
-typedef enum { LargeFrame, SmallFrame } WhichTransformed;
+typedef enum { LARGE_FRAME, SMALL_FRAME } WhichTransformed;
 
 //! rectangle with sides parallel to axes.
 /*! when Frame's are used to define subparts of images, xMin and xMax refer
@@ -88,7 +88,7 @@ public:
     };
 
 private:
-    void order();
+    void _order();
 };
 }  // namespace jointcal
 }  // namespace lsst

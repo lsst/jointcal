@@ -9,7 +9,7 @@
 #include "lsst/jointcal/StarList.h"
 
 namespace {
-LOG_LOGGER _log = LOG_GET("jointcal.FastFinder");
+LOG_LOGGER log = LOG_GET("jointcal.FastFinder");
 }
 
 namespace lsst {
@@ -30,10 +30,10 @@ FittedStar::FittedStar(const MeasuredStar &measuredStar)
 void FittedStar::setRefStar(const RefStar *refStar) {
     if ((_refStar != nullptr) && (refStar != nullptr)) {
         // TODO: should we raise an Exception in this case?
-        LOGLS_WARN(_log,
+        LOGLS_WARN(log,
                    "FittedStar: " << *this << " is already matched to another RefStar. Clean up your lists.");
-        LOGLS_WARN(_log, "old refStar: " << *_refStar);
-        LOGLS_WARN(_log, "new refStar: " << *refStar);
+        LOGLS_WARN(log, "old refStar: " << *_refStar);
+        LOGLS_WARN(log, "new refStar: " << *refStar);
     } else
         _refStar = refStar;
 }
@@ -45,12 +45,12 @@ void FittedStar::addMagMeasurement(double magValue, double magWeight) {
 
 /************* FittedStarList ************************/
 
-BaseStarList &Fitted2Base(FittedStarList &starList) { return (BaseStarList &)starList; }
+BaseStarList &fitted2Base(FittedStarList &starList) { return (BaseStarList &)starList; }
 
-BaseStarList *Fitted2Base(FittedStarList *starList) { return (BaseStarList *)starList; }
+BaseStarList *fitted2Base(FittedStarList *starList) { return (BaseStarList *)starList; }
 
-const BaseStarList &Fitted2Base(const FittedStarList &starList) { return (const BaseStarList &)starList; }
+const BaseStarList &fitted2Base(const FittedStarList &starList) { return (const BaseStarList &)starList; }
 
-const BaseStarList *Fitted2Base(const FittedStarList *starList) { return (BaseStarList *)starList; }
+const BaseStarList *fitted2Base(const FittedStarList *starList) { return (BaseStarList *)starList; }
 }  // namespace jointcal
 }  // namespace lsst

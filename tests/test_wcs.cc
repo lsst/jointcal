@@ -54,7 +54,7 @@ BOOST_AUTO_TEST_CASE(test_wcs)
 
   lsst::afw::geom::Point2D whereSame(100.,200.);
   auto skyPos = skyWcs->pixelToSky(whereSame);
-  lsst::afw::geom::Point2D outDeg = skyPos.getPosition(lsst::afw::geom::degrees);
+  lsst::afw::geom::Point2D outDeg = skyPos.getPosition(lsst::afw::geom::DEGREES);
   std::cout << "Stack : " << outDeg[0] << ' ' << outDeg[1] << std::endl;
 
   BOOST_CHECK_CLOSE(outPol.x, outDeg[0], .000001);

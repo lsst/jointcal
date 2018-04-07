@@ -88,9 +88,9 @@ public:
     void setIndex(unsigned i) { index = i; }
 
     virtual void computeTransformAndDerivatives(FatPoint const &where, FatPoint &outPoint,
-                                                Eigen::MatrixX2d &H) const {
+                                                Eigen::MatrixX2d &h) const {
         transformPosAndErrors(where, outPoint);
-        transfo->paramDerivatives(where, &H(0, 0), &H(0, 1));
+        transfo->paramDerivatives(where, &h(0, 0), &h(0, 1));
     }
 
     //! Access to the (fitted) transfo
@@ -117,8 +117,8 @@ public:
     // ! contructor.
     /*! The transformation will be initialized to gtransfo, so that the effective transformation
       reads gtransfo*CenterAndScale */
-    SimplePolyMapping(GtransfoLin const &CenterAndScale, GtransfoPoly const &gtransfo)
-            : SimpleGtransfoMapping(gtransfo), _centerAndScale(CenterAndScale) {
+    SimplePolyMapping(GtransfoLin const &centerAndScale, GtransfoPoly const &gtransfo)
+            : SimpleGtransfoMapping(gtransfo), _centerAndScale(centerAndScale) {
         // We assume that the initialization was done properly, for example that
         // gtransfo = pix2TP*CenterAndScale.invert(), so we do not touch transfo.
         /* store the (spatial) derivative of _centerAndScale. For the extra
@@ -129,8 +129,8 @@ public:
         preDer(1, 1) = _centerAndScale.coeff(0, 1, 1);
 
         // check of matrix indexing (once for all)
-        MatrixX2d H(3, 2);
-        assert((&H(1, 0) - &H(0, 0)) == 1);
+        MatrixX2d h(3, 2);
+        assert((&h(1, 0) - &h(0, 0)) == 1);
     }
 
     /// No copy or move: there is only ever one instance of a given mapping (i.e.. per ccd+visit)
@@ -163,7 +163,7 @@ public:
        parameter derivatives into the same Gtransfo routine because
        it could be significantly faster */
     virtual void computeTransformAndDerivatives(FatPoint const &where, FatPoint &outPoint,
-                                                Eigen::MatrixX2d &H) const {
+                                                Eigen::MatrixX2d &h) const {
         FatPoint mid;
         _centerAndScale.transformPosAndErrors(where, mid);
         transfo->transformPosAndErrors(mid, outPoint);
@@ -172,7 +172,7 @@ public:
         outPoint.vx = tmp.vx;
         outPoint.vy = tmp.vy;
         outPoint.vxy = tmp.vxy;
-        transfo->paramDerivatives(mid, &H(0, 0), &H(0, 1));
+        transfo->paramDerivatives(mid, &h(0, 0), &h(0, 1));
     }
 
     //! Implements as well the centering and scaling of coordinates
@@ -200,10 +200,10 @@ private:
     transformed coordinates are mapped (roughly) on [-1,1].
     We need both the transform and its derivative. */
     GtransfoLin _centerAndScale;
-    Eigen::Matrix2d preDer;
+    Eigen::Matrix2d _preDer;
 
     /* Where we store the combination. */
-    mutable GtransfoPoly actualResult;
+    mutable GtransfoPoly _actualResult;
 };
 
 #ifdef STORAGE

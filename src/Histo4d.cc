@@ -8,7 +8,7 @@
 #include "lsst/jointcal/Histo4d.h"
 
 namespace {
-LOG_LOGGER _log = LOG_GET("jointcal.Histo4d");
+LOG_LOGGER log = LOG_GET("jointcal.Histo4d");
 }
 
 namespace lsst {
@@ -20,7 +20,7 @@ SparseHisto4d::SparseHisto4d(const int n1, double min1, double max1, const int n
     double indexMax = n1 * n2 * n3 * n4;
     _data.reset();
     if (indexMax > double(INT_MAX))
-        LOGLS_WARN(_log, "Cannot hold a 4D histo with more than " << INT_MAX << " values.");
+        LOGLS_WARN(log, "Cannot hold a 4D histo with more than " << INT_MAX << " values.");
     _n[0] = n1;
     _n[1] = n2;
     _n[2] = n3;
@@ -41,7 +41,7 @@ SparseHisto4d::SparseHisto4d(const int n1, double min1, double max1, const int n
     _sorted = false;
 }
 
-int SparseHisto4d::code_value(const double x[4]) const {
+int SparseHisto4d::codeValue(const double x[4]) const {
     int index = 0;
     for (int idim = 0; idim < 4; ++idim) {
         int i = (int)floor((x[idim] - _minVal[idim]) * _scale[idim]);
@@ -51,7 +51,7 @@ int SparseHisto4d::code_value(const double x[4]) const {
     return index;
 }
 
-void SparseHisto4d::inverse_code(int code, double x[4]) const {
+void SparseHisto4d::inverseCode(int code, double x[4]) const {
     for (int i = 3; i >= 0; --i) {
         int bin = code % _n[i];
         code /= _n[i];

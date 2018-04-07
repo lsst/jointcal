@@ -135,11 +135,11 @@ private:
     void getIndicesOfMeasuredStar(MeasuredStar const &measuredStar,
                                   std::vector<unsigned> &indices) const override;
 
-    Point transformFittedStar(FittedStar const &fittedStar, Gtransfo const *sky2TP,
+    Point _transformFittedStar(FittedStar const &fittedStar, Gtransfo const *sky2TP,
                               Point const &refractionVector, double refractionCoeff, double mjd) const;
 
     /// Compute the chi2 (per star or total, depending on which Chi2Accumulator is used) from one CcdImage.
-    void accumulateStatImage(CcdImage const &ccdImage, Chi2Accumulator &accum) const;
+    void _accumulateStatImage(CcdImage const &ccdImage, Chi2Accumulator &accum) const;
 };
 }  // namespace jointcal
 }  // namespace lsst

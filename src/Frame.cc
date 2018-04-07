@@ -73,7 +73,7 @@ Frame &Frame::operator+=(const Frame &right) {
     return *this;
 }
 
-void Frame::order() {
+void Frame::_order() {
     if (xMin > xMax) swap(xMin, xMax);
     if (yMin > yMax) swap(yMin, yMax);
 }

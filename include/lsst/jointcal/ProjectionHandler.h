@@ -29,7 +29,7 @@ struct ProjectionHandler {
  * is useful for fitting transfo rms between images.
  */
 class IdentityProjectionHandler : public ProjectionHandler {
-    GtransfoIdentity id;
+    GtransfoIdentity _id;
 
 public:
     const Gtransfo *getSky2TP(const CcdImage &ccdImage) const { return &id; };
@@ -44,7 +44,7 @@ public:
  */
 class OneTPPerVisitHandler : public ProjectionHandler {
     typedef std::map<const unsigned, std::shared_ptr<const Gtransfo>> TransfoMap;
-    TransfoMap tMap;
+    TransfoMap _tMap;
 
 public:
     OneTPPerVisitHandler(const CcdImageList &ccdImageList);

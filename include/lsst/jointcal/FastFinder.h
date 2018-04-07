@@ -51,12 +51,12 @@ public:
 
     //! Find the closest with some rejection capability
     std::shared_ptr<const BaseStar> findClosest(const Point &where, const double maxDist,
-                                                bool (*SkipIt)(const BaseStar &) = nullptr) const;
+                                                bool (*skipIt)(const BaseStar &) = nullptr) const;
 
     //!
     std::shared_ptr<const BaseStar> secondClosest(const Point &where, const double maxDist,
                                                   std::shared_ptr<const BaseStar> &closest,
-                                                  bool (*SkipIt)(const BaseStar &) = nullptr) const;
+                                                  bool (*skipIt)(const BaseStar &) = nullptr) const;
 
     //! mostly for debugging
     void dump() const;
@@ -72,7 +72,7 @@ public:
         /* pointers to the first and beyond last stars in the y range for
            the current stripe :  */
         pstar current, pend;
-        pstar null_value;  // with pointers being iterators, the null value is not NULL
+        pstar nullValue;  // with pointers being iterators, the null value is not NULL
 
         void check() const;
 

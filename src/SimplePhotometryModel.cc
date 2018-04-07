@@ -8,7 +8,7 @@
 #include "lsst/jointcal/MeasuredStar.h"
 
 namespace {
-LOG_LOGGER _log = LOG_GET("jointcal.SimplePhotometryModel");
+LOG_LOGGER log = LOG_GET("jointcal.SimplePhotometryModel");
 }
 
 namespace lsst {
@@ -24,7 +24,7 @@ SimplePhotometryModel::SimplePhotometryModel(CcdImageList const &ccdImageList) {
         _myMap.emplace(ccdImage->getHashKey(),
                        std::unique_ptr<PhotometryMapping>(new PhotometryMapping(transfo)));
     }
-    LOGLS_INFO(_log, "SimplePhotometryModel got " << _myMap.size() << " ccdImage mappings.");
+    LOGLS_INFO(log, "SimplePhotometryModel got " << _myMap.size() << " ccdImage mappings.");
 }
 
 unsigned SimplePhotometryModel::assignIndices(std::string const &whatToFit, unsigned firstIndex) {

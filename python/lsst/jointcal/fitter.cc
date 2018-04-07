@@ -67,9 +67,9 @@ PYBIND11_PLUGIN(fitter) {
     py::module mod("fitter");
 
     py::enum_<MinimizeResult>(mod, "MinimizeResult")
-            .value("Converged", MinimizeResult::Converged)
-            .value("Chi2Increased", MinimizeResult::Chi2Increased)
-            .value("Failed", MinimizeResult::Failed);
+            .value("Converged", MinimizeResult::CONVERGED)
+            .value("Chi2Increased", MinimizeResult::CHI2_INCREASED)
+            .value("Failed", MinimizeResult::FAILED);
 
     declareFitterBase(mod);
     declareAstrometryFit(mod);

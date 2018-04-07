@@ -7,7 +7,7 @@ namespace jointcal {
 
 class Histo2d {
 public:
-    Histo2d() : data() {}
+    Histo2d() : _data() {}
     Histo2d(int nx, float minx, float maxx, int ny, float miny, float maxy);
 
     Histo2d(const Histo2d &other);
@@ -16,9 +16,9 @@ public:
 
     double maxBin(double &x, double &y) const;
 
-    void binWidth(double &Hdx, double &Hdy) const {
-        Hdx = 1. / scalex;
-        Hdy = 1. / scaley;
+    void binWidth(double &hdx, double &hdy) const {
+        hdx = 1. / scalex;
+        hdy = 1. / scaley;
     }
 
     double binContent(double x, double y) const;
@@ -29,12 +29,12 @@ public:
 
 private:
     void operator=(const Histo2d &right);
-    bool indices(double x, double y, int &ix, int &iy) const;
+    bool _indices(double x, double y, int &ix, int &iy) const;
 
-    std::unique_ptr<float[]> data;
-    int nx, ny;
-    float minx, miny;
-    float scalex, scaley;
+    std::unique_ptr<float[]> _data;
+    int _nx, _ny;
+    float _minx, _miny;
+    float _scalex, _scaley;
 };
 }  // namespace jointcal
 }  // namespace lsst

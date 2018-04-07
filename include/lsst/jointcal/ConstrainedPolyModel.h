@@ -53,7 +53,7 @@ public:
      * Dispaches the offsets after a fit step into the actual locations of
      * parameters.
      */
-    void offsetParams(Eigen::VectorXd const &Delta);
+    void offsetParams(Eigen::VectorXd const &delta);
 
     /**
      * From there on, measurement errors are propagated using the current

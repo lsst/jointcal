@@ -12,7 +12,7 @@
 // const int distortionDegree=3;
 
 namespace {
-LOG_LOGGER _log = LOG_GET("jointcal.SimplePolyModel");
+LOG_LOGGER log = LOG_GET("jointcal.SimplePolyModel");
 }
 
 namespace lsst {
@@ -42,7 +42,7 @@ SimplePolyModel::SimplePolyModel(CcdImageList const &ccdImageList, ProjectionHan
       requested polynomial degree */
             size_t nObj = im.getCatalogForFit().size();
             if (nObj == 0) {
-                LOGLS_WARN(_log, "Empty catalog from image: " << im.getName());
+                LOGLS_WARN(log, "Empty catalog from image: " << im.getName());
                 continue;
             }
             GtransfoPoly pol(degree);
@@ -78,7 +78,7 @@ const Mapping *SimplePolyModel::getMapping(CcdImage const &ccdImage) const {
 
 unsigned SimplePolyModel::assignIndices(unsigned firstIndex, std::string const &whatToFit) {
     if (whatToFit.find("Distortions") == std::string::npos) {
-        LOGLS_ERROR(_log, "AssignIndices was called and Distortions is *not* in whatToFit.");
+        LOGLS_ERROR(log, "AssignIndices was called and Distortions is *not* in whatToFit.");
         return 0;
     }
     unsigned index = firstIndex;

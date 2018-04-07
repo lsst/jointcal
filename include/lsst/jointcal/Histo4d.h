@@ -33,8 +33,8 @@ public:
     ~SparseHisto4d() {}
 
     // private:
-    int code_value(const double x[4]) const;
-    void inverse_code(const int code, double x[4]) const;
+    int codeValue(const double x[4]) const;
+    void inverseCode(const int code, double x[4]) const;
     void sort();
     void dump() const;
 

@@ -53,7 +53,7 @@ AstrometryFit::AstrometryFit(std::shared_ptr<Associations> associations,
 /* ! this routine is used in 3 instances: when computing
 the derivatives, when computing the Chi2, when filling a tuple.
 */
-Point AstrometryFit::transformFittedStar(FittedStar const &fittedStar, Gtransfo const *sky2TP,
+Point AstrometryFit::_transformFittedStar(FittedStar const &fittedStar, Gtransfo const *sky2TP,
                                          Point const &refractionVector, double refractionCoeff,
                                          double mjd) const {
     Point fittedStarInTP = sky2TP->apply(fittedStar);
@@ -73,15 +73,15 @@ Point AstrometryFit::transformFittedStar(FittedStar const &fittedStar, Gtransfo 
 /*! This is the first implementation of an error "model".  We'll
   certainly have to upgrade it. MeasuredStar provides the mag in case
   we need it.  */
-static void tweakAstromMeasurementErrors(FatPoint &P, MeasuredStar const &Ms, double error) {
+static void tweakAstromMeasurementErrors(FatPoint &p, MeasuredStar const &ms, double error) {
     static bool called = false;
     static double increment = 0;
     if (!called) {
         increment = std::pow(error, 2);  // was in Preferences
         called = true;
     }
-    P.vx += increment;
-    P.vy += increment;
+    p.vx += increment;
+    p.vy += increment;
 }
 
 // we could consider computing the chi2 here.
@@ -103,15 +103,15 @@ void AstrometryFit::leastSquareDerivativesMeasurement(CcdImage const &ccdImage, 
     // get the Mapping
     const Mapping *mapping = _astrometryModel->getMapping(ccdImage);
     // count parameters
-    unsigned npar_mapping = (_fittingDistortions) ? mapping->getNpar() : 0;
-    unsigned npar_pos = (_fittingPos) ? 2 : 0;
-    unsigned npar_refrac = (_fittingRefrac) ? 1 : 0;
-    unsigned npar_pm = (_fittingPM) ? NPAR_PM : 0;
-    unsigned npar_tot = npar_mapping + npar_pos + npar_refrac + npar_pm;
+    unsigned nparMapping = (_fittingDistortions) ? mapping->getNpar() : 0;
+    unsigned nparPos = (_fittingPos) ? 2 : 0;
+    unsigned nparRefrac = (_fittingRefrac) ? 1 : 0;
+    unsigned nparPm = (_fittingPM) ? NPAR_PM : 0;
+    unsigned nparTot = nparMapping + nparPos + nparRefrac + nparPm;
     // if (npar_tot == 0) this CcdImage does not contribute
     // any constraint to the fit, so :
-    if (npar_tot == 0) return;
-    std::vector<unsigned> indices(npar_tot, -1);
+    if (nparTot == 0) return;
+    std::vector<unsigned> indices(nparTot, -1);
     if (_fittingDistortions) mapping->getMappingIndices(indices);
 
     // proper motion stuff
@@ -124,10 +124,10 @@ void AstrometryFit::leastSquareDerivativesMeasurement(CcdImage const &ccdImage, 
     GtransfoLin dypdy;
     // the shape of H (et al) is required this way in order to be able to
     // separate derivatives along x and y as vectors.
-    Eigen::MatrixX2d H(npar_tot, 2), halpha(npar_tot, 2), HW(npar_tot, 2);
+    Eigen::MatrixX2d h(nparTot, 2), halpha(nparTot, 2), hw(nparTot, 2);
     Eigen::Matrix2d transW(2, 2);
     Eigen::Matrix2d alpha(2, 2);
-    Eigen::VectorXd grad(npar_tot);
+    Eigen::VectorXd grad(nparTot);
     // current position in the Jacobian
     unsigned kTriplets = tripletList.getNextFreeIndex();
     const MeasuredStarList &catalog = (msList) ? *msList : ccdImage.getCatalogForFit();
@@ -138,15 +138,15 @@ void AstrometryFit::leastSquareDerivativesMeasurement(CcdImage const &ccdImage, 
         // tweak the measurement errors
         FatPoint inPos = ms;
         tweakAstromMeasurementErrors(inPos, ms, _posError);
-        H.setZero();  // we cannot be sure that all entries will be overwritten.
+        h.setZero();  // we cannot be sure that all entries will be overwritten.
         FatPoint outPos;
         // should *not* fill H if whatToFit excludes mapping parameters.
         if (_fittingDistortions)
-            mapping->computeTransformAndDerivatives(inPos, outPos, H);
+            mapping->computeTransformAndDerivatives(inPos, outPos, h);
         else
             mapping->transformPosAndErrors(inPos, outPos);
 
-        unsigned ipar = npar_mapping;
+        unsigned ipar = nparMapping;
         double det = outPos.vx * outPos.vy - std::pow(outPos.vxy, 2);
         if (det <= 0 || outPos.vx <= 0 || outPos.vy <= 0) {
             LOGLS_WARN(_log, "Inconsistent measurement errors: drop measurement at "
@@ -172,35 +172,35 @@ void AstrometryFit::leastSquareDerivativesMeasurement(CcdImage const &ccdImage, 
                 transformFittedStar(*fs, sky2TP, refractionVector, _refractionCoefficient, mjd);
 
         // compute derivative of TP position w.r.t sky position ....
-        if (npar_pos > 0)  // ... if actually fitting FittedStar position
+        if (nparPos > 0)  // ... if actually fitting FittedStar position
         {
             sky2TP->computeDerivative(*fs, dypdy, 1e-3);
             // sign checked
             // TODO Still have to check with non trivial non-diagonal terms
-            H(npar_mapping, 0) = -dypdy.A11();
-            H(npar_mapping + 1, 0) = -dypdy.A12();
-            H(npar_mapping, 1) = -dypdy.A21();
-            H(npar_mapping + 1, 1) = -dypdy.A22();
-            indices[npar_mapping] = fs->getIndexInMatrix();
-            indices.at(npar_mapping + 1) = fs->getIndexInMatrix() + 1;
-            ipar += npar_pos;
+            h(nparMapping, 0) = -dypdy.A11();
+            h(nparMapping + 1, 0) = -dypdy.A12();
+            h(nparMapping, 1) = -dypdy.A21();
+            h(nparMapping + 1, 1) = -dypdy.A22();
+            indices[nparMapping] = fs->getIndexInMatrix();
+            indices.at(nparMapping + 1) = fs->getIndexInMatrix() + 1;
+            ipar += nparPos;
         }
         /* only consider proper motions of objects allowed to move,
         unless the fit is going to be degenerate */
         if (_fittingPM && fs->mightMove) {
-            H(ipar, 0) = -mjd;  // Sign unchecked but consistent with above
-            H(ipar + 1, 1) = -mjd;
+            h(ipar, 0) = -mjd;  // Sign unchecked but consistent with above
+            h(ipar + 1, 1) = -mjd;
             indices[ipar] = fs->getIndexInMatrix() + 2;
             indices[ipar + 1] = fs->getIndexInMatrix() + 3;
-            ipar += npar_pm;
+            ipar += nparPm;
         }
         if (_fittingRefrac) {
             /* if the definition of color changes, it has to remain
                consistent with transformFittedStar */
             double color = fs->color - _referenceColor;
             // sign checked
-            H(ipar, 0) = -refractionVector.x * color;
-            H(ipar, 1) = -refractionVector.y * color;
+            h(ipar, 0) = -refractionVector.x * color;
+            h(ipar, 1) = -refractionVector.y * color;
             indices[ipar] = _refracPosInMatrix;
             ipar += 1;
         }
@@ -210,11 +210,11 @@ void AstrometryFit::leastSquareDerivativesMeasurement(CcdImage const &ccdImage, 
 
         // do not write grad = H*transW*res to avoid
         // dynamic allocation of a temporary
-        halpha = H * alpha;
-        HW = H * transW;
-        grad = HW * res;
+        halpha = h * alpha;
+        hw = h * transW;
+        grad = hw * res;
         // now feed in triplets and fullGrad
-        for (unsigned ipar = 0; ipar < npar_tot; ++ipar) {
+        for (unsigned ipar = 0; ipar < nparTot; ++ipar) {
             for (unsigned ic = 0; ic < 2; ++ic) {
                 double val = halpha(ipar, ic);
                 if (val == 0) continue;
@@ -242,9 +242,9 @@ void AstrometryFit::leastSquareDerivativesReference(FittedStarList const &fitted
     /* the other case where the accumulation of derivatives stops
        here is when there are no RefStars */
     if (_associations->refStarList.size() == 0) return;
-    Eigen::Matrix2d W(2, 2);
+    Eigen::Matrix2d w(2, 2);
     Eigen::Matrix2d alpha(2, 2);
-    Eigen::Matrix2d H(2, 2), halpha(2, 2), HW(2, 2);
+    Eigen::Matrix2d h(2, 2), halpha(2, 2), hw(2, 2);
     GtransfoLin der;
     Eigen::Vector2d res, grad;
     unsigned indices[2 + NPAR_PM];
@@ -267,29 +267,29 @@ void AstrometryFit::leastSquareDerivativesReference(FittedStarList const &fitted
         // Compute the derivative of the projector to incorporate its effects on the errors.
         proj.computeDerivative(fs, der, 1e-4);
         // sign checked. TODO check that the off-diagonal terms are OK.
-        H(0, 0) = -der.A11();
-        H(1, 0) = -der.A12();
-        H(0, 1) = -der.A21();
-        H(1, 1) = -der.A22();
+        h(0, 0) = -der.A11();
+        h(1, 0) = -der.A12();
+        h(0, 1) = -der.A21();
+        h(1, 1) = -der.A22();
         // TO DO : account for proper motions.
         double det = rsProj.vx * rsProj.vy - std::pow(rsProj.vxy, 2);
         if (rsProj.vx <= 0 || rsProj.vy <= 0 || det <= 0) {
             LOGLS_WARN(_log, "RefStar error matrix not positive definite for:  " << *rs);
             continue;
         }
-        W(0, 0) = rsProj.vy / det;
-        W(0, 1) = W(1, 0) = -rsProj.vxy / det;
-        W(1, 1) = rsProj.vx / det;
+        w(0, 0) = rsProj.vy / det;
+        w(0, 1) = w(1, 0) = -rsProj.vxy / det;
+        w(1, 1) = rsProj.vx / det;
         // compute alpha, a triangular square root
         // of W (i.e. a Cholesky factor)
-        alpha(0, 0) = sqrt(W(0, 0));
+        alpha(0, 0) = sqrt(w(0, 0));
         // checked that  alpha*alphaT = transW
-        alpha(1, 0) = W(0, 1) / alpha(0, 0);
-        alpha(1, 1) = 1. / sqrt(det * W(0, 0));
+        alpha(1, 0) = w(0, 1) / alpha(0, 0);
+        alpha(1, 1) = 1. / sqrt(det * w(0, 0));
         alpha(0, 1) = 0;
         indices[0] = fs.getIndexInMatrix();
         indices[1] = fs.getIndexInMatrix() + 1;
-        unsigned npar_tot = 2;
+        unsigned nparTot = 2;
         /* TODO: account here for proper motions in the reference
         catalog. We can code the effect and set the value to 0. Most
         (all?)  catalogs do not even come with a reference epoch. Gaia
@@ -300,12 +300,12 @@ void AstrometryFit::leastSquareDerivativesReference(FittedStarList const &fitted
         with the measurement terms. Since P(fs) = 0, we have: */
         res[0] = -rsProj.x;
         res[1] = -rsProj.y;
-        halpha = H * alpha;
+        halpha = h * alpha;
         // grad = H*W*res
-        HW = H * W;
-        grad = HW * res;
+        hw = h * w;
+        grad = hw * res;
         // now feed in triplets and fullGrad
-        for (unsigned ipar = 0; ipar < npar_tot; ++ipar) {
+        for (unsigned ipar = 0; ipar < nparTot; ++ipar) {
             for (unsigned ic = 0; ic < 2; ++ic) {
                 double val = halpha(ipar, ic);
                 if (val == 0) continue;
@@ -318,7 +318,7 @@ void AstrometryFit::leastSquareDerivativesReference(FittedStarList const &fitted
     tripletList.setNextFreeIndex(kTriplets);
 }
 
-void AstrometryFit::accumulateStatImage(CcdImage const &ccdImage, Chi2Accumulator &accum) const {
+void AstrometryFit::_accumulateStatImage(CcdImage const &ccdImage, Chi2Accumulator &accum) const {
     /**********************************************************************/
     /** @note the math in this method and leastSquareDerivativesMeasurement() must be kept consistent,
      * in terms of +/- convention, definition of model, etc. */

@@ -11,7 +11,7 @@ TwoTransfoMapping::TwoTransfoMapping(SimpleGtransfoMapping *mapping1, SimpleGtra
     /* Allocate the record of temporary variables, so that they are not
        allocated at every call. This is hidden behind a pointer in order
        to be allowed to alter them in a const routine. */
-    tmp = std::unique_ptr<tmpVars>(new tmpVars);
+    tmp = std::unique_ptr<TmpVars>(new TmpVars);
     setWhatToFit(true, true);
 }
 
@@ -35,7 +35,7 @@ void TwoTransfoMapping::getMappingIndices(std::vector<unsigned> &indices) const 
 }
 
 void TwoTransfoMapping::computeTransformAndDerivatives(FatPoint const &where, FatPoint &outPoint,
-                                                       Eigen::MatrixX2d &H) const {
+                                                       Eigen::MatrixX2d &h) const {
     // not true in general. Will crash if H is too small.
     //  assert(H.cols()==Npar());
 
@@ -46,12 +46,12 @@ void TwoTransfoMapping::computeTransformAndDerivatives(FatPoint const &where, Fa
         _m1->computeTransformAndDerivatives(where, pMid, tmp->h1);
         // the last argument is epsilon and is not used for polynomials
         _m2->positionDerivative(pMid, tmp->dt2dx, 1e-4);
-        H.block(0, 0, _nPar1, 2) = tmp->h1 * tmp->dt2dx;
+        h.block(0, 0, _nPar1, 2) = tmp->h1 * tmp->dt2dx;
     } else
         _m1->transformPosAndErrors(where, pMid);
     if (_nPar2) {
         _m2->computeTransformAndDerivatives(pMid, outPoint, tmp->h2);
-        H.block(_nPar1, 0, _nPar2, 2) = tmp->h2;
+        h.block(_nPar1, 0, _nPar2, 2) = tmp->h2;
     } else
         _m2->transformPosAndErrors(pMid, outPoint);
 }
@@ -60,7 +60,7 @@ void TwoTransfoMapping::computeTransformAndDerivatives(FatPoint const &where, Fa
    avoid allocation at every call. If we did not care about dynamic
    allocation, we could just put the information of what moves and
    what doesn't into the SimpleGtransfoMapping. */
-void TwoTransfoMapping::setWhatToFit(const bool fittingT1, const bool fittingT2) {
+void TwoTransfoMapping::_setWhatToFit(const bool fittingT1, const bool fittingT2) {
     if (fittingT1) {
         _nPar1 = _m1->getNpar();
         tmp->h1 = Eigen::MatrixX2d(_nPar1, 2);

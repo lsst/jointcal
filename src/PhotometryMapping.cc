@@ -4,7 +4,7 @@
 #include "lsst/jointcal/PhotometryMapping.h"
 
 namespace {
-LOG_LOGGER _log = LOG_GET("jointcal.PhotometryMapping");
+LOG_LOGGER log = LOG_GET("jointcal.PhotometryMapping");
 }
 
 namespace lsst {

@@ -19,13 +19,13 @@ namespace {
 // to the coefficients.
 template <typename CoeffGetter>
 double evaluateFunction1d(CoeffGetter g, double x, int size) {
-    double b_kp2 = 0.0, b_kp1 = 0.0;
+    double bKp2 = 0.0, bKp1 = 0.0;
     for (int k = (size - 1); k > 0; --k) {
-        double b_k = g[k] + 2 * x * b_kp1 - b_kp2;
-        b_kp2 = b_kp1;
-        b_kp1 = b_k;
+        double bK = g[k] + 2 * x * bKp1 - bKp2;
+        bKp2 = bKp1;
+        bKp1 = bK;
     }
-    return g[0] + x * b_kp1 - b_kp2;
+    return g[0] + x * bKp1 - bKp2;
 }
 
 // This class imitates a 1-d array, by running evaluateFunction1d on a nested dimension;
@@ -38,8 +38,8 @@ struct RecursionArrayImitator {
         return evaluateFunction1d(coefficients[i], x, coefficients.getSize<1>());
     }
 
-    RecursionArrayImitator(ndarray::Array<double const, 2, 2> const &coefficients_, double x_)
-            : coefficients(coefficients_), x(x_) {}
+    RecursionArrayImitator(ndarray::Array<double const, 2, 2> const &coefficients, double x)
+            : coefficients(coefficients), x(x) {}
 
     ndarray::Array<double const, 2, 2> coefficients;
     double x;
@@ -54,7 +54,7 @@ afw::geom::AffineTransform makeChebyshevRangeTransform(afw::geom::Box2D const &b
 }
 
 // Initialize a "unit" Chebyshev
-ndarray::Array<double, 2, 2> _identityChebyshev(size_t degree) {
+ndarray::Array<double, 2, 2> identityChebyshev(size_t degree) {
     ndarray::Array<double, 2, 2> coeffs = ndarray::allocate(ndarray::makeVector(degree + 1, degree + 1));
     coeffs.deep() = 0.0;
     coeffs[0][0] = 1;
@@ -65,7 +65,7 @@ ndarray::Array<double, 2, 2> _identityChebyshev(size_t degree) {
 PhotometryTransfoChebyshev::PhotometryTransfoChebyshev(size_t degree, afw::geom::Box2D const &bbox)
         : _bbox(bbox),
           _toChebyshevRange(makeChebyshevRangeTransform(bbox)),
-          _coefficients(_identityChebyshev(degree)),
+          _coefficients(identityChebyshev(degree)),
           _degree(degree),
           _nParameters((degree + 1) * (degree + 2) / 2) {}
 
@@ -105,7 +105,7 @@ double integrateTn(int n) {
 }
 }  // namespace
 
-double PhotometryTransfoChebyshev::integrate() const {
+double PhotometryTransfoChebyshev::_integrate() const {
     double result = 0;
     double determinant = _bbox.getArea() / 4.0;
     for (ndarray::Size j = 0; j < _coefficients.getSize<0>(); j++) {
@@ -123,17 +123,17 @@ void PhotometryTransfoChebyshev::computeParameterDerivatives(double x, double y,
     afw::geom::Point2D p = _toChebyshevRange(afw::geom::Point2D(x, y));
     // Algorithm: compute all the individual components recursively (since we'll need them anyway),
     // then combine them into the final answer vectors.
-    Eigen::VectorXd Tnx(_degree + 1);
-    Eigen::VectorXd Tmy(_degree + 1);
-    Tnx[0] = 1;
-    Tmy[0] = 1;
+    Eigen::VectorXd tnx(_degree + 1);
+    Eigen::VectorXd tmy(_degree + 1);
+    tnx[0] = 1;
+    tmy[0] = 1;
     if (_degree >= 1) {
-        Tnx[1] = p.getX();
-        Tmy[1] = p.getY();
+        tnx[1] = p.getX();
+        tmy[1] = p.getY();
     }
     for (ndarray::Size i = 2; i <= _degree; ++i) {
-        Tnx[i] = 2 * p.getX() * Tnx[i - 1] - Tnx[i - 2];
-        Tmy[i] = 2 * p.getY() * Tmy[i - 1] - Tmy[i - 2];
+        tnx[i] = 2 * p.getX() * tnx[i - 1] - tnx[i - 2];
+        tmy[i] = 2 * p.getY() * tmy[i - 1] - tmy[i - 2];
     }
 
     // NOTE: the indexing in this method and offsetParams must be kept consistent!
@@ -141,7 +141,7 @@ void PhotometryTransfoChebyshev::computeParameterDerivatives(double x, double y,
     for (ndarray::Size j = 0; j <= _degree; ++j) {
         ndarray::Size const iMax = _degree - j;  // to save re-computing `i+j <= degree` every inner step.
         for (ndarray::Size i = 0; i <= iMax; ++i, ++k) {
-            derivatives[k] = instFlux * Tmy[j] * Tnx[i];
+            derivatives[k] = instFlux * tmy[j] * tnx[i];
         }
     }
 }

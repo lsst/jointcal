@@ -140,16 +140,16 @@ public:
     size_t nFittedStarsWithAssociatedRefStar() const;
 
 private:
-    void associateRefStars(double matchCutInArcsec, const Gtransfo *gtransfo);
+    void _associateRefStars(double matchCutInArcsec, const Gtransfo *gtransfo);
 
-    void assignMags();
+    void _assignMags();
 
     /**
      * Apply quality cuts on potential FittedStars
      *
      * @param[in]  minMeasurements  The minimum number of measuredStars for a FittedStar to be included.
      */
-    void selectFittedStars(int minMeasurements);
+    void _selectFittedStars(int minMeasurements);
 
     /**
      * Make fitted star positions and fluxes be the average of their measured stars.
@@ -157,7 +157,7 @@ private:
      * Only call after selectFittedStars() has been called: it assumes that each measuredStar points to a
      * fittedStar, and that the measurementCount for each fittedStar is correct.
      */
-    void normalizeFittedStars() const;
+    void _normalizeFittedStars() const;
 
     // Map from filter name to index in each refStar's _refFlux/_refFluxErr vector.
     std::unordered_map<std::string, std::size_t> _filterMap;

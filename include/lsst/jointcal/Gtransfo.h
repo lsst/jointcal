@@ -57,7 +57,7 @@ public:
     //! dumps the transfo coefficients to stream.
     virtual void dump(std::ostream &stream = std::cout) const = 0;
 
-    std::string __str__() {
+    std::string str() {
         std::stringstream s;
         dump(s);
         return s.str();
@@ -264,7 +264,7 @@ public:
     void read(std::istream &s);
 
 private:
-    double computeFit(const StarMatchList &starMatchList, const Gtransfo &InTransfo, const bool UseErrors);
+    double _computeFit(const StarMatchList &starMatchList, const Gtransfo &inTransfo, const bool useErrors);
 
     unsigned _degree;             // the degree
     unsigned _nterms;             // number of parameters per coordinate
@@ -280,12 +280,12 @@ private:
        then be allocated on the execution stack, which speeds thing
        up. However this uses Variable Length Array (VLA) which is not
        part of C++, but gcc implements it. */
-    void computeMonomials(double xIn, double yIn, double *monomial) const;
+    void _computeMonomials(double xIn, double yIn, double *monomial) const;
 };
 
 //! approximates the inverse by a polynomial, up to required precision.
-std::unique_ptr<GtransfoPoly> inversePolyTransfo(const Gtransfo &Direct, const Frame &frame,
-                                                 const double Prec);
+std::unique_ptr<GtransfoPoly> inversePolyTransfo(const Gtransfo &direct, const Frame &frame,
+                                                 const double prec);
 
 GtransfoLin normalizeCoordinatesTransfo(const Frame &frame);
 
@@ -329,12 +329,12 @@ public:
 
     std::unique_ptr<Gtransfo> inverseTransfo(const double precision, const Frame &region) const;
 
-    double A11() const { return coeff(1, 0, 0); }
-    double A12() const { return coeff(0, 1, 0); }
-    double A21() const { return coeff(1, 0, 1); }
-    double A22() const { return coeff(0, 1, 1); }
-    double Dx() const { return coeff(0, 0, 0); }
-    double Dy() const { return coeff(0, 0, 1); }
+    double a11() const { return coeff(1, 0, 0); }
+    double a12() const { return coeff(0, 1, 0); }
+    double a21() const { return coeff(1, 0, 1); }
+    double a22() const { return coeff(0, 1, 1); }
+    double dx() const { return coeff(0, 0, 0); }
+    double dy() const { return coeff(0, 0, 1); }
 
 protected:
     double &a11() { return coeff(1, 0, 0); }
@@ -349,7 +349,7 @@ protected:
     friend class GtransfoPoly;      // // for Gtransfo::Derivative
 
 private:
-    void setDegree(const unsigned degree);  // to hide GtransfoPoly::setDegree
+    void _setDegree(const unsigned degree);  // to hide GtransfoPoly::setDegree
 };
 
 /*=============================================================*/
@@ -592,9 +592,9 @@ public:
     double fit(const StarMatchList &starMatchList);
 
 private:
-    double ra0, dec0;  // tangent point (radians)
-    double cos0, sin0;
-    GtransfoLin linTan2Pix;  // tangent plane (probably degrees) to pixels
+    double _ra0, _dec0;  // tangent point (radians)
+    double _cos0, _sin0;
+    GtransfoLin _linTan2Pix;  // tangent plane (probably degrees) to pixels
 };
 
 //! signature of the user-provided routine that actually does the coordinate transfo for UserTransfo.

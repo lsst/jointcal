@@ -14,7 +14,7 @@ namespace pexExcept = lsst::pex::exceptions;
 #include <iostream>
 
 namespace {
-LOG_LOGGER _log = LOG_GET("jointcal.ConstrainedPolyModel");
+LOG_LOGGER log = LOG_GET("jointcal.ConstrainedPolyModel");
 }
 
 namespace lsst {
@@ -71,7 +71,7 @@ ConstrainedPolyModel::ConstrainedPolyModel(CcdImageList const &ccdImageList,
         // check that the chip_indexed part was indeed assigned
         // (i.e. the reference visit was complete)
         if (_chipMap.find(chip) == _chipMap.end()) {
-            LOGLS_WARN(_log, "Chip " << chip << " is missing in the reference exposure, expect troubles.");
+            LOGLS_WARN(log, "Chip " << chip << " is missing in the reference exposure, expect troubles.");
             GtransfoLin norm = normalizeCoordinatesTransfo(im.getImageFrame());
             _chipMap[chip] =
                     std::unique_ptr<SimplePolyMapping>(new SimplePolyMapping(norm, GtransfoPoly(chipDegree)));
@@ -79,10 +79,10 @@ ConstrainedPolyModel::ConstrainedPolyModel(CcdImageList const &ccdImageList,
         _mappings[&im] = std::unique_ptr<TwoTransfoMapping>(
                 new TwoTransfoMapping(_chipMap[chip].get(), _visitMap[visit].get()));
     }
-    LOGLS_INFO(_log, "Constructor got " << _chipMap.size() << " chip mappings and " << _visitMap.size()
+    LOGLS_INFO(log, "Constructor got " << _chipMap.size() << " chip mappings and " << _visitMap.size()
                                         << " visit mappings.");
     // DEBUG
-    for (auto i = _visitMap.begin(); i != _visitMap.end(); ++i) LOGLS_DEBUG(_log, i->first);
+    for (auto i = _visitMap.begin(); i != _visitMap.end(); ++i) LOGLS_DEBUG(log, i->first);
 }
 
 const Mapping *ConstrainedPolyModel::getMapping(CcdImage const &ccdImage) const {
@@ -98,7 +98,7 @@ const Mapping *ConstrainedPolyModel::getMapping(CcdImage const &ccdImage) const 
 unsigned ConstrainedPolyModel::assignIndices(unsigned firstIndex, std::string const &whatToFit) {
     unsigned index = firstIndex;
     if (whatToFit.find("Distortions") == std::string::npos) {
-        LOGLS_ERROR(_log, "assignIndices was called and Distortions is *not* in whatToFit");
+        LOGLS_ERROR(log, "assignIndices was called and Distortions is *not* in whatToFit");
         return 0;
     }
     // if we get here "Distortions" is in whatToFit
@@ -176,11 +176,11 @@ std::shared_ptr<TanSipPix2RaDec> ConstrainedPolyModel::produceSipWcs(CcdImage co
     try {
         mapping = _mappings.at(&ccdImage).get();
     } catch (std::out_of_range &) {
-        LOGLS_ERROR(_log, "CcdImage with ccd/visit " << ccdImage.getCcdId() << "/" << ccdImage.getVisit()
+        LOGLS_ERROR(log, "CcdImage with ccd/visit " << ccdImage.getCcdId() << "/" << ccdImage.getVisit()
                                                      << " not found in constrainedPolyModel mapping list.");
         std::ostringstream os;
         for (auto const &i : _mappings) os << i.first << ",";
-        LOGLS_ERROR(_log, "Available CcdImages: " << os.str());
+        LOGLS_ERROR(log, "Available CcdImages: " << os.str());
         return nullptr;
     }
 
@@ -190,7 +190,7 @@ std::shared_ptr<TanSipPix2RaDec> ConstrainedPolyModel::produceSipWcs(CcdImage co
     // raises bad_cast instead of returning nullptr like a failed pointer cast), but I'll deal with it as
     // part of DM-10524 (hopefully removing the necessity of the casts).
     if (!(&t1)) {
-        LOGLS_ERROR(_log, "Problem with transform 1 of ccd/visit " << ccdImage.getCcdId() << "/"
+        LOGLS_ERROR(log, "Problem with transform 1 of ccd/visit " << ccdImage.getCcdId() << "/"
                                                                    << ccdImage.getVisit() << ": T1 "
                                                                    << mapping->getTransfo1());
         return nullptr;
@@ -202,10 +202,10 @@ std::shared_ptr<TanSipPix2RaDec> ConstrainedPolyModel::produceSipWcs(CcdImage co
         pix2Tp = t1;
     } catch (std::bad_cast &) {
         try {
-            const GtransfoPoly &t2_poly = dynamic_cast<const GtransfoPoly &>(mapping->getTransfo2());
-            pix2Tp = t2_poly * t1;
+            const GtransfoPoly &t2Poly = dynamic_cast<const GtransfoPoly &>(mapping->getTransfo2());
+            pix2Tp = t2Poly * t1;
         } catch (std::bad_cast &) {
-            LOGLS_ERROR(_log, "Problem with transform 2 of ccd/visit " << ccdImage.getCcdId() << "/"
+            LOGLS_ERROR(log, "Problem with transform 2 of ccd/visit " << ccdImage.getCcdId() << "/"
                                                                        << ccdImage.getVisit() << ": T2 "
                                                                        << mapping->getTransfo2());
             return nullptr;
@@ -213,7 +213,7 @@ std::shared_ptr<TanSipPix2RaDec> ConstrainedPolyModel::produceSipWcs(CcdImage co
     }
     const TanRaDec2Pix *proj = dynamic_cast<const TanRaDec2Pix *>(getSky2TP(ccdImage));
     if (!proj) {
-        LOGLS_ERROR(_log, "Problem with projection of ccd/visit " << ccdImage.getCcdId() << "/"
+        LOGLS_ERROR(log, "Problem with projection of ccd/visit " << ccdImage.getCcdId() << "/"
                                                                   << ccdImage.getVisit() << ": projection "
                                                                   << getSky2TP(ccdImage));
         return nullptr;

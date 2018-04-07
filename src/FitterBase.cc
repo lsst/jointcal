@@ -87,14 +87,14 @@ unsigned FitterBase::findOutliers(double nSigmaCut, MeasuredStarList &msOutliers
         constraining some parameter this one constrains as well. If
          yes, we keep this one, because this stronger outlier could be
          causing the large chi2 we have in hand.  */
-        bool drop_it = true;
+        bool dropIt = true;
         for (auto const &i : indices) {
             if (affectedParams(i) != 0) {
-                drop_it = false;
+                dropIt = false;
             }
         }
 
-        if (drop_it)  // store the outlier in one of the lists:
+        if (dropIt)  // store the outlier in one of the lists:
         {
             if (measuredStar == nullptr) {
                 // reference term
@@ -119,7 +119,7 @@ unsigned FitterBase::findOutliers(double nSigmaCut, MeasuredStarList &msOutliers
 MinimizeResult FitterBase::minimize(std::string const &whatToFit, double nSigmaCut) {
     assignIndices(whatToFit);
 
-    MinimizeResult returnCode = MinimizeResult::Converged;
+    MinimizeResult returnCode = MinimizeResult::CONVERGED;
 
     // TODO : write a guesser for the number of triplets
     unsigned nTrip = (_lastNTrip) ? _lastNTrip : 1e6;
@@ -149,7 +149,7 @@ MinimizeResult FitterBase::minimize(std::string const &whatToFit, double nSigmaC
     CholmodSimplicialLDLT2<SpMat> chol(hessian);
     if (chol.info() != Eigen::Success) {
         LOGLS_ERROR(_log, "minimize: factorization failed ");
-        return MinimizeResult::Failed;
+        return MinimizeResult::FAILED;
     }
 
     unsigned totalMeasOutliers = 0;
@@ -163,7 +163,7 @@ MinimizeResult FitterBase::minimize(std::string const &whatToFit, double nSigmaC
         LOGLS_DEBUG(_log, currentChi2);
         if (currentChi2.chi2 > oldChi2 && totalMeasOutliers + totalRefOutliers != 0) {
             LOGL_WARN(_log, "chi2 went up, skipping outlier rejection loop");
-            returnCode = MinimizeResult::Chi2Increased;
+            returnCode = MinimizeResult::CHI2_INCREASED;
             break;
         }
         oldChi2 = currentChi2.chi2;
@@ -184,10 +184,10 @@ MinimizeResult FitterBase::minimize(std::string const &whatToFit, double nSigmaC
         removeMeasOutliers(msOutliers);
         removeRefOutliers(fsOutliers);
         // convert triplet list to eigen internal format
-        SpMat H(_nParTot, tripletList.getNextFreeIndex());
-        H.setFromTriplets(tripletList.begin(), tripletList.end());
-        int update_status = chol.update(H, false /* means downdate */);
-        LOGLS_DEBUG(_log, "cholmod update_status " << update_status);
+        SpMat h(_nParTot, tripletList.getNextFreeIndex());
+        h.setFromTriplets(tripletList.begin(), tripletList.end());
+        int updateStatus = chol.update(h, false /* means downdate */);
+        LOGLS_DEBUG(_log, "cholmod update_status " << updateStatus);
         // The contribution of outliers to the gradient is the opposite
         // of the contribution of all other terms, because they add up to 0
         grad *= -1;

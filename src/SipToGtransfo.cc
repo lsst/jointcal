@@ -25,7 +25,7 @@ std::shared_ptr<afw::geom::SkyWcs> gtransfoToTanWcs(const jointcal::TanSipPix2Ra
                                                     const jointcal::Frame &ccdFrame,
                                                     const bool noLowOrderSipTerms) {
     GtransfoLin linPart = wcsTransfo.getLinPart();
-    afwGeom::Point2D crpix_lsst;  // in LSST "frame"
+    afwGeom::Point2D crpixLsst;  // in LSST "frame"
                                   /* In order to remove the low order sip terms, one has to
                                      define the linear WCS transformation as the expansion of
                                      the total pix-to-tangent plane (or focal plane) at the
@@ -34,28 +34,28 @@ std::shared_ptr<afw::geom::SkyWcs> gtransfoToTanWcs(const jointcal::TanSipPix2Ra
 
     /* compute crpix as the point that is transformed by the linear part
       into (0,0) */
-    linPart.invert().apply(0., 0., crpix_lsst[0], crpix_lsst[1]);
+    linPart.invert().apply(0., 0., crpixLsst[0], crpixLsst[1]);
 
     // This is what we have to respect:
     jointcal::GtransfoPoly pix2TP = wcsTransfo.getPix2TangentPlane();
 
     if (noLowOrderSipTerms) {
-        Point ctmp = Point(crpix_lsst[0], crpix_lsst[1]);
+        Point ctmp = Point(crpixLsst[0], crpixLsst[1]);
         // cookup a large Frame
         jointcal::Frame f(ctmp.x - 10000, ctmp.y - 10000, ctmp.x + 10000, ctmp.y + 10000);
         auto r = pix2TP.inverseTransfo(1e-6, f);
         // overwrite crpix ...
-        r->apply(0, 0, crpix_lsst[0], crpix_lsst[1]);
+        r->apply(0, 0, crpixLsst[0], crpixLsst[1]);
         // and the "linpart"
-        linPart = pix2TP.linearApproximation(Point(crpix_lsst[0], crpix_lsst[1]));
+        linPart = pix2TP.linearApproximation(Point(crpixLsst[0], crpixLsst[1]));
     }
 
     /* At this stage, crpix should not be shifted from "LSST units" to
        "FITS units" yet because the SkyWcs constructors expect it in LSST
        units */
 
-    afw::geom::SpherePoint const crval(wcsTransfo.getTangentPoint().x * afwGeom::degrees,
-                                       wcsTransfo.getTangentPoint().y * afwGeom::degrees);
+    afw::geom::SpherePoint const crval(wcsTransfo.getTangentPoint().x * afwGeom::DEGREES,
+                                       wcsTransfo.getTangentPoint().y * afwGeom::DEGREES);
 
     // CD matrix:
     Eigen::Matrix2d cdMat;
@@ -65,7 +65,7 @@ std::shared_ptr<afw::geom::SkyWcs> gtransfoToTanWcs(const jointcal::TanSipPix2Ra
     cdMat(1, 1) = linPart.coeff(0, 1, 1);  // CD2_2
 
     if (!wcsTransfo.getCorr()) {  // the WCS has no distortions
-        return afw::geom::makeSkyWcs(crpix_lsst, crval, cdMat);
+        return afw::geom::makeSkyWcs(crpixLsst, crval, cdMat);
     }
 
     /* We are now given:
@@ -77,7 +77,7 @@ std::shared_ptr<afw::geom::SkyWcs> gtransfoToTanWcs(const jointcal::TanSipPix2Ra
        in the appendix of the documentation */
 
     // This is (the opposite of) the crpix that will go into the fits header:
-    jointcal::GtransfoLinShift s2(-crpix_lsst[0], -crpix_lsst[1]);
+    jointcal::GtransfoLinShift s2(-crpixLsst[0], -crpixLsst[1]);
 
     // for SIP, pix2TP = linpart*sipStuff, so
     jointcal::GtransfoPoly sipTransform = jointcal::GtransfoPoly(linPart.invert()) * pix2TP;
@@ -118,7 +118,7 @@ std::shared_ptr<afw::geom::SkyWcs> gtransfoToTanWcs(const jointcal::TanSipPix2Ra
         }
     }
 
-    return makeTanSipWcs(crpix_lsst, crval, cdMat, sipA, sipB, sipAp, sipBp);
+    return makeTanSipWcs(crpixLsst, crval, cdMat, sipA, sipB, sipAp, sipBp);
 }
 
 }  // namespace jointcal

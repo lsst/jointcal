@@ -5,7 +5,7 @@
 #include "lsst/jointcal/FastFinder.h"
 
 namespace {
-LOG_LOGGER _log = LOG_GET("jointcal.FastFinder");
+LOG_LOGGER log = LOG_GET("jointcal.FastFinder");
 }
 
 namespace lsst {
@@ -23,7 +23,7 @@ FastFinder::FastFinder(const BaseStarList &list, const unsigned nXSlice)
     }
 
     sort(stars.begin(), stars.end(),
-         [](const stars_element &E1, const stars_element &E2) { return (E1->x < E2->x); });
+         [](const stars_element &e1, const stars_element &e2) { return (e1->x < e2->x); });
 
     xmin = stars[0]->x;
     xmax = stars[count - 1]->x;
@@ -44,8 +44,8 @@ FastFinder::FastFinder(const BaseStarList &list, const unsigned nXSlice)
     index[nslice] = count;  // last
     for (unsigned islice = 0; islice < nslice; ++islice) {
         sort(stars.begin() + index[islice], stars.begin() + index[islice + 1],
-             [](const stars_element &E1, const stars_element &E2) {
-                 return (E1->y < E2->y);
+             [](const stars_element &e1, const stars_element &e2) {
+                 return (e1->y < e2->y);
              });  // sort each slice in y.
     }
     // dump();
@@ -58,14 +58,14 @@ void FastFinder::dump() const {
 }
 
 std::shared_ptr<const BaseStar> FastFinder::findClosest(const Point &where, const double maxDist,
-                                                        bool (*SkipIt)(const BaseStar &)) const {
+                                                        bool (*skipIt)(const BaseStar &)) const {
     if (count == 0) return nullptr;
     FastFinder::Iterator it = beginScan(where, maxDist);
     if (*it == nullptr) return nullptr;
     std::shared_ptr<const BaseStar> pbest;
     double minDist2 = maxDist * maxDist;
     for (; *it != nullptr; ++it) {
-        if (SkipIt && SkipIt(**it)) continue;
+        if (skipIt && skipIt(**it)) continue;
         double dist2 = where.computeDist2(**it);
         if (dist2 < minDist2) {
             pbest = *it;
@@ -77,26 +77,26 @@ std::shared_ptr<const BaseStar> FastFinder::findClosest(const Point &where, cons
 
 std::shared_ptr<const BaseStar> FastFinder::secondClosest(const Point &where, const double maxDist,
                                                           std::shared_ptr<const BaseStar> &closest,
-                                                          bool (*SkipIt)(const BaseStar &)) const {
+                                                          bool (*skipIt)(const BaseStar &)) const {
     closest = nullptr;
     if (count == 0) return nullptr;
     FastFinder::Iterator it = beginScan(where, maxDist);
     if (*it == nullptr) return nullptr;
     std::shared_ptr<const BaseStar> pbest1;  // closest
     std::shared_ptr<const BaseStar> pbest2;  // second closest
-    double minDist1_2 = maxDist * maxDist;
-    double minDist2_2 = maxDist * maxDist;
+    double minDist12 = maxDist * maxDist;
+    double minDist22 = maxDist * maxDist;
     for (; *it != nullptr; ++it) {
-        if (SkipIt && SkipIt(**it)) continue;
+        if (skipIt && skipIt(**it)) continue;
         double dist2 = where.computeDist2(**it);
-        if (dist2 < minDist1_2) {
+        if (dist2 < minDist12) {
             pbest2 = pbest1;
-            minDist2_2 = minDist1_2;
+            minDist22 = minDist12;
             pbest1 = *it;
-            minDist1_2 = dist2;
-        } else if (dist2 < minDist2_2) {
+            minDist12 = dist2;
+        } else if (dist2 < minDist22) {
             pbest2 = *it;
-            minDist2_2 = dist2;
+            minDist22 = dist2;
         }
     }
     closest = pbest1;
@@ -112,13 +112,13 @@ FastFinder::pstar FastFinder::locateYStart(pstar begin, pstar end, double yVal) 
     if (begin == stars.end() || begin == end) return stars.end();
     int span = end - begin - 1;
     while (span > 1) {
-        int half_span = span / 2;
-        pstar middle = begin + half_span;
+        int halfSpan = span / 2;
+        pstar middle = begin + halfSpan;
         if ((*middle)->y < yVal) {
-            begin += half_span;
-            span -= half_span;
+            begin += halfSpan;
+            span -= halfSpan;
         } else {
-            span -= (span - half_span);
+            span -= (span - halfSpan);
         }
     }
     return begin;
@@ -130,13 +130,13 @@ FastFinder::pstar FastFinder::locateYEnd(pstar begin, pstar end, double yVal) co
     if (begin == stars.end()) return stars.end();
     int span = end - begin - 1;
     while (span > 1) {
-        int half_span = span / 2;
-        pstar middle = end - half_span;
+        int halfSpan = span / 2;
+        pstar middle = end - halfSpan;
         if ((*middle)->y > yVal) {
-            end -= half_span;
-            span -= half_span;
+            end -= halfSpan;
+            span -= halfSpan;
         } else {
-            span -= (span - half_span);
+            span -= (span - halfSpan);
         }
     }
     return end - 1;
@@ -154,8 +154,8 @@ FastFinder::Iterator FastFinder::beginScan(const Point &where, double maxDist) c
 
 using Iterator = FastFinder::Iterator;
 
-Iterator::Iterator(const FastFinder &F, const Point &where, double maxDist)
-        : finder(F), null_value(F.stars.end()) {
+Iterator::Iterator(const FastFinder &f, const Point &where, double maxDist)
+        : finder(f), nullValue(f.stars.end()) {
     current = pend = null_value;  // does not iterate
     int startSlice = 0;
     if (finder.xstep != 0)  // means we have several slices
@@ -202,7 +202,7 @@ void Iterator::operator++() {
 void FastFinder::Iterator::check() const {
     if (current != null_value &&
         (current < finder.stars.begin() || current >= finder.stars.begin() + finder.count)) {
-        LOGLS_ERROR(_log, "Error in FastFinder " << *current << " " << *(finder.stars.begin()) << ' '
+        LOGLS_ERROR(log, "Error in FastFinder " << *current << " " << *(finder.stars.begin()) << ' '
                                                  << *(finder.stars.begin() + finder.count));
     }
 }

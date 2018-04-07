@@ -113,16 +113,16 @@ class MeasuredStarList : public StarList<MeasuredStar> {
 public:
     MeasuredStarList(){};
 
-    void setCcdImage(const CcdImage *_ccdImage);
+    void setCcdImage(const CcdImage *ccdImage);
 };
 
 typedef MeasuredStarList::const_iterator MeasuredStarCIterator;
 typedef MeasuredStarList::iterator MeasuredStarIterator;
 
-BaseStarList &Measured2Base(MeasuredStarList &starList);
-BaseStarList *Measured2Base(MeasuredStarList *starList);
-const BaseStarList &Measured2Base(const MeasuredStarList &starList);
-const BaseStarList *Measured2Base(const MeasuredStarList *starList);
+BaseStarList &measured2Base(MeasuredStarList &starList);
+BaseStarList *measured2Base(MeasuredStarList *starList);
+const BaseStarList &measured2Base(const MeasuredStarList &starList);
+const BaseStarList *measured2Base(const MeasuredStarList *starList);
 }  // namespace jointcal
 }  // namespace lsst
 

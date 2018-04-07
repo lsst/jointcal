@@ -13,7 +13,7 @@
 #include "lsst/jointcal/PhotometryMapping.h"
 
 namespace {
-LOG_LOGGER _log = LOG_GET("jointcal.ConstrainedPhotometryModel");
+LOG_LOGGER log = LOG_GET("jointcal.ConstrainedPhotometryModel");
 }
 
 namespace lsst {
@@ -68,9 +68,9 @@ ConstrainedPhotometryModel::ConstrainedPhotometryModel(CcdImageList const &ccdIm
                        std::unique_ptr<ChipVisitPhotometryMapping>(
                                new ChipVisitPhotometryMapping(_chipMap[chip], _visitMap[visit])));
     }
-    LOGLS_INFO(_log, "Got " << _chipMap.size() << " chip mappings and " << _visitMap.size()
+    LOGLS_INFO(log, "Got " << _chipMap.size() << " chip mappings and " << _visitMap.size()
                             << " visit mappings; holding chip " << constrainedChip << " fixed.");
-    LOGLS_DEBUG(_log, "CcdImage map has " << _myMap.size() << " mappings, with " << _myMap.bucket_count()
+    LOGLS_DEBUG(log, "CcdImage map has " << _myMap.size() << " mappings, with " << _myMap.bucket_count()
                                           << " buckets and a load factor of " << _myMap.load_factor());
 }
 
@@ -177,13 +177,13 @@ std::shared_ptr<afw::image::PhotoCalib> ConstrainedPhotometryModel::toPhotoCalib
     auto focalBBox = visitTransfo->getBBox();
 
     // Unravel our chebyshev coefficients to build an astshim::ChebyMap.
-    auto coeff_f = toChebyMapCoeffs(
+    auto coeffF = toChebyMapCoeffs(
             std::dynamic_pointer_cast<PhotometryTransfoChebyshev>(mapping->getVisitMapping()->getTransfo()));
     // Bounds are the bbox
     std::vector<double> lowerBound = {focalBBox.getMinX(), focalBBox.getMinY()};
     std::vector<double> upperBound = {focalBBox.getMaxX(), focalBBox.getMaxY()};
 
-    afw::geom::TransformPoint2ToGeneric chebyTransform(ast::ChebyMap(coeff_f, 1, lowerBound, upperBound));
+    afw::geom::TransformPoint2ToGeneric chebyTransform(ast::ChebyMap(coeffF, 1, lowerBound, upperBound));
 
     // The chip part is easy: zoom map with the single value as the "zoom" factor.
     afw::geom::Transform<afw::geom::GenericEndpoint, afw::geom::GenericEndpoint> zoomTransform(
