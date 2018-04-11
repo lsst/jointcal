@@ -33,8 +33,9 @@ public:
      * @param[in]  visitOrder    The order of the visit polynomial.
      */
     explicit ConstrainedPhotometryModel(CcdImageList const &ccdImageList,
-                                        afw::geom::Box2D const &focalPlaneBBox, int visitOrder = 7)
-            : _fittingChips(false), _fittingVisits(false) {
+                                        afw::geom::Box2D const &focalPlaneBBox, int visitOrder = 7,
+                                        double errorPedestal_ = 0)
+            : PhotometryModel(errorPedestal_), _fittingChips(false), _fittingVisits(false) {
         _chipVisitMap.reserve(ccdImageList.size());
     }
 
@@ -101,8 +102,8 @@ private:
 class ConstrainedFluxModel : public ConstrainedPhotometryModel {
 public:
     explicit ConstrainedFluxModel(CcdImageList const &ccdImageList, afw::geom::Box2D const &focalPlaneBBox,
-                                  int visitOrder = 7)
-            : ConstrainedPhotometryModel(ccdImageList, focalPlaneBBox, visitOrder) {
+                                  int visitOrder = 7, double errorPedestal_ = 0)
+            : ConstrainedPhotometryModel(ccdImageList, focalPlaneBBox, visitOrder, errorPedestal_) {
         initialize<FluxTransfoSpatiallyInvariant, FluxTransfoChebyshev, ChipVisitFluxMapping>(
                 ccdImageList, focalPlaneBBox, visitOrder);
     }
@@ -134,7 +135,7 @@ public:
 
 protected:
     /// @copydoc ConstrainedPhotometryModel::initialChipCalibration
-    double initialChipCalibration(std::shared_ptr<afw::image::PhotoCalib const> photoCalib) {
+    double initialChipCalibration(std::shared_ptr<afw::image::PhotoCalib const> photoCalib) override {
         return photoCalib->getCalibrationMean();
     }
 };
@@ -142,8 +143,9 @@ protected:
 class ConstrainedMagnitudeModel : public ConstrainedPhotometryModel {
 public:
     explicit ConstrainedMagnitudeModel(CcdImageList const &ccdImageList,
-                                       afw::geom::Box2D const &focalPlaneBBox, int visitOrder = 7)
-            : ConstrainedPhotometryModel(ccdImageList, focalPlaneBBox, visitOrder) {
+                                       afw::geom::Box2D const &focalPlaneBBox, int visitOrder = 7,
+                                       double errorPedestal_ = 0)
+            : ConstrainedPhotometryModel(ccdImageList, focalPlaneBBox, visitOrder, errorPedestal_) {
         initialize<MagnitudeTransfoSpatiallyInvariant, MagnitudeTransfoChebyshev, ChipVisitMagnitudeMapping>(
                 ccdImageList, focalPlaneBBox, visitOrder);
     }
@@ -175,7 +177,7 @@ public:
 
 protected:
     /// @copydoc ConstrainedPhotometryModel::initialChipCalibration
-    double initialChipCalibration(std::shared_ptr<afw::image::PhotoCalib const> photoCalib) {
+    double initialChipCalibration(std::shared_ptr<afw::image::PhotoCalib const> photoCalib) override {
         return magFromFlux(photoCalib->getCalibrationMean());
     }
 };

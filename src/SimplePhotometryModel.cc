@@ -80,7 +80,8 @@ PhotometryMappingBase *SimplePhotometryModel::findMapping(CcdImage const &ccdIma
     return i->second.get();
 }
 
-SimpleFluxModel::SimpleFluxModel(CcdImageList const &ccdImageList) : SimplePhotometryModel(ccdImageList) {
+SimpleFluxModel::SimpleFluxModel(CcdImageList const &ccdImageList, double errorPedestal_)
+        : SimplePhotometryModel(ccdImageList, errorPedestal_) {
     for (auto const &ccdImage : ccdImageList) {
         auto photoCalib = ccdImage->getPhotoCalib();
         // Use the single-frame processing calibration from the PhotoCalib as the initial value.
@@ -101,7 +102,8 @@ double SimpleFluxModel::transform(CcdImage const &ccdImage, MeasuredStar const &
 
 double SimpleFluxModel::transformError(CcdImage const &ccdImage, MeasuredStar const &star) const {
     auto mapping = findMapping(ccdImage);
-    return mapping->transformError(star, star.getInstFlux(), star.getInstFluxErr());
+    double tempErr = tweakFluxError(star);
+    return mapping->transformError(star, star.getInstFlux(), tempErr);
 }
 
 std::shared_ptr<afw::image::PhotoCalib> SimpleFluxModel::toPhotoCalib(CcdImage const &ccdImage) const {
@@ -110,8 +112,8 @@ std::shared_ptr<afw::image::PhotoCalib> SimpleFluxModel::toPhotoCalib(CcdImage c
     return std::make_unique<afw::image::PhotoCalib>(calibration, oldPhotoCalib->getCalibrationErr());
 }
 
-SimpleMagnitudeModel::SimpleMagnitudeModel(CcdImageList const &ccdImageList)
-        : SimplePhotometryModel(ccdImageList) {
+SimpleMagnitudeModel::SimpleMagnitudeModel(CcdImageList const &ccdImageList, double errorPedestal_)
+        : SimplePhotometryModel(ccdImageList, errorPedestal_) {
     for (auto const &ccdImage : ccdImageList) {
         auto photoCalib = ccdImage->getPhotoCalib();
         // Use the single-frame processing calibration from the PhotoCalib as the default.
@@ -134,7 +136,8 @@ double SimpleMagnitudeModel::transform(CcdImage const &ccdImage, MeasuredStar co
 
 double SimpleMagnitudeModel::transformError(CcdImage const &ccdImage, MeasuredStar const &star) const {
     auto mapping = findMapping(ccdImage);
-    return mapping->transformError(star, star.getInstMag(), star.getInstMagErr());
+    double tempErr = tweakMagnitudeError(star);
+    return mapping->transformError(star, star.getInstMag(), tempErr);
 }
 
 std::shared_ptr<afw::image::PhotoCalib> SimpleMagnitudeModel::toPhotoCalib(CcdImage const &ccdImage) const {

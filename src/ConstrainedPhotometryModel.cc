@@ -216,7 +216,8 @@ double ConstrainedFluxModel::transform(CcdImage const &ccdImage, MeasuredStar co
 double ConstrainedFluxModel::transformError(CcdImage const &ccdImage,
                                             MeasuredStar const &measuredStar) const {
     auto mapping = findMapping(ccdImage);
-    return mapping->transformError(measuredStar, measuredStar.getInstFlux(), measuredStar.getInstFluxErr());
+    double tempErr = tweakFluxError(measuredStar);
+    return mapping->transformError(measuredStar, measuredStar.getInstFlux(), tempErr);
 }
 
 std::shared_ptr<afw::image::PhotoCalib> ConstrainedFluxModel::toPhotoCalib(CcdImage const &ccdImage) const {
@@ -272,7 +273,8 @@ double ConstrainedMagnitudeModel::transform(CcdImage const &ccdImage,
 double ConstrainedMagnitudeModel::transformError(CcdImage const &ccdImage,
                                                  MeasuredStar const &measuredStar) const {
     auto mapping = findMapping(ccdImage);
-    return mapping->transformError(measuredStar, measuredStar.getInstFlux(), measuredStar.getInstFluxErr());
+    double tempErr = tweakFluxError(measuredStar);
+    return mapping->transformError(measuredStar, measuredStar.getInstFlux(), tempErr);
 }
 
 std::shared_ptr<afw::image::PhotoCalib> ConstrainedMagnitudeModel::toPhotoCalib(

@@ -133,6 +133,8 @@ class JointcalTestDECAM(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Test
         self.config.doAstrometry = False
         self.jointcalStatistics.do_astrometry = False
 
+        self.other_args.extend(['--config', 'writeChi2ContributionFiles=True'])
+
         # See Readme for an explanation of these empirical values.
         pa1 = 0.11
         metrics = {'collected_photometry_refStars': 4865,
@@ -147,8 +149,9 @@ class JointcalTestDECAM(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Test
         return pa1, metrics
 
     @unittest.skip("DM-14439 : This test produces different chi2/ndof on Linux and macOS.")
-    def test_jointcalTask_2_visits_constrainedPhotometry_no_astrometry(self):
+    def test_jointcalTask_2_visits_constrainedPhotometry_no_astrometry_fluxErr_0(self):
         pa1, metrics = self.setup_jointcalTask_2_visits_constrainedPhotometry_no_astrometry()
+
         self._testJointcalTask(2, None, None, pa1, metrics=metrics)
 
     @unittest.skip("DM-14439 : This test produces different chi2/ndof on Linux and macOS.")
@@ -174,6 +177,15 @@ class JointcalTestDECAM(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Test
     def test_jointcalTask_2_visits_constrainedPhotometry_no_rank_update(self):
         pa1, metrics = self.setup_jointcalTask_2_visits_constrainedPhotometry_no_astrometry()
         self.config.photometryDoRankUpdate = False
+
+        self._testJointcalTask(2, None, None, pa1, metrics=metrics)
+
+    @unittest.skip("DM-14439 : This test produces different chi2/ndof on Linux and macOS.")
+    def test_jointcalTask_2_visits_constrainedPhotometry_fluxErr_3(self):
+        pa1, metrics = self.setup_jointcalTask_2_visits_constrainedPhotometry_no_astrometry()
+        self.config.fluxError = 0.03
+        metrics['photometry_final_chi2'] = 1818.92
+        metrics['photometry_final_ndof'] = 2010
 
         self._testJointcalTask(2, None, None, pa1, metrics=metrics)
 

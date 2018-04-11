@@ -2,6 +2,7 @@
 #include <iomanip>
 #include <algorithm>
 #include <fstream>
+#include <cmath>
 
 #include "Eigen/Sparse"
 
@@ -43,10 +44,6 @@ void PhotometryFit::leastSquareDerivativesMeasurement(CcdImage const &ccdImage, 
 
     for (auto const &measuredStar : catalog) {
         if (!measuredStar->isValid()) continue;
-// tweak the measurement errors
-#ifdef FUTURE
-        TweakPhotomMeasurementErrors(inPos, *measuredStar, _fluxError);
-#endif
         H.setZero();  // we cannot be sure that all entries will be overwritten.
 
         double residual = _photometryModel->computeResidual(ccdImage, *measuredStar);
@@ -121,9 +118,6 @@ void PhotometryFit::accumulateStatImageList(CcdImageList const &ccdImageList, Ch
         for (auto const &measuredStar : catalog) {
             if (!measuredStar->isValid()) continue;
             double sigma = _photometryModel->transformError(*ccdImage, *measuredStar);
-#ifdef FUTURE
-            TweakPhotomMeasurementErrors(inPos, measuredStar, _fluxError);
-#endif
             double residual = _photometryModel->computeResidual(*ccdImage, *measuredStar);
 
             double chi2Val = std::pow(residual / sigma, 2);
@@ -228,7 +222,7 @@ void PhotometryFit::saveChi2MeasContributions(std::string const &baseName) const
     ofile << "#id in source catalog" << separator << "coordinates in CCD" << separator << separator;
     ofile << "fitted magnitude" << separator << "measured magnitude" << separator
           << "measured magnitude error" << separator;
-    ofile << "measured instrument flux (ADU)" << separator << "measured instrument flux error" << separator;
+    ofile << "measured instrumental flux (ADU)" << separator << "measured instrument flux error" << separator;
     ofile << "measured flux (maggies)" << separator << "measured flux error" << separator;
     ofile << separator << separator;
     ofile << "fitted flux (maggies)" << separator;
@@ -244,23 +238,21 @@ void PhotometryFit::saveChi2MeasContributions(std::string const &baseName) const
         const MeasuredStarList &cat = ccdImage->getCatalogForFit();
         for (auto const &measuredStar : cat) {
             if (!measuredStar->isValid()) continue;
-            double sigma = _photometryModel->transformError(*ccdImage, *measuredStar);
-#ifdef FUTURE
-            tweakPhotomMeasurementErrors(inPos, measuredStar, _fluxError);
-#endif
+
+            double instFluxErr = _photometryModel->tweakFluxError(*measuredStar);
             double flux = _photometryModel->transform(*ccdImage, *measuredStar);
             double fluxErr = _photometryModel->transformError(*ccdImage, *measuredStar);
             double jd = ccdImage->getMjd();
             std::shared_ptr<FittedStar const> const fittedStar = measuredStar->getFittedStar();
             double residual = _photometryModel->computeResidual(*ccdImage, *measuredStar);
-            double chi2Val = std::pow(residual / sigma, 2);
+            double chi2Val = std::pow(residual / fluxErr, 2);
 
             ofile << std::setprecision(9);
             ofile << measuredStar->getId() << separator << measuredStar->x << separator << measuredStar->y
                   << separator;
             ofile << fittedStar->getMag() << separator << measuredStar->getInstMag() << separator
                   << measuredStar->getInstMagErr() << separator;
-            ofile << measuredStar->getInstFlux() << separator << measuredStar->getInstFluxErr() << separator;
+            ofile << measuredStar->getInstFlux() << separator << instFluxErr << separator;
             ofile << measuredStar->getFlux() << separator << measuredStar->getFluxErr() << separator;
             ofile << flux << separator << fluxErr << separator << fittedStar->getFlux() << separator;
             ofile << jd << separator << fittedStar->color << separator;
