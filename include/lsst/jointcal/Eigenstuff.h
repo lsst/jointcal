@@ -2,8 +2,9 @@
 #ifndef LSST_JOINTCAL_EIGENSTUFF_H
 #define LSST_JOINTCAL_EIGENSTUFF_H
 
-#include "Eigen/CholmodSupport"  // to switch to cholmod
+#include "lsst/pex/exceptions.h"
 
+#include "Eigen/CholmodSupport"  // to switch to cholmod
 #include "Eigen/Core"
 
 typedef Eigen::Matrix<double, Eigen::Dynamic, 2> MatrixX2d;
@@ -38,7 +39,7 @@ public:
     }
 
     // this routine is the one we added
-    int update(SparseMatrixD const &H, bool UpOrDown) {
+    void update(SparseMatrixD const &H, bool UpOrDown) {
         // check size
         Index const size = Base::m_cholmodFactor->n;
         EIGEN_UNUSED_VARIABLE(size);
@@ -51,10 +52,11 @@ public:
                 cholmod_submatrix(&C_cs, (int *)Base::m_cholmodFactor->Perm, Base::m_cholmodFactor->n,
                                   nullptr, -1, true, true, &this->cholmod());
         assert(C_cs_perm);
-        int ret = cholmod_updown(UpOrDown, C_cs_perm, Base::m_cholmodFactor, &this->cholmod());
+        int isOk = cholmod_updown(UpOrDown, C_cs_perm, Base::m_cholmodFactor, &this->cholmod());
         cholmod_free_sparse(&C_cs_perm, &this->cholmod());
-        assert(ret != 0);
-        return ret;
+        if (!isOk) {
+            throw(LSST_EXCEPT(lsst::pex::exceptions::RuntimeError, "cholmod_update failed!"));
+        }
     }
 
 protected:

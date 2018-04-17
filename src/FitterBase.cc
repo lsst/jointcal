@@ -190,8 +190,7 @@ MinimizeResult FitterBase::minimize(std::string const &whatToFit, double nSigmaC
             // convert triplet list to eigen internal format
             SparseMatrixD H(_nParTot, outlierTriplets.getNextFreeIndex());
             H.setFromTriplets(outlierTriplets.begin(), outlierTriplets.end());
-            int update_status = chol.update(H, false /* means downdate */);
-            LOGLS_DEBUG(_log, "cholmod update_status " << update_status);
+            chol.update(H, false /* means downdate */);
             // The contribution of outliers to the gradient is the opposite
             // of the contribution of all other terms, because they add up to 0
             grad *= -1;
