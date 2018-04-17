@@ -252,26 +252,31 @@ bool isIntegerShift(const Gtransfo *gtransfo);
 //! Polynomial transformation class.
 class GtransfoPoly : public Gtransfo {
 public:
-    //! Default transfo : identity for all degrees (>=1 ). The degree refers to the highest total power (x+y)
-    //! of monomials.
-    GtransfoPoly(const unsigned degree = 1);
+    /**
+     * Default transfo : identity for all orders (>=1 ).
+     *
+     * @param order The highest total power (x+y) of monomials of this polynomial.
+     */
+    GtransfoPoly(const unsigned order = 1);
 
     //! Constructs a "polynomial image" from an existing transfo, over a specified domain
-    GtransfoPoly(const Gtransfo *gtransfo, const Frame &frame, unsigned degree, unsigned nPoint = 1000);
+    GtransfoPoly(const Gtransfo *gtransfo, const Frame &frame, unsigned order, unsigned nPoint = 1000);
 
     /**
      * Constructs a polynomial approximation to an afw::geom::TransformPoint2ToPoint2.
      *
      * @param[in] transform The transform to be approximated.
      * @param[in] domain The valid domain of the transform.
-     * @param[in] degree The polynomial degree to use when approximating.
+     * @param[in] order The polynomial order to use when approximating.
      * @param[in] nSteps The number of sample points per axis (nSteps^2 total points).
      */
     GtransfoPoly(std::shared_ptr<afw::geom::TransformPoint2ToPoint2> transform, jointcal::Frame const &domain,
-                 unsigned const degree, unsigned const nSteps = 50);
+                 unsigned const order, unsigned const nSteps = 50);
 
-    // sets the polynomial degree.
-    void setDegree(const unsigned degree);
+    /// Sets the polynomial order (the highest sum of exponents of the largest monomial).
+    void setOrder(const unsigned order);
+    /// Returns the polynomial order.
+    unsigned getOrder() const { return _order; }
 
     using Gtransfo::apply;  // to unhide Gtransfo::apply(Point const &)
 
@@ -283,9 +288,6 @@ public:
 
     //! a mix of apply and Derivative
     virtual void transformPosAndErrors(const FatPoint &in, FatPoint &out) const override;
-
-    //! returns degree
-    unsigned getDegree() const { return _degree; }
 
     //! total number of parameters
     int getNpar() const override { return 2 * _nterms; }
@@ -319,7 +321,7 @@ public:
     //! write access
     double &coeff(const unsigned powX, const unsigned powY, const unsigned whichCoord);
 
-    //! read access, zero if beyond degree
+    //! read access, zero if beyond order
     double coeffOrZero(const unsigned powX, const unsigned powY, const unsigned whichCoord) const;
 
     double determinant() const;
@@ -343,7 +345,7 @@ public:
 private:
     double computeFit(StarMatchList const &starMatchList, Gtransfo const &InTransfo, const bool UseErrors);
 
-    unsigned _degree;             // the degree
+    unsigned _order;              // The highest sum of exponents of the largest monomial.
     unsigned _nterms;             // number of parameters per coordinate
     std::vector<double> _coeffs;  // the actual coefficients
                                   // both polynomials in a single vector to speed up allocation and copies
@@ -373,13 +375,13 @@ private:
  * @param      forward    Transform to be inverted.
  * @param[in]  domain     The domain of forward.
  * @param[in]  precision  Require that \f$chi2 / (nsteps^2) < precision^2\f$.
- * @param[in]  maxDegree  The maximum degree allowed of the inverse polynomial.
+ * @param[in]  maxOrder  The maximum order allowed of the inverse polynomial.
  * @param[in]  nSteps     The number of sample points per axis (nSteps^2 total points).
  *
  * @return  A polynomial that best approximates forward.
  */
 std::shared_ptr<GtransfoPoly> inversePolyTransfo(Gtransfo const &forward, Frame const &domain,
-                                                 double const precision, int const maxDegree = 9,
+                                                 double const precision, int const maxOrder = 9,
                                                  unsigned const nSteps = 50);
 
 GtransfoLin normalizeCoordinatesTransfo(const Frame &frame);
@@ -393,7 +395,7 @@ public:
     //! the default constructor constructs the do-nothing transformation.
     GtransfoLin() : GtransfoPoly(1){};
 
-    //! This triggers an exception if P.degree() != 1
+    //! This triggers an exception if P.getOrder() != 1
     explicit GtransfoLin(GtransfoPoly const &gtransfoPoly);
 
     //!  enables to combine linear tranformations: T1=T2*T3 is legal.
@@ -444,7 +446,7 @@ protected:
     friend class GtransfoPoly;      // // for Gtransfo::Derivative
 
 private:
-    void setDegree(const unsigned degree);  // to hide GtransfoPoly::setDegree
+    void setOrder(const unsigned order);  // to hide GtransfoPoly::setOrder
 };
 
 /*=============================================================*/

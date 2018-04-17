@@ -30,10 +30,10 @@ public:
      * @param      ccdImageList   The list of CCDImages to construct the model for.
      * @param      focalPlaneBBox The bounding box of the camera's focal plane, defining the domain of the
      *                            visit polynomial.
-     * @param[in]  visitDegree    The degree of the visit polynomial.
+     * @param[in]  visitOrder    The order of the visit polynomial.
      */
     explicit ConstrainedPhotometryModel(CcdImageList const &ccdImageList,
-                                        afw::geom::Box2D const &focalPlaneBBox, int visitDegree = 7);
+                                        afw::geom::Box2D const &focalPlaneBBox, int visitOrder = 7);
 
     /// No copy or move: there is only ever one instance of a given model (i.e. per ccd+visit)
     ConstrainedPhotometryModel(ConstrainedPhotometryModel const &) = delete;

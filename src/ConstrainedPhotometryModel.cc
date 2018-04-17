@@ -21,7 +21,7 @@ namespace jointcal {
 
 ConstrainedPhotometryModel::ConstrainedPhotometryModel(CcdImageList const &ccdImageList,
                                                        afw::geom::Box2D const &focalPlaneBBox,
-                                                       int visitDegree) {
+                                                       int visitOrder) {
     // keep track of which chip we want to constrain (the one closest to the middle of the focal plane)
     double minRadius2 = std::numeric_limits<double>::infinity();
     CcdIdType constrainedChip = -1;
@@ -50,7 +50,7 @@ ConstrainedPhotometryModel::ConstrainedPhotometryModel(CcdImageList const &ccdIm
         }
         // If the visit is not in the map, add it, otherwise continue.
         if (visitPair == _visitMap.end()) {
-            auto visitTransfo = std::make_shared<PhotometryTransfoChebyshev>(visitDegree, focalPlaneBBox);
+            auto visitTransfo = std::make_shared<PhotometryTransfoChebyshev>(visitOrder, focalPlaneBBox);
             _visitMap[visit] =
                     std::unique_ptr<PhotometryMapping>(new PhotometryMapping(std::move(visitTransfo)));
         }
@@ -146,9 +146,9 @@ ndarray::Array<double, 2, 2> toChebyMapCoeffs(std::shared_ptr<PhotometryTransfoC
     // 4 x nPar: ChebyMap wants rows that look like (a_ij, 1, i, j) for out += a_ij*T_i(x)*T_j(y)
     ndarray::Array<double, 2, 2> chebyCoeffs = allocate(ndarray::makeVector(transfo->getNpar(), 4));
     Eigen::VectorXd::Index k = 0;
-    auto degree = transfo->getDegree();
-    for (ndarray::Size j = 0; j <= degree; ++j) {
-        ndarray::Size const iMax = degree - j;  // to save re-computing `i+j <= degree` every inner step.
+    auto order = transfo->getOrder();
+    for (ndarray::Size j = 0; j <= order; ++j) {
+        ndarray::Size const iMax = order - j;  // to save re-computing `i+j <= order` every inner step.
         for (ndarray::Size i = 0; i <= iMax; ++i, ++k) {
             chebyCoeffs[k][0] = coeffs[j][i];
             chebyCoeffs[k][1] = 1;

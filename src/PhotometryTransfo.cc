@@ -54,28 +54,28 @@ afw::geom::AffineTransform makeChebyshevRangeTransform(afw::geom::Box2D const &b
 }
 
 // Initialize a "unit" Chebyshev
-ndarray::Array<double, 2, 2> _identityChebyshev(size_t degree) {
-    ndarray::Array<double, 2, 2> coeffs = ndarray::allocate(ndarray::makeVector(degree + 1, degree + 1));
+ndarray::Array<double, 2, 2> _identityChebyshev(size_t order) {
+    ndarray::Array<double, 2, 2> coeffs = ndarray::allocate(ndarray::makeVector(order + 1, order + 1));
     coeffs.deep() = 0.0;
     coeffs[0][0] = 1;
     return coeffs;
 }
 }  // namespace
 
-PhotometryTransfoChebyshev::PhotometryTransfoChebyshev(size_t degree, afw::geom::Box2D const &bbox)
+PhotometryTransfoChebyshev::PhotometryTransfoChebyshev(size_t order, afw::geom::Box2D const &bbox)
         : _bbox(bbox),
           _toChebyshevRange(makeChebyshevRangeTransform(bbox)),
-          _coefficients(_identityChebyshev(degree)),
-          _degree(degree),
-          _nParameters((degree + 1) * (degree + 2) / 2) {}
+          _coefficients(_identityChebyshev(order)),
+          _order(order),
+          _nParameters((order + 1) * (order + 2) / 2) {}
 
 PhotometryTransfoChebyshev::PhotometryTransfoChebyshev(ndarray::Array<double, 2, 2> const &coefficients,
                                                        afw::geom::Box2D const &bbox)
         : _bbox(bbox),
           _toChebyshevRange(makeChebyshevRangeTransform(bbox)),
           _coefficients(coefficients),
-          _degree(coefficients.size() - 1),
-          _nParameters((_degree + 1) * (_degree + 2) / 2) {}
+          _order(coefficients.size() - 1),
+          _nParameters((_order + 1) * (_order + 2) / 2) {}
 
 double PhotometryTransfoChebyshev::transform(double x, double y, double instFlux) const {
     afw::geom::Point2D p = _toChebyshevRange(afw::geom::Point2D(x, y));
@@ -86,8 +86,8 @@ double PhotometryTransfoChebyshev::transform(double x, double y, double instFlux
 void PhotometryTransfoChebyshev::offsetParams(Eigen::VectorXd const &delta) {
     // NOTE: the indexing in this method and computeParameterDerivatives must be kept consistent!
     Eigen::VectorXd::Index k = 0;
-    for (ndarray::Size j = 0; j <= _degree; ++j) {
-        ndarray::Size const iMax = _degree - j;  // to save re-computing `i+j <= degree` every inner step.
+    for (ndarray::Size j = 0; j <= _order; ++j) {
+        ndarray::Size const iMax = _order - j;  // to save re-computing `i+j <= order` every inner step.
         for (ndarray::Size i = 0; i <= iMax; ++i, ++k) {
             _coefficients[j][i] -= delta[k];
         }
@@ -123,23 +123,23 @@ void PhotometryTransfoChebyshev::computeParameterDerivatives(double x, double y,
     afw::geom::Point2D p = _toChebyshevRange(afw::geom::Point2D(x, y));
     // Algorithm: compute all the individual components recursively (since we'll need them anyway),
     // then combine them into the final answer vectors.
-    Eigen::VectorXd Tnx(_degree + 1);
-    Eigen::VectorXd Tmy(_degree + 1);
+    Eigen::VectorXd Tnx(_order + 1);
+    Eigen::VectorXd Tmy(_order + 1);
     Tnx[0] = 1;
     Tmy[0] = 1;
-    if (_degree >= 1) {
+    if (_order >= 1) {
         Tnx[1] = p.getX();
         Tmy[1] = p.getY();
     }
-    for (ndarray::Size i = 2; i <= _degree; ++i) {
+    for (ndarray::Size i = 2; i <= _order; ++i) {
         Tnx[i] = 2 * p.getX() * Tnx[i - 1] - Tnx[i - 2];
         Tmy[i] = 2 * p.getY() * Tmy[i - 1] - Tmy[i - 2];
     }
 
     // NOTE: the indexing in this method and offsetParams must be kept consistent!
     Eigen::VectorXd::Index k = 0;
-    for (ndarray::Size j = 0; j <= _degree; ++j) {
-        ndarray::Size const iMax = _degree - j;  // to save re-computing `i+j <= degree` every inner step.
+    for (ndarray::Size j = 0; j <= _order; ++j) {
+        ndarray::Size const iMax = _order - j;  // to save re-computing `i+j <= order` every inner step.
         for (ndarray::Size i = 0; i <= iMax; ++i, ++k) {
             derivatives[k] = instFlux * Tmy[j] * Tnx[i];
         }
@@ -150,8 +150,8 @@ Eigen::VectorXd PhotometryTransfoChebyshev::getParameters() const {
     Eigen::VectorXd parameters(_nParameters);
     // NOTE: the indexing in this method and offsetParams must be kept consistent!
     Eigen::VectorXd::Index k = 0;
-    for (ndarray::Size j = 0; j <= _degree; ++j) {
-        for (ndarray::Size i = 0; i + j <= _degree; ++i, ++k) {
+    for (ndarray::Size j = 0; j <= _order; ++j) {
+        for (ndarray::Size i = 0; i + j <= _order; ++i, ++k) {
             parameters[k] = _coefficients[j][i];
         }
     }

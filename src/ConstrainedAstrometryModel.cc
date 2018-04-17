@@ -42,7 +42,7 @@ namespace jointcal {
 
 ConstrainedAstrometryModel::ConstrainedAstrometryModel(
         CcdImageList const &ccdImageList, std::shared_ptr<ProjectionHandler const> projectionHandler,
-        int chipDegree, int visitDegree)
+        int chipOrder, int visitOrder)
         : _sky2TP(projectionHandler) {
     // keep track of which chip we want to hold fixed (the one closest to the middle of the focal plane)
     double minRadius2 = std::numeric_limits<double>::infinity();
@@ -55,7 +55,7 @@ ConstrainedAstrometryModel::ConstrainedAstrometryModel(
         auto chip = im.getCcdId();
         auto visitp = _visitMap.find(visit);
         if (visitp == _visitMap.end()) {
-            _visitMap[visit] = std::make_shared<SimplePolyMapping>(GtransfoLin(), GtransfoPoly(visitDegree));
+            _visitMap[visit] = std::make_shared<SimplePolyMapping>(GtransfoLin(), GtransfoPoly(visitOrder));
         }
         auto chipp = _chipMap.find(chip);
         if (chipp == _chipMap.end()) {
@@ -70,7 +70,7 @@ ConstrainedAstrometryModel::ConstrainedAstrometryModel(
                     im.getDetector()->getTransform(afw::cameraGeom::PIXELS, afw::cameraGeom::FOCAL_PLANE);
             Frame const &frame = im.getImageFrame();
             // construct the chip gtransfo by approximating the pixel->Focal afw::geom::Transform.
-            GtransfoPoly pol = GtransfoPoly(pixelsToFocal, frame, chipDegree);
+            GtransfoPoly pol = GtransfoPoly(pixelsToFocal, frame, chipOrder);
             GtransfoLin shiftAndNormalize = normalizeCoordinatesTransfo(frame);
             _chipMap[chip] =
                     std::make_shared<SimplePolyMapping>(shiftAndNormalize, pol * shiftAndNormalize.invert());
@@ -91,7 +91,7 @@ ConstrainedAstrometryModel::ConstrainedAstrometryModel(
         if (_chipMap.find(chip) == _chipMap.end()) {
             LOGLS_WARN(_log, "Chip " << chip << " is missing in the reference exposure, expect troubles.");
             GtransfoLin norm = normalizeCoordinatesTransfo(im.getImageFrame());
-            _chipMap[chip] = std::make_shared<SimplePolyMapping>(norm, GtransfoPoly(chipDegree));
+            _chipMap[chip] = std::make_shared<SimplePolyMapping>(norm, GtransfoPoly(chipOrder));
         }
         _mappings[ccdImage->getHashKey()] =
                 std::make_unique<TwoTransfoMapping>(_chipMap[chip], _visitMap[visit]);

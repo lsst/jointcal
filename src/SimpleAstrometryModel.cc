@@ -11,8 +11,6 @@
 #include "lsst/pex/exceptions.h"
 #include "lsst/jointcal/Gtransfo.h"
 
-// const int distortionDegree=3;
-
 namespace {
 LOG_LOGGER _log = LOG_GET("jointcal.SimpleAstrometryModel");
 }
@@ -20,10 +18,9 @@ LOG_LOGGER _log = LOG_GET("jointcal.SimpleAstrometryModel");
 namespace lsst {
 namespace jointcal {
 
-// need a way to propagate the requested degree !
 SimpleAstrometryModel::SimpleAstrometryModel(CcdImageList const &ccdImageList,
                                              const std::shared_ptr<ProjectionHandler const> projectionHandler,
-                                             bool initFromWcs, unsigned nNotFit, unsigned degree)
+                                             bool initFromWcs, unsigned nNotFit, unsigned order)
         : _sky2TP(projectionHandler)
 
 {
@@ -39,20 +36,20 @@ SimpleAstrometryModel::SimpleAstrometryModel(CcdImageList const &ccdImageList,
         // Given how AssignIndices works, only the SimplePolyMappings
         // will actually be fitted, as nNotFit requests.
         {
-            // first check that there are enough measurements for the requested polynomial degree.
+            // first check that there are enough measurements for the requested polynomial order.
             size_t nObj = im.getCatalogForFit().size();
             if (nObj == 0) {
                 LOGLS_WARN(_log, "Empty catalog from image: " << im.getName());
                 continue;
             }
-            GtransfoPoly pol(degree);
-            if (pol.getDegree() > 0)  // if not, it cannot be decreased
+            GtransfoPoly pol(order);
+            if (pol.getOrder() > 0)  // if not, it cannot be decreased
             {
                 while (unsigned(pol.getNpar()) > 2 * nObj) {
-                    LOGLS_WARN(_log, "Reducing polynomial degree from "
-                                             << pol.getDegree() << ", due to too few sources (" << nObj
+                    LOGLS_WARN(_log, "Reducing polynomial order from "
+                                             << pol.getOrder() << ", due to too few sources (" << nObj
                                              << " vs. " << pol.getNpar() << " parameters)");
-                    pol.setDegree(pol.getDegree() - 1);
+                    pol.setOrder(pol.getOrder() - 1);
                 }
             }
             /* We have to center and normalize the coordinates so that
@@ -66,7 +63,7 @@ SimpleAstrometryModel::SimpleAstrometryModel(CcdImageList const &ccdImageList,
             const Frame &frame = im.getImageFrame();
             GtransfoLin shiftAndNormalize = normalizeCoordinatesTransfo(frame);
             if (initFromWcs) {
-                pol = GtransfoPoly(im.getPix2TangentPlane(), frame, degree);
+                pol = GtransfoPoly(im.getPix2TangentPlane(), frame, order);
                 pol = pol * shiftAndNormalize.invert();
             }
             _myMap[im.getHashKey()] =

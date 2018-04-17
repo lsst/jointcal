@@ -31,8 +31,8 @@ namespace jointcal {
 class ConstrainedAstrometryModel : public AstrometryModel {
 public:
     ConstrainedAstrometryModel(CcdImageList const &ccdImageList,
-                               std::shared_ptr<ProjectionHandler const> projectionHandler, int chipDegree,
-                               int visitDegree);
+                               std::shared_ptr<ProjectionHandler const> projectionHandler, int chipOrder,
+                               int visitOrder);
 
     /// No copy or move: there is only ever one instance of a given model (i.e. per ccd+visit)
     ConstrainedAstrometryModel(ConstrainedAstrometryModel const &) = delete;

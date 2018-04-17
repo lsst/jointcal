@@ -222,35 +222,35 @@ class SimpleAstrometryModelTestCase(AstrometryModelTestBase, lsst.utils.tests.Te
     """Test the `SimpleAstrometryModel`, with one mapping per ccd per visit."""
     def setUp(self):
         super().setUp()
-        self.degree1 = 3
+        self.order1 = 3
         self.inverseMaxDiff1 = 2e-5
         self.model1 = astrometryModels.SimpleAstrometryModel(self.associations.getCcdImageList(),
                                                              self.projectionHandler,
                                                              True,
-                                                             degree=self.degree1)
+                                                             order=self.order1)
 
-        self.degree2 = 5
+        self.order2 = 5
         self.inverseMaxDiff2 = 5e-4
         self.model2 = astrometryModels.SimpleAstrometryModel(self.associations.getCcdImageList(),
                                                              self.projectionHandler,
                                                              False,
-                                                             degree=self.degree2)
+                                                             order=self.order2)
         self._prepModels()
 
     def testGetNpar(self):
         """Number of parameters is 2 * (d+1)(d+2)/2."""
-        def polyParams(degree):
-            return (degree + 1)*(degree + 2)
+        def polyParams(order):
+            return (order + 1)*(order + 2)
 
         result = self.model1.getNpar(self.associations.getCcdImageList()[0])
-        self.assertEqual(result, polyParams(self.degree1))
+        self.assertEqual(result, polyParams(self.order1))
         result = self.model1.getNpar(self.associations.getCcdImageList()[1])
-        self.assertEqual(result, polyParams(self.degree1))
+        self.assertEqual(result, polyParams(self.order1))
 
         result = self.model2.getNpar(self.associations.getCcdImageList()[0])
-        self.assertEqual(result, polyParams(self.degree2))
+        self.assertEqual(result, polyParams(self.order2))
         result = self.model2.getNpar(self.associations.getCcdImageList()[1])
-        self.assertEqual(result, polyParams(self.degree2))
+        self.assertEqual(result, polyParams(self.order2))
 
 
 class ConstrainedAstrometryModelTestCase(AstrometryModelTestBase, lsst.utils.tests.TestCase):
@@ -259,57 +259,57 @@ class ConstrainedAstrometryModelTestCase(AstrometryModelTestBase, lsst.utils.tes
     """
     def setUp(self):
         super().setUp()
-        self.visitDegree1 = 3
-        self.chipDegree1 = 1
+        self.visitOrder1 = 3
+        self.chipOrder1 = 1
         self.inverseMaxDiff1 = 1e-5
         self.model1 = astrometryModels.ConstrainedAstrometryModel(self.associations.getCcdImageList(),
                                                                   self.projectionHandler,
-                                                                  chipDegree=self.chipDegree1,
-                                                                  visitDegree=self.visitDegree1)
+                                                                  chipOrder=self.chipOrder1,
+                                                                  visitOrder=self.visitOrder1)
 
-        self.visitDegree2 = 5
-        self.chipDegree2 = 2
+        self.visitOrder2 = 5
+        self.chipOrder2 = 2
         self.inverseMaxDiff2 = 5e-5
         self.model2 = astrometryModels.ConstrainedAstrometryModel(self.associations.getCcdImageList(),
                                                                   self.projectionHandler,
-                                                                  chipDegree=self.chipDegree2,
-                                                                  visitDegree=self.visitDegree2)
+                                                                  chipOrder=self.chipOrder2,
+                                                                  visitOrder=self.visitOrder2)
         self._prepModels()
 
     def testGetNpar(self):
         """
         Number of parameters per polynomial is (d+1)(d+2)/2, summed over
         polynomials, times 2 polynomials per dimension.
-        One ccdImage has identity for chip, so only chipDegree matters.
+        One ccdImage has identity for chip, so only chipOrder matters.
         """
 
-        def polyParams(chipDegree, visitDegree):
-            if chipDegree is not None:
-                params = (chipDegree + 1)*(chipDegree + 2)
+        def polyParams(chipOrder, visitOrder):
+            if chipOrder is not None:
+                params = (chipOrder + 1)*(chipOrder + 2)
             else:
                 params = 0
-            params += (visitDegree + 1)*(visitDegree + 2)
+            params += (visitOrder + 1)*(visitOrder + 2)
             return params
 
-        def checkParams(ccdImage, model, chipDegree, visitDegree):
+        def checkParams(ccdImage, model, chipOrder, visitOrder):
             result = model.getNpar(ccdImage)
-            failMsg = "ccdImage: %s, with chipDegree %s and visitDegree %s"%(ccdImage.getName(),
-                                                                             chipDegree,
-                                                                             visitDegree)
-            self.assertEqual(result, polyParams(chipDegree, visitDegree), msg=failMsg)
+            failMsg = "ccdImage: %s, with chipOrder %s and visitOrder %s"%(ccdImage.getName(),
+                                                                           chipOrder,
+                                                                           visitOrder)
+            self.assertEqual(result, polyParams(chipOrder, visitOrder), msg=failMsg)
 
         # 22 is closest to the center of the focal plane in this data, so it is not fit.
         fixedCcd = 22
 
         for ccdImage in self.associations.getCcdImageList():
-            chipDegree = None if ccdImage.getCcdId() == fixedCcd else self.chipDegree1
-            visitDegree = self.visitDegree1
-            checkParams(ccdImage, self.model1, chipDegree, visitDegree)
+            chipOrder = None if ccdImage.getCcdId() == fixedCcd else self.chipOrder1
+            visitOrder = self.visitOrder1
+            checkParams(ccdImage, self.model1, chipOrder, visitOrder)
 
         for ccdImage in self.associations.getCcdImageList():
-            chipDegree = None if ccdImage.getCcdId() == fixedCcd else self.chipDegree2
-            visitDegree = self.visitDegree2
-            checkParams(ccdImage, self.model2, chipDegree, visitDegree)
+            chipOrder = None if ccdImage.getCcdId() == fixedCcd else self.chipOrder2
+            visitOrder = self.visitOrder2
+            checkParams(ccdImage, self.model2, chipOrder, visitOrder)
 
     def checkGetChipTransfo(self, model):
         # Check valid ccds

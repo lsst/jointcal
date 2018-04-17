@@ -68,9 +68,9 @@ class PhotometryTransfoChebyshevTestCase(PhotometryTransfoTestBase, lsst.utils.t
     def setUp(self):
         super(PhotometryTransfoChebyshevTestCase, self).setUp()
         self.bbox = lsst.afw.geom.Box2D(lsst.afw.geom.Point2D(-5, -6), lsst.afw.geom.Point2D(7, 8))
-        self.degree1 = 2
-        self.transfo1 = lsst.jointcal.photometryTransfo.PhotometryTransfoChebyshev(self.degree1, self.bbox)
-        self.degree2 = 1
+        self.order1 = 2
+        self.transfo1 = lsst.jointcal.photometryTransfo.PhotometryTransfoChebyshev(self.order1, self.bbox)
+        self.order2 = 1
         self.coefficients = np.array([[5, 3], [4, 0]], dtype=float)
         self.transfo2 = lsst.jointcal.photometryTransfo.PhotometryTransfoChebyshev(self.coefficients,
                                                                                    self.bbox)
@@ -87,9 +87,9 @@ class PhotometryTransfoChebyshevTestCase(PhotometryTransfoTestBase, lsst.utils.t
         sx = 2.0 / self.bbox.getWidth()
         sy = 2.0 / self.bbox.getHeight()
         result = 0
-        degree = len(self.coefficients)
-        for j in range(degree):
-            for i in range(0, degree-j):
+        order = len(self.coefficients)
+        for j in range(order):
+            for i in range(0, order-j):
                 Tx = CHEBYSHEV_T[i](sx*(x - cx))
                 Ty = CHEBYSHEV_T[j](sy*(y - cy))
                 result += self.coefficients[j, i]*Tx*Ty
@@ -106,7 +106,7 @@ class PhotometryTransfoChebyshevTestCase(PhotometryTransfoTestBase, lsst.utils.t
     def test_offsetParams(self):
         """Test offsetting; note that offsetParams offsets by `-delta`."""
         delta = np.zeros(self.transfo1.getNpar(), dtype=float)
-        expect = np.zeros((self.degree1+1, self.degree1+1), dtype=float)
+        expect = np.zeros((self.order1+1, self.order1+1), dtype=float)
         expect[0, 0] = 1
         self.transfo1.offsetParams(delta)
         # nothing should have changed if we transform a delta of 0
@@ -130,11 +130,11 @@ class PhotometryTransfoChebyshevTestCase(PhotometryTransfoTestBase, lsst.utils.t
     def test_clone(self):
         clone1 = self.transfo1.clone()
         self.assertFloatsEqual(self.transfo1.getParameters(), clone1.getParameters())
-        self.assertEqual(self.transfo1.getDegree(), clone1.getDegree())
+        self.assertEqual(self.transfo1.getOrder(), clone1.getOrder())
         self.assertEqual(self.transfo1.getBBox(), clone1.getBBox())
         clone2 = self.transfo2.clone()
         self.assertFloatsEqual(self.transfo2.getParameters(), clone2.getParameters())
-        self.assertEqual(self.transfo2.getDegree(), clone2.getDegree())
+        self.assertEqual(self.transfo2.getOrder(), clone2.getOrder())
         self.assertEqual(self.transfo2.getBBox(), clone2.getBBox())
 
     def test_computeParameterDerivatives(self):
@@ -143,11 +143,11 @@ class PhotometryTransfoChebyshevTestCase(PhotometryTransfoTestBase, lsst.utils.t
         sx = 2.0 / self.bbox.getWidth()
         sy = 2.0 / self.bbox.getHeight()
         result = self.transfo1.computeParameterDerivatives(self.point[0], self.point[1], self.instFlux)
-        Tx = np.array([CHEBYSHEV_T[i](sx*(self.point[0] - cx)) for i in range(self.degree1+1)], dtype=float)
-        Ty = np.array([CHEBYSHEV_T[i](sy*(self.point[1] - cy)) for i in range(self.degree1+1)], dtype=float)
+        Tx = np.array([CHEBYSHEV_T[i](sx*(self.point[0] - cx)) for i in range(self.order1+1)], dtype=float)
+        Ty = np.array([CHEBYSHEV_T[i](sy*(self.point[1] - cy)) for i in range(self.order1+1)], dtype=float)
         expect = []
         for j in range(len(Ty)):
-            for i in range(0, self.degree1-j+1):
+            for i in range(0, self.order1-j+1):
                 expect.append(Ty[j]*Tx[i]*self.instFlux)
         self.assertFloatsAlmostEqual(np.array(expect), result)
 

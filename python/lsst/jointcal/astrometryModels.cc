@@ -57,7 +57,7 @@ void declareSimpleAstrometryModel(py::module &mod) {
 
     cls.def(py::init<CcdImageList const &, const std::shared_ptr<ProjectionHandler const>, bool, unsigned,
                      unsigned>(),
-            "ccdImageList"_a, "projectionHandler"_a, "initFromWcs"_a, "nNotFit"_a = 0, "degree"_a = 3);
+            "ccdImageList"_a, "projectionHandler"_a, "initFromWcs"_a, "nNotFit"_a = 0, "order"_a = 3);
 
     cls.def("getTransfo", &SimpleAstrometryModel::getTransfo, py::return_value_policy::reference_internal);
 }
@@ -67,7 +67,7 @@ void declareConstrainedAstrometryModel(py::module &mod) {
             mod, "ConstrainedAstrometryModel");
 
     cls.def(py::init<CcdImageList const &, std::shared_ptr<ProjectionHandler const>, int, int>(),
-            "ccdImageList"_a, "projectionHandler"_a, "chipDegree"_a, "visitDegree"_a);
+            "ccdImageList"_a, "projectionHandler"_a, "chipOrder"_a, "visitOrder"_a);
 
     cls.def("getChipTransfo", &ConstrainedAstrometryModel::getChipTransfo,
             py::return_value_policy::reference_internal);

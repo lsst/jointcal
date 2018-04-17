@@ -61,8 +61,8 @@ void declareGtransfoIdentity(py::module &mod) {
 void declareGtransfoPoly(py::module &mod) {
     py::class_<GtransfoPoly, std::shared_ptr<GtransfoPoly>, Gtransfo> cls(mod, "GtransfoPoly");
 
-    cls.def(py::init<const unsigned>(), "degree"_a);
-    cls.def("getDegree", &GtransfoPoly::getDegree);
+    cls.def(py::init<const unsigned>(), "order"_a);
+    cls.def("getOrder", &GtransfoPoly::getOrder);
     cls.def("coeff", (double (GtransfoPoly::*)(unsigned const, unsigned const, unsigned const) const) &
                              GtransfoPoly::coeff);
     cls.def("write", [](GtransfoPoly const &self) {
@@ -139,7 +139,7 @@ PYBIND11_PLUGIN(gtransfo) {
 
     // utility functions
     mod.def("inversePolyTransfo", &inversePolyTransfo, "forward"_a, "domain"_a, "precision"_a,
-            "maxDegree"_a = 9, "nSteps"_a = 50);
+            "maxOrder"_a = 9, "nSteps"_a = 50);
 
     return mod.ptr();
 }

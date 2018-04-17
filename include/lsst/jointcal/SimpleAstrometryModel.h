@@ -31,7 +31,7 @@ public:
     //! Sky2TP is just a name, it can be anything
     SimpleAstrometryModel(CcdImageList const &ccdImageList,
                           const std::shared_ptr<ProjectionHandler const> projectionHandler, bool initFromWCS,
-                          unsigned nNotFit = 0, unsigned degree = 3);
+                          unsigned nNotFit = 0, unsigned order = 3);
 
     /// No copy or move: there is only ever one instance of a given model (i.e.. per ccd+visit)
     SimpleAstrometryModel(SimpleAstrometryModel const &) = delete;

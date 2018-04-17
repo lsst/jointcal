@@ -64,7 +64,7 @@ static unsigned chi2_cleanup(StarMatchList &starMatchList, const double chi2Cut,
 /*! removes pairs beyond nSigmas in distance (where the sigma scale is
    set by the fit) and iterates until stabilization of the number of pairs.
    If the transfo is not assigned, it will be set to a GtransfoLinear. User
-   can set an other type/degree using setTransfo() before call. */
+   can set an other type/order using setTransfo() before call. */
 void StarMatchList::refineTransfo(double nSigmas) {
     double cut;
     unsigned nremoved;

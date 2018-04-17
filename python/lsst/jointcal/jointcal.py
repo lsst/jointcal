@@ -147,18 +147,18 @@ class JointcalConfig(pexConfig.Config):
         dtype=int,
         default=2,
     )
-    astrometrySimpleDegree = pexConfig.Field(
-        doc="Polynomial degree for fitting the simple astrometry model.",
+    astrometrySimpleOrder = pexConfig.Field(
+        doc="Polynomial order for fitting the simple astrometry model.",
         dtype=int,
         default=3,
     )
-    astrometryChipDegree = pexConfig.Field(
-        doc="Degree of the per-chip transform for the constrained astrometry model.",
+    astrometryChipOrder = pexConfig.Field(
+        doc="Order of the per-chip transform for the constrained astrometry model.",
         dtype=int,
         default=1,
     )
-    astrometryVisitDegree = pexConfig.Field(
-        doc="Degree of the per-visit transform for the constrained astrometry model.",
+    astrometryVisitOrder = pexConfig.Field(
+        doc="Order of the per-visit transform for the constrained astrometry model.",
         dtype=int,
         default=5,
     )
@@ -181,8 +181,8 @@ class JointcalConfig(pexConfig.Config):
         allowed={"simple": "One constant zeropoint per ccd and visit",
                  "constrained": "Constrained zeropoint per ccd, and one polynomial per visit"}
     )
-    photometryVisitDegree = pexConfig.Field(
-        doc="Degree of the per-visit polynomial transform for the constrained photometry model.",
+    photometryVisitOrder = pexConfig.Field(
+        doc="Order of the per-visit polynomial transform for the constrained photometry model.",
         dtype=int,
         default=7,
     )
@@ -544,7 +544,7 @@ class JointcalTask(pipeBase.CmdLineTask):
         if self.config.photometryModel == "constrained":
             model = lsst.jointcal.ConstrainedPhotometryModel(associations.getCcdImageList(),
                                                              self.focalPlaneBBox,
-                                                             visitDegree=self.config.photometryVisitDegree)
+                                                             visitOrder=self.config.photometryVisitOrder)
         elif self.config.photometryModel == "simple":
             model = lsst.jointcal.SimplePhotometryModel(associations.getCcdImageList())
 
@@ -622,14 +622,14 @@ class JointcalTask(pipeBase.CmdLineTask):
         if self.config.astrometryModel == "constrained":
             model = lsst.jointcal.ConstrainedAstrometryModel(associations.getCcdImageList(),
                                                              sky_to_tan_projection,
-                                                             chipDegree=self.config.astrometryChipDegree,
-                                                             visitDegree=self.config.astrometryVisitDegree)
+                                                             chipOrder=self.config.astrometryChipOrder,
+                                                             visitOrder=self.config.astrometryVisitOrder)
         elif self.config.astrometryModel == "simple":
             model = lsst.jointcal.SimpleAstrometryModel(associations.getCcdImageList(),
                                                         sky_to_tan_projection,
                                                         self.config.useInputWcs,
                                                         nNotFit=0,
-                                                        degree=self.config.astrometrySimpleDegree)
+                                                        order=self.config.astrometrySimpleOrder)
 
         fit = lsst.jointcal.AstrometryFit(associations, model, self.config.posError)
         chi2 = fit.computeChi2()
