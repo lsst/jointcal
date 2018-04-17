@@ -42,8 +42,8 @@ unsigned FitterBase::findOutliers(double nSigmaCut, MeasuredStarList &msOutliers
     double median = (nval & 1) ? chi2List[nval / 2].chi2
                                : 0.5 * (chi2List[nval / 2 - 1].chi2 + chi2List[nval / 2].chi2);
     auto averageAndSigma = chi2List.computeAverageAndSigma();
-    LOGLS_DEBUG(_log, "RemoveOutliers chi2 stat: mean/median/sigma " << averageAndSigma.first << '/' << median
-                                                                     << '/' << averageAndSigma.second);
+    LOGLS_DEBUG(_log, "findOutliers chi2 stat: mean/median/sigma " << averageAndSigma.first << '/' << median
+                                                                   << '/' << averageAndSigma.second);
     double cut = averageAndSigma.first + nSigmaCut * averageAndSigma.second;
     /* For each of the parameters, we will not remove more than 1
        measurement that contributes to constraining it. Keep track using
@@ -73,6 +73,7 @@ unsigned FitterBase::findOutliers(double nSigmaCut, MeasuredStarList &msOutliers
             // NOTE: Stars contribute twice to astrometry (x,y), but once to photometry (flux),
             // NOTE: but we only need to mark one index here because both will be removed with that star.
             indices.push_back(fittedStar->getIndexInMatrix());
+            LOGLS_TRACE(_log, "Removing refStar " << *(fittedStar->getRefStar()) << " chi2: " << chi2->chi2);
             /* One might think it would be useful to account for PM
                parameters here, but it is just useless */
         } else {
@@ -84,6 +85,7 @@ unsigned FitterBase::findOutliers(double nSigmaCut, MeasuredStarList &msOutliers
                 continue;
             }
             getIndicesOfMeasuredStar(*measuredStar, indices);
+            LOGLS_TRACE(_log, "Removing measStar " << *measuredStar << " chi2: " << chi2->chi2);
         }
 
         /* Find out if we already discarded a stronger outlier
