@@ -44,6 +44,8 @@ void declareCcdImage(py::module &mod) {
 
     cls.def("getPhotoCalib", &CcdImage::getPhotoCalib);
 
+    cls.def("resetCatalogForFit", &CcdImage::resetCatalogForFit);
+
     cls.def("getBoresightRaDec", &CcdImage::getBoresightRaDec);
     cls.def_property_readonly("boresightRaDec", &CcdImage::getBoresightRaDec);
 
@@ -60,11 +62,16 @@ void declareCcdImage(py::module &mod) {
     cls.def("getVisit", &CcdImage::getVisit);
     cls.def_property_readonly("visit", &CcdImage::getVisit);
 
+    cls.def("getDetector", &CcdImage::getDetector, py::return_value_policy::reference_internal);
+
     cls.def("getCommonTangentPoint", &CcdImage::getCommonTangentPoint,
             py::return_value_policy::reference_internal);
     cls.def("setCommonTangentPoint", &CcdImage::setCommonTangentPoint);
     cls.def_property("commonTangentPoint", &CcdImage::getCommonTangentPoint, &CcdImage::setCommonTangentPoint,
                      py::return_value_policy::reference_internal);
+
+    cls.def("getSky2TP", &CcdImage::getSky2TP, py::return_value_policy::reference_internal);
+    cls.def("readWCS", &CcdImage::readWCS, py::return_value_policy::reference_internal);
 }
 
 PYBIND11_PLUGIN(ccdImage) {

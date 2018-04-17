@@ -2,6 +2,7 @@
 from lsst.sconsUtils import scripts
 scripts.BasicSConscript.pybind11(
     ['associations',
+     'astrometryMappings',
      'astrometryModels',
      'ccdImage',
      'chi2',
@@ -9,7 +10,6 @@ scripts.BasicSConscript.pybind11(
      'frame',
      'gtransfo',
      'jointcalControl',
-     'mappings',
      'photometryMappings',
      'photometryModels',
      'photometryTransfo',

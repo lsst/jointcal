@@ -80,7 +80,7 @@ class ChipVisitPhotometryMappingTestCase(PhotometryMappingTestBase, lsst.utils.t
     def setUp(self):
         super(ChipVisitPhotometryMappingTestCase, self).setUp()
         self.bbox = lsst.afw.geom.Box2D(lsst.afw.geom.Point2D(-5, -6), lsst.afw.geom.Point2D(7, 8))
-        self.degree = 1
+        self.order = 1
         self.coefficients = np.array([[5, 2], [3, 0]], dtype=float)
         self.chipScale = 2
         self.visitScale = 3
@@ -109,7 +109,7 @@ class ChipVisitPhotometryMappingTestCase(PhotometryMappingTestBase, lsst.utils.t
     def test_getNpar(self):
         result = self.mappingInvariants.getNpar()
         self.assertEqual(result, 2)
-        # degree 1 implies 3 parameters, plus one for the chip mapping
+        # order 1 implies 3 parameters, plus one for the chip mapping
         result = self.mappingCheby.getNpar()
         self.assertEqual(result, 4)
 
@@ -121,9 +121,9 @@ class ChipVisitPhotometryMappingTestCase(PhotometryMappingTestBase, lsst.utils.t
         sx = 2.0 / self.bbox.getWidth()
         sy = 2.0 / self.bbox.getHeight()
         result = 0
-        for j in range(self.degree+1):
+        for j in range(self.order+1):
             Ty = CHEBYSHEV_T[j](sy*(y - cy))
-            for i in range(0, self.degree-j+1):
+            for i in range(0, self.order-j+1):
                 Tx = CHEBYSHEV_T[i](sx*(x - cx))
                 result += self.coefficients[j, i]*Tx*Ty
         return result
@@ -149,7 +149,7 @@ class ChipVisitPhotometryMappingTestCase(PhotometryMappingTestBase, lsst.utils.t
         self.mappingInvariants.offsetParams(delta)
         self.assertFloatsAlmostEqual(expect, self.mappingInvariants.getParameters())
 
-        # degree 1 means 3 parameters, so 4 total w/chipTransfo
+        # order 1 means 3 parameters, so 4 total w/chipTransfo
         delta = np.zeros(4, dtype=float)
         expect = np.zeros(4, dtype=float)
         delta[0] = 1
@@ -160,7 +160,7 @@ class ChipVisitPhotometryMappingTestCase(PhotometryMappingTestBase, lsst.utils.t
         expect[1] = self.coefficients[0, 0] - delta[1]
         expect[2] = self.coefficients[0, 1] - delta[2]
         expect[3] = self.coefficients[1, 0] - delta[3]
-        # coeff[1,1] is unused in a degree 1 Chebyshev (it would be a 2nd degree component)
+        # coeff[1,1] is unused in a order 1 Chebyshev (it would be a 2nd order component)
         self.mappingCheby.offsetParams(delta)
         self.assertFloatsAlmostEqual(self.mappingCheby.getParameters(), expect)
 
@@ -174,12 +174,12 @@ class ChipVisitPhotometryMappingTestCase(PhotometryMappingTestBase, lsst.utils.t
         sx = 2.0 / self.bbox.getWidth()
         sy = 2.0 / self.bbox.getHeight()
         Tx = np.array([CHEBYSHEV_T[i](sx*(self.star1.getXFocal() - cx))
-                      for i in range(self.degree+1)], dtype=float)
+                      for i in range(self.order+1)], dtype=float)
         Ty = np.array([CHEBYSHEV_T[i](sy*(self.star1.getYFocal() - cy))
-                      for i in range(self.degree+1)], dtype=float)
+                      for i in range(self.order+1)], dtype=float)
         expect = [self.instFlux*self._evaluate_chebyshev(self.star1.getXFocal(), self.star1.getYFocal()), ]
         for j in range(len(Ty)):
-            for i in range(0, self.degree-j+1):
+            for i in range(0, self.order-j+1):
                 expect.append(Ty[j]*Tx[i]*self.instFlux*self.chipScale)
         result = self.mappingCheby.computeParameterDerivatives(self.star1, self.instFlux)
         self.assertFloatsAlmostEqual(np.array(expect), result)

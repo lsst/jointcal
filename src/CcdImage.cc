@@ -12,8 +12,6 @@
 
 #include "lsst/log/Log.h"
 #include "lsst/jointcal/CcdImage.h"
-#include "lsst/jointcal/SipToGtransfo.h"
-#include "lsst/jointcal/AstroUtils.h"
 #include "lsst/jointcal/Gtransfo.h"
 #include "lsst/jointcal/Point.h"
 
@@ -48,6 +46,7 @@ void CcdImage::loadCatalog(afw::table::SourceCatalog const &catalog, std::string
     _wholeCatalog.clear();
     for (auto const &record : catalog) {
         auto ms = std::make_shared<MeasuredStar>();
+        ms->setId(record.getId());
         ms->x = record.get(xKey);
         ms->y = record.get(yKey);
         ms->vx = std::pow(record.get(xsKey), 2);
@@ -62,13 +61,12 @@ void CcdImage::loadCatalog(afw::table::SourceCatalog const &catalog, std::string
         double myy = record.get(myyKey);
         double mxy = record.get(mxyKey);
         ms->vxy = mxy * (ms->vx + ms->vy) / (mxx + myy);
-        if (ms->vx < 0 || ms->vy < 0 || (ms->vxy * ms->vxy) > (ms->vx * ms->vy)) {
-            LOGLS_WARN(_log, "Bad source detected in loadCatalog : " << ms->vx << " " << ms->vy << " "
-                                                                     << ms->vxy * ms->vxy << " "
-                                                                     << ms->vx * ms->vy);
+        if (std::isnan(ms->vxy) || ms->vx < 0 || ms->vy < 0 || (ms->vxy * ms->vxy) > (ms->vx * ms->vy)) {
+            LOGLS_WARN(_log, "Bad source detected during loadCatalog id: "
+                                     << ms->getId() << " with vx,vy: " << ms->vx << "," << ms->vy
+                                     << " vxy^2: " << ms->vxy * ms->vxy << " vx*vy: " << ms->vx * ms->vy);
             continue;
         }
-        ms->setId(record.getId());
         ms->setInstFlux(record.get(fluxKey));
         ms->setInstFluxErr(record.get(fluxErrKey));
         // TODO: the below lines will be less clumsy once DM-4044 is cleaned up and we can say:
@@ -135,28 +133,26 @@ CcdImage::CcdImage(afw::table::SourceCatalog &catalog, std::shared_ptr<lsst::afw
 void CcdImage::setCommonTangentPoint(Point const &commonTangentPoint) {
     _commonTangentPoint = commonTangentPoint;
 
-    // use some other variable in case we later have to actually convert the
-    // as-read wcs:
     auto const crval = _readWcs->getSkyWcs()->getSkyOrigin();
-    Point tangentPoint(crval[0].asDegrees(), crval[1].asDegrees());
+    jointcal::Point tangentPoint(crval[0].asDegrees(), crval[1].asDegrees());
 
     /* we don't assume here that we know the internals of TanPix2RaDec:
        to construct pix->TP, we do pix->sky->TP, although pix->sky
        actually goes through TP */
     GtransfoLin identity;
     TanRaDec2Pix raDec2TP(identity, tangentPoint);
-    _pix2TP = gtransfoCompose(&raDec2TP, _readWcs.get());
+    _pix2TP = gtransfoCompose(raDec2TP, *_readWcs);
     TanPix2RaDec CTP2RaDec(identity, commonTangentPoint);
-    _CTP2TP = gtransfoCompose(&raDec2TP, &CTP2RaDec);
+    _CTP2TP = gtransfoCompose(raDec2TP, CTP2RaDec);
 
     // jump from one TP to an other:
     TanRaDec2Pix raDec2CTP(identity, commonTangentPoint);
     TanPix2RaDec TP2RaDec(identity, tangentPoint);
-    _TP2CTP = gtransfoCompose(&raDec2CTP, &TP2RaDec);
+    _TP2CTP = gtransfoCompose(raDec2CTP, TP2RaDec);
     _sky2TP.reset(new TanRaDec2Pix(identity, tangentPoint));
 
     // this one is needed for matches :
-    _pix2CommonTangentPlane = gtransfoCompose(&raDec2CTP, _readWcs.get());
+    _pix2CommonTangentPlane = gtransfoCompose(raDec2CTP, *_readWcs);
 }
 }  // namespace jointcal
 }  // namespace lsst

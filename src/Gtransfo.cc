@@ -1,7 +1,8 @@
 #include <iostream>
 #include <iomanip>
 #include <iterator> /* for ostream_iterator */
-#include <math.h>   // for sin and cos and may be others
+#include <limits>
+#include <math.h>  // for sin and cos and may be others
 #include <fstream>
 #include "assert.h"
 #include <sstream>
@@ -27,10 +28,6 @@ LOG_LOGGER _log = LOG_GET("jointcal.Gtransfo");
 namespace lsst {
 namespace jointcal {
 
-bool isIdentity(const Gtransfo *gtransfo) {
-    return (dynamic_cast<const GtransfoIdentity *>(gtransfo) != nullptr);
-}
-
 bool isIntegerShift(const Gtransfo *gtransfo) {
     const GtransfoPoly *shift = dynamic_cast<const GtransfoPoly *>(gtransfo);
     if (shift == nullptr) return false;
@@ -50,7 +47,26 @@ bool isIntegerShift(const Gtransfo *gtransfo) {
 
 /********* Gtransfo ***********************/
 
-std::unique_ptr<Gtransfo> Gtransfo::reduceCompo(const Gtransfo *) const {  // by default no way to compose
+Frame Gtransfo::apply(Frame const &inputframe, bool inscribed) const {
+    // 2 opposite corners
+    double xtmin1, xtmax1, ytmin1, ytmax1;
+    apply(inputframe.xMin, inputframe.yMin, xtmin1, ytmin1);
+    apply(inputframe.xMax, inputframe.yMax, xtmax1, ytmax1);
+    Frame fr1(std::min(xtmin1, xtmax1), std::min(ytmin1, ytmax1), std::max(xtmin1, xtmax1),
+              std::max(ytmin1, ytmax1));
+    // 2 other corners
+    double xtmin2, xtmax2, ytmin2, ytmax2;
+    apply(inputframe.xMin, inputframe.yMax, xtmin2, ytmax2);
+    apply(inputframe.xMax, inputframe.yMin, xtmax2, ytmin2);
+    Frame fr2(std::min(xtmin2, xtmax2), std::min(ytmin2, ytmax2), std::max(xtmin2, xtmax2),
+              std::max(ytmin2, ytmax2));
+
+    if (inscribed) return fr1 * fr2;
+    return fr1 + fr2;
+}
+
+std::unique_ptr<Gtransfo> Gtransfo::composeAndReduce(
+        Gtransfo const &) const {  // by default no way to compose
     return std::unique_ptr<Gtransfo>(nullptr);
 }
 
@@ -73,7 +89,7 @@ double Gtransfo::getJacobian(const double x, const double y) const {
 /*! the Derivative is represented by a GtransfoLin, in which
   (hopefully), the offset terms are zero. Derivative should
   transform a vector of offsets into a vector of offsets. */
-void Gtransfo::computeDerivative(const Point &where, GtransfoLin &derivative, const double step) const {
+void Gtransfo::computeDerivative(Point const &where, GtransfoLin &derivative, const double step) const {
     double x = where.x;
     double y = where.y;
     double xp0, yp0;
@@ -90,14 +106,14 @@ void Gtransfo::computeDerivative(const Point &where, GtransfoLin &derivative, co
     derivative.dy() = 0;
 }
 
-GtransfoLin Gtransfo::linearApproximation(const Point &where, const double step) const {
+GtransfoLin Gtransfo::linearApproximation(Point const &where, const double step) const {
     Point outwhere = apply(where);
     GtransfoLin der;
     computeDerivative(where, der, step);
     return GtransfoLinShift(outwhere.x, outwhere.y) * der * GtransfoLinShift(-where.x, -where.y);
 }
 
-void Gtransfo::transformPosAndErrors(const FatPoint &in, FatPoint &out) const {
+void Gtransfo::transformPosAndErrors(FatPoint const &in, FatPoint &out) const {
     FatPoint res;  // in case in and out are the same address...
     res = apply(in);
     GtransfoLin der;
@@ -114,7 +130,7 @@ void Gtransfo::transformPosAndErrors(const FatPoint &in, FatPoint &out) const {
     out = res;
 }
 
-void Gtransfo::transformErrors(const Point &where, const double *vIn, double *vOut) const {
+void Gtransfo::transformErrors(Point const &where, const double *vIn, double *vOut) const {
     GtransfoLin der;
     computeDerivative(where, der, 0.01);
     double a11 = der.A11();
@@ -186,12 +202,12 @@ double &Gtransfo::paramRef(const int) {
     throw LSST_EXCEPT(pex::exceptions::InvalidParameterError, "Gtransfo::paramRef should never be called ");
 }
 
-void Gtransfo::paramDerivatives(const Point &, double *, double *) const {
+void Gtransfo::paramDerivatives(Point const &, double *, double *) const {
     throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,
                       "Gtransfo::paramDerivatives() should never be called ");
 }
 
-ostream &operator<<(ostream &stream, const Gtransfo &gtransfo) {
+ostream &operator<<(ostream &stream, Gtransfo const &gtransfo) {
     gtransfo.dump(stream);
     return stream;
 }
@@ -231,11 +247,11 @@ public:
 
     void dump(ostream &stream) const;
 
-    double fit(const StarMatchList &starMatchList);
+    double fit(StarMatchList const &starMatchList);
 
     virtual std::unique_ptr<Gtransfo> clone() const;
 
-    GtransfoInverse(const GtransfoInverse &);
+    GtransfoInverse(GtransfoInverse const &);
 
     //! Overload the "generic routine"
     std::unique_ptr<Gtransfo> roughInverse(const Frame &) const { return _direct->clone(); }
@@ -246,7 +262,7 @@ public:
     ~GtransfoInverse();
 
 private:
-    void operator=(const GtransfoInverse &);
+    void operator=(GtransfoInverse const &);
 };
 
 std::unique_ptr<Gtransfo> Gtransfo::inverseTransfo(const double precision, const Frame &region) const {
@@ -259,7 +275,7 @@ GtransfoInverse::GtransfoInverse(const Gtransfo *direct, const double precision,
     precision2 = precision * precision;
 }
 
-GtransfoInverse::GtransfoInverse(const GtransfoInverse &model) : Gtransfo() {
+GtransfoInverse::GtransfoInverse(GtransfoInverse const &model) : Gtransfo() {
     _direct = model._direct->clone();
     _roughInverse = model._roughInverse->clone();
     precision2 = model.precision2;
@@ -267,7 +283,7 @@ GtransfoInverse::GtransfoInverse(const GtransfoInverse &model) : Gtransfo() {
 
 GtransfoInverse::~GtransfoInverse() {}
 
-void GtransfoInverse::operator=(const GtransfoInverse &model) {
+void GtransfoInverse::operator=(GtransfoInverse const &model) {
     _direct = model._direct->clone();
     _roughInverse = model._roughInverse->clone();
     precision2 = model.precision2;
@@ -300,7 +316,7 @@ void GtransfoInverse::dump(ostream &stream) const {
     stream << " GtransfoInverse of  :" << endl << *_direct << endl;
 }
 
-double GtransfoInverse::fit(const StarMatchList &) {
+double GtransfoInverse::fit(StarMatchList const &) {
     throw pexExcept::RuntimeError("Cannot fit a GtransfoInverse. Use StarMatchList::inverseTransfo instead.");
 }
 
@@ -321,22 +337,22 @@ private:
 
 public:
     //! will pipe transfos
-    GtransfoComposition(const Gtransfo *second, const Gtransfo *first);
+    GtransfoComposition(Gtransfo const &second, Gtransfo const &first);
 
     //! return second(first(xIn,yIn))
     void apply(const double xIn, const double yIn, double &xOut, double &yOut) const;
     void dump(ostream &stream = cout) const;
 
     //!
-    double fit(const StarMatchList &starMatchList);
+    double fit(StarMatchList const &starMatchList);
 
     std::unique_ptr<Gtransfo> clone() const;
     ~GtransfoComposition();
 };
 
-GtransfoComposition::GtransfoComposition(const Gtransfo *second, const Gtransfo *first) {
-    _first = first->clone();
-    _second = second->clone();
+GtransfoComposition::GtransfoComposition(Gtransfo const &second, Gtransfo const &first) {
+    _first = first.clone();
+    _second = second.clone();
 }
 
 void GtransfoComposition::apply(const double xIn, const double yIn, double &xOut, double &yOut) const {
@@ -350,46 +366,44 @@ void GtransfoComposition::dump(ostream &stream) const {
     _second->dump(stream);
 }
 
-double GtransfoComposition::fit(const StarMatchList &starMatchList) {
+double GtransfoComposition::fit(StarMatchList const &starMatchList) {
     /* fits only one of them. could check that first can actually be fitted... */
     return _first->fit(starMatchList);
 }
 
 std::unique_ptr<Gtransfo> GtransfoComposition::clone() const {
-    return std::unique_ptr<Gtransfo>(new GtransfoComposition(_second.get(), _first.get()));
+    return std::make_unique<GtransfoComposition>(*_second, *_first);
 }
 
 GtransfoComposition::~GtransfoComposition() {}
 
-/*!  This routine implements "run-time" compositions. When
- there is a possible "reduction" (e.g. compositions of polynomials),
- gtransfoCompose detects it and returns a genuine Gtransfo.
- */
-std::unique_ptr<Gtransfo> gtransfoCompose(const Gtransfo *left, const Gtransfo *right) {
-    /* is right Identity ? if left is Identity , GtransfoIdentity::reduceCompo does the right job */
-    if (isIdentity(right)) {
-        return left->clone();
-    }
-    /* Try to use the reduceCompo method from left. If absent,
-       Gtransfo::reduceCompo return NULL. reduceCompo is non trivial for
-       polynomials */
-    std::unique_ptr<Gtransfo> composition(left->reduceCompo(right));
-    /* composition == NULL means no reduction : just build a Composition
-       that pipelines "left" and "right" */
+std::unique_ptr<Gtransfo> gtransfoCompose(Gtransfo const &left, GtransfoIdentity const &right) {
+    return left.clone();
+}
+
+std::unique_ptr<Gtransfo> gtransfoCompose(Gtransfo const &left, Gtransfo const &right) {
+    // Try to use the composeAndReduce method from left. If absent, Gtransfo::composeAndReduce returns NULL.
+    // composeAndReduce is non trivial for polynomials.
+    std::unique_ptr<Gtransfo> composition(left.composeAndReduce(right));
+    // composition == NULL means no reduction: just build a Composition that pipelines "left" and "right".
     if (composition == nullptr)
-        return std::unique_ptr<Gtransfo>(new GtransfoComposition(left, right));
+        return std::make_unique<GtransfoComposition>(left, right);
     else
         return composition;
 }
 
 // just a speed up, to avoid useless numerical derivation.
-void GtransfoIdentity::computeDerivative(const Point &, GtransfoLin &derivative, const double) const {
+void GtransfoIdentity::computeDerivative(Point const &, GtransfoLin &derivative, const double) const {
     derivative = GtransfoLin();
 }
 
-GtransfoLin GtransfoIdentity::linearApproximation(const Point &, const double) const {
+GtransfoLin GtransfoIdentity::linearApproximation(Point const &, const double) const {
     GtransfoLin result;
     return result;  // rely on default Gtransfolin constructor;
+}
+
+std::shared_ptr<ast::Mapping> GtransfoIdentity::toAstMap(jointcal::Frame const &) const {
+    return std::make_shared<ast::UnitMap>(2);  // a GtransfoIdentity is identically ast::UnitMap(2)
 }
 
 void GtransfoIdentity::write(ostream &stream) const { stream << "GtransfoIdentity 1" << endl; }
@@ -404,22 +418,22 @@ void GtransfoIdentity::read(istream &stream) {
 
 /***************  GtransfoPoly **************************************/
 
-//! Default transfo : identity for all degrees (>=1 )
+//! Default transfo : identity for all orders (>=1 )
 
-GtransfoPoly::GtransfoPoly(const unsigned degree) : _degree(degree) {
-    _nterms = (degree + 1) * (degree + 2) / 2;
+GtransfoPoly::GtransfoPoly(const unsigned order) : _order(order) {
+    _nterms = (order + 1) * (order + 2) / 2;
 
     // allocate and fill coefficients
     _coeffs.resize(2 * _nterms, 0.);
-    // the default is supposed to be the identity, (for degree>=1).
-    if (_degree >= 1) {
+    // the default is supposed to be the identity, (for order>=1).
+    if (_order >= 1) {
         coeff(1, 0, 0) = 1;
         coeff(0, 1, 1) = 1;
     }
 }
 
 //#ifdef TO_BE_FIXED
-GtransfoPoly::GtransfoPoly(const Gtransfo *gtransfo, const Frame &frame, unsigned degree, unsigned nPoint) {
+GtransfoPoly::GtransfoPoly(const Gtransfo *gtransfo, const Frame &frame, unsigned order, unsigned nPoint) {
     StarMatchList sm;
 
     double step = sqrt(fabs(frame.getArea()) / double(nPoint));
@@ -433,11 +447,33 @@ GtransfoPoly::GtransfoPoly(const Gtransfo *gtransfo, const Frame &frame, unsigne
                all errors (and weights) will be equal : */
             sm.push_back(StarMatch(*pix, *tp, pix, tp));
         }
-    GtransfoPoly ret(degree);
+    GtransfoPoly ret(order);
     ret.fit(sm);
     *this = ret;
 }
 //#endif
+
+GtransfoPoly::GtransfoPoly(std::shared_ptr<afw::geom::TransformPoint2ToPoint2> transform,
+                           jointcal::Frame const &domain, unsigned const order, unsigned const nSteps) {
+    jointcal::StarMatchList starMatchList;
+    double xStart = domain.xMin;
+    double yStart = domain.yMin;
+    double xStep = domain.getWidth() / (nSteps + 1);
+    double yStep = domain.getHeight() / (nSteps + 1);
+    for (unsigned i = 0; i < nSteps; ++i) {
+        for (unsigned j = 0; j < nSteps; ++j) {
+            // TODO: once DM-4044 is done, we can remove the redundancy in `Point`/`Point2D` here
+            jointcal::Point in(xStart + i * xStep, yStart + j * yStep);
+            afw::geom::Point2D inAfw(in.x, in.y);
+            afw::geom::Point2D outAfw = transform->applyForward(inAfw);
+            jointcal::Point out(outAfw.getX(), outAfw.getY());
+            starMatchList.emplace_back(in, out, nullptr, nullptr);
+        }
+    }
+    GtransfoPoly poly(order);
+    poly.fit(starMatchList);
+    *this = poly;
+}
 
 void GtransfoPoly::computeMonomials(double xIn, double yIn, double *monomial) const {
     /* The ordering of monomials is implemented here.
@@ -450,10 +486,10 @@ void GtransfoPoly::computeMonomials(double xIn, double yIn, double *monomial) co
     */
 
     double xx = 1;
-    for (unsigned ix = 0; ix <= _degree; ++ix) {
+    for (unsigned ix = 0; ix <= _order; ++ix) {
         double yy = 1;
         unsigned k = ix * (ix + 1) / 2;
-        for (unsigned iy = 0; iy <= _degree - ix; ++iy) {
+        for (unsigned iy = 0; iy <= _order - ix; ++iy) {
             monomial[k] = xx * yy;
             yy *= yIn;
             k += ix + iy + 2;
@@ -462,10 +498,10 @@ void GtransfoPoly::computeMonomials(double xIn, double yIn, double *monomial) co
     }
 }
 
-void GtransfoPoly::setDegree(const unsigned degree) {
-    _degree = degree;
+void GtransfoPoly::setOrder(const unsigned order) {
+    _order = order;
     unsigned old_nterms = _nterms;
-    _nterms = (_degree + 1) * (_degree + 2) / 2;
+    _nterms = (_order + 1) * (_order + 2) / 2;
 
     // temporarily save coefficients
     vector<double> old_coeffs = _coeffs;
@@ -506,9 +542,9 @@ void GtransfoPoly::apply(const double xIn, const double yIn, double &xOut, doubl
     for (int k = _nterms; k--;) yOut += (*(pm++)) * (*(c++));
 }
 
-void GtransfoPoly::computeDerivative(const Point &where, GtransfoLin &derivative, const double step)
+void GtransfoPoly::computeDerivative(Point const &where, GtransfoLin &derivative, const double step)
         const { /* routine checked against numerical derivatives from Gtransfo::Derivative */
-    if (_degree == 1) {
+    if (_order == 1) {
         derivative = GtransfoLin(*this);
         derivative.dx() = derivative.dy() = 0;
         return;
@@ -521,14 +557,14 @@ void GtransfoPoly::computeDerivative(const Point &where, GtransfoLin &derivative
 
     double xx = 1;
     double xxm1 = 1;  // xx^(ix-1)
-    for (unsigned ix = 0; ix <= _degree; ++ix) {
+    for (unsigned ix = 0; ix <= _order; ++ix) {
         unsigned k = (ix) * (ix + 1) / 2;
         // iy = 0
         dermx[k] = ix * xxm1;
         dermy[k] = 0;
         k += ix + 2;
         double yym1 = 1;  // yy^(iy-1)
-        for (unsigned iy = 1; iy <= _degree - ix; ++iy) {
+        for (unsigned iy = 1; iy <= _order - ix; ++iy) {
             dermx[k] = ix * xxm1 * yym1 * yin;
             dermy[k] = iy * xx * yym1;
             yym1 *= yin;
@@ -564,7 +600,7 @@ void GtransfoPoly::computeDerivative(const Point &where, GtransfoLin &derivative
     derivative.a22() = a22;
 }
 
-void GtransfoPoly::transformPosAndErrors(const FatPoint &in, FatPoint &out) const {
+void GtransfoPoly::transformPosAndErrors(FatPoint const &in, FatPoint &out) const {
     /*
        The results from this routine were compared to what comes out
        from apply and transformErrors. The Derivative routine was
@@ -588,7 +624,7 @@ void GtransfoPoly::transformPosAndErrors(const FatPoint &in, FatPoint &out) cons
 
     double xx = 1;
     double xxm1 = 1;  // xx^(ix-1)
-    for (unsigned ix = 0; ix <= _degree; ++ix) {
+    for (unsigned ix = 0; ix <= _order; ++ix) {
         unsigned k = (ix) * (ix + 1) / 2;
         // iy = 0
         dermx[k] = ix * xxm1;
@@ -597,7 +633,7 @@ void GtransfoPoly::transformPosAndErrors(const FatPoint &in, FatPoint &out) cons
         k += ix + 2;
         double yy = yin;
         double yym1 = 1;  // yy^(iy-1)
-        for (unsigned iy = 1; iy <= _degree - ix; ++iy) {
+        for (unsigned iy = 1; iy <= _order - ix; ++iy) {
             monomials[k] = xx * yy;
             dermx[k] = ix * xxm1 * yy;
             dermy[k] = iy * xx * yym1;
@@ -649,22 +685,22 @@ void GtransfoPoly::transformPosAndErrors(const FatPoint &in, FatPoint &out) cons
    Change all or none ! */
 
 double GtransfoPoly::coeff(const unsigned degX, const unsigned degY, const unsigned whichCoord) const {
-    assert((degX + degY <= _degree) && whichCoord < 2);
+    assert((degX + degY <= _order) && whichCoord < 2);
     /* this assertion above is enough to ensure that the index used just
        below is within bounds since the reserved length is
-       2*_nterms=(degree+1)*(degree+2) */
+       2*_nterms=(order+1)*(order+2) */
     return _coeffs[(degX + degY) * (degX + degY + 1) / 2 + degY + whichCoord * _nterms];
 }
 
 double &GtransfoPoly::coeff(const unsigned degX, const unsigned degY, const unsigned whichCoord) {
-    assert((degX + degY <= _degree) && whichCoord < 2);
+    assert((degX + degY <= _order) && whichCoord < 2);
     return _coeffs[(degX + degY) * (degX + degY + 1) / 2 + degY + whichCoord * _nterms];
 }
 
 double GtransfoPoly::coeffOrZero(const unsigned degX, const unsigned degY, const unsigned whichCoord) const {
-    //  assert((degX+degY<=degree) && whichCoord<2);
+    //  assert((degX+degY<=order) && whichCoord<2);
     assert(whichCoord < 2);
-    if (degX + degY <= _degree)
+    if (degX + degY <= _order)
         return _coeffs[(degX + degY) * (degX + degY + 1) / 2 + degY + whichCoord * _nterms];
     return 0;
 }
@@ -680,7 +716,7 @@ double &GtransfoPoly::paramRef(const int i) {
     return _coeffs[i];
 }
 
-void GtransfoPoly::paramDerivatives(const Point &where, double *dx, double *dy)
+void GtransfoPoly::paramDerivatives(Point const &where, double *dx, double *dy)
         const { /* first half : dxout/dpar, second half : dyout/dpar */
     computeMonomials(where.x, where.y, dx);
     for (unsigned k = 0; k < _nterms; ++k) {
@@ -701,23 +737,26 @@ static string monomialString(const unsigned powX, const unsigned powY) {
 }
 
 void GtransfoPoly::dump(ostream &stream) const {
+    auto oldPrecision = stream.precision();
+    stream.precision(12);
     for (unsigned ic = 0; ic < 2; ++ic) {
         if (ic == 0)
             stream << "newx = ";
         else
             stream << "newy = ";
-        for (unsigned p = 0; p <= _degree; ++p)
+        for (unsigned p = 0; p <= _order; ++p)
             for (unsigned py = 0; py <= p; ++py) {
                 if (p + py != 0) stream << " + ";
                 stream << coeff(p - py, py, ic) << monomialString(p - py, py);
             }
         stream << endl;
     }
-    if (_degree > 0) stream << " Linear determinant = " << determinant() << endl;
+    if (_order > 0) stream << " Linear determinant = " << determinant() << endl;
+    stream.precision(oldPrecision);
 }
 
 double GtransfoPoly::determinant() const {
-    if (_degree >= 1) return coeff(1, 0, 0) * coeff(0, 1, 1) - coeff(0, 1, 0) * coeff(1, 0, 1);
+    if (_order >= 1) return coeff(1, 0, 0) * coeff(0, 1, 1) - coeff(0, 1, 0) * coeff(1, 0, 1);
     return 0;
 }
 
@@ -729,7 +768,7 @@ GtransfoLin normalizeCoordinatesTransfo(const Frame &frame) {
 }
 
 /*utility for the GtransfoPoly::fit() routine */
-static GtransfoLin shiftAndNormalize(const StarMatchList &starMatchList) {
+static GtransfoLin shiftAndNormalize(StarMatchList const &starMatchList) {
     double xav = 0;
     double x2 = 0;
     double yav = 0;
@@ -737,7 +776,7 @@ static GtransfoLin shiftAndNormalize(const StarMatchList &starMatchList) {
     double count = 0;
     for (auto it = starMatchList.begin(); it != starMatchList.end(); ++it) {
         const StarMatch &a_match = *it;
-        const Point &point1 = a_match.point1;
+        Point const &point1 = a_match.point1;
         xav += point1.x;
         yav += point1.y;
         x2 += std::pow(point1.x, 2);
@@ -755,7 +794,7 @@ static GtransfoLin shiftAndNormalize(const StarMatchList &starMatchList) {
 
 static double sq(double x) { return x * x; }
 
-double GtransfoPoly::computeFit(const StarMatchList &starMatchList, const Gtransfo &shiftToCenter,
+double GtransfoPoly::computeFit(StarMatchList const &starMatchList, Gtransfo const &shiftToCenter,
                                 const bool useErrors) {
     Eigen::MatrixXd A(2 * _nterms, 2 * _nterms);
     A.setZero();
@@ -767,7 +806,7 @@ double GtransfoPoly::computeFit(const StarMatchList &starMatchList, const Gtrans
         const StarMatch &a_match = *it;
         Point tmp = shiftToCenter.apply(a_match.point1);
         FatPoint point1(tmp, a_match.point1.vx, a_match.point1.vy, a_match.point1.vxy);
-        const FatPoint &point2 = a_match.point2;
+        FatPoint const &point2 = a_match.point2;
         double wxx, wyy, wxy;
         FatPoint tr1;
         computeMonomials(point1.x, point1.y, monomials);
@@ -814,10 +853,10 @@ double GtransfoPoly::computeFit(const StarMatchList &starMatchList, const Gtrans
     return (sumr2 - B.dot(sol));
 }
 
-double GtransfoPoly::fit(const StarMatchList &starMatchList) {
+double GtransfoPoly::fit(StarMatchList const &starMatchList) {
     if (starMatchList.size() < _nterms) {
-        LOGLS_FATAL(_log, "GtransfoPoly::fit trying to fit a polynomial transfo of degree "
-                                  << _degree << " with only " << starMatchList.size() << " matches.");
+        LOGLS_FATAL(_log, "GtransfoPoly::fit trying to fit a polynomial transfo of order "
+                                  << _order << " with only " << starMatchList.size() << " matches.");
         return -1;
     }
 
@@ -832,15 +871,11 @@ double GtransfoPoly::fit(const StarMatchList &starMatchList) {
     return chi2;
 }
 
-std::unique_ptr<Gtransfo> GtransfoPoly::reduceCompo(const Gtransfo *right) const {
-    const GtransfoPoly *p = dynamic_cast<const GtransfoPoly *>(right);
-    if (p) {
-        if (getDegree() == 1 && p->getDegree() == 1)
-            return std::unique_ptr<Gtransfo>(new GtransfoLin((*this) * (*p)));  // does the composition
-        else
-            return std::unique_ptr<Gtransfo>(new GtransfoPoly((*this) * (*p)));  // does the composition
-    } else
-        return std::unique_ptr<Gtransfo>(nullptr);
+std::unique_ptr<Gtransfo> GtransfoPoly::composeAndReduce(GtransfoPoly const &right) const {
+    if (getOrder() == 1 && right.getOrder() == 1)
+        return std::make_unique<GtransfoLin>((*this) * (right));  // does the composition
+    else
+        return std::make_unique<GtransfoPoly>((*this) * (right));  // does the composition
 }
 
 /*  PolyXY the class used to perform polynomial algebra (and in
@@ -853,32 +888,32 @@ std::unique_ptr<Gtransfo> GtransfoPoly::reduceCompo(const Gtransfo *right) const
 */
 
 class PolyXY {
-    unsigned degree;
+    unsigned order;
     unsigned nterms;
     vector<long double> coeffs;
 
 public:
-    PolyXY(const int degree) : degree(degree), nterms((degree + 1) * (degree + 2) / 2) {
+    PolyXY(const int order) : order(order), nterms((order + 1) * (order + 2) / 2) {
         coeffs.reserve(nterms);
         coeffs.insert(coeffs.begin(), nterms, 0L);  // fill & initialize to 0.
     }
 
-    unsigned getDegree() const { return degree; }
+    unsigned getOrder() const { return order; }
 
-    PolyXY(const GtransfoPoly &gtransfoPoly, const unsigned whichCoord)
-            : degree(gtransfoPoly.getDegree()), nterms((degree + 1) * (degree + 2) / 2), coeffs(nterms, 0L) {
-        for (unsigned px = 0; px <= degree; ++px)
-            for (unsigned py = 0; py <= degree - px; ++py)
+    PolyXY(GtransfoPoly const &gtransfoPoly, const unsigned whichCoord)
+            : order(gtransfoPoly.getOrder()), nterms((order + 1) * (order + 2) / 2), coeffs(nterms, 0L) {
+        for (unsigned px = 0; px <= order; ++px)
+            for (unsigned py = 0; py <= order - px; ++py)
                 coeff(px, py) = gtransfoPoly.coeff(px, py, whichCoord);
     }
 
     long double coeff(const unsigned powX, const unsigned powY) const {
-        assert(powX + powY <= degree);
+        assert(powX + powY <= order);
         return coeffs.at((powX + powY) * (powX + powY + 1) / 2 + powY);
     }
 
     long double &coeff(const unsigned powX, const unsigned powY) {
-        assert(powX + powY <= degree);
+        assert(powX + powY <= order);
         return coeffs.at((powX + powY) * (powX + powY + 1) / 2 + powY);
     }
 };
@@ -886,8 +921,8 @@ public:
 /* =====================  PolyXY Algebra routines ================== */
 
 static void operator+=(PolyXY &left, const PolyXY &right) {
-    unsigned rdeg = right.getDegree();
-    assert(left.getDegree() >= rdeg);
+    unsigned rdeg = right.getOrder();
+    assert(left.getOrder() >= rdeg);
     for (unsigned i = 0; i <= rdeg; ++i)
         for (unsigned j = 0; j <= rdeg - i; ++j) left.coeff(i, j) += right.coeff(i, j);
 }
@@ -896,16 +931,16 @@ static void operator+=(PolyXY &left, const PolyXY &right) {
 static PolyXY operator*(const long double &a, const PolyXY &polyXY) {
     PolyXY result(polyXY);
     // no direct access to coefficients: do it the soft way
-    unsigned degree = polyXY.getDegree();
-    for (unsigned i = 0; i <= degree; ++i)
-        for (unsigned j = 0; j <= degree - i; ++j) result.coeff(i, j) *= a;
+    unsigned order = polyXY.getOrder();
+    for (unsigned i = 0; i <= order; ++i)
+        for (unsigned j = 0; j <= order - i; ++j) result.coeff(i, j) *= a;
     return result;
 }
 
 /*! result(x,y) = p1(x,y)*p2(x,y) */
 static PolyXY product(const PolyXY &p1, const PolyXY &p2) {
-    unsigned deg1 = p1.getDegree();
-    unsigned deg2 = p2.getDegree();
+    unsigned deg1 = p1.getOrder();
+    unsigned deg2 = p2.getOrder();
     PolyXY result(deg1 + deg2);
     for (unsigned i1 = 0; i1 <= deg1; ++i1)
         for (unsigned j1 = 0; j1 <= deg1 - i1; ++j1)
@@ -925,8 +960,8 @@ static void computePowers(const PolyXY &polyXY, const unsigned maxP, vector<Poly
 
 /*! result(x,y) = polyXY(polyX(x,y),polyY(x,y)) */
 static PolyXY composition(const PolyXY &polyXY, const PolyXY &polyX, const PolyXY &polyY) {
-    unsigned pdeg = polyXY.getDegree();
-    PolyXY result(pdeg * max(polyX.getDegree(), polyY.getDegree()));
+    unsigned pdeg = polyXY.getOrder();
+    PolyXY result(pdeg * max(polyX.getOrder(), polyY.getOrder()));
     vector<PolyXY> pXPowers;
     vector<PolyXY> pYPowers;
     computePowers(polyX, pdeg, pXPowers);
@@ -941,7 +976,7 @@ static PolyXY composition(const PolyXY &polyXY, const PolyXY &polyX, const PolyX
 
 /* reducing polynomial composition is the reason for PolyXY stuff : */
 
-GtransfoPoly GtransfoPoly::operator*(const GtransfoPoly &right) const {
+GtransfoPoly GtransfoPoly::operator*(GtransfoPoly const &right) const {
     // split each transfo into 2d polynomials
     PolyXY plx(*this, 0);
     PolyXY ply(*this, 1);
@@ -953,20 +988,20 @@ GtransfoPoly GtransfoPoly::operator*(const GtransfoPoly &right) const {
     PolyXY ry(composition(ply, prx, pry));
 
     // copy the results the hard way.
-    GtransfoPoly result(_degree * right._degree);
-    for (unsigned px = 0; px <= result._degree; ++px)
-        for (unsigned py = 0; py <= result._degree - px; ++py) {
+    GtransfoPoly result(_order * right._order);
+    for (unsigned px = 0; px <= result._order; ++px)
+        for (unsigned py = 0; py <= result._order - px; ++py) {
             result.coeff(px, py, 0) = rx.coeff(px, py);
             result.coeff(px, py, 1) = ry.coeff(px, py);
         }
     return result;
 }
 
-GtransfoPoly GtransfoPoly::operator+(const GtransfoPoly &right) const {
-    if (_degree >= right._degree) {
+GtransfoPoly GtransfoPoly::operator+(GtransfoPoly const &right) const {
+    if (_order >= right._order) {
         GtransfoPoly res(*this);
-        for (unsigned i = 0; i <= right._degree; ++i)
-            for (unsigned j = 0; j <= right._degree - i; ++j) {
+        for (unsigned i = 0; i <= right._order; ++i)
+            for (unsigned j = 0; j <= right._order - i; ++j) {
                 res.coeff(i, j, 0) += right.coeff(i, j, 0);
                 res.coeff(i, j, 1) += right.coeff(i, j, 1);
             }
@@ -975,19 +1010,24 @@ GtransfoPoly GtransfoPoly::operator+(const GtransfoPoly &right) const {
         return (right + (*this));
 }
 
-GtransfoPoly GtransfoPoly::operator-(const GtransfoPoly &right) const {
-    GtransfoPoly res(std::max(_degree, right._degree));
-    for (unsigned i = 0; i <= res._degree; ++i)
-        for (unsigned j = 0; j <= res._degree - i; ++j) {
+GtransfoPoly GtransfoPoly::operator-(GtransfoPoly const &right) const {
+    GtransfoPoly res(std::max(_order, right._order));
+    for (unsigned i = 0; i <= res._order; ++i)
+        for (unsigned j = 0; j <= res._order - i; ++j) {
             res.coeff(i, j, 0) = coeffOrZero(i, j, 0) - right.coeffOrZero(i, j, 0);
             res.coeff(i, j, 1) = coeffOrZero(i, j, 1) - right.coeffOrZero(i, j, 1);
         }
     return res;
 }
 
+std::shared_ptr<ast::Mapping> GtransfoPoly::toAstMap(jointcal::Frame const &domain) const {
+    auto inverse = inversePolyTransfo(*this, domain, 1e-7, _order + 2, 100);
+    return std::make_shared<ast::PolyMap>(toAstPolyMapCoefficients(), inverse->toAstPolyMapCoefficients());
+}
+
 void GtransfoPoly::write(ostream &s) const {
     s << " GtransfoPoly 1" << endl;
-    s << "degree " << _degree << endl;
+    s << "order " << _order << endl;
     int oldprec = s.precision();
     s << setprecision(12);
     for (unsigned k = 0; k < 2 * _nterms; ++k) s << _coeffs[k] << ' ';
@@ -1001,43 +1041,91 @@ void GtransfoPoly::read(istream &s) {
     if (format != 1)
         throw LSST_EXCEPT(pex::exceptions::InvalidParameterError, " GtransfoPoly::read : format is not 1 ");
 
-    string degree;
-    s >> degree >> _degree;
-    if (degree != "degree")
+    string order;
+    s >> order >> _order;
+    if (order != "order")
         throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,
-                          " GtransfoPoly::read : expecting \"degree\" and found " + degree);
-    setDegree(_degree);
+                          " GtransfoPoly::read : expecting \"order\" and found " + order);
+    setOrder(_order);
     for (unsigned k = 0; k < 2 * _nterms; ++k) s >> _coeffs[k];
 }
 
-std::unique_ptr<GtransfoPoly> inversePolyTransfo(const Gtransfo &direct, const Frame &frame,
-                                                 const double precision) {
+ndarray::Array<double, 2, 2> GtransfoPoly::toAstPolyMapCoefficients() const {
+    int nCoeffs = _coeffs.size();
+    ndarray::Array<double, 2, 2> result = ndarray::allocate(ndarray::makeVector(nCoeffs, 4));
+
+    ndarray::Size k = 0;
+    for (unsigned iCoord = 0; iCoord < 2; ++iCoord) {
+        for (unsigned p = 0; p <= _order; ++p) {
+            for (unsigned py = 0; py <= p; ++py, ++k) {
+                result[k][0] = coeff(p - py, py, iCoord);
+                result[k][1] = iCoord + 1;
+                result[k][2] = p - py;
+                result[k][3] = py;
+            }
+        }
+    }
+
+    return result;
+}
+
+std::shared_ptr<GtransfoPoly> inversePolyTransfo(Gtransfo const &forward, Frame const &domain,
+                                                 double const precision, int const maxOrder,
+                                                 unsigned const nSteps) {
     StarMatchList sm;
-    unsigned nx = 50;
-    double stepx = frame.getWidth() / (nx + 1);
-    unsigned ny = 50;
-    double stepy = frame.getHeight() / (ny + 1);
-    for (unsigned i = 0; i < nx; ++i)
-        for (unsigned j = 0; j < ny; ++j) {
-            Point in((i + 0.5) * stepx, (j + 0.5) * stepy);
-            Point out(direct.apply(in));
+    double xStart = domain.xMin;
+    double yStart = domain.yMin;
+    double xStep = domain.getWidth() / (nSteps - 1);
+    double yStep = domain.getHeight() / (nSteps - 1);
+    for (unsigned i = 0; i < nSteps; ++i) {
+        for (unsigned j = 0; j < nSteps; ++j) {
+            Point in(xStart + i * xStep, yStart + j * yStep);
+            Point out(forward.apply(in));
             sm.push_back(StarMatch(out, in, nullptr, nullptr));
         }
-    unsigned npairs = sm.size();
-    int maxdeg = 9;
-    int degree;
-    std::unique_ptr<GtransfoPoly> poly;
-    for (degree = 1; degree <= maxdeg; ++degree) {
-        poly.reset(new GtransfoPoly(degree));
-        poly->fit(sm);
-        // compute the chi2 ignoring errors:
-        double chi2 = 0;
-        for (auto const &i : sm) chi2 += i.point2.computeDist2(poly->apply((i.point1)));
-        if (chi2 / npairs < precision * precision) break;
     }
-    if (degree > maxdeg)
-        LOGLS_WARN(_log, "inversePolyTransfo: Reached max degree without reaching requested precision: "
-                                 << precision);
+    unsigned npairs = sm.size();
+    int order;
+    std::shared_ptr<GtransfoPoly> poly;
+    std::shared_ptr<GtransfoPoly> oldPoly;
+    double chi2 = 0;
+    double oldChi2 = std::numeric_limits<double>::infinity();
+    for (order = 1; order <= maxOrder; ++order) {
+        poly.reset(new GtransfoPoly(order));
+        auto success = poly->fit(sm);
+        if (success == -1) {
+            std::stringstream errMsg;
+            errMsg << "Cannot fit a polynomial of order " << order << " with " << nSteps << "^2 points";
+            throw pexExcept::RuntimeError(errMsg.str());
+        }
+        // compute the chi2 ignoring errors:
+        chi2 = 0;
+        for (auto const &i : sm) chi2 += i.point2.computeDist2(poly->apply((i.point1)));
+        LOGLS_TRACE(_log, "inversePoly order " << order << ": " << chi2 << " / " << npairs << " = "
+                                               << chi2 / npairs << " < " << precision * precision);
+
+        if (chi2 / npairs < precision * precision) break;
+
+        // If this triggers, we know we did not reach the required precision.
+        if (chi2 > oldChi2) {
+            LOGLS_WARN(_log, "inversePolyTransfo: chi2 increases (" << chi2 << " > " << oldChi2
+                                                                    << "); ending fit with order: " << order);
+            LOGLS_WARN(_log, "inversePolyTransfo: requested precision not reached: "
+                                     << chi2 << " / " << npairs << " = " << chi2 / npairs << " < "
+                                     << precision * precision);
+            poly = std::move(oldPoly);
+            order--;
+            break;
+        } else {
+            oldChi2 = chi2;
+            // Clone it so we don't lose it in the next iteration.
+            oldPoly = dynamic_pointer_cast<GtransfoPoly>(std::shared_ptr<Gtransfo>(poly->clone()));
+        }
+    }
+    if (order > maxOrder)
+        LOGLS_WARN(_log, "inversePolyTransfo: Reached max order without reaching requested precision: "
+                                 << chi2 << " / " << npairs << " = " << chi2 / npairs << " < "
+                                 << precision * precision);
     return poly;
 }
 
@@ -1057,14 +1145,14 @@ GtransfoLin::GtransfoLin(const double Dx, const double Dy, const double A11, con
     a22() = A22;
 }
 
-GtransfoLin::GtransfoLin(const GtransfoPoly &gtransfoPoly) : GtransfoPoly(1) {
-    if (gtransfoPoly.getDegree() != 1)
+GtransfoLin::GtransfoLin(GtransfoPoly const &gtransfoPoly) : GtransfoPoly(1) {
+    if (gtransfoPoly.getOrder() != 1)
         throw pexExcept::InvalidParameterError(
                 "Trying to build a GtransfoLin from a higher order transfo. Aborting. ");
     (GtransfoPoly &)(*this) = gtransfoPoly;
 }
 
-GtransfoLin GtransfoLin::operator*(const GtransfoLin &right) const {
+GtransfoLin GtransfoLin::operator*(GtransfoLin const &right) const {
     // There is a general routine in GtransfoPoly that would do the job:
     //  return GtransfoLin(GtransfoPoly::operator*(right));
     // however, we are using this composition of linear stuff heavily in
@@ -1079,13 +1167,13 @@ GtransfoLin GtransfoLin::operator*(const GtransfoLin &right) const {
     return result;
 }
 
-void GtransfoLin::computeDerivative(const Point &, GtransfoLin &derivative, const double) const {
+void GtransfoLin::computeDerivative(Point const &, GtransfoLin &derivative, const double) const {
     derivative = *this;
     derivative.coeff(0, 0, 0) = 0;
     derivative.coeff(0, 0, 1) = 0;
 }
 
-GtransfoLin GtransfoLin::linearApproximation(const Point &, const double) const { return *this; }
+GtransfoLin GtransfoLin::linearApproximation(Point const &, const double) const { return *this; }
 
 GtransfoLin GtransfoLin::invert() const {
     //
@@ -1117,11 +1205,11 @@ std::unique_ptr<Gtransfo> GtransfoLin::inverseTransfo(const double, const Frame 
     return std::unique_ptr<Gtransfo>(new GtransfoLin(invert()));
 }
 
-double GtransfoLinRot::fit(const StarMatchList &) {
+double GtransfoLinRot::fit(StarMatchList const &) {
     throw pexExcept::NotFoundError("GTransfoLinRot::fit not implemented! aborting");
 }
 
-double GtransfoLinShift::fit(const StarMatchList &starMatchList) {
+double GtransfoLinShift::fit(StarMatchList const &starMatchList) {
     int npairs = starMatchList.size();
     if (npairs < 3) {
         LOGLS_FATAL(_log, "GtransfoLinShift::fit trying to fit a linear transfo with only " << npairs
@@ -1137,8 +1225,8 @@ double GtransfoLinShift::fit(const StarMatchList &starMatchList) {
     A.setZero();
 
     for (auto const &it : starMatchList) {
-        const FatPoint &point1 = it.point1;
-        const FatPoint &point2 = it.point2;
+        FatPoint const &point1 = it.point1;
+        FatPoint const &point2 = it.point2;
         double deltax = point2.x - point1.x;
         double deltay = point2.y - point1.y;
         double vxx = point1.vx + point2.vx;
@@ -1191,7 +1279,7 @@ static double rad2deg(double rad) { return rad * 180. / M_PI; }
 /************** LinPix2Tan *******************/
 
 /* Implementation note : it seemed wise to incorporate
-   the radians to degrees convertion into the linPix2Tan
+   the radians to degreess convertion into the linPix2Tan
    part (right in the constructor), and to do the
    opposite operation in the LinPart routine.
    When I was coding the fit, I realized that it was a
@@ -1205,10 +1293,9 @@ static double rad2deg(double rad) { return rad * 180. / M_PI; }
    done in apply (for TanPix2RaDec and TanRaDec2Pix).
    This is a minor concern though....
 */
-BaseTanWcs::BaseTanWcs(const GtransfoLin &pix2Tan, const Point &tangentPoint,
+BaseTanWcs::BaseTanWcs(GtransfoLin const &pix2Tan, Point const &tangentPoint,
                        const GtransfoPoly *corrections) {
-    /* the angles returned by linPix2Tan should be in
-       degrees. */
+    // the angles returned by linPix2Tan should be in degrees.
     linPix2Tan = pix2Tan;
     ra0 = deg2rad(tangentPoint.x);
     dec0 = deg2rad(tangentPoint.y);
@@ -1283,7 +1370,6 @@ Point BaseTanWcs::getCrPix() const {
 
 BaseTanWcs::~BaseTanWcs() {}
 
-
 GtransfoSkyWcs::GtransfoSkyWcs(std::shared_ptr<afw::geom::SkyWcs> skyWcs) : _skyWcs(skyWcs) {}
 
 void GtransfoSkyWcs::apply(const double xIn, const double yIn, double &xOut, double &yOut) const {
@@ -1292,9 +1378,7 @@ void GtransfoSkyWcs::apply(const double xIn, const double yIn, double &xOut, dou
     yOut = outCoord[1].asDegrees();
 }
 
-void GtransfoSkyWcs::dump(std::ostream &stream) const {
-    stream << "GtransfoSkyWcs(" << *_skyWcs << ")";
-}
+void GtransfoSkyWcs::dump(std::ostream &stream) const { stream << "GtransfoSkyWcs(" << *_skyWcs << ")"; }
 
 double GtransfoSkyWcs::fit(const StarMatchList &starMatchList) {
     throw LSST_EXCEPT(pex::exceptions::LogicError, "Not implemented");
@@ -1306,20 +1390,22 @@ std::unique_ptr<Gtransfo> GtransfoSkyWcs::clone() const {
 
 /*************************** TanPix2RaDec ***************/
 
-TanPix2RaDec::TanPix2RaDec(const GtransfoLin &pix2Tan, const Point &tangentPoint,
+TanPix2RaDec::TanPix2RaDec(GtransfoLin const &pix2Tan, Point const &tangentPoint,
                            const GtransfoPoly *corrections)
         : BaseTanWcs(pix2Tan, tangentPoint, corrections) {}
 
 // ": Gtransfo" suppresses a warning
 TanPix2RaDec::TanPix2RaDec() : BaseTanWcs(GtransfoLin(), Point(0, 0), nullptr) {}
 
-std::unique_ptr<Gtransfo> TanPix2RaDec::reduceCompo(const Gtransfo *right) const {
-    const GtransfoLin *lin = dynamic_cast<const GtransfoLin *>(right);
-    if (lin && lin->getDegree() == 1) return std::unique_ptr<Gtransfo>(new TanPix2RaDec((*this) * (*lin)));
-    return std::unique_ptr<Gtransfo>(nullptr);
+std::unique_ptr<Gtransfo> TanPix2RaDec::composeAndReduce(GtransfoLin const &right) const {
+    if (right.getOrder() == 1) {
+        return std::make_unique<TanPix2RaDec>((*this) * (right));
+    } else {
+        return std::unique_ptr<Gtransfo>(nullptr);
+    }
 }
 
-TanPix2RaDec TanPix2RaDec::operator*(const GtransfoLin &right) const {
+TanPix2RaDec TanPix2RaDec::operator*(GtransfoLin const &right) const {
     TanPix2RaDec result(*this);
     result.linPix2Tan = result.linPix2Tan * right;
     return result;
@@ -1374,7 +1460,7 @@ void TanPix2RaDec::dump(ostream &stream) const {
     if (corr) stream << "PV correction: " << endl << *corr;
 }
 
-double TanPix2RaDec::fit(const StarMatchList &) {
+double TanPix2RaDec::fit(StarMatchList const &) {
     /* OK we could implement this routine, but it is
        probably useless since to do the match, we have to
        project from sky to tangent plane. When a match is
@@ -1390,7 +1476,7 @@ double TanPix2RaDec::fit(const StarMatchList &) {
 
 /*************************** TanSipPix2RaDec ***************/
 
-TanSipPix2RaDec::TanSipPix2RaDec(const GtransfoLin &pix2Tan, const Point &tangentPoint,
+TanSipPix2RaDec::TanSipPix2RaDec(GtransfoLin const &pix2Tan, Point const &tangentPoint,
                                  const GtransfoPoly *corrections)
         : BaseTanWcs(pix2Tan, tangentPoint, corrections) {}
 
@@ -1443,7 +1529,7 @@ void TanSipPix2RaDec::dump(ostream &stream) const {
     if (corr) stream << "PV correction: " << endl << *corr;
 }
 
-double TanSipPix2RaDec::fit(const StarMatchList &) {
+double TanSipPix2RaDec::fit(StarMatchList const &) {
     /* OK we could implement this routine, but it is
        probably useless since to do the match, we have to
        project from sky to tangent plane. When a match is
@@ -1459,11 +1545,11 @@ double TanSipPix2RaDec::fit(const StarMatchList &) {
 
 /***************  reverse transfo of TanPix2RaDec: TanRaDec2Pix ********/
 
-TanRaDec2Pix::TanRaDec2Pix(const GtransfoLin &tan2Pix, const Point &tangentPoint) : linTan2Pix(tan2Pix) {
+TanRaDec2Pix::TanRaDec2Pix(GtransfoLin const &tan2Pix, Point const &tangentPoint) : linTan2Pix(tan2Pix) {
     setTangentPoint(tangentPoint);
 }
 
-void TanRaDec2Pix::setTangentPoint(const Point &tangentPoint) {
+void TanRaDec2Pix::setTangentPoint(Point const &tangentPoint) {
     /* the radian to degrees conversion after projection
         is handled in apply */
     ra0 = deg2rad(tangentPoint.x);
@@ -1483,7 +1569,7 @@ Point TanRaDec2Pix::getTangentPoint() const { return Point(rad2deg(ra0), rad2deg
 GtransfoLin TanRaDec2Pix::getLinPart() const { return linTan2Pix; }
 
 // Use analytic derivatives, computed at the same time as the transform itself
-void TanRaDec2Pix::transformPosAndErrors(const FatPoint &in, FatPoint &out) const {
+void TanRaDec2Pix::transformPosAndErrors(FatPoint const &in, FatPoint &out) const {
     /* this routine is very similar to apply, but also propagates errors.
        The deg2rad and rad2deg are ignored for errors because they act as
        2 global scalings that cancel each other.
@@ -1573,7 +1659,7 @@ std::unique_ptr<Gtransfo> TanRaDec2Pix::clone() const {
     return std::unique_ptr<Gtransfo>(new TanRaDec2Pix(*this));
 }
 
-double TanRaDec2Pix::fit(const StarMatchList &) {
+double TanRaDec2Pix::fit(StarMatchList const &) {
     throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,
                       "TanRaDec2Pix::fit is NOT implemented (although it is doable)) ");
     return -1;
@@ -1593,7 +1679,7 @@ void UserTransfo::dump(ostream &stream) const {
     stream << "UserTransfo with user function @ " << _userFun << "and userData@ " << _userData << endl;
 }
 
-double UserTransfo::fit(const StarMatchList &) {
+double UserTransfo::fit(StarMatchList const &) {
     throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,
                       "UserTransfo::fit is NOT implemented (and will never be)) ");
     return -1;

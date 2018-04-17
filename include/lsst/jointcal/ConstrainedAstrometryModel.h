@@ -1,6 +1,6 @@
 // -*- LSST-C++ -*-
-#ifndef LSST_JOINTCAL_CONSTRAINED_POLY_MODEL_H
-#define LSST_JOINTCAL_CONSTRAINED_POLY_MODEL_H
+#ifndef LSST_JOINTCAL_CONSTRAINED_ASTROMETRY_MODEL_H
+#define LSST_JOINTCAL_CONSTRAINED_ASTROMETRY_MODEL_H
 
 #include "memory"  // for std::*_ptr
 
@@ -11,7 +11,7 @@ class CcdImage;
 #include "lsst/jointcal/AstrometryModel.h"
 #include "lsst/jointcal/Gtransfo.h"
 #include "lsst/jointcal/Frame.h"
-#include "lsst/jointcal/SimplePolyMapping.h"
+#include "lsst/jointcal/SimpleAstrometryMapping.h"
 #include "lsst/jointcal/ProjectionHandler.h"
 #include "lsst/jointcal/TwoTransfoMapping.h"
 #include "lsst/jointcal/CcdImage.h"
@@ -28,26 +28,27 @@ namespace jointcal {
  * required for this model is TwoTransfoMapping. This modeling of distortions
  * is meant for a set of images from a single mosaic imager.
  */
-class ConstrainedPolyModel : public AstrometryModel {
+class ConstrainedAstrometryModel : public AstrometryModel {
 public:
-    ConstrainedPolyModel(CcdImageList const &ccdImageList, ProjectionHandler const *projectionHandler,
-                         bool initFromWCS, unsigned nNotFit = 0, int chipDegree = 3, int visitDegree = 2);
+    ConstrainedAstrometryModel(CcdImageList const &ccdImageList,
+                               std::shared_ptr<ProjectionHandler const> projectionHandler, int chipOrder,
+                               int visitOrder);
 
     /// No copy or move: there is only ever one instance of a given model (i.e. per ccd+visit)
-    ConstrainedPolyModel(ConstrainedPolyModel const &) = delete;
-    ConstrainedPolyModel(ConstrainedPolyModel &&) = delete;
-    ConstrainedPolyModel &operator=(ConstrainedPolyModel const &) = delete;
-    ConstrainedPolyModel &operator=(ConstrainedPolyModel &&) = delete;
+    ConstrainedAstrometryModel(ConstrainedAstrometryModel const &) = delete;
+    ConstrainedAstrometryModel(ConstrainedAstrometryModel &&) = delete;
+    ConstrainedAstrometryModel &operator=(ConstrainedAstrometryModel const &) = delete;
+    ConstrainedAstrometryModel &operator=(ConstrainedAstrometryModel &&) = delete;
 
     // The following routines are the interface to AstrometryFit
     //!
-    Mapping const *getMapping(CcdImage const &) const;
+    AstrometryMapping const *getMapping(CcdImage const &) const;
 
     /**
      * Positions the various parameter sets into the parameter vector, starting at
      * firstIndex.
      */
-    unsigned assignIndices(unsigned firstIndex, std::string const &whatToFit);
+    unsigned assignIndices(std::string const &whatToFit, unsigned firstIndex);
 
     /**
      * Dispaches the offsets after a fit step into the actual locations of
@@ -75,21 +76,24 @@ public:
      * stars are reported) onto the Tangent plane (into which the pixel coordinates
      * are transformed).
      */
-    const Gtransfo *getSky2TP(CcdImage const &ccdImage) const { return _sky2TP->getSky2TP(ccdImage); }
+    const std::shared_ptr<Gtransfo const> getSky2TP(CcdImage const &ccdImage) const {
+        return _sky2TP->getSky2TP(ccdImage);
+    }
 
-    std::shared_ptr<TanSipPix2RaDec> produceSipWcs(CcdImage const &ccdImage) const;
+    /// @copydoc AstrometryModel::makeSkyWcs
+    std::shared_ptr<afw::geom::SkyWcs> makeSkyWcs(CcdImage const &ccdImage) const;
 
 private:
-    typedef std::map<const CcdImage *, std::unique_ptr<TwoTransfoMapping>> mappingMapType;
-    mappingMapType _mappings;
-    typedef std::map<CcdIdType, std::unique_ptr<SimpleGtransfoMapping>> chipMapType;
-    chipMapType _chipMap;
-    typedef std::map<VisitIdType, std::unique_ptr<SimpleGtransfoMapping>> visitMapType;
-    visitMapType _visitMap;
-    const ProjectionHandler *_sky2TP;
+    std::unordered_map<CcdImageKey, std::unique_ptr<TwoTransfoMapping>> _mappings;
+    std::map<CcdIdType, std::shared_ptr<SimpleGtransfoMapping>> _chipMap;
+    std::map<VisitIdType, std::shared_ptr<SimpleGtransfoMapping>> _visitMap;
+    const std::shared_ptr<ProjectionHandler const> _sky2TP;
     bool _fittingChips, _fittingVisits;
+
+    /// @copydoc AstrometryModel::findMapping
+    AstrometryMapping *findMapping(CcdImage const &ccdImage) const;
 };
 }  // namespace jointcal
 }  // namespace lsst
 
-#endif  // LSST_JOINTCAL_CONSTRAINED_POLY_MODEL_H
+#endif  // LSST_JOINTCAL_CONSTRAINED_ASTROMETRY_MODEL_H

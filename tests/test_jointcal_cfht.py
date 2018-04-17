@@ -64,7 +64,7 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
         # NOTE: The relative RMS limit was empirically determined from the
         # first run of jointcal on this data. We should always do better than
         # this in the future!
-        dist_rms_relative = 25e-3*u.arcsecond
+        dist_rms_relative = 11e-3*u.arcsecond
         pa1 = 0.014
         metrics = {'collected_astrometry_refStars': 825,
                    'collected_photometry_refStars': 825,
@@ -95,10 +95,10 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
             self.assertTrue(os.path.exists(name), msg='Did not find file %s'%name)
             os.remove(name)
 
-    def test_jointcalTask_2_visits_constrainedPoly(self):
+    def test_jointcalTask_2_visits_constrainedAstrometry_no_photometry(self):
         self.config = lsst.jointcal.jointcal.JointcalConfig()
         self.config.astrometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
-        self.config.astrometryModel = "constrainedPoly"
+        self.config.astrometryModel = "constrained"
         self.config.doPhotometry = False
         self.config.sourceSelector['astrometry'].badFlags.append("base_PixelFlags_flag_interpolated")
         self.jointcalStatistics.do_photometry = False
@@ -106,16 +106,16 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
         # NOTE: The relative RMS limit was empirically determined from the
         # first run of jointcal on this data. We should always do better than
         # this in the future!
-        dist_rms_relative = 16e-3*u.arcsecond
-        dist_rms_absolute = 54e-3*u.arcsecond
+        dist_rms_relative = 12e-3*u.arcsecond
+        dist_rms_absolute = 48e-3*u.arcsecond
         pa1 = None
         metrics = {'collected_astrometry_refStars': 825,
                    'selected_astrometry_refStars': 350,
                    'associated_astrometry_fittedStars': 2269,
                    'selected_astrometry_fittedStars': 1239,
                    'selected_astrometry_ccdImages': 12,
-                   'astrometry_final_chi2': 1376.24,
-                   'astrometry_final_ndof': 2630,
+                   'astrometry_final_chi2': 1253.80,
+                   'astrometry_final_ndof': 2660,
                    }
 
         self._testJointcalTask(2, dist_rms_relative, dist_rms_absolute, pa1, metrics=metrics)

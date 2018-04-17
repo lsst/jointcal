@@ -16,10 +16,10 @@ OneTPPerVisitHandler::OneTPPerVisitHandler(const CcdImageList &ccdImageList) {
     }
 }
 
-const Gtransfo *OneTPPerVisitHandler::getSky2TP(const CcdImage &ccdImage) const {
+const std::shared_ptr<const Gtransfo> OneTPPerVisitHandler::getSky2TP(const CcdImage &ccdImage) const {
     auto it = tMap.find(ccdImage.getVisit());
     if (it == tMap.end()) return nullptr;
-    return &*(it->second);
+    return it->second;
 }
 }  // namespace jointcal
 }  // namespace lsst

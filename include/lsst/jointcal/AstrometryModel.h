@@ -6,7 +6,7 @@
 
 #include "lsst/jointcal/Gtransfo.h"
 #include "lsst/jointcal/Eigenstuff.h"
-#include "lsst/jointcal/Mapping.h"
+#include "lsst/jointcal/AstrometryMapping.h"
 
 namespace lsst {
 namespace jointcal {
@@ -20,12 +20,15 @@ class Gtransfo;
 the top of simplepolymodel.h */
 class AstrometryModel {
 public:
+    /// Return the number of parameters in the mapping of CcdImage
+    int getNpar(CcdImage const &ccdImage) const { return findMapping(ccdImage)->getNpar(); }
+
     //! Mapping associated to a given CcdImage
-    virtual const Mapping *getMapping(CcdImage const &) const = 0;
+    virtual const AstrometryMapping *getMapping(CcdImage const &) const = 0;
 
     //! Assign indices to parameters involved in mappings, starting at firstIndex. Returns the highest
     //! assigned index.
-    virtual unsigned assignIndices(unsigned firstIndex, std::string const &whatToFit) = 0;
+    virtual unsigned assignIndices(std::string const &whatToFit, unsigned firstIndex) = 0;
 
     //! Offset the parameters by the provided amounts.
     /*! The shifts are applied according to the indices given in
@@ -35,15 +38,25 @@ public:
     //! The transformation used to project the positions of FittedStars.
     /*! This defines the coordinate system into which the Mapping of
         this Ccdimage maps the pixel coordinates. */
-    virtual const Gtransfo *getSky2TP(CcdImage const &ccdImage) const = 0;
+    virtual const std::shared_ptr<Gtransfo const> getSky2TP(CcdImage const &ccdImage) const = 0;
 
-    //! Cook up a SIP WCS.
-    virtual std::shared_ptr<TanSipPix2RaDec> produceSipWcs(CcdImage const &ccdImage) const = 0;
+    /**
+     * Make a SkyWcs that contains this model.
+     *
+     * @param      ccdImage  The exposure to create the SkyWcs for.
+     *
+     * @return     SkyWcs containing this model.
+     */
+    virtual std::shared_ptr<afw::geom::SkyWcs> makeSkyWcs(CcdImage const &ccdImage) const = 0;
 
     //!
     virtual void freezeErrorTransform() = 0;
 
     virtual ~AstrometryModel(){};
+
+protected:
+    /// Return a pointer to the mapping associated with this ccdImage.
+    virtual AstrometryMapping *findMapping(CcdImage const &ccdImage) const = 0;
 };
 }  // namespace jointcal
 }  // namespace lsst

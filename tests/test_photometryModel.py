@@ -155,11 +155,11 @@ class SimplePhotometryModelTestCase(PhotometryModelTestBase, lsst.utils.tests.Te
 class ConstrainedPhotometryModelTestCase(PhotometryModelTestBase, lsst.utils.tests.TestCase):
     def setUp(self):
         super(ConstrainedPhotometryModelTestCase, self).setUp()
-        self.visitDegree = 3
+        self.visitOrder = 3
         self.focalPlaneBBox = self.camera.getFpBBox()
         self.model = lsst.jointcal.photometryModels.ConstrainedPhotometryModel(self.ccdImageList,
                                                                                self.focalPlaneBBox,
-                                                                               self.visitDegree)
+                                                                               self.visitOrder)
         # have to call this once to let offsetParams work.
         self.model.assignIndices("", self.firstIndex)
         # tweak to get more than just a constant field for the second ccdImage
@@ -171,7 +171,7 @@ class ConstrainedPhotometryModelTestCase(PhotometryModelTestBase, lsst.utils.tes
 
     def test_getNpar(self):
         """
-        Degree 3 => (3+1)*(3+2))/2 = 10 parameters,
+        Order 3 => (3+1)*(3+2))/2 = 10 parameters,
         and the chip map is fixed (only one ccd), so does not contribute.
         """
         expect = (4*5)/2

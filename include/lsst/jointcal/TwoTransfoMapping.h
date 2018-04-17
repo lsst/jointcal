@@ -4,18 +4,19 @@
 
 #include "memory"
 
-#include "lsst/jointcal/Mapping.h"
+#include "lsst/jointcal/AstrometryMapping.h"
 #include "lsst/jointcal/Eigenstuff.h"
-#include "lsst/jointcal/SimplePolyMapping.h"
+#include "lsst/jointcal/SimpleAstrometryMapping.h"
 
 namespace lsst {
 namespace jointcal {
 
 //! The mapping with two transfos in a row.
-class TwoTransfoMapping : public Mapping {
+class TwoTransfoMapping : public AstrometryMapping {
 public:
     //!
-    TwoTransfoMapping(SimpleGtransfoMapping *chipMapping, SimpleGtransfoMapping *visitMapping);
+    TwoTransfoMapping(std::shared_ptr<SimpleGtransfoMapping> chipMapping,
+                      std::shared_ptr<SimpleGtransfoMapping> visitMapping);
 
     /// No copy or move: there is only ever one instance of a given model (i.e.. per ccd+visit)
     TwoTransfoMapping(TwoTransfoMapping const &) = delete;
@@ -34,7 +35,7 @@ public:
     void transformPosAndErrors(FatPoint const &where, FatPoint &outPoint) const;
 
     /**
-     * @copydoc Mapping::offsetParams
+     * @copydoc AstrometryMapping::offsetParams
      *
      * @note  this routine is not used when fitting (the Model manages the mappings separately),
      *        but can be useful for debugging
@@ -57,11 +58,11 @@ public:
     void freezeErrorTransform();
 
 private:
-    friend class ConstrainedPolyModel;
+    friend class ConstrainedAstrometryModel;
     //!
     void setWhatToFit(const bool fittingT1, const bool fittingT2);
 
-    SimpleGtransfoMapping *_m1, *_m2;
+    std::shared_ptr<SimpleGtransfoMapping> _m1, _m2;
     unsigned _nPar1, _nPar2;
     struct tmpVars  // just there to get around constness issues
     {

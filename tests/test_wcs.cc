@@ -7,7 +7,6 @@
 
 #include "lsst/jointcal/StarMatch.h"
 #include "lsst/jointcal/Gtransfo.h"
-#include "lsst/jointcal/SipToGtransfo.h"
 #include "lsst/jointcal/Frame.h"
 #include "lsst/afw/geom/SkyWcs.h"
 #include "lsst/afw/image/Utils.h"

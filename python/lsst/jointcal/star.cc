@@ -44,16 +44,26 @@ namespace {
 void declarePoint(py::module &mod) {
     py::class_<Point, std::shared_ptr<Point>> cls(mod, "Point");
 
+    cls.def(py::init<double, double>(), "x"_a, "y"_a);
+
     cls.def_readonly("x", &Point::x);
     cls.def_readonly("y", &Point::y);
+
+    utils::python::addOutputOp(cls, "__str__");
+}
+
+void declareFatPoint(py::module &mod) {
+    py::class_<FatPoint, std::shared_ptr<FatPoint>, Point> cls(mod, "FatPoint");
+
+    cls.def(py::init());
 }
 
 void declareBaseStar(py::module &mod) {
-    py::class_<BaseStar, std::shared_ptr<BaseStar>, Point> cls(mod, "BaseStar");
+    py::class_<BaseStar, std::shared_ptr<BaseStar>, FatPoint> cls(mod, "BaseStar");
 
     cls.def(py::init<double, double, double, double>(), "x"_a, "y"_a, "flux"_a, "fluxErr"_a);
 
-    // these three are actually declared in FatPoint, but we don't need that in Python.
+    // these three are actually declared in FatPoint, but we didn't want that in Python.
     // NOTE: see DM-9814 about the necessity of the pointer cast below.
     cls.def_readonly("vx", (double BaseStar::*)&BaseStar::vx);
     cls.def_readonly("vy", (double BaseStar::*)&BaseStar::vy);
@@ -61,8 +71,6 @@ void declareBaseStar(py::module &mod) {
 
     // cls.def("getFlux", &BaseStar::getFlux);
     cls.def_property_readonly("flux", (double (BaseStar::*)() const) & BaseStar::getFlux);
-
-    utils::python::addOutputOp(cls, "__str__");
 }
 
 void declareRefStar(py::module &mod) {
@@ -97,6 +105,7 @@ PYBIND11_PLUGIN(star) {
     py::module mod("star");
 
     declarePoint(mod);
+    declareFatPoint(mod);
     declareBaseStar(mod);
     declareRefStar(mod);
     declareFittedStar(mod);

@@ -147,32 +147,32 @@ class JointcalConfig(pexConfig.Config):
         dtype=int,
         default=2,
     )
-    astrometrySimpleDegree = pexConfig.Field(
-        doc="Polynomial degree for fitting the simple astrometry model.",
+    astrometrySimpleOrder = pexConfig.Field(
+        doc="Polynomial order for fitting the simple astrometry model.",
         dtype=int,
         default=3,
     )
-    astrometryChipDegree = pexConfig.Field(
-        doc="Degree of the per-chip transform for the constrained astrometry model.",
+    astrometryChipOrder = pexConfig.Field(
+        doc="Order of the per-chip transform for the constrained astrometry model.",
         dtype=int,
-        default=2,
+        default=1,
     )
-    astrometryVisitDegree = pexConfig.Field(
-        doc="Degree of the per-visit transform for the constrained astrometry model.",
+    astrometryVisitOrder = pexConfig.Field(
+        doc="Order of the per-visit transform for the constrained astrometry model.",
         dtype=int,
-        default=3,
+        default=5,
     )
     useInputWcs = pexConfig.Field(
-        doc="Use the input calexp WCSs to initialize the astrometryModel.",
+        doc="Use the input calexp WCSs to initialize a SimpleAstrometryModel.",
         dtype=bool,
         default=True,
     )
     astrometryModel = pexConfig.ChoiceField(
         doc="Type of model to fit to astrometry",
         dtype=str,
-        default="simplePoly",
-        allowed={"simplePoly": "One polynomial per ccd",
-                 "constrainedPoly": "One polynomial per ccd, and one polynomial per visit"}
+        default="simple",
+        allowed={"simple": "One polynomial per ccd",
+                 "constrained": "One polynomial per ccd, and one polynomial per visit"}
     )
     photometryModel = pexConfig.ChoiceField(
         doc="Type of model to fit to photometry",
@@ -181,8 +181,8 @@ class JointcalConfig(pexConfig.Config):
         allowed={"simple": "One constant zeropoint per ccd and visit",
                  "constrained": "Constrained zeropoint per ccd, and one polynomial per visit"}
     )
-    photometryVisitDegree = pexConfig.Field(
-        doc="Degree of the per-visit polynomial transform for the constrained photometry model.",
+    photometryVisitOrder = pexConfig.Field(
+        doc="Order of the per-visit polynomial transform for the constrained photometry model.",
         dtype=int,
         default=7,
     )
@@ -544,7 +544,7 @@ class JointcalTask(pipeBase.CmdLineTask):
         if self.config.photometryModel == "constrained":
             model = lsst.jointcal.ConstrainedPhotometryModel(associations.getCcdImageList(),
                                                              self.focalPlaneBBox,
-                                                             visitDegree=self.config.photometryVisitDegree)
+                                                             visitOrder=self.config.photometryVisitOrder)
         elif self.config.photometryModel == "simple":
             model = lsst.jointcal.SimplePhotometryModel(associations.getCcdImageList())
 
@@ -559,6 +559,13 @@ class JointcalTask(pipeBase.CmdLineTask):
         if not np.isfinite(chi2.chi2):
             raise FloatingPointError('Initial chi2 is invalid: %s'%chi2)
         self.log.info("Initialized: %s", str(chi2))
+        # The constrained model needs the visit transfo fit first; the chip
+        # transfo is initialized from the singleFrame PhotoCalib, so it's close.
+        if self.config.photometryModel == "constrained":
+            # TODO: (related to DM-8046): implement Visit/Chip choice
+            fit.minimize("ModelVisit")
+            chi2 = fit.computeChi2()
+            self.log.info(str(chi2))
         fit.minimize("Model")
         chi2 = fit.computeChi2()
         self.log.info(str(chi2))
@@ -612,15 +619,17 @@ class JointcalTask(pipeBase.CmdLineTask):
         # them so carefully?
         sky_to_tan_projection = lsst.jointcal.OneTPPerVisitHandler(associations.getCcdImageList())
 
-        if self.config.astrometryModel == "constrainedPoly":
-            model = lsst.jointcal.ConstrainedPolyModel(associations.getCcdImageList(),
-                                                       sky_to_tan_projection, self.config.useInputWcs, 0,
-                                                       chipDegree=self.config.astrometryChipDegree,
-                                                       visitDegree=self.config.astrometryVisitDegree)
-        elif self.config.astrometryModel == "simplePoly":
-            model = lsst.jointcal.SimplePolyModel(associations.getCcdImageList(),
-                                                  sky_to_tan_projection, self.config.useInputWcs, 0,
-                                                  self.config.astrometrySimpleDegree)
+        if self.config.astrometryModel == "constrained":
+            model = lsst.jointcal.ConstrainedAstrometryModel(associations.getCcdImageList(),
+                                                             sky_to_tan_projection,
+                                                             chipOrder=self.config.astrometryChipOrder,
+                                                             visitOrder=self.config.astrometryVisitOrder)
+        elif self.config.astrometryModel == "simple":
+            model = lsst.jointcal.SimpleAstrometryModel(associations.getCcdImageList(),
+                                                        sky_to_tan_projection,
+                                                        self.config.useInputWcs,
+                                                        nNotFit=0,
+                                                        order=self.config.astrometrySimpleOrder)
 
         fit = lsst.jointcal.AstrometryFit(associations, model, self.config.posError)
         chi2 = fit.computeChi2()
@@ -633,6 +642,12 @@ class JointcalTask(pipeBase.CmdLineTask):
         if not np.isfinite(chi2.chi2):
             raise FloatingPointError('Initial chi2 is invalid: %s'%chi2)
         self.log.info("Initialized: %s", str(chi2))
+        # The constrained model needs the visit transfo fit first; the chip
+        # transfo is initialized from the detector's cameraGeom, so it's close.
+        if self.config.astrometryModel == "constrained":
+            fit.minimize("DistortionsVisit")
+            chi2 = fit.computeChi2()
+            self.log.info(str(chi2))
         fit.minimize("Distortions")
         chi2 = fit.computeChi2()
         self.log.info(str(chi2))
@@ -702,10 +717,9 @@ class JointcalTask(pipeBase.CmdLineTask):
             visit = ccdImage.visit
             dataRef = visit_ccd_to_dataRef[(visit, ccd)]
             self.log.info("Updating WCS for visit: %d, ccd: %d", visit, ccd)
-            tanSip = model.produceSipWcs(ccdImage)
-            wcs = lsst.jointcal.gtransfoToTanWcs(tanSip, ccdImage.imageFrame, False)
+            skyWcs = model.makeSkyWcs(ccdImage)
             try:
-                dataRef.put(wcs, 'jointcal_wcs')
+                dataRef.put(skyWcs, 'jointcal_wcs')
             except pexExceptions.Exception as e:
                 self.log.fatal('Failed to write updated Wcs: %s', str(e))
                 raise e

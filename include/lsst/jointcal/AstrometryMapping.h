@@ -1,6 +1,6 @@
 // -*- LSST-C++ -*-
-#ifndef LSST_JOINTCAL_MAPPING_H
-#define LSST_JOINTCAL_MAPPING_H
+#ifndef LSST_JOINTCAL_ASTROMETRY_MAPPING_H
+#define LSST_JOINTCAL_ASTROMETRY_MAPPING_H
 
 #include <vector>
 #include "lsst/jointcal/Eigenstuff.h"
@@ -12,7 +12,7 @@ class FatPoint;
 class Point;
 
 //! virtual class needed in the abstraction of the distortion model
-class Mapping {
+class AstrometryMapping {
 public:
     //! Number of parameters in total
     virtual unsigned getNpar() const = 0;
@@ -21,7 +21,7 @@ public:
     /// Expects that indices has enough space reserved.
     virtual void getMappingIndices(std::vector<unsigned> &indices) const = 0;
 
-    //! Actually applies the mapping and evaluates the derivatives w.r.t the fitted parameters.
+    //! Actually applies the AstrometryMapping and evaluates the derivatives w.r.t the fitted parameters.
     /*! This is grouped into a single call because for most models,
         evaluating the derivatives w.r.T parameters is not much longer
         than just transforming */
@@ -40,8 +40,8 @@ public:
                                     double epsilon) const = 0;
 
     //!
-    virtual ~Mapping(){};
+    virtual ~AstrometryMapping(){};
 };
 }  // namespace jointcal
 }  // namespace lsst
-#endif  // LSST_JOINTCAL_MAPPING_H
+#endif  // LSST_JOINTCAL_ASTROMETRY_MAPPING_H

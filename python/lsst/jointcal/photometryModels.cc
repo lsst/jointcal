@@ -74,7 +74,7 @@ void declareConstrainedPhotometryModel(py::module &mod) {
     py::class_<ConstrainedPhotometryModel, std::shared_ptr<ConstrainedPhotometryModel>, PhotometryModel> cls(
             mod, "ConstrainedPhotometryModel");
     cls.def(py::init<CcdImageList const &, afw::geom::Box2D const &, int>(), "CcdImageList"_a, "bbox"_a,
-            "visitDegree"_a = 7);
+            "visitOrder"_a = 7);
 }
 
 PYBIND11_PLUGIN(photometryModels) {

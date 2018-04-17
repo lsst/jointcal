@@ -129,7 +129,7 @@ private:
 };
 
 /**
- * nth-degree 2d Chebyshev photometry transfo.
+ * nth-order 2d Chebyshev photometry transfo.
  *
  * The 2-d Chebyshev polynomial used here is defined as:
  *
@@ -137,10 +137,10 @@ private:
  *  f(x,y) = \sum_i \sum_j a_{i,j} T_i(x) T_j(y)
  *  @f]
  *
- * where @f$T_n(x)@f$ is the n-th degree Chebyshev polynomial of @f$x@f$ and
+ * where @f$T_n(x)@f$ is the n-th order Chebyshev polynomial of @f$x@f$ and
  * @f$a_{i,j}@f$ is the corresponding coefficient of the (i,j) polynomial term.
  *
- * Note that the polynomial degree=n means that the highest terms will be of the form:
+ * Note that the polynomial order=n means that the highest terms will be of the form:
  *   @f[
  *   a_{0,n}*x^n*y^0, a_{n-1,1}*x^(n-1)*y^1, ..., a_{1,n-1}*x^1*y^(n-1), a_{n,0}*x^0*y^n
  *   @f]
@@ -148,17 +148,17 @@ private:
 class PhotometryTransfoChebyshev : public PhotometryTransfo {
 public:
     /**
-     * Create an identity (a_0,0==1) Chebyshev transfo with terms up to degree in (x*y).
+     * Create an identity (a_0,0==1) Chebyshev transfo with terms up to order in (x*y).
      *
-     * @param[in]  degree  The maximum degree in (x*y).
+     * @param[in]  order  The maximum order in (x*y).
      * @param[in]  bbox    The bounding box it is valid within, to rescale it to [-1,1].
      */
-    PhotometryTransfoChebyshev(size_t degree, afw::geom::Box2D const &bbox);
+    PhotometryTransfoChebyshev(size_t order, afw::geom::Box2D const &bbox);
 
     /**
      * Create a Chebyshev transfo with the specified coefficients.
      *
-     * The polynomial degree is determined from the number of coefficients.
+     * The polynomial order is determined from the number of coefficients.
      *
      * @param      coefficients  The polynomial coefficients.
      * @param[in]  bbox          The bounding box it is valid within, to rescale it to [-1,1].
@@ -193,7 +193,7 @@ public:
     /// @copydoc PhotometryTransfo::getParameters
     Eigen::VectorXd getParameters() const override;
 
-    ndarray::Size getDegree() const { return _degree; }
+    ndarray::Size getOrder() const { return _order; }
 
     afw::geom::Box2D getBBox() const { return _bbox; }
 
@@ -204,8 +204,8 @@ private:
     afw::geom::Box2D _bbox;                        // the domain of this function
     afw::geom::AffineTransform _toChebyshevRange;  // maps points from the bbox to [-1,1]x[-1,1]
 
-    ndarray::Array<double, 2, 2> _coefficients;  // shape=(degree+1, degree+1)
-    ndarray::Size _degree;
+    ndarray::Array<double, 2, 2> _coefficients;  // shape=(order+1, order+1)
+    ndarray::Size _order;
     ndarray::Size _nParameters;
 
     // Compute the integral of this function over its bounding-box.

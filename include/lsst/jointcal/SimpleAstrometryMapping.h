@@ -1,10 +1,10 @@
 // -*- LSST-C++ -*-
-#ifndef LSST_JOINTCAL_SIMPLE_POLY_MAPPING_H
-#define LSST_JOINTCAL_SIMPLE_POLY_MAPPING_H
+#ifndef LSST_JOINTCAL_SIMPLE_ASTROMETRY_MAPPING_H
+#define LSST_JOINTCAL_SIMPLE_ASTROMETRY_MAPPING_H
 
 #include <memory>  // for unique_ptr
 
-#include "lsst/jointcal/Mapping.h"
+#include "lsst/jointcal/AstrometryMapping.h"
 #include "lsst/jointcal/Gtransfo.h"
 #include "lsst/jointcal/CcdImage.h"
 
@@ -16,10 +16,10 @@ simplePolyMapping overloads a few routines. */
 namespace lsst {
 namespace jointcal {
 
-class SimpleGtransfoMapping : public Mapping {
+class SimpleGtransfoMapping : public AstrometryMapping {
 public:
-    SimpleGtransfoMapping(Gtransfo const &gtransfo, bool toFit = true)
-            : toFit(toFit), transfo(gtransfo.clone()), errorProp(transfo), lin(new GtransfoLin) {
+    SimpleGtransfoMapping(Gtransfo const &gtransfo, bool toBeFit = true)
+            : toBeFit(toBeFit), transfo(gtransfo.clone()), errorProp(transfo), lin(new GtransfoLin) {
         // in this order:
         // take a copy of the input transfo,
         // assign the transformation used to propagate errors to the transfo itself
@@ -41,7 +41,7 @@ public:
 
     //!
     unsigned getNpar() const {
-        if (toFit)
+        if (toBeFit)
             return transfo->getNpar();
         else
             return 0;
@@ -69,7 +69,7 @@ public:
         derivative(0, 0) = lin->coeff(1, 0, 0);
         //
         /* This does not work : it was proved by rotating the frame
-           see the compilation switch ROTATE_T2 in constrainedpolymodel.cc
+           see the compilation switch ROTATE_T2 in constrainedAstrometryModel.cc
         derivative(1,0) = lin->coeff(1,0,1);
         derivative(0,1) = lin->coeff(0,1,0);
         */
@@ -79,7 +79,9 @@ public:
     }
 
     //!
-    void offsetParams(Eigen::VectorXd const &delta) { transfo->offsetParams(delta); }
+    void offsetParams(Eigen::VectorXd const &delta) {
+        if (toBeFit) transfo->offsetParams(delta);
+    }
 
     //! position of the parameters within the grand fitting scheme
     unsigned getIndex() const { return index; }
@@ -96,8 +98,14 @@ public:
     //! Access to the (fitted) transfo
     virtual Gtransfo const &getTransfo() const { return *transfo; }
 
+    /// Get whether this mapping is fit as part of a Model.
+    bool getToBeFit() const { return toBeFit; }
+    /// Set whether this Mapping is to be fit as part of a Model.
+    void setToBeFit(bool value) { toBeFit = value; }
+
 protected:
-    bool toFit;
+    // Whether this Mapping is fit as part of a Model.
+    bool toBeFit;
     unsigned index;
     /* inheritance may also work. Perhaps with some trouble because
        some routines in Mapping and Gtransfo have the same name */
@@ -148,7 +156,7 @@ public:
         derivative(0, 0) = lin->coeff(1, 0, 0);
         //
         /* This does not work : it was proved by rotating the frame
-           see the compilation switch ROTATE_T2 in constrainedpolymodel.cc
+           see the compilation switch ROTATE_T2 in constrainedAstrometryModel.cc
         derivative(1,0) = lin->coeff(1,0,1);
         derivative(0,1) = lin->coeff(0,1,0);
         */
@@ -221,4 +229,4 @@ public:
 }  // namespace jointcal
 }  // namespace lsst
 
-#endif  // LSST_JOINTCAL_SIMPLE_POLY_MAPPING_H
+#endif  // LSST_JOINTCAL_SIMPLE_ASTROMETRY_MAPPING_H

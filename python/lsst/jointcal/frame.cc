@@ -22,6 +22,8 @@
 
 #include "pybind11/pybind11.h"
 
+#include "lsst/utils/python.h"
+
 #include "lsst/jointcal/Frame.h"
 
 namespace py = pybind11;
@@ -31,7 +33,13 @@ namespace lsst {
 namespace jointcal {
 namespace {
 
-void declareFrame(py::module &mod) { py::class_<Frame, std::shared_ptr<Frame>> cls(mod, "Frame"); }
+void declareFrame(py::module &mod) {
+    py::class_<Frame, std::shared_ptr<Frame>> cls(mod, "Frame");
+
+    cls.def(py::init<Point const &, Point const &>(), "lowerLeft"_a, "upperRight"_a);
+
+    utils::python::addOutputOp(cls, "__str__");
+}
 
 PYBIND11_PLUGIN(frame) {
     py::module mod("frame");

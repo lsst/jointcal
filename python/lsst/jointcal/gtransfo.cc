@@ -20,11 +20,18 @@
  * see <https://www.lsstcorp.org/LegalNotices/>.
  */
 
+#include "astshim.h"
+#include "numpy/arrayobject.h"
 #include "pybind11/pybind11.h"
+#include "ndarray/pybind11.h"
+#include "ndarray/eigen.h"
+#include "Eigen/Core"
+
+#include "lsst/utils/python.h"
 
 #include "lsst/jointcal/Frame.h"
 #include "lsst/jointcal/Gtransfo.h"
-#include "lsst/jointcal/SipToGtransfo.h"
+#include "lsst/jointcal/Point.h"
 
 namespace py = pybind11;
 using namespace pybind11::literals;
@@ -34,9 +41,17 @@ namespace jointcal {
 namespace {
 
 void declareGtransfo(py::module &mod) {
-    py::class_<Gtransfo, std::shared_ptr<Gtransfo>> cls(mod, "Gtransfo");
+    py::class_<Gtransfo, std::shared_ptr<Gtransfo>, std::unique_ptr<Gtransfo>> cls(mod, "Gtransfo");
 
-    cls.def("__str__", &Gtransfo::__str__);
+    cls.def("apply", (jointcal::Point(Gtransfo::*)(const jointcal::Point &) const) & Gtransfo::apply,
+            "inPos"_a);
+    cls.def("apply", (jointcal::Frame(Gtransfo::*)(Frame const &, bool) const) & Gtransfo::apply,
+            "inputframe"_a, "inscribed"_a);
+    cls.def("getNpar", &GtransfoPoly::getNpar);
+    cls.def("offsetParams", &GtransfoPoly::offsetParams);
+    cls.def("toAstMap", &GtransfoPoly::toAstMap);
+
+    utils::python::addOutputOp(cls, "__str__");
 }
 
 void declareGtransfoIdentity(py::module &mod) {
@@ -45,6 +60,20 @@ void declareGtransfoIdentity(py::module &mod) {
 
 void declareGtransfoPoly(py::module &mod) {
     py::class_<GtransfoPoly, std::shared_ptr<GtransfoPoly>, Gtransfo> cls(mod, "GtransfoPoly");
+
+    cls.def(py::init<const unsigned>(), "order"_a);
+    cls.def("getOrder", &GtransfoPoly::getOrder);
+    cls.def("coeff", (double (GtransfoPoly::*)(unsigned const, unsigned const, unsigned const) const) &
+                             GtransfoPoly::coeff);
+    cls.def("write", [](GtransfoPoly const &self) {
+        std::stringstream result;
+        self.write(result);
+        return result.str();
+    });
+    cls.def("read", [](GtransfoPoly &self, std::string const &str) {
+        std::istringstream istr(str);
+        self.read(istr);
+    });
 }
 
 void declareGtransfoLin(py::module &mod) {
@@ -85,8 +114,15 @@ void declareTanSipPix2RaDec(py::module &mod) {
 }
 
 PYBIND11_PLUGIN(gtransfo) {
+    py::module::import("astshim.mapping");
     py::module::import("lsst.jointcal.frame");
+    py::module::import("lsst.jointcal.star");
     py::module mod("gtransfo");
+
+    if (_import_array() < 0) {
+        PyErr_SetString(PyExc_ImportError, "numpy.core.multiarray failed to import");
+        return nullptr;
+    }
 
     declareGtransfo(mod);
     declareGtransfoIdentity(mod);
@@ -102,7 +138,8 @@ PYBIND11_PLUGIN(gtransfo) {
     declareTanSipPix2RaDec(mod);
 
     // utility functions
-    mod.def("gtransfoToTanWcs", &gtransfoToTanWcs, py::return_value_policy::move);  // from SipToGtransfo.h
+    mod.def("inversePolyTransfo", &inversePolyTransfo, "forward"_a, "domain"_a, "precision"_a,
+            "maxOrder"_a = 9, "nSteps"_a = 50);
 
     return mod.ptr();
 }
