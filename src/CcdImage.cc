@@ -130,6 +130,21 @@ CcdImage::CcdImage(afw::table::SourceCatalog &catalog, std::shared_ptr<lsst::afw
     }
 }
 
+std::pair<int, int> CcdImage::countStars() const {
+    int measuredStars = 0;
+    int refStars = 0;
+    for (auto const &measuredStar : _catalogForFit) {
+        if (measuredStar->isValid()) {
+            measuredStars++;
+        }
+        if ((measuredStar->getFittedStar() != nullptr) &&
+            (measuredStar->getFittedStar()->getRefStar() != nullptr)) {
+            refStars++;
+        }
+    }
+    return std::make_pair(measuredStars, refStars);
+}
+
 void CcdImage::setCommonTangentPoint(Point const &commonTangentPoint) {
     _commonTangentPoint = commonTangentPoint;
 

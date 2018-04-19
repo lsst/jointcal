@@ -73,6 +73,16 @@ public:
     }
 
     /**
+     * Count the number of valid measured and reference stars that fall within this ccdImage.
+     *
+     * Measured stars are counted if they are valid. Reference stars are counted if a measured star
+     * (valid or not) has a fittedStar that has an associated refStar.
+     *
+     * @return Number of (measured, reference) stars in the image.
+     */
+    std::pair<int, int> countStars() const;
+
+    /**
      * @brief      Sets the common tangent point and computes necessary transforms.
      *
      * @param[in]  commonTangentPoint  The common tangent point of all ccdImages (decimal degrees).

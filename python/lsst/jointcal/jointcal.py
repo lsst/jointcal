@@ -147,6 +147,16 @@ class JointcalConfig(pexConfig.Config):
         dtype=int,
         default=2,
     )
+    minMeasuredStarsPerCcd = pexConfig.Field(
+        doc="Minimum number of measuredStars per ccdImage before printing warnings",
+        dtype=int,
+        default=100,
+    )
+    minRefStarsPerCcd = pexConfig.Field(
+        doc="Minimum number of measuredStars per ccdImage before printing warnings",
+        dtype=int,
+        default=30,
+    )
     astrometrySimpleOrder = pexConfig.Field(
         doc="Polynomial order for fitting the simple astrometry model.",
         dtype=int,
@@ -578,7 +588,7 @@ class JointcalTask(pipeBase.CmdLineTask):
         model.freezeErrorTransform()
         self.log.debug("Photometry error scales are frozen.")
 
-        chi2 = self._iterate_fit(fit, model, 20, "photometry", "Model Fluxes")
+        chi2 = self._iterate_fit(associations, fit, model, 20, "photometry", "Model Fluxes")
 
         add_measurement(self.job, 'jointcal.photometry_final_chi2', chi2.chi2)
         add_measurement(self.job, 'jointcal.photometry_final_ndof', chi2.ndof)
@@ -658,19 +668,33 @@ class JointcalTask(pipeBase.CmdLineTask):
             raise FloatingPointError('Pre-iteration chi2 is invalid: %s'%chi2)
         self.log.info("Fit prepared with %s", str(chi2))
 
-        chi2 = self._iterate_fit(fit, model, 20, "astrometry", "Distortions Positions")
+        chi2 = self._iterate_fit(associations, fit, model, 20, "astrometry", "Distortions Positions")
 
         add_measurement(self.job, 'jointcal.astrometry_final_chi2', chi2.chi2)
         add_measurement(self.job, 'jointcal.astrometry_final_ndof', chi2.ndof)
 
         return Astrometry(fit, model, sky_to_tan_projection)
 
-    def _iterate_fit(self, fit, model, max_steps, name, whatToFit):
+    def _check_stars(self, associations):
+        """Count measured and reference stars per ccd and warn/log them."""
+        for ccdImage in associations.getCcdImageList():
+            nMeasuredStars, nRefStars = ccdImage.countStars()
+            self.log.debug("ccdImage %s has %s measured and %s reference stars",
+                           ccdImage.getName(), nMeasuredStars, nRefStars)
+            if nMeasuredStars < self.config.minMeasuredStarsPerCcd:
+                self.log.warn("ccdImage %s has only %s measuredStars (desired %s)",
+                              ccdImage.getName(), nMeasuredStars, self.config.minMeasuredStarsPerCcd)
+            if nRefStars < self.config.minRefStarsPerCcd:
+                self.log.warn("ccdImage %s has only %s RefStars (desired %s)",
+                              ccdImage.getName(), nRefStars, self.config.minRefStarsPerCcd)
+
+    def _iterate_fit(self, associations, fit, model, max_steps, name, whatToFit):
         """Run fit.minimize up to max_steps times, returning the final chi2."""
 
         for i in range(max_steps):
             r = fit.minimize(whatToFit, 5)  # outlier removal at 5 sigma.
             chi2 = fit.computeChi2()
+            self._check_stars(associations)
             if not np.isfinite(chi2.chi2):
                 raise FloatingPointError('Fit iteration chi2 is invalid: %s'%chi2)
             self.log.info(str(chi2))
