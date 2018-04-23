@@ -137,6 +137,31 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
 
         self._testJointcalTask(2, None, None, pa1, metrics=metrics)
 
+    def test_jointcalTask_2_visits_constrainedPhotometry_flagged(self):
+        """Test the use of the FlaggedSourceSelector."""
+        self.config = lsst.jointcal.jointcal.JointcalConfig()
+        self.config.photometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
+        self.config.photometryModel = "constrained"
+        self.config.sourceSelector.name = "flagged"
+        # Reduce warnings due to flaggedSourceSelector having fewer sources than astrometrySourceSelector.
+        self.config.minMeasuredStarsPerCcd = 30
+        self.config.minRefStarsPerCcd = 20
+        self.config.doAstrometry = False
+        self.config.sourceSelector['astrometry'].badFlags.append("base_PixelFlags_flag_interpolated")
+        self.jointcalStatistics.do_astrometry = False
+
+        pa1 = 0.026
+        metrics = {'collected_photometry_refStars': 825,
+                   'selected_photometry_refStars': 212,
+                   'associated_photometry_fittedStars': 270,
+                   'selected_photometry_fittedStars': 244,
+                   'selected_photometry_ccdImages': 12,
+                   'photometry_final_chi2': 369.96,
+                   'photometry_final_ndof': 252
+                   }
+
+        self._testJointcalTask(2, None, None, pa1, metrics=metrics)
+
 
 class MemoryTester(lsst.utils.tests.MemoryTestCase):
     pass
