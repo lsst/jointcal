@@ -44,6 +44,19 @@ public:
             : _commonTangentPoint(Point(std::numeric_limits<double>::quiet_NaN(),
                                         std::numeric_limits<double>::quiet_NaN())) {}
 
+    /**
+     * Create an Associations object from a pre-built list of ccdImages.
+     *
+     * This is primarily useful for tests that build their own ccdImageList, but it could be used to help
+     * parallelize the creation of the ccdImages.
+     *
+     * @param imageList A pre-built ccdImage list.
+     */
+    Associations(CcdImageList const &imageList)
+            : ccdImageList(imageList),
+              _commonTangentPoint(Point(std::numeric_limits<double>::quiet_NaN(),
+                                        std::numeric_limits<double>::quiet_NaN())) {}
+
     /// No moves or copies: jointcal only ever needs one Associations object.
     Associations(Associations const &) = delete;
     Associations(Associations &&) = delete;

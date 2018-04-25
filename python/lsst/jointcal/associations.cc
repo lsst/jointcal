@@ -36,6 +36,7 @@ namespace {
 void declareAssociations(py::module &mod) {
     py::class_<Associations, std::shared_ptr<Associations>> cls(mod, "Associations");
     cls.def(py::init<>());
+    cls.def(py::init<CcdImageList const &>(), "imageList"_a);
 
     // NOTE: these could go away if the lists they wrap can be accessed directly.
     cls.def("refStarListSize", &Associations::refStarListSize);
