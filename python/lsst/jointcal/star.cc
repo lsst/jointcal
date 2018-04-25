@@ -46,8 +46,8 @@ void declarePoint(py::module &mod) {
 
     cls.def(py::init<double, double>(), "x"_a, "y"_a);
 
-    cls.def_readonly("x", &Point::x);
-    cls.def_readonly("y", &Point::y);
+    cls.def_readwrite("x", &Point::x);
+    cls.def_readwrite("y", &Point::y);
 
     utils::python::addOutputOp(cls, "__str__");
 }
@@ -83,13 +83,18 @@ void declareRefStar(py::module &mod) {
 void declareFittedStar(py::module &mod) {
     py::class_<FittedStar, std::shared_ptr<FittedStar>, BaseStar> cls(mod, "FittedStar");
 
+    cls.def(py::init<>());
     cls.def(py::init<BaseStar const &>(), "baseStar"_a);
 }
 
 void declareMeasuredStar(py::module &mod) {
     py::class_<MeasuredStar, std::shared_ptr<MeasuredStar>, BaseStar> cls(mod, "MeasuredStar");
 
+    cls.def(py::init<>());
     cls.def(py::init<BaseStar const &>(), "baseStar"_a);
+
+    cls.def("getFittedStar", &MeasuredStar::getFittedStar);
+    cls.def("setFittedStar", &MeasuredStar::setFittedStar);
 
     cls.def("getInstFlux", &MeasuredStar::getInstFlux);
     cls.def("setInstFlux", &MeasuredStar::setInstFlux);
