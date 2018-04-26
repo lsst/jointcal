@@ -23,8 +23,9 @@ class JointcalTestCFHTMinimal(jointcalTestBase.JointcalTestBase, lsst.utils.test
     @classmethod
     def setUpClass(cls):
         try:
-            cls.data_dir = lsst.utils.getPackageDir('testdata_jointcal')
-            os.environ['ASTROMETRY_NET_DATA_DIR'] = os.path.join(cls.data_dir, 'cfht_and_index')
+            cls.data_dir = os.path.join(lsst.utils.getPackageDir('jointcal'), 'tests/data')
+            anet_data_dir = lsst.utils.getPackageDir('testdata_jointcal')
+            os.environ['ASTROMETRY_NET_DATA_DIR'] = os.path.join(anet_data_dir, 'cfht_and_index')
         except lsst.pex.exceptions.NotFoundError:
             raise unittest.SkipTest("testdata_jointcal not setup")
 
