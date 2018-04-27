@@ -17,7 +17,7 @@ CHEBYSHEV_T = [
 ]
 
 
-class PhotometryTransfoTestBase():
+class PhotometryTransfoTestBase:
     def setUp(self):
         self.instFlux = 1.0
         self.point = [1., 5.]

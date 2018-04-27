@@ -1,6 +1,4 @@
 """Test with a minimal catalog extracted from cfht."""
-from __future__ import division, absolute_import, print_function
-
 import inspect
 import unittest
 import os

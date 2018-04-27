@@ -15,7 +15,7 @@ import lsst.jointcal.photometryModels
 import lsst.jointcal.star
 
 
-class PhotometryModelTestBase():
+class PhotometryModelTestBase:
     @classmethod
     def setUpClass(cls):
         try:

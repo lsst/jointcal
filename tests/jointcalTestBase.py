@@ -1,9 +1,4 @@
 # See COPYRIGHT file at the top of the source tree.
-
-from __future__ import division, absolute_import, print_function
-from builtins import str
-from builtins import object
-
 import os
 import inspect
 
@@ -14,7 +9,7 @@ from lsst.meas.extensions.astrometryNet import LoadAstrometryNetObjectsTask, Loa
 from lsst.jointcal import jointcal, utils
 
 
-class JointcalTestBase(object):
+class JointcalTestBase:
     """
     Base class for jointcal tests, to genericize some test running and setup.
 

@@ -2,9 +2,6 @@
 
 Includes tests of producing a Wcs from a model.
 """
-from __future__ import absolute_import
-from builtins import super
-
 import itertools
 import os
 import numpy as np
@@ -23,7 +20,7 @@ from lsst.jointcal import astrometryModels
 from lsst.meas.algorithms import astrometrySourceSelector
 
 
-class AstrometryModelTestBase(object):
+class AstrometryModelTestBase:
     @classmethod
     def setUpClass(cls):
         try:

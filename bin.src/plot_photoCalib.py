@@ -140,7 +140,7 @@ def makePhotoCalibImages(visit, butler, step=8, chips=[], tract=None,
     return images
 
 
-class ImageMaker(object):
+class ImageMaker:
     """An image factory for lsst.afw.cameraGeom.utils.makeImageFromCamera().
 
     Inspired by lsst.pipe.drivers.makeCameraImage.
