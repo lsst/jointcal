@@ -24,6 +24,8 @@
 namespace lsst {
 namespace jointcal {
 
+using RefFluxMapType = std::map<std::string, std::vector<double>>;
+
 //! The class that implements the relations between MeasuredStar and FittedStar.
 class Associations {
 public:
@@ -64,6 +66,11 @@ public:
     Associations &operator=(Associations &&) = delete;
 
     /**
+     * Sets a shared tangent point for all ccdImages, using the mean of the centers of all ccdImages.
+     */
+    void computeCommonTangentPoint();
+
+    /**
      * @brief      Sets a shared tangent point for all ccdImages.
      *
      * @param      commonTangentPoint  The common tangent point of all input images (decimal degrees).
@@ -87,8 +94,7 @@ public:
      * @param[in]  ccd        The ccd identifier
      * @param[in]  control    The JointcalControl object
      */
-    void addImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &catalog,
-                  std::shared_ptr<lsst::afw::geom::SkyWcs> wcs,
+    void addImage(afw::table::SourceCatalog &catalog, std::shared_ptr<lsst::afw::geom::SkyWcs> wcs,
                   std::shared_ptr<lsst::afw::image::VisitInfo> visitInfo, lsst::afw::geom::Box2I const &bbox,
                   std::string const &filter, std::shared_ptr<afw::image::PhotoCalib> photoCalib,
                   std::shared_ptr<afw::cameraGeom::Detector> detector, int visit, int ccd,
@@ -110,10 +116,9 @@ public:
      * @param      rejectBadFluxes  Reject reference sources with flux=NaN or 0 and/or fluxErr=NaN or 0.
      *                              Typically false for astrometry and true for photometry.
      */
-    void collectRefStars(lsst::afw::table::SortedCatalogT<lsst::afw::table::SimpleRecord> &refCat,
-                         afw::geom::Angle matchCut, std::string const &fluxField,
-                         std::map<std::string, std::vector<double>> const &refFluxMap,
-                         std::map<std::string, std::vector<double>> const &refFluxErrMap,
+    void collectRefStars(afw::table::SimpleCatalog &refCat, afw::geom::Angle matchCut,
+                         std::string const &fluxField, RefFluxMapType const &refFluxMap = RefFluxMapType(),
+                         RefFluxMapType const &refFluxErrMap = RefFluxMapType(),
                          bool rejectBadFluxes = false);
 
     //! Sends back the fitted stars coordinates on the sky FittedStarsList::inTangentPlaneCoordinates keeps

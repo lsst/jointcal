@@ -361,10 +361,7 @@ class JointcalTask(pipeBase.CmdLineTask):
                 filters.append(result.filter)
         filters = collections.Counter(filters)
 
-        centers = [ccdImage.getBoresightRaDec() for ccdImage in associations.getCcdImageList()]
-        commonTangentPoint = afwGeom.averageSpherePoint(centers)
-        self.log.debug("Using common tangent point: %s", commonTangentPoint.getPosition(afwGeom.degrees))
-        associations.setCommonTangentPoint(commonTangentPoint.getPosition(afwGeom.degrees))
+        associations.computeCommonTangentPoint()
 
         # Use external reference catalogs handled by LSST stack mechanism
         # Get the bounding box overlapping all associated images

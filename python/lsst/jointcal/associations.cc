@@ -43,7 +43,9 @@ void declareAssociations(py::module &mod) {
     cls.def("fittedStarListSize", &Associations::fittedStarListSize);
     cls.def("associateCatalogs", &Associations::associateCatalogs, "matchCutInArcsec"_a = 0,
             "useFittedList"_a = false, "enlargeFittedList"_a = true);
-    cls.def("collectRefStars", &Associations::collectRefStars);
+    cls.def("collectRefStars", &Associations::collectRefStars, "refCat"_a, "matchCut"_a, "fluxField"_a,
+            "refFluxMap"_a = RefFluxMapType(), "refFluxErrMap"_a = RefFluxMapType(),
+            "rejectBadFluxes"_a = false);
     cls.def("deprojectFittedStars", &Associations::deprojectFittedStars);
     cls.def("nCcdImagesValidForFit", &Associations::nCcdImagesValidForFit);
     cls.def("nFittedStarsWithAssociatedRefStar", &Associations::nFittedStarsWithAssociatedRefStar);
@@ -60,8 +62,7 @@ void declareAssociations(py::module &mod) {
 
     cls.def("getCommonTangentPoint", &Associations::getCommonTangentPoint);
     cls.def("setCommonTangentPoint", &Associations::setCommonTangentPoint);
-    cls.def_property("commonTangentPoint", &Associations::getCommonTangentPoint,
-                     &Associations::setCommonTangentPoint);
+    cls.def("computeCommonTangentPoint", &Associations::computeCommonTangentPoint);
 }
 
 PYBIND11_PLUGIN(associations) {

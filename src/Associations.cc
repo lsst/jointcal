@@ -33,8 +33,7 @@ const double JanskyToMaggy = 3631.0;
 namespace lsst {
 namespace jointcal {
 
-void Associations::addImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &catalog,
-                            std::shared_ptr<lsst::afw::geom::SkyWcs> wcs,
+void Associations::addImage(afw::table::SourceCatalog &catalog, std::shared_ptr<lsst::afw::geom::SkyWcs> wcs,
                             std::shared_ptr<lsst::afw::image::VisitInfo> visitInfo,
                             lsst::afw::geom::Box2I const &bbox, std::string const &filter,
                             std::shared_ptr<afw::image::PhotoCalib> photoCalib,
@@ -45,6 +44,17 @@ void Associations::addImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::S
     ccdImageList.push_back(ccdImage);
     LOGLS_DEBUG(_log, "Catalog " << ccdImage->getName() << " has " << ccdImage->getWholeCatalog().size()
                                  << " objects.");
+}
+
+void Associations::computeCommonTangentPoint() {
+    std::vector<afw::geom::SpherePoint> centers;
+    centers.reserve(ccdImageList.size());
+    for (auto const &ccdImage : ccdImageList) {
+        centers.push_back(ccdImage->getBoresightRaDec());
+    }
+    auto commonTangentPoint = afw::geom::averageSpherePoint(centers);
+    LOGLS_DEBUG(_log, "Using common tangent point: " << commonTangentPoint.getPosition(afw::geom::degrees));
+    setCommonTangentPoint(commonTangentPoint.getPosition(afw::geom::degrees));
 }
 
 void Associations::setCommonTangentPoint(lsst::afw::geom::Point2D const &commonTangentPoint) {
@@ -131,8 +141,8 @@ void Associations::associateCatalogs(const double matchCutInArcSec, const bool u
     assignMags();
 }
 
-void Associations::collectRefStars(lsst::afw::table::SortedCatalogT<lsst::afw::table::SimpleRecord> &refCat,
-                                   afw::geom::Angle matchCut, std::string const &fluxField,
+void Associations::collectRefStars(afw::table::SimpleCatalog &refCat, afw::geom::Angle matchCut,
+                                   std::string const &fluxField,
                                    std::map<std::string, std::vector<double>> const &refFluxMap,
                                    std::map<std::string, std::vector<double>> const &refFluxErrMap,
                                    bool rejectBadFluxes) {

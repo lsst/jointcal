@@ -115,10 +115,7 @@ class AstrometryModelTestBase(object):
                                        jointcalControl)
 
         # Have to set the common tangent point so projectionHandler can use skyToCTP.
-        centers = [ccdImage.getBoresightRaDec() for ccdImage in self.associations.getCcdImageList()]
-        # TODO DM-4404: this gets cleaner once jointcal.point is the same as afw.point
-        commonTangentPoint = lsst.afw.geom.averageSpherePoint(centers)
-        self.associations.setCommonTangentPoint(commonTangentPoint.getPosition(lsst.afw.geom.degrees))
+        self.associations.computeCommonTangentPoint()
 
         self.projectionHandler = lsst.jointcal.OneTPPerVisitHandler(self.associations.getCcdImageList())
 
