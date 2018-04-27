@@ -59,7 +59,7 @@ public:
      * Transform a bounding box, taking either the inscribed or circumscribed box.
      *
      * @param[in] inputframe The frame to be transformed.
-     * @param[in] which Return the inscribed (true) or circumscribed (false) box.
+     * @param[in] inscribed Return the inscribed (true) or circumscribed (false) box.
      *
      * @return The transformed frame.
      */
