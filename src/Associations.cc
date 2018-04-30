@@ -33,12 +33,13 @@ const double JanskyToMaggy = 3631.0;
 namespace lsst {
 namespace jointcal {
 
-void Associations::addImage(afw::table::SourceCatalog &catalog, std::shared_ptr<lsst::afw::geom::SkyWcs> wcs,
-                            std::shared_ptr<lsst::afw::image::VisitInfo> visitInfo,
-                            lsst::afw::geom::Box2I const &bbox, std::string const &filter,
-                            std::shared_ptr<afw::image::PhotoCalib> photoCalib,
-                            std::shared_ptr<afw::cameraGeom::Detector> detector, int visit, int ccd,
-                            lsst::jointcal::JointcalControl const &control) {
+void Associations::createCcdImage(afw::table::SourceCatalog &catalog,
+                                  std::shared_ptr<lsst::afw::geom::SkyWcs> wcs,
+                                  std::shared_ptr<lsst::afw::image::VisitInfo> visitInfo,
+                                  lsst::afw::geom::Box2I const &bbox, std::string const &filter,
+                                  std::shared_ptr<afw::image::PhotoCalib> photoCalib,
+                                  std::shared_ptr<afw::cameraGeom::Detector> detector, int visit, int ccd,
+                                  lsst::jointcal::JointcalControl const &control) {
     auto ccdImage = std::make_shared<CcdImage>(catalog, wcs, visitInfo, bbox, filter, photoCalib, detector,
                                                visit, ccd, control.sourceFluxField);
     ccdImageList.push_back(ccdImage);

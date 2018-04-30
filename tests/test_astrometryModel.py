@@ -100,16 +100,16 @@ class AstrometryModelTestBase:
             photoCalib = lsst.afw.image.PhotoCalib(100.0, 1.0)
 
             self.catalogs.append(goodSrc)
-            self.associations.addImage(goodSrc,
-                                       wcs,
-                                       visitInfo,
-                                       bbox,
-                                       filterName,
-                                       photoCalib,
-                                       detector,
-                                       visit,
-                                       ccdId,
-                                       jointcalControl)
+            self.associations.createCcdImage(goodSrc,
+                                             wcs,
+                                             visitInfo,
+                                             bbox,
+                                             filterName,
+                                             photoCalib,
+                                             detector,
+                                             visit,
+                                             ccdId,
+                                             jointcalControl)
 
         # Have to set the common tangent point so projectionHandler can use skyToCTP.
         self.associations.computeCommonTangentPoint()

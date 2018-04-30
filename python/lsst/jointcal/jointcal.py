@@ -314,8 +314,16 @@ class JointcalTask(pipeBase.CmdLineTask):
             self.log.warn("No sources selected in visit %s ccd %s", visit, ccdId)
         else:
             self.log.info("%d sources selected in visit %d ccd %d", len(goodSrc.sourceCat), visit, ccdId)
-        associations.addImage(goodSrc.sourceCat, tanWcs, visitInfo, bbox, filterName, photoCalib, detector,
-                              visit, ccdId, jointcalControl)
+        associations.createCcdImage(goodSrc.sourceCat,
+                                    tanWcs,
+                                    visitInfo,
+                                    bbox,
+                                    filterName,
+                                    photoCalib,
+                                    detector,
+                                    visit,
+                                    ccdId,
+                                    jointcalControl)
 
         Result = collections.namedtuple('Result_from_build_CcdImage', ('wcs', 'key', 'filter'))
         Key = collections.namedtuple('Key', ('visit', 'ccd'))
