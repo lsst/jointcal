@@ -86,7 +86,7 @@ class AstrometryModelTestBase:
             dataRef = self.butler.dataRef('calexp', visit=visit, ccd=ccd)
 
             src = dataRef.get("src", flags=lsst.afw.table.SOURCE_IO_NO_FOOTPRINTS, immediate=True)
-            goodSrc = sourceSelector.selectSources(src)
+            goodSrc = sourceSelector.run(src)
             # Need memory contiguity to do vector-like things on the sourceCat.
             goodSrc = goodSrc.sourceCat.copy(deep=True)
 
