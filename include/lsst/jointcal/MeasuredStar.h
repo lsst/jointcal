@@ -109,7 +109,7 @@ private:
 
 /****** MeasuredStarList */
 
-//! A list of MeasuredStar. They are usually filled in Associations::AddImage
+//! A list of MeasuredStar. They are usually filled in Associations::createCcdImage
 class MeasuredStarList : public StarList<MeasuredStar> {
 public:
     MeasuredStarList(){};

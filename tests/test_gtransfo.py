@@ -8,7 +8,7 @@ import lsst.log
 import lsst.jointcal
 
 
-class GtransfoPolyBase(object):
+class GtransfoPolyBase:
     def setUp(self):
         self.longMessage = True
         np.random.seed(100)

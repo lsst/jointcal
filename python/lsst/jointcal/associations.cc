@@ -36,18 +36,21 @@ namespace {
 void declareAssociations(py::module &mod) {
     py::class_<Associations, std::shared_ptr<Associations>> cls(mod, "Associations");
     cls.def(py::init<>());
+    cls.def(py::init<CcdImageList const &>(), "imageList"_a);
 
     // NOTE: these could go away if the lists they wrap can be accessed directly.
     cls.def("refStarListSize", &Associations::refStarListSize);
     cls.def("fittedStarListSize", &Associations::fittedStarListSize);
     cls.def("associateCatalogs", &Associations::associateCatalogs, "matchCutInArcsec"_a = 0,
             "useFittedList"_a = false, "enlargeFittedList"_a = true);
-    cls.def("collectRefStars", &Associations::collectRefStars);
+    cls.def("collectRefStars", &Associations::collectRefStars, "refCat"_a, "matchCut"_a, "fluxField"_a,
+            "refFluxMap"_a = RefFluxMapType(), "refFluxErrMap"_a = RefFluxMapType(),
+            "rejectBadFluxes"_a = false);
     cls.def("deprojectFittedStars", &Associations::deprojectFittedStars);
     cls.def("nCcdImagesValidForFit", &Associations::nCcdImagesValidForFit);
     cls.def("nFittedStarsWithAssociatedRefStar", &Associations::nFittedStarsWithAssociatedRefStar);
 
-    cls.def("addImage", &Associations::addImage);
+    cls.def("createCcdImage", &Associations::createCcdImage);
     cls.def("prepareFittedStars", &Associations::prepareFittedStars);
 
     cls.def("getCcdImageList", &Associations::getCcdImageList, py::return_value_policy::reference_internal);
@@ -59,8 +62,7 @@ void declareAssociations(py::module &mod) {
 
     cls.def("getCommonTangentPoint", &Associations::getCommonTangentPoint);
     cls.def("setCommonTangentPoint", &Associations::setCommonTangentPoint);
-    cls.def_property("commonTangentPoint", &Associations::getCommonTangentPoint,
-                     &Associations::setCommonTangentPoint);
+    cls.def("computeCommonTangentPoint", &Associations::computeCommonTangentPoint);
 }
 
 PYBIND11_PLUGIN(associations) {

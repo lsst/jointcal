@@ -24,6 +24,8 @@
 namespace lsst {
 namespace jointcal {
 
+using RefFluxMapType = std::map<std::string, std::vector<double>>;
+
 //! The class that implements the relations between MeasuredStar and FittedStar.
 class Associations {
 public:
@@ -44,11 +46,29 @@ public:
             : _commonTangentPoint(Point(std::numeric_limits<double>::quiet_NaN(),
                                         std::numeric_limits<double>::quiet_NaN())) {}
 
+    /**
+     * Create an Associations object from a pre-built list of ccdImages.
+     *
+     * This is primarily useful for tests that build their own ccdImageList, but it could be used to help
+     * parallelize the creation of the ccdImages.
+     *
+     * @param imageList A pre-built ccdImage list.
+     */
+    Associations(CcdImageList const &imageList)
+            : ccdImageList(imageList),
+              _commonTangentPoint(Point(std::numeric_limits<double>::quiet_NaN(),
+                                        std::numeric_limits<double>::quiet_NaN())) {}
+
     /// No moves or copies: jointcal only ever needs one Associations object.
     Associations(Associations const &) = delete;
     Associations(Associations &&) = delete;
     Associations &operator=(Associations const &) = delete;
     Associations &operator=(Associations &&) = delete;
+
+    /**
+     * Sets a shared tangent point for all ccdImages, using the mean of the centers of all ccdImages.
+     */
+    void computeCommonTangentPoint();
 
     /**
      * @brief      Sets a shared tangent point for all ccdImages.
@@ -74,12 +94,12 @@ public:
      * @param[in]  ccd        The ccd identifier
      * @param[in]  control    The JointcalControl object
      */
-    void addImage(lsst::afw::table::SortedCatalogT<lsst::afw::table::SourceRecord> &catalog,
-                  std::shared_ptr<lsst::afw::geom::SkyWcs> wcs,
-                  std::shared_ptr<lsst::afw::image::VisitInfo> visitInfo, lsst::afw::geom::Box2I const &bbox,
-                  std::string const &filter, std::shared_ptr<afw::image::PhotoCalib> photoCalib,
-                  std::shared_ptr<afw::cameraGeom::Detector> detector, int visit, int ccd,
-                  lsst::jointcal::JointcalControl const &control);
+    void createCcdImage(afw::table::SourceCatalog &catalog, std::shared_ptr<lsst::afw::geom::SkyWcs> wcs,
+                        std::shared_ptr<lsst::afw::image::VisitInfo> visitInfo,
+                        lsst::afw::geom::Box2I const &bbox, std::string const &filter,
+                        std::shared_ptr<afw::image::PhotoCalib> photoCalib,
+                        std::shared_ptr<afw::cameraGeom::Detector> detector, int visit, int ccd,
+                        lsst::jointcal::JointcalControl const &control);
 
     //! incrementaly builds a merged catalog of all image catalogs
     void associateCatalogs(const double matchCutInArcsec = 0, const bool useFittedList = false,
@@ -97,10 +117,9 @@ public:
      * @param      rejectBadFluxes  Reject reference sources with flux=NaN or 0 and/or fluxErr=NaN or 0.
      *                              Typically false for astrometry and true for photometry.
      */
-    void collectRefStars(lsst::afw::table::SortedCatalogT<lsst::afw::table::SimpleRecord> &refCat,
-                         afw::geom::Angle matchCut, std::string const &fluxField,
-                         std::map<std::string, std::vector<double>> const &refFluxMap,
-                         std::map<std::string, std::vector<double>> const &refFluxErrMap,
+    void collectRefStars(afw::table::SimpleCatalog &refCat, afw::geom::Angle matchCut,
+                         std::string const &fluxField, RefFluxMapType const &refFluxMap = RefFluxMapType(),
+                         RefFluxMapType const &refFluxErrMap = RefFluxMapType(),
                          bool rejectBadFluxes = false);
 
     //! Sends back the fitted stars coordinates on the sky FittedStarsList::inTangentPlaneCoordinates keeps

@@ -19,7 +19,7 @@ CHEBYSHEV_T = [
 ]
 
 
-class PhotometryMappingTestBase():
+class PhotometryMappingTestBase:
     def setUp(self):
         self.instFlux = 5.0
         self.instFluxErr = 2.0

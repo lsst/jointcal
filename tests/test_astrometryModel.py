@@ -2,9 +2,6 @@
 
 Includes tests of producing a Wcs from a model.
 """
-from __future__ import absolute_import
-from builtins import super
-
 import itertools
 import os
 import numpy as np
@@ -23,7 +20,7 @@ from lsst.jointcal import astrometryModels
 from lsst.meas.algorithms import astrometrySourceSelector
 
 
-class AstrometryModelTestBase(object):
+class AstrometryModelTestBase:
     @classmethod
     def setUpClass(cls):
         try:
@@ -103,22 +100,19 @@ class AstrometryModelTestBase(object):
             photoCalib = lsst.afw.image.PhotoCalib(100.0, 1.0)
 
             self.catalogs.append(goodSrc)
-            self.associations.addImage(goodSrc,
-                                       wcs,
-                                       visitInfo,
-                                       bbox,
-                                       filterName,
-                                       photoCalib,
-                                       detector,
-                                       visit,
-                                       ccdId,
-                                       jointcalControl)
+            self.associations.createCcdImage(goodSrc,
+                                             wcs,
+                                             visitInfo,
+                                             bbox,
+                                             filterName,
+                                             photoCalib,
+                                             detector,
+                                             visit,
+                                             ccdId,
+                                             jointcalControl)
 
         # Have to set the common tangent point so projectionHandler can use skyToCTP.
-        centers = [ccdImage.getBoresightRaDec() for ccdImage in self.associations.getCcdImageList()]
-        # TODO DM-4404: this gets cleaner once jointcal.point is the same as afw.point
-        commonTangentPoint = lsst.afw.geom.averageSpherePoint(centers)
-        self.associations.setCommonTangentPoint(commonTangentPoint.getPosition(lsst.afw.geom.degrees))
+        self.associations.computeCommonTangentPoint()
 
         self.projectionHandler = lsst.jointcal.OneTPPerVisitHandler(self.associations.getCcdImageList())
 
