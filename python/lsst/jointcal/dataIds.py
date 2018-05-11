@@ -7,11 +7,11 @@ import lsst.log
 import lsst.pex.exceptions
 import lsst.afw.table
 import lsst.afw.image
-from lsst.geom import convexHull
+import lsst.meas.base
 
 from lsst.coadd.utils import CoaddDataIdContainer
 
-__all__ = ["PerTractCcdDataIdContainer", "overlapsTract"]
+__all__ = ["PerTractCcdDataIdContainer"]
 
 
 class PerTractCcdDataIdContainer(CoaddDataIdContainer):
@@ -92,7 +92,7 @@ class PerTractCcdDataIdContainer(CoaddDataIdContainer):
                     # Going with just the nearest tract.  Since we're throwing all tracts for the visit
                     # together, this shouldn't be a problem unless the tracts are much smaller than a CCD.
                     tract = skymap.findTract(wcs.pixelToSky(box.getCenter()))
-                    if overlapsTract(tract, wcs, box):
+                    if lsst.meas.base.imageOverlapsTract(tract, wcs, box):
                         if visit not in visitTract:
                             visitTract[visit] = set()
                         visitTract[visit].add(tract.getId())
@@ -115,40 +115,3 @@ class PerTractCcdDataIdContainer(CoaddDataIdContainer):
             for tractSet in visitTract.values():
                 tractCounter.update(tractSet)
             log.infof("Number of visits per tract: {}", dict(tractCounter))
-
-
-def overlapsTract(tract, imageWcs, imageBox):
-    """Return whether the image (specified by Wcs and bounding box) overlaps the tract
-
-    Parameters
-    ----------
-    tract
-        TractInfo specifying a tract
-    imageWcs
-        Wcs for image
-    imageBox
-        Bounding box for image
-
-    Returns
-    -------
-    bool
-        True if the image overlaps the tract, False otherwise.
-    """
-    tractWcs = tract.getWcs()
-    tractCorners = [tractWcs.pixelToSky(lsst.afw.geom.Point2D(coord)).getVector() for
-                    coord in tract.getBBox().getCorners()]
-    tractPoly = convexHull(tractCorners)
-
-    try:
-        imageCorners = [imageWcs.pixelToSky(lsst.afw.geom.Point2D(pix)) for pix in imageBox.getCorners()]
-    except lsst.pex.exceptions.LsstCppException as e:
-        # Protecting ourselves from awful Wcs solutions in input images
-        if (not isinstance(e.message, lsst.pex.exceptions.DomainErrorException) and
-                not isinstance(e.message, lsst.pex.exceptions.RuntimeErrorException)):
-            raise
-        return False
-
-    imagePoly = convexHull([coord.getVector() for coord in imageCorners])
-    if imagePoly is None:
-        return False
-    return tractPoly.intersects(imagePoly)  # "intersects" also covers "contains" or "is contained by"
