@@ -33,8 +33,7 @@ class JointcalTestLSSTSim(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Te
     def setUp(self):
         # We don't want the absolute astrometry to become significantly worse
         # than the single-epoch astrometry (about 0.040").
-        # This value was empirically determined from the first run of jointcal on
-        # this data, and will likely vary from survey to survey.
+        # See Readme for an explanation of this empirical value.
         self.dist_rms_absolute = 42e-3*u.arcsecond
 
         do_plot = False
@@ -78,6 +77,8 @@ class JointcalTestLSSTSim(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Te
         self.config.sourceSelector['astrometry'].badFlags.append("base_PixelFlags_flag_interpolated")
         self.config.doPhotometry = False
         self.jointcalStatistics.do_photometry = False
+
+        # See Readme for an explanation of these empirical values.
         # pa1 = 2.64e-3
         # 'collected_photometry_refStars': 1686,
         # 'selected_photometry_refStars': 1686,
@@ -107,6 +108,8 @@ class JointcalTestLSSTSim(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Te
         self.config.doPhotometry = False
         self.config.sourceSelector['astrometry'].badFlags.append("base_PixelFlags_flag_interpolated")
         self.jointcalStatistics.do_photometry = False
+
+        # See Readme for an explanation of these empirical values.
         # pa1 = 2.64e-3
         # 'collected_photometry_refStars': 1686,
         # 'selected_photometry_refStars': 1686,
@@ -128,6 +131,7 @@ class JointcalTestLSSTSim(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Te
     @unittest.skip("A.net reference catalog missing flux errors. Unskip once DM-11397 is fixed.")
     def testJointcalTask_2_visits_no_astrometry(self):
         """Test turning off fitting astrometry."""
+        # See Readme for an explanation of these empirical values.
         pa1 = 2.64e-3
         metrics = {'collected_photometry_refStars': 1686,
                    'selected_photometry_refStars': 176,
@@ -163,6 +167,7 @@ class JointcalTestLSSTSim(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Te
 
     def testJointcalTask_2_visits_no_photometry(self):
         """Test turning off fitting photometry."""
+        # See Readme for an explanation of these empirical values.
         dist_rms_relative = 9.7e-3*u.arcsecond
         metrics = {'collected_astrometry_refStars': 1686,
                    'selected_astrometry_refStars': 176,

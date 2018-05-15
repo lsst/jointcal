@@ -208,6 +208,11 @@ class JointcalConfig(pexConfig.Config):
         doc="Write initial/final fit files containing the contributions to chi2.",
         default=False
     )
+    sourceFluxType = pexConfig.Field(
+        dtype=str,
+        doc="Source flux field to use in source selection and to get fluxes from the catalog.",
+        default='Calib'
+    )
 
     def setDefaults(self):
         sourceSelector = self.sourceSelector["astrometry"]
@@ -215,7 +220,7 @@ class JointcalConfig(pexConfig.Config):
         # don't want to lose existing flags, just add to them.
         sourceSelector.badFlags.extend(["slot_Shape_flag"])
         # This should be used to set the FluxField value in jointcal::JointcalControl
-        sourceSelector.sourceFluxType = 'Calib'
+        sourceSelector.sourceFluxType = self.sourceFluxType
 
 
 class JointcalTask(pipeBase.CmdLineTask):
@@ -308,7 +313,7 @@ class JointcalTask(pipeBase.CmdLineTask):
         fluxMag0 = calib.getFluxMag0()
         photoCalib = afwImage.PhotoCalib(1.0/fluxMag0[0], fluxMag0[1]/fluxMag0[0]**2, bbox)
 
-        goodSrc = self.sourceSelector.selectSources(src)
+        goodSrc = self.sourceSelector.run(src)
 
         if len(goodSrc.sourceCat) == 0:
             self.log.warn("No sources selected in visit %s ccd %s", visit, ccdId)
@@ -354,7 +359,7 @@ class JointcalTask(pipeBase.CmdLineTask):
 
         exitStatus = 0  # exit status for shell
 
-        sourceFluxField = "slot_%sFlux" % (self.sourceSelector.config.sourceFluxType,)
+        sourceFluxField = "slot_%sFlux" % (self.config.sourceFluxType,)
         jointcalControl = lsst.jointcal.JointcalControl(sourceFluxField)
         associations = lsst.jointcal.Associations()
 

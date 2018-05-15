@@ -28,8 +28,7 @@ class JointcalTestDECAM(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Test
             raise unittest.SkipTest("testdata_jointcal not setup")
 
     def setUp(self):
-        # This value was empirically determined from the first run of jointcal on
-        # this data, and will likely vary from survey to survey.
+        # See Readme for an explanation of this empirical value.
         self.dist_rms_absolute = 62.5e-3*u.arcsecond
 
         do_plot = False
@@ -56,12 +55,9 @@ class JointcalTestDECAM(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Test
         self.config.astrometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
         self.config.sourceSelector['astrometry'].badFlags.append("base_PixelFlags_flag_interpolated")
 
-        # NOTE: The relative RMS limit was empirically determined from the
-        # first run of jointcal on this data. We should always do better than
-        # this in the future!
+        # See Readme for an explanation of these empirical values.
         relative_error = 19e-3*u.arcsecond
         pa1 = 0.14
-        # NOTE: decam fits are currently not converging; the chi2 jumps around, so skip that Metric.
         metrics = {'collected_astrometry_refStars': 4866,
                    'collected_photometry_refStars': 4865,
                    'selected_astrometry_refStars': 661,
@@ -89,9 +85,7 @@ class JointcalTestDECAM(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Test
         self.config.sourceSelector['astrometry'].badFlags.append("base_PixelFlags_flag_interpolated")
         self.jointcalStatistics.do_photometry = False
 
-        # NOTE: The relative RMS limit was empirically determined from the
-        # first run of jointcal on this data. We should always do better than
-        # this in the future!
+        # See Readme for an explanation of these empirical values.
         relative_error = 17e-3*u.arcsecond
         pa1 = None
         metrics = {'collected_astrometry_refStars': 4866,
@@ -104,6 +98,55 @@ class JointcalTestDECAM(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Test
                    }
 
         self._testJointcalTask(2, relative_error, self.dist_rms_absolute, pa1, metrics=metrics)
+
+    def setup_jointcalTask_2_visits_constrainedPhotometry_no_astrometry(self):
+        """Help keep the constrainedPhotometry tests consistent and make
+        the differences between them more obvious.
+        """
+        self.config = lsst.jointcal.jointcal.JointcalConfig()
+        self.config.astrometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
+        self.config.photometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
+        self.config.photometryModel = "constrained"
+        self.config.sourceSelector['astrometry'].badFlags.append("base_PixelFlags_flag_interpolated")
+        self.config.doAstrometry = False
+        self.jointcalStatistics.do_astrometry = False
+
+        # See Readme for an explanation of these empirical values.
+        pa1 = 0.11
+        metrics = {'collected_photometry_refStars': 4865,
+                   'selected_photometry_refStars': 661,
+                   'associated_photometry_fittedStars': 6749,
+                   'selected_photometry_fittedStars': 2044,
+                   'selected_photometry_ccdImages': 14,
+                   'photometry_final_chi2': 3066.22,
+                   'photometry_final_ndof': 1998,
+                   }
+
+        return pa1, metrics
+
+    @unittest.skip("DM-14439 : This test produces different chi2/ndof on Linux and macOS.")
+    def test_jointcalTask_2_visits_constrainedPhotometry_no_astrometry(self):
+        pa1, metrics = self.setup_jointcalTask_2_visits_constrainedPhotometry_no_astrometry()
+        self._testJointcalTask(2, None, None, pa1, metrics=metrics)
+
+    @unittest.skip("DM-14439 : This test produces different chi2/ndof on Linux and macOS.")
+    def test_jointcalTask_2_visits_constrainedPhotometry_flagged_selector(self):
+        pa1, metrics = self.setup_jointcalTask_2_visits_constrainedPhotometry_no_astrometry()
+        self.config.sourceSelector.name = 'flagged'
+        # Reduce warnings due to flaggedSourceSelector having fewer sources than astrometrySourceSelector.
+        self.config.minMeasuredStarsPerCcd = 40
+
+        # See Readme for an explanation of these empirical values.
+        metrics = {'collected_photometry_refStars': 4865,
+                   'selected_photometry_refStars': 551,
+                   'associated_photometry_fittedStars': 860,
+                   'selected_photometry_fittedStars': 593,
+                   'selected_photometry_ccdImages': 14,
+                   'photometry_final_chi2': 817.124,
+                   'photometry_final_ndof': 607,
+                   }
+
+        self._testJointcalTask(2, None, None, pa1, metrics=metrics)
 
 
 class MemoryTester(lsst.utils.tests.MemoryTestCase):

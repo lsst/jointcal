@@ -30,8 +30,7 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
             raise unittest.SkipTest("testdata_jointcal not setup")
 
     def setUp(self):
-        # This value was empirically determined from the first run of jointcal on
-        # this data, and will likely vary from survey to survey.
+        # See Readme for an explanation of this empirical value.
         self.dist_rms_absolute = 53e-3*u.arcsecond
 
         do_plot = False
@@ -54,9 +53,7 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         self.config.astrometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
         self.config.sourceSelector['astrometry'].badFlags.append("base_PixelFlags_flag_interpolated")
 
-        # NOTE: The relative RMS limit was empirically determined from the
-        # first run of jointcal on this data. We should always do better than
-        # this in the future!
+        # See Readme for an explanation of these empirical values.
         dist_rms_relative = 17e-3*u.arcsecond
         pa1 = 0.024
         metrics = {'collected_astrometry_refStars': 2187,
@@ -87,9 +84,7 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         self.config.sourceSelector['astrometry'].badFlags.append("base_PixelFlags_flag_interpolated")
         self.jointcalStatistics.do_photometry = False
 
-        # NOTE: The relative RMS limit was empirically determined from the
-        # first run of jointcal on this data. We should always do better than
-        # this in the future!
+        # See Readme for an explanation of these empirical values.
         dist_rms_relative = 17e-3*u.arcsecond
         pa1 = None  # pa1 = 0.134
         metrics = {'collected_astrometry_refStars': 3649,
@@ -104,6 +99,7 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
 
     def testJointcalTask_2_visits_no_astrometry(self):
         """Test turning off fitting astrometry."""
+        # See Readme for an explanation of these empirical values.
         pa1 = 0.024
         metrics = {'collected_photometry_refStars': 2187,
                    'selected_photometry_refStars': 515,
@@ -139,6 +135,7 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
 
     def testJointcalTask_2_visits_no_photometry(self):
         """Test turning off fitting photometry."""
+        # See Readme for an explanation of these empirical values.
         dist_rms_relative = 17e-3*u.arcsecond
         metrics = {'collected_astrometry_refStars': 2187,
                    'selected_astrometry_refStars': 515,
@@ -182,6 +179,8 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         test_config = os.path.join(lsst.utils.getPackageDir('jointcal'), 'tests/config/hsc-config.py')
         self.other_args.extend(['--configfile', test_config])
         dist_rms_relative = 17e-3*u.arcsecond
+
+        # See Readme for an explanation of these empirical values.
         # NOTE: PA1 is slightly different here, because the number of SDSS
         # cross-matches within 0.1" goes down after we apply the GAIA-fit WCS.
         pa1 = 0.02405
@@ -214,6 +213,7 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         self.config.sourceSelector['astrometry'].badFlags.append("base_PixelFlags_flag_interpolated")
         self.jointcalStatistics.do_photometry = False
 
+        # See Readme for an explanation of these empirical values.
         dist_rms_relative = 17e-3*u.arcsecond
         metrics = {'collected_astrometry_refStars': 2187,
                    'selected_astrometry_refStars': 546,
@@ -235,6 +235,7 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         self.config.sourceSelector['astrometry'].badFlags.append("base_PixelFlags_flag_interpolated")
         self.jointcalStatistics.do_photometry = False
 
+        # See Readme for an explanation of these empirical values.
         dist_rms_relative = 17e-3*u.arcsecond
         metrics = {'collected_astrometry_refStars': 2187,
                    'selected_astrometry_refStars': 541,
@@ -258,6 +259,7 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         self.config.sourceSelector['astrometry'].badFlags.append("base_PixelFlags_flag_interpolated")
         self.jointcalStatistics.do_photometry = False
 
+        # See Readme for an explanation of these empirical values.
         dist_rms_relative = 17e-3*u.arcsecond
         metrics = {'collected_astrometry_refStars': 2187,
                    'selected_astrometry_refStars': 541,
