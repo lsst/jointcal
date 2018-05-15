@@ -28,8 +28,7 @@ class JointcalTestDECAM(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Test
             raise unittest.SkipTest("testdata_jointcal not setup")
 
     def setUp(self):
-        # This value was empirically determined from the first run of jointcal on
-        # this data, and will likely vary from survey to survey.
+        # See Readme for an explanation of this empirical value.
         self.dist_rms_absolute = 62.5e-3*u.arcsecond
 
         do_plot = False
@@ -56,9 +55,7 @@ class JointcalTestDECAM(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Test
         self.config.astrometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
         self.config.sourceSelector['astrometry'].badFlags.append("base_PixelFlags_flag_interpolated")
 
-        # NOTE: The relative RMS limit was empirically determined from the
-        # first run of jointcal on this data. We should always do better than
-        # this in the future!
+        # See Readme for an explanation of these empirical values.
         relative_error = 19e-3*u.arcsecond
         pa1 = 0.14
         metrics = {'collected_astrometry_refStars': 4866,
@@ -88,9 +85,7 @@ class JointcalTestDECAM(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Test
         self.config.sourceSelector['astrometry'].badFlags.append("base_PixelFlags_flag_interpolated")
         self.jointcalStatistics.do_photometry = False
 
-        # NOTE: The relative RMS limit was empirically determined from the
-        # first run of jointcal on this data. We should always do better than
-        # this in the future!
+        # See Readme for an explanation of these empirical values.
         relative_error = 17e-3*u.arcsecond
         pa1 = None
         metrics = {'collected_astrometry_refStars': 4866,
@@ -116,6 +111,7 @@ class JointcalTestDECAM(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Test
         self.config.doAstrometry = False
         self.jointcalStatistics.do_astrometry = False
 
+        # See Readme for an explanation of these empirical values.
         pa1 = 0.11
         metrics = {'collected_photometry_refStars': 4865,
                    'selected_photometry_refStars': 661,
@@ -140,6 +136,7 @@ class JointcalTestDECAM(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Test
         # Reduce warnings due to flaggedSourceSelector having fewer sources than astrometrySourceSelector.
         self.config.minMeasuredStarsPerCcd = 40
 
+        # See Readme for an explanation of these empirical values.
         metrics = {'collected_photometry_refStars': 4865,
                    'selected_photometry_refStars': 551,
                    'associated_photometry_fittedStars': 860,

@@ -30,8 +30,7 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
     def setUp(self):
         # We don't want the absolute astrometry to become significantly worse
         # than the single-epoch astrometry (about 0.040").
-        # This value was empirically determined from the first run of jointcal on
-        # this data, and will likely vary from survey to survey.
+        # See Readme for an explanation of this empirical value.
         self.dist_rms_absolute = 48.6e-3*u.arcsecond
 
         do_plot = False
@@ -58,9 +57,7 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
         # to test whether we got the expected chi2 contribution files.
         self.other_args.extend(['--config', 'writeChi2ContributionFiles=True'])
 
-        # NOTE: The relative RMS limit was empirically determined from the
-        # first run of jointcal on this data. We should always do better than
-        # this in the future!
+        # See Readme for an explanation of these empirical values.
         dist_rms_relative = 11e-3*u.arcsecond
         pa1 = 0.014
         metrics = {'collected_astrometry_refStars': 825,
@@ -100,9 +97,7 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
         self.config.sourceSelector['astrometry'].badFlags.append("base_PixelFlags_flag_interpolated")
         self.jointcalStatistics.do_photometry = False
 
-        # NOTE: The relative RMS limit was empirically determined from the
-        # first run of jointcal on this data. We should always do better than
-        # this in the future!
+        # See Readme for an explanation of these empirical values.
         dist_rms_relative = 12e-3*u.arcsecond
         dist_rms_absolute = 48e-3*u.arcsecond
         pa1 = None
@@ -125,6 +120,7 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
         self.config.sourceSelector['astrometry'].badFlags.append("base_PixelFlags_flag_interpolated")
         self.jointcalStatistics.do_astrometry = False
 
+        # See Readme for an explanation of these empirical values.
         pa1 = 0.017
         metrics = {'collected_photometry_refStars': 825,
                    'selected_photometry_refStars': 350,
@@ -150,6 +146,7 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
         self.config.sourceSelector['astrometry'].badFlags.append("base_PixelFlags_flag_interpolated")
         self.jointcalStatistics.do_astrometry = False
 
+        # See Readme for an explanation of these empirical values.
         pa1 = 0.026
         metrics = {'collected_photometry_refStars': 825,
                    'selected_photometry_refStars': 212,
