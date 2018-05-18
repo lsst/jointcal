@@ -1,4 +1,5 @@
 #include <vector>
+#include "Eigen/Core"
 
 #include "lsst/log/Log.h"
 
@@ -123,9 +124,24 @@ SparseMatrixD createHessian(int nParTot, TripletList const &tripletList) {
     jacobian.setFromTriplets(tripletList.begin(), tripletList.end());
     return jacobian * jacobian.transpose();
 }
+
+/// Write matrix and gradient to files built from dumpFile, and log their names.
+void dumpMatrixAndGradient(SparseMatrixD const &matrix, Eigen::VectorXd const &grad,
+                           std::string const &dumpFile, LOG_LOGGER _log) {
+    std::string ext = ".txt";
+    Eigen::MatrixXd matrixDense(matrix);
+    std::string dumpMatrixPath = dumpFile + "-mat" + ext;
+    std::ofstream matfile(dumpMatrixPath);
+    matfile << matrixDense << std::endl;
+    std::string dumpGradPath = dumpFile + "-grad" + ext;
+    std::ofstream gradfile(dumpGradPath);
+    gradfile << grad << std::endl;
+    LOGLS_INFO(_log, "Dumped Hessian, gradient to: '" << dumpMatrixPath << "', '" << dumpGradPath << "'");
+}
 }  // namespace
 
-MinimizeResult FitterBase::minimize(std::string const &whatToFit, double nSigmaCut, bool doRankUpdate) {
+MinimizeResult FitterBase::minimize(std::string const &whatToFit, double nSigmaCut, bool doRankUpdate,
+                                    std::string const &dumpMatrixFile) {
     assignIndices(whatToFit);
 
     MinimizeResult returnCode = MinimizeResult::Converged;
@@ -148,6 +164,15 @@ MinimizeResult FitterBase::minimize(std::string const &whatToFit, double nSigmaC
     LOGLS_DEBUG(_log, "Starting factorization, hessian: dim="
                               << hessian.rows() << " non-zeros=" << hessian.nonZeros()
                               << " filling-frac = " << hessian.nonZeros() / std::pow(hessian.rows(), 2));
+
+    if (dumpMatrixFile != "") {
+        if (hessian.rows() * hessian.cols() > 2e8) {
+            LOGLS_WARN(_log, "Hessian matrix is too big to dump to file, with rows, columns: "
+                                     << hessian.rows() << ", " << hessian.cols());
+        } else {
+            dumpMatrixAndGradient(hessian, grad, dumpMatrixFile, _log);
+        }
+    }
 
     CholmodSimplicialLDLT2<SparseMatrixD> chol(hessian);
     if (chol.info() != Eigen::Success) {

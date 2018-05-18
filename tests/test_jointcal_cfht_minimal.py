@@ -2,6 +2,7 @@
 import inspect
 import unittest
 import os
+import contextlib
 
 import lsst.afw.geom
 import lsst.utils
@@ -44,10 +45,19 @@ class JointcalTestCFHTMinimal(jointcalTestBase.JointcalTestBase, lsst.utils.test
                         other_args=other_args,
                         do_plot=do_plot, log_level="debug")
 
+    def tearDown(self):
+        super()
+        with contextlib.suppress(FileNotFoundError):
+            os.remove("photometry_preinit-mat.txt")
+            os.remove("photometry_preinit-grad.txt")
+            os.remove("photometry_postinit-mat.txt")
+            os.remove("photometry_postinit-grad.txt")
+
     def test_jointcalTask_2_visits_photometry(self):
         self.config = lsst.jointcal.jointcal.JointcalConfig()
         self.config.photometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
         self.config.doAstrometry = False
+        self.config.writeInitMatrix = True  # write Hessian/gradient files
         self.jointcalStatistics.do_astrometry = False
 
         # NOTE: ndof==1 from 4 fit parameters (2 model, 2 fittedStar), and
@@ -64,6 +74,12 @@ class JointcalTestCFHTMinimal(jointcalTestBase.JointcalTestBase, lsst.utils.test
         # the calling method is one step back on the stack: use it to specify the output repo.
         caller = inspect.stack()[1][3]  # NOTE: could be inspect.stack()[1].function in py3.5
         self._runJointcalTask(2, caller, metrics=metrics)
+
+        # Check that the Hessian/gradient files were written.
+        self.assertTrue(os.path.exists("photometry_preinit-mat.txt"))
+        self.assertTrue(os.path.exists("photometry_preinit-grad.txt"))
+        self.assertTrue(os.path.exists("photometry_postinit-mat.txt"))
+        self.assertTrue(os.path.exists("photometry_postinit-grad.txt"))
 
     def test_jointcalTask_fails_raise(self):
         """Raise an exception if there is no data to process."""

@@ -40,7 +40,8 @@ namespace {
 void declareFitterBase(py::module &mod) {
     py::class_<FitterBase, std::shared_ptr<FitterBase>> cls(mod, "FitterBase");
 
-    cls.def("minimize", &FitterBase::minimize, "whatToFit"_a, "nSigRejCut"_a = 0, "doRankUpdate"_a = true);
+    cls.def("minimize", &FitterBase::minimize, "whatToFit"_a, "nSigRejCut"_a = 0, "doRankUpdate"_a = true,
+            "dumpMatrixFile"_a = "");
     cls.def("computeChi2", &FitterBase::computeChi2);
     cls.def("saveChi2Contributions", &FitterBase::saveChi2Contributions);
 }
