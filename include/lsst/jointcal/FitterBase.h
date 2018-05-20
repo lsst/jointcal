@@ -50,6 +50,9 @@ public:
      * @param[in]  whatToFit  See child method assignIndices for valid string values.
      * @param[in]  nSigmaCut  How many sigma to reject outliers at. Outlier
      *                        rejection ignored for nSigmaCut=0.
+     * @param[in]  doRankUpdate  Use CholmodSimplicialLDLT2.update() to do a fast rank update after outlier
+     *                           removal; otherwise do a slower full recomputation of the matrix.
+     *                           Only matters if nSigmaCut != 0.
      *
      * @return  Return code describing success/failure of fit.
      *
@@ -59,7 +62,8 @@ public:
      *         the second run with the same "whatToFit" will produce no change in
      *         the fitted parameters, if the calculations and indices are defined correctly.
      */
-    MinimizeResult minimize(std::string const &whatToFit, double nSigmaCut = 0);
+    MinimizeResult minimize(std::string const &whatToFit, double const nSigmaCut = 0,
+                            bool const doRankUpdate = true);
 
     /**
      * Returns the chi2 for the current state.

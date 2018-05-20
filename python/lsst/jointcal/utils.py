@@ -522,7 +522,7 @@ def wcs_convert(xv, yv, wcs):
     yout = np.zeros((xv.shape[0], yv.shape[0]))
     for i, x in enumerate(xv):
         for j, y in enumerate(yv):
-            sky = wcs.pixelToSky(x, y).toFk5()
+            sky = wcs.pixelToSky(x, y)
             xout[i, j] = sky.getRa()
             yout[i, j] = sky.getDec()
     return xout, yout

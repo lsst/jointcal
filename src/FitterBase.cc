@@ -116,7 +116,16 @@ unsigned FitterBase::findOutliers(double nSigmaCut, MeasuredStarList &msOutliers
     return nOutliers;
 }
 
-MinimizeResult FitterBase::minimize(std::string const &whatToFit, double nSigmaCut) {
+namespace {
+/// Return a Hessian matrix filled from tripletList of size nParTot x nParTot.
+SparseMatrixD createHessian(int nParTot, TripletList const &tripletList) {
+    SparseMatrixD jacobian(nParTot, tripletList.getNextFreeIndex());
+    jacobian.setFromTriplets(tripletList.begin(), tripletList.end());
+    return jacobian * jacobian.transpose();
+}
+}  // namespace
+
+MinimizeResult FitterBase::minimize(std::string const &whatToFit, double nSigmaCut, bool doRankUpdate) {
     assignIndices(whatToFit);
 
     MinimizeResult returnCode = MinimizeResult::Converged;
@@ -133,20 +142,14 @@ MinimizeResult FitterBase::minimize(std::string const &whatToFit, double nSigmaC
 
     LOGLS_DEBUG(_log, "End of triplet filling, ntrip = " << tripletList.size());
 
-    SpMat hessian;
-    {
-        SpMat jacobian(_nParTot, tripletList.getNextFreeIndex());
-        jacobian.setFromTriplets(tripletList.begin(), tripletList.end());
-        // release memory shrink_to_fit is C++11
-        tripletList.clear();  // tripletList.shrink_to_fit();
-        hessian = jacobian * jacobian.transpose();
-    }  // release the Jacobian
+    SparseMatrixD hessian = createHessian(_nParTot, tripletList);
+    tripletList.clear();  // we don't need it any more after we have the hessian.
 
     LOGLS_DEBUG(_log, "Starting factorization, hessian: dim="
                               << hessian.rows() << " non-zeros=" << hessian.nonZeros()
                               << " filling-frac = " << hessian.nonZeros() / std::pow(hessian.rows(), 2));
 
-    CholmodSimplicialLDLT2<SpMat> chol(hessian);
+    CholmodSimplicialLDLT2<SparseMatrixD> chol(hessian);
     if (chol.info() != Eigen::Success) {
         LOGLS_ERROR(_log, "minimize: factorization failed ");
         return MinimizeResult::Failed;
@@ -176,21 +179,43 @@ MinimizeResult FitterBase::minimize(std::string const &whatToFit, double nSigmaC
         totalMeasOutliers += msOutliers.size();
         totalRefOutliers += fsOutliers.size();
         if (nOutliers == 0) break;
-        TripletList tripletList(nOutliers);
+        TripletList outlierTriplets(nOutliers);
         grad.setZero();  // recycle the gradient
         // compute the contributions of outliers to derivatives
-        outliersContributions(msOutliers, fsOutliers, tripletList, grad);
+        outliersContributions(msOutliers, fsOutliers, outlierTriplets, grad);
         // Remove significant outliers
         removeMeasOutliers(msOutliers);
         removeRefOutliers(fsOutliers);
-        // convert triplet list to eigen internal format
-        SpMat H(_nParTot, tripletList.getNextFreeIndex());
-        H.setFromTriplets(tripletList.begin(), tripletList.end());
-        int update_status = chol.update(H, false /* means downdate */);
-        LOGLS_DEBUG(_log, "cholmod update_status " << update_status);
-        // The contribution of outliers to the gradient is the opposite
-        // of the contribution of all other terms, because they add up to 0
-        grad *= -1;
+        if (doRankUpdate) {
+            // convert triplet list to eigen internal format
+            SparseMatrixD H(_nParTot, outlierTriplets.getNextFreeIndex());
+            H.setFromTriplets(outlierTriplets.begin(), outlierTriplets.end());
+            chol.update(H, false /* means downdate */);
+            // The contribution of outliers to the gradient is the opposite
+            // of the contribution of all other terms, because they add up to 0
+            grad *= -1;
+        } else {
+            // don't reuse tripletList because we want a new nextFreeIndex.
+            TripletList nextTripletList(_lastNTrip);
+            grad.setZero();
+            // Rebuild the matrix and gradient
+            leastSquareDerivatives(nextTripletList, grad);
+            _lastNTrip = nextTripletList.size();
+            LOGLS_DEBUG(_log, "Triplets recomputed, ntrip = " << nextTripletList.size());
+
+            hessian = createHessian(_nParTot, nextTripletList);
+            nextTripletList.clear();  // we don't need it any more after we have the hessian.
+
+            LOGLS_DEBUG(_log,
+                        "Restarting factorization, hessian: dim="
+                                << hessian.rows() << " non-zeros=" << hessian.nonZeros()
+                                << " filling-frac = " << hessian.nonZeros() / std::pow(hessian.rows(), 2));
+            chol.compute(hessian);
+            if (chol.info() != Eigen::Success) {
+                LOGLS_ERROR(_log, "minimize: factorization failed ");
+                return MinimizeResult::Failed;
+            }
+        }
     }
 
     // only print the outlier summary if outlier rejection was turned on.
