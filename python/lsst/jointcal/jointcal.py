@@ -203,6 +203,11 @@ class JointcalConfig(pexConfig.Config):
         dtype=bool,
         default=True,
     )
+    outlierRejectSigma = pexConfig.Field(
+        doc="How many sigma to reject outliers at during minimization.",
+        dtype=float,
+        default=5.0,
+    )
     maxPhotometrySteps = pexConfig.Field(
         doc="Maximum number of minimize iterations to take when fitting photometry.",
         dtype=int,
@@ -735,7 +740,7 @@ class JointcalTask(pipeBase.CmdLineTask):
 
         for i in range(max_steps):
             # outlier removal at 5 sigma.
-            r = fit.minimize(whatToFit, 5, doRankUpdate=doRankUpdate)
+            r = fit.minimize(whatToFit, self.config.outlierRejectSigma, doRankUpdate=doRankUpdate)
             chi2 = fit.computeChi2()
             self._check_stars(associations)
             if not np.isfinite(chi2.chi2):

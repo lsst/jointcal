@@ -114,6 +114,17 @@ class JointcalTestDECAM(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Test
 
         self._testJointcalTask(2, relative_error, self.dist_rms_absolute, pa1, metrics=metrics)
 
+    def test_jointcalTask_2_visits_constrainedAstrometry_4sigma_outliers(self):
+        """4 sigma outlier rejection means a fewer available sources, resulting
+        in a smaller ndof and chi2.
+        """
+        relative_error, pa1, metrics = self.setup_jointcalTask_2_visits_constrainedAstrometry_no_photometry()
+        self.config.outlierRejectSigma = 4
+        metrics['astrometry_final_chi2'] = 1506.7
+        metrics['astrometry_final_ndof'] = 3682
+
+        self._testJointcalTask(2, relative_error, self.dist_rms_absolute, pa1, metrics=metrics)
+
     def setup_jointcalTask_2_visits_constrainedPhotometry_no_astrometry(self):
         """Help keep the constrainedPhotometry tests consistent and make
         the differences between them more obvious.
