@@ -47,6 +47,9 @@ public:
     /// @copydoc PhotometryModel::getMappingIndices
     void getMappingIndices(CcdImage const &ccdImage, std::vector<unsigned> &indices) const override;
 
+    /// @copydoc PhotometryModel::getTotalParameters
+    int getTotalParameters() const override;
+
     /// @copydoc PhotometryModel::computeParameterDerivatives
     void computeParameterDerivatives(MeasuredStar const &measuredStar, CcdImage const &ccdImage,
                                      Eigen::VectorXd &derivatives) const override;

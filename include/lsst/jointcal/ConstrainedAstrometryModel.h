@@ -62,6 +62,9 @@ public:
      */
     void freezeErrorTransform();
 
+    /// @copydoc AstrometryModel::getTotalParameters
+    int getTotalParameters() const override;
+
     //! Access to mappings
     Gtransfo const &getChipTransfo(CcdIdType const chip) const;
 

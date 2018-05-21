@@ -49,6 +49,7 @@ void declareAstrometryModel(py::module &mod) {
     cls.def("offsetParams", &AstrometryModel::offsetParams);
     cls.def("getSky2TP", &AstrometryModel::getSky2TP);
     cls.def("makeSkyWcs", &AstrometryModel::makeSkyWcs);
+    cls.def("getTotalParameters", &AstrometryModel::getTotalParameters);
 }
 
 void declareSimpleAstrometryModel(py::module &mod) {

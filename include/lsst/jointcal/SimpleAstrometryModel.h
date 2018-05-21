@@ -59,6 +59,9 @@ public:
     //!
     virtual void freezeErrorTransform();
 
+    /// @copydoc AstrometryModel::getTotalParameters
+    int getTotalParameters() const override;
+
     //! Access to mappings
     Gtransfo const &getTransfo(CcdImage const &ccdImage) const;
 

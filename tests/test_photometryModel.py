@@ -15,6 +15,11 @@ import lsst.jointcal.photometryModels
 import lsst.jointcal.star
 
 
+def getNParametersPolynomial(order):
+    """Number of parameters in a photometry polynomial model is (d+1)(d+2)/2."""
+    return (order + 1)*(order + 2)/2
+
+
 class PhotometryModelTestBase:
     @classmethod
     def setUpClass(cls):
@@ -83,6 +88,10 @@ class SimplePhotometryModelTestCase(PhotometryModelTestBase, lsst.utils.tests.Te
         result = self.model.getNpar(self.ccdImageList[1])
         self.assertEqual(result, 1)
 
+    def testGetTotalParameters(self):
+        result = self.model.getTotalParameters()
+        self.assertEqual(result, 2)
+
     def test_toPhotoCalib(self):
         self._toPhotoCalib(self.ccdImageList[0])
         self._toPhotoCalib(self.ccdImageList[1])
@@ -110,10 +119,16 @@ class ConstrainedPhotometryModelTestCase(PhotometryModelTestBase, lsst.utils.tes
         Order 3 => (3+1)*(3+2))/2 = 10 parameters,
         and the chip map is fixed (only one ccd), so does not contribute.
         """
-        expect = (4*5)/2
+        expect = getNParametersPolynomial(self.visitOrder)
         result = self.model.getNpar(self.ccdImageList[0])
         self.assertEqual(result, expect)
         result = self.model.getNpar(self.ccdImageList[1])
+        self.assertEqual(result, expect)
+
+    def testGetTotalParameters(self):
+        """Two visits, one (fixed) ccd."""
+        expect = getNParametersPolynomial(self.visitOrder) * 2
+        result = self.model.getTotalParameters()
         self.assertEqual(result, expect)
 
     def test_toPhotoCalib(self):

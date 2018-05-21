@@ -97,7 +97,8 @@ ConstrainedAstrometryModel::ConstrainedAstrometryModel(
                 std::make_unique<TwoTransfoMapping>(_chipMap[chip], _visitMap[visit]);
     }
     LOGLS_INFO(_log, "Got " << _chipMap.size() << " chip mappings and " << _visitMap.size()
-                            << " visit mappings; holding chip " << constrainedChip << " fixed.");
+                            << " visit mappings; holding chip " << constrainedChip << " fixed ("
+                            << getTotalParameters() << " total parameters).");
     LOGLS_DEBUG(_log, "CcdImage map has " << _mappings.size() << " mappings, with "
                                           << _mappings.bucket_count() << " buckets and a load factor of "
                                           << _mappings.load_factor());
@@ -189,6 +190,17 @@ const Gtransfo &ConstrainedAstrometryModel::getVisitTransfo(VisitIdType const &v
         throw pexExcept::InvalidParameterError(errMsg.str());
     }
     return visitp->second->getTransfo();
+}
+
+int ConstrainedAstrometryModel::getTotalParameters() const {
+    int total = 0;
+    for (auto &i : _chipMap) {
+        total += i.second->getNpar();
+    }
+    for (auto &i : _visitMap) {
+        total += i.second->getNpar();
+    }
+    return total;
 }
 
 std::shared_ptr<afw::geom::SkyWcs> ConstrainedAstrometryModel::makeSkyWcs(CcdImage const &ccdImage) const {
