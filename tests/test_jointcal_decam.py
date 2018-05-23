@@ -114,6 +114,7 @@ class JointcalTestDECAM(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Test
 
         self._testJointcalTask(2, relative_error, self.dist_rms_absolute, pa1, metrics=metrics)
 
+    @unittest.skip("DM-14439 : This test produces different chi2/ndof on centos6 and centos7/macOS.")
     def test_jointcalTask_2_visits_constrainedAstrometry_4sigma_outliers(self):
         """4 sigma outlier rejection means a fewer available sources, resulting
         in a smaller ndof and chi2.
