@@ -89,7 +89,10 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
             self.assertTrue(os.path.exists(name), msg='Did not find file %s'%name)
             os.remove(name)
 
-    def test_jointcalTask_2_visits_constrainedAstrometry_no_photometry(self):
+    def setup_jointcalTask_2_visits_constrainedAstrometry(self):
+        """Help keep the constrainedAstrometry tests consistent and make
+        the differences between them more obvious.
+        """
         self.config = lsst.jointcal.jointcal.JointcalConfig()
         self.config.astrometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
         self.config.astrometryModel = "constrained"
@@ -99,8 +102,6 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
 
         # See Readme for an explanation of these empirical values.
         dist_rms_relative = 12e-3*u.arcsecond
-        dist_rms_absolute = 48e-3*u.arcsecond
-        pa1 = None
         metrics = {'collected_astrometry_refStars': 825,
                    'selected_astrometry_refStars': 350,
                    'associated_astrometry_fittedStars': 2269,
@@ -110,9 +111,35 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
                    'astrometry_final_ndof': 2660,
                    }
 
-        self._testJointcalTask(2, dist_rms_relative, dist_rms_absolute, pa1, metrics=metrics)
+        return dist_rms_relative, metrics
 
-    def test_jointcalTask_2_visits_constrainedPhotometry_no_astrometry(self):
+    def test_jointcalTask_2_visits_constrainedAstrometry_no_photometry(self):
+        dist_rms_relative, metrics = self.setup_jointcalTask_2_visits_constrainedAstrometry()
+        self._testJointcalTask(2, dist_rms_relative, self.dist_rms_absolute, None, metrics=metrics)
+
+    def test_jointcalTask_2_visits_constrainedAstrometry_no_rank_update(self):
+        """Demonstrate that skipping the rank update doesn't affect astrometry.
+        """
+        relative_error, metrics = self.setup_jointcalTask_2_visits_constrainedAstrometry()
+        self.config.astrometryDoRankUpdate = False
+
+        self._testJointcalTask(2, relative_error, self.dist_rms_absolute, None, metrics=metrics)
+
+    def test_jointcalTask_2_visits_constrainedAstrometry_4sigma_outliers(self):
+        """4 sigma outlier rejection means fewer available sources after the
+        fitter converges, resulting in a smaller ndof and chi2.
+        """
+        dist_rms_relative, metrics = self.setup_jointcalTask_2_visits_constrainedAstrometry()
+        self.config.outlierRejectSigma = 4
+        metrics['astrometry_final_chi2'] = 922.76
+        metrics['astrometry_final_ndof'] = 2486
+
+        self._testJointcalTask(2, dist_rms_relative, self.dist_rms_absolute, None, metrics=metrics)
+
+    def setup_jointcalTask_2_visits_constrainedPhotometry(self):
+        """Help keep the constrainedPhotometry tests consistent and make
+        the differences between them more obvious.
+        """
         self.config = lsst.jointcal.jointcal.JointcalConfig()
         self.config.photometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
         self.config.photometryModel = "constrained"
@@ -130,32 +157,35 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
                    'photometry_final_chi2': 2655.86,
                    'photometry_final_ndof': 1328
                    }
+        return pa1, metrics
+
+    def test_jointcalTask_2_visits_constrainedPhotometry_no_astrometry(self):
+        pa1, metrics = self.setup_jointcalTask_2_visits_constrainedPhotometry()
+
+        self._testJointcalTask(2, None, None, pa1, metrics=metrics)
+
+    def test_jointcalTask_2_visits_constrainedPhotometry_no_rank_update(self):
+        """Demonstrate that skipping the rank update doesn't affect photometry.
+        """
+        pa1, metrics = self.setup_jointcalTask_2_visits_constrainedPhotometry()
+        self.config.photometryDoRankUpdate = False
 
         self._testJointcalTask(2, None, None, pa1, metrics=metrics)
 
     def test_jointcalTask_2_visits_constrainedPhotometry_flagged(self):
         """Test the use of the FlaggedSourceSelector."""
-        self.config = lsst.jointcal.jointcal.JointcalConfig()
-        self.config.photometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
-        self.config.photometryModel = "constrained"
+        pa1, metrics = self.setup_jointcalTask_2_visits_constrainedPhotometry()
         self.config.sourceSelector.name = "flagged"
         # Reduce warnings due to flaggedSourceSelector having fewer sources than astrometrySourceSelector.
         self.config.minMeasuredStarsPerCcd = 30
         self.config.minRefStarsPerCcd = 20
-        self.config.doAstrometry = False
-        self.config.sourceSelector['astrometry'].badFlags.append("base_PixelFlags_flag_interpolated")
-        self.jointcalStatistics.do_astrometry = False
 
-        # See Readme for an explanation of these empirical values.
         pa1 = 0.026
-        metrics = {'collected_photometry_refStars': 825,
-                   'selected_photometry_refStars': 212,
-                   'associated_photometry_fittedStars': 270,
-                   'selected_photometry_fittedStars': 244,
-                   'selected_photometry_ccdImages': 12,
-                   'photometry_final_chi2': 369.96,
-                   'photometry_final_ndof': 252
-                   }
+        metrics['selected_photometry_refStars'] = 212
+        metrics['associated_photometry_fittedStars'] = 270
+        metrics['selected_photometry_fittedStars'] = 244
+        metrics['photometry_final_chi2'] = 369.96
+        metrics['photometry_final_ndof'] = 252
 
         self._testJointcalTask(2, None, None, pa1, metrics=metrics)
 
