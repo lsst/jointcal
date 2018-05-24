@@ -1,6 +1,8 @@
 #include <vector>
 #include "Eigen/Core"
 
+#include <boost/math/tools/minima.hpp>
+
 #include "lsst/log/Log.h"
 
 #include "lsst/jointcal/Chi2.h"
@@ -141,7 +143,7 @@ void dumpMatrixAndGradient(SparseMatrixD const &matrix, Eigen::VectorXd const &g
 }  // namespace
 
 MinimizeResult FitterBase::minimize(std::string const &whatToFit, double nSigmaCut, bool doRankUpdate,
-                                    std::string const &dumpMatrixFile) {
+                                    bool const doLineSearch, std::string const &dumpMatrixFile) {
     assignIndices(whatToFit);
 
     MinimizeResult returnCode = MinimizeResult::Converged;
@@ -151,6 +153,7 @@ MinimizeResult FitterBase::minimize(std::string const &whatToFit, double nSigmaC
     TripletList tripletList(nTrip);
     Eigen::VectorXd grad(_nParTot);
     grad.setZero();
+    double scale = 1.0;
 
     // Fill the triplets
     leastSquareDerivatives(tripletList, grad);
@@ -186,7 +189,10 @@ MinimizeResult FitterBase::minimize(std::string const &whatToFit, double nSigmaC
 
     while (true) {
         Eigen::VectorXd delta = chol.solve(grad);
-        offsetParams(delta);
+        if (doLineSearch) {
+            scale = _lineSearch(delta);
+        }
+        offsetParams(scale * delta);
         Chi2Statistic currentChi2(computeChi2());
         LOGLS_DEBUG(_log, currentChi2);
         if (currentChi2.chi2 > oldChi2 && totalMeasOutliers + totalRefOutliers != 0) {
@@ -297,6 +303,22 @@ void FitterBase::saveChi2Contributions(std::string const &baseName) const {
     std::string refTuple(baseName);
     refTuple.insert(dot, "-ref");
     saveChi2RefContributions(refTuple);
+}
+
+double FitterBase::_lineSearch(Eigen::VectorXd const &delta) {
+    auto func = [this, &delta](double scale) {
+        auto offset = scale * delta;
+        offsetParams(offset);
+        auto chi2 = computeChi2();
+        // reset the system to where it was before offsetting.
+        offsetParams(-offset);
+        return chi2.chi2;
+    };
+    // The maximum theoretical precision is half the number of bits in the mantissa (see boost docs).
+    auto bits = std::numeric_limits<double>::digits / 2;
+    auto result = boost::math::tools::brent_find_minima(func, -1.0, 2.0, bits);
+    LOGLS_DEBUG(_log, "Line search scale factor: " << result.first);
+    return result.first;
 }
 
 }  // namespace jointcal

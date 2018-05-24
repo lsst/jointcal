@@ -41,11 +41,11 @@ public:
      * Does a 1 step minimization, assuming a linear model.
      *
      * This is a complete Newton Raphson step. Compute first and second
-     * derivatives, solve for the step and apply it, without a line search.
+     * derivatives, solve for the step and apply it, with an optional line search.
      *
      * It calls assignIndices, leastSquareDerivatives, solves the linear system and calls
      * offsetParams, then removes outliers in a loop if requested.
-     * Relies on sparse linear algebra.
+     * Relies on sparse linear algebra via Eigen's CholmodSupport package.
      *
      * @param[in]  whatToFit  See child method assignIndices for valid string values.
      * @param[in]  nSigmaCut  How many sigma to reject outliers at. Outlier
@@ -53,6 +53,11 @@ public:
      * @param[in]  doRankUpdate  Use CholmodSimplicialLDLT2.update() to do a fast rank update after outlier
      *                           removal; otherwise do a slower full recomputation of the matrix.
      *                           Only matters if nSigmaCut != 0.
+     * @param[in]  doLineSearch  Use boost's brent_find_minima to perform a line search after the gradient
+     *                           solution is found, and apply the scale factor to the computed offsets.
+     *                           The line search is done in the domain [-1, 2], but if the scale factor
+     *                           is far from 1.0, then the problem is likely in a significantly non-linear
+     *                           regime.
      * @param[in] dumpMatrixFile  Write the pre-fit Hessian matrix and gradient to the files with "-mat.txt"
      *                            and "-grad.txt". Be aware, this requires a large increase in memory usage
      *                            to create a dense matrix before writing it; the output file may be large.
@@ -74,7 +79,8 @@ public:
      *         the fitted parameters, if the calculations and indices are defined correctly.
      */
     MinimizeResult minimize(std::string const &whatToFit, double const nSigmaCut = 0,
-                            bool const doRankUpdate = true, std::string const &dumpMatrixFile = "");
+                            bool const doRankUpdate = true, bool const doLineSearch = false,
+                            std::string const &dumpMatrixFile = "");
 
     /**
      * Returns the chi2 for the current state.
@@ -189,6 +195,19 @@ protected:
     /// Compute the derivatives of the reference terms
     virtual void leastSquareDerivativesReference(FittedStarList const &fittedStarList,
                                                  TripletList &tripletList, Eigen::VectorXd &grad) const = 0;
+
+private:
+    /**
+     * Performe a line search along vector delta, returning a scale factor for the minimum.
+     *
+     * Note that this offsets and restores the model during each iteration of the line search,
+     * as part of the minimization schema.
+     *
+     * @param delta The vector of offsets that is expected to reach the minimium value.
+     *
+     * @return The scale factor to apply to delta that gets it to the true minimum.
+     */
+    double _lineSearch(Eigen::VectorXd const &delta);
 };
 }  // namespace jointcal
 }  // namespace lsst
