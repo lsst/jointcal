@@ -8,6 +8,8 @@
 #include "lsst/jointcal/StarMatch.h"
 #include "lsst/jointcal/Gtransfo.h"
 #include "lsst/jointcal/Frame.h"
+#include "lsst/afw/geom/Angle.h"
+#include "lsst/afw/geom/Point.h"
 #include "lsst/afw/geom/SkyWcs.h"
 #include "lsst/afw/image/Utils.h"
 #include "lsst/afw/image/Image.h"
