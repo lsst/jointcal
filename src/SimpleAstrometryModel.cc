@@ -102,6 +102,14 @@ void SimpleAstrometryModel::freezeErrorTransform() {
     for (auto &i : _myMap) i.second->freezeErrorTransform();
 }
 
+int SimpleAstrometryModel::getTotalParameters() const {
+    int total = 0;
+    for (auto &i : _myMap) {
+        total += i.second->getNpar();
+    }
+    return total;
+}
+
 const Gtransfo &SimpleAstrometryModel::getTransfo(CcdImage const &ccdImage) const {
     return dynamic_cast<const SimplePolyMapping *>(findMapping(ccdImage))->getTransfo();
 }

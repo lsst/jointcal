@@ -61,6 +61,7 @@ void declarePhotometryModel(py::module &mod) {
     cls.def("getNpar", &PhotometryModel::getNpar);
     cls.def("toPhotoCalib", &PhotometryModel::toPhotoCalib);
     cls.def("getMapping", &PhotometryModel::getMapping, py::return_value_policy::reference_internal);
+    cls.def("getTotalParameters", &PhotometryModel::getTotalParameters);
     utils::python::addOutputOp(cls, "__str__");
 }
 

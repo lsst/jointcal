@@ -20,6 +20,11 @@ from lsst.jointcal import astrometryModels
 from lsst.meas.algorithms import astrometrySourceSelector
 
 
+def getNParametersPolynomial(order):
+    """Number of parameters in an astrometry polynomial model is 2 * (d+1)(d+2)/2."""
+    return (order + 1)*(order + 2)
+
+
 class AstrometryModelTestBase:
     @classmethod
     def setUpClass(cls):
@@ -231,20 +236,27 @@ class SimpleAstrometryModelTestCase(AstrometryModelTestBase, lsst.utils.tests.Te
                                                              order=self.order2)
         self._prepModels()
 
-    def testGetNpar(self):
-        """Number of parameters is 2 * (d+1)(d+2)/2."""
-        def polyParams(order):
-            return (order + 1)*(order + 2)
+    def _testGetNpar(self, model, order):
+        for ccdImage in self.associations.getCcdImageList():
+            result = model.getNpar(ccdImage)
+            self.assertEqual(result, getNParametersPolynomial(order))
 
-        result = self.model1.getNpar(self.associations.getCcdImageList()[0])
-        self.assertEqual(result, polyParams(self.order1))
-        result = self.model1.getNpar(self.associations.getCcdImageList()[1])
-        self.assertEqual(result, polyParams(self.order1))
+    def testGetNpar1(self):
+        self._testGetNpar(self.model1, self.order1)
 
-        result = self.model2.getNpar(self.associations.getCcdImageList()[0])
-        self.assertEqual(result, polyParams(self.order2))
-        result = self.model2.getNpar(self.associations.getCcdImageList()[1])
-        self.assertEqual(result, polyParams(self.order2))
+    def testGetNpar2(self):
+        self._testGetNpar(self.model2, self.order2)
+
+    def _testGetTotalParameters(self, model, order):
+        result = model.getTotalParameters()
+        expect = getNParametersPolynomial(order)*len(self.associations.getCcdImageList())
+        self.assertEqual(result, expect)
+
+    def testGetTotalParametersModel1(self):
+        self._testGetTotalParameters(self.model1, self.order1)
+
+    def testGetTotalParametersModel2(self):
+        self._testGetTotalParameters(self.model2, self.order2)
 
 
 class ConstrainedAstrometryModelTestCase(AstrometryModelTestBase, lsst.utils.tests.TestCase):
@@ -270,40 +282,50 @@ class ConstrainedAstrometryModelTestCase(AstrometryModelTestBase, lsst.utils.tes
                                                                   visitOrder=self.visitOrder2)
         self._prepModels()
 
-    def testGetNpar(self):
-        """
-        Number of parameters per polynomial is (d+1)(d+2)/2, summed over
+        # 22 is closest to the center of the focal plane in this data, so it is not fit.
+        self.fixedCcd = 22
+
+    def _polyParams(self, chipOrder, visitOrder):
+        """Number of parameters per polynomial is (d+1)(d+2)/2, summed over
         polynomials, times 2 polynomials per dimension.
-        One ccdImage has identity for chip, so only chipOrder matters.
+        The chip transform is fixed for one chip, so only visitOrder matters
+        if chipOrder is None.
         """
+        params = getNParametersPolynomial(visitOrder)
+        if chipOrder is not None:
+            params += getNParametersPolynomial(chipOrder)
+        return params
 
-        def polyParams(chipOrder, visitOrder):
-            if chipOrder is not None:
-                params = (chipOrder + 1)*(chipOrder + 2)
-            else:
-                params = 0
-            params += (visitOrder + 1)*(visitOrder + 2)
-            return params
-
+    def _testGetNpar(self, model, chipOrder, visitOrder):
         def checkParams(ccdImage, model, chipOrder, visitOrder):
             result = model.getNpar(ccdImage)
             failMsg = "ccdImage: %s, with chipOrder %s and visitOrder %s"%(ccdImage.getName(),
                                                                            chipOrder,
                                                                            visitOrder)
-            self.assertEqual(result, polyParams(chipOrder, visitOrder), msg=failMsg)
-
-        # 22 is closest to the center of the focal plane in this data, so it is not fit.
-        fixedCcd = 22
+            self.assertEqual(result, self._polyParams(chipOrder, visitOrder), msg=failMsg)
 
         for ccdImage in self.associations.getCcdImageList():
-            chipOrder = None if ccdImage.getCcdId() == fixedCcd else self.chipOrder1
-            visitOrder = self.visitOrder1
-            checkParams(ccdImage, self.model1, chipOrder, visitOrder)
+            realChipOrder = None if ccdImage.getCcdId() == self.fixedCcd else chipOrder
+            checkParams(ccdImage, model, realChipOrder, visitOrder)
 
-        for ccdImage in self.associations.getCcdImageList():
-            chipOrder = None if ccdImage.getCcdId() == fixedCcd else self.chipOrder2
-            visitOrder = self.visitOrder2
-            checkParams(ccdImage, self.model2, chipOrder, visitOrder)
+    def testGetNpar1(self):
+        self._testGetNpar(self.model1, self.chipOrder1, self.visitOrder1)
+
+    def testGetNpar2(self):
+        self._testGetNpar(self.model2, self.chipOrder2, self.visitOrder2)
+
+    def _testGetTotalParameters(self, model, chipOrder, visitOrder):
+        result = model.getTotalParameters()
+        # one sensor is held fixed, hence len(ccds)-1
+        expect = getNParametersPolynomial(chipOrder)*(len(self.ccds) - 1) + \
+            getNParametersPolynomial(visitOrder)*len(self.visits)
+        self.assertEqual(result, expect)
+
+    def testGetTotalParametersModel1(self):
+        self._testGetTotalParameters(self.model1, self.chipOrder1, self.visitOrder1)
+
+    def testGetTotalParametersModel2(self):
+        self._testGetTotalParameters(self.model2, self.chipOrder2, self.visitOrder2)
 
     def checkGetChipTransfo(self, model):
         # Check valid ccds

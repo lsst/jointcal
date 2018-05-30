@@ -230,6 +230,13 @@ class JointcalConfig(pexConfig.Config):
         doc="How to select sources for cross-matching",
         default="astrometry"
     )
+    writeInitMatrix = pexConfig.Field(
+        dtype=bool,
+        doc="Write the pre/post-initialization Hessian and gradient to text files, for debugging."
+            "The output files will be of the form 'astrometry_preinit-mat.txt', in the current directory."
+            "Note that these files are the dense versions of the matrix, and so may be very large.",
+        default=False
+    )
     writeChi2ContributionFiles = pexConfig.Field(
         dtype=bool,
         doc="Write initial/final fit files containing the contributions to chi2.",
@@ -603,12 +610,14 @@ class JointcalTask(pipeBase.CmdLineTask):
         self.log.info("Initialized: %s", str(chi2))
         # The constrained model needs the visit transfo fit first; the chip
         # transfo is initialized from the singleFrame PhotoCalib, so it's close.
+        dumpMatrixFile = "photometry_preinit" if self.config.writeInitMatrix else ""
         if self.config.photometryModel == "constrained":
             # TODO: (related to DM-8046): implement Visit/Chip choice
-            fit.minimize("ModelVisit")
+            fit.minimize("ModelVisit", dumpMatrixFile=dumpMatrixFile)
             chi2 = fit.computeChi2()
             self.log.info(str(chi2))
-        fit.minimize("Model")
+            dumpMatrixFile = ""  # so we don't redo the output on the next step
+        fit.minimize("Model", dumpMatrixFile=dumpMatrixFile)
         chi2 = fit.computeChi2()
         self.log.info(str(chi2))
         fit.minimize("Fluxes")
@@ -690,13 +699,15 @@ class JointcalTask(pipeBase.CmdLineTask):
         if not np.isfinite(chi2.chi2):
             raise FloatingPointError('Initial chi2 is invalid: %s'%chi2)
         self.log.info("Initialized: %s", str(chi2))
+        dumpMatrixFile = "astrometry_preinit" if self.config.writeInitMatrix else ""
         # The constrained model needs the visit transfo fit first; the chip
         # transfo is initialized from the detector's cameraGeom, so it's close.
         if self.config.astrometryModel == "constrained":
-            fit.minimize("DistortionsVisit")
+            fit.minimize("DistortionsVisit", dumpMatrixFile=dumpMatrixFile)
             chi2 = fit.computeChi2()
             self.log.info(str(chi2))
-        fit.minimize("Distortions")
+            dumpMatrixFile = ""  # so we don't redo the output on the next step
+        fit.minimize("Distortions", dumpMatrixFile=dumpMatrixFile)
         chi2 = fit.computeChi2()
         self.log.info(str(chi2))
         fit.minimize("Positions")
@@ -738,9 +749,14 @@ class JointcalTask(pipeBase.CmdLineTask):
     def _iterate_fit(self, associations, fit, model, max_steps, name, whatToFit, doRankUpdate=True):
         """Run fit.minimize up to max_steps times, returning the final chi2."""
 
+        dumpMatrixFile = "%s_postinit" % name if self.config.writeInitMatrix else ""
         for i in range(max_steps):
             # outlier removal at 5 sigma.
-            r = fit.minimize(whatToFit, self.config.outlierRejectSigma, doRankUpdate=doRankUpdate)
+            r = fit.minimize(whatToFit,
+                             self.config.outlierRejectSigma,
+                             doRankUpdate=doRankUpdate,
+                             dumpMatrixFile=dumpMatrixFile)
+            dumpMatrixFile = ""  # clear it so we don't write the matrix again.
             chi2 = fit.computeChi2()
             self._check_stars(associations)
             if not np.isfinite(chi2.chi2):

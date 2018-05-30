@@ -41,29 +41,32 @@ public:
 
     // The following routines are the interface to AstrometryFit
     //!
-    const AstrometryMapping *getMapping(CcdImage const &) const;
+    const AstrometryMapping *getMapping(CcdImage const &) const override;
 
     //! Positions the various parameter sets into the parameter vector, starting at firstIndex
-    unsigned assignIndices(std::string const &whatToFit, unsigned firstIndex);
+    unsigned assignIndices(std::string const &whatToFit, unsigned firstIndex) override;
 
     // dispaches the offsets after a fit step into the actual locations of parameters
-    void offsetParams(Eigen::VectorXd const &delta);
+    void offsetParams(Eigen::VectorXd const &delta) override;
 
     /*! the mapping of sky coordinates (i.e. the coordinate system
     in which fitted stars are reported) onto the Tangent plane
     (into which the pixel coordinates are transformed) */
-    const std::shared_ptr<Gtransfo const> getSky2TP(CcdImage const &ccdImage) const {
+    const std::shared_ptr<Gtransfo const> getSky2TP(CcdImage const &ccdImage) const override {
         return _sky2TP->getSky2TP(ccdImage);
     }
 
     //!
-    virtual void freezeErrorTransform();
+    void freezeErrorTransform() override;
+
+    /// @copydoc AstrometryModel::getTotalParameters
+    int getTotalParameters() const override;
 
     //! Access to mappings
     Gtransfo const &getTransfo(CcdImage const &ccdImage) const;
 
     /// @copydoc AstrometryModel::makeSkyWcs
-    std::shared_ptr<afw::geom::SkyWcs> makeSkyWcs(CcdImage const &ccdImage) const;
+    std::shared_ptr<afw::geom::SkyWcs> makeSkyWcs(CcdImage const &ccdImage) const override;
 
     ~SimpleAstrometryModel(){};
 
@@ -72,7 +75,7 @@ private:
     const std::shared_ptr<ProjectionHandler const> _sky2TP;
 
     /// @copydoc AstrometryModel::findMapping
-    AstrometryMapping *findMapping(CcdImage const &ccdImage) const;
+    AstrometryMapping *findMapping(CcdImage const &ccdImage) const override;
 };
 }  // namespace jointcal
 }  // namespace lsst

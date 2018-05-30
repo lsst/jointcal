@@ -69,7 +69,8 @@ ConstrainedPhotometryModel::ConstrainedPhotometryModel(CcdImageList const &ccdIm
                                new ChipVisitPhotometryMapping(_chipMap[chip], _visitMap[visit])));
     }
     LOGLS_INFO(_log, "Got " << _chipMap.size() << " chip mappings and " << _visitMap.size()
-                            << " visit mappings; holding chip " << constrainedChip << " fixed.");
+                            << " visit mappings; holding chip " << constrainedChip << " fixed ("
+                            << getTotalParameters() << " total parameters).");
     LOGLS_DEBUG(_log, "CcdImage map has " << _myMap.size() << " mappings, with " << _myMap.bucket_count()
                                           << " buckets and a load factor of " << _myMap.load_factor());
 }
@@ -130,6 +131,17 @@ void ConstrainedPhotometryModel::getMappingIndices(CcdImage const &ccdImage,
                                                    std::vector<unsigned> &indices) const {
     auto mapping = findMapping(ccdImage);
     mapping->getMappingIndices(indices);
+}
+
+int ConstrainedPhotometryModel::getTotalParameters() const {
+    int total = 0;
+    for (auto &i : _chipMap) {
+        total += i.second->getNpar();
+    }
+    for (auto &i : _visitMap) {
+        total += i.second->getNpar();
+    }
+    return total;
 }
 
 void ConstrainedPhotometryModel::computeParameterDerivatives(MeasuredStar const &measuredStar,

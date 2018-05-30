@@ -53,17 +53,28 @@ public:
      * @param[in]  doRankUpdate  Use CholmodSimplicialLDLT2.update() to do a fast rank update after outlier
      *                           removal; otherwise do a slower full recomputation of the matrix.
      *                           Only matters if nSigmaCut != 0.
+     * @param[in] dumpMatrixFile  Write the pre-fit Hessian matrix and gradient to the files with "-mat.txt"
+     *                            and "-grad.txt". Be aware, this requires a large increase in memory usage
+     *                            to create a dense matrix before writing it; the output file may be large.
+     *                            Writing the matrix can be helpful for debugging bad fits.
+     *                            Read it and compute the real eigenvalues (recall that the Hessian is
+     *                            symmetric by construction) with numpy:
+     *                            @code{.py}
+     *                             hessian = np.matrix(np.loadtxt("dumpMatrixFile-mat.txt"))
+     *                             values, vectors = np.linalg.eigh(hessian)
+     *                            @endcode
      *
      * @return  Return code describing success/failure of fit.
      *
-     * @note   When fitting one parameter set by itself (e.g. "Model"), the system is purely linear,
+     * @note   When fitting one parameter set by itself (e.g. "Model"), the system is purely linear
+     *         (assuming there are no cross-terms in the derivatives, e.g. the SimpleAstrometryModel),
      *         which should result in the optimal chi2 after a single step. This can
      *         be used to debug the fitter by fitting that parameter set twice in a row:
      *         the second run with the same "whatToFit" will produce no change in
      *         the fitted parameters, if the calculations and indices are defined correctly.
      */
     MinimizeResult minimize(std::string const &whatToFit, double const nSigmaCut = 0,
-                            bool const doRankUpdate = true);
+                            bool const doRankUpdate = true, std::string const &dumpMatrixFile = "");
 
     /**
      * Returns the chi2 for the current state.

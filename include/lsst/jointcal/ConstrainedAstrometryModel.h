@@ -42,25 +42,28 @@ public:
 
     // The following routines are the interface to AstrometryFit
     //!
-    AstrometryMapping const *getMapping(CcdImage const &) const;
+    AstrometryMapping const *getMapping(CcdImage const &) const override;
 
     /**
      * Positions the various parameter sets into the parameter vector, starting at
      * firstIndex.
      */
-    unsigned assignIndices(std::string const &whatToFit, unsigned firstIndex);
+    unsigned assignIndices(std::string const &whatToFit, unsigned firstIndex) override;
 
     /**
      * Dispaches the offsets after a fit step into the actual locations of
      * parameters.
      */
-    void offsetParams(Eigen::VectorXd const &Delta);
+    void offsetParams(Eigen::VectorXd const &Delta) override;
 
     /**
      * From there on, measurement errors are propagated using the current
      * transfos (and no longer evolve).
      */
-    void freezeErrorTransform();
+    void freezeErrorTransform() override;
+
+    /// @copydoc AstrometryModel::getTotalParameters
+    int getTotalParameters() const override;
 
     //! Access to mappings
     Gtransfo const &getChipTransfo(CcdIdType const chip) const;
@@ -76,12 +79,12 @@ public:
      * stars are reported) onto the Tangent plane (into which the pixel coordinates
      * are transformed).
      */
-    const std::shared_ptr<Gtransfo const> getSky2TP(CcdImage const &ccdImage) const {
+    const std::shared_ptr<Gtransfo const> getSky2TP(CcdImage const &ccdImage) const override {
         return _sky2TP->getSky2TP(ccdImage);
     }
 
     /// @copydoc AstrometryModel::makeSkyWcs
-    std::shared_ptr<afw::geom::SkyWcs> makeSkyWcs(CcdImage const &ccdImage) const;
+    std::shared_ptr<afw::geom::SkyWcs> makeSkyWcs(CcdImage const &ccdImage) const override;
 
 private:
     std::unordered_map<CcdImageKey, std::unique_ptr<TwoTransfoMapping>> _mappings;
@@ -91,7 +94,7 @@ private:
     bool _fittingChips, _fittingVisits;
 
     /// @copydoc AstrometryModel::findMapping
-    AstrometryMapping *findMapping(CcdImage const &ccdImage) const;
+    AstrometryMapping *findMapping(CcdImage const &ccdImage) const override;
 };
 }  // namespace jointcal
 }  // namespace lsst

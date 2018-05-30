@@ -52,6 +52,9 @@ public:
     //!
     virtual void freezeErrorTransform() = 0;
 
+    /// Return the total number of parameters in this model.
+    virtual int getTotalParameters() const = 0;
+
     virtual ~AstrometryModel(){};
 
 protected:

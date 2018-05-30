@@ -69,6 +69,14 @@ void SimplePhotometryModel::getMappingIndices(CcdImage const &ccdImage,
     indices[0] = mapping->getIndex();
 }
 
+int SimplePhotometryModel::getTotalParameters() const {
+    int total = 0;
+    for (auto &i : _myMap) {
+        total += i.second->getNpar();
+    }
+    return total;
+}
+
 void SimplePhotometryModel::computeParameterDerivatives(MeasuredStar const &measuredStar,
                                                         CcdImage const &ccdImage,
                                                         Eigen::VectorXd &derivatives) const {

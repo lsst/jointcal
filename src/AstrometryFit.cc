@@ -490,30 +490,6 @@ void AstrometryFit::offsetParams(Eigen::VectorXd const &delta) {
     }
 }
 
-// should not be too large !
-#ifdef STORAGE
-static void write_sparse_matrix_in_fits(SparseMatrixD const &mat, std::string const &fitsName) {
-    if (mat.rows() * mat.cols() > 2e8) {
-        LOGLS_WARN(_log,
-                   "write_sparse_matrix_in_fits: yout matrix is too large. " << fitsName << " not generated");
-        return;
-    }
-    Mat m(mat.rows(), mat.cols());
-    for (int k = 0; k < mat.outerSize(); ++k)
-        for (SparseMatrixD::InnerIterator it(mat, k); it; ++it) {
-            m(it.row(), it.col()) = it.value();
-        }
-    m.writeFits(fitsName);
-}
-
-static void write_vect_in_fits(Eigen::VectorXd const &vectorXd, std::string const &fitsName) {
-    Vect v(vectorXd.size());
-    for (int k = 0; k < vectorXd.size(); ++k) v(k) = V(k);
-    Mat(v).writeFits(fitsName);
-}
-
-#endif
-
 void AstrometryFit::checkStuff() {
 #if (0)
     const char *what2fit[] = {"Positions",
@@ -535,13 +511,6 @@ void AstrometryFit::checkStuff() {
         SparseMatrixD jacobian(_nParTot, tripletList.getNextFreeIndex());
         jacobian.setFromTriplets(tripletList.begin(), tripletList.end());
         SparseMatrixD hessian = jacobian * jacobian.transpose();
-#ifdef STORAGE
-        char name[24];
-        sprintf(name, "H%d.fits", k);
-        write_sparse_matrix_in_fits(hessian, name);
-        sprintf(name, "g%d.fits", k);
-        write_vect_in_fits(grad, name);
-#endif
         LOGLS_DEBUG(_log, "npar : " << _nParTot << ' ' << _nParDistortions);
     }
 }
