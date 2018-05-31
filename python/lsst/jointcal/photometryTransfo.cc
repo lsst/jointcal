@@ -21,7 +21,6 @@
  */
 
 #include "pybind11/pybind11.h"
-#include "numpy/arrayobject.h"
 #include "ndarray/pybind11.h"
 #include "ndarray/eigen.h"
 #include "Eigen/Core"
@@ -80,11 +79,6 @@ void declarePhotometryTransfoChebyshev(py::module &mod) {
 
 PYBIND11_PLUGIN(photometryTransfo) {
     py::module mod("photometryTransfo");
-
-    if (_import_array() < 0) {
-        PyErr_SetString(PyExc_ImportError, "numpy.core.multiarray failed to import");
-        return nullptr;
-    }
 
     declarePhotometryTransfo(mod);
     declarePhotometryTransfoSpatiallyInvariant(mod);

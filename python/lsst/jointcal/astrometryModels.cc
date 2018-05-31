@@ -22,7 +22,6 @@
 
 #include "pybind11/pybind11.h"
 #include "pybind11/stl.h"
-#include "numpy/arrayobject.h"
 #include "ndarray/pybind11.h"
 #include "ndarray/eigen.h"
 #include "Eigen/Core"
@@ -81,11 +80,6 @@ PYBIND11_PLUGIN(astrometryModels) {
     py::module::import("lsst.jointcal.gtransfo");
     py::module::import("lsst.jointcal.astrometryMappings");
     py::module mod("astrometryModels");
-
-    if (_import_array() < 0) {
-        PyErr_SetString(PyExc_ImportError, "numpy.core.multiarray failed to import");
-        return nullptr;
-    }
 
     declareAstrometryModel(mod);
     declareSimpleAstrometryModel(mod);
