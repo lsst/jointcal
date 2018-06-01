@@ -12,6 +12,7 @@ config.log
 *_wrap.cc
 *Lib.py
 .cache
+.pytest_cache
 pytest_session.txt
 bin/*.py
 doc/html
