@@ -22,7 +22,6 @@
 
 #include "pybind11/pybind11.h"
 #include "pybind11/stl.h"
-#include "numpy/arrayobject.h"
 #include "ndarray/pybind11.h"
 #include "ndarray/eigen.h"
 #include "Eigen/Core"
@@ -88,11 +87,6 @@ PYBIND11_PLUGIN(photometryMappings) {
     py::module::import("lsst.jointcal.star");
     py::module::import("lsst.jointcal.photometryTransfo");
     py::module mod("photometryMappings");
-
-    if (_import_array() < 0) {
-        PyErr_SetString(PyExc_ImportError, "numpy.core.multiarray failed to import");
-        return nullptr;
-    }
 
     declarePhotometryMappingBase(mod);
     declarePhotometryMapping(mod);

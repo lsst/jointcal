@@ -21,7 +21,6 @@
  */
 
 #include "astshim.h"
-#include "numpy/arrayobject.h"
 #include "pybind11/pybind11.h"
 #include "ndarray/pybind11.h"
 #include "ndarray/eigen.h"
@@ -118,11 +117,6 @@ PYBIND11_PLUGIN(gtransfo) {
     py::module::import("lsst.jointcal.frame");
     py::module::import("lsst.jointcal.star");
     py::module mod("gtransfo");
-
-    if (_import_array() < 0) {
-        PyErr_SetString(PyExc_ImportError, "numpy.core.multiarray failed to import");
-        return nullptr;
-    }
 
     declareGtransfo(mod);
     declareGtransfoIdentity(mod);
