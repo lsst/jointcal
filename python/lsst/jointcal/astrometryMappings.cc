@@ -21,6 +21,7 @@
  */
 
 #include "pybind11/pybind11.h"
+#include "pybind11/eigen.h"
 
 #include "lsst/jointcal/Gtransfo.h"
 #include "lsst/jointcal/AstrometryMapping.h"
