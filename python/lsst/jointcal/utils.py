@@ -503,7 +503,7 @@ def plot_all_wcs_deltas(plt, data_refs, visits, old_wcs_list, per_ccd_plot=False
             dims = lsst.afw.image.bboxFromMetadata(md).getDimensions()
             plot_wcs(plt, old_wcs_list[i], ref.get('jointcal_wcs'),
                      dims.getX(), dims.getY(),
-                     center=(md.get('CRVAL1'), md.get('CRVAL2')), name='dataRef %d'%i,
+                     center=(md.getScalar('CRVAL1'), md.getScalar('CRVAL2')), name='dataRef %d'%i,
                      outdir=outdir)
 
 
