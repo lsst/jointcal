@@ -80,7 +80,8 @@ SimpleFluxModel::SimpleFluxModel(CcdImageList const &ccdImageList) : SimplePhoto
     for (auto const &ccdImage : ccdImageList) {
         auto photoCalib = ccdImage->getPhotoCalib();
         // Use the single-frame processing calibration from the PhotoCalib as the initial value.
-        auto transfo = std::make_shared<FluxTransfoSpatiallyInvariant>(photoCalib->getCalibrationMean());
+        auto transfo = std::make_shared<FluxTransfoSpatiallyInvariant>(photoCalib->getCalibrationMean(),
+                                                                       photoCalib->getCalibrationErr());
         _myMap.emplace(ccdImage->getHashKey(),
                        std::unique_ptr<PhotometryMapping>(new PhotometryMapping(transfo)));
     }
@@ -98,7 +99,7 @@ double SimpleFluxModel::transform(CcdImage const &ccdImage, MeasuredStar const &
 
 double SimpleFluxModel::transformError(CcdImage const &ccdImage, MeasuredStar const &star) const {
     auto mapping = findMapping(ccdImage);
-    return mapping->transformError(star, star.getInstFluxErr());
+    return mapping->transformError(star, star.getInstFlux(), star.getInstFluxErr());
 }
 
 std::shared_ptr<afw::image::PhotoCalib> SimpleFluxModel::toPhotoCalib(CcdImage const &ccdImage) const {

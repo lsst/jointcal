@@ -4,7 +4,7 @@ import unittest
 import lsst.utils.tests
 
 import lsst.afw.geom
-import lsst.jointcal.photometryTransfo
+from lsst.jointcal import photometryTransfo
 
 
 CHEBYSHEV_T = [
@@ -20,6 +20,7 @@ CHEBYSHEV_T = [
 class PhotometryTransfoTestBase:
     def setUp(self):
         self.value = 5.0
+        self.valueError = 0.3
         self.point = [1., 5.]
 
 
@@ -27,15 +28,21 @@ class SpatiallyInvariantTestBase(PhotometryTransfoTestBase):
     """Tests for PhotometryTransfoSpatiallyInvariant.
      Subclasses need to call super.setUp() and then define:
          self.transfo1 == a default initalized PhotometryTransfoSpatiallyInvariant.
-         self.transfo2 == a transfo initialized with self.t2init.
+         self.transfo2 == a transfo initialized with self.t2InitValue.
     """
     def setUp(self):
         super().setUp()
-        self.t2init = 1000.0
+        # initial values for self.transfo2
+        self.t2InitValue = 1000.0
+        self.t2InitError = 70.0
 
     def _test_transform(self, transfo, expect):
         result = transfo.transform(self.point[0], self.point[1], self.value)
-        self.assertEqual(result, expect)
+        self.assertEqual(result, expect)  # yes, I really mean exactly equal
+
+    def _test_transformError(self, transfo, expect):
+        result = transfo.transformError(self.point[0], self.point[1], self.value, self.valueError)
+        self.assertFloatsAlmostEqual(result, expect)
 
     def _offsetParams(self, delta, value, expect):
         self.transfo1.offsetParams(delta)
@@ -43,7 +50,7 @@ class SpatiallyInvariantTestBase(PhotometryTransfoTestBase):
         self.assertFloatsAlmostEqual(result, expect)
 
     def _test_offsetParams(self, expect):
-        """Test offsetting; note that offsetParams offsets by `-delta`."""
+        """Test offsetting; note that offsetParams offsets by +1."""
         # check that offset by 0 doesn't change anything.
         delta = np.zeros(1, dtype=float)
         self._offsetParams(delta, self.value, self.value)
@@ -57,7 +64,9 @@ class SpatiallyInvariantTestBase(PhotometryTransfoTestBase):
         self.assertEqual(self.transfo1.getParameters(), clone1.getParameters())
         clone2 = self.transfo2.clone()
         self.assertEqual(self.transfo2.getParameters(), clone2.getParameters())
+        self.assertEqual(self.transfo2.getErr(), clone2.getErr())
         self.assertNotEqual(clone1.getParameters(), clone2.getParameters())
+        self.assertNotEqual(clone1.getErr(), clone2.getErr())
 
     def _test_computeParameterDerivatives(self, expect):
         """The derivative of a spatially invariant transform is always the same.
@@ -74,14 +83,22 @@ class SpatiallyInvariantTestBase(PhotometryTransfoTestBase):
 class FluxTransfoSpatiallyInvariantTestCase(SpatiallyInvariantTestBase, lsst.utils.tests.TestCase):
     def setUp(self):
         super().setUp()
-        self.transfo1 = lsst.jointcal.photometryTransfo.FluxTransfoSpatiallyInvariant()
-        self.transfo2 = lsst.jointcal.photometryTransfo.FluxTransfoSpatiallyInvariant(self.t2init)
+        self.transfo1 = photometryTransfo.FluxTransfoSpatiallyInvariant()
+        self.transfo2 = photometryTransfo.FluxTransfoSpatiallyInvariant(self.t2InitValue,
+                                                                        self.t2InitError)
 
     def test_transform(self):
         self._test_transform(self.transfo1, self.value)
-        self._test_transform(self.transfo2, self.value*self.t2init)
+        self._test_transform(self.transfo2, self.value*self.t2InitValue)
+
+    def test_transformError(self):
+        expect = np.sqrt((self.valueError*1)**2 + (0*self.value)**2)
+        self._test_transformError(self.transfo1, expect)
+        expect = np.sqrt((self.valueError*self.t2InitValue)**2 + (self.t2InitError*self.value)**2)
+        self._test_transformError(self.transfo2, expect)
 
     def test_offsetParams(self):
+        """Offset by +1 means transform by 2."""
         self._test_offsetParams(self.value*2)
 
     def test_computeParameterDerivatives(self):
@@ -94,11 +111,10 @@ class PhotometryTransfoChebyshevTestCase(PhotometryTransfoTestBase, lsst.utils.t
         super().setUp()
         self.bbox = lsst.afw.geom.Box2D(lsst.afw.geom.Point2D(-5, -6), lsst.afw.geom.Point2D(7, 8))
         self.order1 = 2
-        self.transfo1 = lsst.jointcal.photometryTransfo.PhotometryTransfoChebyshev(self.order1, self.bbox)
+        self.transfo1 = photometryTransfo.PhotometryTransfoChebyshev(self.order1, self.bbox)
         self.order2 = 1
         self.coefficients = np.array([[5, 3], [4, 0]], dtype=float)
-        self.transfo2 = lsst.jointcal.photometryTransfo.PhotometryTransfoChebyshev(self.coefficients,
-                                                                                   self.bbox)
+        self.transfo2 = photometryTransfo.PhotometryTransfoChebyshev(self.coefficients, self.bbox)
 
     def test_getNpar(self):
         self.assertEqual(self.transfo1.getNpar(), 6)

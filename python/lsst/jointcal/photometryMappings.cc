@@ -76,8 +76,8 @@ void declareChipVisitPhotometryMapping(py::module &mod) {
     py::class_<ChipVisitPhotometryMapping, std::shared_ptr<ChipVisitPhotometryMapping>, PhotometryMappingBase>
             cls(mod, "ChipVisitPhotometryMapping");
 
-    cls.def(py::init<std::shared_ptr<PhotometryMapping>, std::shared_ptr<PhotometryMapping>>(),
-            "chipMapping"_a, "visitMapping"_a);
+    cls.def(py::init<std::shared_ptr<PhotometryMapping>, std::shared_ptr<PhotometryMapping>, double>(),
+            "chipMapping"_a, "visitMapping"_a, "err"_a);
 
     cls.def("getChipMapping", &ChipVisitPhotometryMapping::getChipMapping);
     cls.def("getVisitMapping", &ChipVisitPhotometryMapping::getVisitMapping);

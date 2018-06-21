@@ -28,11 +28,19 @@ class Point;
  */
 class PhotometryTransfo {
 public:
-    /// Apply the transform to instFlux at (x,y), put result in flux
-    virtual double transform(double x, double y, double instFlux) const = 0;
+    /// Return the transform of value at (x,y).
+    virtual double transform(double x, double y, double value) const = 0;
 
-    /// Return the transformed instFlux at (x,y).
-    double transform(Point const &in, double instFlux) const { return transform(in.x, in.y, instFlux); }
+    /// Return the transformed value at Point(x,y).
+    double transform(Point const &in, double value) const { return transform(in.x, in.y, value); }
+
+    /// Return the transformed valueErr at Point(x,y).
+    virtual double transformError(double x, double y, double value, double valueErr) const = 0;
+
+    /// Return the transformed valueErr at Point(x,y).
+    double transformError(Point const &in, double value, double valueErr) const {
+        return transformError(in.x, in.y, value, valueErr);
+    }
 
     /// dumps the transfo coefficients to stream.
     virtual void dump(std::ostream &stream = std::cout) const = 0;
@@ -43,7 +51,7 @@ public:
     }
 
     /// Return the number of parameters (used to compute chisq)
-    virtual int getNpar() const { return 0; }
+    virtual int getNpar() const = 0;
 
     /**
      * Offset the parameters by some (negative) amount during fitting.
@@ -71,6 +79,11 @@ public:
 
     /// Get a copy of the parameters of this model, in the same order as `offsetParams`.
     virtual Eigen::VectorXd getParameters() const = 0;
+
+    /// Compute the mean of this function (over its bounding-box).
+    virtual double mean() const = 0;
+
+    virtual double getErr() const = 0;
 };
 
 /*
@@ -78,7 +91,7 @@ public:
  */
 class PhotometryTransfoSpatiallyInvariant : public PhotometryTransfo {
 public:
-    PhotometryTransfoSpatiallyInvariant(double value) : _value(value) {}
+    PhotometryTransfoSpatiallyInvariant(double value, double valueErr) : _value(value), _valueErr(valueErr) {}
 
     /// @copydoc PhotometryTransfo::dump
     void dump(std::ostream &stream = std::cout) const override { stream << _value; }
@@ -96,11 +109,19 @@ public:
         return parameters;
     }
 
-protected:
-    void setValue(double value) { _value = value; }
+    /// @copydoc PhotometryTransfo::mean
+    double mean() const { return _value; }
 
+    double getErr() const { return _valueErr; }
+
+protected:
+    double getValue() const { return _value; }
+
+private:
     /// value of this transform at all locations.
     double _value;
+    /// uncertainty on this transform at all locations.
+    double _valueErr;
 };
 
 /*
@@ -111,14 +132,20 @@ protected:
  */
 class FluxTransfoSpatiallyInvariant : public PhotometryTransfoSpatiallyInvariant {
 public:
-    FluxTransfoSpatiallyInvariant(double value = 1) : PhotometryTransfoSpatiallyInvariant(value) {}
+    FluxTransfoSpatiallyInvariant(double value = 1, double fluxErr = 0)
+            : PhotometryTransfoSpatiallyInvariant(value, fluxErr) {}
 
     /// @copydoc PhotometryTransfo::transform
-    double transform(double x, double y, double instFlux) const override { return instFlux * _value; }
+    double transform(double x, double y, double instFlux) const override { return instFlux * getValue(); }
+
+    /// @copydoc PhotometryTransfo::transformError
+    double transformError(double x, double y, double flux, double fluxErr) const override {
+        return hypot(flux * getErr(), getValue() * fluxErr);
+    }
 
     /// @copydoc PhotometryTransfo::clone
     std::shared_ptr<PhotometryTransfo> clone() const override {
-        return std::make_shared<FluxTransfoSpatiallyInvariant>(_value);
+        return std::make_shared<FluxTransfoSpatiallyInvariant>(getValue(), getErr());
     }
 
     /// @copydoc PhotometryTransfo::computeParameterDerivatives
@@ -127,22 +154,6 @@ public:
         // the derivative of a spatially constant transfo w.r.t. that value is just the instFlux.
         derivatives[0] = instFlux;
     }
-
-    /// @copydoc PhotometryTransfo::getParameters
-    Eigen::VectorXd getParameters() const override {
-        Eigen::VectorXd parameters(1);
-        parameters[0] = _value;
-        return parameters;
-    }
-
-protected:
-    void setValue(double value) { _value = value; }
-
-    friend class PhotometryTransfo;
-
-private:
-    /// value of this transform at all locations.
-    double _value;
 };
 
 /**
@@ -186,6 +197,9 @@ public:
     /// @copydoc PhotometryTransfo::transform
     double transform(double x, double y, double instFlux) const override;
 
+    /// @copydoc PhotometryTransfo::transformError
+    double transformError(double x, double y, double value, double valueErr) const { return 0; }
+
     /// @copydoc PhotometryTransfo::dump
     void dump(std::ostream &stream = std::cout) const override { stream << _coefficients; }
 
@@ -216,6 +230,8 @@ public:
 
     // Compute the mean of this function over its bounding-box.
     double mean() const;
+
+    double getErr() const { return 0.0; }
 
 private:
     afw::geom::Box2D _bbox;                        // the domain of this function

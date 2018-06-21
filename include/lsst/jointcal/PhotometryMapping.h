@@ -44,14 +44,15 @@ public:
 
     /**
      * Return the on-sky transformed flux uncertainty for measuredStar on ccdImage.
-     * Identical to transform() until freezeErrorTransform() is called.
+     * Matches the underlying PhotometryTransfo's `transformError()` until freezeErrorTransform() is called.
      *
      * @param[in]  measuredStar  The measured star position to transform.
-     * @param[in]  instFluxErr   The instrument flux error to transform.
+     * @param[in]  value  The value to transform.
+     * @param[in]  valueErr  The value uncertainty to transform.
      *
      * @return     The on-sky flux transformed from instFlux at measuredStar's position.
      */
-    virtual double transformError(MeasuredStar const &measuredStar, double instFluxErr) const = 0;
+    virtual double transformError(MeasuredStar const &measuredStar, double value, double valueErr) const = 0;
 
     /**
      * Once this routine has been called, the error transform is not modified by offsetParams().
@@ -131,13 +132,13 @@ public:
     }
 
     /// @copydoc PhotometryMappingBase::transform
-    double transform(MeasuredStar const &measuredStar, double instFlux) const override {
-        return _transfo->transform(measuredStar.x, measuredStar.y, instFlux);
+    double transform(MeasuredStar const &measuredStar, double value) const override {
+        return _transfo->transform(measuredStar.x, measuredStar.y, value);
     }
 
     /// @copydoc PhotometryMappingBase::transformError
-    double transformError(MeasuredStar const &measuredStar, double instFluxErr) const override {
-        return _transfoErrors->transform(measuredStar.x, measuredStar.y, instFluxErr);
+    double transformError(MeasuredStar const &measuredStar, double value, double valueErr) const override {
+        return _transfoErrors->transformError(measuredStar.x, measuredStar.y, value, valueErr);
     }
 
     /// @copydoc PhotometryMappingBase::freezeErrorTransform
@@ -146,12 +147,12 @@ public:
     }
 
     /// @copydoc PhotometryMappingBase::computeParameterDerivatives
-    void computeParameterDerivatives(MeasuredStar const &measuredStar, double instFlux,
+    void computeParameterDerivatives(MeasuredStar const &measuredStar, double value,
                                      Eigen::Ref<Eigen::VectorXd> derivatives) const override {
         if (fixed) {
             return;
         } else {
-            _transfo->computeParameterDerivatives(measuredStar.x, measuredStar.y, instFlux, derivatives);
+            _transfo->computeParameterDerivatives(measuredStar.x, measuredStar.y, value, derivatives);
         }
     }
 
@@ -188,14 +189,19 @@ private:
 
 /**
  * A two-level photometric transform: one for the ccd and one for the visit.
+ *
+ * NOTE: We store the error in this mapping for now, because we are just using the single frame processing
+ * calibration uncertainty, which is defined per Sensor Exposure, thus we would not preserve each
+ * such uncertainty if we stored it in the chipMapping or visitMapping transfos individually.
  */
 class ChipVisitPhotometryMapping : public PhotometryMappingBase {
 public:
     ChipVisitPhotometryMapping(std::shared_ptr<PhotometryMapping> chipMapping,
-                               std::shared_ptr<PhotometryMapping> visitMapping)
+                               std::shared_ptr<PhotometryMapping> visitMapping, double err)
             : PhotometryMappingBase(),
               _chipMapping(std::move(chipMapping)),
-              _visitMapping(std::move(visitMapping)) {}
+              _visitMapping(std::move(visitMapping)),
+              _err(err) {}
 
     /// @copydoc PhotometryMappingBase::getNpar
     unsigned getNpar() const override { return _chipMapping->getNpar() + _visitMapping->getNpar(); }
@@ -208,11 +214,8 @@ public:
     }
 
     /// @copydoc PhotometryMappingBase::transformError
-    double transformError(MeasuredStar const &measuredStar, double instFluxErr) const override {
-        double tempFluxErr = _chipMapping->transformError(measuredStar, instFluxErr);
-        return _visitMapping->getTransfoErrors()->transform(measuredStar.getXFocal(),
-                                                            measuredStar.getYFocal(), tempFluxErr);
-    }
+    double transformError(MeasuredStar const &measuredStar, double instFlux,
+                          double instFluxErr) const override;
 
     /// @copydoc PhotometryMappingBase::freezeErrorTransform
     void freezeErrorTransform() override {
@@ -255,6 +258,9 @@ private:
     // the actual transformation to be fit
     std::shared_ptr<PhotometryMapping> _chipMapping;
     std::shared_ptr<PhotometryMapping> _visitMapping;
+
+    // The uncertainty on this Exposure's calibration, taken from single frame processing.
+    double _err;
 };
 
 }  // namespace jointcal

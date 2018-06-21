@@ -84,6 +84,7 @@ class ChipVisitPhotometryMappingTestCase(PhotometryMappingTestBase, lsst.utils.t
         self.coefficients = np.array([[5, 2], [3, 0]], dtype=float)
         self.chipScale = 2
         self.visitScale = 3
+        self.err = 0.6
         self.chipIndex = 5
         self.visitIndex = 1000
         chipTransfo = lsst.jointcal.photometryTransfo.FluxTransfoSpatiallyInvariant(self.chipScale)
@@ -93,7 +94,8 @@ class ChipVisitPhotometryMappingTestCase(PhotometryMappingTestBase, lsst.utils.t
         visitMapping = lsst.jointcal.photometryMappings.PhotometryMapping(visitTransfo)
         visitMapping.setIndex(self.visitIndex)
         self.mappingInvariants = lsst.jointcal.photometryMappings.ChipVisitPhotometryMapping(chipMapping,
-                                                                                             visitMapping)
+                                                                                             visitMapping,
+                                                                                             self.err)
 
         # Have to make a new chipMapping, as it stores shared_ptr to the transfo.
         chipTransfo = lsst.jointcal.photometryTransfo.FluxTransfoSpatiallyInvariant(self.chipScale)
@@ -104,7 +106,8 @@ class ChipVisitPhotometryMappingTestCase(PhotometryMappingTestBase, lsst.utils.t
         visitMapping2 = lsst.jointcal.photometryMappings.PhotometryMapping(visitTransfo2)
         visitMapping2.setIndex(self.visitIndex)
         self.mappingCheby = lsst.jointcal.photometryMappings.ChipVisitPhotometryMapping(chipMapping,
-                                                                                        visitMapping2)
+                                                                                        visitMapping2,
+                                                                                        self.err)
 
     def test_getNpar(self):
         result = self.mappingInvariants.getNpar()
