@@ -44,7 +44,7 @@ ConstrainedPhotometryModel::ConstrainedPhotometryModel(CcdImageList const &ccdIm
             auto photoCalib = ccdImage->getPhotoCalib();
             // Use the single-frame processing calibration from the PhotoCalib as the default.
             auto chipTransfo =
-                    std::make_shared<PhotometryTransfoSpatiallyInvariant>(photoCalib->getCalibrationMean());
+                    std::make_shared<FluxTransfoSpatiallyInvariant>(photoCalib->getCalibrationMean());
             _chipMap[chip] =
                     std::unique_ptr<PhotometryMapping>(new PhotometryMapping(std::move(chipTransfo)));
         }

@@ -36,7 +36,7 @@ class PhotometryMappingTestCase(PhotometryMappingTestBase, lsst.utils.tests.Test
     def setUp(self):
         super(PhotometryMappingTestCase, self).setUp()
         self.scale = 3
-        transfo = lsst.jointcal.photometryTransfo.PhotometryTransfoSpatiallyInvariant(self.scale)
+        transfo = lsst.jointcal.photometryTransfo.FluxTransfoSpatiallyInvariant(self.scale)
         self.mapping = lsst.jointcal.photometryMappings.PhotometryMapping(transfo)
 
     def test_getNpar(self):
@@ -64,7 +64,7 @@ class PhotometryMappingTestCase(PhotometryMappingTestBase, lsst.utils.tests.Test
         self.assertEqual(self.instFlux, result)
         result = self.mapping.computeParameterDerivatives(self.star1, self.instFlux)
         self.assertEqual(self.instFlux, result)
-        transfo = lsst.jointcal.photometryTransfo.PhotometryTransfoSpatiallyInvariant(1000.0)
+        transfo = lsst.jointcal.photometryTransfo.FluxTransfoSpatiallyInvariant(1000.0)
         mapping = lsst.jointcal.photometryMappings.PhotometryMapping(transfo)
         result = mapping.computeParameterDerivatives(self.star0, self.instFlux)
         self.assertEqual(self.instFlux, result)
@@ -86,17 +86,17 @@ class ChipVisitPhotometryMappingTestCase(PhotometryMappingTestBase, lsst.utils.t
         self.visitScale = 3
         self.chipIndex = 5
         self.visitIndex = 1000
-        chipTransfo = lsst.jointcal.photometryTransfo.PhotometryTransfoSpatiallyInvariant(self.chipScale)
+        chipTransfo = lsst.jointcal.photometryTransfo.FluxTransfoSpatiallyInvariant(self.chipScale)
         chipMapping = lsst.jointcal.photometryMappings.PhotometryMapping(chipTransfo)
         chipMapping.setIndex(self.chipIndex)
-        visitTransfo = lsst.jointcal.photometryTransfo.PhotometryTransfoSpatiallyInvariant(self.visitScale)
+        visitTransfo = lsst.jointcal.photometryTransfo.FluxTransfoSpatiallyInvariant(self.visitScale)
         visitMapping = lsst.jointcal.photometryMappings.PhotometryMapping(visitTransfo)
         visitMapping.setIndex(self.visitIndex)
         self.mappingInvariants = lsst.jointcal.photometryMappings.ChipVisitPhotometryMapping(chipMapping,
                                                                                              visitMapping)
 
         # Have to make a new chipMapping, as it stores shared_ptr to the transfo.
-        chipTransfo = lsst.jointcal.photometryTransfo.PhotometryTransfoSpatiallyInvariant(self.chipScale)
+        chipTransfo = lsst.jointcal.photometryTransfo.FluxTransfoSpatiallyInvariant(self.chipScale)
         chipMapping = lsst.jointcal.photometryMappings.PhotometryMapping(chipTransfo)
         chipMapping.setIndex(self.chipIndex)
         visitTransfo2 = lsst.jointcal.photometryTransfo.PhotometryTransfoChebyshev(self.coefficients,
