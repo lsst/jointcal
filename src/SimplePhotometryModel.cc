@@ -1,4 +1,5 @@
 #include <iostream>
+#include <math.h>
 
 #include "lsst/log/Log.h"
 #include "lsst/jointcal/PhotometryMapping.h"
@@ -13,18 +14,6 @@ LOG_LOGGER _log = LOG_GET("jointcal.SimplePhotometryModel");
 
 namespace lsst {
 namespace jointcal {
-
-SimplePhotometryModel::SimplePhotometryModel(CcdImageList const &ccdImageList) {
-    _myMap.reserve(ccdImageList.size());
-    for (auto const &ccdImage : ccdImageList) {
-        auto photoCalib = ccdImage->getPhotoCalib();
-        // Use the single-frame processing calibration from the PhotoCalib as the default.
-        auto transfo = std::make_shared<FluxTransfoSpatiallyInvariant>(photoCalib->getCalibrationMean());
-        _myMap.emplace(ccdImage->getHashKey(),
-                       std::unique_ptr<PhotometryMapping>(new PhotometryMapping(transfo)));
-    }
-    LOGLS_INFO(_log, "SimplePhotometryModel got " << _myMap.size() << " ccdImage mappings.");
-}
 
 unsigned SimplePhotometryModel::assignIndices(std::string const &whatToFit, unsigned firstIndex) {
     unsigned ipar = firstIndex;
@@ -41,18 +30,6 @@ void SimplePhotometryModel::offsetParams(Eigen::VectorXd const &delta) {
         auto mapping = i.second.get();
         mapping->offsetParams(delta.segment(mapping->getIndex(), mapping->getNpar()));
     }
-}
-
-double SimplePhotometryModel::transform(CcdImage const &ccdImage, MeasuredStar const &star,
-                                        double instFlux) const {
-    auto mapping = findMapping(ccdImage);
-    return mapping->transform(star, instFlux);
-}
-
-double SimplePhotometryModel::transformError(CcdImage const &ccdImage, MeasuredStar const &star,
-                                             double instFluxErr) const {
-    auto mapping = findMapping(ccdImage);
-    return mapping->transformError(star, instFluxErr);
 }
 
 void SimplePhotometryModel::freezeErrorTransform() {
@@ -83,13 +60,6 @@ void SimplePhotometryModel::computeParameterDerivatives(MeasuredStar const &meas
     mapping->computeParameterDerivatives(measuredStar, measuredStar.getInstFlux(), derivatives);
 }
 
-std::shared_ptr<afw::image::PhotoCalib> SimplePhotometryModel::toPhotoCalib(CcdImage const &ccdImage) const {
-    double calibration = (findMapping(ccdImage)->getParameters()[0]);
-    auto oldPhotoCalib = ccdImage.getPhotoCalib();
-    return std::unique_ptr<afw::image::PhotoCalib>(
-            new afw::image::PhotoCalib(calibration, oldPhotoCalib->getCalibrationErr()));
-}
-
 void SimplePhotometryModel::dump(std::ostream &stream) const {
     for (auto &i : _myMap) {
         stream << i.first << ": ";
@@ -104,6 +74,38 @@ PhotometryMappingBase *SimplePhotometryModel::findMapping(CcdImage const &ccdIma
         throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,
                           "SimplePhotometryModel cannot find CcdImage " + ccdImage.getName());
     return i->second.get();
+}
+
+SimpleFluxModel::SimpleFluxModel(CcdImageList const &ccdImageList) : SimplePhotometryModel(ccdImageList) {
+    for (auto const &ccdImage : ccdImageList) {
+        auto photoCalib = ccdImage->getPhotoCalib();
+        // Use the single-frame processing calibration from the PhotoCalib as the initial value.
+        auto transfo = std::make_shared<FluxTransfoSpatiallyInvariant>(photoCalib->getCalibrationMean());
+        _myMap.emplace(ccdImage->getHashKey(),
+                       std::unique_ptr<PhotometryMapping>(new PhotometryMapping(transfo)));
+    }
+    LOGLS_INFO(_log, "SimpleFluxModel got " << _myMap.size() << " ccdImage mappings.");
+}
+
+double SimpleFluxModel::computeResidual(CcdImage const &ccdImage, MeasuredStar const &measuredStar) const {
+    return transform(ccdImage, measuredStar) - measuredStar.getFittedStar()->getFlux();
+}
+
+double SimpleFluxModel::transform(CcdImage const &ccdImage, MeasuredStar const &star) const {
+    auto mapping = findMapping(ccdImage);
+    return mapping->transform(star, star.getInstFlux());
+}
+
+double SimpleFluxModel::transformError(CcdImage const &ccdImage, MeasuredStar const &star) const {
+    auto mapping = findMapping(ccdImage);
+    return mapping->transformError(star, star.getInstFluxErr());
+}
+
+std::shared_ptr<afw::image::PhotoCalib> SimpleFluxModel::toPhotoCalib(CcdImage const &ccdImage) const {
+    double calibration = (findMapping(ccdImage)->getParameters()[0]);
+    auto oldPhotoCalib = ccdImage.getPhotoCalib();
+    return std::unique_ptr<afw::image::PhotoCalib>(
+            new afw::image::PhotoCalib(calibration, oldPhotoCalib->getCalibrationErr()));
 }
 
 }  // namespace jointcal

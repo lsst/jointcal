@@ -19,9 +19,9 @@ class Point;
 //! Photometric response model which has a single photometric factor per CcdImage.
 class SimplePhotometryModel : public PhotometryModel {
 public:
-    SimplePhotometryModel(CcdImageList const &ccdImageList);
+    SimplePhotometryModel(CcdImageList const &ccdImageList) { _myMap.reserve(ccdImageList.size()); }
 
-    /// No copy or move: there is only ever one instance of a given model (i.e. per ccd+visit)
+    /// No copy or move: there is only ever one instance of a given model.
     SimplePhotometryModel(SimplePhotometryModel const &) = delete;
     SimplePhotometryModel(SimplePhotometryModel &&) = delete;
     SimplePhotometryModel &operator=(SimplePhotometryModel const &) = delete;
@@ -32,14 +32,6 @@ public:
 
     /// @copydoc PhotometryModel::offsetParams
     void offsetParams(Eigen::VectorXd const &delta) override;
-
-    /// @copydoc PhotometryModel::transform
-    double transform(CcdImage const &ccdImage, MeasuredStar const &measuredStar,
-                     double instFlux) const override;
-
-    /// @copydoc PhotometryModel::transformError
-    double transformError(CcdImage const &ccdImage, MeasuredStar const &measuredStar,
-                          double instFluxErr) const override;
 
     /// @copydoc PhotometryModel::freezeErrorTransform
     void freezeErrorTransform() override;
@@ -54,22 +46,36 @@ public:
     void computeParameterDerivatives(MeasuredStar const &measuredStar, CcdImage const &ccdImage,
                                      Eigen::VectorXd &derivatives) const override;
 
+    /// @copydoc PhotometryModel::dump
+    void dump(std::ostream &stream = std::cout) const override;
+
+protected:
+    typedef std::unordered_map<CcdImageKey, std::unique_ptr<PhotometryMapping>> MapType;
+    MapType _myMap;
+
+    /// Return the mapping associated with this ccdImage.
+    PhotometryMappingBase *findMapping(CcdImage const &ccdImage) const override;
+};
+
+class SimpleFluxModel : public SimplePhotometryModel {
+public:
+    SimpleFluxModel(CcdImageList const &ccdImageList);
+
+    /// @copydoc PhotometryModel::computeResidual
+    double computeResidual(CcdImage const &ccdImage, MeasuredStar const &measuredStar) const override;
+
+    /// @copydoc PhotometryModel::transform
+    double transform(CcdImage const &ccdImage, MeasuredStar const &measuredStar) const override;
+
+    /// @copydoc PhotometryModel::transformError
+    double transformError(CcdImage const &ccdImage, MeasuredStar const &measuredStar) const override;
+
     /**
      * @copydoc PhotometryModel::toPhotoCalib
      *
      * @note SimplePhotometryModel uses a spatially-invariant transfo, so we can simplify the PhotoCalib.
      */
     std::shared_ptr<afw::image::PhotoCalib> toPhotoCalib(CcdImage const &ccdImage) const override;
-
-    /// @copydoc PhotometryModel::dump
-    void dump(std::ostream &stream = std::cout) const override;
-
-private:
-    typedef std::unordered_map<CcdImageKey, std::unique_ptr<PhotometryMapping>> MapType;
-    MapType _myMap;
-
-    /// Return the mapping associated with this ccdImage.
-    PhotometryMappingBase *findMapping(CcdImage const &ccdImage) const override;
 };
 
 }  // namespace jointcal
