@@ -53,8 +53,8 @@ class PhotometryMappingTestCase(PhotometryMappingTestBase, lsst.utils.tests.Test
 
     def test_offsetParams(self):
         """Test offsetting; note that offsetParams offsets by `-delta`."""
-        delta = np.array(0.0)
-        self._test_offsetParams(delta, np.array(self.scale))
+        delta = np.array([0.0])
+        self._test_offsetParams(delta, np.array([self.scale]))
         delta -= 1
         self._test_offsetParams(delta, self.scale-delta)
 

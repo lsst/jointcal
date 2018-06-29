@@ -14,6 +14,7 @@ config.log
 .cache
 .pytest_cache
 pytest_session.txt
+.coverage
 bin/*.py
 doc/html
 doc/xml
