@@ -595,7 +595,7 @@ class JointcalTask(pipeBase.CmdLineTask):
                                                              self.focalPlaneBBox,
                                                              visitOrder=self.config.photometryVisitOrder)
         elif self.config.photometryModel == "simple":
-            model = lsst.jointcal.SimplePhotometryModel(associations.getCcdImageList())
+            model = lsst.jointcal.SimpleFluxModel(associations.getCcdImageList())
 
         fit = lsst.jointcal.PhotometryFit(associations, model)
         chi2 = fit.computeChi2()

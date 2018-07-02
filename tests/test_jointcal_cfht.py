@@ -72,7 +72,7 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
                    'selected_photometry_ccdImages': 12,
                    'astrometry_final_chi2': 1150.62,
                    'astrometry_final_ndof': 2550,
-                   'photometry_final_chi2': 2824.86,
+                   'photometry_final_chi2': 2816.89,
                    'photometry_final_ndof': 1388
                    }
 
@@ -154,7 +154,7 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
                    'associated_photometry_fittedStars': 2269,
                    'selected_photometry_fittedStars': 1239,
                    'selected_photometry_ccdImages': 12,
-                   'photometry_final_chi2': 2655.86,
+                   'photometry_final_chi2': 2652.32,
                    'photometry_final_ndof': 1328
                    }
         return pa1, metrics
@@ -184,7 +184,7 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
         metrics['selected_photometry_refStars'] = 212
         metrics['associated_photometry_fittedStars'] = 270
         metrics['selected_photometry_fittedStars'] = 244
-        metrics['photometry_final_chi2'] = 369.96
+        metrics['photometry_final_chi2'] = 369.47
         metrics['photometry_final_ndof'] = 252
 
         self._testJointcalTask(2, None, None, pa1, metrics=metrics)

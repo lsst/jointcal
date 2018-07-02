@@ -63,6 +63,7 @@ def createTwoFakeCcdImages(num1=4, num2=4, seed=100):
        - `ccdImageList` : CcdImages containing the metadata and fake sources
            (`list` of `lsst.jointcal.CcdImage`).
        - `bbox` : Bounding Box of the image (`lsst.afw.geom.Box2I`).
+       - 'instFluxKeyName' : name of the instFlux field in the catalogs ('str').
     """
     np.random.seed(seed)
 
@@ -87,7 +88,8 @@ def createTwoFakeCcdImages(num1=4, num2=4, seed=100):
     return lsst.pipe.base.Struct(camera=camera,
                                  catalogs=[struct1.catalog, struct2.catalog],
                                  ccdImageList=[struct1.ccdImage, struct2.ccdImage],
-                                 bbox=struct1.bbox)
+                                 bbox=struct1.bbox,
+                                 instFluxKeyName=instFluxKeyName)
 
 
 def createFakeCcdImage(butler, visit, ccdId, num, instFluxKeyName,
@@ -226,8 +228,8 @@ def fillCatalog(schema, num, bbox,
     else:
         catalog = lsst.afw.table.SourceCatalog(table)
 
-    instFlux = np.random.random(num)
-    instFluxErr = instFlux * fluxErrFraction
+    instFlux = np.random.random(num)*10000
+    instFluxErr = np.abs(instFlux * np.random.normal(fluxErrFraction, scale=0.1, size=num))
     xx = np.linspace(bbox.getMinX(), bbox.getMaxX(), int(np.sqrt(num)))
     yy = np.linspace(bbox.getMinY(), bbox.getMaxY(), int(np.sqrt(num)))
     xv, yv = np.meshgrid(xx, yy)

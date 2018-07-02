@@ -39,30 +39,28 @@ public:
      */
     virtual void offsetParams(Eigen::VectorXd const &delta) = 0;
 
+    virtual double computeResidual(CcdImage const &ccdImage, MeasuredStar const &measuredStar) const = 0;
+
     /**
      * Return the on-sky transformed flux for measuredStar on ccdImage.
      *
      * @param[in]  ccdImage     The ccdImage where measuredStar resides.
-     * @param      measuredStar The measured star position to compute the transform at.
-     * @param[in]  instFlux     The instrument flux to transform.
+     * @param      measuredStar The measured star position to transform.
      *
      * @return     The on-sky flux transformed from instFlux at measuredStar's position.
      */
-    virtual double transform(CcdImage const &ccdImage, MeasuredStar const &measuredStar,
-                             double instFlux) const = 0;
+    virtual double transform(CcdImage const &ccdImage, MeasuredStar const &measuredStar) const = 0;
 
     /**
      * Return the on-sky transformed flux uncertainty for measuredStar on ccdImage.
      * Identical to transform() until freezeErrorTransform() is called.
      *
      * @param[in]  ccdImage     The ccdImage where measuredStar resides.
-     * @param      measuredStar The measured star position to compute the transform at.
-     * @param[in]  instFluxErr  The instrument flux error to transform.
+     * @param      measuredStar The measured star position to transform.
      *
      * @return     The on-sky flux transformed from instFlux at measuredStar's position.
      */
-    virtual double transformError(CcdImage const &ccdImage, MeasuredStar const &measuredStar,
-                                  double instFluxErr) const = 0;
+    virtual double transformError(CcdImage const &ccdImage, MeasuredStar const &measuredStar) const = 0;
 
     /**
      * Once this routine has been called, the error transform is not modified by offsetParams().

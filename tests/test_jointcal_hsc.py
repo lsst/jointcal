@@ -68,7 +68,7 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
                    'selected_photometry_ccdImages': 6,
                    'astrometry_final_chi2': 691.12,
                    'astrometry_final_ndof': 1858,
-                   'photometry_final_chi2': 1557.27,
+                   'photometry_final_chi2': 1555.27,
                    'photometry_final_ndof': 968
                    }
         self._testJointcalTask(2, dist_rms_relative, self.dist_rms_absolute, pa1, metrics=metrics)
@@ -106,7 +106,7 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
                    'associated_photometry_fittedStars': 1151,
                    'selected_photometry_fittedStars': 770,
                    'selected_photometry_ccdImages': 6,
-                   'photometry_final_chi2': 1557.27,
+                   'photometry_final_chi2': 1555.27,
                    'photometry_final_ndof': 968
                    }
 
@@ -196,7 +196,7 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
                    'selected_photometry_ccdImages': 6,
                    'astrometry_final_chi2': 435.01995,
                    'astrometry_final_ndof': 1412,
-                   'photometry_final_chi2': 1557.27,
+                   'photometry_final_chi2': 1555.27,
                    'photometry_final_ndof': 968
                    }
         # NOTE: The astrometry/photometry tests are computed using the a.net SDSS refcat,
