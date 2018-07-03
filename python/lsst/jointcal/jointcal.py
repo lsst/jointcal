@@ -152,6 +152,12 @@ class JointcalConfig(pexConfig.Config):
         dtype=int,
         default=30,
     )
+    allowLineSearch = pexConfig.Field(
+        doc="Allow a line search during minimization, if it is reasonable for the model"
+        " (models with a significant non-linear component, e.g. constrainedPhotometry).",
+        dtype=bool,
+        default=False
+    )
     astrometrySimpleOrder = pexConfig.Field(
         doc="Polynomial order for fitting the simple astrometry model.",
         dtype=int,
@@ -594,8 +600,11 @@ class JointcalTask(pipeBase.CmdLineTask):
             model = lsst.jointcal.ConstrainedPhotometryModel(associations.getCcdImageList(),
                                                              self.focalPlaneBBox,
                                                              visitOrder=self.config.photometryVisitOrder)
+            # potentially nonlinear problem, so we may need a line search to converge.
+            doLineSearch = self.config.allowLineSearch
         elif self.config.photometryModel == "simple":
             model = lsst.jointcal.SimplePhotometryModel(associations.getCcdImageList())
+            doLineSearch = False  # purely linear problem, so no line search needed
 
         fit = lsst.jointcal.PhotometryFit(associations, model)
         chi2 = fit.computeChi2()
@@ -613,17 +622,19 @@ class JointcalTask(pipeBase.CmdLineTask):
         dumpMatrixFile = "photometry_preinit" if self.config.writeInitMatrix else ""
         if self.config.photometryModel == "constrained":
             # TODO: (related to DM-8046): implement Visit/Chip choice
+            # no line search: should be purely (or nearly) linear,
+            # and we want a large step size to initialize with.
             fit.minimize("ModelVisit", dumpMatrixFile=dumpMatrixFile)
             chi2 = fit.computeChi2()
             self.log.info(str(chi2))
             dumpMatrixFile = ""  # so we don't redo the output on the next step
-        fit.minimize("Model", dumpMatrixFile=dumpMatrixFile)
+        fit.minimize("Model", doLineSearch=doLineSearch, dumpMatrixFile=dumpMatrixFile)
         chi2 = fit.computeChi2()
         self.log.info(str(chi2))
-        fit.minimize("Fluxes")
+        fit.minimize("Fluxes")  # no line search: always purely linear.
         chi2 = fit.computeChi2()
         self.log.info(str(chi2))
-        fit.minimize("Model Fluxes")
+        fit.minimize("Model Fluxes", doLineSearch=doLineSearch)
         chi2 = fit.computeChi2()
         if not np.isfinite(chi2.chi2):
             raise FloatingPointError('Pre-iteration chi2 is invalid: %s'%chi2)
@@ -638,7 +649,8 @@ class JointcalTask(pipeBase.CmdLineTask):
                                  self.config.maxPhotometrySteps,
                                  "photometry",
                                  "Model Fluxes",
-                                 doRankUpdate=self.config.photometryDoRankUpdate)
+                                 doRankUpdate=self.config.photometryDoRankUpdate,
+                                 doLineSearch=doLineSearch)
 
         add_measurement(self.job, 'jointcal.photometry_final_chi2', chi2.chi2)
         add_measurement(self.job, 'jointcal.photometry_final_ndof', chi2.ndof)
@@ -746,7 +758,8 @@ class JointcalTask(pipeBase.CmdLineTask):
                 self.log.warn("ccdImage %s has only %s RefStars (desired %s)",
                               ccdImage.getName(), nRefStars, self.config.minRefStarsPerCcd)
 
-    def _iterate_fit(self, associations, fit, model, max_steps, name, whatToFit, doRankUpdate=True):
+    def _iterate_fit(self, associations, fit, model, max_steps, name, whatToFit, doRankUpdate=True,
+                     doLineSearch=False):
         """Run fit.minimize up to max_steps times, returning the final chi2."""
 
         dumpMatrixFile = "%s_postinit" % name if self.config.writeInitMatrix else ""
@@ -755,6 +768,7 @@ class JointcalTask(pipeBase.CmdLineTask):
             r = fit.minimize(whatToFit,
                              self.config.outlierRejectSigma,
                              doRankUpdate=doRankUpdate,
+                             doLineSearch=doLineSearch,
                              dumpMatrixFile=dumpMatrixFile)
             dumpMatrixFile = ""  # clear it so we don't write the matrix again.
             chi2 = fit.computeChi2()

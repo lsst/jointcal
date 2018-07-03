@@ -71,7 +71,7 @@ public:
     ~SimpleAstrometryModel(){};
 
 private:
-    std::map<CcdImageKey, std::unique_ptr<SimpleGtransfoMapping>> _myMap;
+    std::unordered_map<CcdImageKey, std::unique_ptr<SimpleGtransfoMapping>> _myMap;
     const std::shared_ptr<ProjectionHandler const> _sky2TP;
 
     /// @copydoc AstrometryModel::findMapping

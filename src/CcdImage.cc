@@ -26,7 +26,7 @@ namespace lsst {
 namespace jointcal {
 
 std::ostream &operator<<(std::ostream &out, CcdImageKey const &key) {
-    out << "(visit: " << key.first << ", ccd: " << key.second << ")";
+    out << "(visit: " << key.visit << ", ccd: " << key.ccd << ")";
     return out;
 }
 

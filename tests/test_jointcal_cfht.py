@@ -172,6 +172,16 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
 
         self._testJointcalTask(2, None, None, pa1, metrics=metrics)
 
+    def test_jointcalTask_2_visits_constrainedPhotometry_lineSearch(self):
+        """Activating the line search should only slightly change the chi2 in this case."""
+        pa1, metrics = self.setup_jointcalTask_2_visits_constrainedPhotometry()
+        self.config.allowLineSearch = True
+
+        # Only this value should differ from the metrics defined in setup above.
+        metrics['photometry_final_chi2'] = 2642.54
+
+        self._testJointcalTask(2, None, None, pa1, metrics=metrics)
+
     def test_jointcalTask_2_visits_constrainedPhotometry_flagged(self):
         """Test the use of the FlaggedSourceSelector."""
         pa1, metrics = self.setup_jointcalTask_2_visits_constrainedPhotometry()

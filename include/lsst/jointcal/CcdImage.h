@@ -25,7 +25,13 @@ typedef std::list<std::shared_ptr<CcdImage>> CcdImageList;
 typedef int VisitIdType;
 typedef int CcdIdType;
 /// For hashing a ccdImage: the pair of (visit, ccd) IDs should be unique to each ccdImage.
-typedef std::pair<VisitIdType, CcdIdType> CcdImageKey;
+struct CcdImageKey {
+    VisitIdType visit;
+    CcdIdType ccd;
+    bool operator!=(CcdImageKey const &right) const { return !(*this == right); }
+    bool operator==(CcdImageKey const &right) const { return (visit == right.visit) && (ccd == right.ccd); }
+};
+// typedef std::pair<VisitIdType, CcdIdType> CcdImageKey;
 std::ostream &operator<<(std::ostream &out, CcdImageKey const &key);
 
 /**
@@ -119,7 +125,7 @@ public:
 
     std::shared_ptr<afw::cameraGeom::Detector> getDetector() const { return _detector; }
 
-    CcdImageKey getHashKey() const { return CcdImageKey(_visit, _ccdId); }
+    CcdImageKey getHashKey() const { return CcdImageKey{_visit, _ccdId}; }
 
     //!  Airmass
     double getAirMass() const { return _airMass; }
@@ -210,9 +216,8 @@ template <>
  * most-significant-bit, and the visitId in the least for a simple, unique, hash per ccdImage.
  */
 struct hash<lsst::jointcal::CcdImageKey> {
-    size_t operator()(lsst::jointcal::CcdImageKey const &ccdImage) const {
-        return hash<size_t>()(static_cast<size_t>(ccdImage.first) |
-                              (static_cast<size_t>(ccdImage.second) << 32));
+    size_t operator()(lsst::jointcal::CcdImageKey const &key) const {
+        return hash<size_t>()(static_cast<size_t>(key.visit) | (static_cast<size_t>(key.ccd) << 32));
     }
 };
 }  // namespace std
