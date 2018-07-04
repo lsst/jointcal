@@ -34,7 +34,7 @@ import lsst.pipe.base
 import lsst.jointcal.star
 
 
-def createTwoFakeCcdImages(num1=4, num2=4, seed=100):
+def createTwoFakeCcdImages(num1=4, num2=4, seed=100, fakeCcdId=12):
     """Return two fake ccdImages built on CFHT Megacam metadata.
 
     If ``num1 == num2``, the catalogs will align on-sky so each source will
@@ -50,6 +50,10 @@ def createTwoFakeCcdImages(num1=4, num2=4, seed=100):
         a square, to have sqrt(num) centroids on a grid.
     seed : `int`, optional
         Seed value for np.random.
+    fakeCcdId : `int`, optional
+        Sensor identifier to use for both CcdImages. The wcs, bbox, calib, etc.
+        will still be drawn from the CFHT ccd=12 files, as that is the only
+        testdata that is included in this simple test dataset.
 
     Returns
     -------
@@ -68,7 +72,6 @@ def createTwoFakeCcdImages(num1=4, num2=4, seed=100):
 
     visit1 = 849375
     visit2 = 850587
-    ccdId = 12
     instFluxKeyName = "SomeFlux"
 
     # Load or fake the necessary metadata for each CcdImage
@@ -77,12 +80,12 @@ def createTwoFakeCcdImages(num1=4, num2=4, seed=100):
     butler = lsst.daf.persistence.Butler(inputDir)
 
     # so we can access parts of the camera later (e.g. focal plane)
-    camera = butler.get('camera', visit=visit1, ccd=ccdId)
+    camera = butler.get('camera', visit=visit1)
 
-    struct1 = createFakeCcdImage(butler, visit1, ccdId, num1, instFluxKeyName,
-                                 photoCalibMean=100.0, photoCalibErr=1.0)
-    struct2 = createFakeCcdImage(butler, visit2, ccdId, num2, instFluxKeyName,
-                                 photoCalibMean=120.0, photoCalibErr=5.0)
+    struct1 = createFakeCcdImage(butler, visit1, num1, instFluxKeyName,
+                                 photoCalibMean=100.0, photoCalibErr=1.0, fakeCcdId=fakeCcdId)
+    struct2 = createFakeCcdImage(butler, visit2, num2, instFluxKeyName,
+                                 photoCalibMean=120.0, photoCalibErr=5.0, fakeCcdId=fakeCcdId)
 
     return lsst.pipe.base.Struct(camera=camera,
                                  catalogs=[struct1.catalog, struct2.catalog],
@@ -90,8 +93,8 @@ def createTwoFakeCcdImages(num1=4, num2=4, seed=100):
                                  bbox=struct1.bbox)
 
 
-def createFakeCcdImage(butler, visit, ccdId, num, instFluxKeyName,
-                       photoCalibMean=100.0, photoCalibErr=1.0):
+def createFakeCcdImage(butler, visit, num, instFluxKeyName,
+                       photoCalibMean=100.0, photoCalibErr=1.0, fakeCcdId=12):
     """Create a fake CcdImage by making a fake catalog.
 
     Parameters
@@ -100,8 +103,6 @@ def createFakeCcdImage(butler, visit, ccdId, num, instFluxKeyName,
         Butler to load metadata from.
     visit : `int`
         Visit identifier to build a butler dataId.
-    ccdId : `int`
-        CCD identifier to build a butler dataId.
     num : `int`
         Number of sources to put in the catalogs. Should be
         a square, to have sqrt(num) centroids on a grid.
@@ -111,6 +112,8 @@ def createFakeCcdImage(butler, visit, ccdId, num, instFluxKeyName,
         Value to set for calibrationMean in the created PhotoCalib.
     photoCalibErr : `float`, optional
         Value to set for calibrationErr in the created PhotoCalib.
+    fakeCcdId : `int`, optional
+        Use this as the ccdId in the returned CcdImage.
 
     Returns
     -------
@@ -123,6 +126,8 @@ def createFakeCcdImage(butler, visit, ccdId, num, instFluxKeyName,
            (`lsst.jointcal.CcdImage`).
        - `bbox` : Bounding Box of the image (`lsst.afw.geom.Box2I`).
     """
+    ccdId = 12  # we only have data for ccd=12
+
     dataId = dict(visit=visit, ccd=ccdId)
     skyWcs = butler.get('calexp_wcs', dataId=dataId)
     visitInfo = butler.get('calexp_visitInfo', dataId=dataId)
@@ -133,7 +138,7 @@ def createFakeCcdImage(butler, visit, ccdId, num, instFluxKeyName,
 
     catalog = createFakeCatalog(num, bbox, instFluxKeyName, skyWcs=skyWcs)
     ccdImage = lsst.jointcal.ccdImage.CcdImage(catalog, skyWcs, visitInfo, bbox, filt, photoCalib,
-                                               detector, visit, ccdId, instFluxKeyName)
+                                               detector, visit, fakeCcdId, instFluxKeyName)
 
     return lsst.pipe.base.Struct(catalog=catalog, ccdImage=ccdImage, bbox=bbox)
 
