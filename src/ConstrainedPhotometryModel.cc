@@ -20,8 +20,8 @@ namespace lsst {
 namespace jointcal {
 
 ConstrainedPhotometryModel::ConstrainedPhotometryModel(CcdImageList const &ccdImageList,
-                                                       afw::geom::Box2D const &focalPlaneBBox,
-                                                       int visitOrder) {
+                                                       afw::geom::Box2D const &focalPlaneBBox, int visitOrder)
+        : _fittingChips(false), _fittingVisits(false) {
     // keep track of which chip we want to constrain (the one closest to the middle of the focal plane)
     double minRadius2 = std::numeric_limits<double>::infinity();
     CcdIdType constrainedChip = -1;
@@ -45,14 +45,12 @@ ConstrainedPhotometryModel::ConstrainedPhotometryModel(CcdImageList const &ccdIm
             // Use the single-frame processing calibration from the PhotoCalib as the default.
             auto chipTransfo =
                     std::make_shared<PhotometryTransfoSpatiallyInvariant>(photoCalib->getCalibrationMean());
-            _chipMap[chip] =
-                    std::unique_ptr<PhotometryMapping>(new PhotometryMapping(std::move(chipTransfo)));
+            _chipMap[chip] = std::make_unique<PhotometryMapping>(std::move(chipTransfo));
         }
         // If the visit is not in the map, add it, otherwise continue.
         if (visitPair == _visitMap.end()) {
             auto visitTransfo = std::make_shared<PhotometryTransfoChebyshev>(visitOrder, focalPlaneBBox);
-            _visitMap[visit] =
-                    std::unique_ptr<PhotometryMapping>(new PhotometryMapping(std::move(visitTransfo)));
+            _visitMap[visit] = std::make_unique<PhotometryMapping>(std::move(visitTransfo));
         }
     }
 
@@ -60,49 +58,73 @@ ConstrainedPhotometryModel::ConstrainedPhotometryModel(CcdImageList const &ccdIm
     _chipMap.at(constrainedChip)->setFixed(true);
 
     // Now create the ccdImage mappings, which are combinations of the chip/visit mappings above.
-    _myMap.reserve(ccdImageList.size());  // we know how big it will be, so pre-allocate space.
+    _chipVisitMap.reserve(
+            ccdImageList.size());  // we know how chipVisitbig it will be, so pre-allocate space.
     for (auto const &ccdImage : ccdImageList) {
         auto visit = ccdImage->getVisit();
         auto chip = ccdImage->getCcdId();
-        _myMap.emplace(ccdImage->getHashKey(),
-                       std::unique_ptr<ChipVisitPhotometryMapping>(
-                               new ChipVisitPhotometryMapping(_chipMap[chip], _visitMap[visit])));
+        _chipVisitMap.emplace(ccdImage->getHashKey(),
+                              std::make_unique<ChipVisitPhotometryMapping>(_chipMap[chip], _visitMap[visit]));
     }
     LOGLS_INFO(_log, "Got " << _chipMap.size() << " chip mappings and " << _visitMap.size()
                             << " visit mappings; holding chip " << constrainedChip << " fixed ("
                             << getTotalParameters() << " total parameters).");
-    LOGLS_DEBUG(_log, "CcdImage map has " << _myMap.size() << " mappings, with " << _myMap.bucket_count()
-                                          << " buckets and a load factor of " << _myMap.load_factor());
+    LOGLS_DEBUG(_log, "CcdImage map has " << _chipVisitMap.size() << " mappings, with "
+                                          << _chipVisitMap.bucket_count() << " buckets and a load factor of "
+                                          << _chipVisitMap.load_factor());
 }
 
 unsigned ConstrainedPhotometryModel::assignIndices(std::string const &whatToFit, unsigned firstIndex) {
-    // TODO DM-8046: currently ignoring whatToFit: eventually implement configurability.
     unsigned index = firstIndex;
-    for (auto &i : _chipMap) {
-        auto mapping = i.second.get();
-        // Don't assign indices for fixed parameters.
-        if (mapping->isFixed()) continue;
-        mapping->setIndex(index);
-        index += mapping->getNpar();
+    if (whatToFit.find("Model") == std::string::npos) {
+        LOGLS_WARN(_log, "assignIndices was called and Model is *not* in whatToFit");
+        return index;
     }
-    for (auto &i : _visitMap) {
-        auto mapping = i.second.get();
-        mapping->setIndex(index);
-        index += mapping->getNpar();
+
+    // If we got here, "Model" is definitely in whatToFit.
+    _fittingChips = (whatToFit.find("ModelChip") != std::string::npos);
+    _fittingVisits = (whatToFit.find("ModelVisit") != std::string::npos);
+    // If nothing more than "Model" is specified, it means fit everything.
+    if ((!_fittingChips) && (!_fittingVisits)) {
+        _fittingChips = _fittingVisits = true;
+    }
+
+    if (_fittingChips) {
+        for (auto &idMapping : _chipMap) {
+            auto mapping = idMapping.second.get();
+            // Don't assign indices for fixed parameters.
+            if (mapping->isFixed()) continue;
+            mapping->setIndex(index);
+            index += mapping->getNpar();
+        }
+    }
+    if (_fittingVisits) {
+        for (auto &idMapping : _visitMap) {
+            auto mapping = idMapping.second.get();
+            mapping->setIndex(index);
+            index += mapping->getNpar();
+        }
+    }
+    for (auto &idMapping : _chipVisitMap) {
+        idMapping.second->setWhatToFit(_fittingChips, _fittingVisits);
     }
     return index;
 }
 
 void ConstrainedPhotometryModel::offsetParams(Eigen::VectorXd const &delta) {
-    for (auto &i : _chipMap) {
-        auto mapping = i.second.get();
-        // Don't offset indices for fixed parameters.
-        if (mapping->isFixed()) continue;
-        mapping->offsetParams(delta.segment(mapping->getIndex(), mapping->getNpar()));
+    if (_fittingChips) {
+        for (auto &idMapping : _chipMap) {
+            auto mapping = idMapping.second.get();
+            // Don't offset indices for fixed parameters.
+            if (mapping->isFixed()) continue;
+            mapping->offsetParams(delta.segment(mapping->getIndex(), mapping->getNpar()));
+        }
     }
-    for (auto &i : _visitMap) {
-        auto mapping = i.second.get();
-        mapping->offsetParams(delta.segment(mapping->getIndex(), mapping->getNpar()));
+    if (_fittingVisits) {
+        for (auto &idMapping : _visitMap) {
+            auto mapping = idMapping.second.get();
+            mapping->offsetParams(delta.segment(mapping->getIndex(), mapping->getNpar()));
+        }
     }
 }
 
@@ -119,11 +141,11 @@ double ConstrainedPhotometryModel::transformError(CcdImage const &ccdImage, Meas
 }
 
 void ConstrainedPhotometryModel::freezeErrorTransform() {
-    for (auto &i : _chipMap) {
-        i.second.get()->freezeErrorTransform();
+    for (auto &idMapping : _chipMap) {
+        idMapping.second.get()->freezeErrorTransform();
     }
-    for (auto &i : _visitMap) {
-        i.second.get()->freezeErrorTransform();
+    for (auto &idMapping : _visitMap) {
+        idMapping.second.get()->freezeErrorTransform();
     }
 }
 
@@ -135,11 +157,11 @@ void ConstrainedPhotometryModel::getMappingIndices(CcdImage const &ccdImage,
 
 int ConstrainedPhotometryModel::getTotalParameters() const {
     int total = 0;
-    for (auto &i : _chipMap) {
-        total += i.second->getNpar();
+    for (auto &idMapping : _chipMap) {
+        total += idMapping.second->getNpar();
     }
-    for (auto &i : _visitMap) {
-        total += i.second->getNpar();
+    for (auto &idMapping : _visitMap) {
+        total += idMapping.second->getNpar();
     }
     return total;
 }
@@ -211,23 +233,23 @@ std::shared_ptr<afw::image::PhotoCalib> ConstrainedPhotometryModel::toPhotoCalib
 }
 
 void ConstrainedPhotometryModel::dump(std::ostream &stream) const {
-    for (auto &i : _chipMap) {
-        i.second->dump(stream);
+    for (auto &idMapping : _chipMap) {
+        idMapping.second->dump(stream);
         stream << std::endl;
     }
     stream << std::endl;
-    for (auto &i : _visitMap) {
-        i.second->dump(stream);
+    for (auto &idMapping : _visitMap) {
+        idMapping.second->dump(stream);
         stream << std::endl;
     }
 }
 
 PhotometryMappingBase *ConstrainedPhotometryModel::findMapping(CcdImage const &ccdImage) const {
-    auto i = _myMap.find(ccdImage.getHashKey());
-    if (i == _myMap.end())
+    auto idMapping = _chipVisitMap.find(ccdImage.getHashKey());
+    if (idMapping == _chipVisitMap.end())
         throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,
                           "ConstrainedPhotometryModel cannot find CcdImage " + ccdImage.getName());
-    return i->second.get();
+    return idMapping->second.get();
 }
 
 }  // namespace jointcal

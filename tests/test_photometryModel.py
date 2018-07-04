@@ -106,7 +106,7 @@ class ConstrainedPhotometryModelTestCase(PhotometryModelTestBase, lsst.utils.tes
                                                                                self.focalPlaneBBox,
                                                                                self.visitOrder)
         # have to call this once to let offsetParams work.
-        self.model.assignIndices("", self.firstIndex)
+        self.model.assignIndices("Model", self.firstIndex)
         # tweak to get more than just a constant field for the second ccdImage
         self.delta = np.arange(20, dtype=float)*-0.2 + 1
         # but keep the first ccdImage constant, to help distinguish test failures.
@@ -134,6 +134,40 @@ class ConstrainedPhotometryModelTestCase(PhotometryModelTestBase, lsst.utils.tes
     def test_toPhotoCalib(self):
         self._toPhotoCalib(self.ccdImageList[0])
         self._toPhotoCalib(self.ccdImageList[1])
+
+    def test_assignIndices(self):
+        """Test that the correct number of indices were assigned.
+        Does not check that the internal mappings are assigned the correct
+        indices.
+        """
+        # need at least two sensors to distinguish "Model" from "ModelVisit"
+        # NOTE: createTwoFakeCcdImages() always uses the same two visitIds,
+        # so there will be 2 visits total here.
+        struct1 = lsst.jointcal.testUtils.createTwoFakeCcdImages(100, 100, seed=100, fakeCcdId=12)
+        ccdImageList = struct1.ccdImageList
+        struct2 = lsst.jointcal.testUtils.createTwoFakeCcdImages(100, 100, seed=101, fakeCcdId=13)
+        ccdImageList.extend(struct2.ccdImageList)
+        camera = struct1.camera  # the camera is the same in both structs
+        visitOrder = 3
+        focalPlaneBBox = camera.getFpBBox()
+        model = lsst.jointcal.photometryModels.ConstrainedPhotometryModel(ccdImageList,
+                                                                          focalPlaneBBox,
+                                                                          visitOrder)
+
+        # one polynomial per visit, plus one fitted scale for the second chip.
+        expect = 2 * getNParametersPolynomial(self.visitOrder) + 1
+        index = model.assignIndices("Model", self.firstIndex)
+        self.assertEqual(index, expect)
+
+        # one polynomial per visit
+        expect = 2 * getNParametersPolynomial(self.visitOrder)
+        index = model.assignIndices("ModelVisit", self.firstIndex)
+        self.assertEqual(index, expect)
+
+        # one fitted chip
+        expect = 1
+        index = model.assignIndices("ModelChip", self.firstIndex)
+        self.assertEqual(index, expect)
 
 
 class MemoryTester(lsst.utils.tests.MemoryTestCase):

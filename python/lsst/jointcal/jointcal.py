@@ -621,7 +621,6 @@ class JointcalTask(pipeBase.CmdLineTask):
         # transfo is initialized from the singleFrame PhotoCalib, so it's close.
         dumpMatrixFile = "photometry_preinit" if self.config.writeInitMatrix else ""
         if self.config.photometryModel == "constrained":
-            # TODO: (related to DM-8046): implement Visit/Chip choice
             # no line search: should be purely (or nearly) linear,
             # and we want a large step size to initialize with.
             fit.minimize("ModelVisit", dumpMatrixFile=dumpMatrixFile)

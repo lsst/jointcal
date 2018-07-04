@@ -77,11 +77,21 @@ public:
 private:
     PhotometryMappingBase *findMapping(CcdImage const &ccdImage) const override;
 
-    typedef std::unordered_map<CcdImageKey, std::unique_ptr<ChipVisitPhotometryMapping>> MapType;
-    MapType _myMap;
+    // Which components of the model are we fitting currently?
+    bool _fittingChips;
+    bool _fittingVisits;
 
+    /* The per-ccdImage transforms, each of which is a composition of a chip and visit transform.
+     * Not all pairs of _visitMap[visit] and _chipMap[chip] are guaranteed to have an entry in
+     * _chipVisitMap (for example, one ccd in one visit might fail to produce a catalog).
+     */
+    typedef std::unordered_map<CcdImageKey, std::unique_ptr<ChipVisitPhotometryMapping>> MapType;
+    MapType _chipVisitMap;
+
+    // The per-visit transforms that go into _chipVisitMap.
     typedef std::map<VisitIdType, std::shared_ptr<PhotometryMapping>> VisitMapType;
     VisitMapType _visitMap;
+    // The per-chip transforms that go into _chipVisitMap.
     typedef std::map<CcdIdType, std::shared_ptr<PhotometryMapping>> ChipMapType;
     ChipMapType _chipMap;
 };

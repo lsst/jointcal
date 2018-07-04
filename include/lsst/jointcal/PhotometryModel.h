@@ -21,7 +21,7 @@ class MeasuredStar;
 class PhotometryModel {
 public:
     /**
-     * Assign indices to parameters involved in mappings, starting at firstIndex.
+     * Assign indices in the full matrix to the parameters being fit in the mappings, starting at firstIndex.
      *
      * @param[in]  whatToFit   String containing parameters to fit.
      * @param[in]  firstIndex  Index to start assigning at.

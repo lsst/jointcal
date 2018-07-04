@@ -94,6 +94,7 @@ class ChipVisitPhotometryMappingTestCase(PhotometryMappingTestBase, lsst.utils.t
         visitMapping.setIndex(self.visitIndex)
         self.mappingInvariants = lsst.jointcal.photometryMappings.ChipVisitPhotometryMapping(chipMapping,
                                                                                              visitMapping)
+        self.mappingInvariants.setWhatToFit(True, True)  # default to fitting both
 
         # Have to make a new chipMapping, as it stores shared_ptr to the transfo.
         chipTransfo = lsst.jointcal.photometryTransfo.PhotometryTransfoSpatiallyInvariant(self.chipScale)
@@ -105,6 +106,7 @@ class ChipVisitPhotometryMappingTestCase(PhotometryMappingTestBase, lsst.utils.t
         visitMapping2.setIndex(self.visitIndex)
         self.mappingCheby = lsst.jointcal.photometryMappings.ChipVisitPhotometryMapping(chipMapping,
                                                                                         visitMapping2)
+        self.mappingCheby.setWhatToFit(True, True)  # default to fitting both
 
     def test_getNpar(self):
         result = self.mappingInvariants.getNpar()
@@ -142,45 +144,33 @@ class ChipVisitPhotometryMappingTestCase(PhotometryMappingTestBase, lsst.utils.t
                                                                        self.star1.getYFocal())
         self.assertEqual(result, expect)
 
-    def test_offsetParams(self):
-        """Test offsetting; note that offsetParams offsets by `-delta`."""
-        delta = np.array([1, 2], dtype=float)
-        expect = np.array([self.chipScale-1, self.visitScale-2])
-        self.mappingInvariants.offsetParams(delta)
-        self.assertFloatsAlmostEqual(expect, self.mappingInvariants.getParameters())
+    def _computeChebyshevDerivative(self, star):
+        """Return the derivatives w.r.t. the Chebyshev components."""
+        cx = (self.bbox.getMinX() + self.bbox.getMaxX())/2.0
+        cy = (self.bbox.getMinY() + self.bbox.getMaxY())/2.0
+        sx = 2.0 / self.bbox.getWidth()
+        sy = 2.0 / self.bbox.getHeight()
+        Tx = np.array([CHEBYSHEV_T[i](sx*(star.getXFocal() - cx))
+                      for i in range(self.order+1)], dtype=float)
+        Ty = np.array([CHEBYSHEV_T[i](sy*(star.getYFocal() - cy))
+                      for i in range(self.order+1)], dtype=float)
+        expect = []
+        for j in range(len(Ty)):
+            for i in range(0, self.order-j+1):
+                expect.append(Ty[j]*Tx[i]*self.instFlux*self.chipScale)
+        return expect
 
-        # order 1 means 3 parameters, so 4 total w/chipTransfo
-        delta = np.zeros(4, dtype=float)
-        expect = np.zeros(4, dtype=float)
-        delta[0] = 1
-        delta[1] = -2
-        delta[2] = 3
-        delta[3] = -5
-        expect[0] = self.chipScale - delta[0]
-        expect[1] = self.coefficients[0, 0] - delta[1]
-        expect[2] = self.coefficients[0, 1] - delta[2]
-        expect[3] = self.coefficients[1, 0] - delta[3]
-        # coeff[1,1] is unused in a order 1 Chebyshev (it would be a 2nd order component)
-        self.mappingCheby.offsetParams(delta)
-        self.assertFloatsAlmostEqual(self.mappingCheby.getParameters(), expect)
+    def _computeChipDerivative(self, star):
+        """Return the derivative w.r.t. the chip component."""
+        return self.instFlux*self._evaluate_chebyshev(star.getXFocal(), star.getYFocal())
 
     def test_computeParameterDerivatives(self):
         result = self.mappingInvariants.computeParameterDerivatives(self.star0, self.instFlux)
         expect = np.array([self.instFlux*self.visitScale, self.instFlux*self.chipScale])
         self.assertFloatsAlmostEqual(result, expect)
 
-        cx = (self.bbox.getMinX() + self.bbox.getMaxX())/2.0
-        cy = (self.bbox.getMinY() + self.bbox.getMaxY())/2.0
-        sx = 2.0 / self.bbox.getWidth()
-        sy = 2.0 / self.bbox.getHeight()
-        Tx = np.array([CHEBYSHEV_T[i](sx*(self.star1.getXFocal() - cx))
-                      for i in range(self.order+1)], dtype=float)
-        Ty = np.array([CHEBYSHEV_T[i](sy*(self.star1.getYFocal() - cy))
-                      for i in range(self.order+1)], dtype=float)
-        expect = [self.instFlux*self._evaluate_chebyshev(self.star1.getXFocal(), self.star1.getYFocal()), ]
-        for j in range(len(Ty)):
-            for i in range(0, self.order-j+1):
-                expect.append(Ty[j]*Tx[i]*self.instFlux*self.chipScale)
+        expect = [self._computeChipDerivative(self.star1), ]
+        expect.extend(self._computeChebyshevDerivative(self.star1))
         result = self.mappingCheby.computeParameterDerivatives(self.star1, self.instFlux)
         self.assertFloatsAlmostEqual(np.array(expect), result)
 
@@ -195,6 +185,48 @@ class ChipVisitPhotometryMappingTestCase(PhotometryMappingTestBase, lsst.utils.t
                                                  self.visitIndex + self.mappingCheby.getNpar() - 1))
         result = self.mappingCheby.getMappingIndices()
         self.assertEqual(result, expect)
+
+    def _test_setWhatToFit(self, fittingChips, fittingVisits, nPar, indices, derivatives):
+        """
+        Parameters
+        ----------
+        fittingChips : `bool`
+            Are we fitting the chip component?
+            Passed to ``self.mappingCheby.setWhatToFit()``.
+        fittingVisits : `bool`
+            Are we fitting the visit component?
+            Passed to ``self.mappingCheby.setWhatToFit()``.
+        nPar : `int`
+            Expected result from ``self.mappingCheby.getNpar()``.
+        indices : `list`
+            Expected result from ``self.mappingCheby.getMappingIndices()``.
+        derivatives : `list`
+            Expected result from ``self.mappingCheby.computeParameterDerivatives()``.
+        """
+        self.mappingCheby.setWhatToFit(fittingChips, fittingVisits)
+        self.assertEqual(self.mappingCheby.getNpar(), nPar)
+        self.assertEqual(self.mappingCheby.getMappingIndices(), indices)
+        result = self.mappingCheby.computeParameterDerivatives(self.star1, self.instFlux)
+        self.assertFloatsEqual(result, derivatives)
+
+    def test_setWhatToFit(self):
+        """Test that mapping methods behave correctly when chip and/or visit
+        fitting is disabled.
+
+        The "fit both" case (True, True) is tested by all of the above tests.
+        """
+        # Using mappingCheby so getNpar() will distinguish chips (1 param) from visits (3 params).
+
+        # fit nothing means 0 parameters and no indices
+        self._test_setWhatToFit(False, False, 0, [], [])
+
+        # fit just chips means 1 parameter and one index [self.chipIndex]
+        self._test_setWhatToFit(True, False, 1, [self.chipIndex],
+                                [self._computeChipDerivative(self.star1)])
+
+        # fit just visits means 3 parameters (order 1) and 3 indices starting at self.visitIndex
+        self._test_setWhatToFit(False, True, 3, list(range(self.visitIndex, self.visitIndex+3)),
+                                [self._computeChebyshevDerivative(self.star1)])
 
 
 class MemoryTester(lsst.utils.tests.MemoryTestCase):
