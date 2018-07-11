@@ -186,6 +186,10 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
         """Test the use of the FlaggedSourceSelector."""
         pa1, metrics = self.setup_jointcalTask_2_visits_constrainedPhotometry()
         self.config.sourceSelector.name = "flagged"
+        # Calib flag names changed with RFC-498 (DM-14997).  The following sets the config to use the
+        # old names associated with the current data in testdata_jointcal that was processed pre-RFC-498.
+        # Remove line if the data in testdata_jointcal are ever reprocessed post-RFC-498.
+        self.config.sourceSelector.active.field = "calib_psfUsed"
         # Reduce warnings due to flaggedSourceSelector having fewer sources than astrometrySourceSelector.
         self.config.minMeasuredStarsPerCcd = 30
         self.config.minRefStarsPerCcd = 20
