@@ -47,6 +47,9 @@ public:
     /// @copydoc PhotometryModel::offsetParams
     void offsetParams(Eigen::VectorXd const &delta) override;
 
+    /// @copydoc PhotometryModel::offsetFittedStar
+    void offsetFittedStar(FittedStar &fittedStar, double delta) const { fittedStar.getFlux() -= delta; }
+
     /// @copydoc PhotometryModel::computeResidual
     double computeResidual(CcdImage const &ccdImage, MeasuredStar const &measuredStar) const override;
 
@@ -68,6 +71,14 @@ public:
     /// @copydoc PhotometryModel::computeParameterDerivatives
     void computeParameterDerivatives(MeasuredStar const &measuredStar, CcdImage const &ccdImage,
                                      Eigen::VectorXd &derivatives) const override;
+
+    /// @copydoc PhotometryModel::getRefError
+    double getRefError(RefStar const &refStar) const override { return refStar.getFluxErr(); }
+
+    /// @copydoc PhotometryModel::computeRefResidual
+    double computeRefResidual(FittedStar const &fittedStar, RefStar const &refStar) const override {
+        return fittedStar.getFlux() - refStar.getFlux();
+    };
 
     /// @copydoc PhotometryModel::toPhotoCalib
     std::shared_ptr<afw::image::PhotoCalib> toPhotoCalib(CcdImage const &ccdImage) const override;

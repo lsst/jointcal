@@ -67,6 +67,7 @@ def createTwoFakeCcdImages(num1=4, num2=4, seed=100, fakeCcdId=12):
        - `ccdImageList` : CcdImages containing the metadata and fake sources
            (`list` of `lsst.jointcal.CcdImage`).
        - `bbox` : Bounding Box of the image (`lsst.afw.geom.Box2I`).
+       - 'instFluxKeyName' : name of the instFlux field in the catalogs ('str').
     """
     np.random.seed(seed)
 
@@ -90,7 +91,8 @@ def createTwoFakeCcdImages(num1=4, num2=4, seed=100, fakeCcdId=12):
     return lsst.pipe.base.Struct(camera=camera,
                                  catalogs=[struct1.catalog, struct2.catalog],
                                  ccdImageList=[struct1.ccdImage, struct2.ccdImage],
-                                 bbox=struct1.bbox)
+                                 bbox=struct1.bbox,
+                                 instFluxKeyName=instFluxKeyName)
 
 
 def createFakeCcdImage(butler, visit, num, instFluxKeyName,

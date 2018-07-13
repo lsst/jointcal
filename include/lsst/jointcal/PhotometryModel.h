@@ -7,6 +7,9 @@
 #include "lsst/jointcal/CcdImage.h"
 #include "lsst/jointcal/Eigenstuff.h"
 #include "lsst/jointcal/PhotometryMapping.h"
+#include "lsst/jointcal/FittedStar.h"
+#include "lsst/jointcal/MeasuredStar.h"
+#include "lsst/jointcal/RefStar.h"
 #include <string>
 #include <vector>
 
@@ -38,6 +41,14 @@ public:
      * @param[in]  delta  vector of offsets to apply
      */
     virtual void offsetParams(Eigen::VectorXd const &delta) = 0;
+
+    /**
+     * Offset the appropriate flux or magnitude.
+     *
+     * @param fittedStar The star to update.
+     * @param delta The amount to update by.
+     */
+    virtual void offsetFittedStar(FittedStar &fittedStar, double delta) const = 0;
 
     virtual double computeResidual(CcdImage const &ccdImage, MeasuredStar const &measuredStar) const = 0;
 
@@ -88,6 +99,12 @@ public:
      */
     virtual void computeParameterDerivatives(MeasuredStar const &measuredStar, CcdImage const &ccdImage,
                                              Eigen::VectorXd &derivatives) const = 0;
+
+    /// Return the refStar error appropriate for this model (e.g. fluxErr or magErr).
+    virtual double getRefError(RefStar const &refStar) const = 0;
+
+    /// Return the fittedStar - refStar residual appropriate for this model (e.g. flux - flux or mag - mag).
+    virtual double computeRefResidual(FittedStar const &fittedStar, RefStar const &refStar) const = 0;
 
     /**
      * Return the mapping of ccdImage represented as a PhotoCalib.

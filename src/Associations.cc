@@ -340,7 +340,6 @@ void Associations::normalizeFittedStars() const {
             fittedStar->x += point.x;
             fittedStar->y += point.y;
             fittedStar->getFlux() += mi->getFlux();
-            fittedStar->getMag() += mi->getMag();
         }
     }
 
@@ -349,7 +348,7 @@ void Associations::normalizeFittedStars() const {
         fi->x /= measurementCount;
         fi->y /= measurementCount;
         fi->getFlux() /= measurementCount;
-        fi->getMag() /= measurementCount;
+        fi->getMag() = magFromFlux(fi->getFlux());
     }
 }
 

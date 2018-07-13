@@ -133,7 +133,7 @@ class JointcalTestDECAM(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Test
         self.config = lsst.jointcal.jointcal.JointcalConfig()
         self.config.astrometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
         self.config.photometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
-        self.config.photometryModel = "constrained"
+        self.config.photometryModel = "constrainedFlux"
         self.config.sourceSelector['astrometry'].badFlags.append("base_PixelFlags_flag_interpolated")
         self.config.doAstrometry = False
         self.jointcalStatistics.do_astrometry = False

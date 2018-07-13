@@ -76,6 +76,28 @@ class JointcalTestCFHTMinimal(jointcalTestBase.JointcalTestBase, lsst.utils.test
         self.assertTrue(os.path.exists("photometry_postinit-grad.txt"))
         os.remove("photometry_postinit-grad.txt")
 
+    def test_jointcalTask_2_visits_photometry_magnitude(self):
+        self.config = lsst.jointcal.jointcal.JointcalConfig()
+        self.config.photometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
+        self.config.photometryModel = "simpleMagnitude"
+        self.config.doAstrometry = False
+        self.jointcalStatistics.do_astrometry = False
+
+        # NOTE: ndof==1 from 4 fit parameters (2 model, 2 fittedStar), and
+        # 5 degrees-of-freedom (3 star measurements, with 2 reference stars).
+        metrics = {'collected_photometry_refStars': 183,
+                   'selected_photometry_refStars': 2,
+                   'associated_photometry_fittedStars': 2,
+                   'selected_photometry_fittedStars': 2,
+                   'selected_photometry_ccdImages': 2,
+                   'photometry_final_chi2': 2.23008,
+                   'photometry_final_ndof': 1
+                   }
+
+        # the calling method is one step back on the stack: use it to specify the output repo.
+        caller = inspect.stack()[1][3]  # NOTE: could be inspect.stack()[1].function in py3.5
+        self._runJointcalTask(2, caller, metrics=metrics)
+
     def test_jointcalTask_fails_raise(self):
         """Raise an exception if there is no data to process."""
         self.config = lsst.jointcal.jointcal.JointcalConfig()

@@ -68,6 +68,18 @@ void declarePhotometryModel(py::module &mod) {
 void declareSimplePhotometryModel(py::module &mod) {
     py::class_<SimplePhotometryModel, std::shared_ptr<SimplePhotometryModel>, PhotometryModel> cls(
             mod, "SimplePhotometryModel");
+}
+
+void declareSimpleFluxModel(py::module &mod) {
+    py::class_<SimpleFluxModel, std::shared_ptr<SimpleFluxModel>, SimplePhotometryModel, PhotometryModel> cls(
+            mod, "SimpleFluxModel");
+    cls.def(py::init<CcdImageList const &>(), "ccdImageList"_a);
+}
+
+void declareSimpleMagnitudeModel(py::module &mod) {
+    py::class_<SimpleMagnitudeModel, std::shared_ptr<SimpleMagnitudeModel>, SimplePhotometryModel,
+               PhotometryModel>
+            cls(mod, "SimpleMagnitudeModel");
     cls.def(py::init<CcdImageList const &>(), "ccdImageList"_a);
 }
 
@@ -84,6 +96,8 @@ PYBIND11_MODULE(photometryModels, mod) {
     py::module::import("lsst.jointcal.star");
     declarePhotometryModel(mod);
     declareSimplePhotometryModel(mod);
+    declareSimpleFluxModel(mod);
+    declareSimpleMagnitudeModel(mod);
     declareConstrainedPhotometryModel(mod);
 }
 }  // namespace

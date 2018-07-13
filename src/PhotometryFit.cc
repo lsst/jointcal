@@ -96,9 +96,10 @@ void PhotometryFit::leastSquareDerivativesReference(FittedStarList const &fitted
         // filter = ccdImage.getFilter();
 
         // W == inverseSigma^2
-        double inverseSigma = 1.0 / refStar->getFluxErr();
-        // Residual is fittedStar.flux - refStar.flux for consistency with measurement terms.
-        double residual = fittedStar->getFlux() - refStar->getFlux();
+
+        double inverseSigma = 1.0 / _photometryModel->getRefError(*refStar);
+        // Residual is fittedStar - refStar for consistency with measurement terms.
+        double residual = _photometryModel->computeRefResidual(*fittedStar, *refStar);
 
         unsigned index = fittedStar->getIndexInMatrix();
         // Note: H = dR/dFittedStar == 1
@@ -141,7 +142,9 @@ void PhotometryFit::accumulateStatRefStars(Chi2Accumulator &accum) const {
     for (auto const &fittedStar : fittedStarList) {
         auto refStar = fittedStar->getRefStar();
         if (refStar == nullptr) continue;
-        double chi2 = std::pow(((fittedStar->getFlux() - refStar->getFlux()) / refStar->getFluxErr()), 2);
+        double sigma = _photometryModel->getRefError(*refStar);
+        double residual = _photometryModel->computeRefResidual(*fittedStar, *refStar);
+        double chi2 = std::pow(residual / sigma, 2);
         accum.addEntry(chi2, 1, fittedStar);
     }
 }
@@ -201,7 +204,7 @@ void PhotometryFit::offsetParams(Eigen::VectorXd const &delta) {
             // - when filling the derivatives
             // - when assigning indices (assignIndices())
             unsigned index = fittedStar->getIndexInMatrix();
-            fittedStar->getFlux() -= delta(index);
+            _photometryModel->offsetFittedStar(*fittedStar, delta(index));
         }
     }
 }

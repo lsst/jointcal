@@ -188,9 +188,10 @@ class JointcalConfig(pexConfig.Config):
     photometryModel = pexConfig.ChoiceField(
         doc="Type of model to fit to photometry",
         dtype=str,
-        default="simple",
-        allowed={"simple": "One constant zeropoint per ccd and visit",
-                 "constrained": "Constrained zeropoint per ccd, and one polynomial per visit"}
+        default="simpleFlux",
+        allowed={"simpleFlux": "One constant zeropoint per ccd and visit",
+                 "constrainedFlux": "Constrained zeropoint per ccd, and one polynomial per visit",
+                 "simpleMagnitude": "One constant zeropoint per ccd and visit"}
     )
     photometryVisitOrder = pexConfig.Field(
         doc="Order of the per-visit polynomial transform for the constrained photometry model.",
@@ -596,15 +597,18 @@ class JointcalTask(pipeBase.CmdLineTask):
         self.log.info("=== Starting photometric fitting...")
 
         # TODO: should use pex.config.RegistryField here (see DM-9195)
-        if self.config.photometryModel == "constrained":
+        if self.config.photometryModel == "constrainedFlux":
             model = lsst.jointcal.ConstrainedPhotometryModel(associations.getCcdImageList(),
                                                              self.focalPlaneBBox,
                                                              visitOrder=self.config.photometryVisitOrder)
             # potentially nonlinear problem, so we may need a line search to converge.
             doLineSearch = self.config.allowLineSearch
-        elif self.config.photometryModel == "simple":
-            model = lsst.jointcal.SimplePhotometryModel(associations.getCcdImageList())
-            doLineSearch = False  # purely linear problem, so no line search needed
+        elif self.config.photometryModel == "simpleFlux":
+            model = lsst.jointcal.SimpleFluxModel(associations.getCcdImageList())
+            doLineSearch = False  # purely linear in model parameters, so no line search needed
+        elif self.config.photometryModel == "simpleMagnitude":
+            model = lsst.jointcal.SimpleMagnitudeModel(associations.getCcdImageList())
+            doLineSearch = False  # purely linear in model parameters, so no line search needed
 
         fit = lsst.jointcal.PhotometryFit(associations, model)
         chi2 = fit.computeChi2()
