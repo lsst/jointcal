@@ -89,7 +89,7 @@ public:
     explicit PhotometryTransfoSpatiallyInvariant(double value) : _value(value) {}
 
     /// @copydoc PhotometryTransfo::dump
-    void dump(std::ostream &stream = std::cout) const override { stream << _value; }
+    void dump(std::ostream &stream = std::cout) const override { stream << std::setprecision(10) << _value; }
 
     /// @copydoc PhotometryTransfo::getNpar
     int getNpar() const override { return 1; }
