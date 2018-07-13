@@ -65,6 +65,14 @@ void declareFluxTransfoSpatiallyInvariant(py::module &mod) {
     cls.def(py::init<double>(), "value"_a = 1);
 }
 
+void declareMagnitudeTransfoSpatiallyInvariant(py::module &mod) {
+    py::class_<MagnitudeTransfoSpatiallyInvariant, std::shared_ptr<MagnitudeTransfoSpatiallyInvariant>,
+               PhotometryTransfo>
+            cls(mod, "MagnitudeTransfoSpatiallyInvariant");
+
+    cls.def(py::init<double>(), "value"_a = 0);
+}
+
 void declarePhotometryTransfoChebyshev(py::module &mod) {
     py::class_<PhotometryTransfoChebyshev, std::shared_ptr<PhotometryTransfoChebyshev>, PhotometryTransfo>
             cls(mod, "PhotometryTransfoChebyshev");
@@ -83,6 +91,7 @@ PYBIND11_MODULE(photometryTransfo, mod) {
 
     declareFluxTransfoSpatiallyInvariant(mod);
     declarePhotometryTransfoChebyshev(mod);
+    declareMagnitudeTransfoSpatiallyInvariant(mod);
 }
 
 }  // namespace

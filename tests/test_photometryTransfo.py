@@ -89,6 +89,24 @@ class FluxTransfoSpatiallyInvariantTestCase(SpatiallyInvariantTestBase, lsst.uti
         self._test_computeParameterDerivatives(self.value)
 
 
+class MagnitudeTransfoSpatiallyInvariantTestCase(SpatiallyInvariantTestBase, lsst.utils.tests.TestCase):
+    def setUp(self):
+        super().setUp()
+        self.transfo1 = lsst.jointcal.photometryTransfo.MagnitudeTransfoSpatiallyInvariant()
+        self.transfo2 = lsst.jointcal.photometryTransfo.MagnitudeTransfoSpatiallyInvariant(self.t2init)
+
+    def test_transform(self):
+        self._test_transform(self.transfo1, self.value)
+        self._test_transform(self.transfo2, self.value + self.t2init)
+
+    def test_offsetParams(self):
+        self._test_offsetParams(self.value + 1)
+
+    def test_computeParameterDerivatives(self):
+        """Should always be identically 1."""
+        self._test_computeParameterDerivatives(1.0)
+
+
 class PhotometryTransfoChebyshevTestCase(PhotometryTransfoTestBase, lsst.utils.tests.TestCase):
     def setUp(self):
         super().setUp()
