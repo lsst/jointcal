@@ -71,6 +71,9 @@ void declareBaseStar(py::module &mod) {
 
     // cls.def("getFlux", &BaseStar::getFlux);
     cls.def_property_readonly("flux", (double (BaseStar::*)() const) & BaseStar::getFlux);
+    cls.def_property_readonly("fluxErr", (double (BaseStar::*)() const) & BaseStar::getFluxErr);
+    cls.def_property_readonly("mag", (double (BaseStar::*)() const) & BaseStar::getMag);
+    cls.def_property_readonly("magErr", (double (BaseStar::*)() const) & BaseStar::getMagErr);
 }
 
 void declareRefStar(py::module &mod) {

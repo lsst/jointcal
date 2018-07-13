@@ -27,6 +27,16 @@ namespace {
 LOG_LOGGER _log = LOG_GET("jointcal.Associations");
 }
 
+namespace {
+/// Compute AB magnitude from flux (in Maggies).
+double abMagFromFlux(double flux) { return -2.5 * std::log10(flux); }
+
+/// Compute AB magnitude error from flux and flux error (in any consistent units).
+double abMagErrFromFluxErr(double flux, double fluxErr) {
+    return std::abs(fluxErr / (-0.4 * flux * std::log(10)));
+}
+}  // namespace
+
 // TODO: Remove this once RFC-356 is implemented and all refcats give fluxes in Maggies.
 const double JanskyToMaggy = 3631.0;
 
@@ -139,7 +149,12 @@ void Associations::associateCatalogs(const double matchCutInArcSec, const bool u
         LOGLS_INFO(_log, "Unmatched objects: " << unMatchedCount);
     }  // end of loop on CcdImages
 
-    assignMags();
+    // !!!!!!!!!!!!!!!!!
+    // TODO: DO WE REALLY NEED THIS???
+    // Why do we need to do this, instead of directly computing them in normalizeFittedStars?
+    // What makes the magnitudes special here?
+    // !!!!!!!!!!!!!!!!!
+    // assignMags();
 }
 
 void Associations::collectRefStars(afw::table::SimpleCatalog &refCat, afw::geom::Angle matchCut,
@@ -316,6 +331,7 @@ void Associations::normalizeFittedStars() const {
         fittedStar->x = 0.0;
         fittedStar->y = 0.0;
         fittedStar->setFlux(0.0);
+        fittedStar->getMag() = 0.0;
     }
 
     // Iterate over measuredStars to add their values into their fittedStars
@@ -332,6 +348,7 @@ void Associations::normalizeFittedStars() const {
             fittedStar->x += point.x;
             fittedStar->y += point.y;
             fittedStar->getFlux() += mi->getFlux();
+            fittedStar->getMag() += mi->getMag();
         }
     }
 
@@ -340,6 +357,7 @@ void Associations::normalizeFittedStars() const {
         fi->x /= measurementCount;
         fi->y /= measurementCount;
         fi->getFlux() /= measurementCount;
+        fi->getMag() /= measurementCount;
     }
 }
 

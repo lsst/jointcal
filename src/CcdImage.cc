@@ -75,7 +75,9 @@ void CcdImage::loadCatalog(afw::table::SourceCatalog const &catalog, std::string
         auto flux = _photoCalib->instFluxToMaggies(ms->getInstFlux(), ms->getInstFluxErr(), point);
         ms->setFlux(flux.value);
         ms->setFluxErr(flux.err);
-        ms->mag = _photoCalib->instFluxToMagnitude(ms->getInstFlux(), point);
+        auto mag = _photoCalib->instFluxToMagnitude(ms->getInstFlux(), ms->getInstFluxErr(), point);
+        ms->getMag() = mag.value;
+        ms->setMagErr(mag.err);
         ms->setCcdImage(this);
         _wholeCatalog.push_back(std::move(ms));
     }

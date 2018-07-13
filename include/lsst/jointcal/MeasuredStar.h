@@ -18,32 +18,28 @@ class CcdImage;
 //! expressed in ADU/s.
 class MeasuredStar : public BaseStar {
 public:
-    double mag;
-    double wmag;
-    double chi2;
-
     MeasuredStar()
             : BaseStar(),
-              mag(0.),
-              wmag(0.),
               _id(0),
               _instFlux(0.),
               _instFluxErr(0.),
               _ccdImage(0),
               _valid(true),
               _xFocal(0.0),
-              _yFocal(0.0) {}
+              _yFocal(0.0),
+              _instMag(0.),
+              _instMagErr(0.) {}
 
     MeasuredStar(BaseStar const &baseStar)
             : BaseStar(baseStar),
-              mag(0.),
-              wmag(0.),
               _id(0),
               _instFluxErr(0.),
               _ccdImage(0),
               _valid(true),
               _xFocal(0.0),
-              _yFocal(0.0) {}
+              _yFocal(0.0),
+              _instMag(0.),
+              _instMagErr(0.) {}
 
     /// No move, allow copy constructor: we may copy the fitted StarLists when associating and matching
     /// catalogs, otherwise Stars should be managed by shared_ptr only.
@@ -65,10 +61,13 @@ public:
 
     void setInstFlux(double instFlux) { _instFlux = instFlux; }
     void setInstFluxErr(double instFluxErr) { _instFluxErr = instFluxErr; }
+    void setInstMag(double instMag) { _instMag = instMag; }
+    void setInstMagErr(double instMagErr) { _instMagErr = instMagErr; }
 
     double getInstFlux() const { return _instFlux; }
     double getInstFluxErr() const { return _instFluxErr; }
-    double getMag() const { return mag; }
+    double getInstMag() const { return _instMag; }
+    double getInstMagErr() const { return _instMagErr; }
 
     void setId(afw::table::RecordId id) { _id = id; }
     afw::table::RecordId getId() { return _id; }
@@ -105,6 +104,10 @@ private:
     bool _valid;
 
     double _xFocal, _yFocal;
+
+    // on-sensor "magnitudes", used when fitting the MagnitudeModel.
+    double _instMag;
+    double _instMagErr;
 };
 
 /****** MeasuredStarList */
