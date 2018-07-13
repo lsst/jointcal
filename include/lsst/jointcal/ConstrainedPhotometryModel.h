@@ -47,13 +47,14 @@ public:
     /// @copydoc PhotometryModel::offsetParams
     void offsetParams(Eigen::VectorXd const &delta) override;
 
+    /// @copydoc PhotometryModel::computeResidual
+    double computeResidual(CcdImage const &ccdImage, MeasuredStar const &measuredStar) const override;
+
     /// @copydoc PhotometryModel::transform
-    double transform(CcdImage const &ccdImage, MeasuredStar const &measuredStar,
-                     double instFlux) const override;
+    double transform(CcdImage const &ccdImage, MeasuredStar const &measuredStar) const override;
 
     /// @copydoc PhotometryModel::transformError
-    double transformError(CcdImage const &ccdImage, MeasuredStar const &measuredStar,
-                          double instFluxErr) const override;
+    double transformError(CcdImage const &ccdImage, MeasuredStar const &measuredStar) const override;
 
     /// @copydoc PhotometryModel::freezeErrorTransform
     void freezeErrorTransform() override;

@@ -128,16 +128,21 @@ void ConstrainedPhotometryModel::offsetParams(Eigen::VectorXd const &delta) {
     }
 }
 
-double ConstrainedPhotometryModel::transform(CcdImage const &ccdImage, MeasuredStar const &measuredStar,
-                                             double instFlux) const {
-    auto mapping = findMapping(ccdImage);
-    return mapping->transform(measuredStar, instFlux);
+double ConstrainedPhotometryModel::computeResidual(CcdImage const &ccdImage,
+                                                   MeasuredStar const &measuredStar) const {
+    return transform(ccdImage, measuredStar) - measuredStar.getFittedStar()->getFlux();
 }
 
-double ConstrainedPhotometryModel::transformError(CcdImage const &ccdImage, MeasuredStar const &measuredStar,
-                                                  double instFluxErr) const {
+double ConstrainedPhotometryModel::transform(CcdImage const &ccdImage,
+                                             MeasuredStar const &measuredStar) const {
     auto mapping = findMapping(ccdImage);
-    return mapping->transformError(measuredStar, instFluxErr);
+    return mapping->transform(measuredStar, measuredStar.getInstFlux());
+}
+
+double ConstrainedPhotometryModel::transformError(CcdImage const &ccdImage,
+                                                  MeasuredStar const &measuredStar) const {
+    auto mapping = findMapping(ccdImage);
+    return mapping->transformError(measuredStar, measuredStar.getInstFluxErr());
 }
 
 void ConstrainedPhotometryModel::freezeErrorTransform() {
