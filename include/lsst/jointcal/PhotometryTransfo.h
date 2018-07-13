@@ -19,14 +19,10 @@ namespace jointcal {
 
 class Point;
 
-class PhotometryTransfoSpatiallyInvariant;
-
 /*
- * A photometric transform, defined as a scalar multiple of the input flux.
+ * A photometric transform, defined in terms of the input flux or magnitude.
  *
  * Unit agnostic: a higher level Model must keep track of the units going into and out of of its Transfos.
- *
- *     inputFlux * transfo(x,y) -> correctedFlux
  *
  * @seealso lsst::afw::image::PhotoCalib
  */
@@ -78,17 +74,11 @@ public:
 };
 
 /*
- * Photometric offset independent of position, defined as (fluxMag0)^-1.
- *
- * initialCalibFlux * SpatiallyInvariantTransfo -> correctedFlux
- *
+ * Photometry offset independent of position. Abstract class.
  */
 class PhotometryTransfoSpatiallyInvariant : public PhotometryTransfo {
 public:
-    PhotometryTransfoSpatiallyInvariant(double value = 1) : _value(value) {}
-
-    /// @copydoc PhotometryTransfo::transform
-    double transform(double x, double y, double instFlux) const override { return instFlux * _value; }
+    PhotometryTransfoSpatiallyInvariant(double value) : _value(value) {}
 
     /// @copydoc PhotometryTransfo::dump
     void dump(std::ostream &stream = std::cout) const override { stream << _value; }
@@ -99,9 +89,36 @@ public:
     /// @copydoc PhotometryTransfo::offsetParams
     void offsetParams(Eigen::VectorXd const &delta) override { _value -= delta[0]; };
 
+    /// @copydoc PhotometryTransfo::getParameters
+    Eigen::VectorXd getParameters() const override {
+        Eigen::VectorXd parameters(1);
+        parameters[0] = _value;
+        return parameters;
+    }
+
+protected:
+    void setValue(double value) { _value = value; }
+
+    /// value of this transform at all locations.
+    double _value;
+};
+
+/*
+ * Photometric offset independent of position, defined as (fluxMag0)^-1.
+ *
+ * initialCalibFlux * SpatiallyInvariantTransfo -> correctedFlux
+ *
+ */
+class FluxTransfoSpatiallyInvariant : public PhotometryTransfoSpatiallyInvariant {
+public:
+    FluxTransfoSpatiallyInvariant(double value = 1) : PhotometryTransfoSpatiallyInvariant(value) {}
+
+    /// @copydoc PhotometryTransfo::transform
+    double transform(double x, double y, double instFlux) const override { return instFlux * _value; }
+
     /// @copydoc PhotometryTransfo::clone
     std::shared_ptr<PhotometryTransfo> clone() const override {
-        return std::make_shared<PhotometryTransfoSpatiallyInvariant>(_value);
+        return std::make_shared<FluxTransfoSpatiallyInvariant>(_value);
     }
 
     /// @copydoc PhotometryTransfo::computeParameterDerivatives

@@ -19,8 +19,7 @@ SimplePhotometryModel::SimplePhotometryModel(CcdImageList const &ccdImageList) {
     for (auto const &ccdImage : ccdImageList) {
         auto photoCalib = ccdImage->getPhotoCalib();
         // Use the single-frame processing calibration from the PhotoCalib as the default.
-        auto transfo =
-                std::make_shared<PhotometryTransfoSpatiallyInvariant>(photoCalib->getCalibrationMean());
+        auto transfo = std::make_shared<FluxTransfoSpatiallyInvariant>(photoCalib->getCalibrationMean());
         _myMap.emplace(ccdImage->getHashKey(),
                        std::unique_ptr<PhotometryMapping>(new PhotometryMapping(transfo)));
     }
