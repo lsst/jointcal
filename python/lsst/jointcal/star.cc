@@ -100,9 +100,10 @@ void declareMeasuredStar(py::module &mod) {
     cls.def("setFittedStar", &MeasuredStar::setFittedStar);
 
     cls.def("getInstFlux", &MeasuredStar::getInstFlux);
-    cls.def("setInstFlux", &MeasuredStar::setInstFlux);
+    cls.def("setInstFluxAndErr", &MeasuredStar::setInstFluxAndErr);
     cls.def("getInstFluxErr", &MeasuredStar::getInstFluxErr);
-    cls.def("setInstFluxErr", &MeasuredStar::setInstFluxErr);
+    cls.def("getInstMag", &MeasuredStar::getInstMag);
+    cls.def("getInstMagErr", &MeasuredStar::getInstMagErr);
     cls.def("setXFocal", &MeasuredStar::setXFocal);
     cls.def("setYFocal", &MeasuredStar::setYFocal);
     cls.def("getXFocal", &MeasuredStar::getXFocal);

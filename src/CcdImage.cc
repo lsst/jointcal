@@ -67,8 +67,8 @@ void CcdImage::loadCatalog(afw::table::SourceCatalog const &catalog, std::string
                                      << " vxy^2: " << ms->vxy * ms->vxy << " vx*vy: " << ms->vx * ms->vy);
             continue;
         }
-        ms->setInstFlux(record.get(fluxKey));
-        ms->setInstFluxErr(record.get(fluxErrKey));
+        ms->setInstFluxAndErr(record.get(fluxKey), record.get(fluxErrKey));
+        // ms->setInstFluxErr(record.get(fluxErrKey));
         // TODO: the below lines will be less clumsy once DM-4044 is cleaned up and we can say:
         // TODO: instFluxToMaggies(ms->getInstFlux(), ms) (because ms will be derived from afw::geom::Point).
         afw::geom::Point<double, 2> point(ms->x, ms->y);

@@ -12,6 +12,8 @@
 #include "lsst/jointcal/Frame.h"
 #include "lsst/jointcal/FatPoint.h"
 #include "lsst/jointcal/Gtransfo.h"
+#include "lsst/jointcal/MeasuredStar.h"
+
 #include "lsst/afw/image/Image.h"
 #include "lsst/afw/image/VisitInfo.h"
 #include "lsst/daf/base/PropertySet.h"
@@ -26,16 +28,6 @@ namespace jointcal = lsst::jointcal;
 namespace {
 LOG_LOGGER _log = LOG_GET("jointcal.Associations");
 }
-
-namespace {
-/// Compute AB magnitude from flux (in Maggies).
-double abMagFromFlux(double flux) { return -2.5 * std::log10(flux); }
-
-/// Compute AB magnitude error from flux and flux error (in any consistent units).
-double abMagErrFromFluxErr(double flux, double fluxErr) {
-    return std::abs(fluxErr / (-0.4 * flux * std::log(10)));
-}
-}  // namespace
 
 // TODO: Remove this once RFC-356 is implemented and all refcats give fluxes in Maggies.
 const double JanskyToMaggy = 3631.0;

@@ -282,8 +282,7 @@ def getMeasuredStarsFromCatalog(catalog, pixToFocal):
         star = lsst.jointcal.star.MeasuredStar()
         star.x = record.getX()
         star.y = record.getY()
-        star.setInstFlux(record.getInstFlux())
-        star.setInstFluxErr(record.getInstFluxErr())
+        star.setInstFluxAndErr(record.getInstFlux(), record.getInstFluxErr())
         # TODO: cleanup after DM-4044
         point = lsst.afw.geom.Point2D(star.x, star.y)
         pointFocal = pixToFocal.applyForward(point)

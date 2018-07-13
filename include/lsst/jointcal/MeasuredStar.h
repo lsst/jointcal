@@ -59,10 +59,12 @@ public:
                << " valid: " << _valid;
     }
 
-    void setInstFlux(double instFlux) { _instFlux = instFlux; }
-    void setInstFluxErr(double instFluxErr) { _instFluxErr = instFluxErr; }
-    void setInstMag(double instMag) { _instMag = instMag; }
-    void setInstMagErr(double instMagErr) { _instMagErr = instMagErr; }
+    void setInstFluxAndErr(double instFlux, double instFluxErr) {
+        _instFlux = instFlux;
+        _instMag = magFromFlux(instFlux);
+        _instFluxErr = instFluxErr;
+        _instMagErr = magErrFromFluxErr(instFlux, instFluxErr);
+    }
 
     double getInstFlux() const { return _instFlux; }
     double getInstFluxErr() const { return _instFluxErr; }
