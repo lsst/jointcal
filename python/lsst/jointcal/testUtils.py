@@ -231,8 +231,8 @@ def fillCatalog(schema, num, bbox,
     else:
         catalog = lsst.afw.table.SourceCatalog(table)
 
-    instFlux = np.random.random(num)
-    instFluxErr = instFlux * fluxErrFraction
+    instFlux = np.random.random(num)*10000
+    instFluxErr = np.abs(instFlux * np.random.normal(fluxErrFraction, scale=0.1, size=num))
     xx = np.linspace(bbox.getMinX(), bbox.getMaxX(), int(np.sqrt(num)))
     yy = np.linspace(bbox.getMinY(), bbox.getMaxY(), int(np.sqrt(num)))
     xv, yv = np.meshgrid(xx, yy)
