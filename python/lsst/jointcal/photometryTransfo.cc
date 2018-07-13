@@ -42,7 +42,11 @@ void declarePhotometryTransfo(py::module &mod) {
 
     cls.def("transform",
             (double (PhotometryTransfo::*)(double, double, double) const) & PhotometryTransfo::transform,
-            "x"_a, "y"_a, "instFlux"_a);
+            "x"_a, "y"_a, "value"_a);
+    cls.def("transformError",
+            (double (PhotometryTransfo::*)(double, double, double, double) const) &
+                    PhotometryTransfo::transformError,
+            "x"_a, "y"_a, "value"_a, "valueErr"_a);
     cls.def("offsetParams", &PhotometryTransfo::offsetParams);
     cls.def("clone", &PhotometryTransfo::clone);
     cls.def("getNpar", &PhotometryTransfo::getNpar);
@@ -57,9 +61,15 @@ void declarePhotometryTransfo(py::module &mod) {
     utils::python::addOutputOp(cls, "__str__");
 }
 
+void declarePhotometryTransfoSpatiallyInvariant(py::module &mod) {
+    py::class_<PhotometryTransfoSpatiallyInvariant, std::shared_ptr<PhotometryTransfoSpatiallyInvariant>,
+               PhotometryTransfo>
+            cls(mod, "PhotometryTransfoSpatiallyInvariant");
+}
+
 void declareFluxTransfoSpatiallyInvariant(py::module &mod) {
     py::class_<FluxTransfoSpatiallyInvariant, std::shared_ptr<FluxTransfoSpatiallyInvariant>,
-               PhotometryTransfo>
+               PhotometryTransfoSpatiallyInvariant, PhotometryTransfo>
             cls(mod, "FluxTransfoSpatiallyInvariant");
 
     cls.def(py::init<double>(), "value"_a = 1);
@@ -67,7 +77,7 @@ void declareFluxTransfoSpatiallyInvariant(py::module &mod) {
 
 void declareMagnitudeTransfoSpatiallyInvariant(py::module &mod) {
     py::class_<MagnitudeTransfoSpatiallyInvariant, std::shared_ptr<MagnitudeTransfoSpatiallyInvariant>,
-               PhotometryTransfo>
+               PhotometryTransfoSpatiallyInvariant, PhotometryTransfo>
             cls(mod, "MagnitudeTransfoSpatiallyInvariant");
 
     cls.def(py::init<double>(), "value"_a = 0);
@@ -89,6 +99,7 @@ void declarePhotometryTransfoChebyshev(py::module &mod) {
 PYBIND11_MODULE(photometryTransfo, mod) {
     declarePhotometryTransfo(mod);
 
+    declarePhotometryTransfoSpatiallyInvariant(mod);
     declareFluxTransfoSpatiallyInvariant(mod);
     declarePhotometryTransfoChebyshev(mod);
     declareMagnitudeTransfoSpatiallyInvariant(mod);

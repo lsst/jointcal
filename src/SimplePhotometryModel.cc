@@ -101,7 +101,7 @@ double SimpleFluxModel::transform(CcdImage const &ccdImage, MeasuredStar const &
 
 double SimpleFluxModel::transformError(CcdImage const &ccdImage, MeasuredStar const &star) const {
     auto mapping = findMapping(ccdImage);
-    return mapping->transformError(star, star.getInstFluxErr());
+    return mapping->transformError(star, star.getInstFlux(), star.getInstFluxErr());
 }
 
 std::shared_ptr<afw::image::PhotoCalib> SimpleFluxModel::toPhotoCalib(CcdImage const &ccdImage) const {
@@ -134,7 +134,7 @@ double SimpleMagnitudeModel::transform(CcdImage const &ccdImage, MeasuredStar co
 
 double SimpleMagnitudeModel::transformError(CcdImage const &ccdImage, MeasuredStar const &star) const {
     auto mapping = findMapping(ccdImage);
-    return mapping->transformError(star, star.getInstMagErr());
+    return mapping->transformError(star, star.getInstMag(), star.getInstMagErr());
 }
 
 std::shared_ptr<afw::image::PhotoCalib> SimpleMagnitudeModel::toPhotoCalib(CcdImage const &ccdImage) const {

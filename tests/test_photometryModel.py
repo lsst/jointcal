@@ -57,13 +57,12 @@ class PhotometryModelTestBase:
         stars = lsst.jointcal.testUtils.getMeasuredStarsFromCatalog(catalog, pixToFocal)
 
         expects = np.empty(len(stars))
-        expectErrs = np.empty(len(stars))
         for i, star in enumerate(stars):
             expects[i] = self.model.transform(ccdImage, star)
-            expectErrs[i] = self.model.transformError(ccdImage, star)
         self.assertFloatsAlmostEqual(result[:, 0], expects, rtol=1e-13)
-        # TODO: this one doesn't pass!
-        # self.assertFloatsAlmostEqual(result[:, 1], expectErrs, rtol=1e-13)
+        # NOTE: don't compare transformed errors, as they will be different:
+        # photoCalib incorporates the model error, while jointcal computes the
+        # full covariance matrix, from which the model error should be derived.
 
     def test_freezeErrorTransform(self):
         """After calling freezeErrorTransform(), the error transform is unchanged

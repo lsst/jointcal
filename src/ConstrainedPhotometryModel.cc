@@ -142,7 +142,7 @@ double ConstrainedPhotometryModel::transform(CcdImage const &ccdImage,
 double ConstrainedPhotometryModel::transformError(CcdImage const &ccdImage,
                                                   MeasuredStar const &measuredStar) const {
     auto mapping = findMapping(ccdImage);
-    return mapping->transformError(measuredStar, measuredStar.getInstFluxErr());
+    return mapping->transformError(measuredStar, measuredStar.getInstFlux(), measuredStar.getInstFluxErr());
 }
 
 void ConstrainedPhotometryModel::freezeErrorTransform() {

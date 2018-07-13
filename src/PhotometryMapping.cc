@@ -39,6 +39,15 @@ void ChipVisitPhotometryMapping::computeParameterDerivatives(MeasuredStar const 
     }
 }
 
+double ChipVisitPhotometryMapping::transformError(MeasuredStar const &measuredStar, double instFlux,
+                                                  double instFluxErr) const {
+    // The transformed error is s_phi = dM(f,x,y)/df * s_f.
+    double tempFlux =
+            _chipMapping->getTransfoErrors()->transform(measuredStar.x, measuredStar.y, instFluxErr);
+    return _visitMapping->getTransfoErrors()->transform(measuredStar.getXFocal(), measuredStar.getYFocal(),
+                                                        tempFlux);
+}
+
 void ChipVisitPhotometryMapping::getMappingIndices(std::vector<unsigned> &indices) const {
     if (indices.size() < getNpar()) indices.resize(getNpar());
     if (_nParChips > 0) {
