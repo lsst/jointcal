@@ -41,7 +41,7 @@ namespace jointcal {
 namespace {
 
 void declareGtransfo(py::module &mod) {
-    py::class_<Gtransfo, std::shared_ptr<Gtransfo>, std::unique_ptr<Gtransfo>> cls(mod, "Gtransfo");
+    py::class_<Gtransfo, std::shared_ptr<Gtransfo>> cls(mod, "Gtransfo");
 
     cls.def("apply", (jointcal::Point(Gtransfo::*)(const jointcal::Point &) const) & Gtransfo::apply,
             "inPos"_a);
