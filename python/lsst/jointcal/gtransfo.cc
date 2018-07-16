@@ -47,9 +47,8 @@ void declareGtransfo(py::module &mod) {
             "inPos"_a);
     cls.def("apply", (jointcal::Frame(Gtransfo::*)(Frame const &, bool) const) & Gtransfo::apply,
             "inputframe"_a, "inscribed"_a);
-    cls.def("getNpar", &GtransfoPoly::getNpar);
-    cls.def("offsetParams", &GtransfoPoly::offsetParams);
-    cls.def("toAstMap", &GtransfoPoly::toAstMap);
+    cls.def("getNpar", &Gtransfo::getNpar);
+    cls.def("offsetParams", &Gtransfo::offsetParams);
 
     utils::python::addOutputOp(cls, "__str__");
 }
@@ -65,6 +64,8 @@ void declareGtransfoPoly(py::module &mod) {
     cls.def("getOrder", &GtransfoPoly::getOrder);
     cls.def("coeff", (double (GtransfoPoly::*)(unsigned const, unsigned const, unsigned const) const) &
                              GtransfoPoly::coeff);
+    cls.def("getNpar", &GtransfoPoly::getNpar);
+    cls.def("toAstMap", &GtransfoPoly::toAstMap);
     cls.def("write", [](GtransfoPoly const &self) {
         std::stringstream result;
         self.write(result);
