@@ -41,12 +41,8 @@ void declareFrame(py::module &mod) {
     utils::python::addOutputOp(cls, "__str__");
 }
 
-PYBIND11_PLUGIN(frame) {
-    py::module mod("frame");
-
+PYBIND11_MODULE(frame, mod) {
     declareFrame(mod);
-
-    return mod.ptr();
 }
 }  // namespace
 }  // namespace jointcal

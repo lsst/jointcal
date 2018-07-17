@@ -39,12 +39,8 @@ void declareJointcalControl(py::module &mod) {
     LSST_DECLARE_CONTROL_FIELD(cls, JointcalControl, sourceFluxField);
 }
 
-PYBIND11_PLUGIN(jointcalControl) {
-    py::module mod("jointcalControl");
-
+PYBIND11_MODULE(jointcalControl, mod) {
     declareJointcalControl(mod);
-
-    return mod.ptr();
 }
 }  // namespace
 }  // namespace jointcal

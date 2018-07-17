@@ -106,17 +106,13 @@ void declareMeasuredStar(py::module &mod) {
     cls.def("getYFocal", &MeasuredStar::getYFocal);
 }
 
-PYBIND11_PLUGIN(star) {
-    py::module mod("star");
-
+PYBIND11_MODULE(star, mod) {
     declarePoint(mod);
     declareFatPoint(mod);
     declareBaseStar(mod);
     declareRefStar(mod);
     declareFittedStar(mod);
     declareMeasuredStar(mod);
-
-    return mod.ptr();
 }
 }  // namespace
 }  // namespace jointcal

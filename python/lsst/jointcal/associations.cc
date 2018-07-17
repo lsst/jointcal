@@ -65,13 +65,9 @@ void declareAssociations(py::module &mod) {
     cls.def("computeCommonTangentPoint", &Associations::computeCommonTangentPoint);
 }
 
-PYBIND11_PLUGIN(associations) {
+PYBIND11_MODULE(associations, mod) {
     py::module::import("lsst.jointcal.ccdImage");
-    py::module mod("associations");
-
     declareAssociations(mod);
-
-    return mod.ptr();
 }
 }  // namespace
 }  // namespace jointcal

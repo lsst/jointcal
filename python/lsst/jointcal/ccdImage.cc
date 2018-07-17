@@ -76,12 +76,8 @@ void declareCcdImage(py::module &mod) {
     cls.def("readWCS", &CcdImage::readWCS, py::return_value_policy::reference_internal);
 }
 
-PYBIND11_PLUGIN(ccdImage) {
-    py::module mod("ccdImage");
-
+PYBIND11_MODULE(ccdImage, mod) {
     declareCcdImage(mod);
-
-    return mod.ptr();
 }
 }  // namespace
 }  // namespace jointcal

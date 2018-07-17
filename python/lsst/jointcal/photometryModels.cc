@@ -78,17 +78,13 @@ void declareConstrainedPhotometryModel(py::module &mod) {
             "visitOrder"_a = 7);
 }
 
-PYBIND11_PLUGIN(photometryModels) {
+PYBIND11_MODULE(photometryModels, mod) {
     py::module::import("lsst.jointcal.ccdImage");
     py::module::import("lsst.jointcal.photometryTransfo");
     py::module::import("lsst.jointcal.star");
-    py::module mod("photometryModels");
-
     declarePhotometryModel(mod);
     declareSimplePhotometryModel(mod);
     declareConstrainedPhotometryModel(mod);
-
-    return mod.ptr();
 }
 }  // namespace
 }  // namespace jointcal

@@ -43,14 +43,10 @@ void declareOneTPPerVisitHandler(py::module &mod) {
     cls.def(py::init<CcdImageList const &>(), "ccdImageList"_a);
 }
 
-PYBIND11_PLUGIN(projectionHandler) {
+PYBIND11_MODULE(projectionHandler, mod) {
     py::module::import("lsst.jointcal.ccdImage");
-    py::module mod("projectionHandler");
-
     declareProjectionHandler(mod);
     declareOneTPPerVisitHandler(mod);
-
-    return mod.ptr();
 }
 }  // namespace
 }  // namespace jointcal

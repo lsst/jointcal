@@ -114,12 +114,10 @@ void declareTanSipPix2RaDec(py::module &mod) {
     py::class_<TanSipPix2RaDec, std::shared_ptr<TanSipPix2RaDec>, BaseTanWcs> cls(mod, "TanSipPix2RaDec");
 }
 
-PYBIND11_PLUGIN(gtransfo) {
+PYBIND11_MODULE(gtransfo, mod) {
     py::module::import("astshim.mapping");
     py::module::import("lsst.jointcal.frame");
     py::module::import("lsst.jointcal.star");
-    py::module mod("gtransfo");
-
     declareGtransfo(mod);
     declareGtransfoIdentity(mod);
     declareGtransfoPoly(mod);
@@ -136,8 +134,6 @@ PYBIND11_PLUGIN(gtransfo) {
     // utility functions
     mod.def("inversePolyTransfo", &inversePolyTransfo, "forward"_a, "domain"_a, "precision"_a,
             "maxOrder"_a = 9, "nSteps"_a = 50);
-
-    return mod.ptr();
 }
 }  // namespace
 }  // namespace jointcal

@@ -70,17 +70,13 @@ void declareSimplePolyMapping(py::module &mod) {
             mod, "SimplePolyMapping");
 }
 
-PYBIND11_PLUGIN(astrometryMappings) {
+PYBIND11_MODULE(astrometryMappings, mod) {
     py::module::import("lsst.jointcal.star");
     py::module::import("lsst.jointcal.gtransfo");
-    py::module mod("astrometryMappings");
-
     declareAstrometryMapping(mod);
     declareTwoTransfoMapping(mod);
     declareSimpleGtransfoMapping(mod);
     declareSimplePolyMapping(mod);
-
-    return mod.ptr();
 }
 }  // namespace
 }  // namespace jointcal
