@@ -51,7 +51,6 @@ void declarePhotometryMappingBase(py::module &mod) {
                 return derivatives;
             });
 
-    cls.def("offsetParams", &PhotometryMappingBase::offsetParams);
     cls.def("getParameters", &PhotometryMappingBase::getParameters);
 
     cls.def("getMappingIndices", [](PhotometryMappingBase const &self) {
@@ -69,6 +68,7 @@ void declarePhotometryMapping(py::module &mod) {
             mod, "PhotometryMapping");
     cls.def(py::init<std::shared_ptr<PhotometryTransfo>>(), "transfo"_a);
 
+    cls.def("offsetParams", &PhotometryMapping::offsetParams);
     cls.def("getTransfo", &PhotometryMapping::getTransfo);
     cls.def("getTransfoErrors", &PhotometryMapping::getTransfoErrors);
 }
@@ -79,6 +79,8 @@ void declareChipVisitPhotometryMapping(py::module &mod) {
 
     cls.def(py::init<std::shared_ptr<PhotometryMapping>, std::shared_ptr<PhotometryMapping>>(),
             "chipMapping"_a, "visitMapping"_a);
+
+    cls.def("setWhatToFit", &ChipVisitPhotometryMapping::setWhatToFit);
 
     cls.def("getChipMapping", &ChipVisitPhotometryMapping::getChipMapping);
     cls.def("getVisitMapping", &ChipVisitPhotometryMapping::getVisitMapping);

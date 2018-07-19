@@ -178,7 +178,7 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
         self.config.allowLineSearch = True
 
         # Only this value should differ from the metrics defined in setup above.
-        metrics['photometry_final_chi2'] = 2642.54
+        metrics['photometry_final_chi2'] = 2642.47
 
         self._testJointcalTask(2, None, None, pa1, metrics=metrics)
 

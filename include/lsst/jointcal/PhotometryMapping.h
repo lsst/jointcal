@@ -72,14 +72,6 @@ public:
     virtual void computeParameterDerivatives(MeasuredStar const &measuredStar, double instFlux,
                                              Eigen::Ref<Eigen::VectorXd> derivatives) const = 0;
 
-    /**
-     * Offset the transfo parameters by delta.
-     *
-     * @param[in]   delta vector to offset transfo parameters. Same ordering as derivatives in
-     *              computeParameterDerivatives();
-     */
-    virtual void offsetParams(Eigen::VectorXd const &delta) = 0;
-
     /// Make this mapping's parameters fixed (i.e. not varied during fitting).
     void setFixed(bool _fixed) { fixed = _fixed; }
     bool isFixed() { return fixed; }
@@ -155,8 +147,13 @@ public:
         }
     }
 
-    /// @copydoc PhotometryMappingBase::offsetParams
-    void offsetParams(Eigen::VectorXd const &delta) override { _transfo->offsetParams(delta); }
+    /**
+     * Offset the transfo parameters by delta.
+     *
+     * @param[in]   delta vector to offset transfo parameters. Same ordering as derivatives in
+     *              computeParameterDerivatives();
+     */
+    void offsetParams(Eigen::VectorXd const &delta) { _transfo->offsetParams(delta); }
 
     /// @copydoc PhotometryMappingBase::getParameters
     Eigen::VectorXd getParameters() override { return _transfo->getParameters(); }
@@ -194,11 +191,13 @@ public:
     ChipVisitPhotometryMapping(std::shared_ptr<PhotometryMapping> chipMapping,
                                std::shared_ptr<PhotometryMapping> visitMapping)
             : PhotometryMappingBase(),
+              _nParChips(0),
+              _nParVisits(0),
               _chipMapping(std::move(chipMapping)),
               _visitMapping(std::move(visitMapping)) {}
 
     /// @copydoc PhotometryMappingBase::getNpar
-    unsigned getNpar() const override { return _chipMapping->getNpar() + _visitMapping->getNpar(); }
+    unsigned getNpar() const override { return _nParChips + _nParVisits; }
 
     /// @copydoc PhotometryMappingBase::transform
     double transform(MeasuredStar const &measuredStar, double instFlux) const override {
@@ -224,12 +223,6 @@ public:
     void computeParameterDerivatives(MeasuredStar const &measuredStar, double instFlux,
                                      Eigen::Ref<Eigen::VectorXd> derivatives) const override;
 
-    /// @copydoc PhotometryMappingBase::offsetParams
-    void offsetParams(Eigen::VectorXd const &delta) override {
-        _chipMapping->offsetParams(delta.segment(0, _chipMapping->getNpar()));
-        _visitMapping->offsetParams(delta.segment(_chipMapping->getNpar(), _visitMapping->getNpar()));
-    }
-
     /// @copydoc PhotometryMappingBase::getParameters
     Eigen::VectorXd getParameters() override {
         Eigen::VectorXd joined(getNpar());
@@ -239,6 +232,17 @@ public:
 
     /// @copydoc PhotometryMappingBase::getMappingIndices
     void getMappingIndices(std::vector<unsigned> &indices) const override;
+
+    /**
+     * Set whether to fit chips or visits.
+     *
+     * This must be called before anything that depends on knowing the number of parameters in the fit,
+     * such as offsetParams(), getParameters(), or computeParameterDerivatives().
+     *
+     * @param fittingChips Fit the chip transform.
+     * @param fittingVisits Fit the visit transform.
+     */
+    void setWhatToFit(bool const fittingChips, bool const fittingVisits);
 
     /// @copydoc PhotometryMappingBase::dump
     void dump(std::ostream &stream = std::cout) const override {
@@ -252,6 +256,9 @@ public:
     std::shared_ptr<PhotometryMapping> getVisitMapping() const { return _visitMapping; }
 
 private:
+    // These are either transfo.getNpar() or 0, depending on whether we are fitting that component or not.
+    unsigned _nParChips, _nParVisits;
+
     // the actual transformation to be fit
     std::shared_ptr<PhotometryMapping> _chipMapping;
     std::shared_ptr<PhotometryMapping> _visitMapping;
