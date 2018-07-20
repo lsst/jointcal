@@ -21,13 +21,6 @@ def getNParametersPolynomial(order):
 
 
 class PhotometryModelTestBase:
-    @classmethod
-    def setUpClass(cls):
-        try:
-            cls.data_dir = lsst.utils.getPackageDir('testdata_jointcal')
-        except lsst.pex.exceptions.NotFoundError:
-            raise unittest.SkipTest("testdata_jointcal not setup")
-
     def setUp(self):
         # Ensure that the filter list is reset for each test so that we avoid
         # confusion or contamination each time we create a cfht camera below.

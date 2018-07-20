@@ -28,7 +28,6 @@ import numpy as np
 import lsst.afw.geom
 import lsst.afw.table
 import lsst.daf.persistence
-import lsst.obs.lsstSim
 import lsst.pipe.base
 
 import lsst.jointcal.star
