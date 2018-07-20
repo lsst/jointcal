@@ -189,9 +189,14 @@ class JointcalConfig(pexConfig.Config):
         doc="Type of model to fit to photometry",
         dtype=str,
         default="simpleFlux",
-        allowed={"simpleFlux": "One constant zeropoint per ccd and visit",
-                 "constrainedFlux": "Constrained zeropoint per ccd, and one polynomial per visit",
-                 "simpleMagnitude": "One constant zeropoint per ccd and visit"}
+        allowed={"simpleFlux": "One constant zeropoint per ccd and visit, fitting in flux space.",
+                 "constrainedFlux": "Constrained zeropoint per ccd, and one polynomial per visit,"
+                 " fitting in flux space.",
+                 "simpleMagnitude": "One constant zeropoint per ccd and visit,"
+                 " fitting in magnitude space.",
+                 "constrainedMagnitude": "Constrained zeropoint per ccd, and one polynomial per visit,"
+                 " fitting in magnitude space.",
+                 }
     )
     photometryVisitOrder = pexConfig.Field(
         doc="Order of the per-visit polynomial transform for the constrained photometry model.",
@@ -598,9 +603,15 @@ class JointcalTask(pipeBase.CmdLineTask):
 
         # TODO: should use pex.config.RegistryField here (see DM-9195)
         if self.config.photometryModel == "constrainedFlux":
-            model = lsst.jointcal.ConstrainedPhotometryModel(associations.getCcdImageList(),
-                                                             self.focalPlaneBBox,
-                                                             visitOrder=self.config.photometryVisitOrder)
+            model = lsst.jointcal.ConstrainedFluxModel(associations.getCcdImageList(),
+                                                       self.focalPlaneBBox,
+                                                       visitOrder=self.config.photometryVisitOrder)
+            # potentially nonlinear problem, so we may need a line search to converge.
+            doLineSearch = self.config.allowLineSearch
+        elif self.config.photometryModel == "constrainedMagnitude":
+            model = lsst.jointcal.ConstrainedMagnitudeModel(associations.getCcdImageList(),
+                                                            self.focalPlaneBBox,
+                                                            visitOrder=self.config.photometryVisitOrder)
             # potentially nonlinear problem, so we may need a line search to converge.
             doLineSearch = self.config.allowLineSearch
         elif self.config.photometryModel == "simpleFlux":
@@ -624,7 +635,7 @@ class JointcalTask(pipeBase.CmdLineTask):
         # The constrained model needs the visit transfo fit first; the chip
         # transfo is initialized from the singleFrame PhotoCalib, so it's close.
         dumpMatrixFile = "photometry_preinit" if self.config.writeInitMatrix else ""
-        if self.config.photometryModel == "constrained":
+        if self.config.photometryModel.startswith("constrained"):
             # no line search: should be purely (or nearly) linear,
             # and we want a large step size to initialize with.
             fit.minimize("ModelVisit", dumpMatrixFile=dumpMatrixFile)
@@ -762,7 +773,6 @@ class JointcalTask(pipeBase.CmdLineTask):
     def _iterate_fit(self, associations, fit, max_steps, name, whatToFit, doRankUpdate=True,
                      doLineSearch=False):
         """Run fit.minimize up to max_steps times, returning the final chi2."""
-
         dumpMatrixFile = "%s_postinit" % name if self.config.writeInitMatrix else ""
         for i in range(max_steps):
             # outlier removal at 5 sigma.

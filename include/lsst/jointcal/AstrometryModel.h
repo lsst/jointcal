@@ -30,9 +30,13 @@ public:
     //! assigned index.
     virtual unsigned assignIndices(std::string const &whatToFit, unsigned firstIndex) = 0;
 
-    //! Offset the parameters by the provided amounts.
-    /*! The shifts are applied according to the indices given in
-        AssignIndices. */
+    /**
+     * Offset the parameters by the provided amounts (by -delta).
+     *
+     * The shifts are applied according to the indices given in assignIndices.
+     *
+     * @param[in]  delta  vector of offsets to apply
+     */
     virtual void offsetParams(Eigen::VectorXd const &delta) = 0;
 
     //! The transformation used to project the positions of FittedStars.

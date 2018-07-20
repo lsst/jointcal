@@ -34,7 +34,7 @@ public:
     virtual unsigned assignIndices(std::string const &whatToFit, unsigned firstIndex) = 0;
 
     /**
-     * Offset the parameters by the provided amounts.
+     * Offset the parameters by the provided amounts (by -delta).
      *
      * The shifts are applied according to the indices given in assignIndices.
      *
@@ -43,13 +43,25 @@ public:
     virtual void offsetParams(Eigen::VectorXd const &delta) = 0;
 
     /**
-     * Offset the appropriate flux or magnitude.
+     * Offset the appropriate flux or magnitude (by -delta).
      *
      * @param fittedStar The star to update.
      * @param delta The amount to update by.
      */
     virtual void offsetFittedStar(FittedStar &fittedStar, double delta) const = 0;
 
+    /**
+     * Compute the residual between the model applied to a star and its associated fittedStar.
+     *
+     * @f[
+     *     residual = Model(measuredStar) - fittedStar
+     * @f]
+     *
+     * @param ccdImage The ccdImage where measuredStar resides.
+     * @param measuredStar The measured star position to compute the residual of.
+     *
+     * @return The residual.
+     */
     virtual double computeResidual(CcdImage const &ccdImage, MeasuredStar const &measuredStar) const = 0;
 
     /**

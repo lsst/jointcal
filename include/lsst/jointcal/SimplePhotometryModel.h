@@ -62,7 +62,9 @@ public:
     SimpleFluxModel(CcdImageList const &ccdImageList);
 
     /// @copydoc PhotometryModel::offsetFittedStar
-    void offsetFittedStar(FittedStar &fittedStar, double delta) const { fittedStar.getFlux() -= delta; }
+    void offsetFittedStar(FittedStar &fittedStar, double delta) const override {
+        fittedStar.getFlux() -= delta;
+    }
 
     /// @copydoc PhotometryModel::computeResidual
     double computeResidual(CcdImage const &ccdImage, MeasuredStar const &measuredStar) const override;
@@ -94,7 +96,9 @@ public:
     SimpleMagnitudeModel(CcdImageList const &ccdImageList);
 
     /// @copydoc PhotometryModel::offsetFittedStar
-    void offsetFittedStar(FittedStar &fittedStar, double delta) const { fittedStar.getMag() -= delta; }
+    void offsetFittedStar(FittedStar &fittedStar, double delta) const override {
+        fittedStar.getMag() -= delta;
+    }
 
     /// @copydoc PhotometryModel::computeResidual
     double computeResidual(CcdImage const &ccdImage, MeasuredStar const &measuredStar) const override;

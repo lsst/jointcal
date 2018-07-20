@@ -1,5 +1,7 @@
 #include <map>
 #include <limits>
+#include <vector>
+#include <string>
 
 #include "lsst/log/Log.h"
 
@@ -18,61 +20,6 @@ LOG_LOGGER _log = LOG_GET("jointcal.ConstrainedPhotometryModel");
 
 namespace lsst {
 namespace jointcal {
-
-ConstrainedPhotometryModel::ConstrainedPhotometryModel(CcdImageList const &ccdImageList,
-                                                       afw::geom::Box2D const &focalPlaneBBox, int visitOrder)
-        : _fittingChips(false), _fittingVisits(false) {
-    // keep track of which chip we want to constrain (the one closest to the middle of the focal plane)
-    double minRadius2 = std::numeric_limits<double>::infinity();
-    CcdIdType constrainedChip = -1;
-
-    // First initialize all visit and ccd transfos, before we make the ccdImage mappings.
-    for (auto const &ccdImage : ccdImageList) {
-        auto visit = ccdImage->getVisit();
-        auto chip = ccdImage->getCcdId();
-        auto visitPair = _visitMap.find(visit);
-        auto chipPair = _chipMap.find(chip);
-
-        // If the chip is not in the map, add it, otherwise continue.
-        if (chipPair == _chipMap.end()) {
-            auto center = ccdImage->getDetector()->getCenter(afw::cameraGeom::FOCAL_PLANE);
-            double radius2 = std::pow(center.getX(), 2) + std::pow(center.getY(), 2);
-            if (radius2 < minRadius2) {
-                minRadius2 = radius2;
-                constrainedChip = chip;
-            }
-            auto photoCalib = ccdImage->getPhotoCalib();
-            // Use the single-frame processing calibration from the PhotoCalib as the default.
-            auto chipTransfo =
-                    std::make_shared<FluxTransfoSpatiallyInvariant>(photoCalib->getCalibrationMean());
-            _chipMap[chip] = std::make_unique<PhotometryMapping>(std::move(chipTransfo));
-        }
-        // If the visit is not in the map, add it, otherwise continue.
-        if (visitPair == _visitMap.end()) {
-            auto visitTransfo = std::make_shared<PhotometryTransfoChebyshev>(visitOrder, focalPlaneBBox);
-            _visitMap[visit] = std::make_unique<PhotometryMapping>(std::move(visitTransfo));
-        }
-    }
-
-    // Fix one chip mapping, to remove the degeneracy from the system.
-    _chipMap.at(constrainedChip)->setFixed(true);
-
-    // Now create the ccdImage mappings, which are combinations of the chip/visit mappings above.
-    _chipVisitMap.reserve(
-            ccdImageList.size());  // we know how chipVisitbig it will be, so pre-allocate space.
-    for (auto const &ccdImage : ccdImageList) {
-        auto visit = ccdImage->getVisit();
-        auto chip = ccdImage->getCcdId();
-        _chipVisitMap.emplace(ccdImage->getHashKey(),
-                              std::make_unique<ChipVisitPhotometryMapping>(_chipMap[chip], _visitMap[visit]));
-    }
-    LOGLS_INFO(_log, "Got " << _chipMap.size() << " chip mappings and " << _visitMap.size()
-                            << " visit mappings; holding chip " << constrainedChip << " fixed ("
-                            << getTotalParameters() << " total parameters).");
-    LOGLS_DEBUG(_log, "CcdImage map has " << _chipVisitMap.size() << " mappings, with "
-                                          << _chipVisitMap.bucket_count() << " buckets and a load factor of "
-                                          << _chipVisitMap.load_factor());
-}
 
 unsigned ConstrainedPhotometryModel::assignIndices(std::string const &whatToFit, unsigned firstIndex) {
     unsigned index = firstIndex;
@@ -126,23 +73,6 @@ void ConstrainedPhotometryModel::offsetParams(Eigen::VectorXd const &delta) {
             mapping->offsetParams(delta.segment(mapping->getIndex(), mapping->getNpar()));
         }
     }
-}
-
-double ConstrainedPhotometryModel::computeResidual(CcdImage const &ccdImage,
-                                                   MeasuredStar const &measuredStar) const {
-    return transform(ccdImage, measuredStar) - measuredStar.getFittedStar()->getFlux();
-}
-
-double ConstrainedPhotometryModel::transform(CcdImage const &ccdImage,
-                                             MeasuredStar const &measuredStar) const {
-    auto mapping = findMapping(ccdImage);
-    return mapping->transform(measuredStar, measuredStar.getInstFlux());
-}
-
-double ConstrainedPhotometryModel::transformError(CcdImage const &ccdImage,
-                                                  MeasuredStar const &measuredStar) const {
-    auto mapping = findMapping(ccdImage);
-    return mapping->transformError(measuredStar, measuredStar.getInstFlux(), measuredStar.getInstFluxErr());
 }
 
 void ConstrainedPhotometryModel::freezeErrorTransform() {
@@ -199,8 +129,97 @@ ndarray::Array<double, 2, 2> toChebyMapCoeffs(std::shared_ptr<PhotometryTransfoC
 }
 }  // namespace
 
-std::shared_ptr<afw::image::PhotoCalib> ConstrainedPhotometryModel::toPhotoCalib(
-        CcdImage const &ccdImage) const {
+void ConstrainedPhotometryModel::dump(std::ostream &stream) const {
+    for (auto &idMapping : _chipMap) {
+        idMapping.second->dump(stream);
+        stream << std::endl;
+    }
+    stream << std::endl;
+    for (auto &idMapping : _visitMap) {
+        idMapping.second->dump(stream);
+        stream << std::endl;
+    }
+}
+
+PhotometryMappingBase *ConstrainedPhotometryModel::findMapping(CcdImage const &ccdImage) const {
+    auto idMapping = _chipVisitMap.find(ccdImage.getHashKey());
+    if (idMapping == _chipVisitMap.end())
+        throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,
+                          "ConstrainedPhotometryModel cannot find CcdImage " + ccdImage.getName());
+    return idMapping->second.get();
+}
+
+template <class ChipTransfo, class VisitTransfo, class ChipVisitMapping>
+void ConstrainedPhotometryModel::initialize(CcdImageList const &ccdImageList,
+                                            afw::geom::Box2D const &focalPlaneBBox, int visitOrder) {
+    // keep track of which chip we want to constrain (the one closest to the middle of the focal plane)
+    double minRadius2 = std::numeric_limits<double>::infinity();
+    CcdIdType constrainedChip = -1;
+
+    // First initialize all visit and ccd transfos, before we make the ccdImage mappings.
+    for (auto const &ccdImage : ccdImageList) {
+        auto visit = ccdImage->getVisit();
+        auto chip = ccdImage->getCcdId();
+        auto visitPair = _visitMap.find(visit);
+        auto chipPair = _chipMap.find(chip);
+
+        // If the chip is not in the map, add it, otherwise continue.
+        if (chipPair == _chipMap.end()) {
+            auto center = ccdImage->getDetector()->getCenter(afw::cameraGeom::FOCAL_PLANE);
+            double radius2 = std::pow(center.getX(), 2) + std::pow(center.getY(), 2);
+            if (radius2 < minRadius2) {
+                minRadius2 = radius2;
+                constrainedChip = chip;
+            }
+            auto photoCalib = ccdImage->getPhotoCalib();
+            // Use the single-frame processing calibration from the PhotoCalib as the default.
+            auto chipTransfo = std::make_unique<ChipTransfo>(initialChipCalibration(photoCalib));
+            _chipMap[chip] = std::make_shared<PhotometryMapping>(std::move(chipTransfo));
+        }
+        // If the visit is not in the map, add it, otherwise continue.
+        if (visitPair == _visitMap.end()) {
+            auto visitTransfo = std::make_unique<VisitTransfo>(visitOrder, focalPlaneBBox);
+            _visitMap[visit] = std::make_shared<PhotometryMapping>(std::move(visitTransfo));
+        }
+    }
+
+    // Fix one chip mapping, to remove the degeneracy from the system.
+    _chipMap.at(constrainedChip)->setFixed(true);
+
+    // Now create the ccdImage mappings, which are combinations of the chip/visit mappings above.
+    for (auto const &ccdImage : ccdImageList) {
+        auto visit = ccdImage->getVisit();
+        auto chip = ccdImage->getCcdId();
+        _chipVisitMap.emplace(ccdImage->getHashKey(),
+                              std::make_unique<ChipVisitMapping>(_chipMap[chip], _visitMap[visit]));
+    }
+    LOGLS_INFO(_log, "Got " << _chipMap.size() << " chip mappings and " << _visitMap.size()
+                            << " visit mappings; holding chip " << constrainedChip << " fixed ("
+                            << getTotalParameters() << " total parameters).");
+    LOGLS_DEBUG(_log, "CcdImage map has " << _chipVisitMap.size() << " mappings, with "
+                                          << _chipVisitMap.bucket_count() << " buckets and a load factor of "
+                                          << _chipVisitMap.load_factor());
+}
+
+// ConstrainedFluxModel methods
+
+double ConstrainedFluxModel::computeResidual(CcdImage const &ccdImage,
+                                             MeasuredStar const &measuredStar) const {
+    return transform(ccdImage, measuredStar) - measuredStar.getFittedStar()->getFlux();
+}
+
+double ConstrainedFluxModel::transform(CcdImage const &ccdImage, MeasuredStar const &measuredStar) const {
+    auto mapping = findMapping(ccdImage);
+    return mapping->transform(measuredStar, measuredStar.getInstFlux());
+}
+
+double ConstrainedFluxModel::transformError(CcdImage const &ccdImage,
+                                            MeasuredStar const &measuredStar) const {
+    auto mapping = findMapping(ccdImage);
+    return mapping->transformError(measuredStar, measuredStar.getInstFlux(), measuredStar.getInstFluxErr());
+}
+
+std::shared_ptr<afw::image::PhotoCalib> ConstrainedFluxModel::toPhotoCalib(CcdImage const &ccdImage) const {
     auto oldPhotoCalib = ccdImage.getPhotoCalib();
     auto detector = ccdImage.getDetector();
     auto ccdBBox = detector->getBBox();
@@ -237,25 +256,75 @@ std::shared_ptr<afw::image::PhotoCalib> ConstrainedPhotometryModel::toPhotoCalib
                                                     false);
 }
 
-void ConstrainedPhotometryModel::dump(std::ostream &stream) const {
-    for (auto &idMapping : _chipMap) {
-        idMapping.second->dump(stream);
-        stream << std::endl;
-    }
-    stream << std::endl;
-    for (auto &idMapping : _visitMap) {
-        idMapping.second->dump(stream);
-        stream << std::endl;
-    }
+// ConstrainedMagnitudeModel methods
+
+double ConstrainedMagnitudeModel::computeResidual(CcdImage const &ccdImage,
+                                                  MeasuredStar const &measuredStar) const {
+    return transform(ccdImage, measuredStar) - measuredStar.getFittedStar()->getMag();
 }
 
-PhotometryMappingBase *ConstrainedPhotometryModel::findMapping(CcdImage const &ccdImage) const {
-    auto idMapping = _chipVisitMap.find(ccdImage.getHashKey());
-    if (idMapping == _chipVisitMap.end())
-        throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,
-                          "ConstrainedPhotometryModel cannot find CcdImage " + ccdImage.getName());
-    return idMapping->second.get();
+double ConstrainedMagnitudeModel::transform(CcdImage const &ccdImage,
+                                            MeasuredStar const &measuredStar) const {
+    auto mapping = findMapping(ccdImage);
+    return mapping->transform(measuredStar, measuredStar.getInstMag());
 }
+
+double ConstrainedMagnitudeModel::transformError(CcdImage const &ccdImage,
+                                                 MeasuredStar const &measuredStar) const {
+    auto mapping = findMapping(ccdImage);
+    return mapping->transformError(measuredStar, measuredStar.getInstFlux(), measuredStar.getInstFluxErr());
+}
+
+std::shared_ptr<afw::image::PhotoCalib> ConstrainedMagnitudeModel::toPhotoCalib(
+        CcdImage const &ccdImage) const {
+    auto oldPhotoCalib = ccdImage.getPhotoCalib();
+    auto detector = ccdImage.getDetector();
+    auto ccdBBox = detector->getBBox();
+    ChipVisitPhotometryMapping *mapping = dynamic_cast<ChipVisitPhotometryMapping *>(findMapping(ccdImage));
+    // There should be no way in which we can get to this point and not have a ChipVisitMapping,
+    // so blow up if we don't.
+    assert(mapping != nullptr);
+    auto pixToFocal = detector->getTransform(afw::cameraGeom::PIXELS, afw::cameraGeom::FOCAL_PLANE);
+    // We know it's a Chebyshev transfo because we created it as such, so blow up if it's not.
+    auto visitTransfo =
+            std::dynamic_pointer_cast<PhotometryTransfoChebyshev>(mapping->getVisitMapping()->getTransfo());
+    assert(visitTransfo != nullptr);
+    auto focalBBox = visitTransfo->getBBox();
+
+    // Unravel our chebyshev coefficients to build an astshim::ChebyMap.
+    auto coeff_f = toChebyMapCoeffs(
+            std::dynamic_pointer_cast<PhotometryTransfoChebyshev>(mapping->getVisitMapping()->getTransfo()));
+    // Bounds are the bbox
+    std::vector<double> lowerBound = {focalBBox.getMinX(), focalBBox.getMinY()};
+    std::vector<double> upperBound = {focalBBox.getMaxX(), focalBBox.getMaxY()};
+
+    afw::geom::TransformPoint2ToGeneric chebyTransform(ast::ChebyMap(coeff_f, 1, lowerBound, upperBound));
+
+    using namespace std::string_literals;  // for operator""s to convert string literal->std::string
+    afw::geom::Transform<afw::geom::GenericEndpoint, afw::geom::GenericEndpoint> logTransform(
+            ast::MathMap(1, 1, {"y=pow(10.0,x/-2.5)"s}, {"x=-2.5*log10(y)"s}));
+
+    // The chip part is easy: zoom map with the value (converted to a flux) as the "zoom" factor.
+    double calibrationMean = std::pow(10, mapping->getChipMapping()->getParameters()[0] / -2.5);
+    afw::geom::Transform<afw::geom::GenericEndpoint, afw::geom::GenericEndpoint> zoomTransform(
+            ast::ZoomMap(1, calibrationMean));
+
+    // Now stitch them all together.
+    auto transform = pixToFocal->then(chebyTransform)->then(logTransform)->then(zoomTransform);
+    // NOTE: TransformBoundedField does not yet implement mean(), so we have to compute it here.
+    double mean = calibrationMean * visitTransfo->mean();
+    auto boundedField = std::make_shared<afw::math::TransformBoundedField>(ccdBBox, *transform);
+    return std::make_shared<afw::image::PhotoCalib>(mean, oldPhotoCalib->getCalibrationErr(), boundedField,
+                                                    false);
+}
+
+// explicit instantiation of templated function, so pybind11 can
+template void ConstrainedPhotometryModel::initialize<FluxTransfoSpatiallyInvariant, FluxTransfoChebyshev,
+                                                     ChipVisitFluxMapping>(CcdImageList const &,
+                                                                           afw::geom::Box2D const &, int);
+template void ConstrainedPhotometryModel::initialize<MagnitudeTransfoSpatiallyInvariant,
+                                                     MagnitudeTransfoChebyshev, ChipVisitMagnitudeMapping>(
+        CcdImageList const &, afw::geom::Box2D const &, int);
 
 }  // namespace jointcal
 }  // namespace lsst

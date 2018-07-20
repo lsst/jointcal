@@ -47,9 +47,17 @@ void declarePhotometryModel(py::module &mod) {
 
     cls.def("assignIndices", &PhotometryModel::assignIndices);
     cls.def("freezeErrorTransform", &PhotometryModel::freezeErrorTransform);
+
     cls.def("offsetParams", &PhotometryModel::offsetParams);
+    cls.def("offsetFittedStar", &PhotometryModel::offsetFittedStar);
+
     cls.def("transform", &PhotometryModel::transform);
     cls.def("transformError", &PhotometryModel::transformError);
+    cls.def("computeResidual", &PhotometryModel::computeResidual);
+
+    cls.def("getRefError", &PhotometryModel::getRefError);
+    cls.def("computeRefResidual", &PhotometryModel::computeRefResidual);
+
     cls.def("getMappingIndices", &PhotometryModel::getMappingIndices);
     cls.def("computeParameterDerivatives",
             [](PhotometryModel const &self, MeasuredStar const &star, CcdImage const &ccdImage) {
@@ -86,6 +94,18 @@ void declareSimpleMagnitudeModel(py::module &mod) {
 void declareConstrainedPhotometryModel(py::module &mod) {
     py::class_<ConstrainedPhotometryModel, std::shared_ptr<ConstrainedPhotometryModel>, PhotometryModel> cls(
             mod, "ConstrainedPhotometryModel");
+}
+
+void declareConstrainedFluxModel(py::module &mod) {
+    py::class_<ConstrainedFluxModel, std::shared_ptr<ConstrainedFluxModel>, PhotometryModel> cls(
+            mod, "ConstrainedFluxModel");
+    cls.def(py::init<CcdImageList const &, afw::geom::Box2D const &, int>(), "CcdImageList"_a, "bbox"_a,
+            "visitOrder"_a = 7);
+}
+
+void declareConstrainedMagnitudeModel(py::module &mod) {
+    py::class_<ConstrainedMagnitudeModel, std::shared_ptr<ConstrainedMagnitudeModel>, PhotometryModel> cls(
+            mod, "ConstrainedMagnitudeModel");
     cls.def(py::init<CcdImageList const &, afw::geom::Box2D const &, int>(), "CcdImageList"_a, "bbox"_a,
             "visitOrder"_a = 7);
 }
@@ -99,6 +119,8 @@ PYBIND11_MODULE(photometryModels, mod) {
     declareSimpleFluxModel(mod);
     declareSimpleMagnitudeModel(mod);
     declareConstrainedPhotometryModel(mod);
+    declareConstrainedFluxModel(mod);
+    declareConstrainedMagnitudeModel(mod);
 }
 }  // namespace
 }  // namespace jointcal

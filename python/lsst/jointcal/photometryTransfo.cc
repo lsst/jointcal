@@ -87,13 +87,28 @@ void declarePhotometryTransfoChebyshev(py::module &mod) {
     py::class_<PhotometryTransfoChebyshev, std::shared_ptr<PhotometryTransfoChebyshev>, PhotometryTransfo>
             cls(mod, "PhotometryTransfoChebyshev");
 
-    cls.def(py::init<size_t, afw::geom::Box2D const &>(), "order"_a, "bbox"_a);
-    cls.def(py::init<ndarray::Array<double, 2, 2> const &, afw::geom::Box2D const &>(), "coefficients"_a,
-            "bbox"_a);
-
     cls.def("getCoefficients", &PhotometryTransfoChebyshev::getCoefficients);
     cls.def("getOrder", &PhotometryTransfoChebyshev::getOrder);
     cls.def("getBBox", &PhotometryTransfoChebyshev::getBBox);
+}
+
+void declareFluxTransfoChebyshev(py::module &mod) {
+    py::class_<FluxTransfoChebyshev, std::shared_ptr<FluxTransfoChebyshev>, PhotometryTransfoChebyshev> cls(
+            mod, "FluxTransfoChebyshev");
+
+    cls.def(py::init<size_t, afw::geom::Box2D const &>(), "order"_a, "bbox"_a);
+    cls.def(py::init<ndarray::Array<double, 2, 2> const &, afw::geom::Box2D const &>(), "coefficients"_a,
+            "bbox"_a);
+}
+
+void declareMagnitudeTransfoChebyshev(py::module &mod) {
+    py::class_<MagnitudeTransfoChebyshev, std::shared_ptr<MagnitudeTransfoChebyshev>,
+               PhotometryTransfoChebyshev>
+            cls(mod, "MagnitudeTransfoChebyshev");
+
+    cls.def(py::init<size_t, afw::geom::Box2D const &>(), "order"_a, "bbox"_a);
+    cls.def(py::init<ndarray::Array<double, 2, 2> const &, afw::geom::Box2D const &>(), "coefficients"_a,
+            "bbox"_a);
 }
 
 PYBIND11_MODULE(photometryTransfo, mod) {
@@ -101,8 +116,10 @@ PYBIND11_MODULE(photometryTransfo, mod) {
 
     declarePhotometryTransfoSpatiallyInvariant(mod);
     declareFluxTransfoSpatiallyInvariant(mod);
-    declarePhotometryTransfoChebyshev(mod);
     declareMagnitudeTransfoSpatiallyInvariant(mod);
+    declarePhotometryTransfoChebyshev(mod);
+    declareFluxTransfoChebyshev(mod);
+    declareMagnitudeTransfoChebyshev(mod);
 }
 
 }  // namespace

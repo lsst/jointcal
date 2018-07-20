@@ -77,13 +77,27 @@ void declareChipVisitPhotometryMapping(py::module &mod) {
     py::class_<ChipVisitPhotometryMapping, std::shared_ptr<ChipVisitPhotometryMapping>, PhotometryMappingBase>
             cls(mod, "ChipVisitPhotometryMapping");
 
-    cls.def(py::init<std::shared_ptr<PhotometryMapping>, std::shared_ptr<PhotometryMapping>>(),
-            "chipMapping"_a, "visitMapping"_a);
-
     cls.def("setWhatToFit", &ChipVisitPhotometryMapping::setWhatToFit);
 
     cls.def("getChipMapping", &ChipVisitPhotometryMapping::getChipMapping);
     cls.def("getVisitMapping", &ChipVisitPhotometryMapping::getVisitMapping);
+}
+
+void declareChipVisitFluxMapping(py::module &mod) {
+    py::class_<ChipVisitFluxMapping, std::shared_ptr<ChipVisitFluxMapping>, ChipVisitPhotometryMapping> cls(
+            mod, "ChipVisitFluxMapping");
+
+    cls.def(py::init<std::shared_ptr<PhotometryMapping>, std::shared_ptr<PhotometryMapping>>(),
+            "chipMapping"_a, "visitMapping"_a);
+}
+
+void declareChipVisitMagnitudeMapping(py::module &mod) {
+    py::class_<ChipVisitMagnitudeMapping, std::shared_ptr<ChipVisitMagnitudeMapping>,
+               ChipVisitPhotometryMapping>
+            cls(mod, "ChipVisitMagnitudeMapping");
+
+    cls.def(py::init<std::shared_ptr<PhotometryMapping>, std::shared_ptr<PhotometryMapping>>(),
+            "chipMapping"_a, "visitMapping"_a);
 }
 
 PYBIND11_MODULE(photometryMappings, mod) {
@@ -92,6 +106,8 @@ PYBIND11_MODULE(photometryMappings, mod) {
     declarePhotometryMappingBase(mod);
     declarePhotometryMapping(mod);
     declareChipVisitPhotometryMapping(mod);
+    declareChipVisitFluxMapping(mod);
+    declareChipVisitMagnitudeMapping(mod);
 }
 }  // namespace
 }  // namespace jointcal

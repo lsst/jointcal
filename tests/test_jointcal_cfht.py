@@ -178,7 +178,7 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
         self.config.allowLineSearch = True
 
         # Only this value should differ from the metrics defined in setup above.
-        metrics['photometry_final_chi2'] = 2642.58
+        metrics['photometry_final_chi2'] = 2642.47
 
         self._testJointcalTask(2, None, None, pa1, metrics=metrics)
 
@@ -200,6 +200,15 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
         metrics['selected_photometry_fittedStars'] = 244
         metrics['photometry_final_chi2'] = 369.964
         metrics['photometry_final_ndof'] = 252
+
+        self._testJointcalTask(2, None, None, pa1, metrics=metrics)
+
+    def test_jointcalTask_2_visits_constrainedMagnitude_no_astrometry(self):
+        pa1, metrics = self.setup_jointcalTask_2_visits_constrainedPhotometry()
+        self.config.photometryModel = "constrainedMagnitude"
+
+        metrics['photometry_final_chi2'] = 2597.4
+        metrics['photometry_final_ndof'] = 1326
 
         self._testJointcalTask(2, None, None, pa1, metrics=metrics)
 
