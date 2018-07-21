@@ -86,16 +86,12 @@ void declareChipVisitPhotometryMapping(py::module &mod) {
     cls.def("getVisitMapping", &ChipVisitPhotometryMapping::getVisitMapping);
 }
 
-PYBIND11_PLUGIN(photometryMappings) {
+PYBIND11_MODULE(photometryMappings, mod) {
     py::module::import("lsst.jointcal.star");
     py::module::import("lsst.jointcal.photometryTransfo");
-    py::module mod("photometryMappings");
-
     declarePhotometryMappingBase(mod);
     declarePhotometryMapping(mod);
     declareChipVisitPhotometryMapping(mod);
-
-    return mod.ptr();
 }
 }  // namespace
 }  // namespace jointcal

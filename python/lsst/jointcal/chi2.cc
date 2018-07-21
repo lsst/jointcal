@@ -44,12 +44,8 @@ void declareChi2(py::module &mod) {
     cls.def_readwrite("ndof", &Chi2Statistic::ndof);
 }
 
-PYBIND11_PLUGIN(chi2) {
-    py::module mod("chi2");
-
+PYBIND11_MODULE(chi2, mod) {
     declareChi2(mod);
-
-    return mod.ptr();
 }
 }  // namespace
 }  // namespace jointcal

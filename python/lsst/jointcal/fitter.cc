@@ -60,13 +60,11 @@ void declarePhotometryFit(py::module &mod) {
             "photometryModel"_a);
 }
 
-PYBIND11_PLUGIN(fitter) {
+PYBIND11_MODULE(fitter, mod) {
     py::module::import("lsst.jointcal.associations");
     py::module::import("lsst.jointcal.astrometryModels");
     py::module::import("lsst.jointcal.chi2");
     py::module::import("lsst.jointcal.photometryModels");
-    py::module mod("fitter");
-
     py::enum_<MinimizeResult>(mod, "MinimizeResult")
             .value("Converged", MinimizeResult::Converged)
             .value("Chi2Increased", MinimizeResult::Chi2Increased)
@@ -75,8 +73,6 @@ PYBIND11_PLUGIN(fitter) {
     declareFitterBase(mod);
     declareAstrometryFit(mod);
     declarePhotometryFit(mod);
-
-    return mod.ptr();
 }
 }  // namespace
 }  // namespace jointcal

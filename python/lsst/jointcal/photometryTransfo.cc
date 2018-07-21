@@ -78,14 +78,10 @@ void declarePhotometryTransfoChebyshev(py::module &mod) {
     cls.def("getBBox", &PhotometryTransfoChebyshev::getBBox);
 }
 
-PYBIND11_PLUGIN(photometryTransfo) {
-    py::module mod("photometryTransfo");
-
+PYBIND11_MODULE(photometryTransfo, mod) {
     declarePhotometryTransfo(mod);
     declarePhotometryTransfoSpatiallyInvariant(mod);
     declarePhotometryTransfoChebyshev(mod);
-
-    return mod.ptr();
 }
 
 }  // namespace
