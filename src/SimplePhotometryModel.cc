@@ -1,5 +1,5 @@
 #include <iostream>
-#include <math.h>
+#include <cmath>
 
 #include "lsst/log/Log.h"
 #include "lsst/jointcal/PhotometryMapping.h"
@@ -13,7 +13,7 @@ LOG_LOGGER _log = LOG_GET("jointcal.SimplePhotometryModel");
 }
 
 namespace {
-double instFluxFromMag(double mag) { return pow(10, mag / -2.5); }
+double instFluxFromMag(double mag) { return std::pow(10, mag / -2.5); }
 }  // namespace
 
 namespace lsst {

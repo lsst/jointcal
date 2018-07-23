@@ -2,7 +2,7 @@
 #include <iomanip>
 #include <iterator> /* for ostream_iterator */
 #include <limits>
-#include <math.h>  // for sin and cos and may be others
+#include <cmath>
 #include <fstream>
 #include "assert.h"
 #include <sstream>
@@ -168,7 +168,7 @@ std::unique_ptr<Gtransfo> Gtransfo::roughInverse(const Frame &region) const {
     Point centerOut = region.getCenter();
     Point centerIn = apply(centerOut);
     GtransfoLin der;
-    computeDerivative(centerOut, der, sqrt(region.getArea()) / 5.);
+    computeDerivative(centerOut, der, std::sqrt(region.getArea()) / 5.);
     der = der.invert();
     der = GtransfoLinShift(centerOut.x, centerOut.y) * der * GtransfoLinShift(-centerIn.x, -centerIn.y);
     return std::unique_ptr<Gtransfo>(new GtransfoLin(der));
@@ -436,7 +436,7 @@ GtransfoPoly::GtransfoPoly(const unsigned order) : _order(order) {
 GtransfoPoly::GtransfoPoly(const Gtransfo *gtransfo, const Frame &frame, unsigned order, unsigned nPoint) {
     StarMatchList sm;
 
-    double step = sqrt(fabs(frame.getArea()) / double(nPoint));
+    double step = std::sqrt(fabs(frame.getArea()) / double(nPoint));
     for (double x = frame.xMin + step / 2; x <= frame.xMax; x += step)
         for (double y = frame.yMin + step / 2; y <= frame.yMax; y += step) {
             auto pix = std::make_shared<BaseStar>(x, y, 0, 0);
@@ -787,8 +787,8 @@ static GtransfoLin shiftAndNormalize(StarMatchList const &starMatchList) {
     xav /= count;
     yav /= count;
     // 3.5 stands for sqrt(12).
-    double xspan = 3.5 * sqrt(x2 / count - std::pow(xav, 2));
-    double yspan = 3.5 * sqrt(y2 / count - std::pow(yav, 2));
+    double xspan = 3.5 * std::sqrt(x2 / count - std::pow(xav, 2));
+    double yspan = 3.5 * std::sqrt(y2 / count - std::pow(yav, 2));
     return GtransfoLinScale(2. / xspan, 2. / yspan) * GtransfoLinShift(-xav, -yav);
 }
 
@@ -1255,8 +1255,8 @@ double GtransfoLinShift::fit(StarMatchList const &starMatchList) {
 }
 
 GtransfoLinRot::GtransfoLinRot(const double angleRad, const Point *center, const double scaleFactor) {
-    double c = scaleFactor * cos(angleRad);
-    double s = scaleFactor * sin(angleRad);
+    double c = scaleFactor * std::cos(angleRad);
+    double s = scaleFactor * std::sin(angleRad);
     a11() = a22() = c;
     a21() = s;
     a12() = -s;
@@ -1299,8 +1299,8 @@ BaseTanWcs::BaseTanWcs(GtransfoLin const &pix2Tan, Point const &tangentPoint,
     linPix2Tan = pix2Tan;
     ra0 = deg2rad(tangentPoint.x);
     dec0 = deg2rad(tangentPoint.y);
-    cos0 = cos(dec0);
-    sin0 = sin(dec0);
+    cos0 = std::cos(dec0);
+    sin0 = std::sin(dec0);
     corr = nullptr;
     if (corrections) corr.reset(new GtransfoPoly(*corrections));
 }
@@ -1318,8 +1318,8 @@ void BaseTanWcs::operator=(const BaseTanWcs &original) {
     linPix2Tan = original.linPix2Tan;
     ra0 = original.ra0;
     dec0 = original.dec0;
-    cos0 = cos(dec0);
-    sin0 = sin(dec0);
+    cos0 = std::cos(dec0);
+    sin0 = std::sin(dec0);
     corr = nullptr;
     if (original.corr) corr.reset(new GtransfoPoly(*original.corr));
 }
@@ -1341,7 +1341,7 @@ void BaseTanWcs::apply(const double xIn, const double yIn, double &xOut, double 
         return;
     }
     double rat = ra0 + atan2(l, dect);
-    dect = atan(cos(rat - ra0) * (m * cos0 + sin0) / dect);
+    dect = atan(std::cos(rat - ra0) * (m * cos0 + sin0) / dect);
     if (rat - ra0 > M_PI) rat -= (2. * M_PI);
     if (rat - ra0 < -M_PI) rat += (2. * M_PI);
     if (rat < 0.0) rat += (2. * M_PI);
@@ -1554,8 +1554,8 @@ void TanRaDec2Pix::setTangentPoint(Point const &tangentPoint) {
         is handled in apply */
     ra0 = deg2rad(tangentPoint.x);
     dec0 = deg2rad(tangentPoint.y);
-    cos0 = cos(dec0);
-    sin0 = sin(dec0);
+    cos0 = std::cos(dec0);
+    sin0 = std::sin(dec0);
 }
 
 TanRaDec2Pix::TanRaDec2Pix() : linTan2Pix() {
@@ -1592,10 +1592,10 @@ void TanRaDec2Pix::transformPosAndErrors(FatPoint const &in, FatPoint &out) cons
     // Code inspired from worldpos.c in wcssubs (ancestor of the wcslib)
     // The same code is copied in ::apply()
 
-    double coss = cos(dec);
-    double sins = sin(dec);
-    double sinda = sin(ra - ra0);
-    double cosda = cos(ra - ra0);
+    double coss = std::cos(dec);
+    double sins = std::sin(dec);
+    double sinda = std::sin(ra - ra0);
+    double cosda = std::cos(ra - ra0);
     double l = sinda * coss;
     double m = sins * sin0 + coss * cos0 * cosda;
     l = l / m;
@@ -1628,12 +1628,12 @@ void TanRaDec2Pix::apply(const double xIn, const double yIn, double &xOut, doubl
     if (ra - ra0 < -M_PI) ra += (2. * M_PI);
     // Code inspired from worldpos.c in wcssubs (ancestor of the wcslib)
     // The same code is copied in ::transformPosAndErrors()
-    double coss = cos(dec);
-    double sins = sin(dec);
-    double l = sin(ra - ra0) * coss;
-    double m = sins * sin0 + coss * cos0 * cos(ra - ra0);
+    double coss = std::cos(dec);
+    double sins = std::sin(dec);
+    double l = std::sin(ra - ra0) * coss;
+    double m = sins * sin0 + coss * cos0 * std::cos(ra - ra0);
     l = l / m;
-    m = (sins * cos0 - coss * sin0 * cos(ra - ra0)) / m;
+    m = (sins * cos0 - coss * sin0 * std::cos(ra - ra0)) / m;
     // l and m are now coordinates in the tangent plane, in radians.
     l = rad2deg(l);
     m = rad2deg(m);

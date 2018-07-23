@@ -1,7 +1,7 @@
 #include <assert.h>
 #include <string>
 #include <sstream>
-#include <math.h>
+#include <cmath>
 
 #include "lsst/afw/cameraGeom/CameraSys.h"
 #include "lsst/pex/exceptions.h"
@@ -68,7 +68,6 @@ void CcdImage::loadCatalog(afw::table::SourceCatalog const &catalog, std::string
             continue;
         }
         ms->setInstFluxAndErr(record.get(fluxKey), record.get(fluxErrKey));
-        // ms->setInstFluxErr(record.get(fluxErrKey));
         // TODO: the below lines will be less clumsy once DM-4044 is cleaned up and we can say:
         // TODO: instFluxToMaggies(ms->getInstFlux(), ms) (because ms will be derived from afw::geom::Point).
         afw::geom::Point<double, 2> point(ms->x, ms->y);
@@ -119,16 +118,16 @@ CcdImage::CcdImage(afw::table::SourceCatalog &catalog, std::shared_ptr<lsst::afw
         _sineta = _coseta = _tgz = 0;
     else {
         double cosz = 1. / _airMass;
-        double sinz = sqrt(1 - cosz * cosz);  // astronomers usually observe above the horizon
+        double sinz = std::sqrt(1 - cosz * cosz);  // astronomers usually observe above the horizon
         _tgz = sinz / cosz;
         // TODO: as part of DM-12473, we can remove all of this and just call _visitInfo.getParallacticAngle()
         double dec = _boresightRaDec.getLatitude();
         // x/y components of refraction angle, eta.]
-        double yEta = sin(_hourAngle);
-        double xEta = cos(dec) * tan(latitude) - sin(dec) * cos(_hourAngle);
-        double eta = atan2(yEta, xEta);
-        _sineta = sin(eta);
-        _coseta = cos(eta);
+        double yEta = std::sin(_hourAngle);
+        double xEta = std::cos(dec) * std::tan(latitude) - std::sin(dec) * std::cos(_hourAngle);
+        double eta = std::atan2(yEta, xEta);
+        _sineta = std::sin(eta);
+        _coseta = std::cos(eta);
     }
 }
 

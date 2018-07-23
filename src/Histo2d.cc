@@ -1,5 +1,5 @@
 #include <iostream>
-#include <math.h>   /* for floor */
+#include <cmath>
 #include <string.h> /* for memset*/
 
 #include "lsst/log/Log.h"
@@ -40,9 +40,9 @@ Histo2d::Histo2d(const Histo2d &other) {
 }
 
 bool Histo2d::indices(double x, double y, int &ix, int &iy) const {
-    ix = (int)floor((x - minx) * scalex);
+    ix = (int)std::floor((x - minx) * scalex);
     if (ix < 0 || ix >= nx) return false;
-    iy = (int)floor((y - miny) * scaley);
+    iy = (int)std::floor((y - miny) * scaley);
     return (iy >= 0 && iy < ny);
 }
 
