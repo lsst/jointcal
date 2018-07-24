@@ -97,8 +97,17 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
                    }
         self._testJointcalTask(11, dist_rms_relative, self.dist_rms_absolute, pa1, metrics=metrics)
 
-    def testJointcalTask_2_visits_no_astrometry(self):
-        """Test turning off fitting astrometry."""
+    def setup_jointcalTask_2_visits_simplePhotometry(self):
+        """Help keep the simplePhotometry tests consistent and make
+        the differences between them more obvious.
+        """
+        self.config = lsst.jointcal.jointcal.JointcalConfig()
+        self.config.photometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
+        self.config.photometryModel = "simpleFlux"
+        self.config.doAstrometry = False
+        self.config.sourceSelector['astrometry'].badFlags.append("base_PixelFlags_flag_interpolated")
+        self.jointcalStatistics.do_astrometry = False
+
         # See Readme for an explanation of these empirical values.
         pa1 = 0.024
         metrics = {'collected_photometry_refStars': 2187,
@@ -109,29 +118,19 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
                    'photometry_final_chi2': 1557.27,
                    'photometry_final_ndof': 968
                    }
+        return pa1, metrics
 
-        self.config = lsst.jointcal.jointcal.JointcalConfig()
-        self.config.photometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
-        self.config.doAstrometry = False
-        self.config.sourceSelector['astrometry'].badFlags.append("base_PixelFlags_flag_interpolated")
-        self.jointcalStatistics.do_astrometry = False
+    def test_jointcalTask_2_visits_simpleFlux(self):
+        pa1, metrics = self.setup_jointcalTask_2_visits_simplePhotometry()
+        self._testJointcalTask(2, None, None, pa1, metrics=metrics)
 
-        caller = inspect.stack()[0][3]  # NOTE: could be inspect.stack()[0].function in py3.5
-        result = self._runJointcalTask(2, caller, metrics=metrics)
-        data_refs = result.resultList[0].result.dataRefs
-        oldWcsList = result.resultList[0].result.oldWcsList
-        rms_result = self.jointcalStatistics.compute_rms(data_refs, self.reference)
+    def test_jointcalTask_2_visits_simpleMagnitude(self):
+        pa1, metrics = self.setup_jointcalTask_2_visits_simplePhotometry()
+        self.config.photometryModel = "simpleMagnitude"
+        metrics['photometry_final_chi2'] = 1550.47
+        metrics['photometry_final_ndof'] = 967
 
-        if self.do_plot:
-            self._plotJointcalTask(data_refs, oldWcsList, caller)
-
-        self.assertIsNone(rms_result.dist_relative)
-        self.assertIsNone(rms_result.dist_absolute)
-        self.assertLess(rms_result.pa1, pa1)
-
-        for data_ref in data_refs:
-            with self.assertRaises(lsst.daf.persistence.butlerExceptions.NoResults):
-                data_ref.get('jointcal_wcs')
+        self._testJointcalTask(2, None, None, pa1, metrics=metrics)
 
     def testJointcalTask_2_visits_no_photometry(self):
         """Test turning off fitting photometry."""

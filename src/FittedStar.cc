@@ -17,15 +17,7 @@ namespace jointcal {
 
 // cannot be in fittedstar.h, because of "crossed includes"
 FittedStar::FittedStar(const MeasuredStar &measuredStar)
-        : BaseStar(measuredStar),
-          _mag(measuredStar.getMag()),
-          _gen(-1),
-          _wmag(measuredStar.getMagWeight()),
-          _indexInMatrix(-1),
-          _measurementCount(0),
-          _refStar(nullptr) {
-    _fluxErr = measuredStar.getInstFluxErr();
-}
+        : BaseStar(measuredStar), _indexInMatrix(-1), _measurementCount(0), _refStar(nullptr) {}
 
 void FittedStar::setRefStar(const RefStar *refStar) {
     if ((_refStar != nullptr) && (refStar != nullptr)) {
@@ -39,8 +31,8 @@ void FittedStar::setRefStar(const RefStar *refStar) {
 }
 
 void FittedStar::addMagMeasurement(double magValue, double magWeight) {
-    _mag = (_mag * _wmag + magValue * magWeight) / (_wmag + magWeight);
-    _wmag += magWeight;
+    _mag = (_mag * _magErr + magValue * magWeight) / (_magErr + magWeight);
+    _magErr += magWeight;
 }
 
 /************* FittedStarList ************************/

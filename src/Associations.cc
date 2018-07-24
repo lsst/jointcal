@@ -12,6 +12,8 @@
 #include "lsst/jointcal/Frame.h"
 #include "lsst/jointcal/FatPoint.h"
 #include "lsst/jointcal/Gtransfo.h"
+#include "lsst/jointcal/MeasuredStar.h"
+
 #include "lsst/afw/image/Image.h"
 #include "lsst/afw/image/VisitInfo.h"
 #include "lsst/daf/base/PropertySet.h"
@@ -139,7 +141,12 @@ void Associations::associateCatalogs(const double matchCutInArcSec, const bool u
         LOGLS_INFO(_log, "Unmatched objects: " << unMatchedCount);
     }  // end of loop on CcdImages
 
-    assignMags();
+    // !!!!!!!!!!!!!!!!!
+    // TODO: DO WE REALLY NEED THIS???
+    // Why do we need to do this, instead of directly computing them in normalizeFittedStars?
+    // What makes the magnitudes special here?
+    // !!!!!!!!!!!!!!!!!
+    // assignMags();
 }
 
 void Associations::collectRefStars(afw::table::SimpleCatalog &refCat, afw::geom::Angle matchCut,
@@ -316,6 +323,7 @@ void Associations::normalizeFittedStars() const {
         fittedStar->x = 0.0;
         fittedStar->y = 0.0;
         fittedStar->setFlux(0.0);
+        fittedStar->getMag() = 0.0;
     }
 
     // Iterate over measuredStars to add their values into their fittedStars
@@ -340,6 +348,7 @@ void Associations::normalizeFittedStars() const {
         fi->x /= measurementCount;
         fi->y /= measurementCount;
         fi->getFlux() /= measurementCount;
+        fi->getMag() = magFromFlux(fi->getFlux());
     }
 }
 

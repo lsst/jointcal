@@ -71,6 +71,9 @@ void declareBaseStar(py::module &mod) {
 
     // cls.def("getFlux", &BaseStar::getFlux);
     cls.def_property_readonly("flux", (double (BaseStar::*)() const) & BaseStar::getFlux);
+    cls.def_property_readonly("fluxErr", (double (BaseStar::*)() const) & BaseStar::getFluxErr);
+    cls.def_property_readonly("mag", (double (BaseStar::*)() const) & BaseStar::getMag);
+    cls.def_property_readonly("magErr", (double (BaseStar::*)() const) & BaseStar::getMagErr);
 }
 
 void declareRefStar(py::module &mod) {
@@ -97,9 +100,10 @@ void declareMeasuredStar(py::module &mod) {
     cls.def("setFittedStar", &MeasuredStar::setFittedStar);
 
     cls.def("getInstFlux", &MeasuredStar::getInstFlux);
-    cls.def("setInstFlux", &MeasuredStar::setInstFlux);
+    cls.def("setInstFluxAndErr", &MeasuredStar::setInstFluxAndErr);
     cls.def("getInstFluxErr", &MeasuredStar::getInstFluxErr);
-    cls.def("setInstFluxErr", &MeasuredStar::setInstFluxErr);
+    cls.def("getInstMag", &MeasuredStar::getInstMag);
+    cls.def("getInstMagErr", &MeasuredStar::getInstMagErr);
     cls.def("setXFocal", &MeasuredStar::setXFocal);
     cls.def("setYFocal", &MeasuredStar::setYFocal);
     cls.def("getXFocal", &MeasuredStar::getXFocal);

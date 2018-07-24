@@ -36,52 +36,58 @@ class PhotometryModelTestBase:
         struct = lsst.jointcal.testUtils.createTwoFakeCcdImages(100, 100)
         self.ccdImageList = struct.ccdImageList
         self.camera = struct.camera
-        catalogs = struct.catalogs
-        pixToFocal = self.ccdImageList[0].getDetector().getTransform(lsst.afw.cameraGeom.PIXELS,
-                                                                     lsst.afw.cameraGeom.FOCAL_PLANE)
-        self.stars = lsst.jointcal.testUtils.getMeasuredStarsFromCatalog(catalogs[0], pixToFocal)
-
-        self.star0 = self.stars[0]
-        self.star1 = self.stars[1]
-
-        self.instFlux = 5.0
-        self.instFluxErr = 2.0
+        self.catalogs = struct.catalogs
+        self.instFluxKeyName = struct.instFluxKeyName
 
         self.firstIndex = 0  # for assignIndices
 
-    def _toPhotoCalib(self, ccdImage):
+        # Set to True in the subclass constructor to do the PhotoCalib calculations in magnitudes.
+        self.useMagnitude = False
+
+    def _toPhotoCalib(self, ccdImage, catalog):
         """Test converting this object to a PhotoCalib."""
         photoCalib = self.model.toPhotoCalib(ccdImage)
-        for star in self.stars:
-            expect = self.model.transform(ccdImage, star, star.getInstFlux())
-            point = lsst.afw.geom.Point2D(star.x, star.y)
-            result = photoCalib.instFluxToMaggies(star.getInstFlux(), point)
-            self.assertFloatsAlmostEqual(result, expect, rtol=1e-13)
+        if self.useMagnitude:
+            result = photoCalib.instFluxToMagnitude(catalog, self.instFluxKeyName)
+        else:
+            result = photoCalib.instFluxToMaggies(catalog, self.instFluxKeyName)
+
+        pixToFocal = ccdImage.getDetector().getTransform(lsst.afw.cameraGeom.PIXELS,
+                                                         lsst.afw.cameraGeom.FOCAL_PLANE)
+        stars = lsst.jointcal.testUtils.getMeasuredStarsFromCatalog(catalog, pixToFocal)
+
+        expects = np.empty(len(stars))
+        for i, star in enumerate(stars):
+            expects[i] = self.model.transform(ccdImage, star)
+        self.assertFloatsAlmostEqual(result[:, 0], expects, rtol=1e-13)
+        # NOTE: don't compare transformed errors, as they will be different:
+        # photoCalib incorporates the model error, while jointcal computes the
+        # full covariance matrix, from which the model error should be derived.
 
     def test_freezeErrorTransform(self):
         """After calling freezeErrorTransform(), the error transform is unchanged
         by offsetParams().
         """
-        self.model.offsetParams(self.delta)
         ccdImage = self.ccdImageList[0]
-        t1 = self.model.transform(ccdImage, self.star0, self.instFlux)
-        t1Err = self.model.transformError(ccdImage, self.star0, self.instFluxErr)
+        catalog = self.catalogs[0]
+        pixToFocal = ccdImage.getDetector().getTransform(lsst.afw.cameraGeom.PIXELS,
+                                                         lsst.afw.cameraGeom.FOCAL_PLANE)
+        stars = lsst.jointcal.testUtils.getMeasuredStarsFromCatalog(catalog, pixToFocal)
+        star0 = stars[0]
+
+        self.model.offsetParams(self.delta)
+        t1 = self.model.transform(ccdImage, star0)
+        t1Err = self.model.transformError(ccdImage, star0)
         self.model.freezeErrorTransform()
         self.model.offsetParams(self.delta)
-        t2 = self.model.transform(ccdImage, self.star0, self.instFlux)
-        t2Err = self.model.transformError(ccdImage, self.star0, self.instFluxErr)
+        t2 = self.model.transform(ccdImage, star0)
+        t2Err = self.model.transformError(ccdImage, star0)
 
         self.assertFloatsNotEqual(t1, t2)
         self.assertFloatsEqual(t1Err, t2Err)
 
 
-class SimplePhotometryModelTestCase(PhotometryModelTestBase, lsst.utils.tests.TestCase):
-    def setUp(self):
-        super(SimplePhotometryModelTestCase, self).setUp()
-        self.model = lsst.jointcal.photometryModels.SimplePhotometryModel(self.ccdImageList)
-        self.model.assignIndices("", self.firstIndex)  # have to call this once to let offsetParams work.
-        self.delta = np.arange(len(self.ccdImageList), dtype=float)*-0.2 + 1
-
+class SimplePhotometryModelTestCase(PhotometryModelTestBase):
     def test_getNpar(self):
         result = self.model.getNpar(self.ccdImageList[0])
         self.assertEqual(result, 1)
@@ -93,8 +99,25 @@ class SimplePhotometryModelTestCase(PhotometryModelTestBase, lsst.utils.tests.Te
         self.assertEqual(result, 2)
 
     def test_toPhotoCalib(self):
-        self._toPhotoCalib(self.ccdImageList[0])
-        self._toPhotoCalib(self.ccdImageList[1])
+        self._toPhotoCalib(self.ccdImageList[0], self.catalogs[0])
+        self._toPhotoCalib(self.ccdImageList[1], self.catalogs[1])
+
+
+class SimpleFluxModelTestCase(SimplePhotometryModelTestCase, lsst.utils.tests.TestCase):
+    def setUp(self):
+        super().setUp()
+        self.model = lsst.jointcal.photometryModels.SimpleFluxModel(self.ccdImageList)
+        self.model.assignIndices("", self.firstIndex)  # have to call this once to let offsetParams work.
+        self.delta = np.arange(len(self.ccdImageList), dtype=float)*-0.2 + 1
+
+
+class SimpleMagnitudeModelTestCase(SimplePhotometryModelTestCase, lsst.utils.tests.TestCase):
+    def setUp(self):
+        super().setUp()
+        self.model = lsst.jointcal.photometryModels.SimpleMagnitudeModel(self.ccdImageList)
+        self.model.assignIndices("", self.firstIndex)  # have to call this once to let offsetParams work.
+        self.delta = np.arange(len(self.ccdImageList), dtype=float)*-0.2 + 1
+        self.useMagnitude = True
 
 
 class ConstrainedPhotometryModelTestCase(PhotometryModelTestBase, lsst.utils.tests.TestCase):
@@ -132,8 +155,8 @@ class ConstrainedPhotometryModelTestCase(PhotometryModelTestBase, lsst.utils.tes
         self.assertEqual(result, expect)
 
     def test_toPhotoCalib(self):
-        self._toPhotoCalib(self.ccdImageList[0])
-        self._toPhotoCalib(self.ccdImageList[1])
+        self._toPhotoCalib(self.ccdImageList[0], self.catalogs[0])
+        self._toPhotoCalib(self.ccdImageList[1], self.catalogs[1])
 
     def test_assignIndices(self):
         """Test that the correct number of indices were assigned.

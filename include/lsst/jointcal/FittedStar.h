@@ -36,23 +36,10 @@ struct PmBlock {
  */
 class FittedStar : public BaseStar, public PmBlock {
 public:
-    FittedStar()
-            : BaseStar(),
-              _mag(-1),
-              _gen(-1),
-              _wmag(0),
-              _indexInMatrix(-1),
-              _measurementCount(0),
-              _refStar(nullptr) {}
+    FittedStar() : BaseStar(), _indexInMatrix(-1), _measurementCount(0), _refStar(nullptr) {}
 
     FittedStar(const BaseStar& baseStar)
-            : BaseStar(baseStar),
-              _mag(-1),
-              _gen(-1),
-              _wmag(0),
-              _indexInMatrix(0),
-              _measurementCount(0),
-              _refStar(nullptr) {}
+            : BaseStar(baseStar), _indexInMatrix(0), _measurementCount(0), _refStar(nullptr) {}
 
     //!
     FittedStar(const MeasuredStar& measuredStar);
@@ -69,7 +56,10 @@ public:
         _indexInMatrix = -1;
         _measurementCount = 0;
         _refStar = nullptr;
-        _wmag = 0;
+        _flux = 0;
+        _fluxErr = 0;
+        _mag = 0;
+        _magErr = 0;
     }
 
     //!
@@ -82,14 +72,7 @@ public:
     int getMeasurementCount() const { return _measurementCount; }
     int& getMeasurementCount() { return _measurementCount; }
 
-    //! derived using available zero points in input images. In the absence ofZP, ZP= 0.
-    double getMag() const { return _mag; }
-    int getGeneration() const { return _gen; }
-
-    //!
-    void setMag(double mag) { _mag = mag; }
-
-    //! this routine will hopefully soon disappear.
+    /// Add a measuredStar on-sky magnitude.
     void addMagMeasurement(double magValue, double magWeight);
 
     //! index is a value that a fit can set and reread....
@@ -105,14 +88,9 @@ public:
     const RefStar* getRefStar() const { return _refStar; };
 
 private:
-    double _mag;
-    int _gen;
-    double _wmag;
     unsigned _indexInMatrix;
     int _measurementCount;
     const RefStar* _refStar;
-
-    double _fluxErr;
 };
 
 /****** FittedStarList */

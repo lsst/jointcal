@@ -1,5 +1,5 @@
 #include <iostream>
-#include <math.h>    /* for floor */
+#include <cmath>
 #include <string.h>  /* for memset*/
 #include <algorithm> /* for sort */
 #include <limits.h>
@@ -44,7 +44,7 @@ SparseHisto4d::SparseHisto4d(const int n1, double min1, double max1, const int n
 int SparseHisto4d::code_value(const double x[4]) const {
     int index = 0;
     for (int idim = 0; idim < 4; ++idim) {
-        int i = (int)floor((x[idim] - _minVal[idim]) * _scale[idim]);
+        int i = (int)std::floor((x[idim] - _minVal[idim]) * _scale[idim]);
         if (i < 0 || i >= _n[idim]) return -1;
         index = index * _n[idim] + i;
     }

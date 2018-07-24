@@ -13,10 +13,15 @@
 namespace lsst {
 namespace jointcal {
 
-#define MEMPIX2DISK 1
+namespace {
+/// Compute magnitude from flux (in Maggies).
+double magFromFlux(double instFlux) { return -2.5 * std::log10(instFlux); }
 
-#define DECALAGE_IJ_XY 0.
-#define DECALAGE_XY_IJ 0.
+/// Compute magnitude error from instFlux and instFlux error (in Maggies).
+double magErrFromFluxErr(double instFlux, double instFluxErr) {
+    return 2.5 / std::log(10) * (instFluxErr / instFlux);
+}
+}  // namespace
 
 //! The base class for handling stars. Used by all matching routines.
 class BaseStar : public FatPoint {
@@ -28,9 +33,17 @@ public:
     };
     //! constructor
     BaseStar(double xx, double yy, double flux, double fluxErr)
-            : FatPoint(xx, yy), _flux(flux), _fluxErr(fluxErr){};
-    BaseStar(Point const &point, double flux, double fluxErr)
-            : FatPoint(point), _flux(flux), _fluxErr(fluxErr){};
+            : FatPoint(xx, yy),
+              _flux(flux),
+              _fluxErr(fluxErr),
+              _mag(magFromFlux(flux)),
+              _magErr(magErrFromFluxErr(flux, fluxErr)){};
+    BaseStar(Point const &point, double flux, double fluxErr, double mag, double magErr)
+            : FatPoint(point),
+              _flux(flux),
+              _fluxErr(fluxErr),
+              _mag(magFromFlux(flux)),
+              _magErr(magErrFromFluxErr(flux, fluxErr)){};
 
     //! access stuff.
     double getX() const { return x; }
@@ -64,22 +77,27 @@ public:
     double getFluxErr() const { return _fluxErr; }
     void setFluxErr(double fluxErr) { _fluxErr = fluxErr; }
 
+    double getMag() const { return _mag; }
+    double &getMag() { return _mag; }
+
+    double getMagErr() const { return _magErr; }
+    void setMagErr(double magErr) { _magErr = magErr; }
+
 protected:
     // on-sky flux, in Maggies
     double _flux;
     double _fluxErr;
+
+    // on-sky magnitude
+    double _mag;
+    double _magErr;
 };
-
-//! enables to sort easily a starList (of anything that derives from BaseStar)
-bool decreasingFlux(BaseStar const *star1, BaseStar const *star2);
-
-int decodeFormat(char const *formatLine, char const *starName);
 
 typedef StarList<BaseStar> BaseStarList;
 
 typedef BaseStarList::const_iterator BaseStarCIterator;
 typedef BaseStarList::iterator BaseStarIterator;
-}
+}  // namespace jointcal
 }  // namespace lsst
 
 #endif  // LSST_JOINTCAL_BASE_STAR_H

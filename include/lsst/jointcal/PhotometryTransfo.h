@@ -19,24 +19,28 @@ namespace jointcal {
 
 class Point;
 
-class PhotometryTransfoSpatiallyInvariant;
-
-/*
- * A photometric transform, defined as a scalar multiple of the input flux.
+/**
+ * A photometric transform, defined in terms of the input flux or magnitude.
  *
  * Unit agnostic: a higher level Model must keep track of the units going into and out of of its Transfos.
- *
- *     inputFlux * transfo(x,y) -> correctedFlux
  *
  * @seealso lsst::afw::image::PhotoCalib
  */
 class PhotometryTransfo {
 public:
-    /// Apply the transform to instFlux at (x,y), put result in flux
-    virtual double transform(double x, double y, double instFlux) const = 0;
+    /// Return the transform of value at (x,y).
+    virtual double transform(double x, double y, double value) const = 0;
 
-    /// Return the transformed instFlux at (x,y).
-    double transform(Point const &in, double instFlux) const { return transform(in.x, in.y, instFlux); }
+    /// Return the transformed value at Point(x,y).
+    double transform(Point const &in, double value) const { return transform(in.x, in.y, value); }
+
+    /// Return the transformed valueErr at Point(x,y).
+    virtual double transformError(double x, double y, double value, double valueErr) const = 0;
+
+    /// Return the transformed valueErr at Point(x,y).
+    double transformError(Point const &in, double value, double valueErr) const {
+        return transformError(in.x, in.y, value, valueErr);
+    }
 
     /// dumps the transfo coefficients to stream.
     virtual void dump(std::ostream &stream = std::cout) const = 0;
@@ -47,7 +51,7 @@ public:
     }
 
     /// Return the number of parameters (used to compute chisq)
-    virtual int getNpar() const { return 0; }
+    virtual int getNpar() const = 0;
 
     /**
      * Offset the parameters by some (negative) amount during fitting.
@@ -77,39 +81,21 @@ public:
     virtual Eigen::VectorXd getParameters() const = 0;
 };
 
-/*
- * Photometric offset independent of position, defined as (fluxMag0)^-1.
- *
- * initialCalibFlux * SpatiallyInvariantTransfo -> correctedFlux
- *
+/**
+ * Photometry offset independent of position. Abstract class.
  */
 class PhotometryTransfoSpatiallyInvariant : public PhotometryTransfo {
 public:
-    PhotometryTransfoSpatiallyInvariant(double value = 1) : _value(value) {}
-
-    /// @copydoc PhotometryTransfo::transform
-    double transform(double x, double y, double instFlux) const override { return instFlux * _value; }
+    explicit PhotometryTransfoSpatiallyInvariant(double value) : _value(value) {}
 
     /// @copydoc PhotometryTransfo::dump
-    void dump(std::ostream &stream = std::cout) const override { stream << _value; }
+    void dump(std::ostream &stream = std::cout) const override { stream << std::setprecision(10) << _value; }
 
     /// @copydoc PhotometryTransfo::getNpar
     int getNpar() const override { return 1; }
 
     /// @copydoc PhotometryTransfo::offsetParams
     void offsetParams(Eigen::VectorXd const &delta) override { _value -= delta[0]; };
-
-    /// @copydoc PhotometryTransfo::clone
-    std::shared_ptr<PhotometryTransfo> clone() const override {
-        return std::make_shared<PhotometryTransfoSpatiallyInvariant>(_value);
-    }
-
-    /// @copydoc PhotometryTransfo::computeParameterDerivatives
-    void computeParameterDerivatives(double x, double y, double instFlux,
-                                     Eigen::Ref<Eigen::VectorXd> derivatives) const override {
-        // the derivative of a spatially constant transfo w.r.t. that value is just the instFlux.
-        derivatives[0] = instFlux;
-    }
 
     /// @copydoc PhotometryTransfo::getParameters
     Eigen::VectorXd getParameters() const override {
@@ -119,13 +105,74 @@ public:
     }
 
 protected:
-    void setValue(double value) { _value = value; }
-
-    friend class PhotometryTransfo;
+    double getValue() const { return _value; }
 
 private:
     /// value of this transform at all locations.
     double _value;
+};
+
+/**
+ * Photometric offset independent of position, defined as (fluxMag0)^-1.
+ *
+ * initialCalibFlux * SpatiallyInvariantTransfo -> correctedFlux
+ *
+ */
+class FluxTransfoSpatiallyInvariant : public PhotometryTransfoSpatiallyInvariant {
+public:
+    explicit FluxTransfoSpatiallyInvariant(double value = 1) : PhotometryTransfoSpatiallyInvariant(value) {}
+
+    /// @copydoc PhotometryTransfo::transform
+    double transform(double x, double y, double instFlux) const override { return instFlux * getValue(); }
+
+    /// @copydoc PhotometryTransfo::transformError
+    double transformError(double x, double y, double flux, double fluxErr) const override {
+        return getValue() * fluxErr;
+    }
+
+    /// @copydoc PhotometryTransfo::clone
+    std::shared_ptr<PhotometryTransfo> clone() const override {
+        return std::make_shared<FluxTransfoSpatiallyInvariant>(getValue());
+    }
+
+    /// @copydoc PhotometryTransfo::computeParameterDerivatives
+    void computeParameterDerivatives(double x, double y, double instFlux,
+                                     Eigen::Ref<Eigen::VectorXd> derivatives) const override {
+        // the derivative of a spatially constant transfo w.r.t. that value is just the instFlux.
+        derivatives[0] = instFlux;
+    }
+};
+
+/**
+ * Photometric offset independent of position, defined as -2.5 * log(flux / fluxMag0).
+ *
+ * initialMagnitude + SpatiallyInvariantTransfo -> correctedMagnitude
+ *
+ */
+class MagnitudeTransfoSpatiallyInvariant : public PhotometryTransfoSpatiallyInvariant {
+public:
+    explicit MagnitudeTransfoSpatiallyInvariant(double value = 0)
+            : PhotometryTransfoSpatiallyInvariant(value) {}
+
+    /// @copydoc PhotometryTransfoSpatiallyInvariant::transform
+    double transform(double x, double y, double mag) const override { return mag + getValue(); }
+
+    /// @copydoc PhotometryTransfo::transformError
+    double transformError(double x, double y, double value, double valueErr) const override {
+        return valueErr;
+    }
+
+    /// @copydoc PhotometryTransfoSpatiallyInvariant::clone
+    std::shared_ptr<PhotometryTransfo> clone() const override {
+        return std::make_shared<MagnitudeTransfoSpatiallyInvariant>(getValue());
+    }
+
+    /// @copydoc PhotometryTransfoSpatiallyInvariant::computeParameterDerivatives
+    void computeParameterDerivatives(double x, double y, double mag,
+                                     Eigen::Ref<Eigen::VectorXd> derivatives) const override {
+        // the derivative of a spatially constant transfo w.r.t. that value is 1.
+        derivatives[0] = 1;
+    }
 };
 
 /**
@@ -169,6 +216,9 @@ public:
     /// @copydoc PhotometryTransfo::transform
     double transform(double x, double y, double instFlux) const override;
 
+    /// @copydoc PhotometryTransfo::transformError
+    double transformError(double x, double y, double value, double valueErr) const override { return 0; }
+
     /// @copydoc PhotometryTransfo::dump
     void dump(std::ostream &stream = std::cout) const override { stream << _coefficients; }
 
@@ -197,7 +247,6 @@ public:
 
     afw::geom::Box2D getBBox() const { return _bbox; }
 
-    // Compute the mean of this function over its bounding-box.
     double mean() const;
 
 private:

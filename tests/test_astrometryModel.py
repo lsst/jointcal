@@ -186,7 +186,6 @@ class AstrometryModelTestBase:
         skyWcs = model.makeSkyWcs(ccdImage)
         skyToTangentPlane = model.getSky2TP(ccdImage)
         mapping = model.getMapping(ccdImage)
-        posErr = 1e-3  # need something for positional error
 
         bbox = ccdImage.getDetector().getBBox()
         num = 200
@@ -203,13 +202,13 @@ class AstrometryModelTestBase:
             # TODO: Fix these "Point"s once DM-4044 is done.
 
             # jointcal's pixel->tangent-plane mapping
-            star = lsst.jointcal.star.BaseStar(point.getX(), point.getY(), posErr, posErr)
+            star = lsst.jointcal.star.BaseStar(point.getX(), point.getY(), 0, 0)
             tpExpect = mapping.transformPosAndErrors(star)
             expects.append(lsst.afw.geom.Point2D(tpExpect.x, tpExpect.y))
 
             # skywcs takes pixel->sky, and we then have to go sky->tangent-plane
             onSky = lsst.jointcal.star.BaseStar(spherePoint.getLongitude().asDegrees(),
-                                                spherePoint.getLatitude().asDegrees(), posErr, posErr)
+                                                spherePoint.getLatitude().asDegrees(), 0, 0)
             result = skyToTangentPlane.apply(onSky)
             forwards.append(lsst.afw.geom.Point2D(result.x, result.y))
 

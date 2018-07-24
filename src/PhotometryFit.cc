@@ -49,11 +49,8 @@ void PhotometryFit::leastSquareDerivativesMeasurement(CcdImage const &ccdImage, 
 #endif
         H.setZero();  // we cannot be sure that all entries will be overwritten.
 
-        double residual = _photometryModel->transform(ccdImage, *measuredStar, measuredStar->getInstFlux()) -
-                          measuredStar->getFittedStar()->getFlux();
-
-        double inverseSigma = 1.0 / _photometryModel->transformError(ccdImage, *measuredStar,
-                                                                     measuredStar->getInstFluxErr());
+        double residual = _photometryModel->computeResidual(ccdImage, *measuredStar);
+        double inverseSigma = 1.0 / _photometryModel->transformError(ccdImage, *measuredStar);
         double W = std::pow(inverseSigma, 2);
 
         if (_fittingModel) {
@@ -99,9 +96,10 @@ void PhotometryFit::leastSquareDerivativesReference(FittedStarList const &fitted
         // filter = ccdImage.getFilter();
 
         // W == inverseSigma^2
-        double inverseSigma = 1.0 / refStar->getFluxErr();
-        // Residual is fittedStar.flux - refStar.flux for consistency with measurement terms.
-        double residual = fittedStar->getFlux() - refStar->getFlux();
+
+        double inverseSigma = 1.0 / _photometryModel->getRefError(*refStar);
+        // Residual is fittedStar - refStar for consistency with measurement terms.
+        double residual = _photometryModel->computeRefResidual(*fittedStar, *refStar);
 
         unsigned index = fittedStar->getIndexInMatrix();
         // Note: H = dR/dFittedStar == 1
@@ -122,14 +120,11 @@ void PhotometryFit::accumulateStatImageList(CcdImageList const &ccdImageList, Ch
 
         for (auto const &measuredStar : catalog) {
             if (!measuredStar->isValid()) continue;
-            double sigma = _photometryModel->transformError(*ccdImage, *measuredStar,
-                                                            measuredStar->getInstFluxErr());
+            double sigma = _photometryModel->transformError(*ccdImage, *measuredStar);
 #ifdef FUTURE
             TweakPhotomMeasurementErrors(inPos, measuredStar, _fluxError);
 #endif
-            double residual =
-                    _photometryModel->transform(*ccdImage, *measuredStar, measuredStar->getInstFlux()) -
-                    measuredStar->getFittedStar()->getFlux();
+            double residual = _photometryModel->computeResidual(*ccdImage, *measuredStar);
 
             double chi2Val = std::pow(residual / sigma, 2);
             accum.addEntry(chi2Val, 1, measuredStar);
@@ -147,7 +142,9 @@ void PhotometryFit::accumulateStatRefStars(Chi2Accumulator &accum) const {
     for (auto const &fittedStar : fittedStarList) {
         auto refStar = fittedStar->getRefStar();
         if (refStar == nullptr) continue;
-        double chi2 = std::pow(((fittedStar->getFlux() - refStar->getFlux()) / refStar->getFluxErr()), 2);
+        double sigma = _photometryModel->getRefError(*refStar);
+        double residual = _photometryModel->computeRefResidual(*fittedStar, *refStar);
+        double chi2 = std::pow(residual / sigma, 2);
         accum.addEntry(chi2, 1, fittedStar);
     }
 }
@@ -207,7 +204,7 @@ void PhotometryFit::offsetParams(Eigen::VectorXd const &delta) {
             // - when filling the derivatives
             // - when assigning indices (assignIndices())
             unsigned index = fittedStar->getIndexInMatrix();
-            fittedStar->getFlux() -= delta(index);
+            _photometryModel->offsetFittedStar(*fittedStar, delta(index));
         }
     }
 }
@@ -217,7 +214,7 @@ void PhotometryFit::saveChi2MeasContributions(std::string const &baseName) const
     std::string separator = "\t";
 
     ofile << "#id" << separator << "xccd" << separator << "yccd" << separator;
-    ofile << "mag" << separator;
+    ofile << "mag" << separator << "instMag" << separator << "instMagErr" << separator;
     ofile << "instFlux" << separator << "instFluxErr" << separator;
     ofile << "inputFlux" << separator << "inputFluxErr" << separator;
     ofile << "transformedFlux" << separator << "transformedFluxErr" << separator;
@@ -229,7 +226,8 @@ void PhotometryFit::saveChi2MeasContributions(std::string const &baseName) const
     ofile << "chip" << separator << "visit" << separator << std::endl;
 
     ofile << "#id in source catalog" << separator << "coordinates in CCD" << separator << separator;
-    ofile << "rough mag" << separator;
+    ofile << "fitted magnitude" << separator << "measured magnitude" << separator
+          << "measured magnitude error" << separator;
     ofile << "measured instrument flux (ADU)" << separator << "measured instrument flux error" << separator;
     ofile << "measured flux (maggies)" << separator << "measured flux error" << separator;
     ofile << separator << separator;
@@ -246,23 +244,22 @@ void PhotometryFit::saveChi2MeasContributions(std::string const &baseName) const
         const MeasuredStarList &cat = ccdImage->getCatalogForFit();
         for (auto const &measuredStar : cat) {
             if (!measuredStar->isValid()) continue;
-            double sigma = _photometryModel->transformError(*ccdImage, *measuredStar,
-                                                            measuredStar->getInstFluxErr());
+            double sigma = _photometryModel->transformError(*ccdImage, *measuredStar);
 #ifdef FUTURE
             tweakPhotomMeasurementErrors(inPos, measuredStar, _fluxError);
 #endif
-            double flux = _photometryModel->transform(*ccdImage, *measuredStar, measuredStar->getInstFlux());
-            double fluxErr = _photometryModel->transformError(*ccdImage, *measuredStar,
-                                                              measuredStar->getInstFluxErr());
+            double flux = _photometryModel->transform(*ccdImage, *measuredStar);
+            double fluxErr = _photometryModel->transformError(*ccdImage, *measuredStar);
             double jd = ccdImage->getMjd();
             std::shared_ptr<FittedStar const> const fittedStar = measuredStar->getFittedStar();
-            double residual = flux - fittedStar->getFlux();
+            double residual = _photometryModel->computeResidual(*ccdImage, *measuredStar);
             double chi2Val = std::pow(residual / sigma, 2);
 
             ofile << std::setprecision(9);
             ofile << measuredStar->getId() << separator << measuredStar->x << separator << measuredStar->y
                   << separator;
-            ofile << fittedStar->getMag() << separator;
+            ofile << fittedStar->getMag() << separator << measuredStar->getInstMag() << separator
+                  << measuredStar->getInstMagErr() << separator;
             ofile << measuredStar->getInstFlux() << separator << measuredStar->getInstFluxErr() << separator;
             ofile << measuredStar->getFlux() << separator << measuredStar->getFluxErr() << separator;
             ofile << flux << separator << fluxErr << separator << fittedStar->getFlux() << separator;

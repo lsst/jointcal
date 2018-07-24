@@ -142,7 +142,7 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
         """
         self.config = lsst.jointcal.jointcal.JointcalConfig()
         self.config.photometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
-        self.config.photometryModel = "constrained"
+        self.config.photometryModel = "constrainedFlux"
         self.config.doAstrometry = False
         self.config.sourceSelector['astrometry'].badFlags.append("base_PixelFlags_flag_interpolated")
         self.jointcalStatistics.do_astrometry = False
@@ -178,7 +178,7 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
         self.config.allowLineSearch = True
 
         # Only this value should differ from the metrics defined in setup above.
-        metrics['photometry_final_chi2'] = 2642.47
+        metrics['photometry_final_chi2'] = 2642.58
 
         self._testJointcalTask(2, None, None, pa1, metrics=metrics)
 
@@ -194,7 +194,7 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
         metrics['selected_photometry_refStars'] = 212
         metrics['associated_photometry_fittedStars'] = 270
         metrics['selected_photometry_fittedStars'] = 244
-        metrics['photometry_final_chi2'] = 369.96
+        metrics['photometry_final_chi2'] = 369.964
         metrics['photometry_final_ndof'] = 252
 
         self._testJointcalTask(2, None, None, pa1, metrics=metrics)
