@@ -17,7 +17,8 @@ namespace jointcal {
 enum class MinimizeResult {
     Converged,      // fit has converged - no more outliers
     Chi2Increased,  // still some ouliers but chi2 increases
-    Failed          // factorization failed
+    Failed,         // factorization failed
+    NonFinite       // non-finite chi2 statistic
 };
 
 /**

@@ -663,7 +663,8 @@ class JointcalTask(pipeBase.CmdLineTask):
                                  "photometry",
                                  "Model Fluxes",
                                  doRankUpdate=self.config.photometryDoRankUpdate,
-                                 doLineSearch=doLineSearch)
+                                 doLineSearch=doLineSearch,
+                                 dataName=dataName)
 
         add_measurement(self.job, 'jointcal.photometry_final_chi2', chi2.chi2)
         add_measurement(self.job, 'jointcal.photometry_final_ndof', chi2.ndof)
@@ -750,7 +751,8 @@ class JointcalTask(pipeBase.CmdLineTask):
                                  self.config.maxAstrometrySteps,
                                  "astrometry",
                                  "Distortions Positions",
-                                 doRankUpdate=self.config.astrometryDoRankUpdate)
+                                 doRankUpdate=self.config.astrometryDoRankUpdate,
+                                 dataName=dataName)
 
         add_measurement(self.job, 'jointcal.astrometry_final_chi2', chi2.chi2)
         add_measurement(self.job, 'jointcal.astrometry_final_ndof', chi2.ndof)
@@ -770,30 +772,65 @@ class JointcalTask(pipeBase.CmdLineTask):
                 self.log.warn("ccdImage %s has only %s RefStars (desired %s)",
                               ccdImage.getName(), nRefStars, self.config.minRefStarsPerCcd)
 
-    def _iterate_fit(self, associations, fit, max_steps, name, whatToFit, doRankUpdate=True,
+    def _iterate_fit(self, associations, fitter, max_steps, name, whatToFit,
+                     dataName="",
+                     doRankUpdate=True,
                      doLineSearch=False):
-        """Run fit.minimize up to max_steps times, returning the final chi2."""
+        """Run fitter.minimize up to max_steps times, returning the final chi2.
+
+        Parameters
+        ----------
+        associations : `lsst.jointcal.Associations`
+            The star/reference star associations to fit.
+        fitter : `lsst.jointcal.FitterBase`
+            The fitter to use for minimization.
+        max_steps : `int`
+            Maximum number of steps to run outlier rejection before declaring
+            convergence failure.
+        name : {'photometry' or 'astrometry'}
+            What type of data are we fitting (for logs and debugging files).
+        whatToFit : `str`
+            Passed to ``fitter.minimize()`` to define the parameters to fit.
+        dataName : str, optional
+            Descriptive name for this dataset (e.g. tract and filter),
+            for debugging.
+        doRankUpdate : bool, optional
+            Do an Eigen rank update during minimization, or recompute the full
+            matrix and gradient?
+        doLineSearch : bool, optional
+            Do a line search for the optimum step during minimization?
+
+        Returns
+        -------
+        chi2: `lsst.jointcal.Chi2Statistic`
+            The final chi2 after the fit converges, or is forced to end.
+
+        Raises
+        ------
+        FloatingPointError
+            Raised if the fitter fails with a non-finite value.
+        RuntimeError
+            Raised if the fitter fails for some other reason;
+            log messages will provide further details.
+        """
         dumpMatrixFile = "%s_postinit" % name if self.config.writeInitMatrix else ""
         for i in range(max_steps):
-            # outlier removal at 5 sigma.
-            result = fit.minimize(whatToFit,
-                                  self.config.outlierRejectSigma,
-                                  doRankUpdate=doRankUpdate,
-                                  doLineSearch=doLineSearch,
-                                  dumpMatrixFile=dumpMatrixFile)
+            result = fitter.minimize(whatToFit,
+                                     self.config.outlierRejectSigma,
+                                     doRankUpdate=doRankUpdate,
+                                     doLineSearch=doLineSearch,
+                                     dumpMatrixFile=dumpMatrixFile)
             dumpMatrixFile = ""  # clear it so we don't write the matrix again.
-            chi2 = fit.computeChi2()
+            chi2 = fitter.computeChi2()
             self._check_stars(associations)
-            if not np.isfinite(chi2.chi2):
-                raise FloatingPointError('Fit iteration chi2 is invalid: %s'%chi2)
             self.log.info(str(chi2))
             if result == MinimizeResult.Converged:
                 if doRankUpdate:
                     self.log.debug("fit has converged - no more outliers - redo minimization "
                                    "one more time in case we have lost accuracy in rank update.")
                     # Redo minimization one more time in case we have lost accuracy in rank update
-                    result = fit.minimize(whatToFit, 5)  # outliers removal at 5 sigma.
-                chi2 = fit.computeChi2()
+                    result = fitter.minimize(whatToFit, self.config.outlierRejectSigma)
+                chi2 = fitter.computeChi2()
                 self.log.info("Fit completed with: %s", str(chi2))
 
                 # log a message for a large final chi2, TODO: DM-15247 for something better
@@ -802,7 +839,13 @@ class JointcalTask(pipeBase.CmdLineTask):
 
                 break
             elif result == MinimizeResult.Chi2Increased:
-                self.log.warn("still some ouliers but chi2 increases - retry")
+                self.log.warn("still some outliers but chi2 increases - retry")
+            elif result == MinimizeResult.NonFinite:
+                filename = "{}_failure-nonfinite_chi2-{}.csv".format(name, dataName)
+                # TODO DM-12446: turn this into a "butler save" somehow.
+                fitter.saveChi2Contributions(filename)
+                msg = "Nonfinite value in chi2 minimization, cannot complete fit. Dumped star tables to: {}"
+                raise FloatingPointError(msg.format(filename))
             elif result == MinimizeResult.Failed:
                 raise RuntimeError("Chi2 minimization failure, cannot complete fit.")
             else:
