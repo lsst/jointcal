@@ -648,7 +648,6 @@ class JointcalTask(pipeBase.CmdLineTask):
 
         chi2 = self._iterate_fit(associations,
                                  fit,
-                                 model,
                                  self.config.maxPhotometrySteps,
                                  "photometry",
                                  "Model Fluxes",
@@ -737,7 +736,6 @@ class JointcalTask(pipeBase.CmdLineTask):
 
         chi2 = self._iterate_fit(associations,
                                  fit,
-                                 model,
                                  self.config.maxAstrometrySteps,
                                  "astrometry",
                                  "Distortions Positions",
@@ -761,7 +759,7 @@ class JointcalTask(pipeBase.CmdLineTask):
                 self.log.warn("ccdImage %s has only %s RefStars (desired %s)",
                               ccdImage.getName(), nRefStars, self.config.minRefStarsPerCcd)
 
-    def _iterate_fit(self, associations, fit, model, max_steps, name, whatToFit, doRankUpdate=True,
+    def _iterate_fit(self, associations, fit, max_steps, name, whatToFit, doRankUpdate=True,
                      doLineSearch=False):
         """Run fit.minimize up to max_steps times, returning the final chi2."""
 
