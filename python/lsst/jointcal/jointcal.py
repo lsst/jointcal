@@ -768,29 +768,29 @@ class JointcalTask(pipeBase.CmdLineTask):
         dumpMatrixFile = "%s_postinit" % name if self.config.writeInitMatrix else ""
         for i in range(max_steps):
             # outlier removal at 5 sigma.
-            r = fit.minimize(whatToFit,
-                             self.config.outlierRejectSigma,
-                             doRankUpdate=doRankUpdate,
-                             doLineSearch=doLineSearch,
-                             dumpMatrixFile=dumpMatrixFile)
+            result = fit.minimize(whatToFit,
+                                  self.config.outlierRejectSigma,
+                                  doRankUpdate=doRankUpdate,
+                                  doLineSearch=doLineSearch,
+                                  dumpMatrixFile=dumpMatrixFile)
             dumpMatrixFile = ""  # clear it so we don't write the matrix again.
             chi2 = fit.computeChi2()
             self._check_stars(associations)
             if not np.isfinite(chi2.chi2):
                 raise FloatingPointError('Fit iteration chi2 is invalid: %s'%chi2)
             self.log.info(str(chi2))
-            if r == MinimizeResult.Converged:
+            if result == MinimizeResult.Converged:
                 if doRankUpdate:
                     self.log.debug("fit has converged - no more outliers - redo minimization "
                                    "one more time in case we have lost accuracy in rank update.")
                     # Redo minimization one more time in case we have lost accuracy in rank update
-                    r = fit.minimize(whatToFit, 5)  # outliers removal at 5 sigma.
+                    result = fit.minimize(whatToFit, 5)  # outliers removal at 5 sigma.
                 chi2 = fit.computeChi2()
                 self.log.info("Fit completed with: %s", str(chi2))
                 break
-            elif r == MinimizeResult.Chi2Increased:
+            elif result == MinimizeResult.Chi2Increased:
                 self.log.warn("still some ouliers but chi2 increases - retry")
-            elif r == MinimizeResult.Failed:
+            elif result == MinimizeResult.Failed:
                 raise RuntimeError("Chi2 minimization failure, cannot complete fit.")
             else:
                 raise RuntimeError("Unxepected return code from minimize().")
