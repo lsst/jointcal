@@ -785,6 +785,11 @@ class JointcalTask(pipeBase.CmdLineTask):
                     result = fit.minimize(whatToFit, 5)  # outliers removal at 5 sigma.
                 chi2 = fit.computeChi2()
                 self.log.info("Fit completed with: %s", str(chi2))
+
+                # log a message for a large final chi2, TODO: DM-15247 for something better
+                if chi2.chi2/chi2.ndof >= 4.0:
+                    self.log.error("Potentially bad fit: High chi-squared/ndof.")
+
                 break
             elif result == MinimizeResult.Chi2Increased:
                 self.log.warn("still some ouliers but chi2 increases - retry")
