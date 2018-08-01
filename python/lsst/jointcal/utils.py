@@ -47,7 +47,7 @@ class JointcalStatistics:
         match_radius : lsst.afw.geom.Angle
             match sources within this radius for RMS statistics
         flux_limit : float
-            Signal/Noise (flux/fluxSigma) for sources to be included in the RMS cross-match.
+            Signal/Noise (flux/fluxErr) for sources to be included in the RMS cross-match.
             100 is a balance between good centroids and enough sources.
         do_photometry : bool, optional
             Perform calculations/make plots for photometric metrics.
@@ -265,7 +265,7 @@ class JointcalStatistics:
         self.old_mag = np.fromiter((abMagFromFlux(r) for r in self.old_ref), dtype=float)
         self.new_mag = np.fromiter((abMagFromFlux(r) for r in self.new_ref), dtype=float)
 
-        def signal_to_noise(sources, flux_key='slot_PsfFlux_flux', sigma_key='slot_PsfFlux_fluxSigma'):
+        def signal_to_noise(sources, flux_key='slot_PsfFlux_flux', sigma_key='slot_PsfFlux_fluxErr'):
             """Compute the mean signal/noise per source from a MatchDict of SourceRecords."""
             result = np.empty(len(sources))
             for i, src in enumerate(sources.values()):
@@ -354,7 +354,7 @@ class JointcalStatistics:
             return Flux(flux, ref_flux)
 
         for cat, photoCalib, filt in zip(visit_catalogs, photoCalibs, self.filters):
-            good = (cat.get('base_PsfFlux_flux')/cat.get('base_PsfFlux_fluxSigma')) > self.flux_limit
+            good = (cat.get('base_PsfFlux_flux')/cat.get('base_PsfFlux_fluxErr')) > self.flux_limit
             # things the classifier called sources are not extended.
             good &= (cat.get('base_ClassificationExtendedness_value') == 0)
             matches = lsst.afw.table.matchRaDec(reference, cat[good], self.match_radius)

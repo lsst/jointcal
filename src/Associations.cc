@@ -164,10 +164,10 @@ void Associations::collectRefStars(afw::table::SimpleCatalog &refCat, afw::geom:
     // Don't blow up if the reference catalog doesn't contain errors.
     afw::table::Key<double> fluxErrKey;
     try {
-        fluxErrKey = refCat.getSchema().find<double>(fluxField + "Sigma").key;
+        fluxErrKey = refCat.getSchema().find<double>(fluxField + "Err").key;
     } catch (pex::exceptions::NotFoundError &) {
         LOGLS_WARN(_log, "Flux error field ("
-                                 << fluxField << "Sigma"
+                                 << fluxField << "Err"
                                  << ") not found in reference catalog. Not using ref flux errors.");
     }
     _filterMap.clear();

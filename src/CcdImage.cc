@@ -39,7 +39,7 @@ void CcdImage::loadCatalog(afw::table::SourceCatalog const &catalog, std::string
     auto myyKey = catalog.getSchema().find<double>("slot_Shape_yy").key;
     auto mxyKey = catalog.getSchema().find<double>("slot_Shape_xy").key;
     auto fluxKey = catalog.getSchema().find<double>(fluxField + "_flux").key;
-    auto fluxErrKey = catalog.getSchema().find<double>(fluxField + "_fluxSigma").key;
+    auto fluxErrKey = catalog.getSchema().find<double>(fluxField + "_fluxErr").key;
 
     auto transform = _detector->getTransform(afw::cameraGeom::PIXELS, afw::cameraGeom::FOCAL_PLANE);
 

@@ -177,7 +177,7 @@ def createFakeCatalog(num, bbox, instFluxKeyName, skyWcs=None, refCat=False):
                                                       lsst.afw.table.CoordinateType.PIXEL)
     # Put the fake sources in the minimal catalog.
     schema.addField(instFluxKeyName+"_flux", type="D", doc="post-ISR instFlux")
-    schema.addField(instFluxKeyName+"_fluxSigma", type="D", doc="post-ISR instFlux stddev")
+    schema.addField(instFluxKeyName+"_fluxErr", type="D", doc="post-ISR instFlux stddev")
     schema.addField(instFluxKeyName+"_calFlux", type="D", doc="maggies")
     schema.addField(instFluxKeyName+"_calFluxErr", type="D", doc="maggies stddev")
     schema.addField(instFluxKeyName+"_mag", type="D", doc="magnitude")
@@ -258,7 +258,7 @@ def fillCatalog(schema, num, bbox,
     catalog[xErrKey] = vx
     catalog[yErrKey] = vy
     catalog[instFluxKeyName + '_flux'] = instFlux
-    catalog[instFluxKeyName + '_fluxSigma'] = instFluxErr
+    catalog[instFluxKeyName + '_fluxErr'] = instFluxErr
 
     return catalog
 
