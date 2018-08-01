@@ -33,8 +33,8 @@ std::ostream &operator<<(std::ostream &out, CcdImageKey const &key) {
 void CcdImage::loadCatalog(afw::table::SourceCatalog const &catalog, std::string const &fluxField) {
     auto xKey = catalog.getSchema().find<double>("slot_Centroid_x").key;
     auto yKey = catalog.getSchema().find<double>("slot_Centroid_y").key;
-    auto xsKey = catalog.getSchema().find<float>("slot_Centroid_xSigma").key;
-    auto ysKey = catalog.getSchema().find<float>("slot_Centroid_ySigma").key;
+    auto xsKey = catalog.getSchema().find<float>("slot_Centroid_xErr").key;
+    auto ysKey = catalog.getSchema().find<float>("slot_Centroid_yErr").key;
     auto mxxKey = catalog.getSchema().find<double>("slot_Shape_xx").key;
     auto myyKey = catalog.getSchema().find<double>("slot_Shape_yy").key;
     auto mxyKey = catalog.getSchema().find<double>("slot_Shape_xy").key;

@@ -170,8 +170,8 @@ def createFakeCatalog(num, bbox, instFluxKeyName, skyWcs=None, refCat=False):
     schema = lsst.afw.table.SourceTable.makeMinimalSchema()
     # centroid
     centroidKey = lsst.afw.table.Point2DKey.addFields(schema, "centroid", "centroid", "pixels")
-    xErrKey = schema.addField("centroid_xSigma", type="F")
-    yErrKey = schema.addField("centroid_ySigma", type="F")
+    xErrKey = schema.addField("centroid_xErr", type="F")
+    yErrKey = schema.addField("centroid_yErr", type="F")
     # shape
     shapeKey = lsst.afw.table.QuadrupoleKey.addFields(schema, "shape", "",
                                                       lsst.afw.table.CoordinateType.PIXEL)

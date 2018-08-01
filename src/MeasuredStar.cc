@@ -16,8 +16,8 @@ namespace jointcal {
 /* Interesting fields of the stack catalogs :
 'base_SdssCentroid_x'
 'base_SdssCentroid_y'
-'base_SdssCentroid_xSigma'
-'base_SdssCentroid_ySigma'
+'base_SdssCentroid_xErr'
+'base_SdssCentroid_yErr'
 
 We miss the xy uncertainty term.
 We can cook it up from the sdss shape:
