@@ -131,7 +131,8 @@ class MagnitudeTransfoSpatiallyInvariantTestCase(SpatiallyInvariantTestBase, lss
 class PhotometryTransfoChebyshevTestCase(PhotometryTransfoTestBase, lsst.utils.tests.TestCase):
     def setUp(self):
         super().setUp()
-        self.bbox = lsst.afw.geom.Box2D(lsst.afw.geom.Point2D(-5, -6), lsst.afw.geom.Point2D(7, 8))
+        self.bbox = lsst.afw.geom.Box2D(lsst.afw.geom.Point2D(-5, -6), lsst.afw.geom.Point2D(7, 8),
+                                        invert=False)
         self.order1 = 2
         self.transfo1 = photometryTransfo.PhotometryTransfoChebyshev(self.order1, self.bbox)
         self.order2 = 1

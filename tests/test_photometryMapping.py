@@ -79,7 +79,8 @@ class PhotometryMappingTestCase(PhotometryMappingTestBase, lsst.utils.tests.Test
 class ChipVisitPhotometryMappingTestCase(PhotometryMappingTestBase, lsst.utils.tests.TestCase):
     def setUp(self):
         super(ChipVisitPhotometryMappingTestCase, self).setUp()
-        self.bbox = lsst.afw.geom.Box2D(lsst.afw.geom.Point2D(-5, -6), lsst.afw.geom.Point2D(7, 8))
+        self.bbox = lsst.afw.geom.Box2D(lsst.afw.geom.Point2D(-5, -6), lsst.afw.geom.Point2D(7, 8),
+                                        invert=False)
         self.order = 1
         self.coefficients = np.array([[5, 2], [3, 0]], dtype=float)
         self.chipScale = 2
