@@ -56,7 +56,7 @@ class JointcalTestBase:
         self.other_args = other_args
         self.do_plot = do_plot
         self.log_level = log_level
-        # Signal/Noise (flux/fluxSigma) for sources to be included in the RMS cross-match.
+        # Signal/Noise (flux/fluxErr) for sources to be included in the RMS cross-match.
         # 100 is a balance between good centroids and enough sources.
         self.flux_limit = 100
 

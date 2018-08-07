@@ -170,14 +170,14 @@ def createFakeCatalog(num, bbox, instFluxKeyName, skyWcs=None, refCat=False):
     schema = lsst.afw.table.SourceTable.makeMinimalSchema()
     # centroid
     centroidKey = lsst.afw.table.Point2DKey.addFields(schema, "centroid", "centroid", "pixels")
-    xErrKey = schema.addField("centroid_xSigma", type="F")
-    yErrKey = schema.addField("centroid_ySigma", type="F")
+    xErrKey = schema.addField("centroid_xErr", type="F")
+    yErrKey = schema.addField("centroid_yErr", type="F")
     # shape
     shapeKey = lsst.afw.table.QuadrupoleKey.addFields(schema, "shape", "",
                                                       lsst.afw.table.CoordinateType.PIXEL)
     # Put the fake sources in the minimal catalog.
     schema.addField(instFluxKeyName+"_flux", type="D", doc="post-ISR instFlux")
-    schema.addField(instFluxKeyName+"_fluxSigma", type="D", doc="post-ISR instFlux stddev")
+    schema.addField(instFluxKeyName+"_fluxErr", type="D", doc="post-ISR instFlux stddev")
     schema.addField(instFluxKeyName+"_calFlux", type="D", doc="maggies")
     schema.addField(instFluxKeyName+"_calFluxErr", type="D", doc="maggies stddev")
     schema.addField(instFluxKeyName+"_mag", type="D", doc="magnitude")
@@ -258,7 +258,7 @@ def fillCatalog(schema, num, bbox,
     catalog[xErrKey] = vx
     catalog[yErrKey] = vy
     catalog[instFluxKeyName + '_flux'] = instFlux
-    catalog[instFluxKeyName + '_fluxSigma'] = instFluxErr
+    catalog[instFluxKeyName + '_fluxErr'] = instFluxErr
 
     return catalog
 
