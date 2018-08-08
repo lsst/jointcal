@@ -648,7 +648,6 @@ class JointcalTask(pipeBase.CmdLineTask):
 
         chi2 = self._iterate_fit(associations,
                                  fit,
-                                 model,
                                  self.config.maxPhotometrySteps,
                                  "photometry",
                                  "Model Fluxes",
@@ -737,7 +736,6 @@ class JointcalTask(pipeBase.CmdLineTask):
 
         chi2 = self._iterate_fit(associations,
                                  fit,
-                                 model,
                                  self.config.maxAstrometrySteps,
                                  "astrometry",
                                  "Distortions Positions",
@@ -761,36 +759,41 @@ class JointcalTask(pipeBase.CmdLineTask):
                 self.log.warn("ccdImage %s has only %s RefStars (desired %s)",
                               ccdImage.getName(), nRefStars, self.config.minRefStarsPerCcd)
 
-    def _iterate_fit(self, associations, fit, model, max_steps, name, whatToFit, doRankUpdate=True,
+    def _iterate_fit(self, associations, fit, max_steps, name, whatToFit, doRankUpdate=True,
                      doLineSearch=False):
         """Run fit.minimize up to max_steps times, returning the final chi2."""
 
         dumpMatrixFile = "%s_postinit" % name if self.config.writeInitMatrix else ""
         for i in range(max_steps):
             # outlier removal at 5 sigma.
-            r = fit.minimize(whatToFit,
-                             self.config.outlierRejectSigma,
-                             doRankUpdate=doRankUpdate,
-                             doLineSearch=doLineSearch,
-                             dumpMatrixFile=dumpMatrixFile)
+            result = fit.minimize(whatToFit,
+                                  self.config.outlierRejectSigma,
+                                  doRankUpdate=doRankUpdate,
+                                  doLineSearch=doLineSearch,
+                                  dumpMatrixFile=dumpMatrixFile)
             dumpMatrixFile = ""  # clear it so we don't write the matrix again.
             chi2 = fit.computeChi2()
             self._check_stars(associations)
             if not np.isfinite(chi2.chi2):
                 raise FloatingPointError('Fit iteration chi2 is invalid: %s'%chi2)
             self.log.info(str(chi2))
-            if r == MinimizeResult.Converged:
+            if result == MinimizeResult.Converged:
                 if doRankUpdate:
                     self.log.debug("fit has converged - no more outliers - redo minimization "
                                    "one more time in case we have lost accuracy in rank update.")
                     # Redo minimization one more time in case we have lost accuracy in rank update
-                    r = fit.minimize(whatToFit, 5)  # outliers removal at 5 sigma.
+                    result = fit.minimize(whatToFit, 5)  # outliers removal at 5 sigma.
                 chi2 = fit.computeChi2()
                 self.log.info("Fit completed with: %s", str(chi2))
+
+                # log a message for a large final chi2, TODO: DM-15247 for something better
+                if chi2.chi2/chi2.ndof >= 4.0:
+                    self.log.error("Potentially bad fit: High chi-squared/ndof.")
+
                 break
-            elif r == MinimizeResult.Chi2Increased:
+            elif result == MinimizeResult.Chi2Increased:
                 self.log.warn("still some ouliers but chi2 increases - retry")
-            elif r == MinimizeResult.Failed:
+            elif result == MinimizeResult.Failed:
                 raise RuntimeError("Chi2 minimization failure, cannot complete fit.")
             else:
                 raise RuntimeError("Unxepected return code from minimize().")
