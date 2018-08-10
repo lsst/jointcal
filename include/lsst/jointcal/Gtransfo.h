@@ -33,8 +33,8 @@ class GtransfoLin;
     transformation". If a transfo has an analytical inverse, then
     providing inverseTransfo is obviously a very good idea. Before
     resorting to inverseTransfo, consider using
-    StarMatchList::inverseTransfo().  GtransfoLin::invert() and
-    TanPix2RaDec::invert() exist.
+    StarMatchList::inverseTransfo().  GtransfoLin::inverted() and
+    TanPix2RaDec::inverted() exist.
     The classes also provide derivation and linear approximation.
 
 */
@@ -401,8 +401,8 @@ public:
     //!  enables to combine linear tranformations: T1=T2*T3 is legal.
     GtransfoLin operator*(GtransfoLin const &right) const;
 
-    //! returns the inverse: T1 = T2.invert();
-    GtransfoLin invert() const;
+    //! returns the inverse: T1 = T2.inverted();
+    GtransfoLin inverted() const;
 
     // useful?    double jacobian(const double x, const double y) const { return determinant();}
 
@@ -598,7 +598,7 @@ public:
     std::unique_ptr<Gtransfo> composeAndReduce(GtransfoLin const &right) const;
 
     //! approximate inverse : it ignores corrections;
-    TanRaDec2Pix invert() const;
+    TanRaDec2Pix inverted() const;
 
     //! Overload the "generic routine" (available for all Gtransfo types
     std::unique_ptr<Gtransfo> roughInverse(const Frame &region) const;
@@ -676,7 +676,7 @@ public:
     void transformPosAndErrors(const FatPoint &in, FatPoint &out) const;
 
     //! exact typed inverse:
-    TanPix2RaDec invert() const;
+    TanPix2RaDec inverted() const;
 
     //! Overload the "generic routine" (available for all Gtransfo types
     std::unique_ptr<Gtransfo> roughInverse(const Frame &region) const;

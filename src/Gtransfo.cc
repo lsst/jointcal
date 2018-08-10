@@ -169,7 +169,7 @@ std::unique_ptr<Gtransfo> Gtransfo::roughInverse(const Frame &region) const {
     Point centerIn = apply(centerOut);
     GtransfoLin der;
     computeDerivative(centerOut, der, std::sqrt(region.getArea()) / 5.);
-    der = der.invert();
+    der = der.inverted();
     der = GtransfoLinShift(centerOut.x, centerOut.y) * der * GtransfoLinShift(-centerIn.x, -centerIn.y);
     return std::unique_ptr<Gtransfo>(new GtransfoLin(der));
 }
@@ -300,7 +300,7 @@ void GtransfoInverse::apply(const double xIn, const double yIn, double &xOut, do
         loop++;
         Point inGuess = _direct->apply(outGuess);
         _direct->computeDerivative(outGuess, directDer);
-        reverseDer = directDer.invert();
+        reverseDer = directDer.inverted();
         double xShift, yShift;
         reverseDer.apply(xIn - inGuess.x, yIn - inGuess.y, xShift, yShift);
         outGuess.x += xShift;
@@ -1175,7 +1175,7 @@ void GtransfoLin::computeDerivative(Point const &, GtransfoLin &derivative, cons
 
 GtransfoLin GtransfoLin::linearApproximation(Point const &, const double) const { return *this; }
 
-GtransfoLin GtransfoLin::invert() const {
+GtransfoLin GtransfoLin::inverted() const {
     //
     //   (T1,M1) * (T2,M2) = 1 i.e (0,1) implies
     //   T1 = -M1 * T2
@@ -1202,7 +1202,7 @@ GtransfoLin GtransfoLin::invert() const {
 }
 
 std::unique_ptr<Gtransfo> GtransfoLin::inverseTransfo(const double, const Frame &) const {
-    return std::unique_ptr<Gtransfo>(new GtransfoLin(invert()));
+    return std::unique_ptr<Gtransfo>(new GtransfoLin(inverted()));
 }
 
 double GtransfoLinRot::fit(StarMatchList const &) {
@@ -1364,7 +1364,7 @@ Point BaseTanWcs::getCrPix() const {
 
        so that CrPix is the point which transforms to (0,0)
     */
-    const GtransfoLin inverse = linPix2Tan.invert();
+    const GtransfoLin inverse = linPix2Tan.inverted();
     return Point(inverse.Dx(), inverse.Dy());
 }
 
@@ -1411,21 +1411,21 @@ TanPix2RaDec TanPix2RaDec::operator*(GtransfoLin const &right) const {
     return result;
 }
 
-TanRaDec2Pix TanPix2RaDec::invert() const {
+TanRaDec2Pix TanPix2RaDec::inverted() const {
     if (corr != nullptr) {
         LOGL_WARN(_log, "You are inverting a TanPix2RaDec with corrections.");
         LOGL_WARN(_log, "The inverse you get ignores the corrections!");
     }
-    return TanRaDec2Pix(getLinPart().invert(), getTangentPoint());
+    return TanRaDec2Pix(getLinPart().inverted(), getTangentPoint());
 }
 
 std::unique_ptr<Gtransfo> TanPix2RaDec::roughInverse(const Frame &) const {
-    return std::unique_ptr<Gtransfo>(new TanRaDec2Pix(getLinPart().invert(), getTangentPoint()));
+    return std::unique_ptr<Gtransfo>(new TanRaDec2Pix(getLinPart().inverted(), getTangentPoint()));
 }
 
 std::unique_ptr<Gtransfo> TanPix2RaDec::inverseTransfo(const double precision, const Frame &region) const {
     if (!corr)
-        return std::unique_ptr<Gtransfo>(new TanRaDec2Pix(getLinPart().invert(), getTangentPoint()));
+        return std::unique_ptr<Gtransfo>(new TanRaDec2Pix(getLinPart().inverted(), getTangentPoint()));
     else
         return std::unique_ptr<Gtransfo>(new GtransfoInverse(this, precision, region));
 }
@@ -1489,7 +1489,7 @@ TanSipPix2RaDec::TanSipPix2RaDec() : BaseTanWcs(GtransfoLin(), Point(0, 0), null
 std::unique_ptr<Gtransfo> TanPix2RaDec::roughInverse(const Frame &region) const
 {
   if (&region) {}
-  return std::unique_ptr<Gtransfo>(new TanRaDec2Pix(getLinPart().invert(),getTangentPoint()));
+  return std::unique_ptr<Gtransfo>(new TanRaDec2Pix(getLinPart().inverted(),getTangentPoint()));
 }
 #endif
 
@@ -1640,7 +1640,9 @@ void TanRaDec2Pix::apply(const double xIn, const double yIn, double &xOut, doubl
     linTan2Pix.apply(l, m, xOut, yOut);
 }
 
-TanPix2RaDec TanRaDec2Pix::invert() const { return TanPix2RaDec(getLinPart().invert(), getTangentPoint()); }
+TanPix2RaDec TanRaDec2Pix::inverted() const {
+    return TanPix2RaDec(getLinPart().inverted(), getTangentPoint());
+}
 
 void TanRaDec2Pix::dump(ostream &stream) const {
     Point tp = getTangentPoint();
@@ -1648,11 +1650,11 @@ void TanRaDec2Pix::dump(ostream &stream) const {
 }
 
 std::unique_ptr<Gtransfo> TanRaDec2Pix::roughInverse(const Frame &) const {
-    return std::unique_ptr<Gtransfo>(new TanPix2RaDec(getLinPart().invert(), getTangentPoint()));
+    return std::unique_ptr<Gtransfo>(new TanPix2RaDec(getLinPart().inverted(), getTangentPoint()));
 }
 
 std::unique_ptr<Gtransfo> TanRaDec2Pix::inverseTransfo(const double, const Frame &) const {
-    return std::unique_ptr<Gtransfo>(new TanPix2RaDec(getLinPart().invert(), getTangentPoint()));
+    return std::unique_ptr<Gtransfo>(new TanPix2RaDec(getLinPart().inverted(), getTangentPoint()));
 }
 
 std::unique_ptr<Gtransfo> TanRaDec2Pix::clone() const {
