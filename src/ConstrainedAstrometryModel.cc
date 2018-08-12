@@ -72,8 +72,8 @@ ConstrainedAstrometryModel::ConstrainedAstrometryModel(
             // construct the chip gtransfo by approximating the pixel->Focal afw::geom::Transform.
             GtransfoPoly pol = GtransfoPoly(pixelsToFocal, frame, chipOrder);
             GtransfoLin shiftAndNormalize = normalizeCoordinatesTransfo(frame);
-            _chipMap[chip] =
-                    std::make_shared<SimplePolyMapping>(shiftAndNormalize, pol * shiftAndNormalize.invert());
+            _chipMap[chip] = std::make_shared<SimplePolyMapping>(shiftAndNormalize,
+                                                                 pol * shiftAndNormalize.inverted());
         }
     }
 

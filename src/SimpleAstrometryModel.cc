@@ -64,7 +64,7 @@ SimpleAstrometryModel::SimpleAstrometryModel(CcdImageList const &ccdImageList,
             GtransfoLin shiftAndNormalize = normalizeCoordinatesTransfo(frame);
             if (initFromWcs) {
                 pol = GtransfoPoly(im.getPix2TangentPlane(), frame, order);
-                pol = pol * shiftAndNormalize.invert();
+                pol = pol * shiftAndNormalize.inverted();
             }
             _myMap[im.getHashKey()] =
                     std::unique_ptr<SimpleGtransfoMapping>(new SimplePolyMapping(shiftAndNormalize, pol));
