@@ -46,6 +46,7 @@ class JointcalTestCFHTMinimal(jointcalTestBase.JointcalTestBase, lsst.utils.test
 
     def test_jointcalTask_2_visits_photometry(self):
         self.config = lsst.jointcal.jointcal.JointcalConfig()
+        self.config.photometryModel = "simpleFlux"
         self.config.photometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
         self.config.doAstrometry = False
         self.config.writeInitMatrix = True  # write Hessian/gradient files
@@ -102,6 +103,7 @@ class JointcalTestCFHTMinimal(jointcalTestBase.JointcalTestBase, lsst.utils.test
         """Raise an exception if there is no data to process."""
         self.config = lsst.jointcal.jointcal.JointcalConfig()
         self.config.setDefaults()
+        self.config.photometryModel = "simpleFlux"
         self.config.photometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
         self.config.sourceSelector['astrometry'].minSnr = 10000
         self.config.doAstrometry = False
@@ -123,6 +125,7 @@ class JointcalTestCFHTMinimal(jointcalTestBase.JointcalTestBase, lsst.utils.test
         """exitStatus=1 if there is no data to process."""
         self.config = lsst.jointcal.jointcal.JointcalConfig()
         self.config.setDefaults()
+        self.config.photometryModel = "simpleFlux"
         self.config.photometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
         self.config.sourceSelector['astrometry'].minSnr = 10000
         self.config.doAstrometry = False
@@ -144,6 +147,7 @@ class JointcalTestCFHTMinimal(jointcalTestBase.JointcalTestBase, lsst.utils.test
         """exitStatus=1 if there is no data to process."""
         self.config = lsst.jointcal.jointcal.JointcalConfig()
         self.config.setDefaults()
+        self.config.photometryModel = "simpleFlux"
         self.config.photometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
         self.config.sourceSelector['astrometry'].minSnr = 10000
         self.config.doAstrometry = False

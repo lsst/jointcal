@@ -181,14 +181,14 @@ class JointcalConfig(pexConfig.Config):
     astrometryModel = pexConfig.ChoiceField(
         doc="Type of model to fit to astrometry",
         dtype=str,
-        default="simple",
+        default="constrained",
         allowed={"simple": "One polynomial per ccd",
                  "constrained": "One polynomial per ccd, and one polynomial per visit"}
     )
     photometryModel = pexConfig.ChoiceField(
         doc="Type of model to fit to photometry",
         dtype=str,
-        default="simpleFlux",
+        default="constrainedMagnitude",
         allowed={"simpleFlux": "One constant zeropoint per ccd and visit, fitting in flux space.",
                  "constrainedFlux": "Constrained zeropoint per ccd, and one polynomial per visit,"
                  " fitting in flux space.",

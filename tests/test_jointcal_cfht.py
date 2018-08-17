@@ -51,6 +51,8 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
     def test_jointcalTask_2_visits(self):
         self.config = lsst.jointcal.jointcal.JointcalConfig()
         self.config.photometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
+        self.config.astrometryModel = "simple"
+        self.config.photometryModel = "simpleFlux"
         self.config.astrometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
         self.config.sourceSelector['astrometry'].badFlags.append("base_PixelFlags_flag_interpolated")
 
