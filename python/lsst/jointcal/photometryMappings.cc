@@ -81,6 +81,8 @@ void declareChipVisitPhotometryMapping(py::module &mod) {
 
     cls.def("getChipMapping", &ChipVisitPhotometryMapping::getChipMapping);
     cls.def("getVisitMapping", &ChipVisitPhotometryMapping::getVisitMapping);
+    cls.def("getNParChip", &ChipVisitPhotometryMapping::getNParChip);
+    cls.def("getNParVisit", &ChipVisitPhotometryMapping::getNParVisit);
 }
 
 void declareChipVisitFluxMapping(py::module &mod) {

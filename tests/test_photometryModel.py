@@ -188,13 +188,17 @@ class ConstrainedPhotometryModelTestCase(PhotometryModelTestBase):
         # in `test_assignIndices()`.
         # createTwoFakeCcdImages() always uses the same two visitIds,
         # so there will be 2 visits total here.
-        struct1 = lsst.jointcal.testUtils.createTwoFakeCcdImages(100, 100, seed=100, fakeCcdId=12)
-        ccdImageList = struct1.ccdImageList
-        struct2 = lsst.jointcal.testUtils.createTwoFakeCcdImages(100, 100, seed=101, fakeCcdId=13)
-        ccdImageList.extend(struct2.ccdImageList)
+        struct1 = lsst.jointcal.testUtils.createTwoFakeCcdImages(100, 100, seed=100, fakeCcdId=12,
+                                                                 photoCalibMean1=100.0,
+                                                                 photoCalibMean2=120.0)
+        self.ccdImageList2 = struct1.ccdImageList
+        struct2 = lsst.jointcal.testUtils.createTwoFakeCcdImages(100, 100, seed=101, fakeCcdId=13,
+                                                                 photoCalibMean1=101.0,
+                                                                 photoCalibMean2=121.0)
+        self.ccdImageList2.extend(struct2.ccdImageList)
         camera = struct1.camera  # the camera is the same in both structs
         focalPlaneBBox = camera.getFpBBox()
-        self.model2 = Model(ccdImageList, focalPlaneBBox, self.visitOrder)
+        self.model2 = Model(self.ccdImageList2, focalPlaneBBox, self.visitOrder)
 
     def test_getNpar(self):
         """
@@ -233,6 +237,24 @@ class ConstrainedPhotometryModelTestCase(PhotometryModelTestBase):
         index = self.model2.assignIndices("ModelChip", self.firstIndex)
         self.assertEqual(index, expect)
 
+    def _testConstructor(self, expectVisit, expectChips):
+        """Post-construction, the ChipTransfos should be the PhotoCalib mean of
+        the first visit's ccds, and the VisitTransfos should be the identity.
+        """
+        # Identify to the model that we're fitting both components.
+        self.model2.assignIndices("Model", self.firstIndex)
+
+        # check the visitMappings
+        for ccdImage in self.ccdImageList2:
+            result = self.model2.getMapping(ccdImage).getVisitMapping().getTransfo().getParameters()
+            self.assertFloatsEqual(result, expectVisit, msg=ccdImage.getName())
+
+        # check the chipMappings
+        for ccdImage, expect in zip(self.ccdImageList2, expectChips):
+            result = self.model2.getMapping(ccdImage).getChipMapping().getTransfo().getParameters()
+            # almost equal because log() may have been involved in the math
+            self.assertFloatsAlmostEqual(result, expect, msg=ccdImage.getName())
+
 
 class ConstrainedFluxModelTestCase(ConstrainedPhotometryModelTestCase,
                                    FluxTestBase,
@@ -247,6 +269,17 @@ class ConstrainedFluxModelTestCase(ConstrainedPhotometryModelTestCase,
         self.model.offsetParams(self.delta)
 
         self._initModel2(lsst.jointcal.ConstrainedFluxModel)
+
+    def testConstructor(self):
+        expectVisit = np.zeros(int(getNParametersPolynomial(self.visitOrder)))
+        expectVisit[0] = 1
+        # chipMappings are fixed per-chip, and thus are
+        # shared between the first pair and second pair of fake ccdImages
+        expectChips = [self.ccdImageList2[0].getPhotoCalib().getCalibrationMean(),
+                       self.ccdImageList2[0].getPhotoCalib().getCalibrationMean(),
+                       self.ccdImageList2[2].getPhotoCalib().getCalibrationMean(),
+                       self.ccdImageList2[2].getPhotoCalib().getCalibrationMean()]
+        self._testConstructor(expectVisit, expectChips)
 
 
 class ConstrainedMagnitudeModelTestCase(ConstrainedPhotometryModelTestCase,
@@ -264,6 +297,20 @@ class ConstrainedMagnitudeModelTestCase(ConstrainedPhotometryModelTestCase,
         self._initModel2(lsst.jointcal.ConstrainedMagnitudeModel)
 
         self.useMagnitude = True
+
+    def testConstructor(self):
+        expectVisit = np.zeros(int(getNParametersPolynomial(self.visitOrder)))
+
+        def fluxToMag(flux):
+            return -2.5*np.log10(flux)
+
+        # chipMappings are fixed per-chip, and thus are
+        # shared between the first pair and second pair of fake ccdImages
+        expectChips = [fluxToMag(self.ccdImageList2[0].getPhotoCalib().getCalibrationMean()),
+                       fluxToMag(self.ccdImageList2[0].getPhotoCalib().getCalibrationMean()),
+                       fluxToMag(self.ccdImageList2[2].getPhotoCalib().getCalibrationMean()),
+                       fluxToMag(self.ccdImageList2[2].getPhotoCalib().getCalibrationMean())]
+        self._testConstructor(expectVisit, expectChips)
 
 
 class MemoryTester(lsst.utils.tests.MemoryTestCase):
