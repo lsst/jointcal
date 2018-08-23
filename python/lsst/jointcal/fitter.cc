@@ -68,6 +68,7 @@ PYBIND11_MODULE(fitter, mod) {
     py::enum_<MinimizeResult>(mod, "MinimizeResult")
             .value("Converged", MinimizeResult::Converged)
             .value("Chi2Increased", MinimizeResult::Chi2Increased)
+            .value("NonFinite", MinimizeResult::NonFinite)
             .value("Failed", MinimizeResult::Failed);
 
     declareFitterBase(mod);

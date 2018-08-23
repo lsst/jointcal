@@ -1,3 +1,5 @@
+import abc
+
 import numpy as np
 
 import unittest
@@ -128,15 +130,20 @@ class MagnitudeTransfoSpatiallyInvariantTestCase(SpatiallyInvariantTestBase, lss
         self._test_computeParameterDerivatives(1.0)
 
 
-class PhotometryTransfoChebyshevTestCase(PhotometryTransfoTestBase, lsst.utils.tests.TestCase):
+class PhotometryTransfoChebyshevTestCase(PhotometryTransfoTestBase, abc.ABC):
     def setUp(self):
+        """Call this first, then construct self.transfo1 from self.order1,
+        and self.transfo2 from self.coefficients.
+        """
         super().setUp()
         self.bbox = lsst.afw.geom.Box2D(lsst.afw.geom.Point2D(-5, -6), lsst.afw.geom.Point2D(7, 8))
         self.order1 = 2
-        self.transfo1 = photometryTransfo.PhotometryTransfoChebyshev(self.order1, self.bbox)
-        self.order2 = 1
         self.coefficients = np.array([[5, 3], [4, 0]], dtype=float)
-        self.transfo2 = photometryTransfo.PhotometryTransfoChebyshev(self.coefficients, self.bbox)
+
+        # self.transfo1 will have 6 parameters, by construction
+        self.delta = np.arange(6, dtype=float)
+        # make one of them have opposite sign to check +/- consistency
+        self.delta[0] = -self.delta[0]
 
     def test_getNpar(self):
         self.assertEqual(self.transfo1.getNpar(), 6)
@@ -158,36 +165,29 @@ class PhotometryTransfoChebyshevTestCase(PhotometryTransfoTestBase, lsst.utils.t
                 result += self.coefficients[j, i]*Tx*Ty
         return result
 
-    def test_transform(self):
-        result = self.transfo1.transform(self.point[0], self.point[1], self.value)
-        self.assertEqual(result, self.value)  # transfo1 is the identity
+    def _test_offsetParams(self, expect):
+        """Test offsetting; note that offsetParams offsets by `-delta`.
 
-        result = self.transfo2.transform(self.point[0], self.point[1], self.value)
-        expect = self.value*self._evaluate_chebyshev(self.point[0], self.point[1])
-        self.assertEqual(result, expect)
-
-    def test_offsetParams(self):
-        """Test offsetting; note that offsetParams offsets by `-delta`."""
+        Parameters
+        ----------
+        expect1 : `numpy.ndarray`, (N,2)
+            Expected coefficients from an offset by 0.
+        expect2 : `numpy.ndarray`, (N,2)
+            Expected coefficients from an offset by self.delta.
+        """
+        # first offset by all zeros: nothing should change
         delta = np.zeros(self.transfo1.getNpar(), dtype=float)
-        expect = np.zeros((self.order1+1, self.order1+1), dtype=float)
-        expect[0, 0] = 1
         self.transfo1.offsetParams(delta)
-        # nothing should have changed if we transform a delta of 0
         self.assertFloatsAlmostEqual(expect, self.transfo1.getCoefficients())
 
-        delta[0] = 1
-        delta[1] = -2
-        delta[2] = -3
-        delta[3] = -4
-        delta[4] = -5
-        delta[5] = -6
-        expect[0, 0] = 0
-        expect[0, 1] = 2
-        expect[0, 2] = 3
-        expect[1, 0] = 4
-        expect[1, 1] = 5
-        expect[2, 0] = 6
-        self.transfo1.offsetParams(delta)
+        # now offset by self.delta
+        expect[0, 0] -= self.delta[0]
+        expect[0, 1] -= self.delta[1]
+        expect[0, 2] -= self.delta[2]
+        expect[1, 0] -= self.delta[3]
+        expect[1, 1] -= self.delta[4]
+        expect[2, 0] -= self.delta[5]
+        self.transfo1.offsetParams(self.delta)
         self.assertFloatsAlmostEqual(expect, self.transfo1.getCoefficients())
 
     def test_clone(self):
@@ -200,6 +200,11 @@ class PhotometryTransfoChebyshevTestCase(PhotometryTransfoTestBase, lsst.utils.t
         self.assertEqual(self.transfo2.getOrder(), clone2.getOrder())
         self.assertEqual(self.transfo2.getBBox(), clone2.getBBox())
 
+    @abc.abstractmethod
+    def _computeChebyshevDerivative(self, Tx, Ty, value):
+        """Return the derivative of chebyshev component Tx, Ty."""
+        pass
+
     def test_computeParameterDerivatives(self):
         cx = (self.bbox.getMinX() + self.bbox.getMaxX())/2.0
         cy = (self.bbox.getMinY() + self.bbox.getMaxY())/2.0
@@ -211,8 +216,55 @@ class PhotometryTransfoChebyshevTestCase(PhotometryTransfoTestBase, lsst.utils.t
         expect = []
         for j in range(len(Ty)):
             for i in range(0, self.order1-j+1):
-                expect.append(Ty[j]*Tx[i]*self.value)
+                expect.append(self._computeChebyshevDerivative(Ty[j], Tx[i], self.value))
         self.assertFloatsAlmostEqual(np.array(expect), result)
+
+
+class FluxTransfoChebyshevTestCase(PhotometryTransfoChebyshevTestCase, lsst.utils.tests.TestCase):
+    def setUp(self):
+        super().setUp()
+        self.transfo1 = photometryTransfo.FluxTransfoChebyshev(self.order1, self.bbox)
+        self.transfo2 = photometryTransfo.FluxTransfoChebyshev(self.coefficients, self.bbox)
+
+    def test_transform(self):
+        result = self.transfo1.transform(self.point[0], self.point[1], self.value)
+        self.assertEqual(result, self.value)  # transfo1 is the identity
+
+        result = self.transfo2.transform(self.point[0], self.point[1], self.value)
+        expect = self.value*self._evaluate_chebyshev(self.point[0], self.point[1])
+        self.assertEqual(result, expect)
+
+    def test_offsetParams(self):
+        # an offset by 0 means we will still have 1 only in the 0th parameter
+        expect = np.zeros((self.order1+1, self.order1+1), dtype=float)
+        expect[0, 0] = 1
+        self._test_offsetParams(expect)
+
+    def _computeChebyshevDerivative(self, x, y, value):
+        return x * y * value
+
+
+class MagnitudeTransfoChebyshevTestCase(PhotometryTransfoChebyshevTestCase, lsst.utils.tests.TestCase):
+    def setUp(self):
+        super().setUp()
+        self.transfo1 = photometryTransfo.MagnitudeTransfoChebyshev(self.order1, self.bbox)
+        self.transfo2 = photometryTransfo.MagnitudeTransfoChebyshev(self.coefficients, self.bbox)
+
+    def test_transform(self):
+        result = self.transfo1.transform(self.point[0], self.point[1], self.value)
+        self.assertEqual(result, self.value)  # transfo1 is the identity
+
+        result = self.transfo2.transform(self.point[0], self.point[1], self.value)
+        expect = self.value + self._evaluate_chebyshev(self.point[0], self.point[1])
+        self.assertEqual(result, expect)
+
+    def test_offsetParams(self):
+        # an offset by 0 means all parameters still 0
+        expect = np.zeros((self.order1+1, self.order1+1), dtype=float)
+        self._test_offsetParams(expect)
+
+    def _computeChebyshevDerivative(self, x, y, value):
+        return x * y
 
 
 class MemoryTester(lsst.utils.tests.MemoryTestCase):

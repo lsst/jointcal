@@ -1,5 +1,6 @@
 import numpy as np
 
+import abc
 import unittest
 import lsst.utils.tests
 
@@ -21,8 +22,8 @@ CHEBYSHEV_T = [
 
 class PhotometryMappingTestBase:
     def setUp(self):
-        self.instFlux = 5.0
-        self.instFluxErr = 2.0
+        self.value = 5.0
+        self.valueErr = 2.0
 
         baseStar0 = lsst.jointcal.star.BaseStar(0, 0, 1, 2)
         self.star0 = lsst.jointcal.star.MeasuredStar(baseStar0)
@@ -47,9 +48,9 @@ class PhotometryMappingTestCase(PhotometryMappingTestBase, lsst.utils.tests.Test
         self.mapping.offsetParams(delta)
         self.assertFloatsAlmostEqual(expect, self.mapping.getTransfo().getParameters())
 
-    def test_transformFlux(self):
-        result = self.mapping.transform(self.star0, self.instFlux)
-        self.assertEqual(result, self.instFlux*self.scale)
+    def test_transform(self):
+        result = self.mapping.transform(self.star0, self.value)
+        self.assertEqual(result, self.value*self.scale)
 
     def test_offsetParams(self):
         """Test offsetting; note that offsetParams offsets by `-delta`."""
@@ -60,14 +61,14 @@ class PhotometryMappingTestCase(PhotometryMappingTestBase, lsst.utils.tests.Test
 
     def test_computeParameterDerivatives(self):
         """Test that the derivative of a spatially invariant transform is always the same."""
-        result = self.mapping.computeParameterDerivatives(self.star0, self.instFlux)
-        self.assertEqual(self.instFlux, result)
-        result = self.mapping.computeParameterDerivatives(self.star1, self.instFlux)
-        self.assertEqual(self.instFlux, result)
-        transfo = lsst.jointcal.photometryTransfo.FluxTransfoSpatiallyInvariant(1000.0)
-        mapping = lsst.jointcal.photometryMappings.PhotometryMapping(transfo)
-        result = mapping.computeParameterDerivatives(self.star0, self.instFlux)
-        self.assertEqual(self.instFlux, result)
+        result = self.mapping.computeParameterDerivatives(self.star0, self.value)
+        self.assertEqual(self.value, result)
+        result = self.mapping.computeParameterDerivatives(self.star1, self.value)
+        self.assertEqual(self.value, result)
+        transfo = lsst.jointcal.FluxTransfoSpatiallyInvariant(1000.0)
+        mapping = lsst.jointcal.PhotometryMapping(transfo)
+        result = mapping.computeParameterDerivatives(self.star0, self.value)
+        self.assertEqual(self.value, result)
 
     def test_getMappingIndices(self):
         """A mapping with one invariant transfo has one index"""
@@ -76,9 +77,9 @@ class PhotometryMappingTestCase(PhotometryMappingTestBase, lsst.utils.tests.Test
         self.assertEqual(result, [5])
 
 
-class ChipVisitPhotometryMappingTestCase(PhotometryMappingTestBase, lsst.utils.tests.TestCase):
+class ChipVisitPhotometryMappingTestCase(PhotometryMappingTestBase, abc.ABC):
     def setUp(self):
-        super(ChipVisitPhotometryMappingTestCase, self).setUp()
+        super().setUp()
         self.bbox = lsst.afw.geom.Box2D(lsst.afw.geom.Point2D(-5, -6), lsst.afw.geom.Point2D(7, 8))
         self.order = 1
         self.coefficients = np.array([[5, 2], [3, 0]], dtype=float)
@@ -86,26 +87,43 @@ class ChipVisitPhotometryMappingTestCase(PhotometryMappingTestBase, lsst.utils.t
         self.visitScale = 3
         self.chipIndex = 5
         self.visitIndex = 1000
-        chipTransfo = lsst.jointcal.photometryTransfo.FluxTransfoSpatiallyInvariant(self.chipScale)
-        chipMapping = lsst.jointcal.photometryMappings.PhotometryMapping(chipTransfo)
+
+    def _initMappings(self, InvariantTransfo, ChebyTransfo, ChipVisitMapping):
+        """Initialize self.mappingInvariants and self.mappingCheby.
+        Call after setUp().
+
+        Parameters
+        ----------
+        InvariantTransfo : `PhotometryTransfoSpatiallyInvariant`-type
+            The PhotometryTransfoSpatiallyInvariant-derived class to construct
+            invariant transforms for.
+        ChebyTransfo : `PhotometryTransfo`-type
+            The PhotometryTransfoChebyshev-derived class to construct
+            2d transforms for.
+        ChipVisitMapping : `PhotometryMapping`-type
+            The PhotometryMapping-derived class to construct for both mappings.
+        """
+        # self.mappingInvariants has two trivial transforms in it, to serve
+        # as a simpler test of functionality.
+        chipTransfo = InvariantTransfo(self.chipScale)
+        chipMapping = lsst.jointcal.PhotometryMapping(chipTransfo)
         chipMapping.setIndex(self.chipIndex)
-        visitTransfo = lsst.jointcal.photometryTransfo.FluxTransfoSpatiallyInvariant(self.visitScale)
-        visitMapping = lsst.jointcal.photometryMappings.PhotometryMapping(visitTransfo)
+        visitTransfo = InvariantTransfo(self.visitScale)
+        visitMapping = lsst.jointcal.PhotometryMapping(visitTransfo)
         visitMapping.setIndex(self.visitIndex)
-        self.mappingInvariants = lsst.jointcal.photometryMappings.ChipVisitPhotometryMapping(chipMapping,
-                                                                                             visitMapping)
+        self.mappingInvariants = ChipVisitMapping(chipMapping, visitMapping)
         self.mappingInvariants.setWhatToFit(True, True)  # default to fitting both
 
-        # Have to make a new chipMapping, as it stores shared_ptr to the transfo.
-        chipTransfo = lsst.jointcal.photometryTransfo.FluxTransfoSpatiallyInvariant(self.chipScale)
-        chipMapping = lsst.jointcal.photometryMappings.PhotometryMapping(chipTransfo)
+        # self.mappingCheby is a more realistic mapping, with two components:
+        # spatially-invariant per chip and a chebyshev per visit.
+        # Need a new chipMapping, as it stores shared_ptr to the transfo.
+        chipTransfo = InvariantTransfo(self.chipScale)
+        chipMapping = lsst.jointcal.PhotometryMapping(chipTransfo)
         chipMapping.setIndex(self.chipIndex)
-        visitTransfo2 = lsst.jointcal.photometryTransfo.PhotometryTransfoChebyshev(self.coefficients,
-                                                                                   self.bbox)
-        visitMapping2 = lsst.jointcal.photometryMappings.PhotometryMapping(visitTransfo2)
+        visitTransfo2 = ChebyTransfo(self.coefficients, self.bbox)
+        visitMapping2 = lsst.jointcal.PhotometryMapping(visitTransfo2)
         visitMapping2.setIndex(self.visitIndex)
-        self.mappingCheby = lsst.jointcal.photometryMappings.ChipVisitPhotometryMapping(chipMapping,
-                                                                                        visitMapping2)
+        self.mappingCheby = ChipVisitMapping(chipMapping, visitMapping2)
         self.mappingCheby.setWhatToFit(True, True)  # default to fitting both
 
     def test_getNpar(self):
@@ -130,20 +148,6 @@ class ChipVisitPhotometryMappingTestCase(PhotometryMappingTestBase, lsst.utils.t
                 result += self.coefficients[j, i]*Tx*Ty
         return result
 
-    def test_transformFlux(self):
-        result = self.mappingInvariants.transform(self.star0, self.instFlux)
-        self.assertEqual(result, self.instFlux*self.chipScale*self.visitScale)
-
-        result = self.mappingCheby.transform(self.star0, self.instFlux)
-        expect = self.instFlux*self.chipScale*self._evaluate_chebyshev(self.star0.getXFocal(),
-                                                                       self.star0.getYFocal())
-        self.assertEqual(result, expect)
-
-        result = self.mappingCheby.transform(self.star1, self.instFlux)
-        expect = self.instFlux*self.chipScale*self._evaluate_chebyshev(self.star1.getXFocal(),
-                                                                       self.star1.getYFocal())
-        self.assertEqual(result, expect)
-
     def _computeChebyshevDerivative(self, star):
         """Return the derivatives w.r.t. the Chebyshev components."""
         cx = (self.bbox.getMinX() + self.bbox.getMaxX())/2.0
@@ -157,22 +161,18 @@ class ChipVisitPhotometryMappingTestCase(PhotometryMappingTestBase, lsst.utils.t
         expect = []
         for j in range(len(Ty)):
             for i in range(0, self.order-j+1):
-                expect.append(Ty[j]*Tx[i]*self.instFlux*self.chipScale)
-        return expect
+                expect.append(Ty[j]*Tx[i])
+        return np.array(expect)
 
+    @abc.abstractmethod
+    def _computeVisitDerivative(self, star):
+        """Return the derivative w.r.t. the chebyshev visit component."""
+        pass
+
+    @abc.abstractmethod
     def _computeChipDerivative(self, star):
         """Return the derivative w.r.t. the chip component."""
-        return self.instFlux*self._evaluate_chebyshev(star.getXFocal(), star.getYFocal())
-
-    def test_computeParameterDerivatives(self):
-        result = self.mappingInvariants.computeParameterDerivatives(self.star0, self.instFlux)
-        expect = np.array([self.instFlux*self.visitScale, self.instFlux*self.chipScale])
-        self.assertFloatsAlmostEqual(result, expect)
-
-        expect = [self._computeChipDerivative(self.star1), ]
-        expect.extend(self._computeChebyshevDerivative(self.star1))
-        result = self.mappingCheby.computeParameterDerivatives(self.star1, self.instFlux)
-        self.assertFloatsAlmostEqual(np.array(expect), result)
+        pass
 
     def test_getMappingIndices(self):
         """There are npar indices in a constrained mapping."""
@@ -185,6 +185,30 @@ class ChipVisitPhotometryMappingTestCase(PhotometryMappingTestBase, lsst.utils.t
                                                  self.visitIndex + self.mappingCheby.getNpar() - 1))
         result = self.mappingCheby.getMappingIndices()
         self.assertEqual(result, expect)
+
+    def _test_transform_mappingInvariants(self, star, expect):
+        result = self.mappingInvariants.transform(star, self.value)
+        self.assertEqual(result, expect)
+
+    def _test_transform_mappingCheby(self, star, expect):
+        result = self.mappingCheby.transform(star, self.value)
+        self.assertEqual(result, expect)
+
+    def _test_computeParameterDerivatives(self, star, expectInvariant):
+        """Test self.mappingInvariants and self.mappingCheby transforming star.
+        expectCheby is calculated from _computeChipDerivative and
+        _computeChebyshevDerivative.
+        """
+        result = self.mappingInvariants.computeParameterDerivatives(star, self.value)
+        self.assertFloatsAlmostEqual(result, expectInvariant)
+
+        # the chip derivative is a single number
+        expectCheby = [self._computeChipDerivative(self.star1)]
+        # the Chebyshev Derivatives are a list, so we have to use extend
+        expectCheby.extend(self._computeVisitDerivative(self.star1))
+        expectCheby = np.array(expectCheby)
+        result = self.mappingCheby.computeParameterDerivatives(star, self.value)
+        self.assertFloatsAlmostEqual(result, expectCheby)
 
     def _test_setWhatToFit(self, fittingChips, fittingVisits, nPar, indices, derivatives):
         """
@@ -206,8 +230,8 @@ class ChipVisitPhotometryMappingTestCase(PhotometryMappingTestBase, lsst.utils.t
         self.mappingCheby.setWhatToFit(fittingChips, fittingVisits)
         self.assertEqual(self.mappingCheby.getNpar(), nPar)
         self.assertEqual(self.mappingCheby.getMappingIndices(), indices)
-        result = self.mappingCheby.computeParameterDerivatives(self.star1, self.instFlux)
-        self.assertFloatsEqual(result, derivatives)
+        result = self.mappingCheby.computeParameterDerivatives(self.star1, self.value)
+        self.assertFloatsAlmostEqual(result, derivatives)
 
     def test_setWhatToFit(self):
         """Test that mapping methods behave correctly when chip and/or visit
@@ -222,11 +246,77 @@ class ChipVisitPhotometryMappingTestCase(PhotometryMappingTestBase, lsst.utils.t
 
         # fit just chips means 1 parameter and one index [self.chipIndex]
         self._test_setWhatToFit(True, False, 1, [self.chipIndex],
-                                [self._computeChipDerivative(self.star1)])
+                                np.array([self._computeChipDerivative(self.star1)]))
 
         # fit just visits means 3 parameters (order 1) and 3 indices starting at self.visitIndex
         self._test_setWhatToFit(False, True, 3, list(range(self.visitIndex, self.visitIndex+3)),
-                                [self._computeChebyshevDerivative(self.star1)])
+                                np.array([self._computeVisitDerivative(self.star1)]))
+
+
+class ChipVisitFluxMappingTestCase(ChipVisitPhotometryMappingTestCase, lsst.utils.tests.TestCase):
+    def setUp(self):
+        super().setUp()
+        self._initMappings(lsst.jointcal.FluxTransfoSpatiallyInvariant,
+                           lsst.jointcal.FluxTransfoChebyshev,
+                           lsst.jointcal.ChipVisitFluxMapping)
+
+    def _computeVisitDerivative(self, star):
+        return self._computeChebyshevDerivative(star) * self.value * self.chipScale
+
+    def _computeChipDerivative(self, star):
+        return self.value * self._evaluate_chebyshev(star.getXFocal(), star.getYFocal())
+
+    def test_transform(self):
+        expect = self.value * self.chipScale * self.visitScale
+        self._test_transform_mappingInvariants(self.star0, expect)
+        # The doubly-spatially invariant mapping should be independent of star position.
+        self._test_transform_mappingInvariants(self.star1, expect)
+
+        expect = self.value * self.chipScale * self._evaluate_chebyshev(self.star0.getXFocal(),
+                                                                        self.star0.getYFocal())
+        self._test_transform_mappingCheby(self.star0, expect)
+        expect = self.value * self.chipScale * self._evaluate_chebyshev(self.star1.getXFocal(),
+                                                                        self.star1.getYFocal())
+        self._test_transform_mappingCheby(self.star1, expect)
+
+    def test_computeParameterDerivatives(self):
+        expectInvariant = np.array([self.value*self.visitScale, self.value*self.chipScale])
+        self._test_computeParameterDerivatives(self.star1, expectInvariant)
+
+
+class ChipVisitMagnitudeMappingTestCase(ChipVisitPhotometryMappingTestCase, lsst.utils.tests.TestCase):
+    def setUp(self):
+        super().setUp()
+        self._initMappings(lsst.jointcal.MagnitudeTransfoSpatiallyInvariant,
+                           lsst.jointcal.MagnitudeTransfoChebyshev,
+                           lsst.jointcal.ChipVisitMagnitudeMapping)
+
+    def _computeVisitDerivative(self, star):
+        return self._computeChebyshevDerivative(star)
+
+    def _computeChipDerivative(self, star):
+        # Magnitude chip derivative is always identically 1:
+        #     d(M(m))/d(m0)=1 where M(m) = m + m0
+        return 1.0
+
+    def test_transform(self):
+        expect = self.value + self.chipScale + self.visitScale
+        self._test_transform_mappingInvariants(self.star0, expect)
+        # The doubly-spatially invariant mapping should be independent of star position.
+        self._test_transform_mappingInvariants(self.star1, expect)
+
+        expect = self.value + self.chipScale + self._evaluate_chebyshev(self.star0.getXFocal(),
+                                                                        self.star0.getYFocal())
+        self._test_transform_mappingCheby(self.star0, expect)
+
+        expect = self.value + self.chipScale + self._evaluate_chebyshev(self.star1.getXFocal(),
+                                                                        self.star1.getYFocal())
+        self._test_transform_mappingCheby(self.star1, expect)
+
+    def test_computeParameterDerivatives(self):
+        # the parameter derivative of a spatially invariant magnitude transform is always 1.
+        expectInvariant = np.array([1.0, 1.0])
+        self._test_computeParameterDerivatives(self.star1, expectInvariant)
 
 
 class MemoryTester(lsst.utils.tests.MemoryTestCase):

@@ -36,21 +36,21 @@ public:
      * Return the on-sky transformed flux for measuredStar on ccdImage.
      *
      * @param[in]  measuredStar  The measured star position to transform.
-     * @param[in]  instFlux      The instrument flux to transform.
+     * @param[in]  value         The instrument flux or magnitude to transform.
      *
-     * @return     The on-sky flux transformed from instFlux at measuredStar's position.
+     * @return     The on-sky value () transformed from value at measuredStar's position.
      */
-    virtual double transform(MeasuredStar const &measuredStar, double instFlux) const = 0;
+    virtual double transform(MeasuredStar const &measuredStar, double value) const = 0;
 
     /**
      * Return the on-sky transformed flux uncertainty for measuredStar on ccdImage.
      * Matches the underlying PhotometryTransfo's `transformError()` until freezeErrorTransform() is called.
      *
      * @param[in]  measuredStar  The measured star position to transform.
-     * @param[in]  value  The value to transform.
-     * @param[in]  valueErr  The value uncertainty to transform.
+     * @param[in]  value  The flux or magnitude to transform.
+     * @param[in]  valueErr  The flux or magnitude uncertainty to transform.
      *
-     * @return     The on-sky flux transformed from instFlux at measuredStar's position.
+     * @return     The on-sky value transformed from value at measuredStar's position.
      */
     virtual double transformError(MeasuredStar const &measuredStar, double value, double valueErr) const = 0;
 
@@ -67,10 +67,10 @@ public:
      * Compute the derivatives with respect to the parameters (i.e. the coefficients).
      *
      * @param[in]  measuredStar The measured star position to transform.
-     * @param[in]  instFlux     The instrument flux to compute the derivative at.
+     * @param[in]  value        The instrument flux or magnitude to compute the derivative at.
      * @param[out] derivatives  The computed derivatives, in the same order as the deltas in offsetParams.
      */
-    virtual void computeParameterDerivatives(MeasuredStar const &measuredStar, double instFlux,
+    virtual void computeParameterDerivatives(MeasuredStar const &measuredStar, double value,
                                              Eigen::Ref<Eigen::VectorXd> derivatives) const = 0;
 
     /// Make this mapping's parameters fixed (i.e. not varied during fitting).
@@ -192,34 +192,26 @@ public:
     ChipVisitPhotometryMapping(std::shared_ptr<PhotometryMapping> chipMapping,
                                std::shared_ptr<PhotometryMapping> visitMapping)
             : PhotometryMappingBase(),
-              _nParChips(0),
-              _nParVisits(0),
+              _nParChip(0),
+              _nParVisit(0),
               _chipMapping(std::move(chipMapping)),
               _visitMapping(std::move(visitMapping)) {}
 
     /// @copydoc PhotometryMappingBase::getNpar
-    unsigned getNpar() const override { return _nParChips + _nParVisits; }
+    unsigned getNpar() const override { return _nParChip + _nParVisit; }
 
     /// @copydoc PhotometryMappingBase::transform
-    double transform(MeasuredStar const &measuredStar, double instFlux) const override {
-        double tempFlux = _chipMapping->getTransfo()->transform(measuredStar.x, measuredStar.y, instFlux);
+    double transform(MeasuredStar const &measuredStar, double value) const override {
+        double temp = _chipMapping->getTransfo()->transform(measuredStar.x, measuredStar.y, value);
         return _visitMapping->getTransfo()->transform(measuredStar.getXFocal(), measuredStar.getYFocal(),
-                                                      tempFlux);
+                                                      temp);
     }
-
-    /// @copydoc PhotometryMappingBase::transformError
-    double transformError(MeasuredStar const &measuredStar, double instFlux,
-                          double instFluxErr) const override;
 
     /// @copydoc PhotometryMappingBase::freezeErrorTransform
     void freezeErrorTransform() override {
         _chipMapping->freezeErrorTransform();
         _visitMapping->freezeErrorTransform();
     }
-
-    /// @copydoc PhotometryMappingBase::computeParameterDerivatives
-    void computeParameterDerivatives(MeasuredStar const &measuredStar, double instFlux,
-                                     Eigen::Ref<Eigen::VectorXd> derivatives) const override;
 
     /// @copydoc PhotometryMappingBase::getParameters
     Eigen::VectorXd getParameters() override {
@@ -253,13 +245,49 @@ public:
     std::shared_ptr<PhotometryMapping> getChipMapping() const { return _chipMapping; }
     std::shared_ptr<PhotometryMapping> getVisitMapping() const { return _visitMapping; }
 
-private:
+    unsigned getNParChip() const { return _nParChip; }
+    unsigned getNParVisit() const { return _nParVisit; }
+
+protected:
     // These are either transfo.getNpar() or 0, depending on whether we are fitting that component or not.
-    unsigned _nParChips, _nParVisits;
+    unsigned _nParChip, _nParVisit;
 
     // the actual transformation to be fit
     std::shared_ptr<PhotometryMapping> _chipMapping;
     std::shared_ptr<PhotometryMapping> _visitMapping;
+};
+
+class ChipVisitFluxMapping : public ChipVisitPhotometryMapping {
+public:
+    ChipVisitFluxMapping(std::shared_ptr<PhotometryMapping> chipMapping,
+                         std::shared_ptr<PhotometryMapping> visitMapping)
+            : ChipVisitPhotometryMapping(chipMapping, visitMapping) {}
+
+    /// @copydoc PhotometryMappingBase::transformError
+    double transformError(MeasuredStar const &measuredStar, double value, double valueErr) const override;
+
+    /// @copydoc PhotometryMappingBase::computeParameterDerivatives
+    void computeParameterDerivatives(MeasuredStar const &measuredStar, double value,
+                                     Eigen::Ref<Eigen::VectorXd> derivatives) const override;
+};
+
+class ChipVisitMagnitudeMapping : public ChipVisitPhotometryMapping {
+public:
+    ChipVisitMagnitudeMapping(std::shared_ptr<PhotometryMapping> chipMapping,
+                              std::shared_ptr<PhotometryMapping> visitMapping)
+            : ChipVisitPhotometryMapping(chipMapping, visitMapping) {}
+
+    /**
+     * @copydoc PhotometryMappingBase::transformError
+     *
+     * @note This method takes instFlux and instFluxErr: the error calculation has to
+     * use fluxes to get the math right.
+     */
+    double transformError(MeasuredStar const &measuredStar, double value, double valueErr) const override;
+
+    /// @copydoc PhotometryMappingBase::computeParameterDerivatives
+    void computeParameterDerivatives(MeasuredStar const &measuredStar, double value,
+                                     Eigen::Ref<Eigen::VectorXd> derivatives) const override;
 };
 
 }  // namespace jointcal

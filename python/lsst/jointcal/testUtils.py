@@ -28,13 +28,13 @@ import numpy as np
 import lsst.afw.geom
 import lsst.afw.table
 import lsst.daf.persistence
-import lsst.obs.lsstSim
 import lsst.pipe.base
 
 import lsst.jointcal.star
 
 
-def createTwoFakeCcdImages(num1=4, num2=4, seed=100, fakeCcdId=12):
+def createTwoFakeCcdImages(num1=4, num2=4, seed=100, fakeCcdId=12,
+                           photoCalibMean1=100.0, photoCalibMean2=120.0):
     """Return two fake ccdImages built on CFHT Megacam metadata.
 
     If ``num1 == num2``, the catalogs will align on-sky so each source will
@@ -54,6 +54,8 @@ def createTwoFakeCcdImages(num1=4, num2=4, seed=100, fakeCcdId=12):
         Sensor identifier to use for both CcdImages. The wcs, bbox, calib, etc.
         will still be drawn from the CFHT ccd=12 files, as that is the only
         testdata that is included in this simple test dataset.
+    photoCalibMean1, photoCalibMean2: `float`, optional
+        The mean photometric calibration to pass to each ccdImage construction.
 
     Returns
     -------
@@ -84,9 +86,9 @@ def createTwoFakeCcdImages(num1=4, num2=4, seed=100, fakeCcdId=12):
     camera = butler.get('camera', visit=visit1)
 
     struct1 = createFakeCcdImage(butler, visit1, num1, instFluxKeyName,
-                                 photoCalibMean=100.0, photoCalibErr=1.0, fakeCcdId=fakeCcdId)
+                                 photoCalibMean=photoCalibMean1, photoCalibErr=1.0, fakeCcdId=fakeCcdId)
     struct2 = createFakeCcdImage(butler, visit2, num2, instFluxKeyName,
-                                 photoCalibMean=120.0, photoCalibErr=5.0, fakeCcdId=fakeCcdId)
+                                 photoCalibMean=photoCalibMean2, photoCalibErr=5.0, fakeCcdId=fakeCcdId)
 
     return lsst.pipe.base.Struct(camera=camera,
                                  catalogs=[struct1.catalog, struct2.catalog],

@@ -120,12 +120,14 @@ def makePhotoCalibImages(visit, butler, step=8, chips=[], tract=None,
 
         calibScaling = 1
         if singleCalib:
-            calib = butler.get('calexp_calib', dataId=dict(visit=int(visit), ccd=int(ccd), tract=0))
+            calib = butler.get('calexp_calib', dataId=dict(visit=int(visit), ccd=int(ccd), tract=tract))
             calibScaling = calib.getFluxMag0()[0]
             if verbose:
                 print('calib ccd %s: %s' % (ccd, calibScaling))
 
-        photoCalib = butler.get('jointcal_photoCalib', dataId=dict(visit=int(visit), ccd=int(ccd), tract=0))
+        photoCalib = butler.get('jointcal_photoCalib', dataId=dict(visit=int(visit),
+                                                                   ccd=int(ccd),
+                                                                   tract=tract))
         if verbose:
             print("photoCalib mean ccd %s: %s" % (ccd, photoCalib.getCalibrationMean()))
         scaled = photoCalib.computeScaledCalibration()

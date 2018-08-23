@@ -24,7 +24,7 @@ class Point;
  *
  * Unit agnostic: a higher level Model must keep track of the units going into and out of of its Transfos.
  *
- * @seealso lsst::afw::image::PhotoCalib
+ * @see lsst::afw::image::PhotoCalib
  */
 class PhotometryTransfo {
 public:
@@ -71,10 +71,10 @@ public:
      *
      * @param[in]  x        The x coordinate to compute at (in the appropriate units for this transfo).
      * @param[in]  y        The y coordinate to compute at (in the appropriate units for this transfo).
-     * @param[in]  instFlux     The instrument flux to compute the derivative at.
+     * @param[in]  value    The instrument flux or magnitude to compute the derivative at.
      * @param[out] derivatives  The computed derivatives, in the same order as the deltas in offsetParams.
      */
-    virtual void computeParameterDerivatives(double x, double y, double instFlux,
+    virtual void computeParameterDerivatives(double x, double y, double value,
                                              Eigen::Ref<Eigen::VectorXd> derivatives) const = 0;
 
     /// Get a copy of the parameters of this model, in the same order as `offsetParams`.
@@ -123,11 +123,11 @@ public:
     explicit FluxTransfoSpatiallyInvariant(double value = 1) : PhotometryTransfoSpatiallyInvariant(value) {}
 
     /// @copydoc PhotometryTransfo::transform
-    double transform(double x, double y, double instFlux) const override { return instFlux * getValue(); }
+    double transform(double x, double y, double value) const override { return value * getValue(); }
 
     /// @copydoc PhotometryTransfo::transformError
-    double transformError(double x, double y, double flux, double fluxErr) const override {
-        return getValue() * fluxErr;
+    double transformError(double x, double y, double value, double valueErr) const override {
+        return getValue() * valueErr;
     }
 
     /// @copydoc PhotometryTransfo::clone
@@ -136,10 +136,10 @@ public:
     }
 
     /// @copydoc PhotometryTransfo::computeParameterDerivatives
-    void computeParameterDerivatives(double x, double y, double instFlux,
+    void computeParameterDerivatives(double x, double y, double value,
                                      Eigen::Ref<Eigen::VectorXd> derivatives) const override {
-        // the derivative of a spatially constant transfo w.r.t. that value is just the instFlux.
-        derivatives[0] = instFlux;
+        // the derivative of a spatially constant transfo w.r.t. that value is just the value.
+        derivatives[0] = value;
     }
 };
 
@@ -168,7 +168,7 @@ public:
     }
 
     /// @copydoc PhotometryTransfoSpatiallyInvariant::computeParameterDerivatives
-    void computeParameterDerivatives(double x, double y, double mag,
+    void computeParameterDerivatives(double x, double y, double value,
                                      Eigen::Ref<Eigen::VectorXd> derivatives) const override {
         // the derivative of a spatially constant transfo w.r.t. that value is 1.
         derivatives[0] = 1;
@@ -195,12 +195,13 @@ public:
 class PhotometryTransfoChebyshev : public PhotometryTransfo {
 public:
     /**
-     * Create an identity (a_0,0==1) Chebyshev transfo with terms up to order in (x*y).
+     * Create a Chebyshev transfo with terms up to order in (x*y).
      *
      * @param[in]  order  The maximum order in (x*y).
-     * @param[in]  bbox    The bounding box it is valid within, to rescale it to [-1,1].
+     * @param[in]  bbox   The bounding box it is valid within, to rescale it to [-1,1].
+     * @param[in]  identity If true, set a_0,0==1, otherwise all coefficients are 0.
      */
-    PhotometryTransfoChebyshev(size_t order, afw::geom::Box2D const &bbox);
+    PhotometryTransfoChebyshev(size_t order, afw::geom::Box2D const &bbox, bool identity);
 
     /**
      * Create a Chebyshev transfo with the specified coefficients.
@@ -212,9 +213,6 @@ public:
      */
     PhotometryTransfoChebyshev(ndarray::Array<double, 2, 2> const &coefficients,
                                afw::geom::Box2D const &bbox);
-
-    /// @copydoc PhotometryTransfo::transform
-    double transform(double x, double y, double instFlux) const override;
 
     /// @copydoc PhotometryTransfo::transformError
     double transformError(double x, double y, double value, double valueErr) const override { return 0; }
@@ -228,17 +226,8 @@ public:
     /// @copydoc PhotometryTransfo::offsetParams
     void offsetParams(Eigen::VectorXd const &delta) override;
 
-    /// @copydoc PhotometryTransfo::clone
-    std::shared_ptr<PhotometryTransfo> clone() const override {
-        return std::make_shared<PhotometryTransfoChebyshev>(ndarray::copy(_coefficients), _bbox);
-    }
-
-    /// @copydoc PhotometryTransfo::computeParameterDerivatives
-    void computeParameterDerivatives(double x, double y, double instFlux,
-                                     Eigen::Ref<Eigen::VectorXd> derivatives) const override;
-
     /// Get a copy of the coefficients of the polynomials, as a 2d array (NOTE: layout is [y][x])
-    ndarray::Array<double, 2, 2> getCoefficients() { return ndarray::copy(_coefficients); }
+    ndarray::Array<double, 2, 2> getCoefficients() const { return ndarray::copy(_coefficients); }
 
     /// @copydoc PhotometryTransfo::getParameters
     Eigen::VectorXd getParameters() const override;
@@ -248,6 +237,18 @@ public:
     afw::geom::Box2D getBBox() const { return _bbox; }
 
     double mean() const;
+
+protected:
+    /**
+     * Return the value of this polynomial at x,y. For use in the sublcass transform() methods.
+     */
+    double computeChebyshev(double x, double y) const;
+
+    /**
+     * Set the derivatives of this polynomial at x,y. For use in the sublcass computeParameterDerivatives()
+     * methods.
+     */
+    void computeChebyshevDerivatives(double x, double y, Eigen::Ref<Eigen::VectorXd> derivatives) const;
 
 private:
     afw::geom::Box2D _bbox;                        // the domain of this function
@@ -259,6 +260,61 @@ private:
 
     // Compute the integral of this function over its bounding-box.
     double integrate() const;
+};
+
+/**
+ * nth-order 2d Chebyshev photometry transfo, times the input flux.
+ */
+class FluxTransfoChebyshev : public PhotometryTransfoChebyshev {
+public:
+    FluxTransfoChebyshev(size_t order, afw::geom::Box2D const &bbox)
+            : PhotometryTransfoChebyshev(order, bbox, true) {}
+
+    FluxTransfoChebyshev(ndarray::Array<double, 2, 2> const &coefficients, afw::geom::Box2D const &bbox)
+            : PhotometryTransfoChebyshev(coefficients, bbox) {}
+
+    /// @copydoc PhotometryTransfo::transform
+    double transform(double x, double y, double value) const override {
+        return value * computeChebyshev(x, y);
+    }
+
+    /// @copydoc PhotometryTransfo::computeParameterDerivatives
+    void computeParameterDerivatives(double x, double y, double value,
+                                     Eigen::Ref<Eigen::VectorXd> derivatives) const override {
+        computeChebyshevDerivatives(x, y, derivatives);
+        derivatives *= value;
+    }
+
+    /// @copydoc PhotometryTransfo::clone
+    std::shared_ptr<PhotometryTransfo> clone() const override {
+        return std::make_shared<FluxTransfoChebyshev>(getCoefficients(), getBBox());
+    }
+};
+
+class MagnitudeTransfoChebyshev : public PhotometryTransfoChebyshev {
+public:
+    MagnitudeTransfoChebyshev(size_t order, afw::geom::Box2D const &bbox)
+            : PhotometryTransfoChebyshev(order, bbox, false) {}
+
+    MagnitudeTransfoChebyshev(ndarray::Array<double, 2, 2> const &coefficients, afw::geom::Box2D const &bbox)
+            : PhotometryTransfoChebyshev(coefficients, bbox) {}
+
+    /// @copydoc PhotometryTransfo::transform
+    double transform(double x, double y, double value) const override {
+        return value + computeChebyshev(x, y);
+    }
+
+    /// @copydoc PhotometryTransfo::computeParameterDerivatives
+    void computeParameterDerivatives(double x, double y, double value,
+                                     Eigen::Ref<Eigen::VectorXd> derivatives) const override {
+        // The derivatives here are independent of value
+        computeChebyshevDerivatives(x, y, derivatives);
+    }
+
+    /// @copydoc PhotometryTransfo::clone
+    std::shared_ptr<PhotometryTransfo> clone() const override {
+        return std::make_shared<FluxTransfoChebyshev>(getCoefficients(), getBBox());
+    }
 };
 
 }  // namespace jointcal

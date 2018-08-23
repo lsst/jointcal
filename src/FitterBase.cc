@@ -195,6 +195,11 @@ MinimizeResult FitterBase::minimize(std::string const &whatToFit, double nSigmaC
         offsetParams(scale * delta);
         Chi2Statistic currentChi2(computeChi2());
         LOGLS_DEBUG(_log, currentChi2);
+        if (!isfinite(currentChi2.chi2)) {
+            LOGL_ERROR(_log, "chi2 is not finite. Aborting outlier rejection.");
+            returnCode = MinimizeResult::NonFinite;
+            break;
+        }
         if (currentChi2.chi2 > oldChi2 && totalMeasOutliers + totalRefOutliers != 0) {
             LOGL_WARN(_log, "chi2 went up, skipping outlier rejection loop");
             returnCode = MinimizeResult::Chi2Increased;
