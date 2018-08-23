@@ -62,7 +62,7 @@ class JointcalTestCFHTMinimal(jointcalTestBase.JointcalTestBase, lsst.utils.test
                    'photometry_final_ndof': 1
                    }
 
-        # the calling method is one step back on the stack: use it to specify the output repo.
+        # The output repo is named after this method.
         caller = inspect.stack()[0].function
         self._runJointcalTask(2, caller, metrics=metrics)
 
@@ -94,7 +94,7 @@ class JointcalTestCFHTMinimal(jointcalTestBase.JointcalTestBase, lsst.utils.test
                    'photometry_final_ndof': 1
                    }
 
-        # the calling method is one step back on the stack: use it to specify the output repo.
+        # The output repo is named after this method.
         caller = inspect.stack()[0].function
         self._runJointcalTask(2, caller, metrics=metrics)
 
@@ -106,7 +106,7 @@ class JointcalTestCFHTMinimal(jointcalTestBase.JointcalTestBase, lsst.utils.test
         self.config.sourceSelector['astrometry'].minSnr = 10000
         self.config.doAstrometry = False
 
-        # the calling method is one step back on the stack: use it to specify the output repo.
+        # The output repo is named after this method.
         caller = inspect.stack()[0].function
         nCatalogs = 2
         visits = '^'.join(str(v) for v in self.all_visits[:nCatalogs])
@@ -127,7 +127,7 @@ class JointcalTestCFHTMinimal(jointcalTestBase.JointcalTestBase, lsst.utils.test
         self.config.sourceSelector['astrometry'].minSnr = 10000
         self.config.doAstrometry = False
 
-        # the calling method is one step back on the stack: use it to specify the output repo.
+        # The output repo is named after this method.
         caller = inspect.stack()[0].function
         nCatalogs = 2
         visits = '^'.join(str(v) for v in self.all_visits[:nCatalogs])
@@ -148,7 +148,7 @@ class JointcalTestCFHTMinimal(jointcalTestBase.JointcalTestBase, lsst.utils.test
         self.config.sourceSelector['astrometry'].minSnr = 10000
         self.config.doAstrometry = False
 
-        # the calling method is one step back on the stack: use it to specify the output repo.
+        # The output repo is named after this method.
         caller = inspect.stack()[0].function
         nCatalogs = 2
         visits = '^'.join(str(v) for v in self.all_visits[:nCatalogs])
