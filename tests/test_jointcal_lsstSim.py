@@ -72,6 +72,7 @@ class JointcalTestLSSTSim(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Te
         # NOTE: the measured values of the metrics may change with the new fitter.
         pa1 = None
         self.config = lsst.jointcal.jointcal.JointcalConfig()
+        self.config.astrometryModel = "simple"
         self.config.astrometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
         self.config.photometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
         self.config.sourceSelector['astrometry'].badFlags.append("base_PixelFlags_flag_interpolated")
@@ -103,6 +104,7 @@ class JointcalTestLSSTSim(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Te
         # NOTE: the measured values of the metrics may change with the new fitter.
         pa1 = None
         self.config = lsst.jointcal.jointcal.JointcalConfig()
+        self.config.astrometryModel = "simple"
         self.config.astrometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
         self.config.photometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
         self.config.doPhotometry = False
@@ -145,6 +147,7 @@ class JointcalTestLSSTSim(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Te
         self.config = lsst.jointcal.jointcal.JointcalConfig()
         self.config.photometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
         self.config.doAstrometry = False
+        self.config.photometryModel = "simpleFlux"
         self.config.sourceSelector['astrometry'].badFlags.append("base_PixelFlags_flag_interpolated")
         self.jointcalStatistics.do_astrometry = False
 
@@ -180,6 +183,7 @@ class JointcalTestLSSTSim(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Te
 
         self.config = lsst.jointcal.jointcal.JointcalConfig()
         self.config.astrometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
+        self.config.astrometryModel = "simple"
         self.config.doPhotometry = False
         self.config.sourceSelector['astrometry'].badFlags.append("base_PixelFlags_flag_interpolated")
         self.jointcalStatistics.do_photometry = False

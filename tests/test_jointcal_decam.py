@@ -52,6 +52,8 @@ class JointcalTestDECAM(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Test
 
     def test_jointcalTask_2_visits(self):
         self.config = lsst.jointcal.jointcal.JointcalConfig()
+        self.config.astrometryModel = "simple"
+        self.config.photometryModel = "simpleFlux"
         self.config.photometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
         self.config.astrometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
         self.config.sourceSelector['astrometry'].badFlags.append("base_PixelFlags_flag_interpolated")
