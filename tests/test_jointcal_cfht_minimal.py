@@ -62,8 +62,8 @@ class JointcalTestCFHTMinimal(jointcalTestBase.JointcalTestBase, lsst.utils.test
                    'photometry_final_ndof': 1
                    }
 
-        # the calling method is one step back on the stack: use it to specify the output repo.
-        caller = inspect.stack()[1][3]  # NOTE: could be inspect.stack()[1].function in py3.5
+        # The output repo is named after this method.
+        caller = inspect.stack()[0].function
         self._runJointcalTask(2, caller, metrics=metrics)
 
         # Check that the Hessian/gradient files were written.
@@ -94,8 +94,8 @@ class JointcalTestCFHTMinimal(jointcalTestBase.JointcalTestBase, lsst.utils.test
                    'photometry_final_ndof': 1
                    }
 
-        # the calling method is one step back on the stack: use it to specify the output repo.
-        caller = inspect.stack()[1][3]  # NOTE: could be inspect.stack()[1].function in py3.5
+        # The output repo is named after this method.
+        caller = inspect.stack()[0].function
         self._runJointcalTask(2, caller, metrics=metrics)
 
     def test_jointcalTask_fails_raise(self):
@@ -106,8 +106,8 @@ class JointcalTestCFHTMinimal(jointcalTestBase.JointcalTestBase, lsst.utils.test
         self.config.sourceSelector['astrometry'].minSnr = 10000
         self.config.doAstrometry = False
 
-        # the calling method is one step back on the stack: use it to specify the output repo.
-        caller = inspect.stack()[1][3]  # NOTE: could be inspect.stack()[1].function in py3.5
+        # The output repo is named after this method.
+        caller = inspect.stack()[0].function
         nCatalogs = 2
         visits = '^'.join(str(v) for v in self.all_visits[:nCatalogs])
         output_dir = os.path.join('.test', self.__class__.__name__, caller)
@@ -127,8 +127,8 @@ class JointcalTestCFHTMinimal(jointcalTestBase.JointcalTestBase, lsst.utils.test
         self.config.sourceSelector['astrometry'].minSnr = 10000
         self.config.doAstrometry = False
 
-        # the calling method is one step back on the stack: use it to specify the output repo.
-        caller = inspect.stack()[1][3]  # NOTE: could be inspect.stack()[1].function in py3.5
+        # The output repo is named after this method.
+        caller = inspect.stack()[0].function
         nCatalogs = 2
         visits = '^'.join(str(v) for v in self.all_visits[:nCatalogs])
         output_dir = os.path.join('.test', self.__class__.__name__, caller)
@@ -148,8 +148,8 @@ class JointcalTestCFHTMinimal(jointcalTestBase.JointcalTestBase, lsst.utils.test
         self.config.sourceSelector['astrometry'].minSnr = 10000
         self.config.doAstrometry = False
 
-        # the calling method is one step back on the stack: use it to specify the output repo.
-        caller = inspect.stack()[1][3]  # NOTE: could be inspect.stack()[1].function in py3.5
+        # The output repo is named after this method.
+        caller = inspect.stack()[0].function
         nCatalogs = 2
         visits = '^'.join(str(v) for v in self.all_visits[:nCatalogs])
         output_dir = os.path.join('.test', self.__class__.__name__, caller)

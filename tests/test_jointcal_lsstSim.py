@@ -148,7 +148,7 @@ class JointcalTestLSSTSim(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Te
         self.config.sourceSelector['astrometry'].badFlags.append("base_PixelFlags_flag_interpolated")
         self.jointcalStatistics.do_astrometry = False
 
-        caller = inspect.stack()[0][3]  # NOTE: could be inspect.stack()[0].function in py3.5
+        caller = inspect.stack()[0].function
         result = self._runJointcalTask(2, caller, metrics=metrics)
 
         data_refs = result.resultList[0].result.dataRefs
@@ -184,7 +184,7 @@ class JointcalTestLSSTSim(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Te
         self.config.sourceSelector['astrometry'].badFlags.append("base_PixelFlags_flag_interpolated")
         self.jointcalStatistics.do_photometry = False
 
-        caller = inspect.stack()[0][3]  # NOTE: could be inspect.stack()[0].function in py3.5
+        caller = inspect.stack()[0].function
         result = self._runJointcalTask(2, caller, metrics=metrics)
         data_refs = result.resultList[0].result.dataRefs
         oldWcsList = result.resultList[0].result.oldWcsList

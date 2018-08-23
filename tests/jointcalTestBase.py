@@ -129,7 +129,7 @@ class JointcalTestBase:
         """
 
         # the calling method is one step back on the stack: use it to specify the output repo.
-        caller = inspect.stack()[1][3]  # NOTE: could be inspect.stack()[1].function in py3.5
+        caller = inspect.stack()[1].function
 
         result = self._runJointcalTask(nCatalogs, caller, metrics=metrics)
 
