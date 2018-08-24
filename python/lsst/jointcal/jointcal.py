@@ -44,8 +44,8 @@ class JointcalRunner(pipeBase.ButlerInitializedTaskRunner):
     See pipeBase.TaskRunner for more information.
     """
 
-    @staticmethod
-    def getTargetList(parsedCmd, **kwargs):
+    @classmethod
+    def getTargetList(cls, parsedCmd, **kwargs):
         """
         Return a list of tuples per tract, each containing (dataRefs, kwargs).
 
