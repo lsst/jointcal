@@ -26,8 +26,8 @@ We can cook it up from the sdss shape:
 'base_SdssShape_xy'
 
 for fluxes, we might use :
-'base_CircularApertureFlux_2_flux'
-'base_CircularApertureFlux_2_fluxErr'
+'base_CircularApertureFlux_2_instFlux'
+'base_CircularApertureFlux_2_instFluxErr'
 
  where the '2' should be read from the environment.
 */

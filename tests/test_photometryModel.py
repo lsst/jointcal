@@ -33,7 +33,7 @@ class PhotometryModelTestBase:
         self.ccdImageList = struct.ccdImageList
         self.camera = struct.camera
         self.catalogs = struct.catalogs
-        self.instFluxKeyName = struct.instFluxKeyName
+        self.fluxFieldName = struct.fluxFieldName
 
         self.stars = []
         for catalog, ccdImage in zip(self.catalogs, self.ccdImageList):
@@ -59,9 +59,9 @@ class PhotometryModelTestBase:
         """Test converting this object to a PhotoCalib."""
         photoCalib = self.model.toPhotoCalib(ccdImage)
         if self.useMagnitude:
-            result = photoCalib.instFluxToMagnitude(catalog, self.instFluxKeyName)
+            result = photoCalib.instFluxToMagnitude(catalog, self.fluxFieldName)
         else:
-            result = photoCalib.instFluxToMaggies(catalog, self.instFluxKeyName)
+            result = photoCalib.instFluxToMaggies(catalog, self.fluxFieldName)
 
         expects = np.empty(len(stars))
         for i, star in enumerate(stars):
