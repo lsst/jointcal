@@ -69,13 +69,13 @@ def createTwoFakeCcdImages(num1=4, num2=4, seed=100, fakeCcdId=12,
        - `ccdImageList` : CcdImages containing the metadata and fake sources
            (`list` of `lsst.jointcal.CcdImage`).
        - `bbox` : Bounding Box of the image (`lsst.afw.geom.Box2I`).
-       - 'instFluxKeyName' : name of the instFlux field in the catalogs ('str').
+       - 'fluxFieldName' : name of the instFlux field in the catalogs ('str').
     """
     np.random.seed(seed)
 
     visit1 = 849375
     visit2 = 850587
-    instFluxKeyName = "SomeFlux"
+    fluxFieldName = "SomeFlux"
 
     # Load or fake the necessary metadata for each CcdImage
     dataDir = lsst.utils.getPackageDir('jointcal')
@@ -85,19 +85,19 @@ def createTwoFakeCcdImages(num1=4, num2=4, seed=100, fakeCcdId=12,
     # so we can access parts of the camera later (e.g. focal plane)
     camera = butler.get('camera', visit=visit1)
 
-    struct1 = createFakeCcdImage(butler, visit1, num1, instFluxKeyName,
+    struct1 = createFakeCcdImage(butler, visit1, num1, fluxFieldName,
                                  photoCalibMean=photoCalibMean1, photoCalibErr=1.0, fakeCcdId=fakeCcdId)
-    struct2 = createFakeCcdImage(butler, visit2, num2, instFluxKeyName,
+    struct2 = createFakeCcdImage(butler, visit2, num2, fluxFieldName,
                                  photoCalibMean=photoCalibMean2, photoCalibErr=5.0, fakeCcdId=fakeCcdId)
 
     return lsst.pipe.base.Struct(camera=camera,
                                  catalogs=[struct1.catalog, struct2.catalog],
                                  ccdImageList=[struct1.ccdImage, struct2.ccdImage],
                                  bbox=struct1.bbox,
-                                 instFluxKeyName=instFluxKeyName)
+                                 fluxFieldName=fluxFieldName)
 
 
-def createFakeCcdImage(butler, visit, num, instFluxKeyName,
+def createFakeCcdImage(butler, visit, num, fluxFieldName,
                        photoCalibMean=100.0, photoCalibErr=1.0, fakeCcdId=12):
     """Create a fake CcdImage by making a fake catalog.
 
@@ -110,8 +110,9 @@ def createFakeCcdImage(butler, visit, num, instFluxKeyName,
     num : `int`
         Number of sources to put in the catalogs. Should be
         a square, to have sqrt(num) centroids on a grid.
-    instFluxKeyName : `str`
-        Name of the instFluxKey to populate in the catalog.
+    fluxFieldName : `str`
+        Name of the flux field to populate in the catalog, without `_instFlux`
+        (e.g. "slot_CalibFlux").
     photoCalibMean : `float`, optional
         Value to set for calibrationMean in the created PhotoCalib.
     photoCalibErr : `float`, optional
@@ -140,14 +141,14 @@ def createFakeCcdImage(butler, visit, num, instFluxKeyName,
     filt = butler.get("calexp_filter", dataId=dataId).getName()
     photoCalib = lsst.afw.image.PhotoCalib(photoCalibMean, photoCalibErr)
 
-    catalog = createFakeCatalog(num, bbox, instFluxKeyName, skyWcs=skyWcs)
+    catalog = createFakeCatalog(num, bbox, fluxFieldName, skyWcs=skyWcs)
     ccdImage = lsst.jointcal.ccdImage.CcdImage(catalog, skyWcs, visitInfo, bbox, filt, photoCalib,
-                                               detector, visit, fakeCcdId, instFluxKeyName)
+                                               detector, visit, fakeCcdId, fluxFieldName)
 
     return lsst.pipe.base.Struct(catalog=catalog, ccdImage=ccdImage, bbox=bbox)
 
 
-def createFakeCatalog(num, bbox, instFluxKeyName, skyWcs=None, refCat=False):
+def createFakeCatalog(num, bbox, fluxFieldName, skyWcs=None, refCat=False):
     """Return a fake minimally-useful catalog for jointcal.
 
     Parameters
@@ -157,8 +158,9 @@ def createFakeCatalog(num, bbox, instFluxKeyName, skyWcs=None, refCat=False):
         a square, to have sqrt(num) centroids on a grid.
     bbox : `lsst.afw.geom.Box2I`
         Bounding Box of the detector to populate.
-    instFluxKeyName : `str`
-        Name of the instFluxKey to populate in the catalog.
+    fluxFieldName : `str`
+        Name of the flux field to populate in the catalog, without `_instFlux`
+        (e.g. "slot_CalibFlux").
     skyWcs : `lsst.afw.geom.SkyWcs` or None, optional
         If supplied, use this to fill in coordinates from centroids.
     refCat : `bool`, optional
@@ -178,19 +180,19 @@ def createFakeCatalog(num, bbox, instFluxKeyName, skyWcs=None, refCat=False):
     shapeKey = lsst.afw.table.QuadrupoleKey.addFields(schema, "shape", "",
                                                       lsst.afw.table.CoordinateType.PIXEL)
     # Put the fake sources in the minimal catalog.
-    schema.addField(instFluxKeyName+"_flux", type="D", doc="post-ISR instFlux")
-    schema.addField(instFluxKeyName+"_fluxErr", type="D", doc="post-ISR instFlux stddev")
-    schema.addField(instFluxKeyName+"_calFlux", type="D", doc="maggies")
-    schema.addField(instFluxKeyName+"_calFluxErr", type="D", doc="maggies stddev")
-    schema.addField(instFluxKeyName+"_mag", type="D", doc="magnitude")
-    schema.addField(instFluxKeyName+"_magErr", type="D", doc="magnitude stddev")
+    schema.addField(fluxFieldName+"_instFlux", type="D", doc="post-ISR instFlux")
+    schema.addField(fluxFieldName+"_instFluxErr", type="D", doc="post-ISR instFlux stddev")
+    schema.addField(fluxFieldName+"_flux", type="D", doc="maggies")
+    schema.addField(fluxFieldName+"_fluxErr", type="D", doc="maggies stddev")
+    schema.addField(fluxFieldName+"_mag", type="D", doc="magnitude")
+    schema.addField(fluxFieldName+"_magErr", type="D", doc="magnitude stddev")
     return fillCatalog(schema, num, bbox,
-                       centroidKey, xErrKey, yErrKey, shapeKey, instFluxKeyName,
+                       centroidKey, xErrKey, yErrKey, shapeKey, fluxFieldName,
                        skyWcs=skyWcs, refCat=refCat)
 
 
 def fillCatalog(schema, num, bbox,
-                centroidKey, xErrKey, yErrKey, shapeKey, instFluxKeyName,
+                centroidKey, xErrKey, yErrKey, shapeKey, fluxFieldName,
                 skyWcs=None, fluxErrFraction=0.05, refCat=False):
     """Return a catalog populated with fake, but reasonable, sources.
 
@@ -212,8 +214,9 @@ def fillCatalog(schema, num, bbox,
         Key for the yErr field to populate.
     shapeKey : `lsst.afw.table.Key`
         Key for the shape field to populate.
-    instFluxKeyName : `str`
-        Name of instFlux field to populate (i.e. instFluxKeyName+'_flux')
+    fluxFieldName : `str`
+        Name of the flux field to populate in the catalog, without `_instFlux`
+        (e.g. "slot_CalibFlux").
     skyWcs : `lsst.afw.geom.SkyWcs` or None, optional
         If supplied, use this to fill in coordinates from centroids.
     fluxErrFraction : `float`, optional
@@ -229,7 +232,7 @@ def fillCatalog(schema, num, bbox,
     table = lsst.afw.table.SourceTable.make(schema)
     table.defineCentroid('centroid')
     table.defineShape('shape')
-    table.defineInstFlux(instFluxKeyName)
+    table.defineCalibFlux(fluxFieldName)
     if refCat:
         catalog = lsst.afw.table.SimpleCatalog(table)
     else:
@@ -259,8 +262,8 @@ def fillCatalog(schema, num, bbox,
 
     catalog[xErrKey] = vx
     catalog[yErrKey] = vy
-    catalog[instFluxKeyName + '_flux'] = instFlux
-    catalog[instFluxKeyName + '_fluxErr'] = instFluxErr
+    catalog[fluxFieldName + '_instFlux'] = instFlux
+    catalog[fluxFieldName + '_instFluxErr'] = instFluxErr
 
     return catalog
 
@@ -286,7 +289,7 @@ def getMeasuredStarsFromCatalog(catalog, pixToFocal):
         star = lsst.jointcal.star.MeasuredStar()
         star.x = record.getX()
         star.y = record.getY()
-        star.setInstFluxAndErr(record.getInstFlux(), record.getInstFluxErr())
+        star.setInstFluxAndErr(record.getCalibInstFlux(), record.getCalibInstFluxErr())
         # TODO: cleanup after DM-4044
         point = lsst.afw.geom.Point2D(star.x, star.y)
         pointFocal = pixToFocal.applyForward(point)

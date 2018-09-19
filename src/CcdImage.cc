@@ -38,8 +38,8 @@ void CcdImage::loadCatalog(afw::table::SourceCatalog const &catalog, std::string
     auto mxxKey = catalog.getSchema().find<double>("slot_Shape_xx").key;
     auto myyKey = catalog.getSchema().find<double>("slot_Shape_yy").key;
     auto mxyKey = catalog.getSchema().find<double>("slot_Shape_xy").key;
-    auto fluxKey = catalog.getSchema().find<double>(fluxField + "_flux").key;
-    auto fluxErrKey = catalog.getSchema().find<double>(fluxField + "_fluxErr").key;
+    auto instFluxKey = catalog.getSchema().find<double>(fluxField + "_instFlux").key;
+    auto instFluxErrKey = catalog.getSchema().find<double>(fluxField + "_instFluxErr").key;
 
     auto transform = _detector->getTransform(afw::cameraGeom::PIXELS, afw::cameraGeom::FOCAL_PLANE);
 
@@ -67,7 +67,7 @@ void CcdImage::loadCatalog(afw::table::SourceCatalog const &catalog, std::string
                                      << " vxy^2: " << ms->vxy * ms->vxy << " vx*vy: " << ms->vx * ms->vy);
             continue;
         }
-        ms->setInstFluxAndErr(record.get(fluxKey), record.get(fluxErrKey));
+        ms->setInstFluxAndErr(record.get(instFluxKey), record.get(instFluxErrKey));
         // TODO: the below lines will be less clumsy once DM-4044 is cleaned up and we can say:
         // TODO: instFluxToMaggies(ms->getInstFlux(), ms) (because ms will be derived from afw::geom::Point).
         afw::geom::Point<double, 2> point(ms->x, ms->y);
