@@ -182,7 +182,7 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         self.config.sourceSelector['astrometry'].badFlags.append("base_PixelFlags_flag_interpolated")
 
         test_config = os.path.join(lsst.utils.getPackageDir('jointcal'), 'tests/config/hsc-config.py')
-        self.other_args.extend(['--configfile', test_config])
+        self.configfiles.extend([test_config])
         dist_rms_relative = 17e-3*u.arcsecond
 
         # See Readme for an explanation of these empirical values.

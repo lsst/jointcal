@@ -62,6 +62,7 @@ class JointcalTestBase:
 
         # Individual tests may want to tweak the config that is passed to parseAndRun().
         self.config = None
+        self.configfiles = []
 
         # Append `msg` arguments to assert failures.
         self.longMessage = True
@@ -172,9 +173,14 @@ class JointcalTestBase:
         output_dir = os.path.join('.test', self.__class__.__name__, caller)
         if self.log_level is not None:
             self.other_args.extend(['--loglevel', 'jointcal=%s'%self.log_level])
+
+        #  Place default configfile first so that specific subclass configfiles are applied after
+        test_config = os.path.join(lsst.utils.getPackageDir('jointcal'), 'tests/config/config.py')
+        self.configfiles = [test_config] + self.configfiles
+
         args = [self.input_dir, '--output', output_dir,
                 '--clobber-versions', '--clobber-config',
-                '--doraise',
+                '--doraise', '--configfile', *self.configfiles,
                 '--id', 'visit=%s'%visits]
         args.extend(self.other_args)
         result = jointcal.JointcalTask.parseAndRun(args=args, doReturnResults=True, config=self.config)
