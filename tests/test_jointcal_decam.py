@@ -7,7 +7,6 @@ from astropy import units as u
 import lsst.afw.geom
 import lsst.utils
 import lsst.pex.exceptions
-from lsst.meas.extensions.astrometryNet import LoadAstrometryNetObjectsTask
 
 import jointcalTestBase
 
@@ -54,8 +53,6 @@ class JointcalTestDECAM(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Test
         self.config = lsst.jointcal.jointcal.JointcalConfig()
         self.config.astrometryModel = "simple"
         self.config.photometryModel = "simpleFlux"
-        self.config.photometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
-        self.config.astrometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
         self.config.sourceSelector['astrometry'].badFlags.append("base_PixelFlags_flag_interpolated")
 
         # See Readme for an explanation of these empirical values.
@@ -83,8 +80,6 @@ class JointcalTestDECAM(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Test
         """Help keep the two constrainedAstrometry tests consistent and make
         the difference between them more obvious."""
         self.config = lsst.jointcal.jointcal.JointcalConfig()
-        self.config.photometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
-        self.config.astrometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
         self.config.astrometryModel = "constrained"
         self.config.doPhotometry = False
         self.config.sourceSelector['astrometry'].badFlags.append("base_PixelFlags_flag_interpolated")
@@ -133,8 +128,6 @@ class JointcalTestDECAM(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Test
         the differences between them more obvious.
         """
         self.config = lsst.jointcal.jointcal.JointcalConfig()
-        self.config.astrometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
-        self.config.photometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
         self.config.photometryModel = "constrainedFlux"
         self.config.sourceSelector['astrometry'].badFlags.append("base_PixelFlags_flag_interpolated")
         self.config.doAstrometry = False

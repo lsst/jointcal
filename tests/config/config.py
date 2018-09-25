@@ -1,2 +1,3 @@
-config.photometryRefObjLoader.filterMap = {'B': 'g', 'V': 'r', 'R': 'r', 'I': 'i'}
-config.astrometryRefObjLoader.filterMap = {'B': 'g', 'V': 'r', 'R': 'r', 'I': 'i'}
+from lsst.meas.extensions.astrometryNet import LoadAstrometryNetObjectsTask
+config.photometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
+config.astrometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
