@@ -9,7 +9,6 @@ import lsst.afw.geom
 import lsst.afw.image
 import lsst.utils
 import lsst.pex.exceptions
-from lsst.meas.extensions.astrometryNet import LoadAstrometryNetObjectsTask
 
 import jointcalTestBase
 import lsst.jointcal.jointcal
@@ -55,8 +54,6 @@ class JointcalTestLSSTSim(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Te
     @unittest.skip('jointcal currently fails (may segfault) if only given one catalog!')
     def testJointcalTask_1_visits(self):
         self.config = lsst.jointcal.jointcal.JointcalConfig()
-        self.config.photometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
-        self.config.astrometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
         self.config.sourceSelector['astrometry'].badFlags.append("base_PixelFlags_flag_interpolated")
 
         dist_rms_relative = 0*u.arcsecond  # there is no such thing as a "relative" test for 1 catalog.
@@ -73,8 +70,6 @@ class JointcalTestLSSTSim(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Te
         pa1 = None
         self.config = lsst.jointcal.jointcal.JointcalConfig()
         self.config.astrometryModel = "simple"
-        self.config.astrometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
-        self.config.photometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
         self.config.sourceSelector['astrometry'].badFlags.append("base_PixelFlags_flag_interpolated")
         self.config.doPhotometry = False
         self.jointcalStatistics.do_photometry = False
@@ -105,8 +100,6 @@ class JointcalTestLSSTSim(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Te
         pa1 = None
         self.config = lsst.jointcal.jointcal.JointcalConfig()
         self.config.astrometryModel = "simple"
-        self.config.astrometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
-        self.config.photometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
         self.config.doPhotometry = False
         self.config.sourceSelector['astrometry'].badFlags.append("base_PixelFlags_flag_interpolated")
         self.jointcalStatistics.do_photometry = False
@@ -145,7 +138,6 @@ class JointcalTestLSSTSim(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Te
                    }
 
         self.config = lsst.jointcal.jointcal.JointcalConfig()
-        self.config.photometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
         self.config.doAstrometry = False
         self.config.photometryModel = "simpleFlux"
         self.config.sourceSelector['astrometry'].badFlags.append("base_PixelFlags_flag_interpolated")
@@ -182,7 +174,6 @@ class JointcalTestLSSTSim(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Te
                    }
 
         self.config = lsst.jointcal.jointcal.JointcalConfig()
-        self.config.astrometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
         self.config.astrometryModel = "simple"
         self.config.doPhotometry = False
         self.config.sourceSelector['astrometry'].badFlags.append("base_PixelFlags_flag_interpolated")

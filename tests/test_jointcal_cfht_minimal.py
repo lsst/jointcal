@@ -6,7 +6,6 @@ import os
 import lsst.afw.geom
 import lsst.utils
 import lsst.pex.exceptions
-from lsst.meas.extensions.astrometryNet import LoadAstrometryNetObjectsTask
 
 import jointcalTestBase
 from lsst.jointcal import jointcal
@@ -47,7 +46,6 @@ class JointcalTestCFHTMinimal(jointcalTestBase.JointcalTestBase, lsst.utils.test
     def test_jointcalTask_2_visits_photometry(self):
         self.config = lsst.jointcal.jointcal.JointcalConfig()
         self.config.photometryModel = "simpleFlux"
-        self.config.photometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
         self.config.doAstrometry = False
         self.config.writeInitMatrix = True  # write Hessian/gradient files
         self.jointcalStatistics.do_astrometry = False
@@ -79,7 +77,6 @@ class JointcalTestCFHTMinimal(jointcalTestBase.JointcalTestBase, lsst.utils.test
 
     def test_jointcalTask_2_visits_photometry_magnitude(self):
         self.config = lsst.jointcal.jointcal.JointcalConfig()
-        self.config.photometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
         self.config.photometryModel = "simpleMagnitude"
         self.config.doAstrometry = False
         self.jointcalStatistics.do_astrometry = False
@@ -104,7 +101,6 @@ class JointcalTestCFHTMinimal(jointcalTestBase.JointcalTestBase, lsst.utils.test
         self.config = lsst.jointcal.jointcal.JointcalConfig()
         self.config.setDefaults()
         self.config.photometryModel = "simpleFlux"
-        self.config.photometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
         self.config.sourceSelector['astrometry'].minSnr = 10000
         self.config.doAstrometry = False
 
@@ -113,8 +109,10 @@ class JointcalTestCFHTMinimal(jointcalTestBase.JointcalTestBase, lsst.utils.test
         nCatalogs = 2
         visits = '^'.join(str(v) for v in self.all_visits[:nCatalogs])
         output_dir = os.path.join('.test', self.__class__.__name__, caller)
+        test_config = os.path.join(lsst.utils.getPackageDir('jointcal'), 'tests/config/config.py')
+        self.configfiles = [test_config] + self.configfiles
         args = [self.input_dir, '--output', output_dir,
-                '--clobber-versions', '--clobber-config',
+                '--clobber-versions', '--clobber-config', '--configfile', *self.configfiles,
                 '--doraise',
                 '--id', 'visit=%s'%visits]
         args.extend(self.other_args)
@@ -126,7 +124,6 @@ class JointcalTestCFHTMinimal(jointcalTestBase.JointcalTestBase, lsst.utils.test
         self.config = lsst.jointcal.jointcal.JointcalConfig()
         self.config.setDefaults()
         self.config.photometryModel = "simpleFlux"
-        self.config.photometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
         self.config.sourceSelector['astrometry'].minSnr = 10000
         self.config.doAstrometry = False
 
@@ -135,8 +132,10 @@ class JointcalTestCFHTMinimal(jointcalTestBase.JointcalTestBase, lsst.utils.test
         nCatalogs = 2
         visits = '^'.join(str(v) for v in self.all_visits[:nCatalogs])
         output_dir = os.path.join('.test', self.__class__.__name__, caller)
+        test_config = os.path.join(lsst.utils.getPackageDir('jointcal'), 'tests/config/config.py')
+        self.configfiles = [test_config] + self.configfiles
         args = [self.input_dir, '--output', output_dir,
-                '--clobber-versions', '--clobber-config',
+                '--clobber-versions', '--clobber-config', '--configfile', *self.configfiles,
                 '--noExit',  # have to specify noExit, otherwise the test quits
                 '--id', 'visit=%s'%visits]
         args.extend(self.other_args)
@@ -148,7 +147,6 @@ class JointcalTestCFHTMinimal(jointcalTestBase.JointcalTestBase, lsst.utils.test
         self.config = lsst.jointcal.jointcal.JointcalConfig()
         self.config.setDefaults()
         self.config.photometryModel = "simpleFlux"
-        self.config.photometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
         self.config.sourceSelector['astrometry'].minSnr = 10000
         self.config.doAstrometry = False
 
@@ -157,8 +155,10 @@ class JointcalTestCFHTMinimal(jointcalTestBase.JointcalTestBase, lsst.utils.test
         nCatalogs = 2
         visits = '^'.join(str(v) for v in self.all_visits[:nCatalogs])
         output_dir = os.path.join('.test', self.__class__.__name__, caller)
+        test_config = os.path.join(lsst.utils.getPackageDir('jointcal'), 'tests/config/config.py')
+        self.configfiles = [test_config] + self.configfiles
         args = [self.input_dir, '--output', output_dir,
-                '--clobber-versions', '--clobber-config',
+                '--clobber-versions', '--clobber-config', '--configfile', *self.configfiles,
                 '--noExit',  # have to specify noExit, otherwise the test quits
                 '--id', 'visit=%s'%visits]
         args.extend(self.other_args)
