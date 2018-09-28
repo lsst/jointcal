@@ -16,10 +16,6 @@
 namespace lsst {
 namespace jointcal {
 
-class CcdImage;
-class Point;
-class MeasuredStar;
-
 //! Interface class for PhotometryFit
 class PhotometryModel {
 public:
