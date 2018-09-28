@@ -8,8 +8,6 @@ from astropy import units as u
 import lsst.afw.geom
 import lsst.utils
 import lsst.pex.exceptions
-from lsst.meas.extensions.astrometryNet import LoadAstrometryNetObjectsTask
-from lsst.meas.algorithms import LoadIndexedReferenceObjectsTask
 
 import jointcalTestBase
 
@@ -51,8 +49,6 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         self.config = lsst.jointcal.jointcal.JointcalConfig()
         self.config.astrometryModel = "simple"
         self.config.photometryModel = "simpleFlux"
-        self.config.photometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
-        self.config.astrometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
         self.config.sourceSelector['astrometry'].badFlags.append("base_PixelFlags_flag_interpolated")
 
         # See Readme for an explanation of these empirical values.
@@ -82,7 +78,6 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
 
         self.config = lsst.jointcal.jointcal.JointcalConfig()
         self.config.astrometryModel = "simple"
-        self.config.astrometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
         self.config.doPhotometry = False
         self.config.sourceSelector['astrometry'].badFlags.append("base_PixelFlags_flag_interpolated")
         self.jointcalStatistics.do_photometry = False
@@ -105,7 +100,6 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         the differences between them more obvious.
         """
         self.config = lsst.jointcal.jointcal.JointcalConfig()
-        self.config.photometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
         self.config.photometryModel = "simpleFlux"
         self.config.doAstrometry = False
         self.config.sourceSelector['astrometry'].badFlags.append("base_PixelFlags_flag_interpolated")
@@ -149,7 +143,6 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
                    }
 
         self.config = lsst.jointcal.jointcal.JointcalConfig()
-        self.config.astrometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
         self.config.astrometryModel = "simple"
         self.config.doPhotometry = False
         self.config.sourceSelector['astrometry'].badFlags.append("base_PixelFlags_flag_interpolated")
@@ -176,13 +169,10 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         self.config = lsst.jointcal.jointcal.JointcalConfig()
         self.config.astrometryModel = "simple"
         self.config.photometryModel = "simpleFlux"
-        self.config.astrometryRefObjLoader.retarget(LoadIndexedReferenceObjectsTask)
-        # use the a.net refcat for photometry.
-        self.config.photometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
+        # use the a.net refcat for photometry, gaia for astrometry
         self.config.sourceSelector['astrometry'].badFlags.append("base_PixelFlags_flag_interpolated")
-
         test_config = os.path.join(lsst.utils.getPackageDir('jointcal'), 'tests/config/hsc-config.py')
-        self.other_args.extend(['--configfile', test_config])
+        self.configfiles.extend([test_config])
         dist_rms_relative = 17e-3*u.arcsecond
 
         # See Readme for an explanation of these empirical values.
@@ -213,7 +203,6 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
     def test_jointcalTask_2_visits_no_photometry_match_cut_10(self):
         self.config = lsst.jointcal.jointcal.JointcalConfig()
         self.config.astrometryModel = "simple"
-        self.config.astrometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
         self.config.matchCut = 10.0  # TODO: once DM-6885 is fixed, we need to put `*lsst.afw.geom.arcseconds`
         self.config.doPhotometry = False
         self.config.sourceSelector['astrometry'].badFlags.append("base_PixelFlags_flag_interpolated")
@@ -236,7 +225,6 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         """3 visit, default config to compare with min_measurements_3 test."""
         self.config = lsst.jointcal.jointcal.JointcalConfig()
         self.config.astrometryModel = "simple"
-        self.config.astrometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
         self.config.minMeasurements = 2
         self.config.doPhotometry = False
         self.config.sourceSelector['astrometry'].badFlags.append("base_PixelFlags_flag_interpolated")
@@ -260,7 +248,6 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         fitted stars (and thus the chisq and Ndof), but should not change the
         other values."""
         self.config = lsst.jointcal.jointcal.JointcalConfig()
-        self.config.astrometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
         self.config.minMeasurements = 3
         self.config.astrometryModel = "simple"
         self.config.doPhotometry = False
