@@ -63,6 +63,7 @@ void declareSimpleGtransfoMapping(py::module &mod) {
             mod, "SimpleGtransfoMapping");
     cls.def("getToBeFit", &SimpleGtransfoMapping::getToBeFit);
     cls.def("setToBeFit", &SimpleGtransfoMapping::setToBeFit);
+    cls.def("getTransfo", &SimpleGtransfoMapping::getTransfo, py::return_value_policy::reference_internal);
 }
 
 void declareSimplePolyMapping(py::module &mod) {
