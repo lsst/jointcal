@@ -209,6 +209,33 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
 
         self._testJointcalTask(2, None, None, pa1, metrics=metrics)
 
+    def test_jointcalTask_2_visits_constrainedFlux_pedestal(self):
+        pa1, metrics = self.setup_jointcalTask_2_visits_constrainedPhotometry()
+        self.config.photometryErrorPedestal = 0.02
+
+        # We're allowing more error in the fit, so PA1 may be worse.
+        pa1 = 0.018
+        # Final chi2 is much lower, because all sources contribute more error.
+        metrics['photometry_final_chi2'] = 1800.08
+        # ndof shouldn't change much; slightly different likelihood contours
+        metrics['photometry_final_ndof'] = 1338
+
+        self._testJointcalTask(2, None, None, pa1, metrics=metrics)
+
+    def test_jointcalTask_2_visits_constrainedMagnitude_pedestal(self):
+        pa1, metrics = self.setup_jointcalTask_2_visits_constrainedPhotometry()
+        self.config.photometryModel = "constrainedMagnitude"
+        self.config.photometryErrorPedestal = 0.02
+
+        # We're allowing more error in the fit, so PA1 may be worse.
+        pa1 = 0.019
+        # Final chi2 is much lower, because all sources contribute more error.
+        metrics['photometry_final_chi2'] = 1632.83
+        # ndof shouldn't change much; slightly different likelihood contours
+        metrics['photometry_final_ndof'] = 1322
+
+        self._testJointcalTask(2, None, None, pa1, metrics=metrics)
+
 
 class MemoryTester(lsst.utils.tests.MemoryTestCase):
     pass

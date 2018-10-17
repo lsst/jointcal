@@ -16,13 +16,10 @@
 namespace lsst {
 namespace jointcal {
 
-class CcdImage;
-class Point;
-class MeasuredStar;
-
-//! Interface class for PhotometryFit
 class PhotometryModel {
 public:
+    PhotometryModel(double errorPedestal_ = 0) : errorPedestal(errorPedestal_) {}
+
     /**
      * Assign indices in the full matrix to the parameters being fit in the mappings, starting at firstIndex.
      *
@@ -142,9 +139,32 @@ public:
         return s;
     }
 
+    double getErrorPedestal() { return errorPedestal; }
+
+    /// Add a fraction of the instrumental flux to the instrumental flux error, in quadrature.
+    double tweakFluxError(jointcal::MeasuredStar const &measuredStar) const {
+        if (errorPedestal == 0) {
+            return measuredStar.getInstFluxErr();
+        } else {
+            return std::hypot(measuredStar.getInstFluxErr(), measuredStar.getInstFlux() * errorPedestal);
+        }
+    }
+
+    /// Add a small magnitude offset to the "instrumental magnitude" error, in quadrature.
+    double tweakMagnitudeError(jointcal::MeasuredStar const &measuredStar) const {
+        if (errorPedestal == 0) {
+            return measuredStar.getInstMagErr();
+        } else {
+            return std::hypot(measuredStar.getInstMagErr(), errorPedestal);
+        }
+    }
+
 protected:
     /// Return a pointer to the mapping associated with this ccdImage.
     virtual PhotometryMappingBase *findMapping(CcdImage const &ccdImage) const = 0;
+
+    // Pedestal on flux/magnitude error (percent of flux or delta magnitude)
+    double errorPedestal;
 };
 }  // namespace jointcal
 }  // namespace lsst

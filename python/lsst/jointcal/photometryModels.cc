@@ -81,14 +81,14 @@ void declareSimplePhotometryModel(py::module &mod) {
 void declareSimpleFluxModel(py::module &mod) {
     py::class_<SimpleFluxModel, std::shared_ptr<SimpleFluxModel>, SimplePhotometryModel, PhotometryModel> cls(
             mod, "SimpleFluxModel");
-    cls.def(py::init<CcdImageList const &>(), "ccdImageList"_a);
+    cls.def(py::init<CcdImageList const &, double>(), "ccdImageList"_a, "errorPedestal"_a = 0);
 }
 
 void declareSimpleMagnitudeModel(py::module &mod) {
     py::class_<SimpleMagnitudeModel, std::shared_ptr<SimpleMagnitudeModel>, SimplePhotometryModel,
                PhotometryModel>
             cls(mod, "SimpleMagnitudeModel");
-    cls.def(py::init<CcdImageList const &>(), "ccdImageList"_a);
+    cls.def(py::init<CcdImageList const &, double>(), "ccdImageList"_a, "errorPedestal"_a = 0);
 }
 
 void declareConstrainedPhotometryModel(py::module &mod) {
@@ -99,15 +99,15 @@ void declareConstrainedPhotometryModel(py::module &mod) {
 void declareConstrainedFluxModel(py::module &mod) {
     py::class_<ConstrainedFluxModel, std::shared_ptr<ConstrainedFluxModel>, PhotometryModel> cls(
             mod, "ConstrainedFluxModel");
-    cls.def(py::init<CcdImageList const &, afw::geom::Box2D const &, int>(), "CcdImageList"_a, "bbox"_a,
-            "visitOrder"_a = 7);
+    cls.def(py::init<CcdImageList const &, afw::geom::Box2D const &, int, double>(), "CcdImageList"_a,
+            "bbox"_a, "visitOrder"_a = 7, "errorPedestal"_a = 0);
 }
 
 void declareConstrainedMagnitudeModel(py::module &mod) {
     py::class_<ConstrainedMagnitudeModel, std::shared_ptr<ConstrainedMagnitudeModel>, PhotometryModel> cls(
             mod, "ConstrainedMagnitudeModel");
-    cls.def(py::init<CcdImageList const &, afw::geom::Box2D const &, int>(), "CcdImageList"_a, "bbox"_a,
-            "visitOrder"_a = 7);
+    cls.def(py::init<CcdImageList const &, afw::geom::Box2D const &, int, double>(), "CcdImageList"_a,
+            "bbox"_a, "visitOrder"_a = 7, "errorPedestal"_a = 0);
 }
 
 PYBIND11_MODULE(photometryModels, mod) {

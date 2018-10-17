@@ -126,10 +126,16 @@ class JointcalConfig(pexConfig.Config):
         dtype=str,
         default="deep"
     )
-    posError = pexConfig.Field(
-        doc="Constant term for error on position (in pixel unit)",
+    positionErrorPedestal = pexConfig.Field(
+        doc="Systematic term to apply to the measured position error (pixels)",
         dtype=float,
         default=0.02,
+    )
+    photometryErrorPedestal = pexConfig.Field(
+        doc="Systematic term to apply to the measured error on flux or magnitude as a "
+        "fraction of source flux or magnitude delta (e.g. 0.05 is 5\% of flux or +50 millimag).",
+        dtype=float,
+        default=0.0,
     )
     # TODO: DM-6885 matchCut should be an afw.geom.Angle
     matchCut = pexConfig.Field(
@@ -605,20 +611,24 @@ class JointcalTask(pipeBase.CmdLineTask):
         if self.config.photometryModel == "constrainedFlux":
             model = lsst.jointcal.ConstrainedFluxModel(associations.getCcdImageList(),
                                                        self.focalPlaneBBox,
-                                                       visitOrder=self.config.photometryVisitOrder)
+                                                       visitOrder=self.config.photometryVisitOrder,
+                                                       errorPedestal=self.config.photometryErrorPedestal)
             # potentially nonlinear problem, so we may need a line search to converge.
             doLineSearch = self.config.allowLineSearch
         elif self.config.photometryModel == "constrainedMagnitude":
             model = lsst.jointcal.ConstrainedMagnitudeModel(associations.getCcdImageList(),
                                                             self.focalPlaneBBox,
-                                                            visitOrder=self.config.photometryVisitOrder)
+                                                            visitOrder=self.config.photometryVisitOrder,
+                                                            errorPedestal=self.config.photometryErrorPedestal)
             # potentially nonlinear problem, so we may need a line search to converge.
             doLineSearch = self.config.allowLineSearch
         elif self.config.photometryModel == "simpleFlux":
-            model = lsst.jointcal.SimpleFluxModel(associations.getCcdImageList())
+            model = lsst.jointcal.SimpleFluxModel(associations.getCcdImageList(),
+                                                  errorPedestal=self.config.photometryErrorPedestal)
             doLineSearch = False  # purely linear in model parameters, so no line search needed
         elif self.config.photometryModel == "simpleMagnitude":
-            model = lsst.jointcal.SimpleMagnitudeModel(associations.getCcdImageList())
+            model = lsst.jointcal.SimpleMagnitudeModel(associations.getCcdImageList(),
+                                                       errorPedestal=self.config.photometryErrorPedestal)
             doLineSearch = False  # purely linear in model parameters, so no line search needed
 
         fit = lsst.jointcal.PhotometryFit(associations, model)
@@ -714,7 +724,7 @@ class JointcalTask(pipeBase.CmdLineTask):
                                                         nNotFit=0,
                                                         order=self.config.astrometrySimpleOrder)
 
-        fit = lsst.jointcal.AstrometryFit(associations, model, self.config.posError)
+        fit = lsst.jointcal.AstrometryFit(associations, model, self.config.positionErrorPedestal)
         chi2 = fit.computeChi2()
         # TODO DM-12446: turn this into a "butler save" somehow.
         # Save reference and measurement chi2 contributions for this data

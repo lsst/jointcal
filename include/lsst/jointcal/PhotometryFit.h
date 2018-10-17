@@ -20,7 +20,14 @@ namespace jointcal {
 //! Class that handles the photometric least squares problem.
 class PhotometryFit : public FitterBase {
 public:
-    //! this is the only constructor
+    /**
+     * Construct a photometry fitter.
+     *
+     * @param associations The associations catalog to use in the fitter.
+     * @param photometryModel The model to build the fitter for.
+     * @param fluxError The systematic error pedestal to apply to measured instFlux errors
+     *                  (as a percent of instFlux).
+     */
     PhotometryFit(std::shared_ptr<Associations> associations,
                   std::shared_ptr<PhotometryModel> photometryModel)
             : FitterBase(associations),
