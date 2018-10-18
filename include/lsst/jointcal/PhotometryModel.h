@@ -2,7 +2,11 @@
 #ifndef LSST_JOINTCAL_PHOTOMETRY_MODEL_H
 #define LSST_JOINTCAL_PHOTOMETRY_MODEL_H
 
+#include <string>
+#include <vector>
+
 #include "lsst/afw/image/PhotoCalib.h"
+#include "lsst/log/Log.h"
 
 #include "lsst/jointcal/CcdImage.h"
 #include "lsst/jointcal/Eigenstuff.h"
@@ -10,15 +14,13 @@
 #include "lsst/jointcal/FittedStar.h"
 #include "lsst/jointcal/MeasuredStar.h"
 #include "lsst/jointcal/RefStar.h"
-#include <string>
-#include <vector>
 
 namespace lsst {
 namespace jointcal {
 
 class PhotometryModel {
 public:
-    PhotometryModel(double errorPedestal_ = 0) : errorPedestal(errorPedestal_) {}
+    PhotometryModel(LOG_LOGGER log, double errorPedestal_ = 0) : _log(log), errorPedestal(errorPedestal_) {}
 
     /**
      * Assign indices in the full matrix to the parameters being fit in the mappings, starting at firstIndex.
@@ -162,6 +164,9 @@ public:
 protected:
     /// Return a pointer to the mapping associated with this ccdImage.
     virtual PhotometryMappingBase *findMapping(CcdImage const &ccdImage) const = 0;
+
+    /// lsst.logging instance, to be created by a subclass so that messages have consistent name.
+    LOG_LOGGER _log;
 
     // Pedestal on flux/magnitude error (percent of flux or delta magnitude)
     double errorPedestal;

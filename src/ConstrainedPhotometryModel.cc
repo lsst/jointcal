@@ -14,10 +14,6 @@
 #include "lsst/jointcal/ConstrainedPhotometryModel.h"
 #include "lsst/jointcal/PhotometryMapping.h"
 
-namespace {
-LOG_LOGGER _log = LOG_GET("jointcal.ConstrainedPhotometryModel");
-}
-
 namespace lsst {
 namespace jointcal {
 
