@@ -327,6 +327,12 @@ class ConstrainedMagnitudeModelTestCase(ConstrainedPhotometryModelTestCase,
                                                         self.visitOrder)
         self.assertFalse(model.checkPositiveOnBBox(struct.ccdImageList[0]))
 
+    def test_validate(self):
+        self.assertTrue(self.model.validate(self.ccdImageList))
+        # Make the model go negative
+        self.model.offsetParams(-3*self.delta)
+        self.assertFalse(self.model.validate(self.ccdImageList))
+
 
 class MemoryTester(lsst.utils.tests.MemoryTestCase):
     pass

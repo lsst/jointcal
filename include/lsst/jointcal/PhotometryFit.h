@@ -68,6 +68,9 @@ public:
     /// @copydoc FitterBase::saveChi2RefContributions
     void saveChi2RefContributions(std::string const &baseName) const override;
 
+    /// Return the model being fit.
+    std::shared_ptr<PhotometryModel> getModel() const { return _photometryModel; }
+
 private:
     bool _fittingModel, _fittingFluxes;
     std::shared_ptr<PhotometryModel> _photometryModel;

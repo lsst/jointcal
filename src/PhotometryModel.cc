@@ -6,6 +6,15 @@
 namespace lsst {
 namespace jointcal {
 
+bool PhotometryModel::validate(CcdImageList const &ccdImageList) const {
+    bool check = true;
+    for (auto const &ccdImage : ccdImageList) {
+        // Don't short circuit so that we log every place the model is negative.
+        check &= checkPositiveOnBBox(*ccdImage);
+    }
+    return check;
+}
+
 bool PhotometryModel::checkPositiveOnBBox(CcdImage const &ccdImage) const {
     bool check = true;
     auto bbox = ccdImage.getImageFrame();

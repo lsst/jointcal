@@ -137,6 +137,16 @@ public:
     virtual void dump(std::ostream &stream = std::cout) const = 0;
 
     /**
+     * Return true if this is a "reasonable" model.
+     *
+     * A valid photometry model is positive within each sensor's bounding box.
+     *
+     * @param ccdImageList The ccdImages to test the model validity on.
+     * @return True if the model is valid on all ccdImages.
+     */
+    bool validate(CcdImageList const &ccdImageList) const;
+
+    /**
      * Check that the model is positive on the ccdImage bbox.
      *
      * @param ccdImage The ccdImage to test.

@@ -4,6 +4,7 @@
 
 #include "memory"
 
+#include "lsst/jointcal/CcdImage.h"
 #include "lsst/jointcal/Gtransfo.h"
 #include "lsst/jointcal/Eigenstuff.h"
 #include "lsst/jointcal/AstrometryMapping.h"
@@ -60,6 +61,17 @@ public:
     virtual int getTotalParameters() const = 0;
 
     virtual ~AstrometryModel(){};
+
+    /**
+     * Return true if this is a "reasonable" model.
+     *
+     * Not yet implemented: DM-16324
+     * An example might be that the model produces finite RA/Dec on each sensor's bounding box.
+     *
+     * @param ccdImageList The ccdImages to test the model validity on.
+     * @return True if the model is valid on all ccdImages.
+     */
+    bool validate(CcdImageList const &ccdImageList) const { return true; }
 
 protected:
     /// Return a pointer to the mapping associated with this ccdImage.

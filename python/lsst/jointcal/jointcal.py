@@ -585,6 +585,17 @@ class JointcalTask(pipeBase.CmdLineTask):
         if associations.refStarListSize() == 0:
             raise RuntimeError('No stars in the {} reference star list!'.format(name))
 
+    def _logChi2AndValidate(self, associations, fit, model, chi2Label="Model"):
+        """Compute chi2, log it, validate the model, and return chi2."""
+        chi2 = fit.computeChi2()
+        self.log.info("%s %s", chi2Label, chi2)
+        self._check_stars(associations)
+        if not np.isfinite(chi2.chi2):
+            raise FloatingPointError('%s chi2 is invalid: %s', chi2Label, chi2)
+        if not model.validate(associations.getCcdImageList()):
+            raise ValueError("Model is not valid: check log messages for warnings.")
+        return chi2
+
     def _fit_photometry(self, associations, dataName=None):
         """
         Fit the photometric data.
@@ -632,16 +643,14 @@ class JointcalTask(pipeBase.CmdLineTask):
             doLineSearch = False  # purely linear in model parameters, so no line search needed
 
         fit = lsst.jointcal.PhotometryFit(associations, model)
-        chi2 = fit.computeChi2()
+        self._logChi2AndValidate(associations, fit, model, "Initialized")
+
         # TODO DM-12446: turn this into a "butler save" somehow.
         # Save reference and measurement chi2 contributions for this data
         if self.config.writeChi2ContributionFiles:
             baseName = "photometry_initial_chi2-{}.csv".format(dataName)
             fit.saveChi2Contributions(baseName)
 
-        if not np.isfinite(chi2.chi2):
-            raise FloatingPointError('Initial chi2 is invalid: %s'%chi2)
-        self.log.info("Initialized: %s", str(chi2))
         # The constrained model needs the visit transfo fit first; the chip
         # transfo is initialized from the singleFrame PhotoCalib, so it's close.
         dumpMatrixFile = "photometry_preinit" if self.config.writeInitMatrix else ""
@@ -649,20 +658,17 @@ class JointcalTask(pipeBase.CmdLineTask):
             # no line search: should be purely (or nearly) linear,
             # and we want a large step size to initialize with.
             fit.minimize("ModelVisit", dumpMatrixFile=dumpMatrixFile)
-            chi2 = fit.computeChi2()
-            self.log.info(str(chi2))
+            self._logChi2AndValidate(associations, fit, model)
             dumpMatrixFile = ""  # so we don't redo the output on the next step
+
         fit.minimize("Model", doLineSearch=doLineSearch, dumpMatrixFile=dumpMatrixFile)
-        chi2 = fit.computeChi2()
-        self.log.info(str(chi2))
+        self._logChi2AndValidate(associations, fit, model)
+
         fit.minimize("Fluxes")  # no line search: always purely linear.
-        chi2 = fit.computeChi2()
-        self.log.info(str(chi2))
+        self._logChi2AndValidate(associations, fit, model)
+
         fit.minimize("Model Fluxes", doLineSearch=doLineSearch)
-        chi2 = fit.computeChi2()
-        if not np.isfinite(chi2.chi2):
-            raise FloatingPointError('Pre-iteration chi2 is invalid: %s'%chi2)
-        self.log.info("Fit prepared with %s", str(chi2))
+        self._logChi2AndValidate(associations, fit, model, "Fit prepared")
 
         model.freezeErrorTransform()
         self.log.debug("Photometry error scales are frozen.")
@@ -725,36 +731,30 @@ class JointcalTask(pipeBase.CmdLineTask):
                                                         order=self.config.astrometrySimpleOrder)
 
         fit = lsst.jointcal.AstrometryFit(associations, model, self.config.positionErrorPedestal)
-        chi2 = fit.computeChi2()
+        self._logChi2AndValidate(associations, fit, model, "Initial")
+
         # TODO DM-12446: turn this into a "butler save" somehow.
         # Save reference and measurement chi2 contributions for this data
         if self.config.writeChi2ContributionFiles:
             baseName = "astrometry_initial_chi2-{}.csv".format(dataName)
             fit.saveChi2Contributions(baseName)
 
-        if not np.isfinite(chi2.chi2):
-            raise FloatingPointError('Initial chi2 is invalid: %s'%chi2)
-        self.log.info("Initialized: %s", str(chi2))
         dumpMatrixFile = "astrometry_preinit" if self.config.writeInitMatrix else ""
         # The constrained model needs the visit transfo fit first; the chip
         # transfo is initialized from the detector's cameraGeom, so it's close.
         if self.config.astrometryModel == "constrained":
             fit.minimize("DistortionsVisit", dumpMatrixFile=dumpMatrixFile)
-            chi2 = fit.computeChi2()
-            self.log.info(str(chi2))
+            self._logChi2AndValidate(associations, fit, model)
             dumpMatrixFile = ""  # so we don't redo the output on the next step
+
         fit.minimize("Distortions", dumpMatrixFile=dumpMatrixFile)
-        chi2 = fit.computeChi2()
-        self.log.info(str(chi2))
+        self._logChi2AndValidate(associations, fit, model)
+
         fit.minimize("Positions")
-        chi2 = fit.computeChi2()
-        self.log.info(str(chi2))
+        self._logChi2AndValidate(associations, fit, model)
+
         fit.minimize("Distortions Positions")
-        chi2 = fit.computeChi2()
-        self.log.info(str(chi2))
-        if not np.isfinite(chi2.chi2):
-            raise FloatingPointError('Pre-iteration chi2 is invalid: %s'%chi2)
-        self.log.info("Fit prepared with %s", str(chi2))
+        self._logChi2AndValidate(associations, fit, model, "Fit prepared")
 
         chi2 = self._iterate_fit(associations,
                                  fit,
@@ -831,17 +831,15 @@ class JointcalTask(pipeBase.CmdLineTask):
                                      doLineSearch=doLineSearch,
                                      dumpMatrixFile=dumpMatrixFile)
             dumpMatrixFile = ""  # clear it so we don't write the matrix again.
-            chi2 = fitter.computeChi2()
-            self._check_stars(associations)
-            self.log.info(str(chi2))
+            chi2 = self._logChi2AndValidate(associations, fitter, fitter.getModel())
+
             if result == MinimizeResult.Converged:
                 if doRankUpdate:
                     self.log.debug("fit has converged - no more outliers - redo minimization "
                                    "one more time in case we have lost accuracy in rank update.")
                     # Redo minimization one more time in case we have lost accuracy in rank update
                     result = fitter.minimize(whatToFit, self.config.outlierRejectSigma)
-                chi2 = fitter.computeChi2()
-                self.log.info("Fit completed with: %s", str(chi2))
+                    chi2 = self._logChi2AndValidate(associations, fitter, fitter.getModel(), "Fit completed")
 
                 # log a message for a large final chi2, TODO: DM-15247 for something better
                 if chi2.chi2/chi2.ndof >= 4.0:
