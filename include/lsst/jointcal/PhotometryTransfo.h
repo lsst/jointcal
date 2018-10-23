@@ -206,7 +206,8 @@ public:
     /**
      * Create a Chebyshev transfo with the specified coefficients.
      *
-     * The polynomial order is determined from the number of coefficients.
+     * The polynomial order is determined from the number of coefficients, taking only the
+     * anti-diagonal upper triangle portion of the passed-in coefficients
      *
      * @param      coefficients  The polynomial coefficients.
      * @param[in]  bbox          The bounding box it is valid within, to rescale it to [-1,1].
@@ -291,6 +292,9 @@ public:
     }
 };
 
+/**
+ * nth-order 2d Chebyshev photometry transfo, plus the input flux.
+ */
 class MagnitudeTransfoChebyshev : public PhotometryTransfoChebyshev {
 public:
     MagnitudeTransfoChebyshev(size_t order, afw::geom::Box2D const &bbox)
