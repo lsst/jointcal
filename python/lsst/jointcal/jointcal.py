@@ -133,7 +133,7 @@ class JointcalConfig(pexConfig.Config):
     )
     photometryErrorPedestal = pexConfig.Field(
         doc="Systematic term to apply to the measured error on flux or magnitude as a "
-        "fraction of source flux or magnitude delta (e.g. 0.05 is 5\% of flux or +50 millimag).",
+        "fraction of source flux or magnitude delta (e.g. 0.05 is 5% of flux or +50 millimag).",
         dtype=float,
         default=0.0,
     )
