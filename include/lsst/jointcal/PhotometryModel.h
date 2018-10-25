@@ -136,6 +136,14 @@ public:
     /// Dump the contents of the transfos, for debugging.
     virtual void dump(std::ostream &stream = std::cout) const = 0;
 
+    /**
+     * Check that the model is positive on the ccdImage bbox.
+     *
+     * @param ccdImage The ccdImage to test.
+     * @return True if the image is positive on a sampling of points of the ccdImage bbox.
+     */
+    bool checkPositiveOnBBox(CcdImage const &ccdImage) const;
+
     friend std::ostream &operator<<(std::ostream &s, PhotometryModel const &model) {
         model.dump(s);
         return s;
