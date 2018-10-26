@@ -19,8 +19,8 @@ class Point;
 //! Photometric response model which has a single photometric factor per CcdImage.
 class SimplePhotometryModel : public PhotometryModel {
 public:
-    SimplePhotometryModel(CcdImageList const &ccdImageList, double errorPedestal_ = 0)
-            : PhotometryModel(errorPedestal_) {
+    SimplePhotometryModel(CcdImageList const &ccdImageList, LOG_LOGGER log, double errorPedestal_ = 0)
+            : PhotometryModel(log, errorPedestal_) {
         _myMap.reserve(ccdImageList.size());
     }
 

@@ -2,6 +2,8 @@
 import unittest
 import unittest.mock
 
+import numpy as np
+
 import lsst.log
 import lsst.utils
 
@@ -39,17 +41,22 @@ class TestJointcalIterateFit(lsst.utils.tests.TestCase):
         self.badChi2.chi2 = 600.0
         self.badChi2.ndof = 100
 
+        self.nanChi2 = lsst.jointcal.chi2.Chi2Statistic()
+        self.nanChi2.chi2 = np.nan
+        self.nanChi2.ndof = 100
+
         self.maxSteps = 20
         self.name = "testing"
         self.whatToFit = ""  # unneeded, since we're mocking the fitter
 
-        # Mock the fitter and association manager, so we can force particular
+        # Mock the fitter, association manager, and model, so we can force particular
         # return values/exceptions. Default to "good" return values.
         self.fitter = unittest.mock.Mock(spec=lsst.jointcal.PhotometryFit)
         self.fitter.computeChi2.return_value = self.goodChi2
         self.fitter.minimize.return_value = MinimizeResult.Converged
         self.associations = unittest.mock.Mock(spec=lsst.jointcal.Associations)
         self.associations.getCcdImageList.return_value = self.ccdImageList
+        self.model = unittest.mock.Mock(spec=lsst.jointcal.SimpleFluxModel)
 
     def test_iterateFit_success(self):
         chi2 = self.jointcal._iterate_fit(self.associations, self.fitter,
@@ -74,7 +81,7 @@ class TestJointcalIterateFit(lsst.utils.tests.TestCase):
         chi2 = self.jointcal._iterate_fit(self.associations, self.fitter,
                                           self.maxSteps, self.name, self.whatToFit)
         self.assertEqual(chi2, self.badChi2)
-        log.info.assert_called_with("Fit completed with: %s", str(self.badChi2))
+        log.info.assert_called_with("%s %s", "Fit completed", self.badChi2)
         log.error.assert_called_with("Potentially bad fit: High chi-squared/ndof.")
 
     def test_iterateFit_exceedMaxSteps(self):
@@ -88,6 +95,16 @@ class TestJointcalIterateFit(lsst.utils.tests.TestCase):
         self.assertEqual(chi2, self.goodChi2)
         self.assertEqual(self.fitter.minimize.call_count, maxSteps)
         log.error.assert_called_with("testing failed to converge after %s steps" % maxSteps)
+
+    def test_invalid_model(self):
+        self.model.validate.return_value = False
+        with(self.assertRaises(ValueError)):
+            self.jointcal._logChi2AndValidate(self.associations, self.fitter, self.model)
+
+    def test_nonfinite_chi2(self):
+        self.fitter.computeChi2.return_value = self.nanChi2
+        with(self.assertRaises(FloatingPointError)):
+            self.jointcal._logChi2AndValidate(self.associations, self.fitter, self.model)
 
 
 class MemoryTester(lsst.utils.tests.MemoryTestCase):

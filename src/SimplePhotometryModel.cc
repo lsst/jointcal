@@ -9,10 +9,6 @@
 #include "lsst/jointcal/MeasuredStar.h"
 
 namespace {
-LOG_LOGGER _log = LOG_GET("jointcal.SimplePhotometryModel");
-}
-
-namespace {
 double instFluxFromMag(double mag) { return std::pow(10, mag / -2.5); }
 }  // namespace
 
@@ -81,7 +77,7 @@ PhotometryMappingBase *SimplePhotometryModel::findMapping(CcdImage const &ccdIma
 }
 
 SimpleFluxModel::SimpleFluxModel(CcdImageList const &ccdImageList, double errorPedestal_)
-        : SimplePhotometryModel(ccdImageList, errorPedestal_) {
+        : SimplePhotometryModel(ccdImageList, LOG_GET("jointcal.SimpleFluxModel"), errorPedestal_) {
     for (auto const &ccdImage : ccdImageList) {
         auto photoCalib = ccdImage->getPhotoCalib();
         // Use the single-frame processing calibration from the PhotoCalib as the initial value.
@@ -113,7 +109,7 @@ std::shared_ptr<afw::image::PhotoCalib> SimpleFluxModel::toPhotoCalib(CcdImage c
 }
 
 SimpleMagnitudeModel::SimpleMagnitudeModel(CcdImageList const &ccdImageList, double errorPedestal_)
-        : SimplePhotometryModel(ccdImageList, errorPedestal_) {
+        : SimplePhotometryModel(ccdImageList, LOG_GET("jointcal.SimpleMagnitudeModel"), errorPedestal_) {
     for (auto const &ccdImage : ccdImageList) {
         auto photoCalib = ccdImage->getPhotoCalib();
         // Use the single-frame processing calibration from the PhotoCalib as the default.

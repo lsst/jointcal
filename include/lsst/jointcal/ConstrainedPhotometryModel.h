@@ -30,12 +30,14 @@ public:
      * @param      ccdImageList   The list of CCDImages to construct the model for.
      * @param      focalPlaneBBox The bounding box of the camera's focal plane, defining the domain of the
      *                            visit polynomial.
+     * @param[in]  log An lsst::log::Log instance to log messages to.
      * @param[in]  visitOrder    The order of the visit polynomial.
+     * @param[in]  errorPedestal_ A pedestal in flux or magnitude to apply to all MeasuredStar flux errors.
      */
     explicit ConstrainedPhotometryModel(CcdImageList const &ccdImageList,
-                                        afw::geom::Box2D const &focalPlaneBBox, int visitOrder = 7,
-                                        double errorPedestal_ = 0)
-            : PhotometryModel(errorPedestal_), _fittingChips(false), _fittingVisits(false) {
+                                        afw::geom::Box2D const &focalPlaneBBox, LOG_LOGGER log,
+                                        int visitOrder = 7, double errorPedestal_ = 0)
+            : PhotometryModel(log, errorPedestal_), _fittingChips(false), _fittingVisits(false) {
         _chipVisitMap.reserve(ccdImageList.size());
     }
 
@@ -103,7 +105,9 @@ class ConstrainedFluxModel : public ConstrainedPhotometryModel {
 public:
     explicit ConstrainedFluxModel(CcdImageList const &ccdImageList, afw::geom::Box2D const &focalPlaneBBox,
                                   int visitOrder = 7, double errorPedestal_ = 0)
-            : ConstrainedPhotometryModel(ccdImageList, focalPlaneBBox, visitOrder, errorPedestal_) {
+            : ConstrainedPhotometryModel(ccdImageList, focalPlaneBBox,
+                                         LOG_GET("jointcal.ConstrainedFluxModel"), visitOrder,
+                                         errorPedestal_) {
         initialize<FluxTransfoSpatiallyInvariant, FluxTransfoChebyshev, ChipVisitFluxMapping>(
                 ccdImageList, focalPlaneBBox, visitOrder);
     }
@@ -145,7 +149,9 @@ public:
     explicit ConstrainedMagnitudeModel(CcdImageList const &ccdImageList,
                                        afw::geom::Box2D const &focalPlaneBBox, int visitOrder = 7,
                                        double errorPedestal_ = 0)
-            : ConstrainedPhotometryModel(ccdImageList, focalPlaneBBox, visitOrder, errorPedestal_) {
+            : ConstrainedPhotometryModel(ccdImageList, focalPlaneBBox,
+                                         LOG_GET("jointcal.ConstrainedMagnitudeModel"), visitOrder,
+                                         errorPedestal_) {
         initialize<MagnitudeTransfoSpatiallyInvariant, MagnitudeTransfoChebyshev, ChipVisitMagnitudeMapping>(
                 ccdImageList, focalPlaneBBox, visitOrder);
     }

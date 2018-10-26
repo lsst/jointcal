@@ -25,8 +25,6 @@ public:
      *
      * @param associations The associations catalog to use in the fitter.
      * @param photometryModel The model to build the fitter for.
-     * @param fluxError The systematic error pedestal to apply to measured instFlux errors
-     *                  (as a percent of instFlux).
      */
     PhotometryFit(std::shared_ptr<Associations> associations,
                   std::shared_ptr<PhotometryModel> photometryModel)
@@ -67,6 +65,9 @@ public:
 
     /// @copydoc FitterBase::saveChi2RefContributions
     void saveChi2RefContributions(std::string const &baseName) const override;
+
+    /// Return the model being fit.
+    std::shared_ptr<PhotometryModel> getModel() const { return _photometryModel; }
 
 private:
     bool _fittingModel, _fittingFluxes;

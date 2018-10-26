@@ -66,7 +66,7 @@ class PhotometryModelTestBase:
         expects = np.empty(len(stars))
         for i, star in enumerate(stars):
             expects[i] = self.model.transform(ccdImage, star)
-        self.assertFloatsAlmostEqual(result[:, 0], expects, rtol=1e-13)
+        self.assertFloatsAlmostEqual(result[:, 0], expects, rtol=2e-13)
         # NOTE: don't compare transformed errors, as they will be different:
         # photoCalib incorporates the model error, while jointcal computes the
         # full covariance matrix, from which the model error should be derived.
@@ -169,8 +169,10 @@ class ConstrainedPhotometryModelTestCase(PhotometryModelTestBase):
         super().setUp()
         self.visitOrder = 3
         self.focalPlaneBBox = self.camera.getFpBBox()
-        # tweak to get more than just a constant field for the second ccdImage
-        self.delta = np.arange(20, dtype=float)*-0.2 + 1
+        # Amount to shift the parameters to get more than just a constant field
+        # for the second ccdImage.
+        # Reverse the range so that the low order terms are the largest.
+        self.delta = (np.arange(20, dtype=float)*-0.2 + 1)[::-1]
         # but keep the first ccdImage constant, to help distinguish test failures.
         self.delta[:10] = 0.0
         self.delta[0] = -5.0
@@ -189,12 +191,12 @@ class ConstrainedPhotometryModelTestCase(PhotometryModelTestBase):
         # createTwoFakeCcdImages() always uses the same two visitIds,
         # so there will be 2 visits total here.
         struct1 = lsst.jointcal.testUtils.createTwoFakeCcdImages(100, 100, seed=100, fakeCcdId=12,
-                                                                 photoCalibMean1=100.0,
-                                                                 photoCalibMean2=120.0)
+                                                                 photoCalibMean1=1e-2,
+                                                                 photoCalibMean2=1.2e-2)
         self.ccdImageList2 = struct1.ccdImageList
         struct2 = lsst.jointcal.testUtils.createTwoFakeCcdImages(100, 100, seed=101, fakeCcdId=13,
-                                                                 photoCalibMean1=101.0,
-                                                                 photoCalibMean2=121.0)
+                                                                 photoCalibMean1=2.0e-2,
+                                                                 photoCalibMean2=2.2e-2)
         self.ccdImageList2.extend(struct2.ccdImageList)
         camera = struct1.camera  # the camera is the same in both structs
         focalPlaneBBox = camera.getFpBBox()
@@ -311,6 +313,25 @@ class ConstrainedMagnitudeModelTestCase(ConstrainedPhotometryModelTestCase,
                        fluxToMag(self.ccdImageList2[2].getPhotoCalib().getCalibrationMean()),
                        fluxToMag(self.ccdImageList2[2].getPhotoCalib().getCalibrationMean())]
         self._testConstructor(expectVisit, expectChips)
+
+    def test_checkPositiveOnBBox(self):
+        self.assertTrue(self.model.checkPositiveOnBBox(self.ccdImageList[0]))
+        self.assertTrue(self.model.checkPositiveOnBBox(self.ccdImageList[1]))
+
+        # make a model that is negative all over
+        struct = lsst.jointcal.testUtils.createTwoFakeCcdImages(100, 100, seed=100, fakeCcdId=12,
+                                                                photoCalibMean1=1000,
+                                                                photoCalibMean2=1200)
+        model = lsst.jointcal.ConstrainedMagnitudeModel(struct.ccdImageList,
+                                                        struct.camera.getFpBBox(),
+                                                        self.visitOrder)
+        self.assertFalse(model.checkPositiveOnBBox(struct.ccdImageList[0]))
+
+    def test_validate(self):
+        self.assertTrue(self.model.validate(self.ccdImageList))
+        # Make the model go negative
+        self.model.offsetParams(-3*self.delta)
+        self.assertFalse(self.model.validate(self.ccdImageList))
 
 
 class MemoryTester(lsst.utils.tests.MemoryTestCase):

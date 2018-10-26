@@ -41,8 +41,8 @@ public:
               _instMag(0.),
               _instMagErr(0.) {}
 
-    /// No move, allow copy constructor: we may copy the fitted StarLists when associating and matching
-    /// catalogs, otherwise Stars should be managed by shared_ptr only.
+    /// No move, allow copy constructor: we may copy the fitted StarLists when associating and
+    /// matching catalogs, otherwise Stars should be managed by shared_ptr only.
     MeasuredStar(MeasuredStar const &) = default;
     MeasuredStar(MeasuredStar &&) = delete;
     MeasuredStar &operator=(MeasuredStar const &) = delete;

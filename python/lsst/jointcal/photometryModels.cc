@@ -58,6 +58,9 @@ void declarePhotometryModel(py::module &mod) {
     cls.def("getRefError", &PhotometryModel::getRefError);
     cls.def("computeRefResidual", &PhotometryModel::computeRefResidual);
 
+    cls.def("checkPositiveOnBBox", &PhotometryModel::checkPositiveOnBBox);
+    cls.def("validate", &PhotometryModel::validate);
+
     cls.def("getMappingIndices", &PhotometryModel::getMappingIndices);
     cls.def("computeParameterDerivatives",
             [](PhotometryModel const &self, MeasuredStar const &star, CcdImage const &ccdImage) {

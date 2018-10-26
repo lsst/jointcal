@@ -34,7 +34,7 @@ import lsst.jointcal.star
 
 
 def createTwoFakeCcdImages(num1=4, num2=4, seed=100, fakeCcdId=12,
-                           photoCalibMean1=100.0, photoCalibMean2=120.0):
+                           photoCalibMean1=1e-2, photoCalibMean2=1.2e-2):
     """Return two fake ccdImages built on CFHT Megacam metadata.
 
     If ``num1 == num2``, the catalogs will align on-sky so each source will
@@ -56,6 +56,7 @@ def createTwoFakeCcdImages(num1=4, num2=4, seed=100, fakeCcdId=12,
         testdata that is included in this simple test dataset.
     photoCalibMean1, photoCalibMean2: `float`, optional
         The mean photometric calibration to pass to each ccdImage construction.
+        Note: this value is 1/instFluxMag0, so it should be less than 1.
 
     Returns
     -------
@@ -98,7 +99,7 @@ def createTwoFakeCcdImages(num1=4, num2=4, seed=100, fakeCcdId=12,
 
 
 def createFakeCcdImage(butler, visit, num, fluxFieldName,
-                       photoCalibMean=100.0, photoCalibErr=1.0, fakeCcdId=12):
+                       photoCalibMean=1e-2, photoCalibErr=1.0, fakeCcdId=12):
     """Create a fake CcdImage by making a fake catalog.
 
     Parameters
@@ -115,6 +116,7 @@ def createFakeCcdImage(butler, visit, num, fluxFieldName,
         (e.g. "slot_CalibFlux").
     photoCalibMean : `float`, optional
         Value to set for calibrationMean in the created PhotoCalib.
+        Note: this value is 1/instFluxMag0, so it should be less than 1.
     photoCalibErr : `float`, optional
         Value to set for calibrationErr in the created PhotoCalib.
     fakeCcdId : `int`, optional

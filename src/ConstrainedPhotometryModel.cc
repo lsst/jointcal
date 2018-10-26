@@ -14,10 +14,6 @@
 #include "lsst/jointcal/ConstrainedPhotometryModel.h"
 #include "lsst/jointcal/PhotometryMapping.h"
 
-namespace {
-LOG_LOGGER _log = LOG_GET("jointcal.ConstrainedPhotometryModel");
-}
-
 namespace lsst {
 namespace jointcal {
 
@@ -251,10 +247,11 @@ std::shared_ptr<afw::image::PhotoCalib> ConstrainedFluxModel::toPhotoCalib(CcdIm
     // Now stitch them all together.
     auto transform = pixToFocal->then(chebyTransform)->then(zoomTransform);
     // NOTE: TransformBoundedField does not yet implement mean(), so we have to compute it here.
-    double mean = mapping->getChipMapping()->getParameters()[0] * visitTransfo->mean();
+    // TODO: restore this calculation as part of DM-16305
+    // double mean = mapping->getChipMapping()->getParameters()[0] * visitTransfo->mean(ccdBBoxInFocal);
     auto boundedField = std::make_shared<afw::math::TransformBoundedField>(ccdBBox, *transform);
-    return std::make_shared<afw::image::PhotoCalib>(mean, oldPhotoCalib->getCalibrationErr(), boundedField,
-                                                    false);
+    return std::make_shared<afw::image::PhotoCalib>(oldPhotoCalib->getCalibrationMean(),
+                                                    oldPhotoCalib->getCalibrationErr(), boundedField, false);
 }
 
 // ConstrainedMagnitudeModel methods
@@ -314,10 +311,11 @@ std::shared_ptr<afw::image::PhotoCalib> ConstrainedMagnitudeModel::toPhotoCalib(
     // Now stitch them all together.
     auto transform = pixToFocal->then(chebyTransform)->then(logTransform)->then(zoomTransform);
     // NOTE: TransformBoundedField does not yet implement mean(), so we have to compute it here.
-    double mean = calibrationMean * visitTransfo->mean();
+    // TODO: restore this calculation as part of DM-16305
+    // double mean = calibrationMean * visitTransfo->mean(ccdBBoxInFocal);
     auto boundedField = std::make_shared<afw::math::TransformBoundedField>(ccdBBox, *transform);
-    return std::make_shared<afw::image::PhotoCalib>(mean, oldPhotoCalib->getCalibrationErr(), boundedField,
-                                                    false);
+    return std::make_shared<afw::image::PhotoCalib>(oldPhotoCalib->getCalibrationMean(),
+                                                    oldPhotoCalib->getCalibrationErr(), boundedField, false);
 }
 
 // explicit instantiation of templated function, so pybind11 can

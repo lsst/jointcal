@@ -51,6 +51,8 @@ void declareAstrometryFit(py::module &mod) {
 
     cls.def(py::init<std::shared_ptr<Associations>, std::shared_ptr<AstrometryModel>, double>(),
             "associations"_a, "astrometryModel"_a, "posError"_a);
+
+    cls.def("getModel", &AstrometryFit::getModel, py::return_value_policy::reference_internal);
 }
 
 void declarePhotometryFit(py::module &mod) {
@@ -58,6 +60,8 @@ void declarePhotometryFit(py::module &mod) {
 
     cls.def(py::init<std::shared_ptr<Associations>, std::shared_ptr<PhotometryModel>>(), "associations"_a,
             "photometryModel"_a);
+
+    cls.def("getModel", &PhotometryFit::getModel, py::return_value_policy::reference_internal);
 }
 
 PYBIND11_MODULE(fitter, mod) {
