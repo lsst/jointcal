@@ -49,6 +49,12 @@ void declareGtransfo(py::module &mod) {
             "inputframe"_a, "inscribed"_a);
     cls.def("getNpar", &Gtransfo::getNpar);
     cls.def("offsetParams", &Gtransfo::offsetParams);
+    cls.def("linearApproximation", &Gtransfo::linearApproximation);
+    cls.def("computeDerivative", [](Gtransfo const &self, Point const &where, double const step) {
+        GtransfoLin derivative;
+        self.computeDerivative(where, derivative, step);
+        return derivative;
+    });
 
     utils::python::addOutputOp(cls, "__str__");
 }
@@ -64,6 +70,7 @@ void declareGtransfoPoly(py::module &mod) {
     cls.def("getOrder", &GtransfoPoly::getOrder);
     cls.def("coeff", (double (GtransfoPoly::*)(unsigned const, unsigned const, unsigned const) const) &
                              GtransfoPoly::coeff);
+    cls.def("determinant", &GtransfoPoly::determinant);
     cls.def("getNpar", &GtransfoPoly::getNpar);
     cls.def("toAstMap", &GtransfoPoly::toAstMap);
     cls.def("write", [](GtransfoPoly const &self) {
