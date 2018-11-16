@@ -43,9 +43,7 @@ void declareFrame(py::module &mod) {
     utils::python::addOutputOp(cls, "__str__");
 }
 
-PYBIND11_MODULE(frame, mod) {
-    declareFrame(mod);
-}
+PYBIND11_MODULE(frame, mod) { declareFrame(mod); }
 }  // namespace
 }  // namespace jointcal
 }  // namespace lsst
