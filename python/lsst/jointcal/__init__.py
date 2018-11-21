@@ -28,7 +28,6 @@ from .ccdImage import *
 from .fitter import *
 from .gtransfo import *
 from .jointcal import *
-from .jointcalCoadd import *
 from .jointcalControl import *
 from .photometryMappings import *
 from .photometryModels import *
