@@ -29,7 +29,7 @@
 #include "lsst/jointcal/ConstrainedAstrometryModel.h"
 #include "lsst/jointcal/CcdImage.h"
 #include "lsst/jointcal/AstrometryModel.h"
-#include "lsst/jointcal/Gtransfo.h"
+#include "lsst/jointcal/AstrometryTransform.h"
 #include "lsst/jointcal/ProjectionHandler.h"
 #include "lsst/jointcal/StarMatch.h"
 
@@ -79,7 +79,8 @@ ConstrainedAstrometryModel::ConstrainedAstrometryModel(
         auto chip = im.getCcdId();
         auto visitp = _visitMap.find(visit);
         if (visitp == _visitMap.end()) {
-            _visitMap[visit] = std::make_shared<SimplePolyMapping>(GtransfoLin(), GtransfoPoly(visitOrder));
+            _visitMap[visit] = std::make_shared<SimplePolyMapping>(AstrometryTransformLinear(),
+                                                                   AstrometryTransformPolynomial(visitOrder));
         }
         auto chipp = _chipMap.find(chip);
         if (chipp == _chipMap.end()) {
@@ -93,9 +94,10 @@ ConstrainedAstrometryModel::ConstrainedAstrometryModel(
             auto pixelsToFocal =
                     im.getDetector()->getTransform(afw::cameraGeom::PIXELS, afw::cameraGeom::FOCAL_PLANE);
             Frame const &frame = im.getImageFrame();
-            // construct the chip gtransfo by approximating the pixel->Focal afw::geom::Transform.
-            GtransfoPoly pol = GtransfoPoly(pixelsToFocal, frame, chipOrder);
-            GtransfoLin shiftAndNormalize = normalizeCoordinatesTransfo(frame);
+            // construct the chip transform by approximating the pixel->Focal afw::geom::Transform.
+            AstrometryTransformPolynomial pol =
+                    AstrometryTransformPolynomial(pixelsToFocal, frame, chipOrder);
+            AstrometryTransformLinear shiftAndNormalize = normalizeCoordinatesTransform(frame);
             _chipMap[chip] = std::make_shared<SimplePolyMapping>(shiftAndNormalize,
                                                                  pol * shiftAndNormalize.inverted());
         }
@@ -114,8 +116,9 @@ ConstrainedAstrometryModel::ConstrainedAstrometryModel(
         // (i.e. the reference visit was complete)
         if (_chipMap.find(chip) == _chipMap.end()) {
             LOGLS_WARN(_log, "Chip " << chip << " is missing in the reference exposure, expect troubles.");
-            GtransfoLin norm = normalizeCoordinatesTransfo(im.getImageFrame());
-            _chipMap[chip] = std::make_shared<SimplePolyMapping>(norm, GtransfoPoly(chipOrder));
+            AstrometryTransformLinear norm = normalizeCoordinatesTransform(im.getImageFrame());
+            _chipMap[chip] =
+                    std::make_shared<SimplePolyMapping>(norm, AstrometryTransformPolynomial(chipOrder));
         }
         _mappings[ccdImage->getHashKey()] =
                 std::make_unique<TwoTransfoMapping>(_chipMap[chip], _visitMap[visit]);
@@ -184,7 +187,7 @@ void ConstrainedAstrometryModel::freezeErrorTransform() {
     for (auto i = _chipMap.begin(); i != _chipMap.end(); ++i) i->second->freezeErrorTransform();
 }
 
-const Gtransfo &ConstrainedAstrometryModel::getChipTransfo(CcdIdType const chip) const {
+const AstrometryTransform &ConstrainedAstrometryModel::getChipTransform(CcdIdType const chip) const {
     auto chipp = _chipMap.find(chip);
     if (chipp == _chipMap.end()) {
         std::stringstream errMsg;
@@ -193,7 +196,7 @@ const Gtransfo &ConstrainedAstrometryModel::getChipTransfo(CcdIdType const chip)
         std::cout << std::endl;
         throw pexExcept::InvalidParameterError(errMsg.str());
     }
-    return chipp->second->getTransfo();
+    return chipp->second->getTransform();
 }
 
 // Array of visits involved in the solution.
@@ -204,7 +207,7 @@ std::vector<VisitIdType> ConstrainedAstrometryModel::getVisits() const {
     return res;
 }
 
-const Gtransfo &ConstrainedAstrometryModel::getVisitTransfo(VisitIdType const &visit) const {
+const AstrometryTransform &ConstrainedAstrometryModel::getVisitTransform(VisitIdType const &visit) const {
     auto visitp = _visitMap.find(visit);
     if (visitp == _visitMap.end()) {
         std::stringstream errMsg;
@@ -213,7 +216,7 @@ const Gtransfo &ConstrainedAstrometryModel::getVisitTransfo(VisitIdType const &v
         std::cout << std::endl;
         throw pexExcept::InvalidParameterError(errMsg.str());
     }
-    return visitp->second->getTransfo();
+    return visitp->second->getTransform();
 }
 
 int ConstrainedAstrometryModel::getTotalParameters() const {
@@ -232,9 +235,9 @@ std::shared_ptr<afw::geom::SkyWcs> ConstrainedAstrometryModel::makeSkyWcs(CcdIma
     jointcal::Point tangentPoint(proj->getTangentPoint());
 
     auto imageFrame = ccdImage.getImageFrame();
-    auto pixelsToFocal = getChipTransfo(ccdImage.getCcdId()).toAstMap(imageFrame);
-    jointcal::Frame focalBox = getChipTransfo(ccdImage.getCcdId()).apply(imageFrame, false);
-    auto focalToIwc = getVisitTransfo(ccdImage.getVisit()).toAstMap(focalBox);
+    auto pixelsToFocal = getChipTransform(ccdImage.getCcdId()).toAstMap(imageFrame);
+    jointcal::Frame focalBox = getChipTransform(ccdImage.getCcdId()).apply(imageFrame, false);
+    auto focalToIwc = getVisitTransform(ccdImage.getVisit()).toAstMap(focalBox);
 
     ast::Frame pixelFrame(2, "Domain=PIXELS");
     ast::Frame focalFrame(2, "Domain=FOCAL");

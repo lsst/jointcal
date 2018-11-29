@@ -33,7 +33,7 @@
 #include "lsst/jointcal/AstrometryModel.h"
 #include "lsst/jointcal/SimpleAstrometryModel.h"
 #include "lsst/jointcal/ConstrainedAstrometryModel.h"
-#include "lsst/jointcal/Gtransfo.h"
+#include "lsst/jointcal/AstrometryTransform.h"
 
 namespace py = pybind11;
 using namespace pybind11::literals;
@@ -63,7 +63,8 @@ void declareSimpleAstrometryModel(py::module &mod) {
                      unsigned>(),
             "ccdImageList"_a, "projectionHandler"_a, "initFromWcs"_a, "nNotFit"_a = 0, "order"_a = 3);
 
-    cls.def("getTransfo", &SimpleAstrometryModel::getTransfo, py::return_value_policy::reference_internal);
+    cls.def("getTransform", &SimpleAstrometryModel::getTransform,
+            py::return_value_policy::reference_internal);
 }
 
 void declareConstrainedAstrometryModel(py::module &mod) {
@@ -73,15 +74,15 @@ void declareConstrainedAstrometryModel(py::module &mod) {
     cls.def(py::init<CcdImageList const &, std::shared_ptr<ProjectionHandler const>, int, int>(),
             "ccdImageList"_a, "projectionHandler"_a, "chipOrder"_a, "visitOrder"_a);
 
-    cls.def("getChipTransfo", &ConstrainedAstrometryModel::getChipTransfo,
+    cls.def("getChipTransform", &ConstrainedAstrometryModel::getChipTransform,
             py::return_value_policy::reference_internal);
-    cls.def("getVisitTransfo", &ConstrainedAstrometryModel::getVisitTransfo,
+    cls.def("getVisitTransform", &ConstrainedAstrometryModel::getVisitTransform,
             py::return_value_policy::reference_internal);
 }
 
 PYBIND11_MODULE(astrometryModels, mod) {
     py::module::import("lsst.jointcal.ccdImage");
-    py::module::import("lsst.jointcal.gtransfo");
+    py::module::import("lsst.jointcal.astrometryTransform");
     py::module::import("lsst.jointcal.astrometryMappings");
     declareAstrometryModel(mod);
     declareSimpleAstrometryModel(mod);

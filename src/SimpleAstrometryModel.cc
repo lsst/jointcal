@@ -33,7 +33,7 @@
 #include "lsst/jointcal/CcdImage.h"
 #include "lsst/jointcal/ProjectionHandler.h"
 #include "lsst/pex/exceptions.h"
-#include "lsst/jointcal/Gtransfo.h"
+#include "lsst/jointcal/AstrometryTransform.h"
 
 namespace {
 LOG_LOGGER _log = LOG_GET("jointcal.SimpleAstrometryModel");
@@ -53,7 +53,8 @@ SimpleAstrometryModel::SimpleAstrometryModel(CcdImageList const &ccdImageList,
     for (auto i = ccdImageList.cbegin(); i != ccdImageList.cend(); ++i, ++count) {
         const CcdImage &im = **i;
         if (count < nNotFit) {
-            std::unique_ptr<SimpleGtransfoMapping> id(new SimpleGtransfoMapping(GtransfoIdentity()));
+            std::unique_ptr<SimpleAstrometryMapping> id(
+                    new SimpleAstrometryMapping(AstrometryTransformIdentity()));
             id->setIndex(-1);  // non sense, because it has no parameters
             _myMap[im.getHashKey()] = std::move(id);
         } else
@@ -66,7 +67,7 @@ SimpleAstrometryModel::SimpleAstrometryModel(CcdImageList const &ccdImageList,
                 LOGLS_WARN(_log, "Empty catalog from image: " << im.getName());
                 continue;
             }
-            GtransfoPoly pol(order);
+            AstrometryTransformPolynomial pol(order);
             if (pol.getOrder() > 0)  // if not, it cannot be decreased
             {
                 while (unsigned(pol.getNpar()) > 2 * nObj) {
@@ -85,13 +86,13 @@ SimpleAstrometryModel::SimpleAstrometryModel(CcdImageList const &ccdImageList,
                remains hidden
              */
             const Frame &frame = im.getImageFrame();
-            GtransfoLin shiftAndNormalize = normalizeCoordinatesTransfo(frame);
+            AstrometryTransformLinear shiftAndNormalize = normalizeCoordinatesTransform(frame);
             if (initFromWcs) {
-                pol = GtransfoPoly(im.getPixelToTangentPlane().get(), frame, order);
+                pol = AstrometryTransformPolynomial(im.getPixelToTangentPlane().get(), frame, order);
                 pol = pol * shiftAndNormalize.inverted();
             }
             _myMap[im.getHashKey()] =
-                    std::unique_ptr<SimpleGtransfoMapping>(new SimplePolyMapping(shiftAndNormalize, pol));
+                    std::unique_ptr<SimpleAstrometryMapping>(new SimplePolyMapping(shiftAndNormalize, pol));
         }
     }
 }
@@ -108,7 +109,7 @@ unsigned SimpleAstrometryModel::assignIndices(std::string const &whatToFit, unsi
     unsigned index = firstIndex;
     for (auto i = _myMap.begin(); i != _myMap.end(); ++i) {
         SimplePolyMapping *p = dynamic_cast<SimplePolyMapping *>(&*(i->second));
-        if (!p) continue;  // it should be GtransfoIdentity
+        if (!p) continue;  // it should be AstrometryTransformIdentity
         p->setIndex(index);
         index += p->getNpar();
     }
@@ -134,15 +135,15 @@ int SimpleAstrometryModel::getTotalParameters() const {
     return total;
 }
 
-const Gtransfo &SimpleAstrometryModel::getTransfo(CcdImage const &ccdImage) const {
-    return dynamic_cast<const SimplePolyMapping *>(findMapping(ccdImage))->getTransfo();
+const AstrometryTransform &SimpleAstrometryModel::getTransform(CcdImage const &ccdImage) const {
+    return dynamic_cast<const SimplePolyMapping *>(findMapping(ccdImage))->getTransform();
 }
 
 std::shared_ptr<afw::geom::SkyWcs> SimpleAstrometryModel::makeSkyWcs(CcdImage const &ccdImage) const {
     auto proj = std::dynamic_pointer_cast<const TanRaDecToPixel>(getSkyToTangentPlane(ccdImage));
     jointcal::Point tangentPoint(proj->getTangentPoint());
 
-    auto polyMap = getTransfo(ccdImage).toAstMap(ccdImage.getImageFrame());
+    auto polyMap = getTransform(ccdImage).toAstMap(ccdImage.getImageFrame());
     ast::Frame pixelFrame(2, "Domain=PIXELS");
     ast::Frame iwcFrame(2, "Domain=IWC");
 

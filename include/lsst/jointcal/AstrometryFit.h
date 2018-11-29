@@ -161,7 +161,7 @@ private:
     void getIndicesOfMeasuredStar(MeasuredStar const &measuredStar,
                                   std::vector<unsigned> &indices) const override;
 
-    Point transformFittedStar(FittedStar const &fittedStar, Gtransfo const &sky2TP,
+    Point transformFittedStar(FittedStar const &fittedStar, AstrometryTransform const &sky2TP,
                               Point const &refractionVector, double refractionCoeff, double mjd) const;
 
     /// Compute the chi2 (per star or total, depending on which Chi2Accumulator is used) from one CcdImage.

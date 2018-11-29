@@ -32,7 +32,7 @@
 class CcdImage;
 
 #include "lsst/jointcal/AstrometryModel.h"
-#include "lsst/jointcal/Gtransfo.h"
+#include "lsst/jointcal/AstrometryTransform.h"
 #include "lsst/jointcal/Frame.h"
 #include "lsst/jointcal/SimpleAstrometryMapping.h"
 #include "lsst/jointcal/ProjectionHandler.h"
@@ -89,10 +89,10 @@ public:
     int getTotalParameters() const override;
 
     //! Access to mappings
-    Gtransfo const &getChipTransfo(CcdIdType const chip) const;
+    AstrometryTransform const &getChipTransform(CcdIdType const chip) const;
 
     //! Access to mappings
-    Gtransfo const &getVisitTransfo(VisitIdType const &visit) const;
+    AstrometryTransform const &getVisitTransform(VisitIdType const &visit) const;
 
     //! Access to array of visits involved in the solution.
     std::vector<VisitIdType> getVisits() const;
@@ -102,7 +102,8 @@ public:
      * stars are reported) onto the Tangent plane (into which the pixel coordinates
      * are transformed).
      */
-    const std::shared_ptr<Gtransfo const> getSkyToTangentPlane(CcdImage const &ccdImage) const override {
+    const std::shared_ptr<AstrometryTransform const> getSkyToTangentPlane(
+            CcdImage const &ccdImage) const override {
         return _skyToTangentPlane->getSkyToTangentPlane(ccdImage);
     }
 
@@ -111,8 +112,8 @@ public:
 
 private:
     std::unordered_map<CcdImageKey, std::unique_ptr<TwoTransfoMapping>> _mappings;
-    std::map<CcdIdType, std::shared_ptr<SimpleGtransfoMapping>> _chipMap;
-    std::map<VisitIdType, std::shared_ptr<SimpleGtransfoMapping>> _visitMap;
+    std::map<CcdIdType, std::shared_ptr<SimpleAstrometryMapping>> _chipMap;
+    std::map<VisitIdType, std::shared_ptr<SimpleAstrometryMapping>> _visitMap;
     const std::shared_ptr<ProjectionHandler const> _skyToTangentPlane;
     bool _fittingChips, _fittingVisits;
 

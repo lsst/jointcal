@@ -25,7 +25,7 @@
 #include "pybind11/pybind11.h"
 #include "pybind11/eigen.h"
 
-#include "lsst/jointcal/Gtransfo.h"
+#include "lsst/jointcal/AstrometryTransform.h"
 #include "lsst/jointcal/AstrometryMapping.h"
 #include "lsst/jointcal/TwoTransfoMapping.h"
 
@@ -60,25 +60,26 @@ void declareTwoTransfoMapping(py::module &mod) {
                               py::return_value_policy::reference_internal);
 }
 
-void declareSimpleGtransfoMapping(py::module &mod) {
-    py::class_<SimpleGtransfoMapping, std::shared_ptr<SimpleGtransfoMapping>, AstrometryMapping> cls(
-            mod, "SimpleGtransfoMapping");
-    cls.def("getToBeFit", &SimpleGtransfoMapping::getToBeFit);
-    cls.def("setToBeFit", &SimpleGtransfoMapping::setToBeFit);
-    cls.def("getTransfo", &SimpleGtransfoMapping::getTransfo, py::return_value_policy::reference_internal);
+void declareSimpleAstrometryMapping(py::module &mod) {
+    py::class_<SimpleAstrometryMapping, std::shared_ptr<SimpleAstrometryMapping>, AstrometryMapping> cls(
+            mod, "SimpleAstrometryMapping");
+    cls.def("getToBeFit", &SimpleAstrometryMapping::getToBeFit);
+    cls.def("setToBeFit", &SimpleAstrometryMapping::setToBeFit);
+    cls.def("getTransform", &SimpleAstrometryMapping::getTransform,
+            py::return_value_policy::reference_internal);
 }
 
 void declareSimplePolyMapping(py::module &mod) {
-    py::class_<SimplePolyMapping, std::shared_ptr<SimplePolyMapping>, SimpleGtransfoMapping> cls(
+    py::class_<SimplePolyMapping, std::shared_ptr<SimplePolyMapping>, SimpleAstrometryMapping> cls(
             mod, "SimplePolyMapping");
 }
 
 PYBIND11_MODULE(astrometryMappings, mod) {
     py::module::import("lsst.jointcal.star");
-    py::module::import("lsst.jointcal.gtransfo");
+    py::module::import("lsst.jointcal.astrometryTransform");
     declareAstrometryMapping(mod);
     declareTwoTransfoMapping(mod);
-    declareSimpleGtransfoMapping(mod);
+    declareSimpleAstrometryMapping(mod);
     declareSimplePolyMapping(mod);
 }
 }  // namespace

@@ -36,7 +36,7 @@
 #include "lsst/jointcal/Associations.h"
 #include "lsst/jointcal/Chi2.h"
 #include "lsst/jointcal/Eigenstuff.h"
-#include "lsst/jointcal/Gtransfo.h"
+#include "lsst/jointcal/AstrometryTransform.h"
 #include "lsst/jointcal/Tripletlist.h"
 
 namespace lsst {

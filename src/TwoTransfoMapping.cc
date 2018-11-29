@@ -30,8 +30,8 @@ namespace pexExcept = lsst::pex::exceptions;
 namespace lsst {
 namespace jointcal {
 
-TwoTransfoMapping::TwoTransfoMapping(std::shared_ptr<SimpleGtransfoMapping> chipMapping,
-                                     std::shared_ptr<SimpleGtransfoMapping> visitMapping)
+TwoTransfoMapping::TwoTransfoMapping(std::shared_ptr<SimpleAstrometryMapping> chipMapping,
+                                     std::shared_ptr<SimpleAstrometryMapping> visitMapping)
         : _m1(chipMapping), _m2(visitMapping) {
     /* Allocate the record of temporary variables, so that they are not
        allocated at every call. This is hidden behind a pointer in order
@@ -84,7 +84,7 @@ void TwoTransfoMapping::computeTransformAndDerivatives(FatPoint const &where, Fa
 /*! Sets the _nPar{1,2} and allocates H matrices accordingly, to
    avoid allocation at every call. If we did not care about dynamic
    allocation, we could just put the information of what moves and
-   what doesn't into the SimpleGtransfoMapping. */
+   what doesn't into the SimpleAstrometryMapping. */
 void TwoTransfoMapping::setWhatToFit(const bool fittingT1, const bool fittingT2) {
     if (fittingT1) {
         _nPar1 = _m1->getNpar();

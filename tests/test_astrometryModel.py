@@ -151,11 +151,11 @@ class AstrometryModelTestBase:
         and instantiate the fitters.
         """
         posError = 0.02  # in pixels
-        # have to call this once or offsetParams will fail because the transfo indices aren't defined
+        # have to call this once or offsetParams will fail because the transform indices aren't defined
         self.model1.assignIndices("Distortions", self.firstIndex)
         self.fitter1 = lsst.jointcal.AstrometryFit(self.associations, self.model1, posError)
 
-        # have to call this once or offsetParams will fail because the transfo indices aren't defined
+        # have to call this once or offsetParams will fail because the transform indices aren't defined
         self.model2.assignIndices("Distortions", self.firstIndex)
         self.fitter2 = lsst.jointcal.AstrometryFit(self.associations, self.model2, posError)
 
@@ -192,7 +192,7 @@ class AstrometryModelTestBase:
 
     def checkMakeSkyWcsOneCcdImage(self, model, ccdImage, inverseMaxDiff):
         """Test converting the model of one ccdImage to a SkyWcs by comparing
-        to the original transfo at the tangent plane.
+        to the original transform at the tangent plane.
 
         Parameters
         ----------
@@ -347,44 +347,48 @@ class ConstrainedAstrometryModelTestCase(AstrometryModelTestBase, lsst.utils.tes
     def testGetTotalParametersModel2(self):
         self._testGetTotalParameters(self.model2, self.chipOrder2, self.visitOrder2)
 
-    def checkGetChipTransfo(self, model):
+    def checkGetChipTransform(self, model):
         # Check valid ccds
         for ccd in self.ccds:
             try:
-                model.getChipTransfo(ccd)
+                model.getChipTransform(ccd)
             except lsst.pex.exceptions.wrappers.InvalidParameterError:
                 self.fail("model: {} raised on ccd: {}, but should not have.".format(model, ccd))
 
         # Check an invalid ccd
         with self.assertRaises(lsst.pex.exceptions.wrappers.InvalidParameterError) as cm:
-            model.getChipTransfo(self.badCcd)
+            model.getChipTransform(self.badCcd)
         errMsg = "No such chipId: {} among [{}]".format(self.badCcd, ", ".join(str(ccd) for ccd in self.ccds))
         self.assertIn(errMsg, str(cm.exception))
 
-    def testGetChipTransfo(self):
-        """getChipTransfo should get each known transfo, and raise with an appropriate message otherwise."""
-        self.checkGetChipTransfo(self.model1)
-        self.checkGetChipTransfo(self.model2)
+    def testGetChipTransform(self):
+        """getChipTransform should get each known transform, and raise with an
+        appropriate message otherwise.
+        """
+        self.checkGetChipTransform(self.model1)
+        self.checkGetChipTransform(self.model2)
 
-    def checkGetVisitTransfo(self, model):
+    def checkGetVisitTransform(self, model):
         # Check valid visits
         for visit in self.visits:
             try:
-                model.getVisitTransfo(visit)
+                model.getVisitTransform(visit)
             except lsst.pex.exceptions.wrappers.InvalidParameterError:
                 self.fail("model: {} raised on visit: {}, but should not have.".format(model, visit))
 
         # Check an invalid visit
         with self.assertRaises(lsst.pex.exceptions.wrappers.InvalidParameterError) as cm:
-            model.getVisitTransfo(self.badVisit)
+            model.getVisitTransform(self.badVisit)
         errMsg = "No such visitId: {} among [{}]".format(self.badVisit,
                                                          ", ".join(str(v) for v in self.visits))
         self.assertIn(errMsg, str(cm.exception))
 
-    def testGetVisitTransfo(self):
-        """getVisitTransfo should get each known transfo, and raise with an appropriate message otherwise."""
-        self.checkGetChipTransfo(self.model1)
-        self.checkGetChipTransfo(self.model2)
+    def testGetVisitTransform(self):
+        """getVisitTransform should get each known transform, and raise with an
+        appropriate message otherwise.
+        """
+        self.checkGetVisitTransform(self.model1)
+        self.checkGetVisitTransform(self.model2)
 
 
 class MemoryTester(lsst.utils.tests.MemoryTestCase):

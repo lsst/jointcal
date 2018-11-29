@@ -37,7 +37,7 @@
 #include "lsst/jointcal/Eigenstuff.h"
 #include "lsst/jointcal/FitterBase.h"
 #include "lsst/jointcal/AstrometryMapping.h"
-#include "lsst/jointcal/Gtransfo.h"
+#include "lsst/jointcal/AstrometryTransform.h"
 #include "lsst/jointcal/Tripletlist.h"
 
 namespace lsst {
@@ -77,7 +77,7 @@ AstrometryFit::AstrometryFit(std::shared_ptr<Associations> associations,
 /* ! this routine is used in 3 instances: when computing
 the derivatives, when computing the Chi2, when filling a tuple.
 */
-Point AstrometryFit::transformFittedStar(FittedStar const &fittedStar, Gtransfo const &sky2TP,
+Point AstrometryFit::transformFittedStar(FittedStar const &fittedStar, AstrometryTransform const &sky2TP,
                                          Point const &refractionVector, double refractionCoeff,
                                          double mjd) const {
     Point fittedStarInTP = sky2TP.apply(fittedStar);
@@ -145,7 +145,7 @@ void AstrometryFit::leastSquareDerivativesMeasurement(CcdImage const &ccdImage, 
     // transformation from sky to TP
     auto sky2TP = _astrometryModel->getSkyToTangentPlane(ccdImage);
     // reserve matrices once for all measurements
-    GtransfoLin dypdy;
+    AstrometryTransformLinear dypdy;
     // the shape of H (et al) is required this way in order to be able to
     // separate derivatives along x and y as vectors.
     Eigen::MatrixX2d H(npar_tot, 2), halpha(npar_tot, 2), HW(npar_tot, 2);
@@ -269,7 +269,7 @@ void AstrometryFit::leastSquareDerivativesReference(FittedStarList const &fitted
     Eigen::Matrix2d W(2, 2);
     Eigen::Matrix2d alpha(2, 2);
     Eigen::Matrix2d H(2, 2), halpha(2, 2), HW(2, 2);
-    GtransfoLin der;
+    AstrometryTransformLinear der;
     Eigen::Vector2d res, grad;
     unsigned indices[2 + NPAR_PM];
     unsigned kTriplets = tripletList.getNextFreeIndex();
@@ -279,7 +279,7 @@ void AstrometryFit::leastSquareDerivativesReference(FittedStarList const &fitted
        disaster around the poles or across alpha=0.  So we need a
        projector. We construct a projector and will change its
        projection point at every object */
-    TanRaDecToPixel proj(GtransfoLin(), Point(0., 0.));
+    TanRaDecToPixel proj(AstrometryTransformLinear(), Point(0., 0.));
     for (auto const &i : fittedStarList) {
         const FittedStar &fs = *i;
         const RefStar *rs = fs.getRefStar();
@@ -405,7 +405,7 @@ void AstrometryFit::accumulateStatRefStars(Chi2Accumulator &accum) const {
     /* If you wonder why we project here, read comments in
        AstrometryFit::leastSquareDerivativesReference(TripletList &TList, Eigen::VectorXd &Rhs) */
     FittedStarList &fittedStarList = _associations->fittedStarList;
-    TanRaDecToPixel proj(GtransfoLin(), Point(0., 0.));
+    TanRaDecToPixel proj(AstrometryTransformLinear(), Point(0., 0.));
     for (auto const &fs : fittedStarList) {
         const RefStar *rs = fs->getRefStar();
         if (rs == nullptr) continue;
@@ -572,7 +572,7 @@ void AstrometryFit::saveChi2MeasContributions(std::string const &baseName) const
     for (auto const &ccdImage : ccdImageList) {
         const MeasuredStarList &cat = ccdImage->getCatalogForFit();
         const AstrometryMapping *mapping = _astrometryModel->getMapping(*ccdImage);
-        const auto readTransfo = ccdImage->getReadWcs();
+        const auto readTransform = ccdImage->getReadWcs();
         const Point &refractionVector = ccdImage->getRefractionVector();
         double mjd = ccdImage->getMjd() - _JDRef;
         for (auto const &ms : cat) {
@@ -582,7 +582,8 @@ void AstrometryFit::saveChi2MeasContributions(std::string const &baseName) const
             tweakAstromMeasurementErrors(inPos, *ms, _posError);
             mapping->transformPosAndErrors(inPos, tpPos);
             auto sky2TP = _astrometryModel->getSkyToTangentPlane(*ccdImage);
-            const std::unique_ptr<Gtransfo> readPixToTangentPlane = gtransfoCompose(*sky2TP, *readTransfo);
+            const std::unique_ptr<AstrometryTransform> readPixToTangentPlane =
+                    compose(*sky2TP, *readTransform);
             FatPoint inputTpPos = readPixToTangentPlane->apply(inPos);
             std::shared_ptr<FittedStar const> const fs = ms->getFittedStar();
 
@@ -633,7 +634,7 @@ void AstrometryFit::saveChi2RefContributions(std::string const &baseName) const 
 
     // The following loop is heavily inspired from AstrometryFit::computeChi2()
     const FittedStarList &fittedStarList = _associations->fittedStarList;
-    TanRaDecToPixel proj(GtransfoLin(), Point(0., 0.));
+    TanRaDecToPixel proj(AstrometryTransformLinear(), Point(0., 0.));
     for (auto const &i : fittedStarList) {
         const FittedStar &fs = *i;
         const RefStar *rs = fs.getRefStar();

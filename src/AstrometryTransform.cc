@@ -35,7 +35,7 @@
 
 #include "lsst/log/Log.h"
 #include "lsst/afw/geom/Point.h"
-#include "lsst/jointcal/Gtransfo.h"
+#include "lsst/jointcal/AstrometryTransform.h"
 #include "lsst/jointcal/Frame.h"
 #include "lsst/jointcal/StarMatch.h"
 #include "lsst/pex/exceptions.h"
@@ -46,14 +46,15 @@ namespace pexExcept = lsst::pex::exceptions;
 using namespace std;
 
 namespace {
-LOG_LOGGER _log = LOG_GET("jointcal.Gtransfo");
+LOG_LOGGER _log = LOG_GET("jointcal.AstrometryTransform");
 }
 
 namespace lsst {
 namespace jointcal {
 
-bool isIntegerShift(const Gtransfo *gtransfo) {
-    const GtransfoPoly *shift = dynamic_cast<const GtransfoPoly *>(gtransfo);
+bool isIntegerShift(const AstrometryTransform *transform) {
+    const AstrometryTransformPolynomial *shift =
+            dynamic_cast<const AstrometryTransformPolynomial *>(transform);
     if (shift == nullptr) return false;
 
     static const double eps = 1e-5;
@@ -69,9 +70,9 @@ bool isIntegerShift(const Gtransfo *gtransfo) {
     return false;
 }
 
-/********* Gtransfo ***********************/
+/********* AstrometryTransform ***********************/
 
-Frame Gtransfo::apply(Frame const &inputframe, bool inscribed) const {
+Frame AstrometryTransform::apply(Frame const &inputframe, bool inscribed) const {
     // 2 opposite corners
     double xtmin1, xtmax1, ytmin1, ytmax1;
     apply(inputframe.xMin, inputframe.yMin, xtmin1, ytmin1);
@@ -89,12 +90,12 @@ Frame Gtransfo::apply(Frame const &inputframe, bool inscribed) const {
     return fr1 + fr2;
 }
 
-std::unique_ptr<Gtransfo> Gtransfo::composeAndReduce(
-        Gtransfo const &) const {  // by default no way to compose
-    return std::unique_ptr<Gtransfo>(nullptr);
+std::unique_ptr<AstrometryTransform> AstrometryTransform::composeAndReduce(
+        AstrometryTransform const &) const {  // by default no way to compose
+    return std::unique_ptr<AstrometryTransform>(nullptr);
 }
 
-double Gtransfo::getJacobian(const double x, const double y) const {
+double AstrometryTransform::getJacobian(const double x, const double y) const {
     double x2, y2;
     double eps = x * 0.01;
     if (eps == 0) eps = 0.01;
@@ -110,10 +111,11 @@ double Gtransfo::getJacobian(const double x, const double y) const {
     return ((dxdx * dydy - dxdy * dydx) / (eps * eps));
 }
 
-/*! the Derivative is represented by a GtransfoLin, in which
+/*! the Derivative is represented by a AstrometryTransformLinear, in which
   (hopefully), the offset terms are zero. Derivative should
   transform a vector of offsets into a vector of offsets. */
-void Gtransfo::computeDerivative(Point const &where, GtransfoLin &derivative, const double step) const {
+void AstrometryTransform::computeDerivative(Point const &where, AstrometryTransformLinear &derivative,
+                                            const double step) const {
     double x = where.x;
     double y = where.y;
     double xp0, yp0;
@@ -130,17 +132,19 @@ void Gtransfo::computeDerivative(Point const &where, GtransfoLin &derivative, co
     derivative.dy() = 0;
 }
 
-GtransfoLin Gtransfo::linearApproximation(Point const &where, const double step) const {
+AstrometryTransformLinear AstrometryTransform::linearApproximation(Point const &where,
+                                                                   const double step) const {
     Point outwhere = apply(where);
-    GtransfoLin der;
+    AstrometryTransformLinear der;
     computeDerivative(where, der, step);
-    return GtransfoLinShift(outwhere.x, outwhere.y) * der * GtransfoLinShift(-where.x, -where.y);
+    return AstrometryTransformLinearShift(outwhere.x, outwhere.y) * der *
+           AstrometryTransformLinearShift(-where.x, -where.y);
 }
 
-void Gtransfo::transformPosAndErrors(FatPoint const &in, FatPoint &out) const {
+void AstrometryTransform::transformPosAndErrors(FatPoint const &in, FatPoint &out) const {
     FatPoint res;  // in case in and out are the same address...
     res = apply(in);
-    GtransfoLin der;
+    AstrometryTransformLinear der;
     // could save a call here, since Derivative needs the transform of where that we already have
     // 0.01 may not be a very good idea in all cases. May be we should provide a way of altering that.
     computeDerivative(in, der, 0.01);
@@ -154,8 +158,8 @@ void Gtransfo::transformPosAndErrors(FatPoint const &in, FatPoint &out) const {
     out = res;
 }
 
-void Gtransfo::transformErrors(Point const &where, const double *vIn, double *vOut) const {
-    GtransfoLin der;
+void AstrometryTransform::transformErrors(Point const &where, const double *vIn, double *vOut) const {
+    AstrometryTransformLinear der;
     computeDerivative(where, der, 0.01);
     double a11 = der.A11();
     double a22 = der.A22();
@@ -187,18 +191,19 @@ void Gtransfo::transformErrors(Point const &where, const double *vIn, double *vO
     vOut[yy] = b21 * a21 + b22 * a22;
 }
 
-std::unique_ptr<Gtransfo> Gtransfo::roughInverse(const Frame &region) const {
+std::unique_ptr<AstrometryTransform> AstrometryTransform::roughInverse(const Frame &region) const {
     // "in" and "out" refer to the inverse direction.
     Point centerOut = region.getCenter();
     Point centerIn = apply(centerOut);
-    GtransfoLin der;
+    AstrometryTransformLinear der;
     computeDerivative(centerOut, der, std::sqrt(region.getArea()) / 5.);
     der = der.inverted();
-    der = GtransfoLinShift(centerOut.x, centerOut.y) * der * GtransfoLinShift(-centerIn.x, -centerIn.y);
-    return std::unique_ptr<Gtransfo>(new GtransfoLin(der));
+    der = AstrometryTransformLinearShift(centerOut.x, centerOut.y) * der *
+          AstrometryTransformLinearShift(-centerIn.x, -centerIn.y);
+    return std::unique_ptr<AstrometryTransform>(new AstrometryTransformLinear(der));
 }
 
-/* implement one in Gtransfo, so that all derived
+/* implement one in AstrometryTransform, so that all derived
    classes do not need to provide one... */
 
 /* the routines that follow are used for ea generic parameter
@@ -207,116 +212,124 @@ std::unique_ptr<Gtransfo> Gtransfo::roughInverse(const Frame &region) const {
 */
 
 // not dummy : what it does is virtual because paramRef is virtual.
-void Gtransfo::getParams(double *params) const {
+void AstrometryTransform::getParams(double *params) const {
     int npar = getNpar();
     for (int i = 0; i < npar; ++i) params[i] = paramRef(i);
 }
 
-void Gtransfo::offsetParams(Eigen::VectorXd const &delta) {
+void AstrometryTransform::offsetParams(Eigen::VectorXd const &delta) {
     int npar = getNpar();
     for (int i = 0; i < npar; ++i) paramRef(i) += delta[i];
 }
 
-double Gtransfo::paramRef(const int) const {
+double AstrometryTransform::paramRef(const int) const {
     throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,
-                      std::string("Gtransfo::paramRef should never be called "));
+                      std::string("AstrometryTransform::paramRef should never be called "));
 }
 
-double &Gtransfo::paramRef(const int) {
-    throw LSST_EXCEPT(pex::exceptions::InvalidParameterError, "Gtransfo::paramRef should never be called ");
-}
-
-void Gtransfo::paramDerivatives(Point const &, double *, double *) const {
+double &AstrometryTransform::paramRef(const int) {
     throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,
-                      "Gtransfo::paramDerivatives() should never be called ");
+                      "AstrometryTransform::paramRef should never be called ");
 }
 
-ostream &operator<<(ostream &stream, Gtransfo const &gtransfo) {
-    gtransfo.dump(stream);
+void AstrometryTransform::paramDerivatives(Point const &, double *, double *) const {
+    throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,
+                      "AstrometryTransform::paramDerivatives() should never be called ");
+}
+
+ostream &operator<<(ostream &stream, AstrometryTransform const &transform) {
+    transform.dump(stream);
     return stream;
 }
 
-void Gtransfo::write(const std::string &fileName) const {
+void AstrometryTransform::write(const std::string &fileName) const {
     ofstream s(fileName.c_str());
     write(s);
     bool ok = !s.fail();
     s.close();
     if (!ok)
         throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,
-                          "Gtransfo::write, something went wrong for file " + fileName);
+                          "AstrometryTransform::write, something went wrong for file " + fileName);
 }
 
-void Gtransfo::write(ostream &stream) const {
-    throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,
-                      "Gtransfo::write(ostream), should never be called. MEans that it is missing in some "
-                      "derived class ");
+void AstrometryTransform::write(ostream &stream) const {
+    throw LSST_EXCEPT(
+            pex::exceptions::InvalidParameterError,
+            "AstrometryTransform::write(ostream), should never be called. MEans that it is missing in some "
+            "derived class ");
 }
 
 /******************* GTransfoInverse ****************/
 /* inverse transformation, solved by iterations. Before using
-   it (probably via Gtransfo::inverseTransfo), consider
-   seriously StarMatchList::inverseTransfo */
-class GtransfoInverse : public Gtransfo {
+   it (probably via AstrometryTransform::inverseTransform), consider
+   seriously StarMatchList::inverseTransform */
+class AstrometryTransformInverse : public AstrometryTransform {
 private:
-    std::unique_ptr<Gtransfo> _direct;
-    std::unique_ptr<Gtransfo> _roughInverse;
+    std::unique_ptr<AstrometryTransform> _direct;
+    std::unique_ptr<AstrometryTransform> _roughInverse;
     double precision2;
 
 public:
-    GtransfoInverse(const Gtransfo *direct, const double precision, const Frame &region);
+    AstrometryTransformInverse(const AstrometryTransform *direct, const double precision,
+                               const Frame &region);
 
     //! implements an iterative (Gauss-Newton) solver. It resorts to the Derivative function: 4 calls to the
-    //! direct transfo per iteration.
+    //! direct transform per iteration.
     void apply(const double xIn, const double yIn, double &xOut, double &yOut) const;
 
     void dump(ostream &stream) const;
 
     double fit(StarMatchList const &starMatchList);
 
-    virtual std::unique_ptr<Gtransfo> clone() const;
+    virtual std::unique_ptr<AstrometryTransform> clone() const;
 
-    GtransfoInverse(GtransfoInverse const &);
+    AstrometryTransformInverse(AstrometryTransformInverse const &);
 
     //! Overload the "generic routine"
-    std::unique_ptr<Gtransfo> roughInverse(const Frame &) const { return _direct->clone(); }
+    std::unique_ptr<AstrometryTransform> roughInverse(const Frame &) const { return _direct->clone(); }
 
-    //! Inverse transfo: returns the direct one!
-    std::unique_ptr<Gtransfo> inverseTransfo(double, const Frame &) const { return _direct->clone(); }
+    //! Inverse transform: returns the direct one!
+    std::unique_ptr<AstrometryTransform> inverseTransform(double, const Frame &) const {
+        return _direct->clone();
+    }
 
-    ~GtransfoInverse();
+    ~AstrometryTransformInverse();
 
 private:
-    void operator=(GtransfoInverse const &);
+    void operator=(AstrometryTransformInverse const &);
 };
 
-std::unique_ptr<Gtransfo> Gtransfo::inverseTransfo(const double precision, const Frame &region) const {
-    return std::unique_ptr<Gtransfo>(new GtransfoInverse(this, precision, region));
+std::unique_ptr<AstrometryTransform> AstrometryTransform::inverseTransform(const double precision,
+                                                                           const Frame &region) const {
+    return std::unique_ptr<AstrometryTransform>(new AstrometryTransformInverse(this, precision, region));
 }
 
-GtransfoInverse::GtransfoInverse(const Gtransfo *direct, const double precision, const Frame &region) {
+AstrometryTransformInverse::AstrometryTransformInverse(const AstrometryTransform *direct,
+                                                       const double precision, const Frame &region) {
     _direct = direct->clone();
     _roughInverse = _direct->roughInverse(region);
     precision2 = precision * precision;
 }
 
-GtransfoInverse::GtransfoInverse(GtransfoInverse const &model) : Gtransfo() {
+AstrometryTransformInverse::AstrometryTransformInverse(AstrometryTransformInverse const &model)
+        : AstrometryTransform() {
     _direct = model._direct->clone();
     _roughInverse = model._roughInverse->clone();
     precision2 = model.precision2;
 }
 
-GtransfoInverse::~GtransfoInverse() {}
+AstrometryTransformInverse::~AstrometryTransformInverse() {}
 
-void GtransfoInverse::operator=(GtransfoInverse const &model) {
+void AstrometryTransformInverse::operator=(AstrometryTransformInverse const &model) {
     _direct = model._direct->clone();
     _roughInverse = model._roughInverse->clone();
     precision2 = model.precision2;
 }
 
-void GtransfoInverse::apply(const double xIn, const double yIn, double &xOut, double &yOut) const {
+void AstrometryTransformInverse::apply(const double xIn, const double yIn, double &xOut, double &yOut) const {
     Point in(xIn, yIn);
     Point outGuess = _roughInverse->apply(in);
-    GtransfoLin directDer, reverseDer;
+    AstrometryTransformLinear directDer, reverseDer;
     int loop = 0;
     int maxloop = 20;
     double move2;
@@ -331,37 +344,38 @@ void GtransfoInverse::apply(const double xIn, const double yIn, double &xOut, do
         outGuess.y += yShift;
         move2 = xShift * xShift + yShift * yShift;
     } while ((move2 > precision2) && (loop < maxloop));
-    if (loop == maxloop) LOGLS_WARN(_log, "Problems applying GtransfoInverse at " << in);
+    if (loop == maxloop) LOGLS_WARN(_log, "Problems applying AstrometryTransformInverse at " << in);
     xOut = outGuess.x;
     yOut = outGuess.y;
 }
 
-void GtransfoInverse::dump(ostream &stream) const {
-    stream << " GtransfoInverse of  :" << endl << *_direct << endl;
+void AstrometryTransformInverse::dump(ostream &stream) const {
+    stream << " AstrometryTransformInverse of  :" << endl << *_direct << endl;
 }
 
-double GtransfoInverse::fit(StarMatchList const &) {
-    throw pexExcept::RuntimeError("Cannot fit a GtransfoInverse. Use StarMatchList::inverseTransfo instead.");
+double AstrometryTransformInverse::fit(StarMatchList const &) {
+    throw pexExcept::RuntimeError(
+            "Cannot fit a AstrometryTransformInverse. Use StarMatchList::inverseTransform instead.");
 }
 
-std::unique_ptr<Gtransfo> GtransfoInverse::clone() const {
-    return std::unique_ptr<Gtransfo>(new GtransfoInverse(*this));
+std::unique_ptr<AstrometryTransform> AstrometryTransformInverse::clone() const {
+    return std::unique_ptr<AstrometryTransform>(new AstrometryTransformInverse(*this));
 }
 
-/************* GtransfoComposition **************/
+/************* AstrometryTransformComposition **************/
 
-// This class was done to allow composition of Gtransfo's, without specifications of their types.
-// does not need to be public. Invoked  by gtransfoCompose(left,right)
+// This class was done to allow composition of AstrometryTransform's, without specifications of their types.
+// does not need to be public. Invoked  by compose(left,right)
 
-//! Private class to handle Gtransfo compositions (i.e. piping). Use the routine gtransfoCompose if you need
-//! this functionnality.
-class GtransfoComposition : public Gtransfo {
+//! Private class to handle AstrometryTransform compositions (i.e. piping). Use the routine compose if
+//! you need this functionnality.
+class AstrometryTransformComposition : public AstrometryTransform {
 private:
-    std::unique_ptr<Gtransfo> _first, _second;
+    std::unique_ptr<AstrometryTransform> _first, _second;
 
 public:
     //! will pipe transfos
-    GtransfoComposition(Gtransfo const &second, Gtransfo const &first);
+    AstrometryTransformComposition(AstrometryTransform const &second, AstrometryTransform const &first);
 
     //! return second(first(xIn,yIn))
     void apply(const double xIn, const double yIn, double &xOut, double &yOut) const;
@@ -370,81 +384,89 @@ public:
     //!
     double fit(StarMatchList const &starMatchList);
 
-    std::unique_ptr<Gtransfo> clone() const;
-    ~GtransfoComposition();
+    std::unique_ptr<AstrometryTransform> clone() const;
+    ~AstrometryTransformComposition();
 };
 
-GtransfoComposition::GtransfoComposition(Gtransfo const &second, Gtransfo const &first) {
+AstrometryTransformComposition::AstrometryTransformComposition(AstrometryTransform const &second,
+                                                               AstrometryTransform const &first) {
     _first = first.clone();
     _second = second.clone();
 }
 
-void GtransfoComposition::apply(const double xIn, const double yIn, double &xOut, double &yOut) const {
+void AstrometryTransformComposition::apply(const double xIn, const double yIn, double &xOut,
+                                           double &yOut) const {
     double xout, yout;
     _first->apply(xIn, yIn, xout, yout);
     _second->apply(xout, yout, xOut, yOut);
 }
 
-void GtransfoComposition::dump(ostream &stream) const {
+void AstrometryTransformComposition::dump(ostream &stream) const {
     _first->dump(stream);
     _second->dump(stream);
 }
 
-double GtransfoComposition::fit(StarMatchList const &starMatchList) {
+double AstrometryTransformComposition::fit(StarMatchList const &starMatchList) {
     /* fits only one of them. could check that first can actually be fitted... */
     return _first->fit(starMatchList);
 }
 
-std::unique_ptr<Gtransfo> GtransfoComposition::clone() const {
-    return std::make_unique<GtransfoComposition>(*_second, *_first);
+std::unique_ptr<AstrometryTransform> AstrometryTransformComposition::clone() const {
+    return std::make_unique<AstrometryTransformComposition>(*_second, *_first);
 }
 
-GtransfoComposition::~GtransfoComposition() {}
+AstrometryTransformComposition::~AstrometryTransformComposition() {}
 
-std::unique_ptr<Gtransfo> gtransfoCompose(Gtransfo const &left, GtransfoIdentity const &right) {
+std::unique_ptr<AstrometryTransform> compose(AstrometryTransform const &left,
+                                             AstrometryTransformIdentity const &right) {
     return left.clone();
 }
 
-std::unique_ptr<Gtransfo> gtransfoCompose(Gtransfo const &left, Gtransfo const &right) {
-    // Try to use the composeAndReduce method from left. If absent, Gtransfo::composeAndReduce returns NULL.
-    // composeAndReduce is non trivial for polynomials.
-    std::unique_ptr<Gtransfo> composition(left.composeAndReduce(right));
+std::unique_ptr<AstrometryTransform> compose(AstrometryTransform const &left,
+                                             AstrometryTransform const &right) {
+    // Try to use the composeAndReduce method from left. If absent, AstrometryTransform::composeAndReduce
+    // returns NULL. composeAndReduce is non trivial for polynomials.
+    std::unique_ptr<AstrometryTransform> composition(left.composeAndReduce(right));
     // composition == NULL means no reduction: just build a Composition that pipelines "left" and "right".
     if (composition == nullptr)
-        return std::make_unique<GtransfoComposition>(left, right);
+        return std::make_unique<AstrometryTransformComposition>(left, right);
     else
         return composition;
 }
 
 // just a speed up, to avoid useless numerical derivation.
-void GtransfoIdentity::computeDerivative(Point const &, GtransfoLin &derivative, const double) const {
-    derivative = GtransfoLin();
+void AstrometryTransformIdentity::computeDerivative(Point const &, AstrometryTransformLinear &derivative,
+                                                    const double) const {
+    derivative = AstrometryTransformLinear();
 }
 
-GtransfoLin GtransfoIdentity::linearApproximation(Point const &, const double) const {
-    GtransfoLin result;
-    return result;  // rely on default Gtransfolin constructor;
+AstrometryTransformLinear AstrometryTransformIdentity::linearApproximation(Point const &,
+                                                                           const double) const {
+    AstrometryTransformLinear result;
+    return result;  // rely on default AstrometryTransformlin constructor;
 }
 
-std::shared_ptr<ast::Mapping> GtransfoIdentity::toAstMap(jointcal::Frame const &) const {
-    return std::make_shared<ast::UnitMap>(2);  // a GtransfoIdentity is identically ast::UnitMap(2)
+std::shared_ptr<ast::Mapping> AstrometryTransformIdentity::toAstMap(jointcal::Frame const &) const {
+    return std::make_shared<ast::UnitMap>(2);  // a AstrometryTransformIdentity is identically ast::UnitMap(2)
 }
 
-void GtransfoIdentity::write(ostream &stream) const { stream << "GtransfoIdentity 1" << endl; }
+void AstrometryTransformIdentity::write(ostream &stream) const {
+    stream << "AstrometryTransformIdentity 1" << endl;
+}
 
-void GtransfoIdentity::read(istream &stream) {
+void AstrometryTransformIdentity::read(istream &stream) {
     int format;
     stream >> format;
     if (format != 1)
         throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,
-                          " GtransfoIdentity::read : format is not 1 ");
+                          " AstrometryTransformIdentity::read : format is not 1 ");
 }
 
-/***************  GtransfoPoly **************************************/
+/***************  AstrometryTransformPolynomial **************************************/
 
-//! Default transfo : identity for all orders (>=1 )
+//! Default transform : identity for all orders (>=1 )
 
-GtransfoPoly::GtransfoPoly(const unsigned order) : _order(order) {
+AstrometryTransformPolynomial::AstrometryTransformPolynomial(const unsigned order) : _order(order) {
     _nterms = (order + 1) * (order + 2) / 2;
 
     // allocate and fill coefficients
@@ -457,7 +479,9 @@ GtransfoPoly::GtransfoPoly(const unsigned order) : _order(order) {
 }
 
 //#ifdef TO_BE_FIXED
-GtransfoPoly::GtransfoPoly(const Gtransfo *gtransfo, const Frame &frame, unsigned order, unsigned nPoint) {
+AstrometryTransformPolynomial::AstrometryTransformPolynomial(const AstrometryTransform *transform,
+                                                             const Frame &frame, unsigned order,
+                                                             unsigned nPoint) {
     StarMatchList sm;
 
     double step = std::sqrt(fabs(frame.getArea()) / double(nPoint));
@@ -465,20 +489,21 @@ GtransfoPoly::GtransfoPoly(const Gtransfo *gtransfo, const Frame &frame, unsigne
         for (double y = frame.yMin + step / 2; y <= frame.yMax; y += step) {
             auto pix = std::make_shared<BaseStar>(x, y, 0, 0);
             double xtr, ytr;
-            gtransfo->apply(x, y, xtr, ytr);
+            transform->apply(x, y, xtr, ytr);
             auto tp = std::make_shared<BaseStar>(xtr, ytr, 0, 0);
             /* These are fake stars so no need to transform fake errors.
                all errors (and weights) will be equal : */
             sm.push_back(StarMatch(*pix, *tp, pix, tp));
         }
-    GtransfoPoly ret(order);
+    AstrometryTransformPolynomial ret(order);
     ret.fit(sm);
     *this = ret;
 }
 //#endif
 
-GtransfoPoly::GtransfoPoly(std::shared_ptr<afw::geom::TransformPoint2ToPoint2> transform,
-                           jointcal::Frame const &domain, unsigned const order, unsigned const nSteps) {
+AstrometryTransformPolynomial::AstrometryTransformPolynomial(
+        std::shared_ptr<afw::geom::TransformPoint2ToPoint2> transform, jointcal::Frame const &domain,
+        unsigned const order, unsigned const nSteps) {
     jointcal::StarMatchList starMatchList;
     double xStart = domain.xMin;
     double yStart = domain.yMin;
@@ -494,12 +519,12 @@ GtransfoPoly::GtransfoPoly(std::shared_ptr<afw::geom::TransformPoint2ToPoint2> t
             starMatchList.emplace_back(in, out, nullptr, nullptr);
         }
     }
-    GtransfoPoly poly(order);
+    AstrometryTransformPolynomial poly(order);
     poly.fit(starMatchList);
     *this = poly;
 }
 
-void GtransfoPoly::computeMonomials(double xIn, double yIn, double *monomial) const {
+void AstrometryTransformPolynomial::computeMonomials(double xIn, double yIn, double *monomial) const {
     /* The ordering of monomials is implemented here.
        You may not change it without updating the "mapping" routines
       coeff(unsigned, unsigned, unsigned).
@@ -522,7 +547,7 @@ void GtransfoPoly::computeMonomials(double xIn, double yIn, double *monomial) co
     }
 }
 
-void GtransfoPoly::setOrder(const unsigned order) {
+void AstrometryTransformPolynomial::setOrder(const unsigned order) {
     _order = order;
     unsigned old_nterms = _nterms;
     _nterms = (_order + 1) * (_order + 2) / 2;
@@ -543,10 +568,11 @@ void GtransfoPoly::setOrder(const unsigned order) {
 }
 
 /* this is reasonably fast, when optimized */
-void GtransfoPoly::apply(const double xIn, const double yIn, double &xOut, double &yOut) const {
+void AstrometryTransformPolynomial::apply(const double xIn, const double yIn, double &xOut,
+                                          double &yOut) const {
     /*
       This routine computes the monomials only once for both
-      polynomials.  This is why GtransfoPoly does not use an auxilary
+      polynomials.  This is why AstrometryTransformPolynomial does not use an auxilary
       class (such as PolyXY) to handle each polynomial.
 
       The code works even if &xIn == &xOut (or &yIn == &yOut)
@@ -566,10 +592,12 @@ void GtransfoPoly::apply(const double xIn, const double yIn, double &xOut, doubl
     for (int k = _nterms; k--;) yOut += (*(pm++)) * (*(c++));
 }
 
-void GtransfoPoly::computeDerivative(Point const &where, GtransfoLin &derivative, const double step)
-        const { /* routine checked against numerical derivatives from Gtransfo::Derivative */
+void AstrometryTransformPolynomial::computeDerivative(Point const &where,
+                                                      AstrometryTransformLinear &derivative,
+                                                      const double step)
+        const { /* routine checked against numerical derivatives from AstrometryTransform::Derivative */
     if (_order == 1) {
-        derivative = GtransfoLin(*this);
+        derivative = AstrometryTransformLinear(*this);
         derivative.dx() = derivative.dy() = 0;
         return;
     }
@@ -624,16 +652,16 @@ void GtransfoPoly::computeDerivative(Point const &where, GtransfoLin &derivative
     derivative.a22() = a22;
 }
 
-void GtransfoPoly::transformPosAndErrors(FatPoint const &in, FatPoint &out) const {
+void AstrometryTransformPolynomial::transformPosAndErrors(FatPoint const &in, FatPoint &out) const {
     /*
        The results from this routine were compared to what comes out
        from apply and transformErrors. The Derivative routine was
        checked against numerical derivatives from
-       Gtransfo::Derivative. (P.A dec 2009).
+       AstrometryTransform::Derivative. (P.A dec 2009).
 
        This routine could be made much simpler by calling apply and
        Derivative (i.e. you just suppress it, and the fallback is the
-       generic version in Gtransfo).  BTW, I checked that both routines
+       generic version in AstrometryTransform).  BTW, I checked that both routines
        provide the same result. This version is however faster
        (monomials get recycled).
     */
@@ -705,10 +733,11 @@ void GtransfoPoly::transformPosAndErrors(FatPoint const &in, FatPoint &out) cons
 }
 
 /* The coefficient ordering is defined both here *AND* in the
-   GtransfoPoly::apply, GtransfoPoly::Derivative, ... routines
+   AstrometryTransformPolynomial::apply, AstrometryTransformPolynomial::Derivative, ... routines
    Change all or none ! */
 
-double GtransfoPoly::coeff(const unsigned degX, const unsigned degY, const unsigned whichCoord) const {
+double AstrometryTransformPolynomial::coeff(const unsigned degX, const unsigned degY,
+                                            const unsigned whichCoord) const {
     assert((degX + degY <= _order) && whichCoord < 2);
     /* this assertion above is enough to ensure that the index used just
        below is within bounds since the reserved length is
@@ -716,12 +745,14 @@ double GtransfoPoly::coeff(const unsigned degX, const unsigned degY, const unsig
     return _coeffs[(degX + degY) * (degX + degY + 1) / 2 + degY + whichCoord * _nterms];
 }
 
-double &GtransfoPoly::coeff(const unsigned degX, const unsigned degY, const unsigned whichCoord) {
+double &AstrometryTransformPolynomial::coeff(const unsigned degX, const unsigned degY,
+                                             const unsigned whichCoord) {
     assert((degX + degY <= _order) && whichCoord < 2);
     return _coeffs[(degX + degY) * (degX + degY + 1) / 2 + degY + whichCoord * _nterms];
 }
 
-double GtransfoPoly::coeffOrZero(const unsigned degX, const unsigned degY, const unsigned whichCoord) const {
+double AstrometryTransformPolynomial::coeffOrZero(const unsigned degX, const unsigned degY,
+                                                  const unsigned whichCoord) const {
     //  assert((degX+degY<=order) && whichCoord<2);
     assert(whichCoord < 2);
     if (degX + degY <= _order)
@@ -730,17 +761,17 @@ double GtransfoPoly::coeffOrZero(const unsigned degX, const unsigned degY, const
 }
 
 /* parameter serialization for "virtual" fits */
-double GtransfoPoly::paramRef(const int i) const {
+double AstrometryTransformPolynomial::paramRef(const int i) const {
     assert(unsigned(i) < 2 * _nterms);
     return _coeffs[i];
 }
 
-double &GtransfoPoly::paramRef(const int i) {
+double &AstrometryTransformPolynomial::paramRef(const int i) {
     assert(unsigned(i) < 2 * _nterms);
     return _coeffs[i];
 }
 
-void GtransfoPoly::paramDerivatives(Point const &where, double *dx, double *dy)
+void AstrometryTransformPolynomial::paramDerivatives(Point const &where, double *dx, double *dy)
         const { /* first half : dxout/dpar, second half : dyout/dpar */
     computeMonomials(where.x, where.y, dx);
     for (unsigned k = 0; k < _nterms; ++k) {
@@ -760,7 +791,7 @@ static string monomialString(const unsigned powX, const unsigned powY) {
     return ss.str();
 }
 
-void GtransfoPoly::dump(ostream &stream) const {
+void AstrometryTransformPolynomial::dump(ostream &stream) const {
     auto oldPrecision = stream.precision();
     stream.precision(12);
     for (unsigned ic = 0; ic < 2; ++ic) {
@@ -779,20 +810,20 @@ void GtransfoPoly::dump(ostream &stream) const {
     stream.precision(oldPrecision);
 }
 
-double GtransfoPoly::determinant() const {
+double AstrometryTransformPolynomial::determinant() const {
     if (_order >= 1) return coeff(1, 0, 0) * coeff(0, 1, 1) - coeff(0, 1, 0) * coeff(1, 0, 1);
     return 0;
 }
 
 //! Returns the transformation that maps the input frame along both axes to [-1,1]
-GtransfoLin normalizeCoordinatesTransfo(const Frame &frame) {
+AstrometryTransformLinear normalizeCoordinatesTransform(const Frame &frame) {
     Point center = frame.getCenter();
-    return GtransfoLinScale(2. / frame.getWidth(), 2. / frame.getHeight()) *
-           GtransfoLinShift(-center.x, -center.y);
+    return AstrometryTransformLinearScale(2. / frame.getWidth(), 2. / frame.getHeight()) *
+           AstrometryTransformLinearShift(-center.x, -center.y);
 }
 
-/*utility for the GtransfoPoly::fit() routine */
-static GtransfoLin shiftAndNormalize(StarMatchList const &starMatchList) {
+/*utility for the AstrometryTransformPolynomial::fit() routine */
+static AstrometryTransformLinear shiftAndNormalize(StarMatchList const &starMatchList) {
     double xav = 0;
     double x2 = 0;
     double yav = 0;
@@ -807,19 +838,21 @@ static GtransfoLin shiftAndNormalize(StarMatchList const &starMatchList) {
         y2 += std::pow(point1.y, 2);
         count++;
     }
-    if (count == 0) return GtransfoLin();
+    if (count == 0) return AstrometryTransformLinear();
     xav /= count;
     yav /= count;
     // 3.5 stands for sqrt(12).
     double xspan = 3.5 * std::sqrt(x2 / count - std::pow(xav, 2));
     double yspan = 3.5 * std::sqrt(y2 / count - std::pow(yav, 2));
-    return GtransfoLinScale(2. / xspan, 2. / yspan) * GtransfoLinShift(-xav, -yav);
+    return AstrometryTransformLinearScale(2. / xspan, 2. / yspan) *
+           AstrometryTransformLinearShift(-xav, -yav);
 }
 
 static double sq(double x) { return x * x; }
 
-double GtransfoPoly::computeFit(StarMatchList const &starMatchList, Gtransfo const &shiftToCenter,
-                                const bool useErrors) {
+double AstrometryTransformPolynomial::computeFit(StarMatchList const &starMatchList,
+                                                 AstrometryTransform const &shiftToCenter,
+                                                 const bool useErrors) {
     Eigen::MatrixXd A(2 * _nterms, 2 * _nterms);
     A.setZero();
     Eigen::VectorXd B(2 * _nterms);
@@ -867,7 +900,7 @@ double GtransfoPoly::computeFit(StarMatchList const &starMatchList, Gtransfo con
     Eigen::LDLT<Eigen::MatrixXd, Eigen::Lower> factor(A);
     // should probably throw
     if (factor.info() != Eigen::Success) {
-        LOGL_ERROR(_log, "GtransfoPoly::fit could not factorize");
+        LOGL_ERROR(_log, "AstrometryTransformPolynomial::fit could not factorize");
         return -1;
     }
 
@@ -877,14 +910,14 @@ double GtransfoPoly::computeFit(StarMatchList const &starMatchList, Gtransfo con
     return (sumr2 - B.dot(sol));
 }
 
-double GtransfoPoly::fit(StarMatchList const &starMatchList) {
+double AstrometryTransformPolynomial::fit(StarMatchList const &starMatchList) {
     if (starMatchList.size() < _nterms) {
-        LOGLS_FATAL(_log, "GtransfoPoly::fit trying to fit a polynomial transfo of order "
+        LOGLS_FATAL(_log, "AstrometryTransformPolynomial::fit trying to fit a polynomial transform of order "
                                   << _order << " with only " << starMatchList.size() << " matches.");
         return -1;
     }
 
-    GtransfoPoly conditionner = shiftAndNormalize(starMatchList);
+    AstrometryTransformPolynomial conditionner = shiftAndNormalize(starMatchList);
 
     computeFit(starMatchList, conditionner, false);               // get a rough solution
     computeFit(starMatchList, conditionner, true);                // weight with it
@@ -895,20 +928,21 @@ double GtransfoPoly::fit(StarMatchList const &starMatchList) {
     return chi2;
 }
 
-std::unique_ptr<Gtransfo> GtransfoPoly::composeAndReduce(GtransfoPoly const &right) const {
+std::unique_ptr<AstrometryTransform> AstrometryTransformPolynomial::composeAndReduce(
+        AstrometryTransformPolynomial const &right) const {
     if (getOrder() == 1 && right.getOrder() == 1)
-        return std::make_unique<GtransfoLin>((*this) * (right));  // does the composition
+        return std::make_unique<AstrometryTransformLinear>((*this) * (right));  // does the composition
     else
-        return std::make_unique<GtransfoPoly>((*this) * (right));  // does the composition
+        return std::make_unique<AstrometryTransformPolynomial>((*this) * (right));  // does the composition
 }
 
 /*  PolyXY the class used to perform polynomial algebra (and in
     particular composition) at the coefficient level. This class
-    handles a single polynomial, while a GtransfoPoly is a couple of
+    handles a single polynomial, while a AstrometryTransformPolynomial is a couple of
     polynomials. This class does not have any routine to evaluate
     polynomials. Efficiency is not a concern since these routines are
     seldom used.  There is no need to expose this tool class to
-    Gtransfo users.
+    AstrometryTransform users.
 */
 
 class PolyXY {
@@ -924,11 +958,10 @@ public:
 
     unsigned getOrder() const { return order; }
 
-    PolyXY(GtransfoPoly const &gtransfoPoly, const unsigned whichCoord)
-            : order(gtransfoPoly.getOrder()), nterms((order + 1) * (order + 2) / 2), coeffs(nterms, 0L) {
+    PolyXY(AstrometryTransformPolynomial const &transform, const unsigned whichCoord)
+            : order(transform.getOrder()), nterms((order + 1) * (order + 2) / 2), coeffs(nterms, 0L) {
         for (unsigned px = 0; px <= order; ++px)
-            for (unsigned py = 0; py <= order - px; ++py)
-                coeff(px, py) = gtransfoPoly.coeff(px, py, whichCoord);
+            for (unsigned py = 0; py <= order - px; ++py) coeff(px, py) = transform.coeff(px, py, whichCoord);
     }
 
     long double coeff(const unsigned powX, const unsigned powY) const {
@@ -1000,8 +1033,9 @@ static PolyXY composition(const PolyXY &polyXY, const PolyXY &polyX, const PolyX
 
 /* reducing polynomial composition is the reason for PolyXY stuff : */
 
-GtransfoPoly GtransfoPoly::operator*(GtransfoPoly const &right) const {
-    // split each transfo into 2d polynomials
+AstrometryTransformPolynomial AstrometryTransformPolynomial::operator*(
+        AstrometryTransformPolynomial const &right) const {
+    // split each transform into 2d polynomials
     PolyXY plx(*this, 0);
     PolyXY ply(*this, 1);
     PolyXY prx(right, 0);
@@ -1012,7 +1046,7 @@ GtransfoPoly GtransfoPoly::operator*(GtransfoPoly const &right) const {
     PolyXY ry(composition(ply, prx, pry));
 
     // copy the results the hard way.
-    GtransfoPoly result(_order * right._order);
+    AstrometryTransformPolynomial result(_order * right._order);
     for (unsigned px = 0; px <= result._order; ++px)
         for (unsigned py = 0; py <= result._order - px; ++py) {
             result.coeff(px, py, 0) = rx.coeff(px, py);
@@ -1021,9 +1055,10 @@ GtransfoPoly GtransfoPoly::operator*(GtransfoPoly const &right) const {
     return result;
 }
 
-GtransfoPoly GtransfoPoly::operator+(GtransfoPoly const &right) const {
+AstrometryTransformPolynomial AstrometryTransformPolynomial::operator+(
+        AstrometryTransformPolynomial const &right) const {
     if (_order >= right._order) {
-        GtransfoPoly res(*this);
+        AstrometryTransformPolynomial res(*this);
         for (unsigned i = 0; i <= right._order; ++i)
             for (unsigned j = 0; j <= right._order - i; ++j) {
                 res.coeff(i, j, 0) += right.coeff(i, j, 0);
@@ -1034,8 +1069,9 @@ GtransfoPoly GtransfoPoly::operator+(GtransfoPoly const &right) const {
         return (right + (*this));
 }
 
-GtransfoPoly GtransfoPoly::operator-(GtransfoPoly const &right) const {
-    GtransfoPoly res(std::max(_order, right._order));
+AstrometryTransformPolynomial AstrometryTransformPolynomial::operator-(
+        AstrometryTransformPolynomial const &right) const {
+    AstrometryTransformPolynomial res(std::max(_order, right._order));
     for (unsigned i = 0; i <= res._order; ++i)
         for (unsigned j = 0; j <= res._order - i; ++j) {
             res.coeff(i, j, 0) = coeffOrZero(i, j, 0) - right.coeffOrZero(i, j, 0);
@@ -1044,13 +1080,13 @@ GtransfoPoly GtransfoPoly::operator-(GtransfoPoly const &right) const {
     return res;
 }
 
-std::shared_ptr<ast::Mapping> GtransfoPoly::toAstMap(jointcal::Frame const &domain) const {
-    auto inverse = inversePolyTransfo(*this, domain, 1e-7, _order + 2, 100);
+std::shared_ptr<ast::Mapping> AstrometryTransformPolynomial::toAstMap(jointcal::Frame const &domain) const {
+    auto inverse = inversePolyTransform(*this, domain, 1e-7, _order + 2, 100);
     return std::make_shared<ast::PolyMap>(toAstPolyMapCoefficients(), inverse->toAstPolyMapCoefficients());
 }
 
-void GtransfoPoly::write(ostream &s) const {
-    s << " GtransfoPoly 1" << endl;
+void AstrometryTransformPolynomial::write(ostream &s) const {
+    s << " AstrometryTransformPolynomial 1" << endl;
     s << "order " << _order << endl;
     int oldprec = s.precision();
     s << setprecision(12);
@@ -1059,22 +1095,23 @@ void GtransfoPoly::write(ostream &s) const {
     s << setprecision(oldprec);
 }
 
-void GtransfoPoly::read(istream &s) {
+void AstrometryTransformPolynomial::read(istream &s) {
     int format;
     s >> format;
     if (format != 1)
-        throw LSST_EXCEPT(pex::exceptions::InvalidParameterError, " GtransfoPoly::read : format is not 1 ");
+        throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,
+                          " AstrometryTransformPolynomial::read : format is not 1 ");
 
     string order;
     s >> order >> _order;
     if (order != "order")
         throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,
-                          " GtransfoPoly::read : expecting \"order\" and found " + order);
+                          " AstrometryTransformPolynomial::read : expecting \"order\" and found " + order);
     setOrder(_order);
     for (unsigned k = 0; k < 2 * _nterms; ++k) s >> _coeffs[k];
 }
 
-ndarray::Array<double, 2, 2> GtransfoPoly::toAstPolyMapCoefficients() const {
+ndarray::Array<double, 2, 2> AstrometryTransformPolynomial::toAstPolyMapCoefficients() const {
     int nCoeffs = _coeffs.size();
     ndarray::Array<double, 2, 2> result = ndarray::allocate(ndarray::makeVector(nCoeffs, 4));
 
@@ -1093,9 +1130,11 @@ ndarray::Array<double, 2, 2> GtransfoPoly::toAstPolyMapCoefficients() const {
     return result;
 }
 
-std::shared_ptr<GtransfoPoly> inversePolyTransfo(Gtransfo const &forward, Frame const &domain,
-                                                 double const precision, int const maxOrder,
-                                                 unsigned const nSteps) {
+std::shared_ptr<AstrometryTransformPolynomial> inversePolyTransform(AstrometryTransform const &forward,
+                                                                    Frame const &domain,
+                                                                    double const precision,
+                                                                    int const maxOrder,
+                                                                    unsigned const nSteps) {
     StarMatchList sm;
     double xStart = domain.xMin;
     double yStart = domain.yMin;
@@ -1110,12 +1149,12 @@ std::shared_ptr<GtransfoPoly> inversePolyTransfo(Gtransfo const &forward, Frame 
     }
     unsigned npairs = sm.size();
     int order;
-    std::shared_ptr<GtransfoPoly> poly;
-    std::shared_ptr<GtransfoPoly> oldPoly;
+    std::shared_ptr<AstrometryTransformPolynomial> poly;
+    std::shared_ptr<AstrometryTransformPolynomial> oldPoly;
     double chi2 = 0;
     double oldChi2 = std::numeric_limits<double>::infinity();
     for (order = 1; order <= maxOrder; ++order) {
-        poly.reset(new GtransfoPoly(order));
+        poly.reset(new AstrometryTransformPolynomial(order));
         auto success = poly->fit(sm);
         if (success == -1) {
             std::stringstream errMsg;
@@ -1132,9 +1171,9 @@ std::shared_ptr<GtransfoPoly> inversePolyTransfo(Gtransfo const &forward, Frame 
 
         // If this triggers, we know we did not reach the required precision.
         if (chi2 > oldChi2) {
-            LOGLS_WARN(_log, "inversePolyTransfo: chi2 increases (" << chi2 << " > " << oldChi2
-                                                                    << "); ending fit with order: " << order);
-            LOGLS_WARN(_log, "inversePolyTransfo: requested precision not reached: "
+            LOGLS_WARN(_log, "inversePolyTransform: chi2 increases ("
+                                     << chi2 << " > " << oldChi2 << "); ending fit with order: " << order);
+            LOGLS_WARN(_log, "inversePolyTransform: requested precision not reached: "
                                      << chi2 << " / " << npairs << " = " << chi2 / npairs << " < "
                                      << precision * precision);
             poly = std::move(oldPoly);
@@ -1143,24 +1182,25 @@ std::shared_ptr<GtransfoPoly> inversePolyTransfo(Gtransfo const &forward, Frame 
         } else {
             oldChi2 = chi2;
             // Clone it so we don't lose it in the next iteration.
-            oldPoly = dynamic_pointer_cast<GtransfoPoly>(std::shared_ptr<Gtransfo>(poly->clone()));
+            oldPoly = dynamic_pointer_cast<AstrometryTransformPolynomial>(
+                    std::shared_ptr<AstrometryTransform>(poly->clone()));
         }
     }
     if (order > maxOrder)
-        LOGLS_WARN(_log, "inversePolyTransfo: Reached max order without reaching requested precision: "
+        LOGLS_WARN(_log, "inversePolyTransform: Reached max order without reaching requested precision: "
                                  << chi2 << " / " << npairs << " = " << chi2 / npairs << " < "
                                  << precision * precision);
     return poly;
 }
 
-/**************** GtransfoLin ***************************************/
-/* GtransfoLin is a specialized constructor of GtransfoPoly
+/**************** AstrometryTransformLinear ***************************************/
+/* AstrometryTransformLinear is a specialized constructor of AstrometryTransformPolynomial
    May be it could just disappear ??
 */
 
-GtransfoLin::GtransfoLin(const double Dx, const double Dy, const double A11, const double A12,
-                         const double A21, const double A22)
-        : GtransfoPoly(1) {
+AstrometryTransformLinear::AstrometryTransformLinear(const double Dx, const double Dy, const double A11,
+                                                     const double A12, const double A21, const double A22)
+        : AstrometryTransformPolynomial(1) {
     dx() = Dx;
     a11() = A11;
     a12() = A12;
@@ -1169,20 +1209,21 @@ GtransfoLin::GtransfoLin(const double Dx, const double Dy, const double A11, con
     a22() = A22;
 }
 
-GtransfoLin::GtransfoLin(GtransfoPoly const &gtransfoPoly) : GtransfoPoly(1) {
-    if (gtransfoPoly.getOrder() != 1)
+AstrometryTransformLinear::AstrometryTransformLinear(AstrometryTransformPolynomial const &transform)
+        : AstrometryTransformPolynomial(1) {
+    if (transform.getOrder() != 1)
         throw pexExcept::InvalidParameterError(
-                "Trying to build a GtransfoLin from a higher order transfo. Aborting. ");
-    (GtransfoPoly &)(*this) = gtransfoPoly;
+                "Trying to build a AstrometryTransformLinear from a higher order transform. Aborting. ");
+    (AstrometryTransformPolynomial &)(*this) = transform;
 }
 
-GtransfoLin GtransfoLin::operator*(GtransfoLin const &right) const {
-    // There is a general routine in GtransfoPoly that would do the job:
-    //  return GtransfoLin(GtransfoPoly::operator*(right));
+AstrometryTransformLinear AstrometryTransformLinear::operator*(AstrometryTransformLinear const &right) const {
+    // There is a general routine in AstrometryTransformPolynomial that would do the job:
+    //  return AstrometryTransformLinear(AstrometryTransformPolynomial::operator*(right));
     // however, we are using this composition of linear stuff heavily in
-    // Gtransfo::linearApproximation, itself used in inverseTransfo::apply.
+    // AstrometryTransform::linearApproximation, itself used in inverseTransform::apply.
     // So, for sake of efficiency, and since it is easy, we take a shortcut:
-    GtransfoLin result;
+    AstrometryTransformLinear result;
     apply(right.Dx(), right.Dy(), result.dx(), result.dy());
     result.a11() = A11() * right.A11() + A12() * right.A21();
     result.a12() = A11() * right.A12() + A12() * right.A22();
@@ -1191,15 +1232,18 @@ GtransfoLin GtransfoLin::operator*(GtransfoLin const &right) const {
     return result;
 }
 
-void GtransfoLin::computeDerivative(Point const &, GtransfoLin &derivative, const double) const {
+void AstrometryTransformLinear::computeDerivative(Point const &, AstrometryTransformLinear &derivative,
+                                                  const double) const {
     derivative = *this;
     derivative.coeff(0, 0, 0) = 0;
     derivative.coeff(0, 0, 1) = 0;
 }
 
-GtransfoLin GtransfoLin::linearApproximation(Point const &, const double) const { return *this; }
+AstrometryTransformLinear AstrometryTransformLinear::linearApproximation(Point const &, const double) const {
+    return *this;
+}
 
-GtransfoLin GtransfoLin::inverted() const {
+AstrometryTransformLinear AstrometryTransformLinear::inverted() const {
     //
     //   (T1,M1) * (T2,M2) = 1 i.e (0,1) implies
     //   T1 = -M1 * T2
@@ -1213,11 +1257,12 @@ GtransfoLin GtransfoLin::inverted() const {
     double d = (a11 * a22 - a12 * a21);
     if (d == 0) {
         LOGL_FATAL(_log,
-                   "GtransfoLin::invert singular transformation: transfo contents will be dumped to stderr.");
+                   "AstrometryTransformLinear::invert singular transformation: transform contents will be "
+                   "dumped to stderr.");
         dump(cerr);
     }
 
-    GtransfoLin result(0, 0, a22 / d, -a12 / d, -a21 / d, a11 / d);
+    AstrometryTransformLinear result(0, 0, a22 / d, -a12 / d, -a21 / d, a11 / d);
     double rdx, rdy;
     result.apply(Dx(), Dy(), rdx, rdy);
     result.dx() = -rdx;
@@ -1225,19 +1270,20 @@ GtransfoLin GtransfoLin::inverted() const {
     return result;
 }
 
-std::unique_ptr<Gtransfo> GtransfoLin::inverseTransfo(const double, const Frame &) const {
-    return std::unique_ptr<Gtransfo>(new GtransfoLin(inverted()));
+std::unique_ptr<AstrometryTransform> AstrometryTransformLinear::inverseTransform(const double,
+                                                                                 const Frame &) const {
+    return std::unique_ptr<AstrometryTransform>(new AstrometryTransformLinear(inverted()));
 }
 
-double GtransfoLinRot::fit(StarMatchList const &) {
+double AstrometryTransformLinearRot::fit(StarMatchList const &) {
     throw pexExcept::NotFoundError("GTransfoLinRot::fit not implemented! aborting");
 }
 
-double GtransfoLinShift::fit(StarMatchList const &starMatchList) {
+double AstrometryTransformLinearShift::fit(StarMatchList const &starMatchList) {
     int npairs = starMatchList.size();
     if (npairs < 3) {
-        LOGLS_FATAL(_log, "GtransfoLinShift::fit trying to fit a linear transfo with only " << npairs
-                                                                                            << " matches.");
+        LOGLS_FATAL(_log, "AstrometryTransformLinearShift::fit trying to fit a linear transform with only "
+                                  << npairs << " matches.");
         return -1;
     }
 
@@ -1274,23 +1320,24 @@ double GtransfoLinShift::fit(StarMatchList const &starMatchList) {
     A(1, 1) = tmp / det;
     A(0, 1) = A(1, 0) = -A(0, 1) / det;
     Eigen::VectorXd sol = A * B;
-    (*this) = GtransfoLinShift(sol(0), sol(1));
+    (*this) = AstrometryTransformLinearShift(sol(0), sol(1));
     return (sumr2 - sol.dot(B));  // chi2 compact form
 }
 
-GtransfoLinRot::GtransfoLinRot(const double angleRad, const Point *center, const double scaleFactor) {
+AstrometryTransformLinearRot::AstrometryTransformLinearRot(const double angleRad, const Point *center,
+                                                           const double scaleFactor) {
     double c = scaleFactor * std::cos(angleRad);
     double s = scaleFactor * std::sin(angleRad);
     a11() = a22() = c;
     a21() = s;
     a12() = -s;
 
-    // we want that the center does not move : gtransfo+M*C = C ==> gtransfo = C - M*C
+    // we want that the center does not move : transform+M*C = C ==> transform = C - M*C
     Point a_point(0., 0.);
     if (center) a_point = *center;
 
     dx() = dy() = 0;
-    GtransfoPoly::apply(a_point.x, a_point.y, dx(), dy());  // compute M*C
+    AstrometryTransformPolynomial::apply(a_point.x, a_point.y, dx(), dy());  // compute M*C
     dx() = a_point.x - Dx();
     dy() = a_point.y - dy();
 }
@@ -1299,7 +1346,7 @@ static double deg2rad(double degree) { return degree * M_PI / 180.; }
 
 static double rad2deg(double rad) { return rad * 180. / M_PI; }
 
-/*************  WCS transfo ******************/
+/*************  WCS transform ******************/
 /************** LinPixelToTan *******************/
 
 /* Implementation note : it seemed wise to incorporate
@@ -1317,8 +1364,8 @@ static double rad2deg(double rad) { return rad * 180. / M_PI; }
    done in apply (for TanPixelToRaDec and TanRaDecToPixel).
    This is a minor concern though....
 */
-BaseTanWcs::BaseTanWcs(GtransfoLin const &pixToTan, Point const &tangentPoint,
-                       const GtransfoPoly *corrections) {
+BaseTanWcs::BaseTanWcs(AstrometryTransformLinear const &pixToTan, Point const &tangentPoint,
+                       const AstrometryTransformPolynomial *corrections) {
     // the angles returned by linPixelToTan should be in degrees.
     linPixelToTan = pixToTan;
     ra0 = deg2rad(tangentPoint.x);
@@ -1326,14 +1373,14 @@ BaseTanWcs::BaseTanWcs(GtransfoLin const &pixToTan, Point const &tangentPoint,
     cos0 = std::cos(dec0);
     sin0 = std::sin(dec0);
     corr = nullptr;
-    if (corrections) corr.reset(new GtransfoPoly(*corrections));
+    if (corrections) corr.reset(new AstrometryTransformPolynomial(*corrections));
 }
 
 /* with some sort of smart pointer ro handle "corr", we could remove the
    copy constructor, the operator = and the destructor */
 
-// ": Gtransfo" suppresses a warning
-BaseTanWcs::BaseTanWcs(const BaseTanWcs &original) : Gtransfo() {
+// ": AstrometryTransform" suppresses a warning
+BaseTanWcs::BaseTanWcs(const BaseTanWcs &original) : AstrometryTransform() {
     corr = nullptr;
     *this = original;
 }
@@ -1345,7 +1392,7 @@ void BaseTanWcs::operator=(const BaseTanWcs &original) {
     cos0 = std::cos(dec0);
     sin0 = std::sin(dec0);
     corr = nullptr;
-    if (original.corr) corr.reset(new GtransfoPoly(*original.corr));
+    if (original.corr) corr.reset(new AstrometryTransformPolynomial(*original.corr));
 }
 
 void BaseTanWcs::apply(const double xIn, const double yIn, double &xOut, double &yOut) const {
@@ -1376,9 +1423,11 @@ void BaseTanWcs::apply(const double xIn, const double yIn, double &xOut, double 
 
 Point BaseTanWcs::getTangentPoint() const { return Point(rad2deg(ra0), rad2deg(dec0)); }
 
-GtransfoLin BaseTanWcs::getLinPart() const { return linPixelToTan; }
+AstrometryTransformLinear BaseTanWcs::getLinPart() const { return linPixelToTan; }
 
-void BaseTanWcs::setCorrections(std::unique_ptr<GtransfoPoly> corrections) { corr = std::move(corrections); }
+void BaseTanWcs::setCorrections(std::unique_ptr<AstrometryTransformPolynomial> corrections) {
+    corr = std::move(corrections);
+}
 
 Point BaseTanWcs::getCrPix() const {
     /* CRPIX's are defined by:
@@ -1388,48 +1437,52 @@ Point BaseTanWcs::getCrPix() const {
 
        so that CrPix is the point which transforms to (0,0)
     */
-    const GtransfoLin inverse = linPixelToTan.inverted();
+    const AstrometryTransformLinear inverse = linPixelToTan.inverted();
     return Point(inverse.Dx(), inverse.Dy());
 }
 
 BaseTanWcs::~BaseTanWcs() {}
 
-GtransfoSkyWcs::GtransfoSkyWcs(std::shared_ptr<afw::geom::SkyWcs> skyWcs) : _skyWcs(skyWcs) {}
+AstrometryTransformSkyWcs::AstrometryTransformSkyWcs(std::shared_ptr<afw::geom::SkyWcs> skyWcs)
+        : _skyWcs(skyWcs) {}
 
-void GtransfoSkyWcs::apply(const double xIn, const double yIn, double &xOut, double &yOut) const {
+void AstrometryTransformSkyWcs::apply(const double xIn, const double yIn, double &xOut, double &yOut) const {
     auto const outCoord = _skyWcs->pixelToSky(afw::geom::Point2D(xIn, yIn));
     xOut = outCoord[0].asDegrees();
     yOut = outCoord[1].asDegrees();
 }
 
-void GtransfoSkyWcs::dump(std::ostream &stream) const { stream << "GtransfoSkyWcs(" << *_skyWcs << ")"; }
+void AstrometryTransformSkyWcs::dump(std::ostream &stream) const {
+    stream << "AstrometryTransformSkyWcs(" << *_skyWcs << ")";
+}
 
-double GtransfoSkyWcs::fit(const StarMatchList &starMatchList) {
+double AstrometryTransformSkyWcs::fit(const StarMatchList &starMatchList) {
     throw LSST_EXCEPT(pex::exceptions::LogicError, "Not implemented");
 }
 
-std::unique_ptr<Gtransfo> GtransfoSkyWcs::clone() const {
-    return std::unique_ptr<GtransfoSkyWcs>(new GtransfoSkyWcs(getSkyWcs()));
+std::unique_ptr<AstrometryTransform> AstrometryTransformSkyWcs::clone() const {
+    return std::unique_ptr<AstrometryTransformSkyWcs>(new AstrometryTransformSkyWcs(getSkyWcs()));
 }
 
 /*************************** TanPixelToRaDec ***************/
 
-TanPixelToRaDec::TanPixelToRaDec(GtransfoLin const &pixToTan, Point const &tangentPoint,
-                                 const GtransfoPoly *corrections)
+TanPixelToRaDec::TanPixelToRaDec(AstrometryTransformLinear const &pixToTan, Point const &tangentPoint,
+                                 const AstrometryTransformPolynomial *corrections)
         : BaseTanWcs(pixToTan, tangentPoint, corrections) {}
 
-// ": Gtransfo" suppresses a warning
-TanPixelToRaDec::TanPixelToRaDec() : BaseTanWcs(GtransfoLin(), Point(0, 0), nullptr) {}
+// ": AstrometryTransform" suppresses a warning
+TanPixelToRaDec::TanPixelToRaDec() : BaseTanWcs(AstrometryTransformLinear(), Point(0, 0), nullptr) {}
 
-std::unique_ptr<Gtransfo> TanPixelToRaDec::composeAndReduce(GtransfoLin const &right) const {
+std::unique_ptr<AstrometryTransform> TanPixelToRaDec::composeAndReduce(
+        AstrometryTransformLinear const &right) const {
     if (right.getOrder() == 1) {
         return std::make_unique<TanPixelToRaDec>((*this) * (right));
     } else {
-        return std::unique_ptr<Gtransfo>(nullptr);
+        return std::unique_ptr<AstrometryTransform>(nullptr);
     }
 }
 
-TanPixelToRaDec TanPixelToRaDec::operator*(GtransfoLin const &right) const {
+TanPixelToRaDec TanPixelToRaDec::operator*(AstrometryTransformLinear const &right) const {
     TanPixelToRaDec result(*this);
     result.linPixelToTan = result.linPixelToTan * right;
     return result;
@@ -1443,18 +1496,21 @@ TanRaDecToPixel TanPixelToRaDec::inverted() const {
     return TanRaDecToPixel(getLinPart().inverted(), getTangentPoint());
 }
 
-std::unique_ptr<Gtransfo> TanPixelToRaDec::roughInverse(const Frame &) const {
-    return std::unique_ptr<Gtransfo>(new TanRaDecToPixel(getLinPart().inverted(), getTangentPoint()));
+std::unique_ptr<AstrometryTransform> TanPixelToRaDec::roughInverse(const Frame &) const {
+    return std::unique_ptr<AstrometryTransform>(
+            new TanRaDecToPixel(getLinPart().inverted(), getTangentPoint()));
 }
 
-std::unique_ptr<Gtransfo> TanPixelToRaDec::inverseTransfo(const double precision, const Frame &region) const {
+std::unique_ptr<AstrometryTransform> TanPixelToRaDec::inverseTransform(const double precision,
+                                                                       const Frame &region) const {
     if (!corr)
-        return std::unique_ptr<Gtransfo>(new TanRaDecToPixel(getLinPart().inverted(), getTangentPoint()));
+        return std::unique_ptr<AstrometryTransform>(
+                new TanRaDecToPixel(getLinPart().inverted(), getTangentPoint()));
     else
-        return std::unique_ptr<Gtransfo>(new GtransfoInverse(this, precision, region));
+        return std::unique_ptr<AstrometryTransform>(new AstrometryTransformInverse(this, precision, region));
 }
 
-GtransfoPoly TanPixelToRaDec::getPixelToTangentPlane() const {
+AstrometryTransformPolynomial TanPixelToRaDec::getPixelToTangentPlane() const {
     if (corr)
         return (*corr) * linPixelToTan;
     else
@@ -1472,8 +1528,9 @@ void TanPixelToRaDec::pixToTangentPlane(double xPixel, double yPixel, double &xT
     }
 }
 
-std::unique_ptr<Gtransfo> TanPixelToRaDec::clone() const {
-    return std::unique_ptr<Gtransfo>(new TanPixelToRaDec(getLinPart(), getTangentPoint(), corr.get()));
+std::unique_ptr<AstrometryTransform> TanPixelToRaDec::clone() const {
+    return std::unique_ptr<AstrometryTransform>(
+            new TanPixelToRaDec(getLinPart(), getTangentPoint(), corr.get()));
 }
 
 void TanPixelToRaDec::dump(ostream &stream) const {
@@ -1501,31 +1558,32 @@ double TanPixelToRaDec::fit(StarMatchList const &) {
 
 /*************************** TanSipPixelToRaDec ***************/
 
-TanSipPixelToRaDec::TanSipPixelToRaDec(GtransfoLin const &pixToTan, Point const &tangentPoint,
-                                       const GtransfoPoly *corrections)
+TanSipPixelToRaDec::TanSipPixelToRaDec(AstrometryTransformLinear const &pixToTan, Point const &tangentPoint,
+                                       const AstrometryTransformPolynomial *corrections)
         : BaseTanWcs(pixToTan, tangentPoint, corrections) {}
 
-// ": Gtransfo" suppresses a warning
-TanSipPixelToRaDec::TanSipPixelToRaDec() : BaseTanWcs(GtransfoLin(), Point(0, 0), nullptr) {}
+// ": AstrometryTransform" suppresses a warning
+TanSipPixelToRaDec::TanSipPixelToRaDec() : BaseTanWcs(AstrometryTransformLinear(), Point(0, 0), nullptr) {}
 
 /* Would require some checks before cooking up something more efficient
    than just a linear approximation */
 #if 0
-std::unique_ptr<Gtransfo> TanPixelToRaDec::roughInverse(const Frame &region) const
+std::unique_ptr<AstrometryTransform> TanPixelToRaDec::roughInverse(const Frame &region) const
 {
   if (&region) {}
-  return std::unique_ptr<Gtransfo>(new TanRaDecToPixel(getLinPart().inverted(),getTangentPoint()));
+  return std::unique_ptr<AstrometryTransform>(new TanRaDecToPixel(getLinPart().inverted(),getTangentPoint()));
 }
 #endif
 
-std::unique_ptr<Gtransfo> TanSipPixelToRaDec::inverseTransfo(const double precision, const Frame &region)
+std::unique_ptr<AstrometryTransform> TanSipPixelToRaDec::inverseTransform(const double precision,
+                                                                          const Frame &region)
         const { /* We have not implemented (yet) the reverse corrections available in SIP */
-    return std::unique_ptr<Gtransfo>(new GtransfoInverse(this, precision, region));
+    return std::unique_ptr<AstrometryTransform>(new AstrometryTransformInverse(this, precision, region));
 }
 
-GtransfoPoly TanSipPixelToRaDec::getPixelToTangentPlane() const {
+AstrometryTransformPolynomial TanSipPixelToRaDec::getPixelToTangentPlane() const {
     if (corr)
-        return GtransfoPoly(linPixelToTan) * (*corr);
+        return AstrometryTransformPolynomial(linPixelToTan) * (*corr);
     else
         return linPixelToTan;
 }
@@ -1541,8 +1599,9 @@ void TanSipPixelToRaDec::pixToTangentPlane(double xPixel, double yPixel, double 
         linPixelToTan.apply(xPixel, yPixel, xTangentPlane, yTangentPlane);
 }
 
-std::unique_ptr<Gtransfo> TanSipPixelToRaDec::clone() const {
-    return std::unique_ptr<Gtransfo>(new TanSipPixelToRaDec(getLinPart(), getTangentPoint(), corr.get()));
+std::unique_ptr<AstrometryTransform> TanSipPixelToRaDec::clone() const {
+    return std::unique_ptr<AstrometryTransform>(
+            new TanSipPixelToRaDec(getLinPart(), getTangentPoint(), corr.get()));
 }
 
 void TanSipPixelToRaDec::dump(ostream &stream) const {
@@ -1568,9 +1627,9 @@ double TanSipPixelToRaDec::fit(StarMatchList const &) {
     return -1;
 }
 
-/***************  reverse transfo of TanPixelToRaDec: TanRaDecToPixel ********/
+/***************  reverse transform of TanPixelToRaDec: TanRaDecToPixel ********/
 
-TanRaDecToPixel::TanRaDecToPixel(GtransfoLin const &tan2Pix, Point const &tangentPoint)
+TanRaDecToPixel::TanRaDecToPixel(AstrometryTransformLinear const &tan2Pix, Point const &tangentPoint)
         : linTan2Pix(tan2Pix) {
     setTangentPoint(tangentPoint);
 }
@@ -1592,7 +1651,7 @@ TanRaDecToPixel::TanRaDecToPixel() : linTan2Pix() {
 
 Point TanRaDecToPixel::getTangentPoint() const { return Point(rad2deg(ra0), rad2deg(dec0)); }
 
-GtransfoLin TanRaDecToPixel::getLinPart() const { return linTan2Pix; }
+AstrometryTransformLinear TanRaDecToPixel::getLinPart() const { return linTan2Pix; }
 
 // Use analytic derivatives, computed at the same time as the transform itself
 void TanRaDecToPixel::transformPosAndErrors(FatPoint const &in, FatPoint &out) const {
@@ -1609,7 +1668,7 @@ void TanRaDecToPixel::transformPosAndErrors(FatPoint const &in, FatPoint &out) c
        simplify(diff(l2/m1,a));
        simplify(diff(l2/m1,d));
 
-       Checked against Gtransfo::transformPosAndErrors (dec 09)
+       Checked against AstrometryTransform::transformPosAndErrors (dec 09)
     */
     double ra = deg2rad(in.x);
     double dec = deg2rad(in.y);
@@ -1675,16 +1734,18 @@ void TanRaDecToPixel::dump(ostream &stream) const {
     stream << " tan2pix " << linTan2Pix << " tangent point " << tp.x << ' ' << tp.y << endl;
 }
 
-std::unique_ptr<Gtransfo> TanRaDecToPixel::roughInverse(const Frame &) const {
-    return std::unique_ptr<Gtransfo>(new TanPixelToRaDec(getLinPart().inverted(), getTangentPoint()));
+std::unique_ptr<AstrometryTransform> TanRaDecToPixel::roughInverse(const Frame &) const {
+    return std::unique_ptr<AstrometryTransform>(
+            new TanPixelToRaDec(getLinPart().inverted(), getTangentPoint()));
 }
 
-std::unique_ptr<Gtransfo> TanRaDecToPixel::inverseTransfo(const double, const Frame &) const {
-    return std::unique_ptr<Gtransfo>(new TanPixelToRaDec(getLinPart().inverted(), getTangentPoint()));
+std::unique_ptr<AstrometryTransform> TanRaDecToPixel::inverseTransform(const double, const Frame &) const {
+    return std::unique_ptr<AstrometryTransform>(
+            new TanPixelToRaDec(getLinPart().inverted(), getTangentPoint()));
 }
 
-std::unique_ptr<Gtransfo> TanRaDecToPixel::clone() const {
-    return std::unique_ptr<Gtransfo>(new TanRaDecToPixel(*this));
+std::unique_ptr<AstrometryTransform> TanRaDecToPixel::clone() const {
+    return std::unique_ptr<AstrometryTransform>(new TanRaDecToPixel(*this));
 }
 
 double TanRaDecToPixel::fit(StarMatchList const &) {
@@ -1693,38 +1754,38 @@ double TanRaDecToPixel::fit(StarMatchList const &) {
     return -1;
 }
 
-/*************  a "run-time" transfo, that does not require to
-modify this file */
+/*************  a "run-time" transform, that does not require to modify this file */
 
-UserTransfo::UserTransfo(GtransfoFun &userFun, const void *userData)
+UserTransform::UserTransform(AstrometryTransformFun &userFun, const void *userData)
         : _userFun(userFun), _userData(userData) {}
 
-void UserTransfo::apply(const double xIn, const double yIn, double &xOut, double &yOut) const {
+void UserTransform::apply(const double xIn, const double yIn, double &xOut, double &yOut) const {
     _userFun(xIn, yIn, xOut, yOut, _userData);
 }
 
-void UserTransfo::dump(ostream &stream) const {
-    stream << "UserTransfo with user function @ " << _userFun << "and userData@ " << _userData << endl;
+void UserTransform::dump(ostream &stream) const {
+    stream << "UserTransform with user function @ " << _userFun << "and userData@ " << _userData << endl;
 }
 
-double UserTransfo::fit(StarMatchList const &) {
+double UserTransform::fit(StarMatchList const &) {
     throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,
-                      "UserTransfo::fit is NOT implemented (and will never be)) ");
+                      "UserTransform::fit is NOT implemented (and will never be)) ");
     return -1;
 }
 
-std::unique_ptr<Gtransfo> UserTransfo::clone() const {
-    return std::unique_ptr<Gtransfo>(new UserTransfo(*this));
+std::unique_ptr<AstrometryTransform> UserTransform::clone() const {
+    return std::unique_ptr<AstrometryTransform>(new UserTransform(*this));
 }
 
 /*************************************************************/
 
-std::unique_ptr<Gtransfo> gtransfoRead(const std::string &fileName) {
+std::unique_ptr<AstrometryTransform> astrometryTransformRead(const std::string &fileName) {
     ifstream s(fileName.c_str());
     if (!s)
-        throw LSST_EXCEPT(pex::exceptions::InvalidParameterError, " gtransfoRead : cannot open " + fileName);
+        throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,
+                          " astrometryTransformRead : cannot open " + fileName);
     try {
-        std::unique_ptr<Gtransfo> res(gtransfoRead(s));
+        std::unique_ptr<AstrometryTransform> res(astrometryTransformRead(s));
         s.close();
         return res;
     } catch (pex::exceptions::InvalidParameterError &e) {
@@ -1733,23 +1794,23 @@ std::unique_ptr<Gtransfo> gtransfoRead(const std::string &fileName) {
     }
 }
 
-std::unique_ptr<Gtransfo> gtransfoRead(istream &s) {
+std::unique_ptr<AstrometryTransform> astrometryTransformRead(istream &s) {
     std::string type;
     s >> type;
     if (s.fail())
         throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,
-                          "gtransfoRead : could not find a Gtransfotype");
-    if (type == "GtransfoIdentity") {
-        std::unique_ptr<GtransfoIdentity> res(new GtransfoIdentity());
+                          "astrometryTransformRead : could not find a AstrometryTransformtype");
+    if (type == "AstrometryTransformIdentity") {
+        std::unique_ptr<AstrometryTransformIdentity> res(new AstrometryTransformIdentity());
         res->read(s);
         return std::move(res);
-    } else if (type == "GtransfoPoly") {
-        std::unique_ptr<GtransfoPoly> res(new GtransfoPoly());
+    } else if (type == "AstrometryTransformPolynomial") {
+        std::unique_ptr<AstrometryTransformPolynomial> res(new AstrometryTransformPolynomial());
         res->read(s);
         return std::move(res);
     } else
         throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,
-                          " gtransfoRead : No reader for Gtransfo type " + type);
+                          " astrometryTransformRead : No reader for AstrometryTransform type " + type);
 }
 }  // namespace jointcal
 }  // namespace lsst

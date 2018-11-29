@@ -26,7 +26,7 @@ from .astrometryMappings import *
 from .astrometryModels import *
 from .ccdImage import *
 from .fitter import *
-from .gtransfo import *
+from .astrometryTransform import *
 from .jointcal import *
 from .jointcalControl import *
 from .photometryMappings import *

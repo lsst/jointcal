@@ -30,7 +30,7 @@
 #include "lsst/jointcal/Eigenstuff.h"
 
 #include "lsst/jointcal/AstrometryModel.h"
-#include "lsst/jointcal/Gtransfo.h"
+#include "lsst/jointcal/AstrometryTransform.h"
 #include "lsst/jointcal/SimpleAstrometryMapping.h"
 #include "lsst/jointcal/ProjectionHandler.h"
 #include <map>
@@ -75,7 +75,8 @@ public:
     /*! the mapping of sky coordinates (i.e. the coordinate system
     in which fitted stars are reported) onto the Tangent plane
     (into which the pixel coordinates are transformed) */
-    const std::shared_ptr<Gtransfo const> getSkyToTangentPlane(CcdImage const &ccdImage) const override {
+    const std::shared_ptr<AstrometryTransform const> getSkyToTangentPlane(
+            CcdImage const &ccdImage) const override {
         return _skyToTangentPlane->getSkyToTangentPlane(ccdImage);
     }
 
@@ -86,7 +87,7 @@ public:
     int getTotalParameters() const override;
 
     //! Access to mappings
-    Gtransfo const &getTransfo(CcdImage const &ccdImage) const;
+    AstrometryTransform const &getTransform(CcdImage const &ccdImage) const;
 
     /// @copydoc AstrometryModel::makeSkyWcs
     std::shared_ptr<afw::geom::SkyWcs> makeSkyWcs(CcdImage const &ccdImage) const override;
@@ -94,7 +95,7 @@ public:
     ~SimpleAstrometryModel(){};
 
 private:
-    std::unordered_map<CcdImageKey, std::unique_ptr<SimpleGtransfoMapping>> _myMap;
+    std::unordered_map<CcdImageKey, std::unique_ptr<SimpleAstrometryMapping>> _myMap;
     const std::shared_ptr<ProjectionHandler const> _skyToTangentPlane;
 
     /// @copydoc AstrometryModel::findMapping

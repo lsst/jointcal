@@ -91,11 +91,11 @@ public:
     //! Clears the std::list
     void clearList() { cutTail(0); };
 
-    //! enables to apply a geometrical transfo if Star is Basestar or derives from it.
+    //! enables to apply a geometrical transform if Star is Basestar or derives from it.
     /*! could be extended to other type of transformations. */
 
     template <class Operator>
-    void applyTransfo(const Operator &op) {
+    void applyTransform(const Operator &op) {
         for (auto &p : *this) op.transformStar(*(p));
     }
 };

@@ -29,7 +29,7 @@
 #include "lsst/jointcal/FittedStar.h"
 #include "lsst/jointcal/RefStar.h"
 #include "lsst/jointcal/MeasuredStar.h"
-#include "lsst/jointcal/Gtransfo.h"
+#include "lsst/jointcal/AstrometryTransform.h"
 #include "lsst/jointcal/StarList.h"
 
 namespace {

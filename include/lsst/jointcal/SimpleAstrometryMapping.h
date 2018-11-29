@@ -28,36 +28,39 @@
 #include <memory>  // for unique_ptr
 
 #include "lsst/jointcal/AstrometryMapping.h"
-#include "lsst/jointcal/Gtransfo.h"
+#include "lsst/jointcal/AstrometryTransform.h"
 #include "lsst/jointcal/CcdImage.h"
 
-//! Class for a simple mapping implementing a generic Gtransfo
+//! Class for a simple mapping implementing a generic AstrometryTransform
 /*! It uses a template rather than a pointer so that the derived
-classes can use the specifics of the transfo. The class
+classes can use the specifics of the transform. The class
 simplePolyMapping overloads a few routines. */
 
 namespace lsst {
 namespace jointcal {
 
-class SimpleGtransfoMapping : public AstrometryMapping {
+class SimpleAstrometryMapping : public AstrometryMapping {
 public:
-    SimpleGtransfoMapping(Gtransfo const &gtransfo, bool toBeFit = true)
-            : toBeFit(toBeFit), transfo(gtransfo.clone()), errorProp(transfo), lin(new GtransfoLin) {
+    SimpleAstrometryMapping(AstrometryTransform const &astrometryTransform, bool toBeFit = true)
+            : toBeFit(toBeFit),
+              transform(astrometryTransform.clone()),
+              errorProp(transform),
+              lin(new AstrometryTransformLinear) {
         // in this order:
-        // take a copy of the input transfo,
-        // assign the transformation used to propagate errors to the transfo itself
+        // take a copy of the input transform,
+        // assign the transformation used to propagate errors to the transform itself
         // reserve some memory space to compute the derivatives (efficiency).
     }
 
     /// No copy or move: there is only ever one instance of a given mapping (i.e.. per ccd+visit)
-    SimpleGtransfoMapping(SimpleGtransfoMapping const &) = delete;
-    SimpleGtransfoMapping(SimpleGtransfoMapping &&) = delete;
-    SimpleGtransfoMapping &operator=(SimpleGtransfoMapping const &) = delete;
-    SimpleGtransfoMapping &operator=(SimpleGtransfoMapping &&) = delete;
+    SimpleAstrometryMapping(SimpleAstrometryMapping const &) = delete;
+    SimpleAstrometryMapping(SimpleAstrometryMapping &&) = delete;
+    SimpleAstrometryMapping &operator=(SimpleAstrometryMapping const &) = delete;
+    SimpleAstrometryMapping &operator=(SimpleAstrometryMapping &&) = delete;
 
     virtual void freezeErrorTransform() {
-        // from there on, updating the transfo does not change the errors.
-        errorProp = transfo->clone();
+        // from there on, updating the transform does not change the errors.
+        errorProp = transform->clone();
     }
 
     // interface Mapping functions:
@@ -65,7 +68,7 @@ public:
     //!
     unsigned getNpar() const {
         if (toBeFit)
-            return transfo->getNpar();
+            return transform->getNpar();
         else
             return 0;
     }
@@ -78,7 +81,7 @@ public:
 
     //!
     void transformPosAndErrors(FatPoint const &where, FatPoint &outPoint) const {
-        transfo->transformPosAndErrors(where, outPoint);
+        transform->transformPosAndErrors(where, outPoint);
         FatPoint tmp;
         errorProp->transformPosAndErrors(where, tmp);
         outPoint.vx = tmp.vx;
@@ -103,7 +106,7 @@ public:
 
     //!
     void offsetParams(Eigen::VectorXd const &delta) {
-        if (toBeFit) transfo->offsetParams(delta);
+        if (toBeFit) transform->offsetParams(delta);
     }
 
     //! position of the parameters within the grand fitting scheme
@@ -115,11 +118,11 @@ public:
     virtual void computeTransformAndDerivatives(FatPoint const &where, FatPoint &outPoint,
                                                 Eigen::MatrixX2d &H) const {
         transformPosAndErrors(where, outPoint);
-        transfo->paramDerivatives(where, &H(0, 0), &H(0, 1));
+        transform->paramDerivatives(where, &H(0, 0), &H(0, 1));
     }
 
-    //! Access to the (fitted) transfo
-    virtual Gtransfo const &getTransfo() const { return *transfo; }
+    //! Access to the (fitted) transform
+    virtual AstrometryTransform const &getTransform() const { return *transform; }
 
     /// Get whether this mapping is fit as part of a Model.
     bool getToBeFit() const { return toBeFit; }
@@ -131,27 +134,28 @@ protected:
     bool toBeFit;
     unsigned index;
     /* inheritance may also work. Perhaps with some trouble because
-       some routines in Mapping and Gtransfo have the same name */
-    std::shared_ptr<Gtransfo> transfo;
+       some routines in Mapping and AstrometryTransform have the same name */
+    std::shared_ptr<AstrometryTransform> transform;
 
-    std::shared_ptr<Gtransfo> errorProp;
+    std::shared_ptr<AstrometryTransform> errorProp;
     /* to avoid allocation at every call of positionDerivative.
        use a pointer for constness */
-    std::unique_ptr<GtransfoLin> lin;
+    std::unique_ptr<AstrometryTransformLinear> lin;
 };
 
 //! Mapping implementation for a polynomial transformation.
-class SimplePolyMapping : public SimpleGtransfoMapping {
+class SimplePolyMapping : public SimpleAstrometryMapping {
 public:
     ~SimplePolyMapping() {}
 
     // ! contructor.
-    /*! The transformation will be initialized to gtransfo, so that the effective transformation
-      reads gtransfo*CenterAndScale */
-    SimplePolyMapping(GtransfoLin const &CenterAndScale, GtransfoPoly const &gtransfo)
-            : SimpleGtransfoMapping(gtransfo), _centerAndScale(CenterAndScale) {
+    /*! The transformation will be initialized to transform, so that the effective transformation
+      reads transform*CenterAndScale */
+    SimplePolyMapping(AstrometryTransformLinear const &CenterAndScale,
+                      AstrometryTransformPolynomial const &transform)
+            : SimpleAstrometryMapping(transform), _centerAndScale(CenterAndScale) {
         // We assume that the initialization was done properly, for example that
-        // gtransfo = pixToTangentPlane*CenterAndScale.inverted(), so we do not touch transfo.
+        // transform = pixToTangentPlane*CenterAndScale.inverted(), so we do not touch transform.
         /* store the (spatial) derivative of _centerAndScale. For the extra
            diagonal terms, just copied the ones in positionDerivatives */
         preDer(0, 0) = _centerAndScale.coeff(1, 0, 0);
@@ -170,8 +174,8 @@ public:
     SimplePolyMapping &operator=(SimplePolyMapping const &) = delete;
     SimplePolyMapping &operator=(SimplePolyMapping &&) = delete;
 
-    /* The SimpleGtransfoMapping version does not account for the
-       _centerAndScale transfo */
+    /* The SimpleAstrometryMapping version does not account for the
+       _centerAndScale transform */
 
     void positionDerivative(Point const &where, Eigen::Matrix2d &derivative, double epsilon) const {
         Point tmp = _centerAndScale.apply(where);
@@ -191,26 +195,26 @@ public:
 
     //! Calls the transforms and implements the centering and scaling of coordinates
     /* We should put the computation of error propagation and
-       parameter derivatives into the same Gtransfo routine because
+       parameter derivatives into the same AstrometryTransform routine because
        it could be significantly faster */
     virtual void computeTransformAndDerivatives(FatPoint const &where, FatPoint &outPoint,
                                                 Eigen::MatrixX2d &H) const {
         FatPoint mid;
         _centerAndScale.transformPosAndErrors(where, mid);
-        transfo->transformPosAndErrors(mid, outPoint);
+        transform->transformPosAndErrors(mid, outPoint);
         FatPoint tmp;
         errorProp->transformPosAndErrors(mid, tmp);
         outPoint.vx = tmp.vx;
         outPoint.vy = tmp.vy;
         outPoint.vxy = tmp.vxy;
-        transfo->paramDerivatives(mid, &H(0, 0), &H(0, 1));
+        transform->paramDerivatives(mid, &H(0, 0), &H(0, 1));
     }
 
     //! Implements as well the centering and scaling of coordinates
     void transformPosAndErrors(FatPoint const &where, FatPoint &outPoint) const {
         FatPoint mid;
         _centerAndScale.transformPosAndErrors(where, mid);
-        transfo->transformPosAndErrors(mid, outPoint);
+        transform->transformPosAndErrors(mid, outPoint);
         FatPoint tmp;
         errorProp->transformPosAndErrors(mid, tmp);
         outPoint.vx = tmp.vx;
@@ -218,10 +222,11 @@ public:
         outPoint.vxy = tmp.vxy;
     }
 
-    //! Access to the (fitted) transfo
-    Gtransfo const &getTransfo() const {
+    //! Access to the (fitted) transform
+    AstrometryTransform const &getTransform() const {
         // Cannot fail given the contructor:
-        const GtransfoPoly *fittedPoly = dynamic_cast<const GtransfoPoly *>(&(*transfo));
+        const AstrometryTransformPolynomial *fittedPoly =
+                dynamic_cast<const AstrometryTransformPolynomial *>(&(*transform));
         actualResult = (*fittedPoly) * _centerAndScale;
         return actualResult;
     }
@@ -230,17 +235,17 @@ private:
     /* to better condition the 2nd derivative matrix, the
     transformed coordinates are mapped (roughly) on [-1,1].
     We need both the transform and its derivative. */
-    GtransfoLin _centerAndScale;
+    AstrometryTransformLinear _centerAndScale;
     Eigen::Matrix2d preDer;
 
     /* Where we store the combination. */
-    mutable GtransfoPoly actualResult;
+    mutable AstrometryTransformPolynomial actualResult;
 };
 
 #ifdef STORAGE
 /*! "do nothing" mapping. The Ccdimage's that "use" this one impose the
   coordinate system */
-class SimpleIdentityMapping : public SimpleGtransfoMapping<GtransfoIdentity> {
+class SimpleIdentityMapping : public SimpleAstrometryMapping<AstrometryTransformIdentity> {
 public:
     //! nothing to do.
     virtual void computeTransformAndDerivatives(FatPoint const &where, FatPoint &outPoint,
