@@ -57,7 +57,7 @@ class GtransfoLin;
     providing inverseTransfo is obviously a very good idea. Before
     resorting to inverseTransfo, consider using
     StarMatchList::inverseTransfo().  GtransfoLin::inverted() and
-    TanPix2RaDec::inverted() exist.
+    TanPixelToRaDec::inverted() exist.
     The classes also provide derivation and linear approximation.
 
 */
@@ -552,7 +552,7 @@ class BaseTanWcs : public Gtransfo {
 public:
     using Gtransfo::apply;  // to unhide apply(const Point&)
 
-    BaseTanWcs(GtransfoLin const &pix2Tan, Point const &tangentPoint,
+    BaseTanWcs(GtransfoLin const &pixToTan, Point const &tangentPoint,
                const GtransfoPoly *corrections = nullptr);
 
     BaseTanWcs(const BaseTanWcs &original);
@@ -579,55 +579,57 @@ public:
 
     //! Get a transform from pixels to tangent plane (degrees)
     //! This is a linear transform plus the effects of the correction
-    virtual GtransfoPoly getPix2TangentPlane() const = 0;
+    virtual GtransfoPoly getPixelToTangentPlane() const = 0;
 
     //! Transform from pixels to tangent plane (degrees)
-    virtual void pix2TP(double xPixel, double yPixel, double &xTangentPlane, double &yTangentPlane) const = 0;
+    virtual void pixToTangentPlane(double xPixel, double yPixel, double &xTangentPlane,
+                                   double &yTangentPlane) const = 0;
 
     ~BaseTanWcs();
 
 protected:
-    GtransfoLin linPix2Tan;  // transform from pixels to tangent plane (degrees)
-                             // a linear approximation centered at the pixel and sky origins
+    GtransfoLin linPixelToTan;  // transform from pixels to tangent plane (degrees)
+                                // a linear approximation centered at the pixel and sky origins
     std::unique_ptr<GtransfoPoly> corr;
     double ra0, dec0;   // sky origin (radians)
     double cos0, sin0;  // cos(dec0), sin(dec0)
 };
 
-class TanRaDec2Pix;  // the inverse of TanPix2RaDec.
+class TanRaDecToPixel;  // the inverse of TanPixelToRaDec.
 
 //! the transformation that handles pix to sideral transfos (Gnomonic, possibly with polynomial distortions).
-class TanPix2RaDec : public BaseTanWcs {
+class TanPixelToRaDec : public BaseTanWcs {
 public:
     using Gtransfo::apply;  // to unhide apply(const Point&)
-    //! pix2Tan describes the transfo from pix to tangent plane (degrees). TangentPoint in degrees.
+    //! pixToTan describes the transfo from pix to tangent plane (degrees). TangentPoint in degrees.
     //! Corrections are applied between Lin and deprojection parts (as in Swarp).
-    TanPix2RaDec(GtransfoLin const &pix2Tan, Point const &tangentPoint,
-                 const GtransfoPoly *corrections = nullptr);
+    TanPixelToRaDec(GtransfoLin const &pixToTan, Point const &tangentPoint,
+                    const GtransfoPoly *corrections = nullptr);
 
     //! the transformation from pixels to tangent plane (degrees)
-    GtransfoPoly getPix2TangentPlane() const;
+    GtransfoPoly getPixelToTangentPlane() const;
 
     //! transforms from pixel space to tangent plane (degrees)
-    virtual void pix2TP(double xPixel, double yPixel, double &xTangentPlane, double &yTangentPlane) const;
+    virtual void pixToTangentPlane(double xPixel, double yPixel, double &xTangentPlane,
+                                   double &yTangentPlane) const;
 
-    TanPix2RaDec();
+    TanPixelToRaDec();
 
     //! composition with GtransfoLin
-    TanPix2RaDec operator*(GtransfoLin const &right) const;
+    TanPixelToRaDec operator*(GtransfoLin const &right) const;
 
     using Gtransfo::composeAndReduce;  // to unhide Gtransfo::composeAndReduce(Gtransfo const &)
     /// @copydoc Gtransfo::composeAndReduce
     std::unique_ptr<Gtransfo> composeAndReduce(GtransfoLin const &right) const;
 
     //! approximate inverse : it ignores corrections;
-    TanRaDec2Pix inverted() const;
+    TanRaDecToPixel inverted() const;
 
     //! Overload the "generic routine" (available for all Gtransfo types
     std::unique_ptr<Gtransfo> roughInverse(const Frame &region) const;
 
-    //! Inverse transfo: returns a TanRaDec2Pix if there are no corrections, or the iterative solver if there
-    //! are.
+    //! Inverse transfo: returns a TanRaDecToPixel if there are no corrections, or the iterative solver if
+    //! there are.
     std::unique_ptr<Gtransfo> inverseTransfo(const double precision, const Frame &region) const;
 
     std::unique_ptr<Gtransfo> clone() const;
@@ -639,23 +641,24 @@ public:
 };
 
 //! Implements the (forward) SIP distorsion scheme
-class TanSipPix2RaDec : public BaseTanWcs {
+class TanSipPixelToRaDec : public BaseTanWcs {
 public:
-    //! pix2Tan describes the transfo from pix to tangent plane (degrees). TangentPoint in degrees.
+    //! pixToTan describes the transfo from pix to tangent plane (degrees). TangentPoint in degrees.
     //! Corrections are applied before Lin.
-    TanSipPix2RaDec(GtransfoLin const &pix2Tan, Point const &tangentPoint,
-                    const GtransfoPoly *corrections = nullptr);
+    TanSipPixelToRaDec(GtransfoLin const &pixToTan, Point const &tangentPoint,
+                       const GtransfoPoly *corrections = nullptr);
 
     //! the transformation from pixels to tangent plane (degrees)
-    GtransfoPoly getPix2TangentPlane() const;
+    GtransfoPoly getPixelToTangentPlane() const;
 
     //! transforms from pixel space to tangent plane (degrees)
-    virtual void pix2TP(double xPixel, double yPixel, double &xTangentPlane, double &yTangentPlane) const;
+    virtual void pixToTangentPlane(double xPixel, double yPixel, double &xTangentPlane,
+                                   double &yTangentPlane) const;
 
-    TanSipPix2RaDec();
+    TanSipPixelToRaDec();
 
-    //! Inverse transfo: returns a TanRaDec2Pix if there are no corrections, or the iterative solver if there
-    //! are.
+    //! Inverse transfo: returns a TanRaDecToPixel if there are no corrections, or the iterative solver if
+    //! there are.
     std::unique_ptr<Gtransfo> inverseTransfo(const double precision, const Frame &region) const;
 
     std::unique_ptr<Gtransfo> clone() const;
@@ -670,18 +673,18 @@ public:
 /*! this transfo does not implement corrections, since
    they are defined the other way around (from pixels to sky),
    and not invertible analytically. The inversion of tangent
-   point WCS (TanPix2RaDec) is obtained via inverseTransfo().
+   point WCS (TanPixelToRaDec) is obtained via inverseTransfo().
 */
 
-class TanRaDec2Pix : public Gtransfo {
+class TanRaDecToPixel : public Gtransfo {
 public:
     using Gtransfo::apply;  // to unhide apply(const Point&)
 
     //! assume degrees everywhere.
-    TanRaDec2Pix(GtransfoLin const &tan2Pix, Point const &tangentPoint);
+    TanRaDecToPixel(GtransfoLin const &tan2Pix, Point const &tangentPoint);
 
     //!
-    TanRaDec2Pix();
+    TanRaDecToPixel();
 
     //! The Linear part (corresponding to CD's and CRPIX's)
     GtransfoLin getLinPart() const;
@@ -699,12 +702,12 @@ public:
     void transformPosAndErrors(const FatPoint &in, FatPoint &out) const;
 
     //! exact typed inverse:
-    TanPix2RaDec inverted() const;
+    TanPixelToRaDec inverted() const;
 
     //! Overload the "generic routine" (available for all Gtransfo types
     std::unique_ptr<Gtransfo> roughInverse(const Frame &region) const;
 
-    //! Inverse transfo: returns a TanPix2RaDec.
+    //! Inverse transfo: returns a TanPixelToRaDec.
     std::unique_ptr<Gtransfo> inverseTransfo(const double precision, const Frame &region) const;
 
     void dump(std::ostream &stream) const;

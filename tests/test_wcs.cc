@@ -58,7 +58,7 @@ static void __attribute__((constructor)) trapfpe() {
 namespace jointcal = lsst::jointcal;
 namespace afwImg = lsst::afw::image;
 
-/* Test jointcal::TanSipPix2RaDec::apply against afwImg::Wcs::pixelToSky */
+/* Test jointcal::TanSipPixelToRaDec::apply against afwImg::Wcs::pixelToSky */
 
 BOOST_AUTO_TEST_SUITE(test_transfos)
 

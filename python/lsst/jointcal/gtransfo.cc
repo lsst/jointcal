@@ -111,16 +111,17 @@ void declareBaseTanWcs(py::module &mod) {
     py::class_<BaseTanWcs, std::shared_ptr<BaseTanWcs>, Gtransfo> cls(mod, "BaseTanWcs");
 }
 
-void declareTanPix2RaDec(py::module &mod) {
-    py::class_<TanPix2RaDec, std::shared_ptr<TanPix2RaDec>, Gtransfo> cls(mod, "TanPix2RaDec");
+void declareTanPixelToRaDec(py::module &mod) {
+    py::class_<TanPixelToRaDec, std::shared_ptr<TanPixelToRaDec>, Gtransfo> cls(mod, "TanPixelToRaDec");
 }
 
-void declareTanRaDec2Pix(py::module &mod) {
-    py::class_<TanRaDec2Pix, std::shared_ptr<TanRaDec2Pix>, Gtransfo> cls(mod, "TanRaDec2Pix");
+void declareTanRaDecToPixel(py::module &mod) {
+    py::class_<TanRaDecToPixel, std::shared_ptr<TanRaDecToPixel>, Gtransfo> cls(mod, "TanRaDecToPixel");
 }
 
-void declareTanSipPix2RaDec(py::module &mod) {
-    py::class_<TanSipPix2RaDec, std::shared_ptr<TanSipPix2RaDec>, BaseTanWcs> cls(mod, "TanSipPix2RaDec");
+void declareTanSipPixelToRaDec(py::module &mod) {
+    py::class_<TanSipPixelToRaDec, std::shared_ptr<TanSipPixelToRaDec>, BaseTanWcs> cls(mod,
+                                                                                        "TanSipPixelToRaDec");
 }
 
 PYBIND11_MODULE(gtransfo, mod) {
@@ -136,9 +137,9 @@ PYBIND11_MODULE(gtransfo, mod) {
     declareGtransfoLinScale(mod);
     declareGtransfoSkyWcs(mod);
     declareBaseTanWcs(mod);
-    declareTanPix2RaDec(mod);
-    declareTanRaDec2Pix(mod);
-    declareTanSipPix2RaDec(mod);
+    declareTanPixelToRaDec(mod);
+    declareTanRaDecToPixel(mod);
+    declareTanSipPixelToRaDec(mod);
 
     // utility functions
     mod.def("inversePolyTransfo", &inversePolyTransfo, "forward"_a, "domain"_a, "precision"_a,

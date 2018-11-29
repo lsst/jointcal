@@ -49,7 +49,7 @@ void declareAstrometryModel(py::module &mod) {
     cls.def("getMapping", &AstrometryModel::getMapping, py::return_value_policy::reference_internal);
     cls.def("assignIndices", &AstrometryModel::assignIndices);
     cls.def("offsetParams", &AstrometryModel::offsetParams);
-    cls.def("getSky2TP", &AstrometryModel::getSky2TP);
+    cls.def("getSkyToTangentPlane", &AstrometryModel::getSkyToTangentPlane);
     cls.def("makeSkyWcs", &AstrometryModel::makeSkyWcs);
     cls.def("getTotalParameters", &AstrometryModel::getTotalParameters);
     cls.def("validate", &AstrometryModel::validate);

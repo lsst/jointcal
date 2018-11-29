@@ -102,8 +102,8 @@ public:
      * stars are reported) onto the Tangent plane (into which the pixel coordinates
      * are transformed).
      */
-    const std::shared_ptr<Gtransfo const> getSky2TP(CcdImage const &ccdImage) const override {
-        return _sky2TP->getSky2TP(ccdImage);
+    const std::shared_ptr<Gtransfo const> getSkyToTangentPlane(CcdImage const &ccdImage) const override {
+        return _skyToTangentPlane->getSkyToTangentPlane(ccdImage);
     }
 
     /// @copydoc AstrometryModel::makeSkyWcs
@@ -113,7 +113,7 @@ private:
     std::unordered_map<CcdImageKey, std::unique_ptr<TwoTransfoMapping>> _mappings;
     std::map<CcdIdType, std::shared_ptr<SimpleGtransfoMapping>> _chipMap;
     std::map<VisitIdType, std::shared_ptr<SimpleGtransfoMapping>> _visitMap;
-    const std::shared_ptr<ProjectionHandler const> _sky2TP;
+    const std::shared_ptr<ProjectionHandler const> _skyToTangentPlane;
     bool _fittingChips, _fittingVisits;
 
     /// @copydoc AstrometryModel::findMapping

@@ -67,7 +67,7 @@ namespace jointcal {
 ConstrainedAstrometryModel::ConstrainedAstrometryModel(
         CcdImageList const &ccdImageList, std::shared_ptr<ProjectionHandler const> projectionHandler,
         int chipOrder, int visitOrder)
-        : _sky2TP(projectionHandler) {
+        : _skyToTangentPlane(projectionHandler) {
     // keep track of which chip we want to hold fixed (the one closest to the middle of the focal plane)
     double minRadius2 = std::numeric_limits<double>::infinity();
     CcdIdType constrainedChip = -1;
@@ -228,7 +228,7 @@ int ConstrainedAstrometryModel::getTotalParameters() const {
 }
 
 std::shared_ptr<afw::geom::SkyWcs> ConstrainedAstrometryModel::makeSkyWcs(CcdImage const &ccdImage) const {
-    auto proj = std::dynamic_pointer_cast<const TanRaDec2Pix>(getSky2TP(ccdImage));
+    auto proj = std::dynamic_pointer_cast<const TanRaDecToPixel>(getSkyToTangentPlane(ccdImage));
     jointcal::Point tangentPoint(proj->getTangentPoint());
 
     auto imageFrame = ccdImage.getImageFrame();

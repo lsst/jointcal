@@ -83,7 +83,7 @@ class CcdImageTestCase(lsst.utils.tests.TestCase):
         self.assertEqual(refStars, 0)
 
         # Make a fake reference catalog; will match the catalog one-to-one.
-        skyWcs = ccdImage.readWCS().getSkyWcs()
+        skyWcs = ccdImage.getReadWcs().getSkyWcs()
         self.refCat = testUtils.createFakeCatalog(nStars, self.bbox, "refFlux", skyWcs=skyWcs, refCat=True)
         # associate the reference stars
         self.associations.collectRefStars(self.refCat, matchCut, 'refFlux_instFlux')

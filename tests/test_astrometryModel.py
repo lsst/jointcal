@@ -205,7 +205,7 @@ class AstrometryModelTestBase:
             See `lsst.afw.geom.utils.assertPairsAlmostEqual`.
         """
         skyWcs = model.makeSkyWcs(ccdImage)
-        skyToTangentPlane = model.getSky2TP(ccdImage)
+        skyToTangentPlane = model.getSkyToTangentPlane(ccdImage)
         mapping = model.getMapping(ccdImage)
 
         bbox = ccdImage.getDetector().getBBox()

@@ -1300,10 +1300,10 @@ static double deg2rad(double degree) { return degree * M_PI / 180.; }
 static double rad2deg(double rad) { return rad * 180. / M_PI; }
 
 /*************  WCS transfo ******************/
-/************** LinPix2Tan *******************/
+/************** LinPixelToTan *******************/
 
 /* Implementation note : it seemed wise to incorporate
-   the radians to degreess convertion into the linPix2Tan
+   the radians to degreess convertion into the linPixelToTan
    part (right in the constructor), and to do the
    opposite operation in the LinPart routine.
    When I was coding the fit, I realized that it was a
@@ -1314,13 +1314,13 @@ static double rad2deg(double rad) { return rad * 180. / M_PI; }
    would expect.
    So, no more "automatic" degrees to radians and
    radians to degrees conversion. They are explicitely
-   done in apply (for TanPix2RaDec and TanRaDec2Pix).
+   done in apply (for TanPixelToRaDec and TanRaDecToPixel).
    This is a minor concern though....
 */
-BaseTanWcs::BaseTanWcs(GtransfoLin const &pix2Tan, Point const &tangentPoint,
+BaseTanWcs::BaseTanWcs(GtransfoLin const &pixToTan, Point const &tangentPoint,
                        const GtransfoPoly *corrections) {
-    // the angles returned by linPix2Tan should be in degrees.
-    linPix2Tan = pix2Tan;
+    // the angles returned by linPixelToTan should be in degrees.
+    linPixelToTan = pixToTan;
     ra0 = deg2rad(tangentPoint.x);
     dec0 = deg2rad(tangentPoint.y);
     cos0 = std::cos(dec0);
@@ -1339,7 +1339,7 @@ BaseTanWcs::BaseTanWcs(const BaseTanWcs &original) : Gtransfo() {
 }
 
 void BaseTanWcs::operator=(const BaseTanWcs &original) {
-    linPix2Tan = original.linPix2Tan;
+    linPixelToTan = original.linPixelToTan;
     ra0 = original.ra0;
     dec0 = original.dec0;
     cos0 = std::cos(dec0);
@@ -1349,8 +1349,8 @@ void BaseTanWcs::operator=(const BaseTanWcs &original) {
 }
 
 void BaseTanWcs::apply(const double xIn, const double yIn, double &xOut, double &yOut) const {
-    double l, m;             // radians in the tangent plane
-    pix2TP(xIn, yIn, l, m);  // l, m in degrees.
+    double l, m;                        // radians in the tangent plane
+    pixToTangentPlane(xIn, yIn, l, m);  // l, m in degrees.
     l = deg2rad(l);
     m = deg2rad(m);  // now in radians
                      // Code inspired from worldpos.c in wcssubs (ancestor of the wcslib)
@@ -1376,7 +1376,7 @@ void BaseTanWcs::apply(const double xIn, const double yIn, double &xOut, double 
 
 Point BaseTanWcs::getTangentPoint() const { return Point(rad2deg(ra0), rad2deg(dec0)); }
 
-GtransfoLin BaseTanWcs::getLinPart() const { return linPix2Tan; }
+GtransfoLin BaseTanWcs::getLinPart() const { return linPixelToTan; }
 
 void BaseTanWcs::setCorrections(std::unique_ptr<GtransfoPoly> corrections) { corr = std::move(corrections); }
 
@@ -1388,7 +1388,7 @@ Point BaseTanWcs::getCrPix() const {
 
        so that CrPix is the point which transforms to (0,0)
     */
-    const GtransfoLin inverse = linPix2Tan.inverted();
+    const GtransfoLin inverse = linPixelToTan.inverted();
     return Point(inverse.Dx(), inverse.Dy());
 }
 
@@ -1412,58 +1412,59 @@ std::unique_ptr<Gtransfo> GtransfoSkyWcs::clone() const {
     return std::unique_ptr<GtransfoSkyWcs>(new GtransfoSkyWcs(getSkyWcs()));
 }
 
-/*************************** TanPix2RaDec ***************/
+/*************************** TanPixelToRaDec ***************/
 
-TanPix2RaDec::TanPix2RaDec(GtransfoLin const &pix2Tan, Point const &tangentPoint,
-                           const GtransfoPoly *corrections)
-        : BaseTanWcs(pix2Tan, tangentPoint, corrections) {}
+TanPixelToRaDec::TanPixelToRaDec(GtransfoLin const &pixToTan, Point const &tangentPoint,
+                                 const GtransfoPoly *corrections)
+        : BaseTanWcs(pixToTan, tangentPoint, corrections) {}
 
 // ": Gtransfo" suppresses a warning
-TanPix2RaDec::TanPix2RaDec() : BaseTanWcs(GtransfoLin(), Point(0, 0), nullptr) {}
+TanPixelToRaDec::TanPixelToRaDec() : BaseTanWcs(GtransfoLin(), Point(0, 0), nullptr) {}
 
-std::unique_ptr<Gtransfo> TanPix2RaDec::composeAndReduce(GtransfoLin const &right) const {
+std::unique_ptr<Gtransfo> TanPixelToRaDec::composeAndReduce(GtransfoLin const &right) const {
     if (right.getOrder() == 1) {
-        return std::make_unique<TanPix2RaDec>((*this) * (right));
+        return std::make_unique<TanPixelToRaDec>((*this) * (right));
     } else {
         return std::unique_ptr<Gtransfo>(nullptr);
     }
 }
 
-TanPix2RaDec TanPix2RaDec::operator*(GtransfoLin const &right) const {
-    TanPix2RaDec result(*this);
-    result.linPix2Tan = result.linPix2Tan * right;
+TanPixelToRaDec TanPixelToRaDec::operator*(GtransfoLin const &right) const {
+    TanPixelToRaDec result(*this);
+    result.linPixelToTan = result.linPixelToTan * right;
     return result;
 }
 
-TanRaDec2Pix TanPix2RaDec::inverted() const {
+TanRaDecToPixel TanPixelToRaDec::inverted() const {
     if (corr != nullptr) {
-        LOGL_WARN(_log, "You are inverting a TanPix2RaDec with corrections.");
+        LOGL_WARN(_log, "You are inverting a TanPixelToRaDec with corrections.");
         LOGL_WARN(_log, "The inverse you get ignores the corrections!");
     }
-    return TanRaDec2Pix(getLinPart().inverted(), getTangentPoint());
+    return TanRaDecToPixel(getLinPart().inverted(), getTangentPoint());
 }
 
-std::unique_ptr<Gtransfo> TanPix2RaDec::roughInverse(const Frame &) const {
-    return std::unique_ptr<Gtransfo>(new TanRaDec2Pix(getLinPart().inverted(), getTangentPoint()));
+std::unique_ptr<Gtransfo> TanPixelToRaDec::roughInverse(const Frame &) const {
+    return std::unique_ptr<Gtransfo>(new TanRaDecToPixel(getLinPart().inverted(), getTangentPoint()));
 }
 
-std::unique_ptr<Gtransfo> TanPix2RaDec::inverseTransfo(const double precision, const Frame &region) const {
+std::unique_ptr<Gtransfo> TanPixelToRaDec::inverseTransfo(const double precision, const Frame &region) const {
     if (!corr)
-        return std::unique_ptr<Gtransfo>(new TanRaDec2Pix(getLinPart().inverted(), getTangentPoint()));
+        return std::unique_ptr<Gtransfo>(new TanRaDecToPixel(getLinPart().inverted(), getTangentPoint()));
     else
         return std::unique_ptr<Gtransfo>(new GtransfoInverse(this, precision, region));
 }
 
-GtransfoPoly TanPix2RaDec::getPix2TangentPlane() const {
+GtransfoPoly TanPixelToRaDec::getPixelToTangentPlane() const {
     if (corr)
-        return (*corr) * linPix2Tan;
+        return (*corr) * linPixelToTan;
     else
-        return linPix2Tan;
+        return linPixelToTan;
 }
 
-void TanPix2RaDec::pix2TP(double xPixel, double yPixel, double &xTangentPlane, double &yTangentPlane) const {
+void TanPixelToRaDec::pixToTangentPlane(double xPixel, double yPixel, double &xTangentPlane,
+                                        double &yTangentPlane) const {
     // xTangentPlane, yTangentPlane in degrees.
-    linPix2Tan.apply(xPixel, yPixel, xTangentPlane, yTangentPlane);
+    linPixelToTan.apply(xPixel, yPixel, xTangentPlane, yTangentPlane);
     if (corr) {
         double xtmp = xTangentPlane;
         double ytmp = yTangentPlane;
@@ -1471,12 +1472,12 @@ void TanPix2RaDec::pix2TP(double xPixel, double yPixel, double &xTangentPlane, d
     }
 }
 
-std::unique_ptr<Gtransfo> TanPix2RaDec::clone() const {
-    return std::unique_ptr<Gtransfo>(new TanPix2RaDec(getLinPart(), getTangentPoint(), corr.get()));
+std::unique_ptr<Gtransfo> TanPixelToRaDec::clone() const {
+    return std::unique_ptr<Gtransfo>(new TanPixelToRaDec(getLinPart(), getTangentPoint(), corr.get()));
 }
 
-void TanPix2RaDec::dump(ostream &stream) const {
-    stream << " TanPix2RaDec, lin part :" << endl << linPix2Tan;
+void TanPixelToRaDec::dump(ostream &stream) const {
+    stream << " TanPixelToRaDec, lin part :" << endl << linPixelToTan;
     Point tp = getTangentPoint();
     stream << " tangent point " << tp.x << ' ' << tp.y << endl;
     Point crpix = getCrPix();
@@ -1484,7 +1485,7 @@ void TanPix2RaDec::dump(ostream &stream) const {
     if (corr) stream << "PV correction: " << endl << *corr;
 }
 
-double TanPix2RaDec::fit(StarMatchList const &) {
+double TanPixelToRaDec::fit(StarMatchList const &) {
     /* OK we could implement this routine, but it is
        probably useless since to do the match, we have to
        project from sky to tangent plane. When a match is
@@ -1494,58 +1495,58 @@ double TanPix2RaDec::fit(StarMatchList const &) {
        message shows up, we'll think about it.
     */
     throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,
-                      "TanPix2RaDec::fit is NOT implemented (although it is doable)) ");
+                      "TanPixelToRaDec::fit is NOT implemented (although it is doable)) ");
     return -1;
 }
 
-/*************************** TanSipPix2RaDec ***************/
+/*************************** TanSipPixelToRaDec ***************/
 
-TanSipPix2RaDec::TanSipPix2RaDec(GtransfoLin const &pix2Tan, Point const &tangentPoint,
-                                 const GtransfoPoly *corrections)
-        : BaseTanWcs(pix2Tan, tangentPoint, corrections) {}
+TanSipPixelToRaDec::TanSipPixelToRaDec(GtransfoLin const &pixToTan, Point const &tangentPoint,
+                                       const GtransfoPoly *corrections)
+        : BaseTanWcs(pixToTan, tangentPoint, corrections) {}
 
 // ": Gtransfo" suppresses a warning
-TanSipPix2RaDec::TanSipPix2RaDec() : BaseTanWcs(GtransfoLin(), Point(0, 0), nullptr) {}
+TanSipPixelToRaDec::TanSipPixelToRaDec() : BaseTanWcs(GtransfoLin(), Point(0, 0), nullptr) {}
 
 /* Would require some checks before cooking up something more efficient
    than just a linear approximation */
 #if 0
-std::unique_ptr<Gtransfo> TanPix2RaDec::roughInverse(const Frame &region) const
+std::unique_ptr<Gtransfo> TanPixelToRaDec::roughInverse(const Frame &region) const
 {
   if (&region) {}
-  return std::unique_ptr<Gtransfo>(new TanRaDec2Pix(getLinPart().inverted(),getTangentPoint()));
+  return std::unique_ptr<Gtransfo>(new TanRaDecToPixel(getLinPart().inverted(),getTangentPoint()));
 }
 #endif
 
-std::unique_ptr<Gtransfo> TanSipPix2RaDec::inverseTransfo(const double precision, const Frame &region)
+std::unique_ptr<Gtransfo> TanSipPixelToRaDec::inverseTransfo(const double precision, const Frame &region)
         const { /* We have not implemented (yet) the reverse corrections available in SIP */
     return std::unique_ptr<Gtransfo>(new GtransfoInverse(this, precision, region));
 }
 
-GtransfoPoly TanSipPix2RaDec::getPix2TangentPlane() const {
+GtransfoPoly TanSipPixelToRaDec::getPixelToTangentPlane() const {
     if (corr)
-        return GtransfoPoly(linPix2Tan) * (*corr);
+        return GtransfoPoly(linPixelToTan) * (*corr);
     else
-        return linPix2Tan;
+        return linPixelToTan;
 }
 
-void TanSipPix2RaDec::pix2TP(double xPixel, double yPixel, double &xTangentPlane,
-                             double &yTangentPlane) const {
+void TanSipPixelToRaDec::pixToTangentPlane(double xPixel, double yPixel, double &xTangentPlane,
+                                           double &yTangentPlane) const {
     // xTangentPlane, yTangentPlane returned in degrees
     if (corr) {
         double xtmp, ytmp;
         corr->apply(xPixel, yPixel, xtmp, ytmp);
-        linPix2Tan.apply(xtmp, ytmp, xTangentPlane, yTangentPlane);
+        linPixelToTan.apply(xtmp, ytmp, xTangentPlane, yTangentPlane);
     } else
-        linPix2Tan.apply(xPixel, yPixel, xTangentPlane, yTangentPlane);
+        linPixelToTan.apply(xPixel, yPixel, xTangentPlane, yTangentPlane);
 }
 
-std::unique_ptr<Gtransfo> TanSipPix2RaDec::clone() const {
-    return std::unique_ptr<Gtransfo>(new TanSipPix2RaDec(getLinPart(), getTangentPoint(), corr.get()));
+std::unique_ptr<Gtransfo> TanSipPixelToRaDec::clone() const {
+    return std::unique_ptr<Gtransfo>(new TanSipPixelToRaDec(getLinPart(), getTangentPoint(), corr.get()));
 }
 
-void TanSipPix2RaDec::dump(ostream &stream) const {
-    stream << " TanSipPix2RaDec, lin part :" << endl << linPix2Tan;
+void TanSipPixelToRaDec::dump(ostream &stream) const {
+    stream << " TanSipPixelToRaDec, lin part :" << endl << linPixelToTan;
     Point tp = getTangentPoint();
     stream << " tangent point " << tp.x << ' ' << tp.y << endl;
     Point crpix = getCrPix();
@@ -1553,7 +1554,7 @@ void TanSipPix2RaDec::dump(ostream &stream) const {
     if (corr) stream << "PV correction: " << endl << *corr;
 }
 
-double TanSipPix2RaDec::fit(StarMatchList const &) {
+double TanSipPixelToRaDec::fit(StarMatchList const &) {
     /* OK we could implement this routine, but it is
        probably useless since to do the match, we have to
        project from sky to tangent plane. When a match is
@@ -1563,17 +1564,18 @@ double TanSipPix2RaDec::fit(StarMatchList const &) {
        message shows up, we'll think about it.
     */
     throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,
-                      "TanSipPix2RaDec::fit is NOT implemented (although it is doable)) ");
+                      "TanSipPixelToRaDec::fit is NOT implemented (although it is doable)) ");
     return -1;
 }
 
-/***************  reverse transfo of TanPix2RaDec: TanRaDec2Pix ********/
+/***************  reverse transfo of TanPixelToRaDec: TanRaDecToPixel ********/
 
-TanRaDec2Pix::TanRaDec2Pix(GtransfoLin const &tan2Pix, Point const &tangentPoint) : linTan2Pix(tan2Pix) {
+TanRaDecToPixel::TanRaDecToPixel(GtransfoLin const &tan2Pix, Point const &tangentPoint)
+        : linTan2Pix(tan2Pix) {
     setTangentPoint(tangentPoint);
 }
 
-void TanRaDec2Pix::setTangentPoint(Point const &tangentPoint) {
+void TanRaDecToPixel::setTangentPoint(Point const &tangentPoint) {
     /* the radian to degrees conversion after projection
         is handled in apply */
     ra0 = deg2rad(tangentPoint.x);
@@ -1582,18 +1584,18 @@ void TanRaDec2Pix::setTangentPoint(Point const &tangentPoint) {
     sin0 = std::sin(dec0);
 }
 
-TanRaDec2Pix::TanRaDec2Pix() : linTan2Pix() {
+TanRaDecToPixel::TanRaDecToPixel() : linTan2Pix() {
     ra0 = dec0 = 0;
     cos0 = 1;
     sin0 = 0;
 }
 
-Point TanRaDec2Pix::getTangentPoint() const { return Point(rad2deg(ra0), rad2deg(dec0)); }
+Point TanRaDecToPixel::getTangentPoint() const { return Point(rad2deg(ra0), rad2deg(dec0)); }
 
-GtransfoLin TanRaDec2Pix::getLinPart() const { return linTan2Pix; }
+GtransfoLin TanRaDecToPixel::getLinPart() const { return linTan2Pix; }
 
 // Use analytic derivatives, computed at the same time as the transform itself
-void TanRaDec2Pix::transformPosAndErrors(FatPoint const &in, FatPoint &out) const {
+void TanRaDecToPixel::transformPosAndErrors(FatPoint const &in, FatPoint &out) const {
     /* this routine is very similar to apply, but also propagates errors.
        The deg2rad and rad2deg are ignored for errors because they act as
        2 global scalings that cancel each other.
@@ -1645,7 +1647,7 @@ void TanRaDec2Pix::transformPosAndErrors(FatPoint const &in, FatPoint &out) cons
     linTan2Pix.transformPosAndErrors(tmp, out);
 }
 
-void TanRaDec2Pix::apply(const double xIn, const double yIn, double &xOut, double &yOut) const {
+void TanRaDecToPixel::apply(const double xIn, const double yIn, double &xOut, double &yOut) const {
     double ra = deg2rad(xIn);
     double dec = deg2rad(yIn);
     if (ra - ra0 > M_PI) ra -= (2. * M_PI);
@@ -1664,30 +1666,30 @@ void TanRaDec2Pix::apply(const double xIn, const double yIn, double &xOut, doubl
     linTan2Pix.apply(l, m, xOut, yOut);
 }
 
-TanPix2RaDec TanRaDec2Pix::inverted() const {
-    return TanPix2RaDec(getLinPart().inverted(), getTangentPoint());
+TanPixelToRaDec TanRaDecToPixel::inverted() const {
+    return TanPixelToRaDec(getLinPart().inverted(), getTangentPoint());
 }
 
-void TanRaDec2Pix::dump(ostream &stream) const {
+void TanRaDecToPixel::dump(ostream &stream) const {
     Point tp = getTangentPoint();
     stream << " tan2pix " << linTan2Pix << " tangent point " << tp.x << ' ' << tp.y << endl;
 }
 
-std::unique_ptr<Gtransfo> TanRaDec2Pix::roughInverse(const Frame &) const {
-    return std::unique_ptr<Gtransfo>(new TanPix2RaDec(getLinPart().inverted(), getTangentPoint()));
+std::unique_ptr<Gtransfo> TanRaDecToPixel::roughInverse(const Frame &) const {
+    return std::unique_ptr<Gtransfo>(new TanPixelToRaDec(getLinPart().inverted(), getTangentPoint()));
 }
 
-std::unique_ptr<Gtransfo> TanRaDec2Pix::inverseTransfo(const double, const Frame &) const {
-    return std::unique_ptr<Gtransfo>(new TanPix2RaDec(getLinPart().inverted(), getTangentPoint()));
+std::unique_ptr<Gtransfo> TanRaDecToPixel::inverseTransfo(const double, const Frame &) const {
+    return std::unique_ptr<Gtransfo>(new TanPixelToRaDec(getLinPart().inverted(), getTangentPoint()));
 }
 
-std::unique_ptr<Gtransfo> TanRaDec2Pix::clone() const {
-    return std::unique_ptr<Gtransfo>(new TanRaDec2Pix(*this));
+std::unique_ptr<Gtransfo> TanRaDecToPixel::clone() const {
+    return std::unique_ptr<Gtransfo>(new TanRaDecToPixel(*this));
 }
 
-double TanRaDec2Pix::fit(StarMatchList const &) {
+double TanRaDecToPixel::fit(StarMatchList const &) {
     throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,
-                      "TanRaDec2Pix::fit is NOT implemented (although it is doable)) ");
+                      "TanRaDecToPixel::fit is NOT implemented (although it is doable)) ");
     return -1;
 }
 

@@ -66,7 +66,7 @@ public:
     //! The transformation used to project the positions of FittedStars.
     /*! This defines the coordinate system into which the Mapping of
         this Ccdimage maps the pixel coordinates. */
-    virtual const std::shared_ptr<Gtransfo const> getSky2TP(CcdImage const &ccdImage) const = 0;
+    virtual const std::shared_ptr<Gtransfo const> getSkyToTangentPlane(CcdImage const &ccdImage) const = 0;
 
     /**
      * Make a SkyWcs that contains this model.
