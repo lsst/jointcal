@@ -27,7 +27,7 @@
 
 #include "lsst/log/Log.h"
 #include "lsst/jointcal/PhotometryMapping.h"
-#include "lsst/jointcal/PhotometryTransfo.h"
+#include "lsst/jointcal/PhotometryTransform.h"
 #include "lsst/jointcal/SimplePhotometryModel.h"
 #include "lsst/jointcal/CcdImage.h"
 #include "lsst/jointcal/MeasuredStar.h"
@@ -105,8 +105,8 @@ SimpleFluxModel::SimpleFluxModel(CcdImageList const &ccdImageList, double errorP
     for (auto const &ccdImage : ccdImageList) {
         auto photoCalib = ccdImage->getPhotoCalib();
         // Use the single-frame processing calibration from the PhotoCalib as the initial value.
-        auto transfo = std::make_shared<FluxTransfoSpatiallyInvariant>(photoCalib->getCalibrationMean());
-        _myMap.emplace(ccdImage->getHashKey(), std::make_unique<PhotometryMapping>(transfo));
+        auto transform = std::make_shared<FluxTransfoSpatiallyInvariant>(photoCalib->getCalibrationMean());
+        _myMap.emplace(ccdImage->getHashKey(), std::make_unique<PhotometryMapping>(transform));
     }
     LOGLS_INFO(_log, "SimpleFluxModel got " << _myMap.size() << " ccdImage mappings.");
 }
@@ -138,8 +138,8 @@ SimpleMagnitudeModel::SimpleMagnitudeModel(CcdImageList const &ccdImageList, dou
         auto photoCalib = ccdImage->getPhotoCalib();
         // Use the single-frame processing calibration from the PhotoCalib as the default.
         double calib = magFromFlux(photoCalib->getCalibrationMean());
-        auto transfo = std::make_shared<MagnitudeTransfoSpatiallyInvariant>(calib);
-        _myMap.emplace(ccdImage->getHashKey(), std::make_unique<PhotometryMapping>(transfo));
+        auto transform = std::make_shared<MagnitudeTransfoSpatiallyInvariant>(calib);
+        _myMap.emplace(ccdImage->getHashKey(), std::make_unique<PhotometryMapping>(transform));
     }
     LOGLS_INFO(_log, "SimpleMagnitudeModel got " << _myMap.size() << " ccdImage mappings.");
 }

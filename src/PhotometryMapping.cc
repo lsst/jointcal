@@ -74,9 +74,9 @@ double ChipVisitFluxMapping::transformError(MeasuredStar const &measuredStar, do
                                             double instFluxErr) const {
     // The transformed error is s_m = dM(f,x,y)/df + s_f.
     double tempFlux =
-            _chipMapping->getTransfoErrors()->transform(measuredStar.x, measuredStar.y, instFluxErr);
-    return _visitMapping->getTransfoErrors()->transform(measuredStar.getXFocal(), measuredStar.getYFocal(),
-                                                        tempFlux);
+            _chipMapping->getTransformErrors()->transform(measuredStar.x, measuredStar.y, instFluxErr);
+    return _visitMapping->getTransformErrors()->transform(measuredStar.getXFocal(), measuredStar.getYFocal(),
+                                                          tempFlux);
 }
 
 void ChipVisitFluxMapping::computeParameterDerivatives(MeasuredStar const &measuredStar, double instFlux,
@@ -85,23 +85,23 @@ void ChipVisitFluxMapping::computeParameterDerivatives(MeasuredStar const &measu
     // and/or save these intermediate calculations when transforming flux to use in derivatives.
     // Like what AstrometryMappings do with `computeTransformAndDerivatives` vs. `transformPosAndErrors`.
 
-    double chipScale = _chipMapping->getTransfo()->transform(measuredStar.x, measuredStar.y, 1);
+    double chipScale = _chipMapping->getTransform()->transform(measuredStar.x, measuredStar.y, 1);
     double visitScale =
-            _visitMapping->getTransfo()->transform(measuredStar.getXFocal(), measuredStar.getYFocal(), 1);
+            _visitMapping->getTransform()->transform(measuredStar.getXFocal(), measuredStar.getYFocal(), 1);
 
     // NOTE: chipBlock is the product of the chip derivatives and the visit transforms, and vice versa.
     // NOTE: See DMTN-036 for the math behind this.
     if (getNParChip() > 0 && !_chipMapping->isFixed()) {
         // The chip derivatives start at 0, independent of the full-fit indices.
         Eigen::Ref<Eigen::VectorXd> chipBlock = derivatives.segment(0, getNParChip());
-        _chipMapping->getTransfo()->computeParameterDerivatives(measuredStar.x, measuredStar.y, instFlux,
-                                                                chipBlock);
+        _chipMapping->getTransform()->computeParameterDerivatives(measuredStar.x, measuredStar.y, instFlux,
+                                                                  chipBlock);
         chipBlock *= visitScale;
     }
     if (getNParVisit() > 0) {
         // The visit derivatives start at the last chip derivative, independent of the full-fit indices.
         Eigen::Ref<Eigen::VectorXd> visitBlock = derivatives.segment(getNParChip(), getNParVisit());
-        _visitMapping->getTransfo()->computeParameterDerivatives(
+        _visitMapping->getTransform()->computeParameterDerivatives(
                 measuredStar.getXFocal(), measuredStar.getYFocal(), instFlux, visitBlock);
         visitBlock *= chipScale;
     }
@@ -126,13 +126,13 @@ void ChipVisitMagnitudeMapping::computeParameterDerivatives(MeasuredStar const &
     if (getNParChip() > 0 && !_chipMapping->isFixed()) {
         // The chip derivatives start at 0, independent of the full-fit indices.
         Eigen::Ref<Eigen::VectorXd> chipBlock = derivatives.segment(0, getNParChip());
-        _chipMapping->getTransfo()->computeParameterDerivatives(measuredStar.x, measuredStar.y, instFlux,
-                                                                chipBlock);
+        _chipMapping->getTransform()->computeParameterDerivatives(measuredStar.x, measuredStar.y, instFlux,
+                                                                  chipBlock);
     }
     if (getNParVisit() > 0) {
         // The visit derivatives start at the last chip derivative, independent of the full-fit indices.
         Eigen::Ref<Eigen::VectorXd> visitBlock = derivatives.segment(getNParChip(), getNParVisit());
-        _visitMapping->getTransfo()->computeParameterDerivatives(
+        _visitMapping->getTransform()->computeParameterDerivatives(
                 measuredStar.getXFocal(), measuredStar.getYFocal(), instFlux, visitBlock);
     }
 }

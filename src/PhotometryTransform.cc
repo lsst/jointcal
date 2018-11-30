@@ -28,12 +28,12 @@
 #include "lsst/afw/math/detail/TrapezoidalPacker.h"
 
 #include "lsst/jointcal/Point.h"
-#include "lsst/jointcal/PhotometryTransfo.h"
+#include "lsst/jointcal/PhotometryTransform.h"
 
 namespace lsst {
 namespace jointcal {
 
-// ------------------ PhotometryTransfoChebyshev helpers ---------------------------------------------------
+// ------------------ PhotometryTransformChebyshev helpers ---------------------------------------------------
 
 namespace {
 
@@ -88,23 +88,23 @@ ndarray::Array<double, 2, 2> _initializeChebyshev(size_t order, bool identity) {
 }
 }  // namespace
 
-PhotometryTransfoChebyshev::PhotometryTransfoChebyshev(size_t order, afw::geom::Box2D const &bbox,
-                                                       bool identity)
+PhotometryTransformChebyshev::PhotometryTransformChebyshev(size_t order, afw::geom::Box2D const &bbox,
+                                                           bool identity)
         : _bbox(bbox),
           _toChebyshevRange(makeChebyshevRangeTransform(bbox)),
           _coefficients(_initializeChebyshev(order, identity)),
           _order(order),
           _nParameters((order + 1) * (order + 2) / 2) {}
 
-PhotometryTransfoChebyshev::PhotometryTransfoChebyshev(ndarray::Array<double, 2, 2> const &coefficients,
-                                                       afw::geom::Box2D const &bbox)
+PhotometryTransformChebyshev::PhotometryTransformChebyshev(ndarray::Array<double, 2, 2> const &coefficients,
+                                                           afw::geom::Box2D const &bbox)
         : _bbox(bbox),
           _toChebyshevRange(makeChebyshevRangeTransform(bbox)),
           _coefficients(coefficients),
           _order(coefficients.size() - 1),
           _nParameters((_order + 1) * (_order + 2) / 2) {}
 
-void PhotometryTransfoChebyshev::offsetParams(Eigen::VectorXd const &delta) {
+void PhotometryTransformChebyshev::offsetParams(Eigen::VectorXd const &delta) {
     // NOTE: the indexing in this method and computeParameterDerivatives must be kept consistent!
     Eigen::VectorXd::Index k = 0;
     for (ndarray::Size j = 0; j <= _order; ++j) {
@@ -126,7 +126,7 @@ double integrateTn(int n) {
 }
 }  // namespace
 
-double PhotometryTransfoChebyshev::integrate() const {
+double PhotometryTransformChebyshev::integrate() const {
     double result = 0;
     double determinant = _bbox.getArea() / 4.0;
     for (ndarray::Size j = 0; j < _coefficients.getSize<0>(); j++) {
@@ -137,9 +137,9 @@ double PhotometryTransfoChebyshev::integrate() const {
     return result * determinant;
 }
 
-double PhotometryTransfoChebyshev::mean() const { return integrate() / _bbox.getArea(); }
+double PhotometryTransformChebyshev::mean() const { return integrate() / _bbox.getArea(); }
 
-Eigen::VectorXd PhotometryTransfoChebyshev::getParameters() const {
+Eigen::VectorXd PhotometryTransformChebyshev::getParameters() const {
     Eigen::VectorXd parameters(_nParameters);
     // NOTE: the indexing in this method and offsetParams must be kept consistent!
     Eigen::VectorXd::Index k = 0;
@@ -153,14 +153,14 @@ Eigen::VectorXd PhotometryTransfoChebyshev::getParameters() const {
     return parameters;
 }
 
-double PhotometryTransfoChebyshev::computeChebyshev(double x, double y) const {
+double PhotometryTransformChebyshev::computeChebyshev(double x, double y) const {
     afw::geom::Point2D p = _toChebyshevRange(afw::geom::Point2D(x, y));
     return evaluateFunction1d(RecursionArrayImitator(_coefficients, p.getX()), p.getY(),
                               _coefficients.getSize<0>());
 }
 
-void PhotometryTransfoChebyshev::computeChebyshevDerivatives(double x, double y,
-                                                             Eigen::Ref<Eigen::VectorXd> derivatives) const {
+void PhotometryTransformChebyshev::computeChebyshevDerivatives(
+        double x, double y, Eigen::Ref<Eigen::VectorXd> derivatives) const {
     afw::geom::Point2D p = _toChebyshevRange(afw::geom::Point2D(x, y));
     // Algorithm: compute all the individual components recursively (since we'll need them anyway),
     // then combine them into the final answer vectors.

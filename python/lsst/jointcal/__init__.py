@@ -31,7 +31,7 @@ from .jointcal import *
 from .jointcalControl import *
 from .photometryMappings import *
 from .photometryModels import *
-from .photometryTransfo import *
+from .photometryTransform import *
 from .projectionHandler import *
 from .version import *
 __path__ = pkgutil.extend_path(__path__, __name__)

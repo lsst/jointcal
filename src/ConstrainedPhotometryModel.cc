@@ -129,13 +129,13 @@ void ConstrainedPhotometryModel::computeParameterDerivatives(MeasuredStar const 
 }
 
 namespace {
-// Convert photoTransfo's way of storing Chebyshev coefficients into the format wanted by ChebyMap.
-ndarray::Array<double, 2, 2> toChebyMapCoeffs(std::shared_ptr<PhotometryTransfoChebyshev> transfo) {
-    auto coeffs = transfo->getCoefficients();
+// Convert photoTransform's way of storing Chebyshev coefficients into the format wanted by ChebyMap.
+ndarray::Array<double, 2, 2> toChebyMapCoeffs(std::shared_ptr<PhotometryTransformChebyshev> transform) {
+    auto coeffs = transform->getCoefficients();
     // 4 x nPar: ChebyMap wants rows that look like (a_ij, 1, i, j) for out += a_ij*T_i(x)*T_j(y)
-    ndarray::Array<double, 2, 2> chebyCoeffs = allocate(ndarray::makeVector(transfo->getNpar(), 4));
+    ndarray::Array<double, 2, 2> chebyCoeffs = allocate(ndarray::makeVector(transform->getNpar(), 4));
     Eigen::VectorXd::Index k = 0;
-    auto order = transfo->getOrder();
+    auto order = transform->getOrder();
     for (ndarray::Size j = 0; j <= order; ++j) {
         ndarray::Size const iMax = order - j;  // to save re-computing `i+j <= order` every inner step.
         for (ndarray::Size i = 0; i <= iMax; ++i, ++k) {
@@ -169,7 +169,7 @@ PhotometryMappingBase *ConstrainedPhotometryModel::findMapping(CcdImage const &c
     return idMapping->second.get();
 }
 
-template <class ChipTransfo, class VisitTransfo, class ChipVisitMapping>
+template <class ChipTransform, class VisitTransform, class ChipVisitMapping>
 void ConstrainedPhotometryModel::initialize(CcdImageList const &ccdImageList,
                                             afw::geom::Box2D const &focalPlaneBBox, int visitOrder) {
     // keep track of which chip we want to constrain (the one closest to the middle of the focal plane)
@@ -193,13 +193,13 @@ void ConstrainedPhotometryModel::initialize(CcdImageList const &ccdImageList,
             }
             auto photoCalib = ccdImage->getPhotoCalib();
             // Use the single-frame processing calibration from the PhotoCalib as the default.
-            auto chipTransfo = std::make_unique<ChipTransfo>(initialChipCalibration(photoCalib));
-            _chipMap[chip] = std::make_shared<PhotometryMapping>(std::move(chipTransfo));
+            auto chipTransform = std::make_unique<ChipTransform>(initialChipCalibration(photoCalib));
+            _chipMap[chip] = std::make_shared<PhotometryMapping>(std::move(chipTransform));
         }
         // If the visit is not in the map, add it, otherwise continue.
         if (visitPair == _visitMap.end()) {
-            auto visitTransfo = std::make_unique<VisitTransfo>(visitOrder, focalPlaneBBox);
-            _visitMap[visit] = std::make_shared<PhotometryMapping>(std::move(visitTransfo));
+            auto visitTransform = std::make_unique<VisitTransform>(visitOrder, focalPlaneBBox);
+            _visitMap[visit] = std::make_shared<PhotometryMapping>(std::move(visitTransform));
         }
     }
 
@@ -249,15 +249,15 @@ std::shared_ptr<afw::image::PhotoCalib> ConstrainedFluxModel::toPhotoCalib(CcdIm
     // so blow up if we don't.
     assert(mapping != nullptr);
     auto pixToFocal = detector->getTransform(afw::cameraGeom::PIXELS, afw::cameraGeom::FOCAL_PLANE);
-    // We know it's a Chebyshev transfo because we created it as such, so blow up if it's not.
-    auto visitTransfo =
-            std::dynamic_pointer_cast<PhotometryTransfoChebyshev>(mapping->getVisitMapping()->getTransfo());
-    assert(visitTransfo != nullptr);
-    auto focalBBox = visitTransfo->getBBox();
+    // We know it's a Chebyshev transform because we created it as such, so blow up if it's not.
+    auto visitTransform = std::dynamic_pointer_cast<PhotometryTransformChebyshev>(
+            mapping->getVisitMapping()->getTransform());
+    assert(visitTransform != nullptr);
+    auto focalBBox = visitTransform->getBBox();
 
     // Unravel our chebyshev coefficients to build an astshim::ChebyMap.
-    auto coeff_f = toChebyMapCoeffs(
-            std::dynamic_pointer_cast<PhotometryTransfoChebyshev>(mapping->getVisitMapping()->getTransfo()));
+    auto coeff_f = toChebyMapCoeffs(std::dynamic_pointer_cast<PhotometryTransformChebyshev>(
+            mapping->getVisitMapping()->getTransform()));
     // Bounds are the bbox
     std::vector<double> lowerBound = {focalBBox.getMinX(), focalBBox.getMinY()};
     std::vector<double> upperBound = {focalBBox.getMaxX(), focalBBox.getMaxY()};
@@ -272,7 +272,7 @@ std::shared_ptr<afw::image::PhotoCalib> ConstrainedFluxModel::toPhotoCalib(CcdIm
     auto transform = pixToFocal->then(chebyTransform)->then(zoomTransform);
     // NOTE: TransformBoundedField does not yet implement mean(), so we have to compute it here.
     // TODO: restore this calculation as part of DM-16305
-    // double mean = mapping->getChipMapping()->getParameters()[0] * visitTransfo->mean(ccdBBoxInFocal);
+    // double mean = mapping->getChipMapping()->getParameters()[0] * visitTransform->mean(ccdBBoxInFocal);
     auto boundedField = std::make_shared<afw::math::TransformBoundedField>(ccdBBox, *transform);
     return std::make_shared<afw::image::PhotoCalib>(oldPhotoCalib->getCalibrationMean(),
                                                     oldPhotoCalib->getCalibrationErr(), boundedField, false);
@@ -308,15 +308,15 @@ std::shared_ptr<afw::image::PhotoCalib> ConstrainedMagnitudeModel::toPhotoCalib(
     // so blow up if we don't.
     assert(mapping != nullptr);
     auto pixToFocal = detector->getTransform(afw::cameraGeom::PIXELS, afw::cameraGeom::FOCAL_PLANE);
-    // We know it's a Chebyshev transfo because we created it as such, so blow up if it's not.
-    auto visitTransfo =
-            std::dynamic_pointer_cast<PhotometryTransfoChebyshev>(mapping->getVisitMapping()->getTransfo());
-    assert(visitTransfo != nullptr);
-    auto focalBBox = visitTransfo->getBBox();
+    // We know it's a Chebyshev transform because we created it as such, so blow up if it's not.
+    auto visitTransform = std::dynamic_pointer_cast<PhotometryTransformChebyshev>(
+            mapping->getVisitMapping()->getTransform());
+    assert(visitTransform != nullptr);
+    auto focalBBox = visitTransform->getBBox();
 
     // Unravel our chebyshev coefficients to build an astshim::ChebyMap.
-    auto coeff_f = toChebyMapCoeffs(
-            std::dynamic_pointer_cast<PhotometryTransfoChebyshev>(mapping->getVisitMapping()->getTransfo()));
+    auto coeff_f = toChebyMapCoeffs(std::dynamic_pointer_cast<PhotometryTransformChebyshev>(
+            mapping->getVisitMapping()->getTransform()));
     // Bounds are the bbox
     std::vector<double> lowerBound = {focalBBox.getMinX(), focalBBox.getMinY()};
     std::vector<double> upperBound = {focalBBox.getMaxX(), focalBBox.getMaxY()};
@@ -336,7 +336,7 @@ std::shared_ptr<afw::image::PhotoCalib> ConstrainedMagnitudeModel::toPhotoCalib(
     auto transform = pixToFocal->then(chebyTransform)->then(logTransform)->then(zoomTransform);
     // NOTE: TransformBoundedField does not yet implement mean(), so we have to compute it here.
     // TODO: restore this calculation as part of DM-16305
-    // double mean = calibrationMean * visitTransfo->mean(ccdBBoxInFocal);
+    // double mean = calibrationMean * visitTransform->mean(ccdBBoxInFocal);
     auto boundedField = std::make_shared<afw::math::TransformBoundedField>(ccdBBox, *transform);
     return std::make_shared<afw::image::PhotoCalib>(oldPhotoCalib->getCalibrationMean(),
                                                     oldPhotoCalib->getCalibrationErr(), boundedField, false);

@@ -33,13 +33,13 @@
 #include "lsst/jointcal/Eigenstuff.h"
 #include "lsst/jointcal/MeasuredStar.h"
 #include "lsst/jointcal/Point.h"
-#include "lsst/jointcal/PhotometryTransfo.h"
+#include "lsst/jointcal/PhotometryTransform.h"
 
 namespace lsst {
 namespace jointcal {
 
 /**
- * Relates transfo(s) to their position in the fitting matrix and allows interaction with the transfo(s).
+ * Relates transform(s) to their position in the fitting matrix and allows interaction with the transform(s).
  */
 class PhotometryMappingBase {
 public:
@@ -67,7 +67,7 @@ public:
 
     /**
      * Return the on-sky transformed flux uncertainty for measuredStar on ccdImage.
-     * Matches the underlying PhotometryTransfo's `transformError()` until freezeErrorTransform() is called.
+     * Matches the underlying PhotometryTransform's `transformError()` until freezeErrorTransform() is called.
      *
      * @param[in]  measuredStar  The measured star position to transform.
      * @param[in]  value  The flux or magnitude to transform.
@@ -125,40 +125,40 @@ protected:
 };
 
 /**
- * A mapping containing a single photometryTransfo.
+ * A mapping containing a single photometryTransform.
  */
 class PhotometryMapping : public PhotometryMappingBase {
 public:
     /**
-     * Value transform takes ownership of transfo, error transform aliases it.
+     * Value transform takes ownership of transform, error transform aliases it.
      *
      * Call freezeErrorTransform() to unalias the error transform.
      */
-    explicit PhotometryMapping(std::shared_ptr<PhotometryTransfo> transfo)
-            : PhotometryMappingBase(), _transfo(std::move(transfo)), _transfoErrors(_transfo) {}
+    explicit PhotometryMapping(std::shared_ptr<PhotometryTransform> transform)
+            : PhotometryMappingBase(), _transform(std::move(transform)), _transformErrors(_transform) {}
 
     /// @copydoc PhotometryMappingBase::getNpar
     unsigned getNpar() const override {
         if (fixed) {
             return 0;
         } else {
-            return _transfo->getNpar();
+            return _transform->getNpar();
         }
     }
 
     /// @copydoc PhotometryMappingBase::transform
     double transform(MeasuredStar const &measuredStar, double value) const override {
-        return _transfo->transform(measuredStar.x, measuredStar.y, value);
+        return _transform->transform(measuredStar.x, measuredStar.y, value);
     }
 
     /// @copydoc PhotometryMappingBase::transformError
     double transformError(MeasuredStar const &measuredStar, double value, double valueErr) const override {
-        return _transfoErrors->transformError(measuredStar.x, measuredStar.y, value, valueErr);
+        return _transformErrors->transformError(measuredStar.x, measuredStar.y, value, valueErr);
     }
 
     /// @copydoc PhotometryMappingBase::freezeErrorTransform
     void freezeErrorTransform() override {
-        _transfoErrors = std::shared_ptr<PhotometryTransfo>(_transfo->clone());
+        _transformErrors = std::shared_ptr<PhotometryTransform>(_transform->clone());
     }
 
     /// @copydoc PhotometryMappingBase::computeParameterDerivatives
@@ -167,20 +167,20 @@ public:
         if (fixed) {
             return;
         } else {
-            _transfo->computeParameterDerivatives(measuredStar.x, measuredStar.y, value, derivatives);
+            _transform->computeParameterDerivatives(measuredStar.x, measuredStar.y, value, derivatives);
         }
     }
 
     /**
-     * Offset the transfo parameters by delta.
+     * Offset the transform parameters by delta.
      *
-     * @param[in]   delta vector to offset transfo parameters. Same ordering as derivatives in
+     * @param[in]   delta vector to offset transform parameters. Same ordering as derivatives in
      *              computeParameterDerivatives();
      */
-    void offsetParams(Eigen::VectorXd const &delta) { _transfo->offsetParams(delta); }
+    void offsetParams(Eigen::VectorXd const &delta) { _transform->offsetParams(delta); }
 
     /// @copydoc PhotometryMappingBase::getParameters
-    Eigen::VectorXd getParameters() override { return _transfo->getParameters(); }
+    Eigen::VectorXd getParameters() override { return _transform->getParameters(); }
 
     /// @copydoc PhotometryMappingBase::getMappingIndices
     void getMappingIndices(std::vector<unsigned> &indices) const override {
@@ -192,19 +192,19 @@ public:
 
     /// @copydoc PhotometryMappingBase::dump
     void dump(std::ostream &stream = std::cout) const override {
-        stream << "index: " << index << " fixed: " << fixed << " transfo parameters: ";
-        _transfo->dump(stream);
+        stream << "index: " << index << " fixed: " << fixed << " transform parameters: ";
+        _transform->dump(stream);
     }
 
-    std::shared_ptr<PhotometryTransfo> getTransfo() const { return _transfo; }
+    std::shared_ptr<PhotometryTransform> getTransform() const { return _transform; }
 
-    std::shared_ptr<PhotometryTransfo> getTransfoErrors() const { return _transfoErrors; }
+    std::shared_ptr<PhotometryTransform> getTransformErrors() const { return _transformErrors; }
 
 private:
     // the actual transformation to be fit
-    std::shared_ptr<PhotometryTransfo> _transfo;
+    std::shared_ptr<PhotometryTransform> _transform;
     // the transformation used for errors
-    std::shared_ptr<PhotometryTransfo> _transfoErrors;
+    std::shared_ptr<PhotometryTransform> _transformErrors;
 };
 
 /**
@@ -225,9 +225,9 @@ public:
 
     /// @copydoc PhotometryMappingBase::transform
     double transform(MeasuredStar const &measuredStar, double value) const override {
-        double temp = _chipMapping->getTransfo()->transform(measuredStar.x, measuredStar.y, value);
-        return _visitMapping->getTransfo()->transform(measuredStar.getXFocal(), measuredStar.getYFocal(),
-                                                      temp);
+        double temp = _chipMapping->getTransform()->transform(measuredStar.x, measuredStar.y, value);
+        return _visitMapping->getTransform()->transform(measuredStar.getXFocal(), measuredStar.getYFocal(),
+                                                        temp);
     }
 
     /// @copydoc PhotometryMappingBase::freezeErrorTransform
@@ -272,7 +272,7 @@ public:
     unsigned getNParVisit() const { return _nParVisit; }
 
 protected:
-    // These are either transfo.getNpar() or 0, depending on whether we are fitting that component or not.
+    // These are either transform.getNpar() or 0, depending on whether we are fitting that component or not.
     unsigned _nParChip, _nParVisit;
 
     // the actual transformation to be fit

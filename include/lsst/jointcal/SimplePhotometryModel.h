@@ -112,7 +112,7 @@ public:
     /**
      * @copydoc PhotometryModel::toPhotoCalib
      *
-     * @note SimplePhotometryModel uses a spatially-invariant transfo, so we can simplify the PhotoCalib.
+     * @note SimplePhotometryModel uses a spatially-invariant transform, so we can simplify the PhotoCalib.
      */
     std::shared_ptr<afw::image::PhotoCalib> toPhotoCalib(CcdImage const &ccdImage) const override;
 };
@@ -146,7 +146,7 @@ public:
     /**
      * @copydoc PhotometryModel::toPhotoCalib
      *
-     * @note SimplePhotometryModel uses a spatially-invariant transfo, so we can simplify the PhotoCalib.
+     * @note SimplePhotometryModel uses a spatially-invariant transform, so we can simplify the PhotoCalib.
      */
     std::shared_ptr<afw::image::PhotoCalib> toPhotoCalib(CcdImage const &ccdImage) const override;
 };

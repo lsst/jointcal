@@ -117,7 +117,7 @@ void declareConstrainedMagnitudeModel(py::module &mod) {
 
 PYBIND11_MODULE(photometryModels, mod) {
     py::module::import("lsst.jointcal.ccdImage");
-    py::module::import("lsst.jointcal.photometryTransfo");
+    py::module::import("lsst.jointcal.photometryTransform");
     py::module::import("lsst.jointcal.star");
     declarePhotometryModel(mod);
     declareSimplePhotometryModel(mod);
