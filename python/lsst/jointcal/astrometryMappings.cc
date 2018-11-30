@@ -27,7 +27,7 @@
 
 #include "lsst/jointcal/AstrometryTransform.h"
 #include "lsst/jointcal/AstrometryMapping.h"
-#include "lsst/jointcal/TwoTransfoMapping.h"
+#include "lsst/jointcal/ChipVisitAstrometryMapping.h"
 
 namespace py = pybind11;
 using namespace pybind11::literals;
@@ -47,16 +47,18 @@ void declareAstrometryMapping(py::module &mod) {
     });
 }
 
-void declareTwoTransfoMapping(py::module &mod) {
-    py::class_<TwoTransfoMapping, std::shared_ptr<TwoTransfoMapping>, AstrometryMapping> cls(
-            mod, "TwoTransfoMapping");
+void declareChipVisitAstrometryMapping(py::module &mod) {
+    py::class_<ChipVisitAstrometryMapping, std::shared_ptr<ChipVisitAstrometryMapping>, AstrometryMapping>
+            cls(mod, "ChipVisitAstrometryMapping");
 
-    cls.def("getTransfo1", &TwoTransfoMapping::getTransfo1, py::return_value_policy::reference_internal);
-    cls.def_property_readonly("transfo1", &TwoTransfoMapping::getTransfo1,
+    cls.def("getTransfo1", &ChipVisitAstrometryMapping::getTransfo1,
+            py::return_value_policy::reference_internal);
+    cls.def_property_readonly("transfo1", &ChipVisitAstrometryMapping::getTransfo1,
                               py::return_value_policy::reference_internal);
 
-    cls.def("getTransfo2", &TwoTransfoMapping::getTransfo2, py::return_value_policy::reference_internal);
-    cls.def_property_readonly("transfo2", &TwoTransfoMapping::getTransfo2,
+    cls.def("getTransfo2", &ChipVisitAstrometryMapping::getTransfo2,
+            py::return_value_policy::reference_internal);
+    cls.def_property_readonly("transfo2", &ChipVisitAstrometryMapping::getTransfo2,
                               py::return_value_policy::reference_internal);
 }
 
@@ -78,7 +80,7 @@ PYBIND11_MODULE(astrometryMappings, mod) {
     py::module::import("lsst.jointcal.star");
     py::module::import("lsst.jointcal.astrometryTransform");
     declareAstrometryMapping(mod);
-    declareTwoTransfoMapping(mod);
+    declareChipVisitAstrometryMapping(mod);
     declareSimpleAstrometryMapping(mod);
     declareSimplePolyMapping(mod);
 }

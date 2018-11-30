@@ -121,7 +121,7 @@ ConstrainedAstrometryModel::ConstrainedAstrometryModel(
                     std::make_shared<SimplePolyMapping>(norm, AstrometryTransformPolynomial(chipOrder));
         }
         _mappings[ccdImage->getHashKey()] =
-                std::make_unique<TwoTransfoMapping>(_chipMap[chip], _visitMap[visit]);
+                std::make_unique<ChipVisitAstrometryMapping>(_chipMap[chip], _visitMap[visit]);
     }
     LOGLS_INFO(_log, "Got " << _chipMap.size() << " chip mappings and " << _visitMap.size()
                             << " visit mappings; holding chip " << constrainedChip << " fixed ("

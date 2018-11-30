@@ -22,7 +22,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "lsst/jointcal/TwoTransfoMapping.h"
+#include "lsst/jointcal/ChipVisitAstrometryMapping.h"
 #include "lsst/pex/exceptions.h"
 
 namespace pexExcept = lsst::pex::exceptions;
@@ -30,8 +30,8 @@ namespace pexExcept = lsst::pex::exceptions;
 namespace lsst {
 namespace jointcal {
 
-TwoTransfoMapping::TwoTransfoMapping(std::shared_ptr<SimpleAstrometryMapping> chipMapping,
-                                     std::shared_ptr<SimpleAstrometryMapping> visitMapping)
+ChipVisitAstrometryMapping::ChipVisitAstrometryMapping(std::shared_ptr<SimpleAstrometryMapping> chipMapping,
+                                                       std::shared_ptr<SimpleAstrometryMapping> visitMapping)
         : _m1(chipMapping), _m2(visitMapping) {
     /* Allocate the record of temporary variables, so that they are not
        allocated at every call. This is hidden behind a pointer in order
@@ -40,9 +40,9 @@ TwoTransfoMapping::TwoTransfoMapping(std::shared_ptr<SimpleAstrometryMapping> ch
     setWhatToFit(true, true);
 }
 
-unsigned TwoTransfoMapping::getNpar() const { return _nPar1 + _nPar2; }
+unsigned ChipVisitAstrometryMapping::getNpar() const { return _nPar1 + _nPar2; }
 
-void TwoTransfoMapping::getMappingIndices(std::vector<unsigned> &indices) const {
+void ChipVisitAstrometryMapping::getMappingIndices(std::vector<unsigned> &indices) const {
     unsigned npar = getNpar();
     if (indices.size() < npar) indices.resize(npar);
     // in case we are only fitting one of the two transfos
@@ -59,8 +59,8 @@ void TwoTransfoMapping::getMappingIndices(std::vector<unsigned> &indices) const 
     for (unsigned k = 0; k < _nPar2; ++k) indices.at(k + _nPar1) = ind2.at(k);
 }
 
-void TwoTransfoMapping::computeTransformAndDerivatives(FatPoint const &where, FatPoint &outPoint,
-                                                       Eigen::MatrixX2d &H) const {
+void ChipVisitAstrometryMapping::computeTransformAndDerivatives(FatPoint const &where, FatPoint &outPoint,
+                                                                Eigen::MatrixX2d &H) const {
     // not true in general. Will crash if H is too small.
     //  assert(H.cols()==Npar());
 
@@ -85,7 +85,7 @@ void TwoTransfoMapping::computeTransformAndDerivatives(FatPoint const &where, Fa
    avoid allocation at every call. If we did not care about dynamic
    allocation, we could just put the information of what moves and
    what doesn't into the SimpleAstrometryMapping. */
-void TwoTransfoMapping::setWhatToFit(const bool fittingT1, const bool fittingT2) {
+void ChipVisitAstrometryMapping::setWhatToFit(const bool fittingT1, const bool fittingT2) {
     if (fittingT1) {
         _nPar1 = _m1->getNpar();
         tmp->h1 = Eigen::MatrixX2d(_nPar1, 2);
@@ -98,14 +98,14 @@ void TwoTransfoMapping::setWhatToFit(const bool fittingT1, const bool fittingT2)
         _nPar2 = 0;
 }
 
-void TwoTransfoMapping::transformPosAndErrors(const FatPoint &where, FatPoint &outPoint) const {
+void ChipVisitAstrometryMapping::transformPosAndErrors(const FatPoint &where, FatPoint &outPoint) const {
     FatPoint pMid;
     _m1->transformPosAndErrors(where, pMid);
     _m2->transformPosAndErrors(pMid, outPoint);
 }
 
-void TwoTransfoMapping::positionDerivative(Point const &where, Eigen::Matrix2d &derivative,
-                                           double epsilon) const {
+void ChipVisitAstrometryMapping::positionDerivative(Point const &where, Eigen::Matrix2d &derivative,
+                                                    double epsilon) const {
     Eigen::Matrix2d d1, d2;  // seems that it does not trigger dynamic allocation
     _m1->positionDerivative(where, d1, 1e-4);
     FatPoint pMid;
@@ -116,11 +116,10 @@ void TwoTransfoMapping::positionDerivative(Point const &where, Eigen::Matrix2d &
     derivative = d1 * d2;
 }
 
-void TwoTransfoMapping::freezeErrorTransform() {
-    throw LSST_EXCEPT(
-            pexExcept::TypeError,
-            " The routine  TwoTransfoMapping::freezeErrorTransform() was thought to be useless and is "
-            "not implemented (yet)");
+void ChipVisitAstrometryMapping::freezeErrorTransform() {
+    throw LSST_EXCEPT(pexExcept::TypeError,
+                      " The routine ChipVisitAstrometryMapping::freezeErrorTransform() was thought to be "
+                      "useless and is not implemented (yet)");
 }
 }  // namespace jointcal
 }  // namespace lsst

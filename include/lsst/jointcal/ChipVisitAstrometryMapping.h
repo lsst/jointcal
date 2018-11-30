@@ -22,8 +22,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef LSST_JOINTCAL_TWO_TRANSFO_MAPPING_H
-#define LSST_JOINTCAL_TWO_TRANSFO_MAPPING_H
+#ifndef LSST_JOINTCAL_CHIP_VISIT_ASTROMETRY_MAPPING_H
+#define LSST_JOINTCAL_CHIP_VISIT_ASTROMETRY_MAPPING_H
 
 #include "memory"
 
@@ -35,17 +35,17 @@ namespace lsst {
 namespace jointcal {
 
 //! The mapping with two transfos in a row.
-class TwoTransfoMapping : public AstrometryMapping {
+class ChipVisitAstrometryMapping : public AstrometryMapping {
 public:
     //!
-    TwoTransfoMapping(std::shared_ptr<SimpleAstrometryMapping> chipMapping,
-                      std::shared_ptr<SimpleAstrometryMapping> visitMapping);
+    ChipVisitAstrometryMapping(std::shared_ptr<SimpleAstrometryMapping> chipMapping,
+                               std::shared_ptr<SimpleAstrometryMapping> visitMapping);
 
     /// No copy or move: there is only ever one instance of a given model (i.e.. per ccd+visit)
-    TwoTransfoMapping(TwoTransfoMapping const &) = delete;
-    TwoTransfoMapping(TwoTransfoMapping &&) = delete;
-    TwoTransfoMapping &operator=(TwoTransfoMapping const &) = delete;
-    TwoTransfoMapping &operator=(TwoTransfoMapping &&) = delete;
+    ChipVisitAstrometryMapping(ChipVisitAstrometryMapping const &) = delete;
+    ChipVisitAstrometryMapping(ChipVisitAstrometryMapping &&) = delete;
+    ChipVisitAstrometryMapping &operator=(ChipVisitAstrometryMapping const &) = delete;
+    ChipVisitAstrometryMapping &operator=(ChipVisitAstrometryMapping &&) = delete;
 
     //!
     unsigned getNpar() const;
@@ -98,4 +98,4 @@ private:
 }  // namespace jointcal
 }  // namespace lsst
 
-#endif  // LSST_JOINTCAL_TWO_TRANSFO_MAPPING_H
+#endif  // LSST_JOINTCAL_CHIP_VISIT_ASTROMETRY_MAPPING_H

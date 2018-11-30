@@ -36,7 +36,7 @@ class CcdImage;
 #include "lsst/jointcal/Frame.h"
 #include "lsst/jointcal/SimpleAstrometryMapping.h"
 #include "lsst/jointcal/ProjectionHandler.h"
-#include "lsst/jointcal/TwoTransfoMapping.h"
+#include "lsst/jointcal/ChipVisitAstrometryMapping.h"
 #include "lsst/jointcal/CcdImage.h"
 
 #include <map>
@@ -48,7 +48,7 @@ namespace jointcal {
  * This is the model used to fit mappings as the combination of a
  * transformation depending on the chip number (instrument model) and a
  * transformation per visit (anamorphism). The two-transformation Mapping
- * required for this model is TwoTransfoMapping. This modeling of distortions
+ * required for this model is ChipVisitAstrometryMapping. This modeling of distortions
  * is meant for a set of images from a single mosaic imager.
  */
 class ConstrainedAstrometryModel : public AstrometryModel {
@@ -111,7 +111,7 @@ public:
     std::shared_ptr<afw::geom::SkyWcs> makeSkyWcs(CcdImage const &ccdImage) const override;
 
 private:
-    std::unordered_map<CcdImageKey, std::unique_ptr<TwoTransfoMapping>> _mappings;
+    std::unordered_map<CcdImageKey, std::unique_ptr<ChipVisitAstrometryMapping>> _mappings;
     std::map<CcdIdType, std::shared_ptr<SimpleAstrometryMapping>> _chipMap;
     std::map<VisitIdType, std::shared_ptr<SimpleAstrometryMapping>> _visitMap;
     const std::shared_ptr<ProjectionHandler const> _skyToTangentPlane;
