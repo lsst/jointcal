@@ -32,8 +32,8 @@
 #include <list>
 
 #include "lsst/jointcal/Point.h"
-#include "lsst/jointcal/BaseStar.h"  // class definition used in inlined functions
-#include "lsst/jointcal/Gtransfo.h"  // inlined function calls Gtransfo::apply()
+#include "lsst/jointcal/BaseStar.h"             // class definition used in inlined functions
+#include "lsst/jointcal/AstrometryTransform.h"  // inlined function calls AstrometryTransform::apply()
 
 namespace lsst {
 namespace jointcal {
@@ -55,7 +55,7 @@ class StarMatch {
     friend class StarMatchList;
 
 public:
-    /* if one sets that private, then fitting routines will be a nightmare. we could set all the Transfo
+    /* if one sets that private, then fitting routines will be a nightmare. we could set all the Transform
      * classes friend... */
     FatPoint point1, point2;  //!< 2 points
     //!< the Star pointers (the pointer is in fact generic, pointed data is never used).
@@ -73,16 +73,16 @@ public:
     // the next one would require that StarMatch knows BaseStar which is not mandatory for StarMatch to work
     // StarMatch(BaseStar *star1, BaseStar *star2) : point1(*star1), point2(*star2), s1(star1), s2(star2) {};
 
-    //! returns the distance from gtransfo(point1) to point2.
-    double computeDistance(const Gtransfo &gtransfo) const {
-        return point2.Distance(gtransfo.apply(point1));
+    //! returns the distance from transform(point1) to point2.
+    double computeDistance(const AstrometryTransform &transform) const {
+        return point2.Distance(transform.apply(point1));
     };
 
     //! returns the chi2 (using errors in the FatPoint's)
-    double computeChi2(const Gtransfo &gtransfo) const;
+    double computeChi2(const AstrometryTransform &transform) const;
 
     //! to be used before sorting on distances.
-    void setDistance(const Gtransfo &gtransfo) { distance = computeDistance(gtransfo); };
+    void setDistance(const AstrometryTransform &transform) { distance = computeDistance(transform); };
     //! returns the value computed by the above one.
     double getDistance() const { return distance; }
 
@@ -135,10 +135,10 @@ typedef ::std::list<StarMatch>::const_iterator StarMatchCIterator;
 //#endif
 
 //! A std::list of star matches,
-/*! To be used as the argument to Gtransfo::fit routines. There is as
+/*! To be used as the argument to AstrometryTransform::fit routines. There is as
 well a StarMatch::fit routine which fits a polynomial by default,
-although the transfo may be user-provided. The
-StarMatchList::refineTransfo is a convenient tool to reject
+although the transform may be user-provided. The
+StarMatchList::refineTransform is a convenient tool to reject
 outliers. Given two catalogs, one can assemble a StarMatchList using
 utilities such as listMatchCollect. StarMatchList's have write
 capabilities.  NStarMatchList is a generalization of this 2-match to n-matches.
@@ -148,12 +148,12 @@ std::ostream &operator<<(std::ostream &stream, const StarMatchList &starMatchLis
 
 class StarMatchList : public std::list<StarMatch> {
 public:
-    void refineTransfo(double nSigmas);
+    void refineTransform(double nSigmas);
 
     //! enables to get a transformed StarMatchList. Only positions are transformed, not attached stars. const
     //! routine: "this" remains unchanged.
-    void applyTransfo(StarMatchList &transformed, const Gtransfo *priorTransfo,
-                      const Gtransfo *posteriorTransfo = nullptr) const;
+    void applyTransform(StarMatchList &transformed, const AstrometryTransform *priorTransform,
+                        const AstrometryTransform *posteriorTransform = nullptr) const;
 
     /* constructor */
     StarMatchList() : _order(0), _chi2(0){};
@@ -161,43 +161,43 @@ public:
     //! carries out a fit with outlier rejection
 
     //! enables to access the fitted transformation.
-    std::shared_ptr<const Gtransfo> getTransfo() const { return _transfo; }
+    std::shared_ptr<const AstrometryTransform> getTransform() const { return _transform; }
 
-    //! access to the sum of squared residuals of the last call to refineTransfo.
+    //! access to the sum of squared residuals of the last call to refineTransform.
     double getDist2() const { return _dist2; }
 
-    //! access to the chi2 of the last call to refineTransfo.
+    //! access to the chi2 of the last call to refineTransform.
     double getChi2() const { return _chi2; }
 
-    //! returns the order of the used transfo
-    int getTransfoOrder() const { return _order; }
+    //! returns the order of the used transform
+    int getTransformOrder() const { return _order; }
 
     //! swaps elements 1 and 2 of each starmatch in std::list.
     void swap();
 
-    //! returns the average 1d Residual (last call to refineTransfo)
+    //! returns the average 1d Residual (last call to refineTransform)
     double computeResidual() const;
 
     /*! cleans up the std::list of pairs for pairs that share one of their stars, keeping the closest one.
-       The distance is computed using gtransfo. which = 1 (2) removes ambiguities
+       The distance is computed using transform. which = 1 (2) removes ambiguities
        on the first (second) term of the match. which=3 does both.*/
-    unsigned removeAmbiguities(const Gtransfo &gtransfo, int which = 3);
+    unsigned removeAmbiguities(const AstrometryTransform &transform, int which = 3);
 
-    //! sets a transfo between the 2 std::lists and deletes the previous or default one.  No fit.
-    void setTransfo(const Gtransfo *gtransfo) { _transfo = gtransfo->clone(); }
+    //! sets a transform between the 2 std::lists and deletes the previous or default one.  No fit.
+    void setTransform(const AstrometryTransform *transform) { _transform = transform->clone(); }
     //!
-    void setTransfo(const Gtransfo &gtransfo) { _transfo = gtransfo.clone(); }
-    void setTransfo(std::shared_ptr<Gtransfo> gtransfo) { _transfo = std::move(gtransfo); }
+    void setTransform(const AstrometryTransform &transform) { _transform = transform.clone(); }
+    void setTransform(std::shared_ptr<AstrometryTransform> transform) { _transform = std::move(transform); }
 
-    //! set transfo according to the given order.
-    void setTransfoOrder(int order);
+    //! set transform according to the given order.
+    void setTransformOrder(int order);
 
-    /*! returns the inverse transfo (swap, fit(refineTransfo) , and swap).
+    /*! returns the inverse transform (swap, fit(refineTransform) , and swap).
            The caller should delete the returned pointer. */
-    std::unique_ptr<Gtransfo> inverseTransfo();
+    std::unique_ptr<AstrometryTransform> inverseTransform();
 
     //! Sets the distance (residual) field of all std::list elements. Mandatory before sorting on distances
-    void setDistance(const Gtransfo &gtransfo);
+    void setDistance(const AstrometryTransform &transform);
 
     //! deletes the tail of the match std::list
     void cutTail(int nKeep);
@@ -205,10 +205,10 @@ public:
     //! count the number of elements for which distance is < mindist
     int recoveredNumber(double mindist) const;
 
-    //! print the matching transformation quality (transfo, chi2, residual)
-    void dumpTransfo(std::ostream &stream = std::cout) const;
+    //! print the matching transformation quality (transform, chi2, residual)
+    void dumpTransform(std::ostream &stream = std::cout) const;
 
-    ~StarMatchList(){/* should delete the transfo.... or use counted refs*/};
+    ~StarMatchList(){/* should delete the transform.... or use counted refs*/};
 
 private:
     StarMatchList(const StarMatchList &);  // copies nor properly handled
@@ -217,14 +217,14 @@ private:
     int _order;
     double _chi2;
     double _dist2;
-    std::shared_ptr<Gtransfo> _transfo;
+    std::shared_ptr<AstrometryTransform> _transform;
 };
 
 //! sum of distance squared
-double computeDist2(const StarMatchList &S, const Gtransfo &gtransfo);
+double computeDist2(const StarMatchList &S, const AstrometryTransform &transform);
 
 //! the actual chi2
-double computeChi2(const StarMatchList &L, const Gtransfo &gtransfo);
+double computeChi2(const StarMatchList &L, const AstrometryTransform &transform);
 }  // namespace jointcal
 }  // namespace lsst
 

@@ -269,12 +269,12 @@ class ConstrainedPhotometryModelTestCase(PhotometryModelTestBase):
 
         # check the visitMappings
         for ccdImage in self.ccdImageList2:
-            result = self.model2.getMapping(ccdImage).getVisitMapping().getTransfo().getParameters()
+            result = self.model2.getMapping(ccdImage).getVisitMapping().getTransform().getParameters()
             self.assertFloatsEqual(result, expectVisit, msg=ccdImage.getName())
 
         # check the chipMappings
         for ccdImage, expect in zip(self.ccdImageList2, expectChips):
-            result = self.model2.getMapping(ccdImage).getChipMapping().getTransfo().getParameters()
+            result = self.model2.getMapping(ccdImage).getChipMapping().getTransform().getParameters()
             # almost equal because log() may have been involved in the math
             self.assertFloatsAlmostEqual(result, expect, msg=ccdImage.getName())
 

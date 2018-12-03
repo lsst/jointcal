@@ -32,11 +32,11 @@
 class CcdImage;
 
 #include "lsst/jointcal/AstrometryModel.h"
-#include "lsst/jointcal/Gtransfo.h"
+#include "lsst/jointcal/AstrometryTransform.h"
 #include "lsst/jointcal/Frame.h"
 #include "lsst/jointcal/SimpleAstrometryMapping.h"
 #include "lsst/jointcal/ProjectionHandler.h"
-#include "lsst/jointcal/TwoTransfoMapping.h"
+#include "lsst/jointcal/ChipVisitAstrometryMapping.h"
 #include "lsst/jointcal/CcdImage.h"
 
 #include <map>
@@ -48,7 +48,7 @@ namespace jointcal {
  * This is the model used to fit mappings as the combination of a
  * transformation depending on the chip number (instrument model) and a
  * transformation per visit (anamorphism). The two-transformation Mapping
- * required for this model is TwoTransfoMapping. This modeling of distortions
+ * required for this model is ChipVisitAstrometryMapping. This modeling of distortions
  * is meant for a set of images from a single mosaic imager.
  */
 class ConstrainedAstrometryModel : public AstrometryModel {
@@ -89,10 +89,10 @@ public:
     int getTotalParameters() const override;
 
     //! Access to mappings
-    Gtransfo const &getChipTransfo(CcdIdType const chip) const;
+    AstrometryTransform const &getChipTransform(CcdIdType const chip) const;
 
     //! Access to mappings
-    Gtransfo const &getVisitTransfo(VisitIdType const &visit) const;
+    AstrometryTransform const &getVisitTransform(VisitIdType const &visit) const;
 
     //! Access to array of visits involved in the solution.
     std::vector<VisitIdType> getVisits() const;
@@ -102,7 +102,8 @@ public:
      * stars are reported) onto the Tangent plane (into which the pixel coordinates
      * are transformed).
      */
-    const std::shared_ptr<Gtransfo const> getSkyToTangentPlane(CcdImage const &ccdImage) const override {
+    const std::shared_ptr<AstrometryTransform const> getSkyToTangentPlane(
+            CcdImage const &ccdImage) const override {
         return _skyToTangentPlane->getSkyToTangentPlane(ccdImage);
     }
 
@@ -110,9 +111,9 @@ public:
     std::shared_ptr<afw::geom::SkyWcs> makeSkyWcs(CcdImage const &ccdImage) const override;
 
 private:
-    std::unordered_map<CcdImageKey, std::unique_ptr<TwoTransfoMapping>> _mappings;
-    std::map<CcdIdType, std::shared_ptr<SimpleGtransfoMapping>> _chipMap;
-    std::map<VisitIdType, std::shared_ptr<SimpleGtransfoMapping>> _visitMap;
+    std::unordered_map<CcdImageKey, std::unique_ptr<ChipVisitAstrometryMapping>> _mappings;
+    std::map<CcdIdType, std::shared_ptr<SimpleAstrometryMapping>> _chipMap;
+    std::map<VisitIdType, std::shared_ptr<SimpleAstrometryMapping>> _visitMap;
     const std::shared_ptr<ProjectionHandler const> _skyToTangentPlane;
     bool _fittingChips, _fittingVisits;
 

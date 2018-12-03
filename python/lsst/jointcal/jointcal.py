@@ -671,8 +671,8 @@ class JointcalTask(pipeBase.CmdLineTask):
             baseName = "photometry_initial_chi2-{}.csv".format(dataName)
             fit.saveChi2Contributions(baseName)
 
-        # The constrained model needs the visit transfo fit first; the chip
-        # transfo is initialized from the singleFrame PhotoCalib, so it's close.
+        # The constrained model needs the visit transform fit first; the chip
+        # transform is initialized from the singleFrame PhotoCalib, so it's close.
         dumpMatrixFile = "photometry_preinit" if self.config.writeInitMatrix else ""
         if self.config.photometryModel.startswith("constrained"):
             # no line search: should be purely (or nearly) linear,
@@ -760,8 +760,8 @@ class JointcalTask(pipeBase.CmdLineTask):
             fit.saveChi2Contributions(baseName)
 
         dumpMatrixFile = "astrometry_preinit" if self.config.writeInitMatrix else ""
-        # The constrained model needs the visit transfo fit first; the chip
-        # transfo is initialized from the detector's cameraGeom, so it's close.
+        # The constrained model needs the visit transform fit first; the chip
+        # transform is initialized from the detector's cameraGeom, so it's close.
         if self.config.astrometryModel == "constrained":
             fit.minimize("DistortionsVisit", dumpMatrixFile=dumpMatrixFile)
             self._logChi2AndValidate(associations, fit, model)

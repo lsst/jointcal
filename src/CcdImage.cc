@@ -36,7 +36,7 @@
 
 #include "lsst/log/Log.h"
 #include "lsst/jointcal/CcdImage.h"
-#include "lsst/jointcal/Gtransfo.h"
+#include "lsst/jointcal/AstrometryTransform.h"
 #include "lsst/jointcal/Point.h"
 
 namespace jointcal = lsst::jointcal;
@@ -119,7 +119,7 @@ CcdImage::CcdImage(afw::table::SourceCatalog &catalog, std::shared_ptr<lsst::afw
     Point upperRight(bbox.getMaxX(), bbox.getMaxY());
     _imageFrame = Frame(lowerLeft, upperRight);
 
-    _readWcs = std::make_shared<GtransfoSkyWcs>(wcs);
+    _readWcs = std::make_shared<AstrometryTransformSkyWcs>(wcs);
 
     std::stringstream out;
     out << visit << "_" << ccdId;
@@ -179,20 +179,20 @@ void CcdImage::setCommonTangentPoint(Point const &commonTangentPoint) {
     /* we don't assume here that we know the internals of TanPixelToRaDec:
        to construct pix->TP, we do pix->sky->TP, although pix->sky
        actually goes through TP */
-    GtransfoLin identity;
+    AstrometryTransformLinear identity;
     TanRaDecToPixel raDecToTangentPlane(identity, tangentPoint);
-    _pixelToTangentPlane = gtransfoCompose(raDecToTangentPlane, *_readWcs);
+    _pixelToTangentPlane = compose(raDecToTangentPlane, *_readWcs);
     TanPixelToRaDec CommonTangentPlane2RaDec(identity, commonTangentPoint);
-    _commonTangentPlaneToTangentPlane = gtransfoCompose(raDecToTangentPlane, CommonTangentPlane2RaDec);
+    _commonTangentPlaneToTangentPlane = compose(raDecToTangentPlane, CommonTangentPlane2RaDec);
 
     // jump from one TP to an other:
     TanRaDecToPixel raDecToCommonTangentPlane(identity, commonTangentPoint);
     TanPixelToRaDec TangentPlaneToRaDec(identity, tangentPoint);
-    _tangentPlaneToCommonTangentPlane = gtransfoCompose(raDecToCommonTangentPlane, TangentPlaneToRaDec);
+    _tangentPlaneToCommonTangentPlane = compose(raDecToCommonTangentPlane, TangentPlaneToRaDec);
     _skyToTangentPlane.reset(new TanRaDecToPixel(identity, tangentPoint));
 
     // this one is needed for matches :
-    _pixelToCommonTangentPlane = gtransfoCompose(raDecToCommonTangentPlane, *_readWcs);
+    _pixelToCommonTangentPlane = compose(raDecToCommonTangentPlane, *_readWcs);
 }
 }  // namespace jointcal
 }  // namespace lsst

@@ -33,8 +33,8 @@
 namespace lsst {
 namespace jointcal {
 
-class Gtransfo;
-class GtransfoLin;
+class AstrometryTransform;
+class AstrometryTransformLinear;
 
 //! Parameters to be provided to combinatorial searches
 struct MatchConditions {
@@ -94,28 +94,33 @@ std::unique_ptr<StarMatchList> matchSearchRotShiftFlip(BaseStarList &list1, Base
 closest star in list2, and builds a match if closer than maxDist). */
 
 std::unique_ptr<StarMatchList> listMatchCollect(const BaseStarList &list1, const BaseStarList &list2,
-                                                const Gtransfo *guess, const double maxDist);
+                                                const AstrometryTransform *guess, const double maxDist);
 
-//! same as before except that the transfo is the identity
+//! same as before except that the transform is the identity
 
 std::unique_ptr<StarMatchList> listMatchCollect(const BaseStarList &list1, const BaseStarList &list2,
                                                 const double maxDist);
 
 //! searches for a 2 dimensional shift using a very crude histogram method.
 
-std::unique_ptr<GtransfoLin> listMatchupShift(const BaseStarList &list1, const BaseStarList &list2,
-                                              const Gtransfo &gtransfo, double maxShift, double binSize = 0);
+std::unique_ptr<AstrometryTransformLinear> listMatchupShift(const BaseStarList &list1,
+                                                            const BaseStarList &list2,
+                                                            const AstrometryTransform &transform,
+                                                            double maxShift, double binSize = 0);
 
-std::unique_ptr<Gtransfo> listMatchCombinatorial(const BaseStarList &list1, const BaseStarList &list2,
-                                                 const MatchConditions &conditions = MatchConditions());
-std::unique_ptr<Gtransfo> listMatchRefine(const BaseStarList &list1, const BaseStarList &list2,
-                                          std::unique_ptr<Gtransfo> transfo, const int maxOrder = 3);
+std::unique_ptr<AstrometryTransform> listMatchCombinatorial(
+        const BaseStarList &list1, const BaseStarList &list2,
+        const MatchConditions &conditions = MatchConditions());
+std::unique_ptr<AstrometryTransform> listMatchRefine(const BaseStarList &list1, const BaseStarList &list2,
+                                                     std::unique_ptr<AstrometryTransform> transform,
+                                                     const int maxOrder = 3);
 
 #ifdef DO_WE_NEED_THAT
-inline Gtransfo *ListMatch(const BaseStarList &list1, const BaseStarList &list2, const int maxOrder = 3) {
-    Gtransfo *transfo = listMatchCombinatorial(list1, list2);
-    transfo = listMatchRefine(list1, list2, transfo, maxOrder);
-    return transfo;
+inline AstrometryTransform *ListMatch(const BaseStarList &list1, const BaseStarList &list2,
+                                      const int maxOrder = 3) {
+    AstrometryTransform *transform = listMatchCombinatorial(list1, list2);
+    transform = listMatchRefine(list1, list2, transform, maxOrder);
+    return transform;
 }
 #endif /*  DO_WE_NEED_THAT */
 }  // namespace jointcal

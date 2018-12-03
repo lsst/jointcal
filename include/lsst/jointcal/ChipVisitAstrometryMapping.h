@@ -22,8 +22,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef LSST_JOINTCAL_TWO_TRANSFO_MAPPING_H
-#define LSST_JOINTCAL_TWO_TRANSFO_MAPPING_H
+#ifndef LSST_JOINTCAL_CHIP_VISIT_ASTROMETRY_MAPPING_H
+#define LSST_JOINTCAL_CHIP_VISIT_ASTROMETRY_MAPPING_H
 
 #include "memory"
 
@@ -35,17 +35,17 @@ namespace lsst {
 namespace jointcal {
 
 //! The mapping with two transfos in a row.
-class TwoTransfoMapping : public AstrometryMapping {
+class ChipVisitAstrometryMapping : public AstrometryMapping {
 public:
     //!
-    TwoTransfoMapping(std::shared_ptr<SimpleGtransfoMapping> chipMapping,
-                      std::shared_ptr<SimpleGtransfoMapping> visitMapping);
+    ChipVisitAstrometryMapping(std::shared_ptr<SimpleAstrometryMapping> chipMapping,
+                               std::shared_ptr<SimpleAstrometryMapping> visitMapping);
 
     /// No copy or move: there is only ever one instance of a given model (i.e.. per ccd+visit)
-    TwoTransfoMapping(TwoTransfoMapping const &) = delete;
-    TwoTransfoMapping(TwoTransfoMapping &&) = delete;
-    TwoTransfoMapping &operator=(TwoTransfoMapping const &) = delete;
-    TwoTransfoMapping &operator=(TwoTransfoMapping &&) = delete;
+    ChipVisitAstrometryMapping(ChipVisitAstrometryMapping const &) = delete;
+    ChipVisitAstrometryMapping(ChipVisitAstrometryMapping &&) = delete;
+    ChipVisitAstrometryMapping &operator=(ChipVisitAstrometryMapping const &) = delete;
+    ChipVisitAstrometryMapping &operator=(ChipVisitAstrometryMapping &&) = delete;
 
     //!
     unsigned getNpar() const;
@@ -69,10 +69,10 @@ public:
     }
 
     //! access to transfos
-    Gtransfo const &getTransfo1() const { return _m1->getTransfo(); }
+    AstrometryTransform const &getTransfo1() const { return _m1->getTransform(); }
 
     //! access to transfos
-    Gtransfo const &getTransfo2() const { return _m2->getTransfo(); }
+    AstrometryTransform const &getTransfo2() const { return _m2->getTransform(); }
 
     //! Currently *not* implemented
     void positionDerivative(Point const &where, Eigen::Matrix2d &derivative, double epsilon) const;
@@ -85,7 +85,7 @@ private:
     //!
     void setWhatToFit(const bool fittingT1, const bool fittingT2);
 
-    std::shared_ptr<SimpleGtransfoMapping> _m1, _m2;
+    std::shared_ptr<SimpleAstrometryMapping> _m1, _m2;
     unsigned _nPar1, _nPar2;
     struct tmpVars  // just there to get around constness issues
     {
@@ -98,4 +98,4 @@ private:
 }  // namespace jointcal
 }  // namespace lsst
 
-#endif  // LSST_JOINTCAL_TWO_TRANSFO_MAPPING_H
+#endif  // LSST_JOINTCAL_CHIP_VISIT_ASTROMETRY_MAPPING_H

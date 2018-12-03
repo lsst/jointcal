@@ -30,7 +30,7 @@
 #include "boost/test/unit_test.hpp"
 
 #include "lsst/jointcal/StarMatch.h"
-#include "lsst/jointcal/Gtransfo.h"
+#include "lsst/jointcal/AstrometryTransform.h"
 #include "lsst/jointcal/Frame.h"
 #include "lsst/afw/geom/Angle.h"
 #include "lsst/afw/geom/Point.h"
@@ -68,10 +68,10 @@ BOOST_AUTO_TEST_CASE(test_wcs) {
     lsst::afw::fits::Fits file(fileName, "r", 0);
     auto propSet = lsst::afw::fits::readMetadata(fileName);
     auto skyWcs = lsst::afw::geom::makeSkyWcs(*propSet);
-    jointcal::GtransfoSkyWcs gtransfoWcs(skyWcs);
+    jointcal::AstrometryTransformSkyWcs astrometryTransformSkyWcs(skyWcs);
 
     jointcal::Point where(100., 200.);
-    jointcal::Point outPol = gtransfoWcs.apply(where);
+    jointcal::Point outPol = astrometryTransformSkyWcs.apply(where);
     std::cout << std::setprecision(12) << "Poloka : " << outPol.x << ' ' << outPol.y << std::endl;
 
     lsst::afw::geom::Point2D whereSame(100., 200.);
@@ -83,7 +83,7 @@ BOOST_AUTO_TEST_CASE(test_wcs) {
     BOOST_CHECK_CLOSE(outPol.y, outDeg[1], .000001);
 }
 
-/* test the GtransfoPoly::fit routine */
+/* test the AstrometryTransformPolynomial::fit routine */
 
 BOOST_AUTO_TEST_CASE(test_polyfit) {
     std::string fileName = "tests/header_only.fits";
@@ -91,7 +91,7 @@ BOOST_AUTO_TEST_CASE(test_polyfit) {
     lsst::afw::fits::Fits file(fileName, "r", 0);
     auto propSet = lsst::afw::fits::readMetadata(fileName);
     auto skyWcs = lsst::afw::geom::makeSkyWcs(*propSet);
-    jointcal::GtransfoSkyWcs gtransfoWcs(skyWcs);
+    jointcal::AstrometryTransformSkyWcs astrometryTransformSkyWcs(skyWcs);
 
     jointcal::StarMatchList sml;
     jointcal::BaseStarList bsl1, bsl2;
@@ -103,12 +103,12 @@ BOOST_AUTO_TEST_CASE(test_polyfit) {
             s1->vy = 0.2;
             s1->vxy = 0.05;
             auto s2 = std::make_shared<jointcal::BaseStar>();
-            gtransfoWcs.transformPosAndErrors(*s1, *s2);
+            astrometryTransformSkyWcs.transformPosAndErrors(*s1, *s2);
             bsl1.push_back(s1);
             bsl2.push_back(s2);
             sml.push_back(jointcal::StarMatch(*s1, *s2, s1, s2));
         }
-    jointcal::GtransfoPoly pol(3);
+    jointcal::AstrometryTransformPolynomial pol(3);
     double chi2 = pol.fit(sml);
     std::cout << " chi2/ndf " << chi2 << '/' << sml.size() - pol.getNpar() << std::endl;
     // since there is no noise, the chi2 should be very very small:

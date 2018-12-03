@@ -36,7 +36,7 @@ namespace jointcal {
 
 class MeasuredStar;
 class RefStar;
-class Gtransfo;
+class AstrometryTransform;
 
 /*! \file */
 

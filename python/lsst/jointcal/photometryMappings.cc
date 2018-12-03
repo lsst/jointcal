@@ -29,7 +29,7 @@
 #include "ndarray/eigen.h"
 #include "Eigen/Core"
 
-#include "lsst/jointcal/PhotometryTransfo.h"
+#include "lsst/jointcal/PhotometryTransform.h"
 #include "lsst/jointcal/PhotometryMapping.h"
 
 namespace py = pybind11;
@@ -68,11 +68,11 @@ void declarePhotometryMappingBase(py::module &mod) {
 void declarePhotometryMapping(py::module &mod) {
     py::class_<PhotometryMapping, std::shared_ptr<PhotometryMapping>, PhotometryMappingBase> cls(
             mod, "PhotometryMapping");
-    cls.def(py::init<std::shared_ptr<PhotometryTransfo>>(), "transfo"_a);
+    cls.def(py::init<std::shared_ptr<PhotometryTransform>>(), "transform"_a);
 
     cls.def("offsetParams", &PhotometryMapping::offsetParams);
-    cls.def("getTransfo", &PhotometryMapping::getTransfo);
-    cls.def("getTransfoErrors", &PhotometryMapping::getTransfoErrors);
+    cls.def("getTransform", &PhotometryMapping::getTransform);
+    cls.def("getTransformErrors", &PhotometryMapping::getTransformErrors);
 }
 
 void declareChipVisitPhotometryMapping(py::module &mod) {
@@ -106,7 +106,7 @@ void declareChipVisitMagnitudeMapping(py::module &mod) {
 
 PYBIND11_MODULE(photometryMappings, mod) {
     py::module::import("lsst.jointcal.star");
-    py::module::import("lsst.jointcal.photometryTransfo");
+    py::module::import("lsst.jointcal.photometryTransform");
     declarePhotometryMappingBase(mod);
     declarePhotometryMapping(mod);
     declareChipVisitPhotometryMapping(mod);

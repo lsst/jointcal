@@ -25,9 +25,9 @@
 #include "pybind11/pybind11.h"
 #include "pybind11/eigen.h"
 
-#include "lsst/jointcal/Gtransfo.h"
+#include "lsst/jointcal/AstrometryTransform.h"
 #include "lsst/jointcal/AstrometryMapping.h"
-#include "lsst/jointcal/TwoTransfoMapping.h"
+#include "lsst/jointcal/ChipVisitAstrometryMapping.h"
 
 namespace py = pybind11;
 using namespace pybind11::literals;
@@ -47,38 +47,41 @@ void declareAstrometryMapping(py::module &mod) {
     });
 }
 
-void declareTwoTransfoMapping(py::module &mod) {
-    py::class_<TwoTransfoMapping, std::shared_ptr<TwoTransfoMapping>, AstrometryMapping> cls(
-            mod, "TwoTransfoMapping");
+void declareChipVisitAstrometryMapping(py::module &mod) {
+    py::class_<ChipVisitAstrometryMapping, std::shared_ptr<ChipVisitAstrometryMapping>, AstrometryMapping>
+            cls(mod, "ChipVisitAstrometryMapping");
 
-    cls.def("getTransfo1", &TwoTransfoMapping::getTransfo1, py::return_value_policy::reference_internal);
-    cls.def_property_readonly("transfo1", &TwoTransfoMapping::getTransfo1,
+    cls.def("getTransfo1", &ChipVisitAstrometryMapping::getTransfo1,
+            py::return_value_policy::reference_internal);
+    cls.def_property_readonly("transfo1", &ChipVisitAstrometryMapping::getTransfo1,
                               py::return_value_policy::reference_internal);
 
-    cls.def("getTransfo2", &TwoTransfoMapping::getTransfo2, py::return_value_policy::reference_internal);
-    cls.def_property_readonly("transfo2", &TwoTransfoMapping::getTransfo2,
+    cls.def("getTransfo2", &ChipVisitAstrometryMapping::getTransfo2,
+            py::return_value_policy::reference_internal);
+    cls.def_property_readonly("transfo2", &ChipVisitAstrometryMapping::getTransfo2,
                               py::return_value_policy::reference_internal);
 }
 
-void declareSimpleGtransfoMapping(py::module &mod) {
-    py::class_<SimpleGtransfoMapping, std::shared_ptr<SimpleGtransfoMapping>, AstrometryMapping> cls(
-            mod, "SimpleGtransfoMapping");
-    cls.def("getToBeFit", &SimpleGtransfoMapping::getToBeFit);
-    cls.def("setToBeFit", &SimpleGtransfoMapping::setToBeFit);
-    cls.def("getTransfo", &SimpleGtransfoMapping::getTransfo, py::return_value_policy::reference_internal);
+void declareSimpleAstrometryMapping(py::module &mod) {
+    py::class_<SimpleAstrometryMapping, std::shared_ptr<SimpleAstrometryMapping>, AstrometryMapping> cls(
+            mod, "SimpleAstrometryMapping");
+    cls.def("getToBeFit", &SimpleAstrometryMapping::getToBeFit);
+    cls.def("setToBeFit", &SimpleAstrometryMapping::setToBeFit);
+    cls.def("getTransform", &SimpleAstrometryMapping::getTransform,
+            py::return_value_policy::reference_internal);
 }
 
 void declareSimplePolyMapping(py::module &mod) {
-    py::class_<SimplePolyMapping, std::shared_ptr<SimplePolyMapping>, SimpleGtransfoMapping> cls(
+    py::class_<SimplePolyMapping, std::shared_ptr<SimplePolyMapping>, SimpleAstrometryMapping> cls(
             mod, "SimplePolyMapping");
 }
 
 PYBIND11_MODULE(astrometryMappings, mod) {
     py::module::import("lsst.jointcal.star");
-    py::module::import("lsst.jointcal.gtransfo");
+    py::module::import("lsst.jointcal.astrometryTransform");
     declareAstrometryMapping(mod);
-    declareTwoTransfoMapping(mod);
-    declareSimpleGtransfoMapping(mod);
+    declareChipVisitAstrometryMapping(mod);
+    declareSimpleAstrometryMapping(mod);
     declareSimplePolyMapping(mod);
 }
 }  // namespace

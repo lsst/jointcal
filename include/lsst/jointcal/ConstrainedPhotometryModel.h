@@ -112,7 +112,7 @@ protected:
     /**
      * Initialize the chip, visit, and chipVisit mappings by creating appropriate transfos and mappings.
      */
-    template <class ChipTransfo, class VisitTransfo, class ChipVisitMapping>
+    template <class ChipTransform, class VisitTransform, class ChipVisitMapping>
     void initialize(CcdImageList const &ccdImageList, afw::geom::Box2D const &focalPlaneBBox, int visitOrder);
 
     /// Return the initial calibration to use from this photoCalib.

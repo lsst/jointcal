@@ -37,7 +37,7 @@
 #include "lsst/afw/geom/Box.h"
 #include "lsst/afw/geom/SpherePoint.h"
 #include "lsst/jointcal/MeasuredStar.h"
-#include "lsst/jointcal/Gtransfo.h"
+#include "lsst/jointcal/AstrometryTransform.h"
 #include "lsst/jointcal/Frame.h"
 
 namespace lsst {
@@ -125,21 +125,21 @@ public:
      */
     jointcal::Point const &getCommonTangentPoint() const { return _commonTangentPoint; }
 
-    std::shared_ptr<Gtransfo> const getPixelToCommonTangentPlane() const {
+    std::shared_ptr<AstrometryTransform> const getPixelToCommonTangentPlane() const {
         return _pixelToCommonTangentPlane;
     }
 
-    std::shared_ptr<Gtransfo> const getCommonTangentPlaneToTangentPlane() const {
+    std::shared_ptr<AstrometryTransform> const getCommonTangentPlaneToTangentPlane() const {
         return _commonTangentPlaneToTangentPlane;
     }
 
-    std::shared_ptr<Gtransfo> const getTangentPlaneToCommonTangentPlane() const {
+    std::shared_ptr<AstrometryTransform> const getTangentPlaneToCommonTangentPlane() const {
         return _tangentPlaneToCommonTangentPlane;
     }
 
-    std::shared_ptr<Gtransfo> const getPixelToTangentPlane() const { return _pixelToTangentPlane; }
+    std::shared_ptr<AstrometryTransform> const getPixelToTangentPlane() const { return _pixelToTangentPlane; }
 
-    std::shared_ptr<Gtransfo> const getSkyToTangentPlane() const { return _skyToTangentPlane; }
+    std::shared_ptr<AstrometryTransform> const getSkyToTangentPlane() const { return _skyToTangentPlane; }
 
     //! returns ccd ID
     CcdIdType getCcdId() const { return _ccdId; }
@@ -185,7 +185,7 @@ public:
     std::string getFilter() const { return _filter; }
 
     //! the wcs read in the header. NOT updated when fitting.
-    std::shared_ptr<Gtransfo> const getReadWcs() const { return _readWcs; }
+    std::shared_ptr<AstrometryTransform> const getReadWcs() const { return _readWcs; }
 
     //! Frame in pixels
     Frame const &getImageFrame() const { return _imageFrame; }
@@ -199,16 +199,16 @@ private:
     MeasuredStarList _wholeCatalog;  // the catalog of measured objets
     MeasuredStarList _catalogForFit;
 
-    std::shared_ptr<GtransfoSkyWcs> _readWcs;  // apply goes from pix to sky
+    std::shared_ptr<AstrometryTransformSkyWcs> _readWcs;  // apply goes from pix to sky
 
     // The following ones should probably be mostly removed.
     // go from CommonTangentPlane to this tangent plane.
-    std::shared_ptr<Gtransfo> _commonTangentPlaneToTangentPlane;
-    std::shared_ptr<Gtransfo> _tangentPlaneToCommonTangentPlane;  // reverse one
-    std::shared_ptr<Gtransfo> _pixelToCommonTangentPlane;         // pixels -> CTP
-    std::shared_ptr<Gtransfo> _pixelToTangentPlane;
+    std::shared_ptr<AstrometryTransform> _commonTangentPlaneToTangentPlane;
+    std::shared_ptr<AstrometryTransform> _tangentPlaneToCommonTangentPlane;  // reverse one
+    std::shared_ptr<AstrometryTransform> _pixelToCommonTangentPlane;         // pixels -> CTP
+    std::shared_ptr<AstrometryTransform> _pixelToTangentPlane;
 
-    std::shared_ptr<Gtransfo> _skyToTangentPlane;
+    std::shared_ptr<AstrometryTransform> _skyToTangentPlane;
 
     std::string _name;
     CcdIdType _ccdId;

@@ -182,7 +182,7 @@ public:
     size_t nFittedStarsWithAssociatedRefStar() const;
 
 private:
-    void associateRefStars(double matchCutInArcsec, const Gtransfo *gtransfo);
+    void associateRefStars(double matchCutInArcsec, const AstrometryTransform *transform);
 
     void assignMags();
 

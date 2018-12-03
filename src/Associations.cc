@@ -34,7 +34,7 @@
 #include "lsst/jointcal/ListMatch.h"
 #include "lsst/jointcal/Frame.h"
 #include "lsst/jointcal/FatPoint.h"
-#include "lsst/jointcal/Gtransfo.h"
+#include "lsst/jointcal/AstrometryTransform.h"
 #include "lsst/jointcal/MeasuredStar.h"
 
 #include "lsst/afw/image/Image.h"
@@ -101,7 +101,7 @@ void Associations::associateCatalogs(const double matchCutInArcSec, const bool u
     if (!useFittedList) fittedStarList.clear();
 
     for (auto &ccdImage : ccdImageList) {
-        std::shared_ptr<Gtransfo> toCommonTangentPlane = ccdImage->getPixelToCommonTangentPlane();
+        std::shared_ptr<AstrometryTransform> toCommonTangentPlane = ccdImage->getPixelToCommonTangentPlane();
 
         // Clear the catalog to fit and copy the whole catalog into it.
         // This allows reassociating from scratch after a fit.
@@ -239,7 +239,7 @@ void Associations::collectRefStars(afw::table::SimpleCatalog &refCat, afw::geom:
     }
 
     // project on CTP (i.e. RaDec2CTP), in degrees
-    GtransfoLin identity;
+    AstrometryTransformLinear identity;
     TanRaDecToPixel raDecToCommonTangentPlane(identity, _commonTangentPoint);
 
     associateRefStars(matchCut.asArcseconds(), &raDecToCommonTangentPlane);
@@ -258,7 +258,7 @@ const lsst::afw::geom::Box2D Associations::getRaDecBBox() {
     }
 
     // convert tangent plane coordinates to RaDec:
-    GtransfoLin identity;
+    AstrometryTransformLinear identity;
     TanPixelToRaDec commonTangentPlaneToRaDec(identity, _commonTangentPoint);
     Frame raDecFrame = commonTangentPlaneToRaDec.apply(tangentPlaneFrame, false);
 
@@ -269,14 +269,14 @@ const lsst::afw::geom::Box2D Associations::getRaDecBBox() {
     return box;
 }
 
-void Associations::associateRefStars(double matchCutInArcSec, const Gtransfo *gtransfo) {
+void Associations::associateRefStars(double matchCutInArcSec, const AstrometryTransform *transform) {
     // associate with FittedStars
     // 3600 because coordinates are in degrees (in CTP).
-    auto starMatchList = listMatchCollect(Ref2Base(refStarList), Fitted2Base(fittedStarList), gtransfo,
+    auto starMatchList = listMatchCollect(Ref2Base(refStarList), Fitted2Base(fittedStarList), transform,
                                           matchCutInArcSec / 3600.);
 
     LOGLS_DEBUG(_log, "Refcat matches before removing ambiguities " << starMatchList->size());
-    starMatchList->removeAmbiguities(*gtransfo);
+    starMatchList->removeAmbiguities(*transform);
     LOGLS_DEBUG(_log, "Refcat matches after removing ambiguities " << starMatchList->size());
 
     // actually associate things
@@ -351,7 +351,7 @@ void Associations::normalizeFittedStars() const {
 
     // Iterate over measuredStars to add their values into their fittedStars
     for (auto const &ccdImage : ccdImageList) {
-        std::shared_ptr<Gtransfo> toCommonTangentPlane = ccdImage->getPixelToCommonTangentPlane();
+        std::shared_ptr<AstrometryTransform> toCommonTangentPlane = ccdImage->getPixelToCommonTangentPlane();
         MeasuredStarList &catalog = ccdImage->getCatalogForFit();
         for (auto &mi : catalog) {
             auto fittedStar = mi->getFittedStar();
@@ -395,8 +395,8 @@ void Associations::deprojectFittedStars() {
         return;
     }
 
-    TanPixelToRaDec ctp2Sky(GtransfoLin(), getCommonTangentPoint());
-    fittedStarList.applyTransfo(ctp2Sky);
+    TanPixelToRaDec ctp2Sky(AstrometryTransformLinear(), getCommonTangentPoint());
+    fittedStarList.applyTransform(ctp2Sky);
     fittedStarList.inTangentPlaneCoordinates = false;
 }
 
@@ -430,7 +430,7 @@ void Associations::collectMCStars(int realization) {
             mctruth = sstrm.str();
         }
 
-        GtransfoIdentity gti;
+        AstrometryTransformIdentity gti;
         MeasuredStarList &catalog = ccdImage.getCatalogForFit();
 
         //      BaseStarWithErrorList mctruthlist(mctruth);
@@ -475,10 +475,10 @@ void Associations::setFittedStarColors(std::string dicStarListName, std::string 
     // we associate in some tangent plane. The reference catalog is expressed on the sky,
     // but FittedStar's may be still in this tangent plane.
     BaseStarList &l1 = (BaseStarList &)fittedStarList;
-    GtransfoIdentity id;
-    TanRaDecToPixel proj(GtransfoLin(), getCommonTangentPoint());
+    AstrometryTransformIdentity id;
+    TanRaDecToPixel proj(AstrometryTransformLinear(), getCommonTangentPoint());
     // project or not ?
-    Gtransfo *id_or_proj = &proj;
+    AstrometryTransform *id_or_proj = &proj;
     if (fittedStarList.inTangentPlaneCoordinates) id_or_proj = &id;
     // The color List is to be projected:
     TStarList projected_cList((BaseStarList &)cList, proj);

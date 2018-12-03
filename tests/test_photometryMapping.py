@@ -27,7 +27,7 @@ import lsst.utils.tests
 
 import lsst.afw.geom
 import lsst.jointcal.photometryMappings
-import lsst.jointcal.photometryTransfo
+import lsst.jointcal.photometryTransform
 import lsst.jointcal.star
 
 
@@ -58,8 +58,8 @@ class PhotometryMappingTestCase(PhotometryMappingTestBase, lsst.utils.tests.Test
     def setUp(self):
         super(PhotometryMappingTestCase, self).setUp()
         self.scale = 3
-        transfo = lsst.jointcal.photometryTransfo.FluxTransfoSpatiallyInvariant(self.scale)
-        self.mapping = lsst.jointcal.photometryMappings.PhotometryMapping(transfo)
+        transform = lsst.jointcal.photometryTransform.FluxTransfoSpatiallyInvariant(self.scale)
+        self.mapping = lsst.jointcal.photometryMappings.PhotometryMapping(transform)
 
     def test_getNpar(self):
         result = self.mapping.getNpar()
@@ -67,7 +67,7 @@ class PhotometryMappingTestCase(PhotometryMappingTestBase, lsst.utils.tests.Test
 
     def _test_offsetParams(self, delta, expect):
         self.mapping.offsetParams(delta)
-        self.assertFloatsAlmostEqual(expect, self.mapping.getTransfo().getParameters())
+        self.assertFloatsAlmostEqual(expect, self.mapping.getTransform().getParameters())
 
     def test_transform(self):
         result = self.mapping.transform(self.star0, self.value)
@@ -86,13 +86,13 @@ class PhotometryMappingTestCase(PhotometryMappingTestBase, lsst.utils.tests.Test
         self.assertEqual(self.value, result)
         result = self.mapping.computeParameterDerivatives(self.star1, self.value)
         self.assertEqual(self.value, result)
-        transfo = lsst.jointcal.FluxTransfoSpatiallyInvariant(1000.0)
-        mapping = lsst.jointcal.PhotometryMapping(transfo)
+        transform = lsst.jointcal.FluxTransfoSpatiallyInvariant(1000.0)
+        mapping = lsst.jointcal.PhotometryMapping(transform)
         result = mapping.computeParameterDerivatives(self.star0, self.value)
         self.assertEqual(self.value, result)
 
     def test_getMappingIndices(self):
-        """A mapping with one invariant transfo has one index"""
+        """A mapping with one invariant transform has one index"""
         self.mapping.setIndex(5)
         result = self.mapping.getMappingIndices()
         self.assertEqual(result, [5])
@@ -109,39 +109,39 @@ class ChipVisitPhotometryMappingTestCase(PhotometryMappingTestBase, abc.ABC):
         self.chipIndex = 5
         self.visitIndex = 1000
 
-    def _initMappings(self, InvariantTransfo, ChebyTransfo, ChipVisitMapping):
+    def _initMappings(self, InvariantTransform, ChebyTransform, ChipVisitMapping):
         """Initialize self.mappingInvariants and self.mappingCheby.
         Call after setUp().
 
         Parameters
         ----------
-        InvariantTransfo : `PhotometryTransfoSpatiallyInvariant`-type
-            The PhotometryTransfoSpatiallyInvariant-derived class to construct
+        InvariantTransform : `PhotometryTransformSpatiallyInvariant`-type
+            The PhotometryTransformSpatiallyInvariant-derived class to construct
             invariant transforms for.
-        ChebyTransfo : `PhotometryTransfo`-type
-            The PhotometryTransfoChebyshev-derived class to construct
+        ChebyTransform : `PhotometryTransform`-type
+            The PhotometryTransformChebyshev-derived class to construct
             2d transforms for.
         ChipVisitMapping : `PhotometryMapping`-type
             The PhotometryMapping-derived class to construct for both mappings.
         """
         # self.mappingInvariants has two trivial transforms in it, to serve
         # as a simpler test of functionality.
-        chipTransfo = InvariantTransfo(self.chipScale)
-        chipMapping = lsst.jointcal.PhotometryMapping(chipTransfo)
+        chipTransform = InvariantTransform(self.chipScale)
+        chipMapping = lsst.jointcal.PhotometryMapping(chipTransform)
         chipMapping.setIndex(self.chipIndex)
-        visitTransfo = InvariantTransfo(self.visitScale)
-        visitMapping = lsst.jointcal.PhotometryMapping(visitTransfo)
+        visitTransform = InvariantTransform(self.visitScale)
+        visitMapping = lsst.jointcal.PhotometryMapping(visitTransform)
         visitMapping.setIndex(self.visitIndex)
         self.mappingInvariants = ChipVisitMapping(chipMapping, visitMapping)
         self.mappingInvariants.setWhatToFit(True, True)  # default to fitting both
 
         # self.mappingCheby is a more realistic mapping, with two components:
         # spatially-invariant per chip and a chebyshev per visit.
-        # Need a new chipMapping, as it stores shared_ptr to the transfo.
-        chipTransfo = InvariantTransfo(self.chipScale)
-        chipMapping = lsst.jointcal.PhotometryMapping(chipTransfo)
+        # Need a new chipMapping, as it stores shared_ptr to the transform.
+        chipTransform = InvariantTransform(self.chipScale)
+        chipMapping = lsst.jointcal.PhotometryMapping(chipTransform)
         chipMapping.setIndex(self.chipIndex)
-        visitTransfo2 = ChebyTransfo(self.coefficients, self.bbox)
+        visitTransfo2 = ChebyTransform(self.coefficients, self.bbox)
         visitMapping2 = lsst.jointcal.PhotometryMapping(visitTransfo2)
         visitMapping2.setIndex(self.visitIndex)
         self.mappingCheby = ChipVisitMapping(chipMapping, visitMapping2)

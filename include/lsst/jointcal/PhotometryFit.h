@@ -117,7 +117,7 @@ private:
                                          Eigen::VectorXd &grad) const override;
 
 #ifdef STORAGE
-    Point transformFittedStar(FittedStar const &fittedStar, Gtransfo const *sky2TP,
+    Point transformFittedStar(FittedStar const &fittedStar, AstrometryTransform const *sky2TP,
                               Point const &refractionVector, double refractionCoeff, double mjd) const;
 #endif
 };

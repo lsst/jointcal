@@ -30,7 +30,7 @@
 
 #include "lsst/utils/python.h"
 
-#include "lsst/jointcal/PhotometryTransfo.h"
+#include "lsst/jointcal/PhotometryTransform.h"
 
 namespace py = pybind11;
 using namespace pybind11::literals;
@@ -39,22 +39,22 @@ namespace lsst {
 namespace jointcal {
 namespace {
 
-void declarePhotometryTransfo(py::module &mod) {
-    py::class_<PhotometryTransfo, std::shared_ptr<PhotometryTransfo>> cls(mod, "PhotometryTransfo");
+void declarePhotometryTransform(py::module &mod) {
+    py::class_<PhotometryTransform, std::shared_ptr<PhotometryTransform>> cls(mod, "PhotometryTransform");
 
     cls.def("transform",
-            (double (PhotometryTransfo::*)(double, double, double) const) & PhotometryTransfo::transform,
+            (double (PhotometryTransform::*)(double, double, double) const) & PhotometryTransform::transform,
             "x"_a, "y"_a, "value"_a);
     cls.def("transformError",
-            (double (PhotometryTransfo::*)(double, double, double, double) const) &
-                    PhotometryTransfo::transformError,
+            (double (PhotometryTransform::*)(double, double, double, double) const) &
+                    PhotometryTransform::transformError,
             "x"_a, "y"_a, "value"_a, "valueErr"_a);
-    cls.def("offsetParams", &PhotometryTransfo::offsetParams);
-    cls.def("clone", &PhotometryTransfo::clone);
-    cls.def("getNpar", &PhotometryTransfo::getNpar);
-    cls.def("getParameters", &PhotometryTransfo::getParameters);
+    cls.def("offsetParams", &PhotometryTransform::offsetParams);
+    cls.def("clone", &PhotometryTransform::clone);
+    cls.def("getNpar", &PhotometryTransform::getNpar);
+    cls.def("getParameters", &PhotometryTransform::getParameters);
     cls.def("computeParameterDerivatives",
-            [](PhotometryTransfo const &self, double x, double y, double instFlux) {
+            [](PhotometryTransform const &self, double x, double y, double instFlux) {
                 Eigen::VectorXd derivatives(self.getNpar());
                 self.computeParameterDerivatives(x, y, instFlux, derivatives);
                 return derivatives;
@@ -63,15 +63,15 @@ void declarePhotometryTransfo(py::module &mod) {
     utils::python::addOutputOp(cls, "__str__");
 }
 
-void declarePhotometryTransfoSpatiallyInvariant(py::module &mod) {
-    py::class_<PhotometryTransfoSpatiallyInvariant, std::shared_ptr<PhotometryTransfoSpatiallyInvariant>,
-               PhotometryTransfo>
-            cls(mod, "PhotometryTransfoSpatiallyInvariant");
+void declarePhotometryTransformSpatiallyInvariant(py::module &mod) {
+    py::class_<PhotometryTransformSpatiallyInvariant, std::shared_ptr<PhotometryTransformSpatiallyInvariant>,
+               PhotometryTransform>
+            cls(mod, "PhotometryTransformSpatiallyInvariant");
 }
 
 void declareFluxTransfoSpatiallyInvariant(py::module &mod) {
     py::class_<FluxTransfoSpatiallyInvariant, std::shared_ptr<FluxTransfoSpatiallyInvariant>,
-               PhotometryTransfoSpatiallyInvariant, PhotometryTransfo>
+               PhotometryTransformSpatiallyInvariant, PhotometryTransform>
             cls(mod, "FluxTransfoSpatiallyInvariant");
 
     cls.def(py::init<double>(), "value"_a = 1);
@@ -79,23 +79,24 @@ void declareFluxTransfoSpatiallyInvariant(py::module &mod) {
 
 void declareMagnitudeTransfoSpatiallyInvariant(py::module &mod) {
     py::class_<MagnitudeTransfoSpatiallyInvariant, std::shared_ptr<MagnitudeTransfoSpatiallyInvariant>,
-               PhotometryTransfoSpatiallyInvariant, PhotometryTransfo>
+               PhotometryTransformSpatiallyInvariant, PhotometryTransform>
             cls(mod, "MagnitudeTransfoSpatiallyInvariant");
 
     cls.def(py::init<double>(), "value"_a = 0);
 }
 
-void declarePhotometryTransfoChebyshev(py::module &mod) {
-    py::class_<PhotometryTransfoChebyshev, std::shared_ptr<PhotometryTransfoChebyshev>, PhotometryTransfo>
-            cls(mod, "PhotometryTransfoChebyshev");
+void declarePhotometryTransformChebyshev(py::module &mod) {
+    py::class_<PhotometryTransformChebyshev, std::shared_ptr<PhotometryTransformChebyshev>,
+               PhotometryTransform>
+            cls(mod, "PhotometryTransformChebyshev");
 
-    cls.def("getCoefficients", &PhotometryTransfoChebyshev::getCoefficients);
-    cls.def("getOrder", &PhotometryTransfoChebyshev::getOrder);
-    cls.def("getBBox", &PhotometryTransfoChebyshev::getBBox);
+    cls.def("getCoefficients", &PhotometryTransformChebyshev::getCoefficients);
+    cls.def("getOrder", &PhotometryTransformChebyshev::getOrder);
+    cls.def("getBBox", &PhotometryTransformChebyshev::getBBox);
 }
 
 void declareFluxTransfoChebyshev(py::module &mod) {
-    py::class_<FluxTransfoChebyshev, std::shared_ptr<FluxTransfoChebyshev>, PhotometryTransfoChebyshev> cls(
+    py::class_<FluxTransfoChebyshev, std::shared_ptr<FluxTransfoChebyshev>, PhotometryTransformChebyshev> cls(
             mod, "FluxTransfoChebyshev");
 
     cls.def(py::init<size_t, afw::geom::Box2D const &>(), "order"_a, "bbox"_a);
@@ -105,7 +106,7 @@ void declareFluxTransfoChebyshev(py::module &mod) {
 
 void declareMagnitudeTransfoChebyshev(py::module &mod) {
     py::class_<MagnitudeTransfoChebyshev, std::shared_ptr<MagnitudeTransfoChebyshev>,
-               PhotometryTransfoChebyshev>
+               PhotometryTransformChebyshev>
             cls(mod, "MagnitudeTransfoChebyshev");
 
     cls.def(py::init<size_t, afw::geom::Box2D const &>(), "order"_a, "bbox"_a);
@@ -113,13 +114,13 @@ void declareMagnitudeTransfoChebyshev(py::module &mod) {
             "bbox"_a);
 }
 
-PYBIND11_MODULE(photometryTransfo, mod) {
-    declarePhotometryTransfo(mod);
+PYBIND11_MODULE(photometryTransform, mod) {
+    declarePhotometryTransform(mod);
 
-    declarePhotometryTransfoSpatiallyInvariant(mod);
+    declarePhotometryTransformSpatiallyInvariant(mod);
     declareFluxTransfoSpatiallyInvariant(mod);
     declareMagnitudeTransfoSpatiallyInvariant(mod);
-    declarePhotometryTransfoChebyshev(mod);
+    declarePhotometryTransformChebyshev(mod);
     declareFluxTransfoChebyshev(mod);
     declareMagnitudeTransfoChebyshev(mod);
 }

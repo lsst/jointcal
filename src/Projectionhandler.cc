@@ -23,7 +23,7 @@
  */
 
 #include "lsst/jointcal/ProjectionHandler.h"
-#include "lsst/jointcal/Gtransfo.h"
+#include "lsst/jointcal/AstrometryTransform.h"
 #include "lsst/jointcal/CcdImage.h"
 
 namespace lsst {
@@ -31,7 +31,7 @@ namespace jointcal {
 
 class Mapping;
 
-/**********   Stuff for providing Sk22TP gtransfos to a AstrometryModel ***/
+/**********   Stuff for providing SkyToTangentPlane transforms to an AstrometryModel ***/
 
 OneTPPerVisitHandler::OneTPPerVisitHandler(const CcdImageList &ccdImageList) {
     for (auto const &i : ccdImageList) {
@@ -40,7 +40,7 @@ OneTPPerVisitHandler::OneTPPerVisitHandler(const CcdImageList &ccdImageList) {
     }
 }
 
-const std::shared_ptr<const Gtransfo> OneTPPerVisitHandler::getSkyToTangentPlane(
+const std::shared_ptr<const AstrometryTransform> OneTPPerVisitHandler::getSkyToTangentPlane(
         const CcdImage &ccdImage) const {
     auto it = tMap.find(ccdImage.getVisit());
     if (it == tMap.end()) return nullptr;

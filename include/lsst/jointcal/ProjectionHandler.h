@@ -26,7 +26,7 @@
 #define LSST_JOINTCAL_PROJECTION_HANDLER_H
 
 #include "lsst/jointcal/CcdImage.h"
-#include "lsst/jointcal/Gtransfo.h"
+#include "lsst/jointcal/AstrometryTransform.h"
 #include "map"
 
 namespace lsst {
@@ -41,7 +41,8 @@ class CcdImage;
  * (where they are compared to transformed measurements)
  */
 struct ProjectionHandler {
-    virtual const std::shared_ptr<const Gtransfo> getSkyToTangentPlane(const CcdImage &ccdImage) const = 0;
+    virtual const std::shared_ptr<const AstrometryTransform> getSkyToTangentPlane(
+            const CcdImage &ccdImage) const = 0;
 
     virtual ~ProjectionHandler(){};
 };
@@ -49,13 +50,15 @@ struct ProjectionHandler {
 /**
  * The simplest implementation of ProjectionHandler. Means that coordinates of
  * objects are expressed in the same space as the arrival mapping space. This
- * is useful for fitting transfo rms between images.
+ * is useful for fitting transform rms between images.
  */
 class IdentityProjectionHandler : public ProjectionHandler {
-    std::shared_ptr<GtransfoIdentity> id;
+    std::shared_ptr<AstrometryTransformIdentity> id;
 
 public:
-    const std::shared_ptr<const Gtransfo> getSkyToTangentPlane(const CcdImage &ccdImage) const { return id; };
+    const std::shared_ptr<const AstrometryTransform> getSkyToTangentPlane(const CcdImage &ccdImage) const {
+        return id;
+    };
 };
 
 /**
@@ -66,13 +69,13 @@ public:
  * point.
  */
 class OneTPPerVisitHandler : public ProjectionHandler {
-    typedef std::map<const VisitIdType, std::shared_ptr<const Gtransfo>> TransfoMap;
+    typedef std::map<const VisitIdType, std::shared_ptr<const AstrometryTransform>> TransfoMap;
     TransfoMap tMap;
 
 public:
     OneTPPerVisitHandler(const CcdImageList &ccdImageList);
 
-    const std::shared_ptr<const Gtransfo> getSkyToTangentPlane(const CcdImage &ccdImage) const;
+    const std::shared_ptr<const AstrometryTransform> getSkyToTangentPlane(const CcdImage &ccdImage) const;
 };
 }  // namespace jointcal
 }  // namespace lsst

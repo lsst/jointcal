@@ -28,7 +28,7 @@
 #include "memory"
 
 #include "lsst/jointcal/CcdImage.h"
-#include "lsst/jointcal/Gtransfo.h"
+#include "lsst/jointcal/AstrometryTransform.h"
 #include "lsst/jointcal/Eigenstuff.h"
 #include "lsst/jointcal/AstrometryMapping.h"
 
@@ -36,7 +36,7 @@ namespace lsst {
 namespace jointcal {
 
 class CcdImage;
-class Gtransfo;
+class AstrometryTransform;
 
 //! Interface class between AstrometryFit and an actual model for the Mapping (s) from pixels to some tangent
 //! plane (aka distortions).
@@ -66,7 +66,8 @@ public:
     //! The transformation used to project the positions of FittedStars.
     /*! This defines the coordinate system into which the Mapping of
         this Ccdimage maps the pixel coordinates. */
-    virtual const std::shared_ptr<Gtransfo const> getSkyToTangentPlane(CcdImage const &ccdImage) const = 0;
+    virtual const std::shared_ptr<AstrometryTransform const> getSkyToTangentPlane(
+            CcdImage const &ccdImage) const = 0;
 
     /**
      * Make a SkyWcs that contains this model.
