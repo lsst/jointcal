@@ -322,10 +322,16 @@ class ConstrainedFluxModelTestCase(ConstrainedPhotometryModelTestCase,
         self.assertFalse(self.model.checkPositiveOnBBox(self.ccdImageList[0]))
 
     def test_validate(self):
-        self.assertTrue(self.model.validate(self.ccdImageList))
-        # Make the model go negative
+        """Test that invalid models fail validate(), and that valid ones pass.
+        """
+        # We need at least 0 degrees of freedom (data - parameters) for the model to be valid.
+        # NOTE: model has 20 parameters (2 visits, 10 params each)
+        self.assertTrue(self.model.validate(self.ccdImageList, 0))
+        self.assertFalse(self.model.validate(self.ccdImageList, -1))
+        # Models that are negative on the bounding box are invalid
         self.model.offsetParams(-5*self.delta)
-        self.assertFalse(self.model.validate(self.ccdImageList))
+        # ensure ndof is high enough that it will not cause a failure
+        self.assertFalse(self.model.validate(self.ccdImageList, 100))
 
 
 class ConstrainedMagnitudeModelTestCase(ConstrainedPhotometryModelTestCase,

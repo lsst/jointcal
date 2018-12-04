@@ -35,17 +35,14 @@
 #include "lsst/pex/exceptions.h"
 #include "lsst/jointcal/AstrometryTransform.h"
 
-namespace {
-LOG_LOGGER _log = LOG_GET("jointcal.SimpleAstrometryModel");
-}
-
 namespace lsst {
 namespace jointcal {
 
 SimpleAstrometryModel::SimpleAstrometryModel(CcdImageList const &ccdImageList,
                                              const std::shared_ptr<ProjectionHandler const> projectionHandler,
                                              bool initFromWcs, unsigned nNotFit, unsigned order)
-        : _skyToTangentPlane(projectionHandler)
+        : AstrometryModel(LOG_GET("jointcal.SimpleAstrometryModel")),
+          _skyToTangentPlane(projectionHandler)
 
 {
     unsigned count = 0;

@@ -41,10 +41,6 @@ namespace pexExcept = lsst::pex::exceptions;
 #include <iostream>
 
 namespace {
-LOG_LOGGER _log = LOG_GET("jointcal.ConstrainedAstrometryModel");
-}
-
-namespace {
 // Append the keys of this map into a comma-separated string.
 template <typename KeyType, typename ValueType>
 void outputMapKeys(std::map<KeyType, ValueType> const &map, std::ostream &os) {
@@ -67,7 +63,8 @@ namespace jointcal {
 ConstrainedAstrometryModel::ConstrainedAstrometryModel(
         CcdImageList const &ccdImageList, std::shared_ptr<ProjectionHandler const> projectionHandler,
         int chipOrder, int visitOrder)
-        : _skyToTangentPlane(projectionHandler) {
+        : AstrometryModel(LOG_GET("jointcal.ConstrainedAstrometryModel")),
+          _skyToTangentPlane(projectionHandler) {
     // keep track of which chip we want to hold fixed (the one closest to the middle of the focal plane)
     double minRadius2 = std::numeric_limits<double>::infinity();
     CcdIdType constrainedChip = -1;

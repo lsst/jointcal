@@ -737,7 +737,7 @@ class JointcalTask(pipeBase.CmdLineTask):
         self._check_stars(associations)
         if not np.isfinite(chi2.chi2):
             raise FloatingPointError('%s chi2 is invalid: %s', chi2Label, chi2)
-        if not model.validate(associations.getCcdImageList()):
+        if not model.validate(associations.getCcdImageList(), chi2.ndof):
             raise ValueError("Model is not valid: check log messages for warnings.")
         return chi2
 
