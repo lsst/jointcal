@@ -70,11 +70,11 @@ struct RecursionArrayImitator {
 };
 
 // Compute an affine transform that maps an arbitrary box to [-1,1]x[-1,1]
-afw::geom::AffineTransform makeChebyshevRangeTransform(afw::geom::Box2D const &bbox) {
-    return afw::geom::AffineTransform(
-            afw::geom::LinearTransform::makeScaling(2.0 / bbox.getWidth(), 2.0 / bbox.getHeight()),
-            afw::geom::Extent2D(-(2.0 * bbox.getCenterX()) / bbox.getWidth(),
-                                -(2.0 * bbox.getCenterY()) / bbox.getHeight()));
+geom::AffineTransform makeChebyshevRangeTransform(geom::Box2D const &bbox) {
+    return geom::AffineTransform(
+            geom::LinearTransform::makeScaling(2.0 / bbox.getWidth(), 2.0 / bbox.getHeight()),
+            geom::Extent2D(-(2.0 * bbox.getCenterX()) / bbox.getWidth(),
+                           -(2.0 * bbox.getCenterY()) / bbox.getHeight()));
 }
 
 // Initialize a "unit" Chebyshev
@@ -88,7 +88,7 @@ ndarray::Array<double, 2, 2> _initializeChebyshev(size_t order, bool identity) {
 }
 }  // namespace
 
-PhotometryTransformChebyshev::PhotometryTransformChebyshev(size_t order, afw::geom::Box2D const &bbox,
+PhotometryTransformChebyshev::PhotometryTransformChebyshev(size_t order, geom::Box2D const &bbox,
                                                            bool identity)
         : _bbox(bbox),
           _toChebyshevRange(makeChebyshevRangeTransform(bbox)),
@@ -97,7 +97,7 @@ PhotometryTransformChebyshev::PhotometryTransformChebyshev(size_t order, afw::ge
           _nParameters((order + 1) * (order + 2) / 2) {}
 
 PhotometryTransformChebyshev::PhotometryTransformChebyshev(ndarray::Array<double, 2, 2> const &coefficients,
-                                                           afw::geom::Box2D const &bbox)
+                                                           geom::Box2D const &bbox)
         : _bbox(bbox),
           _toChebyshevRange(makeChebyshevRangeTransform(bbox)),
           _coefficients(coefficients),
@@ -154,14 +154,14 @@ Eigen::VectorXd PhotometryTransformChebyshev::getParameters() const {
 }
 
 double PhotometryTransformChebyshev::computeChebyshev(double x, double y) const {
-    afw::geom::Point2D p = _toChebyshevRange(afw::geom::Point2D(x, y));
+    geom::Point2D p = _toChebyshevRange(geom::Point2D(x, y));
     return evaluateFunction1d(RecursionArrayImitator(_coefficients, p.getX()), p.getY(),
                               _coefficients.getSize<0>());
 }
 
 void PhotometryTransformChebyshev::computeChebyshevDerivatives(
         double x, double y, Eigen::Ref<Eigen::VectorXd> derivatives) const {
-    afw::geom::Point2D p = _toChebyshevRange(afw::geom::Point2D(x, y));
+    geom::Point2D p = _toChebyshevRange(geom::Point2D(x, y));
     // Algorithm: compute all the individual components recursively (since we'll need them anyway),
     // then combine them into the final answer vectors.
     Eigen::VectorXd Tnx(_order + 1);

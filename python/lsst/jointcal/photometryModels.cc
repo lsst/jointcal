@@ -104,14 +104,14 @@ void declareConstrainedPhotometryModel(py::module &mod) {
 void declareConstrainedFluxModel(py::module &mod) {
     py::class_<ConstrainedFluxModel, std::shared_ptr<ConstrainedFluxModel>, PhotometryModel> cls(
             mod, "ConstrainedFluxModel");
-    cls.def(py::init<CcdImageList const &, afw::geom::Box2D const &, int, double>(), "CcdImageList"_a,
+    cls.def(py::init<CcdImageList const &, lsst::geom::Box2D const &, int, double>(), "CcdImageList"_a,
             "bbox"_a, "visitOrder"_a = 7, "errorPedestal"_a = 0);
 }
 
 void declareConstrainedMagnitudeModel(py::module &mod) {
     py::class_<ConstrainedMagnitudeModel, std::shared_ptr<ConstrainedMagnitudeModel>, PhotometryModel> cls(
             mod, "ConstrainedMagnitudeModel");
-    cls.def(py::init<CcdImageList const &, afw::geom::Box2D const &, int, double>(), "CcdImageList"_a,
+    cls.def(py::init<CcdImageList const &, lsst::geom::Box2D const &, int, double>(), "CcdImageList"_a,
             "bbox"_a, "visitOrder"_a = 7, "errorPedestal"_a = 0);
 }
 

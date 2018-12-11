@@ -224,7 +224,7 @@ public:
      * @param[in]  bbox   The bounding box it is valid within, to rescale it to [-1,1].
      * @param[in]  identity If true, set a_0,0==1, otherwise all coefficients are 0.
      */
-    PhotometryTransformChebyshev(size_t order, afw::geom::Box2D const &bbox, bool identity);
+    PhotometryTransformChebyshev(size_t order, geom::Box2D const &bbox, bool identity);
 
     /**
      * Create a Chebyshev transform with the specified coefficients.
@@ -235,8 +235,7 @@ public:
      * @param      coefficients  The polynomial coefficients.
      * @param[in]  bbox          The bounding box it is valid within, to rescale it to [-1,1].
      */
-    PhotometryTransformChebyshev(ndarray::Array<double, 2, 2> const &coefficients,
-                                 afw::geom::Box2D const &bbox);
+    PhotometryTransformChebyshev(ndarray::Array<double, 2, 2> const &coefficients, geom::Box2D const &bbox);
 
     /// @copydoc PhotometryTransform::transformError
     double transformError(double x, double y, double value, double valueErr) const override { return 0; }
@@ -258,7 +257,7 @@ public:
 
     ndarray::Size getOrder() const { return _order; }
 
-    afw::geom::Box2D getBBox() const { return _bbox; }
+    geom::Box2D getBBox() const { return _bbox; }
 
     double mean() const;
 
@@ -275,8 +274,8 @@ protected:
     void computeChebyshevDerivatives(double x, double y, Eigen::Ref<Eigen::VectorXd> derivatives) const;
 
 private:
-    afw::geom::Box2D _bbox;                        // the domain of this function
-    afw::geom::AffineTransform _toChebyshevRange;  // maps points from the bbox to [-1,1]x[-1,1]
+    geom::Box2D _bbox;                        // the domain of this function
+    geom::AffineTransform _toChebyshevRange;  // maps points from the bbox to [-1,1]x[-1,1]
 
     ndarray::Array<double, 2, 2> _coefficients;  // shape=(order+1, order+1)
     ndarray::Size _order;
@@ -291,10 +290,10 @@ private:
  */
 class FluxTransfoChebyshev : public PhotometryTransformChebyshev {
 public:
-    FluxTransfoChebyshev(size_t order, afw::geom::Box2D const &bbox)
+    FluxTransfoChebyshev(size_t order, geom::Box2D const &bbox)
             : PhotometryTransformChebyshev(order, bbox, true) {}
 
-    FluxTransfoChebyshev(ndarray::Array<double, 2, 2> const &coefficients, afw::geom::Box2D const &bbox)
+    FluxTransfoChebyshev(ndarray::Array<double, 2, 2> const &coefficients, geom::Box2D const &bbox)
             : PhotometryTransformChebyshev(coefficients, bbox) {}
 
     /// @copydoc PhotometryTransform::transform
@@ -320,10 +319,10 @@ public:
  */
 class MagnitudeTransfoChebyshev : public PhotometryTransformChebyshev {
 public:
-    MagnitudeTransfoChebyshev(size_t order, afw::geom::Box2D const &bbox)
+    MagnitudeTransfoChebyshev(size_t order, geom::Box2D const &bbox)
             : PhotometryTransformChebyshev(order, bbox, false) {}
 
-    MagnitudeTransfoChebyshev(ndarray::Array<double, 2, 2> const &coefficients, afw::geom::Box2D const &bbox)
+    MagnitudeTransfoChebyshev(ndarray::Array<double, 2, 2> const &coefficients, geom::Box2D const &bbox)
             : PhotometryTransformChebyshev(coefficients, bbox) {}
 
     /// @copydoc PhotometryTransform::transform
