@@ -61,6 +61,7 @@ void declarePhotometryTransform(py::module &mod) {
             });
 
     utils::python::addOutputOp(cls, "__str__");
+    utils::python::addOutputOp(cls, "__repr__");
 }
 
 void declarePhotometryTransformSpatiallyInvariant(py::module &mod) {
@@ -93,14 +94,18 @@ void declarePhotometryTransformChebyshev(py::module &mod) {
     cls.def("getCoefficients", &PhotometryTransformChebyshev::getCoefficients);
     cls.def("getOrder", &PhotometryTransformChebyshev::getOrder);
     cls.def("getBBox", &PhotometryTransformChebyshev::getBBox);
+    cls.def("integrate", py::overload_cast<>(&PhotometryTransformChebyshev::integrate, py::const_));
+    cls.def("integrate",
+            py::overload_cast<geom::Box2D const &>(&PhotometryTransformChebyshev::integrate, py::const_),
+            "box"_a);
 }
 
 void declareFluxTransformChebyshev(py::module &mod) {
     py::class_<FluxTransformChebyshev, std::shared_ptr<FluxTransformChebyshev>, PhotometryTransformChebyshev>
             cls(mod, "FluxTransformChebyshev");
 
-    cls.def(py::init<size_t, afw::geom::Box2D const &>(), "order"_a, "bbox"_a);
-    cls.def(py::init<ndarray::Array<double, 2, 2> const &, afw::geom::Box2D const &>(), "coefficients"_a,
+    cls.def(py::init<size_t, geom::Box2D const &>(), "order"_a, "bbox"_a);
+    cls.def(py::init<ndarray::Array<double, 2, 2> const &, geom::Box2D const &>(), "coefficients"_a,
             "bbox"_a);
 }
 
@@ -109,8 +114,8 @@ void declareMagnitudeTransformChebyshev(py::module &mod) {
                PhotometryTransformChebyshev>
             cls(mod, "MagnitudeTransformChebyshev");
 
-    cls.def(py::init<size_t, afw::geom::Box2D const &>(), "order"_a, "bbox"_a);
-    cls.def(py::init<ndarray::Array<double, 2, 2> const &, afw::geom::Box2D const &>(), "coefficients"_a,
+    cls.def(py::init<size_t, geom::Box2D const &>(), "order"_a, "bbox"_a);
+    cls.def(py::init<ndarray::Array<double, 2, 2> const &, geom::Box2D const &>(), "coefficients"_a,
             "bbox"_a);
 }
 

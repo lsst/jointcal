@@ -124,7 +124,71 @@ double integrateTn(int n) {
     else
         return 2.0 / (1.0 - static_cast<double>(n * n));
 }
+
+/**
+ * Return the integrals of the first order+1 chebyshev polynomials evaluated at x.
+ *
+ * @param order The order of n to evaluate up to (note T0(x) == 1).
+ * @param x The value to evaluate the integrals at.
+ *
+ * @return The integral of each chebyshev polynomial evaluated at x.
+ */
+Eigen::VectorXd computeIntegralTn(ndarray::Size order, double x) {
+    // We need to compute through order+2, because the integral recurrance relation uses Tn+1(x).
+    Eigen::VectorXd Tn(order + 2);
+
+    // The nth chebyshev polynomial evaluated at x.
+    Tn[0] = 1;
+    Tn[1] = x;
+    for (ndarray::Size i = 2; i <= order + 1; ++i) {
+        Tn[i] = 2 * x * Tn[i - 1] - Tn[i - 2];
+    }
+
+    // The integral of the nth chebyshev polynomial at x.
+    Eigen::VectorXd integralTn(order + 1);
+    integralTn[0] = x;
+    if (order > 0) {  // have to evaluate this separately from the recurrence relation below.
+        integralTn[1] = 0.5 * x * x;
+    }
+    for (ndarray::Size i = 2; i <= order; ++i) {
+        // recurrence relation: integral(Tn(x)) = n*T[n+1](x)/(n^2 - 1) - x*T[n](x)/(n-1)
+        integralTn[i] = i * Tn[i + 1] / (i * i - 1) - x * Tn[i] / (i - 1);
+    }
+
+    return integralTn;
+}
+
 }  // namespace
+
+double PhotometryTransformChebyshev::oneIntegral(double x, double y) const {
+    geom::Point2D point = _toChebyshevRange(geom::Point2D(x, y));
+
+    auto integralTnx = computeIntegralTn(_order, point.getX());
+    auto integralTmy = computeIntegralTn(_order, point.getY());
+
+    // NOTE: the indexing in this method and offsetParams must be kept consistent!
+    // Roll up the x and y terms
+    double result = 0;
+    for (ndarray::Size j = 0; j <= _order; ++j) {
+        ndarray::Size const iMax = _order - j;  // to save re-computing `i+j <= order` every inner step.
+        for (ndarray::Size i = 0; i <= iMax; ++i) {
+            result += _coefficients[j][i] * integralTnx[i] * integralTmy[j];
+        }
+    }
+    return result;
+}
+
+double PhotometryTransformChebyshev::integrate(geom::Box2D const &bbox) const {
+    double result = 0;
+
+    result += oneIntegral(bbox.getMaxX(), bbox.getMaxY());
+    result += oneIntegral(bbox.getMinX(), bbox.getMinY());
+    result -= oneIntegral(bbox.getMaxX(), bbox.getMinY());
+    result -= oneIntegral(bbox.getMinX(), bbox.getMaxY());
+
+    // scale factor due to the change of limits in the integral
+    return result / _toChebyshevRange.getLinear().computeDeterminant();
+}
 
 double PhotometryTransformChebyshev::integrate() const {
     double result = 0;
@@ -135,6 +199,10 @@ double PhotometryTransformChebyshev::integrate() const {
         }
     }
     return result * determinant;
+}
+
+double PhotometryTransformChebyshev::mean(geom::Box2D const &bbox) const {
+    return integrate(bbox) / bbox.getArea();
 }
 
 double PhotometryTransformChebyshev::mean() const { return integrate() / _bbox.getArea(); }

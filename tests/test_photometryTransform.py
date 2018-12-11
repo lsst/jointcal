@@ -240,6 +240,113 @@ class PhotometryTransformChebyshevTestCase(PhotometryTransformTestBase, abc.ABC)
                 expect.append(self._computeChebyshevDerivative(Ty[j], Tx[i], self.value))
         self.assertFloatsAlmostEqual(np.array(expect), result)
 
+    def testIntegrateBoxOrder0(self):
+        r"""Test integrating over an "interesting" box.
+
+        The values of these integrals were checked in Mathematica. The code
+        block below can be pasted into Mathematica to re-do those calculations.
+
+        .. code-block:: mathematica
+
+            f[x_, y_, n_, m_] := \!\(
+            \*UnderoverscriptBox[\(\[Sum]\), \(i = 0\), \(n\)]\(
+            \*UnderoverscriptBox[\(\[Sum]\), \(j = 0\), \(m\)]
+            \*SubscriptBox[\(a\), \(i, j\)]*ChebyshevT[i, x]*ChebyshevT[j, y]\)\)
+            integrate2dBox[n_, m_, xmin_, xmax_, ymin_, ymax_, x0_, x1_, y0_,
+              y1_] := \!\(
+            \*SubsuperscriptBox[\(\[Integral]\), \(y0\), \(y1\)]\(
+            \*SubsuperscriptBox[\(\[Integral]\), \(x0\), \(x1\)]f[
+            \*FractionBox[\(2  x - xmin - xmax\), \(xmax - xmin\)],
+            \*FractionBox[\(2  y - ymin - ymax\), \(ymax - ymin\)], n,
+                 m] \[DifferentialD]x \[DifferentialD]y\)\)
+            integrate2dBox[0, 0, -5, 7, -6, 8, 0, 7, 0, 8]
+            integrate2dBox[0, 0, -5, 7, -6, 8, 2, 6, 3, 5]
+            integrate2dBox[1, 0, -5, 7, -6, 8, 0, 6, 0, 5]
+            integrate2dBox[0, 1, -5, 7, -6, 8, 0, 6, 0, 5]
+            integrate2dBox[1, 1, -5, 7, -6, 8, -1, 5., 2, 7]
+            integrate2dBox[2, 2, -5, 7, -6, 8, 0, 2, 0, 3]
+        """
+        coeffs = np.array([[3.]], dtype=float)
+        transform = photometryTransform.FluxTransformChebyshev(coeffs, self.bbox)
+
+        # a box that goes from 0,0 to the x/y maximum
+        box = lsst.geom.Box2D(lsst.geom.Point2D(0, 0),
+                              lsst.geom.Point2D(self.bbox.getMaxX(), self.bbox.getMaxY()))
+        expect = 56*coeffs[0]
+        result = transform.integrate(box)
+        self.assertFloatsAlmostEqual(result, expect)
+
+        # Different box
+        box = lsst.geom.Box2D(lsst.geom.Point2D(2, 3), lsst.geom.Point2D(6, 5))
+        expect = 8*coeffs[0]
+        result = transform.integrate(box)
+        self.assertFloatsAlmostEqual(result, expect)
+
+    def testIntegrateBoxOrder1(self):
+        """Test integrating 1st order in x or y.
+        Note that the coefficients are [y,x] ordered.
+        """
+        box = lsst.geom.Box2D(lsst.geom.Point2D(0, 0), lsst.geom.Point2D(6, 5))
+        # test 1st order in x:
+        coeffs = np.array([[2., 5.], [0., 0]], dtype=float)
+        transform = photometryTransform.FluxTransformChebyshev(coeffs, self.bbox)
+        # 30*a00 + 10*a10
+        expect = 30*coeffs[0, 0] + 10*coeffs[0, 1]
+        result = transform.integrate(box)
+        self.assertFloatsAlmostEqual(result, expect)
+
+        # test 1st order in y:
+        coeffs = np.array([[2., 0.], [5., 0]], dtype=float)
+        transform = photometryTransform.FluxTransformChebyshev(coeffs, self.bbox)
+        # 30*a00 + 45/7*a01
+        expect = 30*coeffs[0, 0] + 45./7.*coeffs[1, 0]
+        result = transform.integrate(box)
+        self.assertFloatsAlmostEqual(result, expect)
+
+    def testIntegrateBoxOrder2(self):
+        """Test integrating 1st order in both x and y.
+        Note that the coefficients are [y,x] ordered.
+        """
+        # 1st order in both x and y
+        transform = photometryTransform.FluxTransformChebyshev(2, self.bbox)
+        # zero, then set the parameters
+        transform.offsetParams(np.array([1, 0, 0, 0, 0, 0, 0, 0, 0], dtype=float))
+        coeffs = np.array([[0, 0, 0], [0, 4, 0], [0, 0, 0]], dtype=float)
+        transform.offsetParams(-coeffs.flatten())
+
+        # integrate on the smaller box:
+        box = lsst.geom.Box2D(lsst.geom.Point2D(-1, 2), lsst.geom.Point2D(5, 7))
+        # 5/2*(12*a0,0 + 6*a0,1 + 2*a1,0 + a1,1)
+        expect = 5/2 * (12*coeffs[0, 0] + 6*coeffs[1, 0] + 2*coeffs[0, 1] + coeffs[1, 1])
+
+        result = transform.integrate(box)
+        self.assertFloatsAlmostEqual(result, expect)
+
+    def testIntegrateBoxOrder4(self):
+        """Test integrating 2nd order in both x and y.
+        Note that the coefficients are [y,x] ordered.
+        """
+        # for 2nd order in both x and y
+        box = lsst.geom.Box2D(lsst.geom.Point2D(-3, 0), lsst.geom.Point2D(2, 3))
+        coeffs = np.array([[1, 2, 3, 0, 0], [4, 5, 6, 0, 0], [7, 8, 9, 0, 0],
+                          [0, 0, 0, 0, 0], [0, 0, 0, 0, 0]], dtype=float)
+        transform = photometryTransform.FluxTransformChebyshev(coeffs, self.bbox)
+
+        # integrating on the full box should match the standard integral
+        expect = transform.integrate()
+        result = transform.integrate(self.bbox)
+        self.assertFloatsAlmostEqual(result, expect, rtol=6e-16)
+
+        # 5/3528 * (10584*a00 + 756*a01 - 10152*a02 - 2646*a10 - 189*a11 +
+        #           2538*a12 - 8036*a20 - 574*a21 + 7708*a22)
+        expect = 5/3528 * (10584*coeffs[0, 0] + 756*coeffs[1, 0] -
+                           10152*coeffs[2, 0] - 2646*coeffs[0, 1] -
+                           189*coeffs[1, 1] + 2538*coeffs[2, 1] -
+                           8036*coeffs[0, 2] - 574*coeffs[1, 2] +
+                           7708*coeffs[2, 2])
+        result = transform.integrate(box)
+        self.assertFloatsAlmostEqual(result, expect, rtol=2e-14)
+
 
 class FluxTransformChebyshevTestCase(PhotometryTransformChebyshevTestCase, lsst.utils.tests.TestCase):
     def setUp(self):

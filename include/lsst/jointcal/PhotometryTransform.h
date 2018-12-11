@@ -260,7 +260,15 @@ public:
 
     geom::Box2D getBBox() const { return _bbox; }
 
+    /// Compute the mean of this tranform on the bbox (default to our bbox).
+    double mean(geom::Box2D const &bbox) const;
+    /// @overload mean(geom::Box2D const &bbox) const;
     double mean() const;
+
+    // Compute the integral of this function over a bounding-box (default to our bbox).
+    double integrate(geom::Box2D const &bbox) const;
+    /// @overload integrate(geom::Box2D const &bbox) const;
+    double integrate() const;
 
 protected:
     /**
@@ -282,8 +290,8 @@ private:
     ndarray::Size _order;
     ndarray::Size _nParameters;
 
-    // Compute the integral of this function over its bounding-box.
-    double integrate() const;
+    /// Evaluate one limit of a definite 2-d integral (sum four of these to get the full integral).
+    double oneIntegral(double x, double y) const;
 };
 
 /**
