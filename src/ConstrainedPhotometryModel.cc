@@ -343,11 +343,11 @@ std::shared_ptr<afw::image::PhotoCalib> ConstrainedMagnitudeModel::toPhotoCalib(
 }
 
 // explicit instantiation of templated function, so pybind11 can
-template void ConstrainedPhotometryModel::initialize<FluxTransfoSpatiallyInvariant, FluxTransfoChebyshev,
+template void ConstrainedPhotometryModel::initialize<FluxTransformSpatiallyInvariant, FluxTransformChebyshev,
                                                      ChipVisitFluxMapping>(CcdImageList const &,
                                                                            afw::geom::Box2D const &, int);
-template void ConstrainedPhotometryModel::initialize<MagnitudeTransfoSpatiallyInvariant,
-                                                     MagnitudeTransfoChebyshev, ChipVisitMagnitudeMapping>(
+template void ConstrainedPhotometryModel::initialize<MagnitudeTransformSpatiallyInvariant,
+                                                     MagnitudeTransformChebyshev, ChipVisitMagnitudeMapping>(
         CcdImageList const &, afw::geom::Box2D const &, int);
 
 }  // namespace jointcal

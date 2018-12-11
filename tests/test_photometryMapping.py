@@ -58,7 +58,7 @@ class PhotometryMappingTestCase(PhotometryMappingTestBase, lsst.utils.tests.Test
     def setUp(self):
         super(PhotometryMappingTestCase, self).setUp()
         self.scale = 3
-        transform = lsst.jointcal.photometryTransform.FluxTransfoSpatiallyInvariant(self.scale)
+        transform = lsst.jointcal.photometryTransform.FluxTransformSpatiallyInvariant(self.scale)
         self.mapping = lsst.jointcal.photometryMappings.PhotometryMapping(transform)
 
     def test_getNpar(self):
@@ -86,7 +86,7 @@ class PhotometryMappingTestCase(PhotometryMappingTestBase, lsst.utils.tests.Test
         self.assertEqual(self.value, result)
         result = self.mapping.computeParameterDerivatives(self.star1, self.value)
         self.assertEqual(self.value, result)
-        transform = lsst.jointcal.FluxTransfoSpatiallyInvariant(1000.0)
+        transform = lsst.jointcal.FluxTransformSpatiallyInvariant(1000.0)
         mapping = lsst.jointcal.PhotometryMapping(transform)
         result = mapping.computeParameterDerivatives(self.star0, self.value)
         self.assertEqual(self.value, result)
@@ -277,8 +277,8 @@ class ChipVisitPhotometryMappingTestCase(PhotometryMappingTestBase, abc.ABC):
 class ChipVisitFluxMappingTestCase(ChipVisitPhotometryMappingTestCase, lsst.utils.tests.TestCase):
     def setUp(self):
         super().setUp()
-        self._initMappings(lsst.jointcal.FluxTransfoSpatiallyInvariant,
-                           lsst.jointcal.FluxTransfoChebyshev,
+        self._initMappings(lsst.jointcal.FluxTransformSpatiallyInvariant,
+                           lsst.jointcal.FluxTransformChebyshev,
                            lsst.jointcal.ChipVisitFluxMapping)
 
     def _computeVisitDerivative(self, star):
@@ -308,8 +308,8 @@ class ChipVisitFluxMappingTestCase(ChipVisitPhotometryMappingTestCase, lsst.util
 class ChipVisitMagnitudeMappingTestCase(ChipVisitPhotometryMappingTestCase, lsst.utils.tests.TestCase):
     def setUp(self):
         super().setUp()
-        self._initMappings(lsst.jointcal.MagnitudeTransfoSpatiallyInvariant,
-                           lsst.jointcal.MagnitudeTransfoChebyshev,
+        self._initMappings(lsst.jointcal.MagnitudeTransformSpatiallyInvariant,
+                           lsst.jointcal.MagnitudeTransformChebyshev,
                            lsst.jointcal.ChipVisitMagnitudeMapping)
 
     def _computeVisitDerivative(self, star):

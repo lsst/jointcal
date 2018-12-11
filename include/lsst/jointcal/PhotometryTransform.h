@@ -22,8 +22,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef LSST_JOINTCAL_PHOTOMETRY_TRANSFO_H
-#define LSST_JOINTCAL_PHOTOMETRY_TRANSFO_H
+#ifndef LSST_JOINTCAL_PHOTOMETRY_TRANSFORM_H
+#define LSST_JOINTCAL_PHOTOMETRY_TRANSFORM_H
 
 #include <iostream>
 #include <sstream>
@@ -141,9 +141,10 @@ private:
  * initialCalibFlux * SpatiallyInvariantTransform -> correctedFlux
  *
  */
-class FluxTransfoSpatiallyInvariant : public PhotometryTransformSpatiallyInvariant {
+class FluxTransformSpatiallyInvariant : public PhotometryTransformSpatiallyInvariant {
 public:
-    explicit FluxTransfoSpatiallyInvariant(double value = 1) : PhotometryTransformSpatiallyInvariant(value) {}
+    explicit FluxTransformSpatiallyInvariant(double value = 1)
+            : PhotometryTransformSpatiallyInvariant(value) {}
 
     /// @copydoc PhotometryTransform::transform
     double transform(double x, double y, double value) const override { return value * getValue(); }
@@ -155,7 +156,7 @@ public:
 
     /// @copydoc PhotometryTransform::clone
     std::shared_ptr<PhotometryTransform> clone() const override {
-        return std::make_shared<FluxTransfoSpatiallyInvariant>(getValue());
+        return std::make_shared<FluxTransformSpatiallyInvariant>(getValue());
     }
 
     /// @copydoc PhotometryTransform::computeParameterDerivatives
@@ -172,9 +173,9 @@ public:
  * initialMagnitude + SpatiallyInvariantTransform -> correctedMagnitude
  *
  */
-class MagnitudeTransfoSpatiallyInvariant : public PhotometryTransformSpatiallyInvariant {
+class MagnitudeTransformSpatiallyInvariant : public PhotometryTransformSpatiallyInvariant {
 public:
-    explicit MagnitudeTransfoSpatiallyInvariant(double value = 0)
+    explicit MagnitudeTransformSpatiallyInvariant(double value = 0)
             : PhotometryTransformSpatiallyInvariant(value) {}
 
     /// @copydoc PhotometryTransformSpatiallyInvariant::transform
@@ -187,7 +188,7 @@ public:
 
     /// @copydoc PhotometryTransformSpatiallyInvariant::clone
     std::shared_ptr<PhotometryTransform> clone() const override {
-        return std::make_shared<MagnitudeTransfoSpatiallyInvariant>(getValue());
+        return std::make_shared<MagnitudeTransformSpatiallyInvariant>(getValue());
     }
 
     /// @copydoc PhotometryTransformSpatiallyInvariant::computeParameterDerivatives
@@ -288,12 +289,12 @@ private:
 /**
  * nth-order 2d Chebyshev photometry transform, times the input flux.
  */
-class FluxTransfoChebyshev : public PhotometryTransformChebyshev {
+class FluxTransformChebyshev : public PhotometryTransformChebyshev {
 public:
-    FluxTransfoChebyshev(size_t order, geom::Box2D const &bbox)
+    FluxTransformChebyshev(size_t order, geom::Box2D const &bbox)
             : PhotometryTransformChebyshev(order, bbox, true) {}
 
-    FluxTransfoChebyshev(ndarray::Array<double, 2, 2> const &coefficients, geom::Box2D const &bbox)
+    FluxTransformChebyshev(ndarray::Array<double, 2, 2> const &coefficients, geom::Box2D const &bbox)
             : PhotometryTransformChebyshev(coefficients, bbox) {}
 
     /// @copydoc PhotometryTransform::transform
@@ -310,19 +311,19 @@ public:
 
     /// @copydoc PhotometryTransform::clone
     std::shared_ptr<PhotometryTransform> clone() const override {
-        return std::make_shared<FluxTransfoChebyshev>(getCoefficients(), getBBox());
+        return std::make_shared<FluxTransformChebyshev>(getCoefficients(), getBBox());
     }
 };
 
 /**
  * nth-order 2d Chebyshev photometry transform, plus the input flux.
  */
-class MagnitudeTransfoChebyshev : public PhotometryTransformChebyshev {
+class MagnitudeTransformChebyshev : public PhotometryTransformChebyshev {
 public:
-    MagnitudeTransfoChebyshev(size_t order, geom::Box2D const &bbox)
+    MagnitudeTransformChebyshev(size_t order, geom::Box2D const &bbox)
             : PhotometryTransformChebyshev(order, bbox, false) {}
 
-    MagnitudeTransfoChebyshev(ndarray::Array<double, 2, 2> const &coefficients, geom::Box2D const &bbox)
+    MagnitudeTransformChebyshev(ndarray::Array<double, 2, 2> const &coefficients, geom::Box2D const &bbox)
             : PhotometryTransformChebyshev(coefficients, bbox) {}
 
     /// @copydoc PhotometryTransform::transform
@@ -339,11 +340,11 @@ public:
 
     /// @copydoc PhotometryTransform::clone
     std::shared_ptr<PhotometryTransform> clone() const override {
-        return std::make_shared<FluxTransfoChebyshev>(getCoefficients(), getBBox());
+        return std::make_shared<FluxTransformChebyshev>(getCoefficients(), getBBox());
     }
 };
 
 }  // namespace jointcal
 }  // namespace lsst
 
-#endif  // LSST_JOINTCAL_PHOTOMETRY_TRANSFO_H
+#endif  // LSST_JOINTCAL_PHOTOMETRY_TRANSFORM_H

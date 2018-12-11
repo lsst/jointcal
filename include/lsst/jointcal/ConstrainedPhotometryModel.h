@@ -131,7 +131,7 @@ public:
             : ConstrainedPhotometryModel(ccdImageList, focalPlaneBBox,
                                          LOG_GET("jointcal.ConstrainedFluxModel"), visitOrder,
                                          errorPedestal_) {
-        initialize<FluxTransfoSpatiallyInvariant, FluxTransfoChebyshev, ChipVisitFluxMapping>(
+        initialize<FluxTransformSpatiallyInvariant, FluxTransformChebyshev, ChipVisitFluxMapping>(
                 ccdImageList, focalPlaneBBox, visitOrder);
     }
 
@@ -175,8 +175,8 @@ public:
             : ConstrainedPhotometryModel(ccdImageList, focalPlaneBBox,
                                          LOG_GET("jointcal.ConstrainedMagnitudeModel"), visitOrder,
                                          errorPedestal_) {
-        initialize<MagnitudeTransfoSpatiallyInvariant, MagnitudeTransfoChebyshev, ChipVisitMagnitudeMapping>(
-                ccdImageList, focalPlaneBBox, visitOrder);
+        initialize<MagnitudeTransformSpatiallyInvariant, MagnitudeTransformChebyshev,
+                   ChipVisitMagnitudeMapping>(ccdImageList, focalPlaneBBox, visitOrder);
     }
 
     /// @copydoc PhotometryModel::offsetFittedStar
