@@ -45,7 +45,7 @@ class Point;
 /**
  * A photometric transform, defined in terms of the input flux or magnitude.
  *
- * Unit agnostic: a higher level Model must keep track of the units going into and out of of its Transfos.
+ * Unit agnostic: a higher level Model must keep track of the units going into and out of of its Transforms.
  *
  * @see lsst::afw::image::PhotoCalib
  */

@@ -176,7 +176,7 @@ void ConstrainedPhotometryModel::initialize(CcdImageList const &ccdImageList,
     double minRadius2 = std::numeric_limits<double>::infinity();
     CcdIdType constrainedChip = -1;
 
-    // First initialize all visit and ccd transfos, before we make the ccdImage mappings.
+    // First initialize all visit and ccd transforms, before we make the ccdImage mappings.
     for (auto const &ccdImage : ccdImageList) {
         auto visit = ccdImage->getVisit();
         auto chip = ccdImage->getCcdId();

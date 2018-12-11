@@ -81,7 +81,7 @@ public:
 
     /**
      * From there on, measurement errors are propagated using the current
-     * transfos (and no longer evolve).
+     * transforms (and no longer evolve).
      */
     void freezeErrorTransform() override;
 

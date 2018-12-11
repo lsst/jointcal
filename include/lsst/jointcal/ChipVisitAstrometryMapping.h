@@ -34,7 +34,7 @@
 namespace lsst {
 namespace jointcal {
 
-//! The mapping with two transfos in a row.
+//! The mapping with two transforms in a row.
 class ChipVisitAstrometryMapping : public AstrometryMapping {
 public:
     //!
@@ -68,11 +68,11 @@ public:
         _m2->offsetParams(delta.segment(_m2->getIndex() + _m1->getNpar(), _m2->getNpar()));
     }
 
-    //! access to transfos
-    AstrometryTransform const &getTransfo1() const { return _m1->getTransform(); }
+    //! access to transforms
+    AstrometryTransform const &getTransform1() const { return _m1->getTransform(); }
 
-    //! access to transfos
-    AstrometryTransform const &getTransfo2() const { return _m2->getTransform(); }
+    //! access to transforms
+    AstrometryTransform const &getTransform2() const { return _m2->getTransform(); }
 
     //! Currently *not* implemented
     void positionDerivative(Point const &where, Eigen::Matrix2d &derivative, double epsilon) const;

@@ -110,7 +110,7 @@ protected:
     ChipMapType _chipMap;
 
     /**
-     * Initialize the chip, visit, and chipVisit mappings by creating appropriate transfos and mappings.
+     * Initialize the chip, visit, and chipVisit mappings by creating appropriate transforms and mappings.
      */
     template <class ChipTransform, class VisitTransform, class ChipVisitMapping>
     void initialize(CcdImageList const &ccdImageList, afw::geom::Box2D const &focalPlaneBBox, int visitOrder);

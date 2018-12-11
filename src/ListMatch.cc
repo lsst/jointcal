@@ -633,7 +633,7 @@ std::unique_ptr<StarMatchList> listMatchCollect(const BaseStarList &list1, const
     return matches;
 }
 
-static bool is_transfo_ok(const StarMatchList *match, double pixSizeRatio2, const size_t nmin) {
+static bool is_transform_ok(const StarMatchList *match, double pixSizeRatio2, const size_t nmin) {
     if ((fabs(fabs(std::dynamic_pointer_cast<const AstrometryTransformLinear>(match->getTransform())
                            ->determinant()) -
               pixSizeRatio2) /
@@ -647,8 +647,8 @@ static bool is_transfo_ok(const StarMatchList *match, double pixSizeRatio2, cons
 }
 
 // utility to check current transform difference
-static double transfo_diff(const BaseStarList &List, const AstrometryTransform *T1,
-                           const AstrometryTransform *T2) {
+static double transform_diff(const BaseStarList &List, const AstrometryTransform *T1,
+                             const AstrometryTransform *T2) {
     double diff2 = 0;
     FatPoint tf1;
     Point tf2;
@@ -694,12 +694,12 @@ std::unique_ptr<AstrometryTransform> listMatchCombinatorial(const BaseStarList &
             std::min(size_t(10), size_t(std::min(List1.size(), List2.size()) * conditions.minMatchRatio));
 
     std::unique_ptr<AstrometryTransform> transform;
-    if (is_transfo_ok(match.get(), pixSizeRatio2, nmin))
+    if (is_transform_ok(match.get(), pixSizeRatio2, nmin))
         transform = match->getTransform()->clone();
     else {
         LOGL_ERROR(_log, "listMatchCombinatorial: direct transform failed, trying reverse");
         match = matchSearchRotShiftFlip(list2, list1, conditions);
-        if (is_transfo_ok(match.get(), pixSizeRatio2, nmin))
+        if (is_transform_ok(match.get(), pixSizeRatio2, nmin))
             transform = match->inverseTransform();
         else {
             LOGL_FATAL(_log, "FAILED");
@@ -755,7 +755,7 @@ std::unique_ptr<AstrometryTransform> listMatchRefine(const BaseStarList &List1, 
         do {  // loop on transform diff only on bright stars
             brightMatch->setTransformOrder(order);
             brightMatch->refineTransform(nSigmas);
-            transDiff = transfo_diff(list1, brightMatch->getTransform().get(), curTransform.get());
+            transDiff = transform_diff(list1, brightMatch->getTransform().get(), curTransform.get());
             curTransform = brightMatch->getTransform()->clone();
             brightMatch = listMatchCollect(list1, list2, curTransform.get(), brightDist);
         } while (brightMatch->size() > nstarmin && transDiff > 0.05 && ++iter < 5);

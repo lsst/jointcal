@@ -141,8 +141,8 @@ class ChipVisitPhotometryMappingTestCase(PhotometryMappingTestBase, abc.ABC):
         chipTransform = InvariantTransform(self.chipScale)
         chipMapping = lsst.jointcal.PhotometryMapping(chipTransform)
         chipMapping.setIndex(self.chipIndex)
-        visitTransfo2 = ChebyTransform(self.coefficients, self.bbox)
-        visitMapping2 = lsst.jointcal.PhotometryMapping(visitTransfo2)
+        visitTransform2 = ChebyTransform(self.coefficients, self.bbox)
+        visitMapping2 = lsst.jointcal.PhotometryMapping(visitTransform2)
         visitMapping2.setIndex(self.visitIndex)
         self.mappingCheby = ChipVisitMapping(chipMapping, visitMapping2)
         self.mappingCheby.setWhatToFit(True, True)  # default to fitting both

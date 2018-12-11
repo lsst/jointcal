@@ -616,7 +616,10 @@ protected:
 
 class TanRaDecToPixel;  // the inverse of TanPixelToRaDec.
 
-//! the transformation that handles pix to sideral transfos (Gnomonic, possibly with polynomial distortions).
+/**
+ * The transformation that handles pixels to sideral transformations (Gnomonic, possibly with polynomial
+ * distortions).
+ */
 class TanPixelToRaDec : public BaseTanWcs {
 public:
     using AstrometryTransform::apply;  // to unhide apply(const Point&)

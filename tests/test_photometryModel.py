@@ -261,8 +261,8 @@ class ConstrainedPhotometryModelTestCase(PhotometryModelTestBase):
         self.assertEqual(index, expect)
 
     def _testConstructor(self, expectVisit, expectChips):
-        """Post-construction, the ChipTransfos should be the PhotoCalib mean of
-        the first visit's ccds, and the VisitTransfos should be the identity.
+        """Post-construction, the ChipTransforms should be the PhotoCalib mean of
+        the first visit's ccds, and the VisitTransforms should be the identity.
         """
         # Identify to the model that we're fitting both components.
         self.model2.assignIndices("Model", self.firstIndex)

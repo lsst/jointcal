@@ -45,7 +45,7 @@ unsigned ChipVisitAstrometryMapping::getNpar() const { return _nPar1 + _nPar2; }
 void ChipVisitAstrometryMapping::getMappingIndices(std::vector<unsigned> &indices) const {
     unsigned npar = getNpar();
     if (indices.size() < npar) indices.resize(npar);
-    // in case we are only fitting one of the two transfos
+    // in case we are only fitting one of the two transforms
     if (_nPar1)
         _m1->getMappingIndices(indices);
     else if (_nPar2) {

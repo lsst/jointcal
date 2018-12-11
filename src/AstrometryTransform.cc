@@ -259,7 +259,7 @@ void AstrometryTransform::write(ostream &stream) const {
             "derived class ");
 }
 
-/******************* GTransfoInverse ****************/
+/******************* GTransformInverse ****************/
 /* inverse transformation, solved by iterations. Before using
    it (probably via AstrometryTransform::inverseTransform), consider
    seriously StarMatchList::inverseTransform */
@@ -374,7 +374,6 @@ private:
     std::unique_ptr<AstrometryTransform> _first, _second;
 
 public:
-    //! will pipe transfos
     AstrometryTransformComposition(AstrometryTransform const &second, AstrometryTransform const &first);
 
     //! return second(first(xIn,yIn))
@@ -1276,7 +1275,7 @@ std::unique_ptr<AstrometryTransform> AstrometryTransformLinear::inverseTransform
 }
 
 double AstrometryTransformLinearRot::fit(StarMatchList const &) {
-    throw pexExcept::NotFoundError("GTransfoLinRot::fit not implemented! aborting");
+    throw pexExcept::NotFoundError("AstrometryTransformLinearRot::fit not implemented! aborting");
 }
 
 double AstrometryTransformLinearShift::fit(StarMatchList const &starMatchList) {
