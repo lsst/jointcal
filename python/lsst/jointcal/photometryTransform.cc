@@ -61,6 +61,7 @@ void declarePhotometryTransform(py::module &mod) {
             });
 
     utils::python::addOutputOp(cls, "__str__");
+    utils::python::addOutputOp(cls, "__repr__");
 }
 
 void declarePhotometryTransformSpatiallyInvariant(py::module &mod) {
@@ -69,18 +70,18 @@ void declarePhotometryTransformSpatiallyInvariant(py::module &mod) {
             cls(mod, "PhotometryTransformSpatiallyInvariant");
 }
 
-void declareFluxTransfoSpatiallyInvariant(py::module &mod) {
-    py::class_<FluxTransfoSpatiallyInvariant, std::shared_ptr<FluxTransfoSpatiallyInvariant>,
+void declareFluxTransformSpatiallyInvariant(py::module &mod) {
+    py::class_<FluxTransformSpatiallyInvariant, std::shared_ptr<FluxTransformSpatiallyInvariant>,
                PhotometryTransformSpatiallyInvariant, PhotometryTransform>
-            cls(mod, "FluxTransfoSpatiallyInvariant");
+            cls(mod, "FluxTransformSpatiallyInvariant");
 
     cls.def(py::init<double>(), "value"_a = 1);
 }
 
-void declareMagnitudeTransfoSpatiallyInvariant(py::module &mod) {
-    py::class_<MagnitudeTransfoSpatiallyInvariant, std::shared_ptr<MagnitudeTransfoSpatiallyInvariant>,
+void declareMagnitudeTransformSpatiallyInvariant(py::module &mod) {
+    py::class_<MagnitudeTransformSpatiallyInvariant, std::shared_ptr<MagnitudeTransformSpatiallyInvariant>,
                PhotometryTransformSpatiallyInvariant, PhotometryTransform>
-            cls(mod, "MagnitudeTransfoSpatiallyInvariant");
+            cls(mod, "MagnitudeTransformSpatiallyInvariant");
 
     cls.def(py::init<double>(), "value"_a = 0);
 }
@@ -93,24 +94,28 @@ void declarePhotometryTransformChebyshev(py::module &mod) {
     cls.def("getCoefficients", &PhotometryTransformChebyshev::getCoefficients);
     cls.def("getOrder", &PhotometryTransformChebyshev::getOrder);
     cls.def("getBBox", &PhotometryTransformChebyshev::getBBox);
+    cls.def("integrate", py::overload_cast<>(&PhotometryTransformChebyshev::integrate, py::const_));
+    cls.def("integrate",
+            py::overload_cast<geom::Box2D const &>(&PhotometryTransformChebyshev::integrate, py::const_),
+            "box"_a);
 }
 
-void declareFluxTransfoChebyshev(py::module &mod) {
-    py::class_<FluxTransfoChebyshev, std::shared_ptr<FluxTransfoChebyshev>, PhotometryTransformChebyshev> cls(
-            mod, "FluxTransfoChebyshev");
+void declareFluxTransformChebyshev(py::module &mod) {
+    py::class_<FluxTransformChebyshev, std::shared_ptr<FluxTransformChebyshev>, PhotometryTransformChebyshev>
+            cls(mod, "FluxTransformChebyshev");
 
-    cls.def(py::init<size_t, afw::geom::Box2D const &>(), "order"_a, "bbox"_a);
-    cls.def(py::init<ndarray::Array<double, 2, 2> const &, afw::geom::Box2D const &>(), "coefficients"_a,
+    cls.def(py::init<size_t, geom::Box2D const &>(), "order"_a, "bbox"_a);
+    cls.def(py::init<ndarray::Array<double, 2, 2> const &, geom::Box2D const &>(), "coefficients"_a,
             "bbox"_a);
 }
 
-void declareMagnitudeTransfoChebyshev(py::module &mod) {
-    py::class_<MagnitudeTransfoChebyshev, std::shared_ptr<MagnitudeTransfoChebyshev>,
+void declareMagnitudeTransformChebyshev(py::module &mod) {
+    py::class_<MagnitudeTransformChebyshev, std::shared_ptr<MagnitudeTransformChebyshev>,
                PhotometryTransformChebyshev>
-            cls(mod, "MagnitudeTransfoChebyshev");
+            cls(mod, "MagnitudeTransformChebyshev");
 
-    cls.def(py::init<size_t, afw::geom::Box2D const &>(), "order"_a, "bbox"_a);
-    cls.def(py::init<ndarray::Array<double, 2, 2> const &, afw::geom::Box2D const &>(), "coefficients"_a,
+    cls.def(py::init<size_t, geom::Box2D const &>(), "order"_a, "bbox"_a);
+    cls.def(py::init<ndarray::Array<double, 2, 2> const &, geom::Box2D const &>(), "coefficients"_a,
             "bbox"_a);
 }
 
@@ -118,11 +123,11 @@ PYBIND11_MODULE(photometryTransform, mod) {
     declarePhotometryTransform(mod);
 
     declarePhotometryTransformSpatiallyInvariant(mod);
-    declareFluxTransfoSpatiallyInvariant(mod);
-    declareMagnitudeTransfoSpatiallyInvariant(mod);
+    declareFluxTransformSpatiallyInvariant(mod);
+    declareMagnitudeTransformSpatiallyInvariant(mod);
     declarePhotometryTransformChebyshev(mod);
-    declareFluxTransfoChebyshev(mod);
-    declareMagnitudeTransfoChebyshev(mod);
+    declareFluxTransformChebyshev(mod);
+    declareMagnitudeTransformChebyshev(mod);
 }
 
 }  // namespace

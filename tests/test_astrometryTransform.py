@@ -73,7 +73,7 @@ class AstrometryTransformPolynomialBase:
                 self.points.append(lsst.afw.geom.Point2D(x, y))
 
 
-class InversePolyTransfoTestCase(AstrometryTransformPolynomialBase, lsst.utils.tests.TestCase):
+class InversePolyTransformTestCase(AstrometryTransformPolynomialBase, lsst.utils.tests.TestCase):
     def checkInverse(self, poly, inverse, maxDiff):
         """Test that ``astrometryTransformPolynomial(inverse(point))==point`` to within maxDiff."""
         results = []

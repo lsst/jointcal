@@ -108,7 +108,7 @@ public:
      */
     virtual void getMappingIndices(std::vector<unsigned> &indices) const = 0;
 
-    /// Dump the contents of the transfos, for debugging.
+    /// Dump the contents of the transforms, for debugging.
     virtual void dump(std::ostream &stream = std::cout) const = 0;
 
     /// Get the index of this mapping in the grand fit.

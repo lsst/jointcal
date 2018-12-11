@@ -261,8 +261,8 @@ class ConstrainedPhotometryModelTestCase(PhotometryModelTestBase):
         self.assertEqual(index, expect)
 
     def _testConstructor(self, expectVisit, expectChips):
-        """Post-construction, the ChipTransfos should be the PhotoCalib mean of
-        the first visit's ccds, and the VisitTransfos should be the identity.
+        """Post-construction, the ChipTransforms should be the PhotoCalib mean of
+        the first visit's ccds, and the VisitTransforms should be the identity.
         """
         # Identify to the model that we're fitting both components.
         self.model2.assignIndices("Model", self.firstIndex)
@@ -277,6 +277,14 @@ class ConstrainedPhotometryModelTestCase(PhotometryModelTestBase):
             result = self.model2.getMapping(ccdImage).getChipMapping().getTransform().getParameters()
             # almost equal because log() may have been involved in the math
             self.assertFloatsAlmostEqual(result, expect, msg=ccdImage.getName())
+
+    def test_photoCalibMean(self):
+        """The mean of the photoCalib should match the mean over a calibrated image."""
+        image = lsst.afw.image.MaskedImageF(self.ccdImageList[0].getDetector().getBBox())
+        image[:] = 1
+        photoCalib = self.model.toPhotoCalib(self.ccdImageList[0])
+        expect = photoCalib.calibrateImage(image).image.array.mean()
+        self.assertFloatsAlmostEqual(expect, photoCalib.getCalibrationMean(), rtol=2e-5)
 
 
 class ConstrainedFluxModelTestCase(ConstrainedPhotometryModelTestCase,

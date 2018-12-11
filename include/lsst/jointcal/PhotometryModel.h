@@ -156,7 +156,7 @@ public:
     /// Return the total number of parameters in this model.
     virtual int getTotalParameters() const = 0;
 
-    /// Dump the contents of the transfos, for debugging.
+    /// Dump the contents of the transforms, for debugging.
     virtual void dump(std::ostream &stream = std::cout) const = 0;
 
     /**

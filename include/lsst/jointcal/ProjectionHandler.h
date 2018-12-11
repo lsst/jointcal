@@ -69,8 +69,8 @@ public:
  * point.
  */
 class OneTPPerVisitHandler : public ProjectionHandler {
-    typedef std::map<const VisitIdType, std::shared_ptr<const AstrometryTransform>> TransfoMap;
-    TransfoMap tMap;
+    typedef std::map<const VisitIdType, std::shared_ptr<const AstrometryTransform>> TransformMap;
+    TransformMap tMap;
 
 public:
     OneTPPerVisitHandler(const CcdImageList &ccdImageList);

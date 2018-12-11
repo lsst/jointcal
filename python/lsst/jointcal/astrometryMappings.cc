@@ -51,14 +51,14 @@ void declareChipVisitAstrometryMapping(py::module &mod) {
     py::class_<ChipVisitAstrometryMapping, std::shared_ptr<ChipVisitAstrometryMapping>, AstrometryMapping>
             cls(mod, "ChipVisitAstrometryMapping");
 
-    cls.def("getTransfo1", &ChipVisitAstrometryMapping::getTransfo1,
+    cls.def("getTransform1", &ChipVisitAstrometryMapping::getTransform1,
             py::return_value_policy::reference_internal);
-    cls.def_property_readonly("transfo1", &ChipVisitAstrometryMapping::getTransfo1,
+    cls.def_property_readonly("transform1", &ChipVisitAstrometryMapping::getTransform1,
                               py::return_value_policy::reference_internal);
 
-    cls.def("getTransfo2", &ChipVisitAstrometryMapping::getTransfo2,
+    cls.def("getTransform2", &ChipVisitAstrometryMapping::getTransform2,
             py::return_value_policy::reference_internal);
-    cls.def_property_readonly("transfo2", &ChipVisitAstrometryMapping::getTransfo2,
+    cls.def_property_readonly("transform2", &ChipVisitAstrometryMapping::getTransform2,
                               py::return_value_policy::reference_internal);
 }
 

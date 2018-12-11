@@ -105,7 +105,7 @@ SimpleFluxModel::SimpleFluxModel(CcdImageList const &ccdImageList, double errorP
     for (auto const &ccdImage : ccdImageList) {
         auto photoCalib = ccdImage->getPhotoCalib();
         // Use the single-frame processing calibration from the PhotoCalib as the initial value.
-        auto transform = std::make_shared<FluxTransfoSpatiallyInvariant>(photoCalib->getCalibrationMean());
+        auto transform = std::make_shared<FluxTransformSpatiallyInvariant>(photoCalib->getCalibrationMean());
         _myMap.emplace(ccdImage->getHashKey(), std::make_unique<PhotometryMapping>(transform));
     }
     LOGLS_INFO(_log, "SimpleFluxModel got " << _myMap.size() << " ccdImage mappings.");
@@ -138,7 +138,7 @@ SimpleMagnitudeModel::SimpleMagnitudeModel(CcdImageList const &ccdImageList, dou
         auto photoCalib = ccdImage->getPhotoCalib();
         // Use the single-frame processing calibration from the PhotoCalib as the default.
         double calib = magFromFlux(photoCalib->getCalibrationMean());
-        auto transform = std::make_shared<MagnitudeTransfoSpatiallyInvariant>(calib);
+        auto transform = std::make_shared<MagnitudeTransformSpatiallyInvariant>(calib);
         _myMap.emplace(ccdImage->getHashKey(), std::make_unique<PhotometryMapping>(transform));
     }
     LOGLS_INFO(_log, "SimpleMagnitudeModel got " << _myMap.size() << " ccdImage mappings.");

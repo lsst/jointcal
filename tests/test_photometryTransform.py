@@ -50,12 +50,12 @@ class PhotometryTransformTestBase:
 class SpatiallyInvariantTestBase(PhotometryTransformTestBase):
     """Tests for PhotometryTransformSpatiallyInvariant.
      Subclasses need to call setUp to define:
-         self.transfo1 == a default initalized PhotometryTransformSpatiallyInvariant.
-         self.transfo2 == a transform initialized with self.t2InitValue.
+         self.transform1 == a default initalized PhotometryTransformSpatiallyInvariant.
+         self.transform2 == a transform initialized with self.t2InitValue.
     """
     def setUp(self):
         super().setUp()
-        # initial values for self.transfo2
+        # initial values for self.transform2
         self.t2InitValue = 1000.0
         self.t2InitError = 70.0
 
@@ -68,8 +68,8 @@ class SpatiallyInvariantTestBase(PhotometryTransformTestBase):
         self.assertFloatsAlmostEqual(result, expect)
 
     def _offsetParams(self, delta, value, expect):
-        self.transfo1.offsetParams(delta)
-        result = self.transfo1.transform(self.point[0], self.point[1], value)
+        self.transform1.offsetParams(delta)
+        result = self.transform1.transform(self.point[0], self.point[1], value)
         self.assertFloatsAlmostEqual(result, expect)
 
     def _test_offsetParams(self, expect):
@@ -83,39 +83,39 @@ class SpatiallyInvariantTestBase(PhotometryTransformTestBase):
         self._offsetParams(delta, self.value, expect)
 
     def test_clone(self):
-        clone1 = self.transfo1.clone()
-        self.assertEqual(self.transfo1.getParameters(), clone1.getParameters())
-        clone2 = self.transfo2.clone()
-        self.assertEqual(self.transfo2.getParameters(), clone2.getParameters())
+        clone1 = self.transform1.clone()
+        self.assertEqual(self.transform1.getParameters(), clone1.getParameters())
+        clone2 = self.transform2.clone()
+        self.assertEqual(self.transform2.getParameters(), clone2.getParameters())
         self.assertNotEqual(clone1.getParameters(), clone2.getParameters())
 
     def _test_computeParameterDerivatives(self, expect):
         """The derivative of a spatially invariant transform is always the same.
         Should be indepdendent of position
         """
-        result = self.transfo1.computeParameterDerivatives(1, 2, self.value)
+        result = self.transform1.computeParameterDerivatives(1, 2, self.value)
         self.assertEqual(expect, result)
-        result = self.transfo1.computeParameterDerivatives(-5, -100, self.value)
+        result = self.transform1.computeParameterDerivatives(-5, -100, self.value)
         self.assertEqual(expect, result)
-        result = self.transfo2.computeParameterDerivatives(-1000, 150, self.value)
+        result = self.transform2.computeParameterDerivatives(-1000, 150, self.value)
         self.assertEqual(expect, result)
 
 
-class FluxTransfoSpatiallyInvariantTestCase(SpatiallyInvariantTestBase, lsst.utils.tests.TestCase):
+class FluxTransformSpatiallyInvariantTestCase(SpatiallyInvariantTestBase, lsst.utils.tests.TestCase):
     def setUp(self):
         super().setUp()
-        self.transfo1 = photometryTransform.FluxTransfoSpatiallyInvariant()
-        self.transfo2 = photometryTransform.FluxTransfoSpatiallyInvariant(self.t2InitValue)
+        self.transform1 = photometryTransform.FluxTransformSpatiallyInvariant()
+        self.transform2 = photometryTransform.FluxTransformSpatiallyInvariant(self.t2InitValue)
 
     def test_transform(self):
-        self._test_transform(self.transfo1, self.value)
-        self._test_transform(self.transfo2, self.value*self.t2InitValue)
+        self._test_transform(self.transform1, self.value)
+        self._test_transform(self.transform2, self.value*self.t2InitValue)
 
     def test_transformError(self):
         expect = (self.valueError*1)
-        self._test_transformError(self.transfo1, expect)
+        self._test_transformError(self.transform1, expect)
         expect = (self.valueError*self.t2InitValue)
-        self._test_transformError(self.transfo2, expect)
+        self._test_transformError(self.transform2, expect)
 
     def test_offsetParams(self):
         """Offset by +1 means transform by 2."""
@@ -126,21 +126,21 @@ class FluxTransfoSpatiallyInvariantTestCase(SpatiallyInvariantTestBase, lsst.uti
         self._test_computeParameterDerivatives(self.value)
 
 
-class MagnitudeTransfoSpatiallyInvariantTestCase(SpatiallyInvariantTestBase, lsst.utils.tests.TestCase):
+class MagnitudeTransformSpatiallyInvariantTestCase(SpatiallyInvariantTestBase, lsst.utils.tests.TestCase):
     def setUp(self):
         super().setUp()
-        self.transfo1 = photometryTransform.MagnitudeTransfoSpatiallyInvariant()
-        self.transfo2 = photometryTransform.MagnitudeTransfoSpatiallyInvariant(self.t2InitValue)
+        self.transform1 = photometryTransform.MagnitudeTransformSpatiallyInvariant()
+        self.transform2 = photometryTransform.MagnitudeTransformSpatiallyInvariant(self.t2InitValue)
 
     def test_transform(self):
-        self._test_transform(self.transfo1, self.value)
-        self._test_transform(self.transfo2, self.value + self.t2InitValue)
+        self._test_transform(self.transform1, self.value)
+        self._test_transform(self.transform2, self.value + self.t2InitValue)
 
     def test_transformError(self):
         expect = self.valueError
-        self._test_transformError(self.transfo1, expect)
+        self._test_transformError(self.transform1, expect)
         expect = self.valueError
-        self._test_transformError(self.transfo2, expect)
+        self._test_transformError(self.transform2, expect)
 
     def test_offsetParams(self):
         """Offset by +1 means transform by +1."""
@@ -153,22 +153,22 @@ class MagnitudeTransfoSpatiallyInvariantTestCase(SpatiallyInvariantTestBase, lss
 
 class PhotometryTransformChebyshevTestCase(PhotometryTransformTestBase, abc.ABC):
     def setUp(self):
-        """Call this first, then construct self.transfo1 from self.order1,
-        and self.transfo2 from self.coefficients.
+        """Call this first, then construct self.transform1 from self.order1,
+        and self.transform2 from self.coefficients.
         """
         super().setUp()
         self.bbox = lsst.afw.geom.Box2D(lsst.afw.geom.Point2D(-5, -6), lsst.afw.geom.Point2D(7, 8))
         self.order1 = 2
         self.coefficients = np.array([[5, 3], [4, 0]], dtype=float)
 
-        # self.transfo1 will have 6 parameters, by construction
+        # self.transform1 will have 6 parameters, by construction
         self.delta = np.arange(6, dtype=float)
         # make one of them have opposite sign to check +/- consistency
         self.delta[0] = -self.delta[0]
 
     def test_getNpar(self):
-        self.assertEqual(self.transfo1.getNpar(), 6)
-        self.assertEqual(self.transfo2.getNpar(), 3)
+        self.assertEqual(self.transform1.getNpar(), 6)
+        self.assertEqual(self.transform2.getNpar(), 3)
 
     def _evaluate_chebyshev(self, x, y):
         """Evaluate the chebyshev defined by self.coefficients at (x,y)"""
@@ -197,9 +197,9 @@ class PhotometryTransformChebyshevTestCase(PhotometryTransformTestBase, abc.ABC)
             Expected coefficients from an offset by self.delta.
         """
         # first offset by all zeros: nothing should change
-        delta = np.zeros(self.transfo1.getNpar(), dtype=float)
-        self.transfo1.offsetParams(delta)
-        self.assertFloatsAlmostEqual(expect, self.transfo1.getCoefficients())
+        delta = np.zeros(self.transform1.getNpar(), dtype=float)
+        self.transform1.offsetParams(delta)
+        self.assertFloatsAlmostEqual(expect, self.transform1.getCoefficients())
 
         # now offset by self.delta
         expect[0, 0] -= self.delta[0]
@@ -208,18 +208,18 @@ class PhotometryTransformChebyshevTestCase(PhotometryTransformTestBase, abc.ABC)
         expect[1, 0] -= self.delta[3]
         expect[1, 1] -= self.delta[4]
         expect[2, 0] -= self.delta[5]
-        self.transfo1.offsetParams(self.delta)
-        self.assertFloatsAlmostEqual(expect, self.transfo1.getCoefficients())
+        self.transform1.offsetParams(self.delta)
+        self.assertFloatsAlmostEqual(expect, self.transform1.getCoefficients())
 
     def test_clone(self):
-        clone1 = self.transfo1.clone()
-        self.assertFloatsEqual(self.transfo1.getParameters(), clone1.getParameters())
-        self.assertEqual(self.transfo1.getOrder(), clone1.getOrder())
-        self.assertEqual(self.transfo1.getBBox(), clone1.getBBox())
-        clone2 = self.transfo2.clone()
-        self.assertFloatsEqual(self.transfo2.getParameters(), clone2.getParameters())
-        self.assertEqual(self.transfo2.getOrder(), clone2.getOrder())
-        self.assertEqual(self.transfo2.getBBox(), clone2.getBBox())
+        clone1 = self.transform1.clone()
+        self.assertFloatsEqual(self.transform1.getParameters(), clone1.getParameters())
+        self.assertEqual(self.transform1.getOrder(), clone1.getOrder())
+        self.assertEqual(self.transform1.getBBox(), clone1.getBBox())
+        clone2 = self.transform2.clone()
+        self.assertFloatsEqual(self.transform2.getParameters(), clone2.getParameters())
+        self.assertEqual(self.transform2.getOrder(), clone2.getOrder())
+        self.assertEqual(self.transform2.getBBox(), clone2.getBBox())
 
     @abc.abstractmethod
     def _computeChebyshevDerivative(self, Tx, Ty, value):
@@ -231,7 +231,7 @@ class PhotometryTransformChebyshevTestCase(PhotometryTransformTestBase, abc.ABC)
         cy = (self.bbox.getMinY() + self.bbox.getMaxY())/2.0
         sx = 2.0 / self.bbox.getWidth()
         sy = 2.0 / self.bbox.getHeight()
-        result = self.transfo1.computeParameterDerivatives(self.point[0], self.point[1], self.value)
+        result = self.transform1.computeParameterDerivatives(self.point[0], self.point[1], self.value)
         Tx = np.array([CHEBYSHEV_T[i](sx*(self.point[0] - cx)) for i in range(self.order1+1)], dtype=float)
         Ty = np.array([CHEBYSHEV_T[i](sy*(self.point[1] - cy)) for i in range(self.order1+1)], dtype=float)
         expect = []
@@ -240,18 +240,125 @@ class PhotometryTransformChebyshevTestCase(PhotometryTransformTestBase, abc.ABC)
                 expect.append(self._computeChebyshevDerivative(Ty[j], Tx[i], self.value))
         self.assertFloatsAlmostEqual(np.array(expect), result)
 
+    def testIntegrateBoxOrder0(self):
+        r"""Test integrating over an "interesting" box.
 
-class FluxTransfoChebyshevTestCase(PhotometryTransformChebyshevTestCase, lsst.utils.tests.TestCase):
+        The values of these integrals were checked in Mathematica. The code
+        block below can be pasted into Mathematica to re-do those calculations.
+
+        .. code-block:: mathematica
+
+            f[x_, y_, n_, m_] := \!\(
+            \*UnderoverscriptBox[\(\[Sum]\), \(i = 0\), \(n\)]\(
+            \*UnderoverscriptBox[\(\[Sum]\), \(j = 0\), \(m\)]
+            \*SubscriptBox[\(a\), \(i, j\)]*ChebyshevT[i, x]*ChebyshevT[j, y]\)\)
+            integrate2dBox[n_, m_, xmin_, xmax_, ymin_, ymax_, x0_, x1_, y0_,
+              y1_] := \!\(
+            \*SubsuperscriptBox[\(\[Integral]\), \(y0\), \(y1\)]\(
+            \*SubsuperscriptBox[\(\[Integral]\), \(x0\), \(x1\)]f[
+            \*FractionBox[\(2  x - xmin - xmax\), \(xmax - xmin\)],
+            \*FractionBox[\(2  y - ymin - ymax\), \(ymax - ymin\)], n,
+                 m] \[DifferentialD]x \[DifferentialD]y\)\)
+            integrate2dBox[0, 0, -5, 7, -6, 8, 0, 7, 0, 8]
+            integrate2dBox[0, 0, -5, 7, -6, 8, 2, 6, 3, 5]
+            integrate2dBox[1, 0, -5, 7, -6, 8, 0, 6, 0, 5]
+            integrate2dBox[0, 1, -5, 7, -6, 8, 0, 6, 0, 5]
+            integrate2dBox[1, 1, -5, 7, -6, 8, -1, 5., 2, 7]
+            integrate2dBox[2, 2, -5, 7, -6, 8, 0, 2, 0, 3]
+        """
+        coeffs = np.array([[3.]], dtype=float)
+        transform = photometryTransform.FluxTransformChebyshev(coeffs, self.bbox)
+
+        # a box that goes from 0,0 to the x/y maximum
+        box = lsst.geom.Box2D(lsst.geom.Point2D(0, 0),
+                              lsst.geom.Point2D(self.bbox.getMaxX(), self.bbox.getMaxY()))
+        expect = 56*coeffs[0]
+        result = transform.integrate(box)
+        self.assertFloatsAlmostEqual(result, expect)
+
+        # Different box
+        box = lsst.geom.Box2D(lsst.geom.Point2D(2, 3), lsst.geom.Point2D(6, 5))
+        expect = 8*coeffs[0]
+        result = transform.integrate(box)
+        self.assertFloatsAlmostEqual(result, expect)
+
+    def testIntegrateBoxOrder1(self):
+        """Test integrating 1st order in x or y.
+        Note that the coefficients are [y,x] ordered.
+        """
+        box = lsst.geom.Box2D(lsst.geom.Point2D(0, 0), lsst.geom.Point2D(6, 5))
+        # test 1st order in x:
+        coeffs = np.array([[2., 5.], [0., 0]], dtype=float)
+        transform = photometryTransform.FluxTransformChebyshev(coeffs, self.bbox)
+        # 30*a00 + 10*a10
+        expect = 30*coeffs[0, 0] + 10*coeffs[0, 1]
+        result = transform.integrate(box)
+        self.assertFloatsAlmostEqual(result, expect)
+
+        # test 1st order in y:
+        coeffs = np.array([[2., 0.], [5., 0]], dtype=float)
+        transform = photometryTransform.FluxTransformChebyshev(coeffs, self.bbox)
+        # 30*a00 + 45/7*a01
+        expect = 30*coeffs[0, 0] + 45./7.*coeffs[1, 0]
+        result = transform.integrate(box)
+        self.assertFloatsAlmostEqual(result, expect)
+
+    def testIntegrateBoxOrder2(self):
+        """Test integrating 1st order in both x and y.
+        Note that the coefficients are [y,x] ordered.
+        """
+        # 1st order in both x and y
+        transform = photometryTransform.FluxTransformChebyshev(2, self.bbox)
+        # zero, then set the parameters
+        transform.offsetParams(np.array([1, 0, 0, 0, 0, 0, 0, 0, 0], dtype=float))
+        coeffs = np.array([[0, 0, 0], [0, 4, 0], [0, 0, 0]], dtype=float)
+        transform.offsetParams(-coeffs.flatten())
+
+        # integrate on the smaller box:
+        box = lsst.geom.Box2D(lsst.geom.Point2D(-1, 2), lsst.geom.Point2D(5, 7))
+        # 5/2*(12*a0,0 + 6*a0,1 + 2*a1,0 + a1,1)
+        expect = 5/2 * (12*coeffs[0, 0] + 6*coeffs[1, 0] + 2*coeffs[0, 1] + coeffs[1, 1])
+
+        result = transform.integrate(box)
+        self.assertFloatsAlmostEqual(result, expect)
+
+    def testIntegrateBoxOrder4(self):
+        """Test integrating 2nd order in both x and y.
+        Note that the coefficients are [y,x] ordered.
+        """
+        # for 2nd order in both x and y
+        box = lsst.geom.Box2D(lsst.geom.Point2D(-3, 0), lsst.geom.Point2D(2, 3))
+        coeffs = np.array([[1, 2, 3, 0, 0], [4, 5, 6, 0, 0], [7, 8, 9, 0, 0],
+                          [0, 0, 0, 0, 0], [0, 0, 0, 0, 0]], dtype=float)
+        transform = photometryTransform.FluxTransformChebyshev(coeffs, self.bbox)
+
+        # integrating on the full box should match the standard integral
+        expect = transform.integrate()
+        result = transform.integrate(self.bbox)
+        self.assertFloatsAlmostEqual(result, expect, rtol=6e-16)
+
+        # 5/3528 * (10584*a00 + 756*a01 - 10152*a02 - 2646*a10 - 189*a11 +
+        #           2538*a12 - 8036*a20 - 574*a21 + 7708*a22)
+        expect = 5/3528 * (10584*coeffs[0, 0] + 756*coeffs[1, 0] -
+                           10152*coeffs[2, 0] - 2646*coeffs[0, 1] -
+                           189*coeffs[1, 1] + 2538*coeffs[2, 1] -
+                           8036*coeffs[0, 2] - 574*coeffs[1, 2] +
+                           7708*coeffs[2, 2])
+        result = transform.integrate(box)
+        self.assertFloatsAlmostEqual(result, expect, rtol=2e-14)
+
+
+class FluxTransformChebyshevTestCase(PhotometryTransformChebyshevTestCase, lsst.utils.tests.TestCase):
     def setUp(self):
         super().setUp()
-        self.transfo1 = photometryTransform.FluxTransfoChebyshev(self.order1, self.bbox)
-        self.transfo2 = photometryTransform.FluxTransfoChebyshev(self.coefficients, self.bbox)
+        self.transform1 = photometryTransform.FluxTransformChebyshev(self.order1, self.bbox)
+        self.transform2 = photometryTransform.FluxTransformChebyshev(self.coefficients, self.bbox)
 
     def test_transform(self):
-        result = self.transfo1.transform(self.point[0], self.point[1], self.value)
-        self.assertEqual(result, self.value)  # transfo1 is the identity
+        result = self.transform1.transform(self.point[0], self.point[1], self.value)
+        self.assertEqual(result, self.value)  # transform1 is the identity
 
-        result = self.transfo2.transform(self.point[0], self.point[1], self.value)
+        result = self.transform2.transform(self.point[0], self.point[1], self.value)
         expect = self.value*self._evaluate_chebyshev(self.point[0], self.point[1])
         self.assertEqual(result, expect)
 
@@ -265,17 +372,17 @@ class FluxTransfoChebyshevTestCase(PhotometryTransformChebyshevTestCase, lsst.ut
         return x * y * value
 
 
-class MagnitudeTransfoChebyshevTestCase(PhotometryTransformChebyshevTestCase, lsst.utils.tests.TestCase):
+class MagnitudeTransformChebyshevTestCase(PhotometryTransformChebyshevTestCase, lsst.utils.tests.TestCase):
     def setUp(self):
         super().setUp()
-        self.transfo1 = photometryTransform.MagnitudeTransfoChebyshev(self.order1, self.bbox)
-        self.transfo2 = photometryTransform.MagnitudeTransfoChebyshev(self.coefficients, self.bbox)
+        self.transform1 = photometryTransform.MagnitudeTransformChebyshev(self.order1, self.bbox)
+        self.transform2 = photometryTransform.MagnitudeTransformChebyshev(self.coefficients, self.bbox)
 
     def test_transform(self):
-        result = self.transfo1.transform(self.point[0], self.point[1], self.value)
-        self.assertEqual(result, self.value)  # transfo1 is the identity
+        result = self.transform1.transform(self.point[0], self.point[1], self.value)
+        self.assertEqual(result, self.value)  # transform1 is the identity
 
-        result = self.transfo2.transform(self.point[0], self.point[1], self.value)
+        result = self.transform2.transform(self.point[0], self.point[1], self.value)
         expect = self.value + self._evaluate_chebyshev(self.point[0], self.point[1])
         self.assertEqual(result, expect)
 

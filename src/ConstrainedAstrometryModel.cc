@@ -72,7 +72,7 @@ ConstrainedAstrometryModel::ConstrainedAstrometryModel(
     double minRadius2 = std::numeric_limits<double>::infinity();
     CcdIdType constrainedChip = -1;
 
-    // first loop to initialize all visit and chip transfos.
+    // first loop to initialize all visit and chip transforms.
     for (auto &ccdImage : ccdImageList) {
         const CcdImage &im = *ccdImage;
         auto visit = im.getVisit();

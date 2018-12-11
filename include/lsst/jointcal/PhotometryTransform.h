@@ -22,8 +22,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef LSST_JOINTCAL_PHOTOMETRY_TRANSFO_H
-#define LSST_JOINTCAL_PHOTOMETRY_TRANSFO_H
+#ifndef LSST_JOINTCAL_PHOTOMETRY_TRANSFORM_H
+#define LSST_JOINTCAL_PHOTOMETRY_TRANSFORM_H
 
 #include <iostream>
 #include <sstream>
@@ -45,7 +45,7 @@ class Point;
 /**
  * A photometric transform, defined in terms of the input flux or magnitude.
  *
- * Unit agnostic: a higher level Model must keep track of the units going into and out of of its Transfos.
+ * Unit agnostic: a higher level Model must keep track of the units going into and out of of its Transforms.
  *
  * @see lsst::afw::image::PhotoCalib
  */
@@ -141,9 +141,10 @@ private:
  * initialCalibFlux * SpatiallyInvariantTransform -> correctedFlux
  *
  */
-class FluxTransfoSpatiallyInvariant : public PhotometryTransformSpatiallyInvariant {
+class FluxTransformSpatiallyInvariant : public PhotometryTransformSpatiallyInvariant {
 public:
-    explicit FluxTransfoSpatiallyInvariant(double value = 1) : PhotometryTransformSpatiallyInvariant(value) {}
+    explicit FluxTransformSpatiallyInvariant(double value = 1)
+            : PhotometryTransformSpatiallyInvariant(value) {}
 
     /// @copydoc PhotometryTransform::transform
     double transform(double x, double y, double value) const override { return value * getValue(); }
@@ -155,7 +156,7 @@ public:
 
     /// @copydoc PhotometryTransform::clone
     std::shared_ptr<PhotometryTransform> clone() const override {
-        return std::make_shared<FluxTransfoSpatiallyInvariant>(getValue());
+        return std::make_shared<FluxTransformSpatiallyInvariant>(getValue());
     }
 
     /// @copydoc PhotometryTransform::computeParameterDerivatives
@@ -172,9 +173,9 @@ public:
  * initialMagnitude + SpatiallyInvariantTransform -> correctedMagnitude
  *
  */
-class MagnitudeTransfoSpatiallyInvariant : public PhotometryTransformSpatiallyInvariant {
+class MagnitudeTransformSpatiallyInvariant : public PhotometryTransformSpatiallyInvariant {
 public:
-    explicit MagnitudeTransfoSpatiallyInvariant(double value = 0)
+    explicit MagnitudeTransformSpatiallyInvariant(double value = 0)
             : PhotometryTransformSpatiallyInvariant(value) {}
 
     /// @copydoc PhotometryTransformSpatiallyInvariant::transform
@@ -187,7 +188,7 @@ public:
 
     /// @copydoc PhotometryTransformSpatiallyInvariant::clone
     std::shared_ptr<PhotometryTransform> clone() const override {
-        return std::make_shared<MagnitudeTransfoSpatiallyInvariant>(getValue());
+        return std::make_shared<MagnitudeTransformSpatiallyInvariant>(getValue());
     }
 
     /// @copydoc PhotometryTransformSpatiallyInvariant::computeParameterDerivatives
@@ -224,7 +225,7 @@ public:
      * @param[in]  bbox   The bounding box it is valid within, to rescale it to [-1,1].
      * @param[in]  identity If true, set a_0,0==1, otherwise all coefficients are 0.
      */
-    PhotometryTransformChebyshev(size_t order, afw::geom::Box2D const &bbox, bool identity);
+    PhotometryTransformChebyshev(size_t order, geom::Box2D const &bbox, bool identity);
 
     /**
      * Create a Chebyshev transform with the specified coefficients.
@@ -235,8 +236,7 @@ public:
      * @param      coefficients  The polynomial coefficients.
      * @param[in]  bbox          The bounding box it is valid within, to rescale it to [-1,1].
      */
-    PhotometryTransformChebyshev(ndarray::Array<double, 2, 2> const &coefficients,
-                                 afw::geom::Box2D const &bbox);
+    PhotometryTransformChebyshev(ndarray::Array<double, 2, 2> const &coefficients, geom::Box2D const &bbox);
 
     /// @copydoc PhotometryTransform::transformError
     double transformError(double x, double y, double value, double valueErr) const override { return 0; }
@@ -258,9 +258,17 @@ public:
 
     ndarray::Size getOrder() const { return _order; }
 
-    afw::geom::Box2D getBBox() const { return _bbox; }
+    geom::Box2D getBBox() const { return _bbox; }
 
+    /// Compute the mean of this tranform on the bbox (default to our bbox).
+    double mean(geom::Box2D const &bbox) const;
+    /// @overload mean(geom::Box2D const &bbox) const;
     double mean() const;
+
+    // Compute the integral of this function over a bounding-box (default to our bbox).
+    double integrate(geom::Box2D const &bbox) const;
+    /// @overload integrate(geom::Box2D const &bbox) const;
+    double integrate() const;
 
 protected:
     /**
@@ -275,26 +283,26 @@ protected:
     void computeChebyshevDerivatives(double x, double y, Eigen::Ref<Eigen::VectorXd> derivatives) const;
 
 private:
-    afw::geom::Box2D _bbox;                        // the domain of this function
-    afw::geom::AffineTransform _toChebyshevRange;  // maps points from the bbox to [-1,1]x[-1,1]
+    geom::Box2D _bbox;                        // the domain of this function
+    geom::AffineTransform _toChebyshevRange;  // maps points from the bbox to [-1,1]x[-1,1]
 
     ndarray::Array<double, 2, 2> _coefficients;  // shape=(order+1, order+1)
     ndarray::Size _order;
     ndarray::Size _nParameters;
 
-    // Compute the integral of this function over its bounding-box.
-    double integrate() const;
+    /// Evaluate one limit of a definite 2-d integral (sum four of these to get the full integral).
+    double oneIntegral(double x, double y) const;
 };
 
 /**
  * nth-order 2d Chebyshev photometry transform, times the input flux.
  */
-class FluxTransfoChebyshev : public PhotometryTransformChebyshev {
+class FluxTransformChebyshev : public PhotometryTransformChebyshev {
 public:
-    FluxTransfoChebyshev(size_t order, afw::geom::Box2D const &bbox)
+    FluxTransformChebyshev(size_t order, geom::Box2D const &bbox)
             : PhotometryTransformChebyshev(order, bbox, true) {}
 
-    FluxTransfoChebyshev(ndarray::Array<double, 2, 2> const &coefficients, afw::geom::Box2D const &bbox)
+    FluxTransformChebyshev(ndarray::Array<double, 2, 2> const &coefficients, geom::Box2D const &bbox)
             : PhotometryTransformChebyshev(coefficients, bbox) {}
 
     /// @copydoc PhotometryTransform::transform
@@ -311,19 +319,19 @@ public:
 
     /// @copydoc PhotometryTransform::clone
     std::shared_ptr<PhotometryTransform> clone() const override {
-        return std::make_shared<FluxTransfoChebyshev>(getCoefficients(), getBBox());
+        return std::make_shared<FluxTransformChebyshev>(getCoefficients(), getBBox());
     }
 };
 
 /**
  * nth-order 2d Chebyshev photometry transform, plus the input flux.
  */
-class MagnitudeTransfoChebyshev : public PhotometryTransformChebyshev {
+class MagnitudeTransformChebyshev : public PhotometryTransformChebyshev {
 public:
-    MagnitudeTransfoChebyshev(size_t order, afw::geom::Box2D const &bbox)
+    MagnitudeTransformChebyshev(size_t order, geom::Box2D const &bbox)
             : PhotometryTransformChebyshev(order, bbox, false) {}
 
-    MagnitudeTransfoChebyshev(ndarray::Array<double, 2, 2> const &coefficients, afw::geom::Box2D const &bbox)
+    MagnitudeTransformChebyshev(ndarray::Array<double, 2, 2> const &coefficients, geom::Box2D const &bbox)
             : PhotometryTransformChebyshev(coefficients, bbox) {}
 
     /// @copydoc PhotometryTransform::transform
@@ -340,11 +348,11 @@ public:
 
     /// @copydoc PhotometryTransform::clone
     std::shared_ptr<PhotometryTransform> clone() const override {
-        return std::make_shared<FluxTransfoChebyshev>(getCoefficients(), getBBox());
+        return std::make_shared<FluxTransformChebyshev>(getCoefficients(), getBBox());
     }
 };
 
 }  // namespace jointcal
 }  // namespace lsst
 
-#endif  // LSST_JOINTCAL_PHOTOMETRY_TRANSFO_H
+#endif  // LSST_JOINTCAL_PHOTOMETRY_TRANSFORM_H

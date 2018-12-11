@@ -60,7 +60,7 @@ namespace afwImg = lsst::afw::image;
 
 /* Test jointcal::TanSipPixelToRaDec::apply against afwImg::Wcs::pixelToSky */
 
-BOOST_AUTO_TEST_SUITE(test_transfos)
+BOOST_AUTO_TEST_SUITE(test_transforms)
 
 BOOST_AUTO_TEST_CASE(test_wcs) {
     std::string fileName = "tests/header_only.fits";

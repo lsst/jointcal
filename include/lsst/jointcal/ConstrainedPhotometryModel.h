@@ -110,13 +110,24 @@ protected:
     ChipMapType _chipMap;
 
     /**
-     * Initialize the chip, visit, and chipVisit mappings by creating appropriate transfos and mappings.
+     * Initialize the chip, visit, and chipVisit mappings by creating appropriate transforms and mappings.
      */
     template <class ChipTransform, class VisitTransform, class ChipVisitMapping>
     void initialize(CcdImageList const &ccdImageList, afw::geom::Box2D const &focalPlaneBBox, int visitOrder);
 
     /// Return the initial calibration to use from this photoCalib.
     virtual double initialChipCalibration(std::shared_ptr<afw::image::PhotoCalib const> photoCalib) = 0;
+
+    /// To hold the return of prepPhotoCalib
+    struct PrepPhotoCalib {
+        double chipConstant;
+        afw::geom::TransformPoint2ToGeneric visitTransform;
+        std::shared_ptr<afw::geom::TransformPoint2ToPoint2> pixToFocal;
+        double visitMean;
+    };
+
+    /// Helper for preparing toPhotoCalib()
+    PrepPhotoCalib prepPhotoCalib(CcdImage const &ccdImage) const;
 
 private:
     // Which components of the model are we fitting currently?
@@ -131,7 +142,7 @@ public:
             : ConstrainedPhotometryModel(ccdImageList, focalPlaneBBox,
                                          LOG_GET("jointcal.ConstrainedFluxModel"), visitOrder,
                                          errorPedestal_) {
-        initialize<FluxTransfoSpatiallyInvariant, FluxTransfoChebyshev, ChipVisitFluxMapping>(
+        initialize<FluxTransformSpatiallyInvariant, FluxTransformChebyshev, ChipVisitFluxMapping>(
                 ccdImageList, focalPlaneBBox, visitOrder);
     }
 
@@ -175,8 +186,8 @@ public:
             : ConstrainedPhotometryModel(ccdImageList, focalPlaneBBox,
                                          LOG_GET("jointcal.ConstrainedMagnitudeModel"), visitOrder,
                                          errorPedestal_) {
-        initialize<MagnitudeTransfoSpatiallyInvariant, MagnitudeTransfoChebyshev, ChipVisitMagnitudeMapping>(
-                ccdImageList, focalPlaneBBox, visitOrder);
+        initialize<MagnitudeTransformSpatiallyInvariant, MagnitudeTransformChebyshev,
+                   ChipVisitMagnitudeMapping>(ccdImageList, focalPlaneBBox, visitOrder);
     }
 
     /// @copydoc PhotometryModel::offsetFittedStar
