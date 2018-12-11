@@ -118,6 +118,17 @@ protected:
     /// Return the initial calibration to use from this photoCalib.
     virtual double initialChipCalibration(std::shared_ptr<afw::image::PhotoCalib const> photoCalib) = 0;
 
+    /// To hold the return of prepPhotoCalib
+    struct PrepPhotoCalib {
+        double chipConstant;
+        afw::geom::TransformPoint2ToGeneric visitTransform;
+        std::shared_ptr<afw::geom::TransformPoint2ToPoint2> pixToFocal;
+        double visitMean;
+    };
+
+    /// Helper for preparing toPhotoCalib()
+    PrepPhotoCalib prepPhotoCalib(CcdImage const &ccdImage) const;
+
 private:
     // Which components of the model are we fitting currently?
     bool _fittingChips;

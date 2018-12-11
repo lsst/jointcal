@@ -221,6 +221,43 @@ void ConstrainedPhotometryModel::initialize(CcdImageList const &ccdImageList,
                                           << _chipVisitMap.load_factor());
 }
 
+ConstrainedPhotometryModel::PrepPhotoCalib ConstrainedPhotometryModel::prepPhotoCalib(
+        CcdImage const &ccdImage) const {
+    auto detector = ccdImage.getDetector();
+    auto ccdBBox = detector->getBBox();
+    ChipVisitPhotometryMapping *mapping = dynamic_cast<ChipVisitPhotometryMapping *>(findMapping(ccdImage));
+
+    // There should be no way in which we can get to this point and not have a ChipVisitMapping,
+    // so blow up if we don't.
+    assert(mapping != nullptr);
+    // We know it's a Chebyshev transform because we created it as such, so blow up if it's not.
+    auto visitPhotometryTransform = std::dynamic_pointer_cast<PhotometryTransformChebyshev>(
+            mapping->getVisitMapping()->getTransform());
+    assert(visitPhotometryTransform != nullptr);
+    auto focalBBox = visitPhotometryTransform->getBBox();
+
+    // Unravel our chebyshev coefficients to build an astshim::ChebyMap.
+    auto coeff_f = toChebyMapCoeffs(std::dynamic_pointer_cast<PhotometryTransformChebyshev>(
+            mapping->getVisitMapping()->getTransform()));
+    // Bounds are the bbox
+    std::vector<double> lowerBound = {focalBBox.getMinX(), focalBBox.getMinY()};
+    std::vector<double> upperBound = {focalBBox.getMaxX(), focalBBox.getMaxY()};
+    afw::geom::TransformPoint2ToGeneric visitTransform(ast::ChebyMap(coeff_f, 1, lowerBound, upperBound));
+
+    double chipConstant = mapping->getChipMapping()->getParameters()[0];
+
+    // Compute a box that covers the area of the ccd in focal plane coordinates.
+    // This is the box over which we want to compute the mean of the visit transform.
+    auto pixToFocal = detector->getTransform(afw::cameraGeom::PIXELS, afw::cameraGeom::FOCAL_PLANE);
+    geom::Box2D ccdBBoxInFocal;
+    for (auto const &point : pixToFocal->applyForward(geom::Box2D(ccdBBox).getCorners())) {
+        ccdBBoxInFocal.include(point);
+    }
+    double visitMean = visitPhotometryTransform->mean(ccdBBoxInFocal);
+
+    return {chipConstant, visitTransform, pixToFocal, visitMean};
+}
+
 // ConstrainedFluxModel methods
 
 double ConstrainedFluxModel::computeResidual(CcdImage const &ccdImage,
@@ -241,41 +278,22 @@ double ConstrainedFluxModel::transformError(CcdImage const &ccdImage,
 }
 
 std::shared_ptr<afw::image::PhotoCalib> ConstrainedFluxModel::toPhotoCalib(CcdImage const &ccdImage) const {
-    auto oldPhotoCalib = ccdImage.getPhotoCalib();
-    auto detector = ccdImage.getDetector();
-    auto ccdBBox = detector->getBBox();
-    ChipVisitPhotometryMapping *mapping = dynamic_cast<ChipVisitPhotometryMapping *>(findMapping(ccdImage));
-    // There should be no way in which we can get to this point and not have a ChipVisitMapping,
-    // so blow up if we don't.
-    assert(mapping != nullptr);
-    auto pixToFocal = detector->getTransform(afw::cameraGeom::PIXELS, afw::cameraGeom::FOCAL_PLANE);
-    // We know it's a Chebyshev transform because we created it as such, so blow up if it's not.
-    auto visitTransform = std::dynamic_pointer_cast<PhotometryTransformChebyshev>(
-            mapping->getVisitMapping()->getTransform());
-    assert(visitTransform != nullptr);
-    auto focalBBox = visitTransform->getBBox();
+    auto ccdBBox = ccdImage.getDetector()->getBBox();
+    auto prep = prepPhotoCalib(ccdImage);
 
-    // Unravel our chebyshev coefficients to build an astshim::ChebyMap.
-    auto coeff_f = toChebyMapCoeffs(std::dynamic_pointer_cast<PhotometryTransformChebyshev>(
-            mapping->getVisitMapping()->getTransform()));
-    // Bounds are the bbox
-    std::vector<double> lowerBound = {focalBBox.getMinX(), focalBBox.getMinY()};
-    std::vector<double> upperBound = {focalBBox.getMaxX(), focalBBox.getMaxY()};
-
-    afw::geom::TransformPoint2ToGeneric chebyTransform(ast::ChebyMap(coeff_f, 1, lowerBound, upperBound));
-
-    // The chip part is easy: zoom map with the single value as the "zoom" factor.
+    // The chip part is easy: zoom map with the single value as the "zoom" factor
     afw::geom::Transform<afw::geom::GenericEndpoint, afw::geom::GenericEndpoint> zoomTransform(
-            ast::ZoomMap(1, mapping->getChipMapping()->getParameters()[0]));
+            ast::ZoomMap(1, prep.chipConstant));
 
     // Now stitch them all together.
-    auto transform = pixToFocal->then(chebyTransform)->then(zoomTransform);
-    // NOTE: TransformBoundedField does not yet implement mean(), so we have to compute it here.
-    // TODO: restore this calculation as part of DM-16305
-    // double mean = mapping->getChipMapping()->getParameters()[0] * visitTransform->mean(ccdBBoxInFocal);
+    auto transform = prep.pixToFocal->then(prep.visitTransform)->then(zoomTransform);
+
+    // NOTE: TransformBoundedField does not implement mean(), so we have to compute it here.
+    double mean = prep.chipConstant * prep.visitMean;
+
     auto boundedField = std::make_shared<afw::math::TransformBoundedField>(ccdBBox, *transform);
-    return std::make_shared<afw::image::PhotoCalib>(oldPhotoCalib->getCalibrationMean(),
-                                                    oldPhotoCalib->getCalibrationErr(), boundedField, false);
+    return std::make_shared<afw::image::PhotoCalib>(mean, ccdImage.getPhotoCalib()->getCalibrationErr(),
+                                                    boundedField, false);
 }
 
 // ConstrainedMagnitudeModel methods
@@ -300,46 +318,27 @@ double ConstrainedMagnitudeModel::transformError(CcdImage const &ccdImage,
 
 std::shared_ptr<afw::image::PhotoCalib> ConstrainedMagnitudeModel::toPhotoCalib(
         CcdImage const &ccdImage) const {
-    auto oldPhotoCalib = ccdImage.getPhotoCalib();
-    auto detector = ccdImage.getDetector();
-    auto ccdBBox = detector->getBBox();
-    ChipVisitPhotometryMapping *mapping = dynamic_cast<ChipVisitPhotometryMapping *>(findMapping(ccdImage));
-    // There should be no way in which we can get to this point and not have a ChipVisitMapping,
-    // so blow up if we don't.
-    assert(mapping != nullptr);
-    auto pixToFocal = detector->getTransform(afw::cameraGeom::PIXELS, afw::cameraGeom::FOCAL_PLANE);
-    // We know it's a Chebyshev transform because we created it as such, so blow up if it's not.
-    auto visitTransform = std::dynamic_pointer_cast<PhotometryTransformChebyshev>(
-            mapping->getVisitMapping()->getTransform());
-    assert(visitTransform != nullptr);
-    auto focalBBox = visitTransform->getBBox();
-
-    // Unravel our chebyshev coefficients to build an astshim::ChebyMap.
-    auto coeff_f = toChebyMapCoeffs(std::dynamic_pointer_cast<PhotometryTransformChebyshev>(
-            mapping->getVisitMapping()->getTransform()));
-    // Bounds are the bbox
-    std::vector<double> lowerBound = {focalBBox.getMinX(), focalBBox.getMinY()};
-    std::vector<double> upperBound = {focalBBox.getMaxX(), focalBBox.getMaxY()};
-
-    afw::geom::TransformPoint2ToGeneric chebyTransform(ast::ChebyMap(coeff_f, 1, lowerBound, upperBound));
+    auto ccdBBox = ccdImage.getDetector()->getBBox();
+    auto prep = prepPhotoCalib(ccdImage);
 
     using namespace std::string_literals;  // for operator""s to convert string literal->std::string
     afw::geom::Transform<afw::geom::GenericEndpoint, afw::geom::GenericEndpoint> logTransform(
             ast::MathMap(1, 1, {"y=pow(10.0,x/-2.5)"s}, {"x=-2.5*log10(y)"s}));
 
     // The chip part is easy: zoom map with the value (converted to a flux) as the "zoom" factor.
-    double calibrationMean = std::pow(10, mapping->getChipMapping()->getParameters()[0] / -2.5);
+    double chipCalibration = std::pow(10, prep.chipConstant / -2.5);
     afw::geom::Transform<afw::geom::GenericEndpoint, afw::geom::GenericEndpoint> zoomTransform(
-            ast::ZoomMap(1, calibrationMean));
+            ast::ZoomMap(1, chipCalibration));
 
     // Now stitch them all together.
-    auto transform = pixToFocal->then(chebyTransform)->then(logTransform)->then(zoomTransform);
-    // NOTE: TransformBoundedField does not yet implement mean(), so we have to compute it here.
-    // TODO: restore this calculation as part of DM-16305
-    // double mean = calibrationMean * visitTransform->mean(ccdBBoxInFocal);
+    auto transform = prep.pixToFocal->then(prep.visitTransform)->then(logTransform)->then(zoomTransform);
+
+    // NOTE: TransformBoundedField does not implement mean(), so we have to compute it here.
+    double mean = chipCalibration * std::pow(10, prep.visitMean / -2.5);
+
     auto boundedField = std::make_shared<afw::math::TransformBoundedField>(ccdBBox, *transform);
-    return std::make_shared<afw::image::PhotoCalib>(oldPhotoCalib->getCalibrationMean(),
-                                                    oldPhotoCalib->getCalibrationErr(), boundedField, false);
+    return std::make_shared<afw::image::PhotoCalib>(mean, ccdImage.getPhotoCalib()->getCalibrationErr(),
+                                                    boundedField, false);
 }
 
 // explicit instantiation of templated function, so pybind11 can
