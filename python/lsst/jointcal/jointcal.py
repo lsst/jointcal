@@ -460,7 +460,6 @@ class JointcalTask(pipeBase.CmdLineTask):
         # Get the bounding box overlapping all associated images
         # ==> This is probably a bad idea to do it this way <== To be improved
         bbox = associations.getRaDecBBox()
-        # with Python 3 this can be simplified to afwGeom.SpherePoint(*bbox.getCenter(), afwGeom.degrees)
         bboxCenter = bbox.getCenter()
         center = afwGeom.SpherePoint(bboxCenter[0], bboxCenter[1], afwGeom.degrees)
         bboxMax = bbox.getMax()
