@@ -383,7 +383,10 @@ class JointcalTask(pipeBase.CmdLineTask):
         filt = dataRef.get('calexp_filter')
         filterName = filt.getName()
         fluxMag0 = calib.getFluxMag0()
-        photoCalib = afwImage.PhotoCalib(1.0/fluxMag0[0], fluxMag0[1]/fluxMag0[0]**2, bbox)
+        # TODO: need to scale these until DM-10153 is completed and PhotoCalib has replaced Calib entirely
+        referenceFlux = 1e23 * 10**(48.6 / -2.5) * 1e9
+        photoCalib = afwImage.PhotoCalib(referenceFlux/fluxMag0[0],
+                                         referenceFlux*fluxMag0[1]/fluxMag0[0]**2, bbox)
 
         goodSrc = self.sourceSelector.run(src)
 
@@ -566,8 +569,17 @@ class JointcalTask(pipeBase.CmdLineTask):
         refFluxErrs = {}
         for filt in filters:
             filtKeys = lsst.meas.algorithms.getRefFluxKeys(refCat.schema, filt)
-            refFluxes[filt] = refCat.get(filtKeys[0])
-            refFluxErrs[filt] = refCat.get(filtKeys[1])
+            # TODO: need to scale these until RFC-549 is completed and refcats return nanojansky
+            refFluxes[filt] = 1e9*refCat.get(filtKeys[0])
+            refFluxErrs[filt] = 1e9*refCat.get(filtKeys[1])
+
+        # TODO: need to scale these until RFC-549 is completed and refcats return nanojansky
+        refCat[skyCircle.fluxField] *= 1e9
+        try:
+            refCat[skyCircle.fluxField+'Err'] *= 1e9
+        except KeyError:
+            # not all existing refcats have an error field.
+            pass
 
         associations.collectRefStars(refCat, self.config.matchCut*afwGeom.arcseconds,
                                      skyCircle.fluxField, refFluxes, refFluxErrs, reject_bad_fluxes)

@@ -25,6 +25,8 @@ import unittest
 import lsst.utils.tests
 import lsst.jointcal.testUtils
 
+from astropy import units
+
 import lsst.afw.cameraGeom
 import lsst.afw.geom
 import lsst.afw.table
@@ -82,7 +84,7 @@ class PhotometryModelTestBase:
         if self.useMagnitude:
             result = photoCalib.instFluxToMagnitude(catalog, self.fluxFieldName)
         else:
-            result = photoCalib.instFluxToMaggies(catalog, self.fluxFieldName)
+            result = photoCalib.instFluxToNanojansky(catalog, self.fluxFieldName)
 
         expects = np.empty(len(stars))
         for i, star in enumerate(stars):
@@ -312,6 +314,20 @@ class ConstrainedFluxModelTestCase(ConstrainedPhotometryModelTestCase,
                        self.ccdImageList2[2].getPhotoCalib().getCalibrationMean()]
         self._testConstructor(expectVisit, expectChips)
 
+    def test_checkPositiveOnBBox(self):
+        self.assertTrue(self.model.checkPositiveOnBBox(self.ccdImageList[0]))
+        self.assertTrue(self.model.checkPositiveOnBBox(self.ccdImageList[1]))
+
+        # make the model go negative
+        self.model.offsetParams(-5*self.delta)
+        self.assertFalse(self.model.checkPositiveOnBBox(self.ccdImageList[0]))
+
+    def test_validate(self):
+        self.assertTrue(self.model.validate(self.ccdImageList))
+        # Make the model go negative
+        self.model.offsetParams(-5*self.delta)
+        self.assertFalse(self.model.validate(self.ccdImageList))
+
 
 class ConstrainedMagnitudeModelTestCase(ConstrainedPhotometryModelTestCase,
                                         MagnitudeTestBase,
@@ -333,7 +349,8 @@ class ConstrainedMagnitudeModelTestCase(ConstrainedPhotometryModelTestCase,
         expectVisit = np.zeros(int(getNParametersPolynomial(self.visitOrder)))
 
         def fluxToMag(flux):
-            return -2.5*np.log10(flux)
+            # Yay astropy!
+            return (flux * units.nanojansky).to(units.ABmag).value
 
         # chipMappings are fixed per-chip, and thus are
         # shared between the first pair and second pair of fake ccdImages
@@ -342,25 +359,6 @@ class ConstrainedMagnitudeModelTestCase(ConstrainedPhotometryModelTestCase,
                        fluxToMag(self.ccdImageList2[2].getPhotoCalib().getCalibrationMean()),
                        fluxToMag(self.ccdImageList2[2].getPhotoCalib().getCalibrationMean())]
         self._testConstructor(expectVisit, expectChips)
-
-    def test_checkPositiveOnBBox(self):
-        self.assertTrue(self.model.checkPositiveOnBBox(self.ccdImageList[0]))
-        self.assertTrue(self.model.checkPositiveOnBBox(self.ccdImageList[1]))
-
-        # make a model that is negative all over
-        struct = lsst.jointcal.testUtils.createTwoFakeCcdImages(100, 100, seed=100, fakeCcdId=12,
-                                                                photoCalibMean1=1000,
-                                                                photoCalibMean2=1200)
-        model = lsst.jointcal.ConstrainedMagnitudeModel(struct.ccdImageList,
-                                                        struct.camera.getFpBBox(),
-                                                        self.visitOrder)
-        self.assertFalse(model.checkPositiveOnBBox(struct.ccdImageList[0]))
-
-    def test_validate(self):
-        self.assertTrue(self.model.validate(self.ccdImageList))
-        # Make the model go negative
-        self.model.offsetParams(-3*self.delta)
-        self.assertFalse(self.model.validate(self.ccdImageList))
 
 
 class MemoryTester(lsst.utils.tests.MemoryTestCase):
