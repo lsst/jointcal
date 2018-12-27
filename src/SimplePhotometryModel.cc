@@ -32,10 +32,6 @@
 #include "lsst/jointcal/CcdImage.h"
 #include "lsst/jointcal/MeasuredStar.h"
 
-namespace {
-double instFluxFromMag(double mag) { return std::pow(10, mag / -2.5); }
-}  // namespace
-
 namespace lsst {
 namespace jointcal {
 
@@ -137,7 +133,7 @@ SimpleMagnitudeModel::SimpleMagnitudeModel(CcdImageList const &ccdImageList, dou
     for (auto const &ccdImage : ccdImageList) {
         auto photoCalib = ccdImage->getPhotoCalib();
         // Use the single-frame processing calibration from the PhotoCalib as the default.
-        double calib = magFromFlux(photoCalib->getCalibrationMean());
+        double calib = utils::nanojanskyToABMagnitude(photoCalib->getCalibrationMean());
         auto transform = std::make_shared<MagnitudeTransformSpatiallyInvariant>(calib);
         _myMap.emplace(ccdImage->getHashKey(), std::make_unique<PhotometryMapping>(transform));
     }
@@ -161,8 +157,9 @@ double SimpleMagnitudeModel::transformError(CcdImage const &ccdImage, MeasuredSt
 }
 
 std::shared_ptr<afw::image::PhotoCalib> SimpleMagnitudeModel::toPhotoCalib(CcdImage const &ccdImage) const {
-    // NOTE: photocalib is defined as instFlux * calibration = flux
-    double calibration = instFluxFromMag(findMapping(ccdImage)->getParameters()[0]);
+    // NOTE: photocalib is defined as `instFlux * calibration = flux`,
+    // so we have to convert the transform from magnitude space.
+    double calibration = utils::ABMagnitudeToNanojansky(findMapping(ccdImage)->getParameters()[0]);
     auto oldPhotoCalib = ccdImage.getPhotoCalib();
     return std::make_unique<afw::image::PhotoCalib>(calibration, oldPhotoCalib->getCalibrationErr());
 }

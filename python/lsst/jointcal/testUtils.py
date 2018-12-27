@@ -185,8 +185,8 @@ def createFakeCatalog(num, bbox, fluxFieldName, skyWcs=None, refCat=False):
     # Put the fake sources in the minimal catalog.
     schema.addField(fluxFieldName+"_instFlux", type="D", doc="post-ISR instFlux")
     schema.addField(fluxFieldName+"_instFluxErr", type="D", doc="post-ISR instFlux stddev")
-    schema.addField(fluxFieldName+"_flux", type="D", doc="maggies")
-    schema.addField(fluxFieldName+"_fluxErr", type="D", doc="maggies stddev")
+    schema.addField(fluxFieldName+"_flux", type="D", doc="source flux (nJy)")
+    schema.addField(fluxFieldName+"_fluxErr", type="D", doc="flux stddev (nJy)")
     schema.addField(fluxFieldName+"_mag", type="D", doc="magnitude")
     schema.addField(fluxFieldName+"_magErr", type="D", doc="magnitude stddev")
     return fillCatalog(schema, num, bbox,

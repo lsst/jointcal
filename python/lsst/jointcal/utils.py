@@ -39,7 +39,6 @@ from astropy import units as u
 import lsst.log
 import lsst.afw.table
 import lsst.afw.image
-from lsst.afw.image import abMagFromFlux
 from lsst.afw.geom import arcseconds
 
 __all__ = ['JointcalStatistics']
@@ -142,7 +141,8 @@ class JointcalStatistics:
             for ref in data_refs:
                 calib = ref.get('calexp_calib')
                 fluxMag0 = calib.getFluxMag0()
-                old_calibs.append(lsst.afw.image.PhotoCalib(1.0/fluxMag0[0], fluxMag0[1]/fluxMag0[0]**2))
+                # TODO: the old Calib is defined in Jy, so convert to nJy (goes away post-DM-10153)
+                old_calibs.append(lsst.afw.image.PhotoCalib(1e9/fluxMag0[0], 1e9*fluxMag0[1]/fluxMag0[0]**2))
 
         self.old_dist, self.old_flux, self.old_ref_flux, self.old_source = compute(old_cats, old_calibs)
 
@@ -282,8 +282,8 @@ class JointcalStatistics:
         # we want to use the absolute fluxes for all of these calculations.
         self.old_ref = np.fromiter(self.old_ref_flux.absolute.values(), dtype=float)
         self.new_ref = np.fromiter(self.new_ref_flux.absolute.values(), dtype=float)
-        self.old_mag = np.fromiter((abMagFromFlux(r) for r in self.old_ref), dtype=float)
-        self.new_mag = np.fromiter((abMagFromFlux(r) for r in self.new_ref), dtype=float)
+        self.old_mag = u.Quantity(self.old_ref, u.nJy).to_value(u.ABmag)
+        self.new_mag = u.Quantity(self.new_ref, u.nJy).to_value(u.ABmag)
 
         def signal_to_noise(sources, flux_key='slot_PsfFlux_instFlux', sigma_key='slot_PsfFlux_instFluxErr'):
             """Compute the mean signal/noise per source from a MatchDict of SourceRecords."""
@@ -319,7 +319,7 @@ class JointcalStatistics:
         photoCalibs : list of lsst.afw.image.PhotoCalib
             Exposure PhotoCalibs, 1-1 coorespondent with visit_catalogs.
         refcalib : lsst.afw.image.PhotoCalib or None
-            Pass a PhotoCalib here to use it to compute Janskys from the
+            Pass a PhotoCalib here to use it to compute nanojansky from the
             reference catalog ADU slot_flux.
 
         Returns
@@ -327,9 +327,9 @@ class JointcalStatistics:
         distances : dict
             dict of sourceID: array(separation distances for that source)
         fluxes : dict
-            dict of sourceID: array(fluxes (Jy) for that source)
+            dict of sourceID: array(fluxes (nJy) for that source)
         ref_fluxes : dict
-            dict of sourceID: flux (Jy) of the reference object
+            dict of sourceID: flux (nJy) of the reference object
         sources : dict
             dict of sourceID: list(each SourceRecord that was position-matched
             to this sourceID)
@@ -350,23 +350,23 @@ class JointcalStatistics:
         def get_fluxes(photoCalib, match):
             """Return (flux, ref_flux) or None if either is invalid."""
             # NOTE: Protect against negative fluxes: ignore this match if we find one.
-            maggiesToJansky = 3631
             flux = match[1]['slot_CalibFlux_instFlux']
             if flux < 0:
                 return None
             else:
-                flux = maggiesToJansky * photoCalib.instFluxToMaggies(match[1], "slot_CalibFlux").value
+                flux = photoCalib.instFluxToNanojansky(match[1], "slot_CalibFlux").value
 
-            # NOTE: Have to protect against negative reference fluxes too.
+            # NOTE: Have to protect against negative "reference" fluxes too.
             if 'slot' in ref_flux_key:
-                ref_flux = match[0][ref_flux_key+'_flux']
+                ref_flux = match[0][ref_flux_key+'_instFlux']  # relative reference flux
                 if ref_flux < 0:
                     return None
                 else:
-                    ref_flux = maggiesToJansky * photoCalib.instFluxToMaggies(match[0], ref_flux_key).value
+                    ref_flux = refcalib.instFluxToNanojansky(match[0], ref_flux_key).value
             else:
-                # a.net fluxes are already in Janskys.
-                ref_flux = match[0][ref_flux_key.format(filt)]
+                # refcat fluxes are already in Janskys.
+                # TODO: Once RFC-549 is fully implemented, we can remove the 1e9 prefactor.
+                ref_flux = 1e9 * match[0][ref_flux_key.format(filt)]
                 if ref_flux < 0:
                     return None
 

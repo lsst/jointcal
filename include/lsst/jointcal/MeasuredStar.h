@@ -35,6 +35,10 @@
 namespace lsst {
 namespace jointcal {
 
+namespace {  /// Compute "instrumental magnitude" from instFlux (in counts).
+double instMagFromInstFlux(double instFlux) { return -2.5 * std::log10(instFlux); }
+}  // namespace
+
 class CcdImage;
 
 //! objects measured on actual images. Coordinates and uncertainties are expressed in pixel image frame. Flux
@@ -56,6 +60,7 @@ public:
     MeasuredStar(BaseStar const &baseStar)
             : BaseStar(baseStar),
               _id(0),
+              _instFlux(0.),
               _instFluxErr(0.),
               _ccdImage(0),
               _valid(true),
@@ -84,7 +89,7 @@ public:
 
     void setInstFluxAndErr(double instFlux, double instFluxErr) {
         _instFlux = instFlux;
-        _instMag = magFromFlux(instFlux);
+        _instMag = instMagFromInstFlux(instFlux);
         _instFluxErr = instFluxErr;
         _instMagErr = magErrFromFluxErr(instFlux, instFluxErr);
     }

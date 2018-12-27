@@ -218,7 +218,7 @@ public:
 protected:
     /// @copydoc ConstrainedPhotometryModel::initialChipCalibration
     double initialChipCalibration(std::shared_ptr<afw::image::PhotoCalib const> photoCalib) override {
-        return magFromFlux(photoCalib->getCalibrationMean());
+        return utils::nanojanskyToABMagnitude(photoCalib->getCalibrationMean());
     }
 };
 

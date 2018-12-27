@@ -93,14 +93,15 @@ void CcdImage::loadCatalog(afw::table::SourceCatalog const &catalog, std::string
         }
         ms->setInstFluxAndErr(record.get(instFluxKey), record.get(instFluxErrKey));
         // TODO: the below lines will be less clumsy once DM-4044 is cleaned up and we can say:
-        // TODO: instFluxToMaggies(ms->getInstFlux(), ms) (because ms will be derived from afw::geom::Point).
+        // TODO: instFluxToNanojansky(ms->getInstFlux(), ms) (because ms will be derived from
+        // afw::geom::Point).
         afw::geom::Point<double, 2> point(ms->x, ms->y);
-        auto flux = _photoCalib->instFluxToMaggies(ms->getInstFlux(), ms->getInstFluxErr(), point);
+        auto flux = _photoCalib->instFluxToNanojansky(ms->getInstFlux(), ms->getInstFluxErr(), point);
         ms->setFlux(flux.value);
-        ms->setFluxErr(flux.err);
+        ms->setFluxErr(flux.error);
         auto mag = _photoCalib->instFluxToMagnitude(ms->getInstFlux(), ms->getInstFluxErr(), point);
         ms->getMag() = mag.value;
-        ms->setMagErr(mag.err);
+        ms->setMagErr(mag.error);
         ms->setCcdImage(this);
         _wholeCatalog.push_back(std::move(ms));
     }

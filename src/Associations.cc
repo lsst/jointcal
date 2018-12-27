@@ -52,9 +52,6 @@ namespace {
 LOG_LOGGER _log = LOG_GET("jointcal.Associations");
 }
 
-// TODO: Remove this once RFC-356 is implemented and all refcats give fluxes in Maggies.
-const double JanskyToMaggy = 3631.0;
-
 namespace lsst {
 namespace jointcal {
 
@@ -206,18 +203,18 @@ void Associations::collectRefStars(afw::table::SimpleCatalog &refCat, afw::geom:
         auto const &record = refCat.get(i);
 
         auto coord = record->get(coordKey);
-        double defaultFlux = record->get(fluxKey) / JanskyToMaggy;
+        double defaultFlux = record->get(fluxKey);
         double defaultFluxErr;
         if (fluxErrKey.isValid()) {
-            defaultFluxErr = record->get(fluxErrKey) / JanskyToMaggy;
+            defaultFluxErr = record->get(fluxErrKey);
         } else {
             defaultFluxErr = std::numeric_limits<double>::quiet_NaN();
         }
         std::vector<double> fluxList(nFilters);
         std::vector<double> fluxErrList(nFilters);
         for (auto const &filter : _filterMap) {
-            fluxList[filter.second] = refFluxMap.at(filter.first).at(i) / JanskyToMaggy;
-            fluxErrList[filter.second] = refFluxErrMap.at(filter.first).at(i) / JanskyToMaggy;
+            fluxList[filter.second] = refFluxMap.at(filter.first).at(i);
+            fluxErrList[filter.second] = refFluxErrMap.at(filter.first).at(i);
         }
         double ra = lsst::afw::geom::radToDeg(coord.getLongitude());
         double dec = lsst::afw::geom::radToDeg(coord.getLatitude());
@@ -371,7 +368,7 @@ void Associations::normalizeFittedStars() const {
         fi->x /= measurementCount;
         fi->y /= measurementCount;
         fi->getFlux() /= measurementCount;
-        fi->getMag() = magFromFlux(fi->getFlux());
+        fi->getMag() = utils::nanojanskyToABMagnitude(fi->getFlux());
     }
 }
 

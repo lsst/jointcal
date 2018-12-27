@@ -30,6 +30,7 @@
 #include <string>
 #include <sstream>
 
+#include "lsst/utils/Magnitude.h"
 #include "lsst/jointcal/FatPoint.h"
 #include "lsst/jointcal/StarList.h"
 
@@ -37,13 +38,12 @@ namespace lsst {
 namespace jointcal {
 
 namespace {
-/// Compute magnitude from flux (in Maggies).
-double magFromFlux(double instFlux) { return -2.5 * std::log10(instFlux); }
 
-/// Compute magnitude error from instFlux and instFlux error (in Maggies).
+/// Compute magnitude error from instFlux and instFlux error.
 double magErrFromFluxErr(double instFlux, double instFluxErr) {
     return 2.5 / std::log(10) * (instFluxErr / instFlux);
 }
+
 }  // namespace
 
 //! The base class for handling stars. Used by all matching routines.
@@ -59,13 +59,13 @@ public:
             : FatPoint(xx, yy),
               _flux(flux),
               _fluxErr(fluxErr),
-              _mag(magFromFlux(flux)),
+              _mag(utils::nanojanskyToABMagnitude(flux)),
               _magErr(magErrFromFluxErr(flux, fluxErr)){};
     BaseStar(Point const &point, double flux, double fluxErr, double mag, double magErr)
             : FatPoint(point),
               _flux(flux),
               _fluxErr(fluxErr),
-              _mag(magFromFlux(flux)),
+              _mag(utils::nanojanskyToABMagnitude(flux)),
               _magErr(magErrFromFluxErr(flux, fluxErr)){};
 
     //! access stuff.
@@ -107,7 +107,7 @@ public:
     void setMagErr(double magErr) { _magErr = magErr; }
 
 protected:
-    // on-sky flux, in Maggies
+    // on-sky flux, in nanojansky
     double _flux;
     double _fluxErr;
 

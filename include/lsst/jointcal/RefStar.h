@@ -67,7 +67,7 @@ public:
     double getFluxErr(size_t filter) const { return _refFluxErrList[filter]; }
 
 private:
-    // on-sky flux, in Maggies, per filter
+    // on-sky flux, in nanojansky, per filter
     std::vector<double> _refFluxList;
     std::vector<double> _refFluxErrList;
 };

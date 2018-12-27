@@ -247,9 +247,9 @@ void PhotometryFit::saveChi2MeasContributions(std::string const &baseName) const
     ofile << "fitted magnitude" << separator << "measured magnitude" << separator
           << "measured magnitude error" << separator;
     ofile << "measured instrumental flux (ADU)" << separator << "measured instrument flux error" << separator;
-    ofile << "measured flux (maggies)" << separator << "measured flux error" << separator;
+    ofile << "measured flux (nJy)" << separator << "measured flux error" << separator;
     ofile << separator << separator;
-    ofile << "fitted flux (maggies)" << separator;
+    ofile << "fitted flux (nJy)" << separator;
     ofile << "modified Julian date of the measurement" << separator << "currently unused" << separator;
     ofile << "unique index of the fittedStar" << separator;
     ofile << "on-sky position of fitted star" << separator << separator;
@@ -300,8 +300,8 @@ void PhotometryFit::saveChi2RefContributions(std::string const &baseName) const 
 
     ofile << "#coordinates of fittedStar" << separator << separator;
     ofile << "magnitude" << separator << "currently unused" << separator;
-    ofile << "refStar flux (maggies)" << separator << "refStar fluxErr" << separator;
-    ofile << "fittedStar flux (maggies)" << separator << "fittedStar fluxErr" << separator;
+    ofile << "refStar flux (nJy)" << separator << "refStar fluxErr" << separator;
+    ofile << "fittedStar flux (nJy)" << separator << "fittedStar fluxErr" << separator;
     ofile << "unique index of the fittedStar" << separator << "refStar contribution to Chi2 (1 dof)"
           << separator << "number of measurements of this FittedStar" << std::endl;
 
