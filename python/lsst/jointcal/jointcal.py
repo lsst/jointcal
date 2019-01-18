@@ -559,9 +559,67 @@ class JointcalTask(pipeBase.CmdLineTask):
         add_measurement(self.job, 'jointcal.associated_%s_fittedStars' % name,
                         associations.fittedStarListSize())
 
+        refCat, fluxField, refFluxes, refFluxErrs = self._load_reference_catalog(refObjLoader,
+                                                                                 center,
+                                                                                 radius,
+                                                                                 defaultFilter,
+                                                                                 filters)
+
+        associations.collectRefStars(refCat, self.config.matchCut*afwGeom.arcseconds,
+                                     fluxField, refFluxes, refFluxErrs, reject_bad_fluxes)
+        add_measurement(self.job, 'jointcal.collected_%s_refStars' % name,
+                        associations.refStarListSize())
+
+        associations.prepareFittedStars(self.config.minMeasurements)
+
+        self._check_star_lists(associations, name)
+        add_measurement(self.job, 'jointcal.selected_%s_refStars' % name,
+                        associations.nFittedStarsWithAssociatedRefStar())
+        add_measurement(self.job, 'jointcal.selected_%s_fittedStars' % name,
+                        associations.fittedStarListSize())
+        add_measurement(self.job, 'jointcal.selected_%s_ccdImages' % name,
+                        associations.nCcdImagesValidForFit())
+
+        load_cat_prof_file = 'jointcal_fit_%s.prof'%name if profile_jointcal else ''
+        dataName = "{}_{}".format(tract, defaultFilter)
+        with pipeBase.cmdLineTask.profile(load_cat_prof_file):
+            result = fit_function(associations, dataName)
+        # TODO DM-12446: turn this into a "butler save" somehow.
+        # Save reference and measurement chi2 contributions for this data
+        if self.config.writeChi2ContributionFiles:
+            baseName = "{}_final_chi2-{}.csv".format(name, dataName)
+            result.fit.saveChi2Contributions(baseName)
+
+        return result
+
+    def _load_reference_catalog(self, refObjLoader, center, radius, filterName, filters):
+        """Load the necessary reference catalog sources, convert fluxes to
+        correct units, and apply color term corrections if requested.
+
+
+        Parameters
+        ----------
+        refObjLoader : `lsst.meas.algorithms.LoadReferenceObjectsTask`
+            The reference catalog loader to use to get the data.
+        center : `lsst.geom.SpherePoint`
+            The center around which to load sources.
+        radius : `lsst.geom.Angle`
+            The radius around ``center`` to load sources in.
+        filterName : `str`
+            The name of the camera filter to load fluxes for.
+        filters : `list` of `str`
+            The filters to load and correct in the reference catalog.
+
+        Returns
+        -------
+        refCat : `lsst.afw.table.SimpleCatalog`
+            The loaded reference catalog.
+        fluxField : `str`
+            The name of the reference catalog flux field appropriate for ``filterName``.
+        """
         skyCircle = refObjLoader.loadSkyCircle(center,
                                                afwGeom.Angle(radius, afwGeom.radians),
-                                               defaultFilter)
+                                               filterName)
 
         # Need memory contiguity to get reference filters as a vector.
         if not skyCircle.refCat.isContiguous():
@@ -587,32 +645,7 @@ class JointcalTask(pipeBase.CmdLineTask):
             # not all existing refcats have an error field.
             pass
 
-        associations.collectRefStars(refCat, self.config.matchCut*afwGeom.arcseconds,
-                                     skyCircle.fluxField, refFluxes, refFluxErrs, reject_bad_fluxes)
-        add_measurement(self.job, 'jointcal.collected_%s_refStars' % name,
-                        associations.refStarListSize())
-
-        associations.prepareFittedStars(self.config.minMeasurements)
-
-        self._check_star_lists(associations, name)
-        add_measurement(self.job, 'jointcal.selected_%s_refStars' % name,
-                        associations.nFittedStarsWithAssociatedRefStar())
-        add_measurement(self.job, 'jointcal.selected_%s_fittedStars' % name,
-                        associations.fittedStarListSize())
-        add_measurement(self.job, 'jointcal.selected_%s_ccdImages' % name,
-                        associations.nCcdImagesValidForFit())
-
-        load_cat_prof_file = 'jointcal_fit_%s.prof'%name if profile_jointcal else ''
-        dataName = "{}_{}".format(tract, defaultFilter)
-        with pipeBase.cmdLineTask.profile(load_cat_prof_file):
-            result = fit_function(associations, dataName)
-        # TODO DM-12446: turn this into a "butler save" somehow.
-        # Save reference and measurement chi2 contributions for this data
-        if self.config.writeChi2ContributionFiles:
-            baseName = "{}_final_chi2-{}.csv".format(name, dataName)
-            result.fit.saveChi2Contributions(baseName)
-
-        return result
+        return refCat, skyCircle.fluxField, refFluxes, refFluxErrs
 
     def _check_star_lists(self, associations, name):
         # TODO: these should be len(blah), but we need this properly wrapped first.
