@@ -559,14 +559,10 @@ class JointcalTask(pipeBase.CmdLineTask):
         add_measurement(self.job, 'jointcal.associated_%s_fittedStars' % name,
                         associations.fittedStarListSize())
 
-        refCat, fluxField, refFluxes, refFluxErrs = self._load_reference_catalog(refObjLoader,
-                                                                                 center,
-                                                                                 radius,
-                                                                                 defaultFilter,
-                                                                                 filters)
+        refCat, fluxField = self._load_reference_catalog(refObjLoader, center, radius, defaultFilter)
 
         associations.collectRefStars(refCat, self.config.matchCut*afwGeom.arcseconds,
-                                     fluxField, refFluxes, refFluxErrs, reject_bad_fluxes)
+                                     fluxField, reject_bad_fluxes)
         add_measurement(self.job, 'jointcal.collected_%s_refStars' % name,
                         associations.refStarListSize())
 
@@ -592,10 +588,9 @@ class JointcalTask(pipeBase.CmdLineTask):
 
         return result
 
-    def _load_reference_catalog(self, refObjLoader, center, radius, filterName, filters):
+    def _load_reference_catalog(self, refObjLoader, center, radius, filterName):
         """Load the necessary reference catalog sources, convert fluxes to
         correct units, and apply color term corrections if requested.
-
 
         Parameters
         ----------
@@ -607,8 +602,6 @@ class JointcalTask(pipeBase.CmdLineTask):
             The radius around ``center`` to load sources in.
         filterName : `str`
             The name of the camera filter to load fluxes for.
-        filters : `list` of `str`
-            The filters to load and correct in the reference catalog.
 
         Returns
         -------
@@ -627,16 +620,6 @@ class JointcalTask(pipeBase.CmdLineTask):
         else:
             refCat = skyCircle.refCat
 
-        # load the reference catalog fluxes.
-        # TODO: Simon will file a ticket for making this better (and making it use the color terms)
-        refFluxes = {}
-        refFluxErrs = {}
-        for filt in filters:
-            filtKeys = lsst.meas.algorithms.getRefFluxKeys(refCat.schema, filt)
-            # TODO: need to scale these until RFC-549 is completed and refcats return nanojansky
-            refFluxes[filt] = 1e9*refCat.get(filtKeys[0])
-            refFluxErrs[filt] = 1e9*refCat.get(filtKeys[1])
-
         # TODO: need to scale these until RFC-549 is completed and refcats return nanojansky
         refCat[skyCircle.fluxField] *= 1e9
         try:
@@ -645,7 +628,7 @@ class JointcalTask(pipeBase.CmdLineTask):
             # not all existing refcats have an error field.
             pass
 
-        return refCat, skyCircle.fluxField, refFluxes, refFluxErrs
+        return refCat, skyCircle.fluxField
 
     def _check_star_lists(self, associations, name):
         # TODO: these should be len(blah), but we need this properly wrapped first.

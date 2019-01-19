@@ -135,15 +135,11 @@ public:
      * @param[in]  matchCut       Separation radius to match fitted and
      *                            reference stars.
      * @param      fluxField      The field name in refCat to get the flux from.
-     * @param      refFluxMap     fluxes per filter of corresponding refCat objects (can be empty)
-     * @param      refFluxErrMap  flux errors per filter of corresponding refCat objects (can be empty)
      * @param      rejectBadFluxes  Reject reference sources with flux=NaN or 0 and/or fluxErr=NaN or 0.
      *                              Typically false for astrometry and true for photometry.
      */
     void collectRefStars(afw::table::SimpleCatalog &refCat, afw::geom::Angle matchCut,
-                         std::string const &fluxField, RefFluxMapType const &refFluxMap = RefFluxMapType(),
-                         RefFluxMapType const &refFluxErrMap = RefFluxMapType(),
-                         bool rejectBadFluxes = false);
+                         std::string const &fluxField, bool rejectBadFluxes = false);
 
     //! Sends back the fitted stars coordinates on the sky FittedStarsList::inTangentPlaneCoordinates keeps
     //! track of that.
@@ -166,7 +162,7 @@ public:
     CcdImageList const &getCcdImageList() const { return ccdImageList; }
 
     //! Number of different bands in the input image list. Not implemented so far
-    unsigned getNFilters() const { return _filterMap.size(); }
+    unsigned getNFilters() const { return 1; }
 
     // Return the bounding box in (ra, dec) coordinates containing the whole catalog
     const lsst::afw::geom::Box2D getRaDecBBox();
@@ -200,9 +196,6 @@ private:
      * fittedStar, and that the measurementCount for each fittedStar is correct.
      */
     void normalizeFittedStars() const;
-
-    // Map from filter name to index in each refStar's _refFlux/_refFluxErr vector.
-    std::unordered_map<std::string, std::size_t> _filterMap;
 
     Point _commonTangentPoint;
 };

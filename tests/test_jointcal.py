@@ -141,7 +141,7 @@ class TestJointcalIterateFit(lsst.utils.tests.TestCase):
         with(self.assertRaises(FloatingPointError)):
             self.jointcal._logChi2AndValidate(self.associations, self.fitter, self.model)
 
-    def test_load_reference_catalog(self):
+    def _make_fake_refcat(self):
         center = lsst.geom.SpherePoint(30, -30, lsst.geom.degrees)
         flux = 10
         radius = 1 * lsst.geom.degrees
@@ -153,12 +153,15 @@ class TestJointcalIterateFit(lsst.utils.tests.TestCase):
         refObjLoader = unittest.mock.Mock(spec=LoadIndexedReferenceObjectsTask)
         refObjLoader.loadSkyCircle.return_value = returnStruct
 
-        filters = []
-        refCat, fluxField, refFluxes, refFluxErrs = self.jointcal._load_reference_catalog(refObjLoader,
-                                                                                          center,
-                                                                                          radius,
-                                                                                          filterName,
-                                                                                          filters)
+        return refObjLoader, center, radius, filterName, fakeRefCat
+
+    def test_load_reference_catalog(self):
+        refObjLoader, center, radius, filterName, fakeRefCat = self._make_fake_refcat()
+
+        refCat, fluxField = self.jointcal._load_reference_catalog(refObjLoader,
+                                                                  center,
+                                                                  radius,
+                                                                  filterName)
         self.assertEqual(refCat, fakeRefCat)
 
 

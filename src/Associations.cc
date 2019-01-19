@@ -170,10 +170,7 @@ void Associations::associateCatalogs(const double matchCutInArcSec, const bool u
 }
 
 void Associations::collectRefStars(afw::table::SimpleCatalog &refCat, afw::geom::Angle matchCut,
-                                   std::string const &fluxField,
-                                   std::map<std::string, std::vector<double>> const &refFluxMap,
-                                   std::map<std::string, std::vector<double>> const &refFluxErrMap,
-                                   bool rejectBadFluxes) {
+                                   std::string const &fluxField, bool rejectBadFluxes) {
     if (refCat.size() == 0) {
         throw(LSST_EXCEPT(pex::exceptions::InvalidParameterError,
                           " reference catalog is empty : stop here "));
@@ -190,35 +187,22 @@ void Associations::collectRefStars(afw::table::SimpleCatalog &refCat, afw::geom:
                                  << fluxField << "Err"
                                  << ") not found in reference catalog. Not using ref flux errors.");
     }
-    _filterMap.clear();
-    _filterMap.reserve(refFluxMap.size());
-    size_t nFilters = 0;
-    for (auto const &filter : refFluxMap) {
-        _filterMap[filter.first] = nFilters;
-        nFilters++;
-    }
 
     refStarList.clear();
     for (size_t i = 0; i < refCat.size(); i++) {
         auto const &record = refCat.get(i);
 
         auto coord = record->get(coordKey);
-        double defaultFlux = record->get(fluxKey);
-        double defaultFluxErr;
+        double flux = record->get(fluxKey);
+        double fluxErr;
         if (fluxErrKey.isValid()) {
-            defaultFluxErr = record->get(fluxErrKey);
+            fluxErr = record->get(fluxErrKey);
         } else {
-            defaultFluxErr = std::numeric_limits<double>::quiet_NaN();
-        }
-        std::vector<double> fluxList(nFilters);
-        std::vector<double> fluxErrList(nFilters);
-        for (auto const &filter : _filterMap) {
-            fluxList[filter.second] = refFluxMap.at(filter.first).at(i);
-            fluxErrList[filter.second] = refFluxErrMap.at(filter.first).at(i);
+            fluxErr = std::numeric_limits<double>::quiet_NaN();
         }
         double ra = lsst::afw::geom::radToDeg(coord.getLongitude());
         double dec = lsst::afw::geom::radToDeg(coord.getLatitude());
-        auto star = std::make_shared<RefStar>(ra, dec, defaultFlux, defaultFluxErr, fluxList, fluxErrList);
+        auto star = std::make_shared<RefStar>(ra, dec, flux, fluxErr);
 
         // TODO DM-10826: RefCats aren't guaranteed to have position errors.
         // TODO: Need to devise a way to check whether the refCat has position errors
@@ -229,9 +213,7 @@ void Associations::collectRefStars(afw::table::SimpleCatalog &refCat, afw::geom:
         star->vxy = 0.;
 
         // Reject sources with non-finite fluxes and flux errors, and fluxErr=0 (which gives chi2=inf).
-        if (rejectBadFluxes &&
-            (!std::isfinite(defaultFlux) || !std::isfinite(defaultFluxErr) || defaultFluxErr == 0))
-            continue;
+        if (rejectBadFluxes && (!std::isfinite(flux) || !std::isfinite(fluxErr) || fluxErr <= 0)) continue;
         refStarList.push_back(star);
     }
 

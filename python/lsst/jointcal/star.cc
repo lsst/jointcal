@@ -81,8 +81,7 @@ void declareBaseStar(py::module &mod) {
 void declareRefStar(py::module &mod) {
     py::class_<RefStar, std::shared_ptr<RefStar>, BaseStar> cls(mod, "RefStar");
 
-    cls.def(py::init<double, double, double, double, std::vector<double> &, std::vector<double> &>(), "xx"_a,
-            "yy"_a, "defaultFlux"_a, "defaultFluxErr"_a, "refFluxList"_a, "refFluxErrList"_a);
+    cls.def(py::init<double, double, double, double>(), "xx"_a, "yy"_a, "flux"_a, "fluxErr"_a);
 }
 
 void declareFittedStar(py::module &mod) {
