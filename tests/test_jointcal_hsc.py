@@ -19,7 +19,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import inspect
 import unittest
 import os
 
@@ -168,18 +167,8 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         self.config.sourceSelector['astrometry'].badFlags.append("base_PixelFlags_flag_interpolated")
         self.jointcalStatistics.do_photometry = False
 
-        caller = inspect.stack()[0].function
-        result = self._runJointcalTask(2, caller, metrics=metrics)
-        data_refs = result.resultList[0].result.dataRefs
-        oldWcsList = result.resultList[0].result.oldWcsList
-        rms_result = self.jointcalStatistics.compute_rms(data_refs, self.reference)
-
-        if self.do_plot:
-            self._plotJointcalTask(data_refs, oldWcsList, caller)
-
-        self.assertLess(rms_result.dist_relative, dist_rms_relative)
-        self.assertLess(rms_result.dist_absolute, self.dist_rms_absolute)
-        self.assertIsNone(rms_result.pa1)
+        data_refs = self._testJointcalTask(2, dist_rms_relative, self.dist_rms_absolute,
+                                           None, metrics=metrics)
 
         for data_ref in data_refs:
             with self.assertRaises(lsst.daf.persistence.butlerExceptions.NoResults):
