@@ -320,8 +320,12 @@ class JointcalTask(pipeBase.CmdLineTask):
         self.makeSubtask("sourceSelector")
         if self.config.doAstrometry:
             self.makeSubtask('astrometryRefObjLoader', butler=butler)
+        else:
+            self.astrometryRefObjLoader = None
         if self.config.doPhotometry:
             self.makeSubtask('photometryRefObjLoader', butler=butler)
+        else:
+            self.photometryRefObjLoader = None
 
         # To hold various computed metrics for use by tests
         self.job = Job.load_metrics_package(subset='jointcal')
@@ -505,6 +509,9 @@ class JointcalTask(pipeBase.CmdLineTask):
         return pipeBase.Struct(dataRefs=dataRefs,
                                oldWcsList=oldWcsList,
                                job=self.job,
+                               astrometryRefObjLoader=self.astrometryRefObjLoader,
+                               photometryRefObjLoader=self.photometryRefObjLoader,
+                               defaultFilter=defaultFilter,
                                exitStatus=exitStatus)
 
     def _do_load_refcat_and_fit(self, associations, defaultFilter, center, radius,

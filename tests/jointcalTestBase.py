@@ -24,7 +24,6 @@ import inspect
 
 import lsst.afw.geom
 import lsst.afw.image.utils
-from lsst.meas.extensions.astrometryNet import LoadAstrometryNetObjectsTask, LoadAstrometryNetObjectsConfig
 
 from lsst.jointcal import jointcal, utils
 
@@ -67,7 +66,8 @@ class JointcalTestBase:
             tests are running. See the developer docs about logging for valid
             levels: https://developer.lsst.io/coding/logging.html
         """
-        self._prep_reference_loader(center, radius)
+        self.center = center
+        self.radius = radius
         self.jointcalStatistics = utils.JointcalStatistics(match_radius, verbose=True)
         self.input_dir = input_dir
         self.all_visits = all_visits
@@ -102,22 +102,6 @@ class JointcalTestBase:
             del self.jointcalStatistics
         if getattr(self, 'config', None) is not None:
             del self.config
-
-    def _prep_reference_loader(self, center, radius):
-        """
-        Setup an astrometry.net reference loader.
-
-        Parameters
-        ----------
-
-        center : lsst.afw.SpherePoint
-            The center of the field you're testing on.
-        radius : lsst.afw.geom.angle
-            The radius to load objects around center.
-        """
-        refLoader = LoadAstrometryNetObjectsTask(LoadAstrometryNetObjectsConfig())
-        # Make a copy of the reference catalog for in-memory contiguity.
-        self.reference = refLoader.loadSkyCircle(center, radius, filterName='r').refCat.copy()
 
     def _testJointcalTask(self, nCatalogs, dist_rms_relative, dist_rms_absolute, pa1,
                           metrics=None):
@@ -156,7 +140,16 @@ class JointcalTestBase:
 
         data_refs = result.resultList[0].result.dataRefs
         oldWcsList = result.resultList[0].result.oldWcsList
-        rms_result = self.jointcalStatistics.compute_rms(data_refs, self.reference)
+
+        # extract a reference catalog to compute statistics against
+        refObjLoader = result.resultList[0].result.photometryRefObjLoader
+        # Not all tests do astrometry, so might not have the above defined.
+        if refObjLoader is None:
+            refObjLoader = result.resultList[0].result.astrometryRefObjLoader
+        defaultFilter = result.resultList[0].result.defaultFilter
+        refCat = refObjLoader.loadSkyCircle(self.center, self.radius, defaultFilter).refCat
+
+        rms_result = self.jointcalStatistics.compute_rms(data_refs, refCat)
         # Make plots before testing, if requested, so we still get plots if tests fail.
         if self.do_plot:
             self._plotJointcalTask(data_refs, oldWcsList, caller)
