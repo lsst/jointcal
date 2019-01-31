@@ -42,13 +42,12 @@ class JointcalTestDECAM(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Test
     def setUpClass(cls):
         try:
             cls.data_dir = lsst.utils.getPackageDir('testdata_jointcal')
-            os.environ['ASTROMETRY_NET_DATA_DIR'] = os.path.join(cls.data_dir, 'decam_and_index')
         except lsst.pex.exceptions.NotFoundError:
             raise unittest.SkipTest("testdata_jointcal not setup")
 
     def setUp(self):
         # See Readme for an explanation of this empirical value.
-        self.dist_rms_absolute = 62.5e-3*u.arcsecond
+        self.dist_rms_absolute = 63e-3*u.arcsecond
 
         do_plot = False
 
@@ -69,6 +68,9 @@ class JointcalTestDECAM(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Test
                         do_plot=do_plot,
                         log_level="DEBUG")
 
+        test_config = os.path.join(lsst.utils.getPackageDir('jointcal'), 'tests/config/decam-config.py')
+        self.configfiles.append(test_config)
+
     def test_jointcalTask_2_visits(self):
         self.config = lsst.jointcal.jointcal.JointcalConfig()
         self.config.astrometryModel = "simple"
@@ -76,29 +78,33 @@ class JointcalTestDECAM(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Test
         self.config.sourceSelector['astrometry'].badFlags.append("base_PixelFlags_flag_interpolated")
 
         # See Readme for an explanation of these empirical values.
+        # NOTE: the photometry and astrometry refstars numbers are different
+        # here because the SDSS catalogs have some sources with bad fluxes;
+        # those are rejected for photometric calibration, but not astrometric.
         relative_error = 19e-3*u.arcsecond
         pa1 = 0.14
-        metrics = {'collected_astrometry_refStars': 4866,
-                   'collected_photometry_refStars': 4865,
-                   'selected_astrometry_refStars': 661,
-                   'selected_photometry_refStars': 661,
+        metrics = {'collected_astrometry_refStars': 8869,
+                   'collected_photometry_refStars': 8858,
+                   'selected_astrometry_refStars': 1604,
+                   'selected_photometry_refStars': 1604,
                    'associated_astrometry_fittedStars': 6749,
                    'associated_photometry_fittedStars': 6749,
-                   'selected_astrometry_fittedStars': 2044,
-                   'selected_photometry_fittedStars': 2044,
+                   'selected_astrometry_fittedStars': 2709,
+                   'selected_photometry_fittedStars': 2709,
                    'selected_astrometry_ccdImages': 14,
                    'selected_photometry_ccdImages': 14,
-                   'astrometry_final_chi2': 1974.13,
-                   'astrometry_final_ndof': 3822,
-                   'photometry_final_chi2': 3453.16,
-                   'photometry_final_ndof': 2079,
+                   'astrometry_final_chi2': 2838.0,
+                   'astrometry_final_ndof': 5562,
+                   'photometry_final_chi2': 4810.5,
+                   'photometry_final_ndof': 2910,
                    }
 
         self._testJointcalTask(2, relative_error, self.dist_rms_absolute, pa1, metrics=metrics)
 
     def setup_jointcalTask_2_visits_constrainedAstrometry_no_photometry(self):
-        """Help keep the two constrainedAstrometry tests consistent and make
-        the difference between them more obvious."""
+        """Set default values for the constrainedAstrometry tests, and make
+        the differences between each test and the defaults more obvious.
+        """
         self.config = lsst.jointcal.jointcal.JointcalConfig()
         self.config.astrometryModel = "constrained"
         self.config.doPhotometry = False
@@ -108,13 +114,13 @@ class JointcalTestDECAM(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Test
         # See Readme for an explanation of these empirical values.
         relative_error = 17e-3*u.arcsecond
         pa1 = None
-        metrics = {'collected_astrometry_refStars': 4866,
-                   'selected_astrometry_refStars': 661,
+        metrics = {'collected_astrometry_refStars': 8869,
+                   'selected_astrometry_refStars': 1604,
                    'associated_astrometry_fittedStars': 6749,
-                   'selected_astrometry_fittedStars': 2044,
+                   'selected_astrometry_fittedStars': 2709,
                    'selected_astrometry_ccdImages': 14,
-                   'astrometry_final_chi2': 2072.89,
-                   'astrometry_final_ndof': 3970,
+                   'astrometry_final_chi2': 3040.84,
+                   'astrometry_final_ndof': 5748,
                    }
         return relative_error, pa1, metrics
 
@@ -128,6 +134,9 @@ class JointcalTestDECAM(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Test
         """
         relative_error, pa1, metrics = self.setup_jointcalTask_2_visits_constrainedAstrometry_no_photometry()
         self.config.astrometryDoRankUpdate = False
+
+        metrics['astrometry_final_chi2'] = 3015.61
+        metrics['astrometry_final_ndof'] = 5738
 
         self._testJointcalTask(2, relative_error, self.dist_rms_absolute, pa1, metrics=metrics)
 
@@ -144,8 +153,8 @@ class JointcalTestDECAM(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Test
         self._testJointcalTask(2, relative_error, self.dist_rms_absolute, pa1, metrics=metrics)
 
     def setup_jointcalTask_2_visits_constrainedPhotometry_no_astrometry(self):
-        """Help keep the constrainedPhotometry tests consistent and make
-        the differences between them more obvious.
+        """Set default values for the constrainedPhotometry tests, and make
+        the differences between each test and the defaults more obvious.
         """
         self.config = lsst.jointcal.jointcal.JointcalConfig()
         self.config.photometryModel = "constrainedFlux"

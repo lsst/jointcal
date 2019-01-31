@@ -42,7 +42,6 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
     def setUpClass(cls):
         try:
             cls.data_dir = lsst.utils.getPackageDir('testdata_jointcal')
-            os.environ['ASTROMETRY_NET_DATA_DIR'] = os.path.join(cls.data_dir, 'hsc_and_index')
         except lsst.pex.exceptions.NotFoundError:
             raise unittest.SkipTest("testdata_jointcal not setup")
 
@@ -64,6 +63,9 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
                         all_visits=all_visits,
                         do_plot=do_plot)
 
+        test_config = os.path.join(lsst.utils.getPackageDir('jointcal'), 'tests/config/hsc-config.py')
+        self.configfiles.append(test_config)
+
     def test_jointcalTask_2_visits(self):
         self.config = lsst.jointcal.jointcal.JointcalConfig()
         self.config.astrometryModel = "simple"
@@ -73,20 +75,20 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         # See Readme for an explanation of these empirical values.
         dist_rms_relative = 17e-3*u.arcsecond
         pa1 = 0.024
-        metrics = {'collected_astrometry_refStars': 2187,
-                   'collected_photometry_refStars': 2187,
-                   'selected_astrometry_refStars': 515,
-                   'selected_photometry_refStars': 515,
+        metrics = {'collected_astrometry_refStars': 2948,
+                   'collected_photometry_refStars': 2948,
+                   'selected_astrometry_refStars': 657,
+                   'selected_photometry_refStars': 657,
                    'associated_astrometry_fittedStars': 1151,
                    'associated_photometry_fittedStars': 1151,
-                   'selected_astrometry_fittedStars': 770,
-                   'selected_photometry_fittedStars': 770,
+                   'selected_astrometry_fittedStars': 851,
+                   'selected_photometry_fittedStars': 851,
                    'selected_astrometry_ccdImages': 6,
                    'selected_photometry_ccdImages': 6,
-                   'astrometry_final_chi2': 691.12,
-                   'astrometry_final_ndof': 1858,
-                   'photometry_final_chi2': 1557.27,
-                   'photometry_final_ndof': 968
+                   'astrometry_final_chi2': 819.07,
+                   'astrometry_final_ndof': 2134,
+                   'photometry_final_chi2': 1811.45,
+                   'photometry_final_ndof': 1072
                    }
         self._testJointcalTask(2, dist_rms_relative, self.dist_rms_absolute, pa1, metrics=metrics)
 
@@ -104,19 +106,19 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         # See Readme for an explanation of these empirical values.
         dist_rms_relative = 17e-3*u.arcsecond
         pa1 = None  # pa1 = 0.134
-        metrics = {'collected_astrometry_refStars': 3649,
-                   'selected_astrometry_refStars': 1038,
+        metrics = {'collected_astrometry_refStars': 4926,
+                   'selected_astrometry_refStars': 1346,
                    'associated_astrometry_fittedStars': 2908,
-                   'selected_astrometry_fittedStars': 2203,
+                   'selected_astrometry_fittedStars': 2276,
                    'selected_astrometry_ccdImages': 33,
-                   'astrometry_final_chi2': 7929.656,
-                   'astrometry_final_ndof': 14262,
+                   'astrometry_final_chi2': 8207.62,
+                   'astrometry_final_ndof': 14856,
                    }
         self._testJointcalTask(11, dist_rms_relative, self.dist_rms_absolute, pa1, metrics=metrics)
 
     def setup_jointcalTask_2_visits_simplePhotometry(self):
-        """Help keep the simplePhotometry tests consistent and make
-        the differences between them more obvious.
+        """Set default values for the constrainedAstrometry tests, and make
+        the differences between each test and the defaults more obvious.
         """
         self.config = lsst.jointcal.jointcal.JointcalConfig()
         self.config.photometryModel = "simpleFlux"
@@ -126,13 +128,13 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
 
         # See Readme for an explanation of these empirical values.
         pa1 = 0.024
-        metrics = {'collected_photometry_refStars': 2187,
-                   'selected_photometry_refStars': 515,
+        metrics = {'collected_photometry_refStars': 2948,
+                   'selected_photometry_refStars': 657,
                    'associated_photometry_fittedStars': 1151,
-                   'selected_photometry_fittedStars': 770,
+                   'selected_photometry_fittedStars': 851,
                    'selected_photometry_ccdImages': 6,
-                   'photometry_final_chi2': 1557.27,
-                   'photometry_final_ndof': 968
+                   'photometry_final_chi2': 1811.45,
+                   'photometry_final_ndof': 1072
                    }
         return pa1, metrics
 
@@ -143,8 +145,8 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
     def test_jointcalTask_2_visits_simpleMagnitude(self):
         pa1, metrics = self.setup_jointcalTask_2_visits_simplePhotometry()
         self.config.photometryModel = "simpleMagnitude"
-        metrics['photometry_final_chi2'] = 1550.47
-        metrics['photometry_final_ndof'] = 967
+        metrics['photometry_final_chi2'] = 1845.67
+        metrics['photometry_final_ndof'] = 1074
 
         self._testJointcalTask(2, None, None, pa1, metrics=metrics)
 
@@ -152,13 +154,13 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         """Test turning off fitting photometry."""
         # See Readme for an explanation of these empirical values.
         dist_rms_relative = 17e-3*u.arcsecond
-        metrics = {'collected_astrometry_refStars': 2187,
-                   'selected_astrometry_refStars': 515,
+        metrics = {'collected_astrometry_refStars': 2948,
+                   'selected_astrometry_refStars': 657,
                    'associated_astrometry_fittedStars': 1151,
-                   'selected_astrometry_fittedStars': 770,
+                   'selected_astrometry_fittedStars': 851,
                    'selected_astrometry_ccdImages': 6,
-                   'astrometry_final_chi2': 691.1210,
-                   'astrometry_final_ndof': 1858,
+                   'astrometry_final_chi2': 819.07,
+                   'astrometry_final_ndof': 2134,
                    }
 
         self.config = lsst.jointcal.jointcal.JointcalConfig()
@@ -180,8 +182,8 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         self.config.photometryModel = "simpleFlux"
         # use the a.net refcat for photometry, gaia for astrometry
         self.config.sourceSelector['astrometry'].badFlags.append("base_PixelFlags_flag_interpolated")
-        test_config = os.path.join(lsst.utils.getPackageDir('jointcal'), 'tests/config/hsc-config.py')
-        self.configfiles.extend([test_config])
+        test_config = os.path.join(lsst.utils.getPackageDir('jointcal'), 'tests/config/hsc-gaia-config.py')
+        self.configfiles.append(test_config)
         dist_rms_relative = 17e-3*u.arcsecond
 
         # See Readme for an explanation of these empirical values.
@@ -189,19 +191,19 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         # cross-matches within 0.1" goes down after we apply the GAIA-fit WCS.
         pa1 = 0.02405
         metrics = {'collected_astrometry_refStars': 1425,
-                   'collected_photometry_refStars': 2187,
+                   'collected_photometry_refStars': 2948,
                    'selected_astrometry_refStars': 271,
-                   'selected_photometry_refStars': 515,
+                   'selected_photometry_refStars': 657,
                    'associated_astrometry_fittedStars': 1151,
                    'associated_photometry_fittedStars': 1151,
                    'selected_astrometry_fittedStars': 645,
-                   'selected_photometry_fittedStars': 770,
+                   'selected_photometry_fittedStars': 851,
                    'selected_astrometry_ccdImages': 6,
                    'selected_photometry_ccdImages': 6,
                    'astrometry_final_chi2': 435.01995,
                    'astrometry_final_ndof': 1412,
-                   'photometry_final_chi2': 1557.27,
-                   'photometry_final_ndof': 968
+                   'photometry_final_chi2': 1811.45,
+                   'photometry_final_ndof': 1072
                    }
         # NOTE: The astrometry/photometry tests are computed using the a.net SDSS refcat,
         # so the absolute astrometry RMS will be larger (because GAIA is better, so
@@ -210,6 +212,8 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         self._testJointcalTask(2, dist_rms_relative, dist_rms_absolute, pa1, metrics=metrics)
 
     def test_jointcalTask_2_visits_no_photometry_match_cut_10(self):
+        """A larger matching radius will result in more associated fittedStars.
+        """
         self.config = lsst.jointcal.jointcal.JointcalConfig()
         self.config.astrometryModel = "simple"
         self.config.matchCut = 10.0  # TODO: once DM-6885 is fixed, we need to put `*lsst.afw.geom.arcseconds`
@@ -219,13 +223,13 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
 
         # See Readme for an explanation of these empirical values.
         dist_rms_relative = 17e-3*u.arcsecond
-        metrics = {'collected_astrometry_refStars': 2187,
-                   'selected_astrometry_refStars': 546,
+        metrics = {'collected_astrometry_refStars': 2948,
+                   'selected_astrometry_refStars': 693,
                    'associated_astrometry_fittedStars': 1151,
-                   'selected_astrometry_fittedStars': 790,
+                   'selected_astrometry_fittedStars': 876,
                    'selected_astrometry_ccdImages': 6,
-                   'astrometry_final_chi2': 690.509,
-                   'astrometry_final_ndof': 1856,
+                   'astrometry_final_chi2': 818.46,
+                   'astrometry_final_ndof': 2132,
                    }
         pa1 = None
         self._testJointcalTask(2, dist_rms_relative, self.dist_rms_absolute, pa1, metrics=metrics)
@@ -241,13 +245,13 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
 
         # See Readme for an explanation of these empirical values.
         dist_rms_relative = 17e-3*u.arcsecond
-        metrics = {'collected_astrometry_refStars': 2187,
-                   'selected_astrometry_refStars': 541,
+        metrics = {'collected_astrometry_refStars': 2948,
+                   'selected_astrometry_refStars': 695,
                    'associated_astrometry_fittedStars': 1270,
-                   'selected_astrometry_fittedStars': 946,
+                   'selected_astrometry_fittedStars': 1011,
                    'selected_astrometry_ccdImages': 8,
-                   'astrometry_final_chi2': 1229.212,
-                   'astrometry_final_ndof': 3008,
+                   'astrometry_final_chi2': 1357.59,
+                   'astrometry_final_ndof': 3302,
                    }
         pa1 = None
         self._testJointcalTask(3, dist_rms_relative, self.dist_rms_absolute, pa1, metrics=metrics)
@@ -265,13 +269,13 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
 
         # See Readme for an explanation of these empirical values.
         dist_rms_relative = 17e-3*u.arcsecond
-        metrics = {'collected_astrometry_refStars': 2187,
-                   'selected_astrometry_refStars': 541,
+        metrics = {'collected_astrometry_refStars': 2948,
+                   'selected_astrometry_refStars': 695,
                    'associated_astrometry_fittedStars': 1270,
-                   'selected_astrometry_fittedStars': 696,
+                   'selected_astrometry_fittedStars': 808,
                    'selected_astrometry_ccdImages': 8,
-                   'astrometry_final_chi2': 1047.57,
-                   'astrometry_final_ndof': 2526,
+                   'astrometry_final_chi2': 1210.05,
+                   'astrometry_final_ndof': 2906,
                    }
         pa1 = None
         self._testJointcalTask(3, dist_rms_relative, self.dist_rms_absolute, pa1, metrics=metrics)

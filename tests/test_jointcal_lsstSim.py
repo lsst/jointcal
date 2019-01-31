@@ -71,6 +71,9 @@ class JointcalTestLSSTSim(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Te
                         other_args=other_args,
                         do_plot=do_plot)
 
+        test_config = os.path.join(lsst.utils.getPackageDir('jointcal'), 'tests/config/lsstSim-config.py')
+        self.configfiles.append(test_config)
+
     @unittest.skip('jointcal currently fails (may segfault) if only given one catalog!')
     def testJointcalTask_1_visits(self):
         self.config = lsst.jointcal.jointcal.JointcalConfig()
