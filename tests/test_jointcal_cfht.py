@@ -42,7 +42,6 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
     def setUpClass(cls):
         try:
             cls.data_dir = lsst.utils.getPackageDir('testdata_jointcal')
-            os.environ['ASTROMETRY_NET_DATA_DIR'] = os.path.join(cls.data_dir, 'cfht_and_index')
         except lsst.pex.exceptions.NotFoundError:
             raise unittest.SkipTest("testdata_jointcal not setup")
 
@@ -50,7 +49,7 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
         # We don't want the absolute astrometry to become significantly worse
         # than the single-epoch astrometry (about 0.040").
         # See Readme for an explanation of this empirical value.
-        self.dist_rms_absolute = 48.6e-3*u.arcsecond
+        self.dist_rms_absolute = 49e-3*u.arcsecond
 
         do_plot = False
 
@@ -71,6 +70,7 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
         self.config = lsst.jointcal.jointcal.JointcalConfig()
         self.config.astrometryModel = "simple"
         self.config.photometryModel = "simpleFlux"
+
         self.config.sourceSelector['astrometry'].badFlags.append("base_PixelFlags_flag_interpolated")
 
         # to test whether we got the expected chi2 contribution files.
@@ -79,20 +79,20 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
         # See Readme for an explanation of these empirical values.
         dist_rms_relative = 11e-3*u.arcsecond
         pa1 = 0.014
-        metrics = {'collected_astrometry_refStars': 825,
-                   'collected_photometry_refStars': 825,
-                   'selected_astrometry_refStars': 350,
-                   'selected_photometry_refStars': 350,
+        metrics = {'collected_astrometry_refStars': 1767,
+                   'collected_photometry_refStars': 1767,
+                   'selected_astrometry_refStars': 747,
+                   'selected_photometry_refStars': 747,
                    'associated_astrometry_fittedStars': 2269,
                    'associated_photometry_fittedStars': 2269,
-                   'selected_astrometry_fittedStars': 1239,
-                   'selected_photometry_fittedStars': 1239,
+                   'selected_astrometry_fittedStars': 1408,
+                   'selected_photometry_fittedStars': 1408,
                    'selected_astrometry_ccdImages': 12,
                    'selected_photometry_ccdImages': 12,
-                   'astrometry_final_chi2': 1150.62,
-                   'astrometry_final_ndof': 2550,
-                   'photometry_final_chi2': 2824.86,
-                   'photometry_final_ndof': 1388
+                   'astrometry_final_chi2': 1609.29,
+                   'astrometry_final_ndof': 3332,
+                   'photometry_final_chi2': 3632.26,
+                   'photometry_final_ndof': 1693
                    }
 
         self._testJointcalTask(2, dist_rms_relative, self.dist_rms_absolute, pa1, metrics=metrics)
@@ -109,8 +109,8 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
             os.remove(name)
 
     def setup_jointcalTask_2_visits_constrainedAstrometry(self):
-        """Help keep the constrainedAstrometry tests consistent and make
-        the differences between them more obvious.
+        """Set default values for the constrainedAstrometry tests, and make
+        the differences between each test and the defaults more obvious.
         """
         self.config = lsst.jointcal.jointcal.JointcalConfig()
         self.config.astrometryModel = "constrained"
@@ -120,13 +120,13 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
 
         # See Readme for an explanation of these empirical values.
         dist_rms_relative = 12e-3*u.arcsecond
-        metrics = {'collected_astrometry_refStars': 825,
-                   'selected_astrometry_refStars': 350,
+        metrics = {'collected_astrometry_refStars': 1767,
+                   'selected_astrometry_refStars': 747,
                    'associated_astrometry_fittedStars': 2269,
-                   'selected_astrometry_fittedStars': 1239,
+                   'selected_astrometry_fittedStars': 1408,
                    'selected_astrometry_ccdImages': 12,
-                   'astrometry_final_chi2': 1253.80,
-                   'astrometry_final_ndof': 2660,
+                   'astrometry_final_chi2': 1714.8,
+                   'astrometry_final_ndof': 3434,
                    }
 
         return dist_rms_relative, metrics
@@ -136,7 +136,7 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
         self._testJointcalTask(2, dist_rms_relative, self.dist_rms_absolute, None, metrics=metrics)
 
     def test_jointcalTask_2_visits_constrainedAstrometry_no_rank_update(self):
-        """Demonstrate that skipping the rank update doesn't affect astrometry.
+        """Demonstrate that skipping the rank update doesn't substantially affect astrometry.
         """
         relative_error, metrics = self.setup_jointcalTask_2_visits_constrainedAstrometry()
         self.config.astrometryDoRankUpdate = False
@@ -149,14 +149,14 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
         """
         dist_rms_relative, metrics = self.setup_jointcalTask_2_visits_constrainedAstrometry()
         self.config.outlierRejectSigma = 4
-        metrics['astrometry_final_chi2'] = 922.76
-        metrics['astrometry_final_ndof'] = 2486
+        metrics['astrometry_final_chi2'] = 1288.64
+        metrics['astrometry_final_ndof'] = 3232
 
         self._testJointcalTask(2, dist_rms_relative, self.dist_rms_absolute, None, metrics=metrics)
 
     def setup_jointcalTask_2_visits_constrainedPhotometry(self):
-        """Help keep the constrainedPhotometry tests consistent and make
-        the differences between them more obvious.
+        """Set default values for the constrainedPhotometry tests, and make
+        the differences between each test and the defaults more obvious.
         """
         self.config = lsst.jointcal.jointcal.JointcalConfig()
         self.config.photometryModel = "constrainedFlux"
@@ -166,13 +166,13 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
 
         # See Readme for an explanation of these empirical values.
         pa1 = 0.017
-        metrics = {'collected_photometry_refStars': 825,
-                   'selected_photometry_refStars': 350,
+        metrics = {'collected_photometry_refStars': 1767,
+                   'selected_photometry_refStars': 747,
                    'associated_photometry_fittedStars': 2269,
-                   'selected_photometry_fittedStars': 1239,
+                   'selected_photometry_fittedStars': 1408,
                    'selected_photometry_ccdImages': 12,
-                   'photometry_final_chi2': 2655.86,
-                   'photometry_final_ndof': 1328
+                   'photometry_final_chi2': 3292.08,
+                   'photometry_final_ndof': 1622
                    }
         return pa1, metrics
 
@@ -182,20 +182,29 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
         self._testJointcalTask(2, None, None, pa1, metrics=metrics)
 
     def test_jointcalTask_2_visits_constrainedPhotometry_no_rank_update(self):
-        """Demonstrate that skipping the rank update doesn't affect photometry.
+        """Demonstrate that skipping the rank update doesn't substantially affect photometry.
         """
         pa1, metrics = self.setup_jointcalTask_2_visits_constrainedPhotometry()
         self.config.photometryDoRankUpdate = False
 
+        # The constrainedPhotometry model is not purely linear, so a small
+        # change in final chi2 is possible.
+        metrics['photometry_final_chi2'] = 3297.34
+
         self._testJointcalTask(2, None, None, pa1, metrics=metrics)
 
     def test_jointcalTask_2_visits_constrainedPhotometry_lineSearch(self):
-        """Activating the line search should only slightly change the chi2 in this case."""
+        """Activating the line search should only slightly change the chi2.
+        """
         pa1, metrics = self.setup_jointcalTask_2_visits_constrainedPhotometry()
         self.config.allowLineSearch = True
 
-        # Only this value should differ from the metrics defined in setup above.
-        metrics['photometry_final_chi2'] = 2642.47
+        # Activating line search for constrainedPhotometry should result in
+        # nearly the same final fit (the system is somewhat non-linear, so it
+        # may not be exactly the same: check the "Line search scale factor"
+        # lines in the DEBUG log for values that are not ~1 for proof).
+        metrics['photometry_final_chi2'] = 3324.2
+        metrics['photometry_final_ndof'] = 1625
 
         self._testJointcalTask(2, None, None, pa1, metrics=metrics)
 
@@ -212,11 +221,11 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
         self.config.minRefStarsPerCcd = 20
 
         pa1 = 0.026
-        metrics['selected_photometry_refStars'] = 212
+        metrics['selected_photometry_refStars'] = 214
         metrics['associated_photometry_fittedStars'] = 270
-        metrics['selected_photometry_fittedStars'] = 244
-        metrics['photometry_final_chi2'] = 369.964
-        metrics['photometry_final_ndof'] = 252
+        metrics['selected_photometry_fittedStars'] = 245
+        metrics['photometry_final_chi2'] = 373.141
+        metrics['photometry_final_ndof'] = 254
 
         self._testJointcalTask(2, None, None, pa1, metrics=metrics)
 
@@ -224,8 +233,10 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
         pa1, metrics = self.setup_jointcalTask_2_visits_constrainedPhotometry()
         self.config.photometryModel = "constrainedMagnitude"
 
-        metrics['photometry_final_chi2'] = 2597.4
-        metrics['photometry_final_ndof'] = 1326
+        # The resulting fit should be close to the constrainedFlux model:
+        # there are few CCDs and 2 visits, so there's not a lot of complexity
+        # in this case to distinguish the flux vs. magnitude models.
+        metrics['photometry_final_chi2'] = 3332.76
 
         self._testJointcalTask(2, None, None, pa1, metrics=metrics)
 
@@ -234,11 +245,11 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
         self.config.photometryErrorPedestal = 0.02
 
         # We're allowing more error in the fit, so PA1 may be worse.
-        pa1 = 0.018
+        pa1 = 0.021
         # Final chi2 is much lower, because all sources contribute more error.
-        metrics['photometry_final_chi2'] = 1800.08
+        metrics['photometry_final_chi2'] = 2246.58
         # ndof shouldn't change much; slightly different likelihood contours
-        metrics['photometry_final_ndof'] = 1338
+        metrics['photometry_final_ndof'] = 1624
 
         self._testJointcalTask(2, None, None, pa1, metrics=metrics)
 
@@ -248,11 +259,11 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
         self.config.photometryErrorPedestal = 0.02
 
         # We're allowing more error in the fit, so PA1 may be worse.
-        pa1 = 0.019
+        pa1 = 0.024
         # Final chi2 is much lower, because all sources contribute more error.
-        metrics['photometry_final_chi2'] = 1632.83
+        metrics['photometry_final_chi2'] = 2243.56
         # ndof shouldn't change much; slightly different likelihood contours
-        metrics['photometry_final_ndof'] = 1322
+        metrics['photometry_final_ndof'] = 1617
 
         self._testJointcalTask(2, None, None, pa1, metrics=metrics)
 

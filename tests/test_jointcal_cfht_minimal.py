@@ -40,12 +40,7 @@ def setup_module(module):
 class JointcalTestCFHTMinimal(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCase):
     @classmethod
     def setUpClass(cls):
-        try:
-            cls.data_dir = os.path.join(lsst.utils.getPackageDir('jointcal'), 'tests/data')
-            anet_data_dir = lsst.utils.getPackageDir('testdata_jointcal')
-            os.environ['ASTROMETRY_NET_DATA_DIR'] = os.path.join(anet_data_dir, 'cfht_and_index')
-        except lsst.pex.exceptions.NotFoundError:
-            raise unittest.SkipTest("testdata_jointcal not setup")
+        cls.data_dir = os.path.join(lsst.utils.getPackageDir('jointcal'), 'tests/data')
 
     def setUp(self):
         do_plot = False
@@ -73,7 +68,7 @@ class JointcalTestCFHTMinimal(jointcalTestBase.JointcalTestBase, lsst.utils.test
 
         # NOTE: ndof==1 from 4 fit parameters (2 model, 2 fittedStar), and
         # 5 degrees-of-freedom (3 star measurements, with 2 reference stars).
-        metrics = {'collected_photometry_refStars': 183,
+        metrics = {'collected_photometry_refStars': 346,
                    'selected_photometry_refStars': 2,
                    'associated_photometry_fittedStars': 2,
                    'selected_photometry_fittedStars': 2,
@@ -104,7 +99,7 @@ class JointcalTestCFHTMinimal(jointcalTestBase.JointcalTestBase, lsst.utils.test
 
         # NOTE: ndof==1 from 4 fit parameters (2 model, 2 fittedStar), and
         # 5 degrees-of-freedom (3 star measurements, with 2 reference stars).
-        metrics = {'collected_photometry_refStars': 183,
+        metrics = {'collected_photometry_refStars': 346,
                    'selected_photometry_refStars': 2,
                    'associated_photometry_fittedStars': 2,
                    'selected_photometry_fittedStars': 2,

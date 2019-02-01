@@ -234,6 +234,8 @@ class JointcalStatistics:
                                     self.old_weighted_rms, self.new_weighted_rms,
                                     self.faint, self.bright, self.old_PA1, self.new_PA1,
                                     name=name, outdir=outdir)
+            self.log.info("Photometric accuracy (old, new): {:.2e} {:.2e}".format(self.old_PA1,
+                                                                                  self.new_PA1))
 
         def rms_per_source(data):
             """Each element of data must already be the "delta" of whatever measurement."""
