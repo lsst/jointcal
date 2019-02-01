@@ -66,7 +66,7 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         test_config = os.path.join(lsst.utils.getPackageDir('jointcal'), 'tests/config/hsc-config.py')
         self.configfiles.append(test_config)
 
-    def test_jointcalTask_2_visits(self):
+    def test_jointcalTask_2_visits_simple(self):
         self.config = lsst.jointcal.jointcal.JointcalConfig()
         self.config.astrometryModel = "simple"
         self.config.photometryModel = "simpleFlux"
@@ -92,7 +92,7 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
                    }
         self._testJointcalTask(2, dist_rms_relative, self.dist_rms_absolute, pa1, metrics=metrics)
 
-    def test_jointcalTask_11_visits_no_photometry(self):
+    def test_jointcalTask_11_visits_simple_astrometry_no_photometry(self):
         """Test 11 visits with different filters.
         Testing photometry doesn't make sense for this currently.
         """
@@ -150,7 +150,7 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
 
         self._testJointcalTask(2, None, None, pa1, metrics=metrics)
 
-    def testJointcalTask_2_visits_no_photometry(self):
+    def testJointcalTask_2_visits_simple_astrometry_no_photometry(self):
         """Test turning off fitting photometry."""
         # See Readme for an explanation of these empirical values.
         dist_rms_relative = 17e-3*u.arcsecond
@@ -176,7 +176,7 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
             with self.assertRaises(lsst.daf.persistence.butlerExceptions.NoResults):
                 data_ref.get('jointcal_photoCalib')
 
-    def test_jointcalTask_2_visits_gaia_refcat(self):
+    def test_jointcalTask_2_visits_simple_astrometry_gaia_refcat(self):
         self.config = lsst.jointcal.jointcal.JointcalConfig()
         self.config.astrometryModel = "simple"
         self.config.photometryModel = "simpleFlux"
@@ -211,7 +211,7 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         dist_rms_absolute = 56e-3*u.arcsecond
         self._testJointcalTask(2, dist_rms_relative, dist_rms_absolute, pa1, metrics=metrics)
 
-    def test_jointcalTask_2_visits_no_photometry_match_cut_10(self):
+    def test_jointcalTask_2_visits_simple_astrometry_no_photometry_match_cut_10(self):
         """A larger matching radius will result in more associated fittedStars.
         """
         self.config = lsst.jointcal.jointcal.JointcalConfig()
@@ -234,7 +234,7 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         pa1 = None
         self._testJointcalTask(2, dist_rms_relative, self.dist_rms_absolute, pa1, metrics=metrics)
 
-    def test_jointcalTask_3_visits_no_photometry(self):
+    def test_jointcalTask_3_visits_simple_astrometry_no_photometry(self):
         """3 visit, default config to compare with min_measurements_3 test."""
         self.config = lsst.jointcal.jointcal.JointcalConfig()
         self.config.astrometryModel = "simple"
@@ -256,7 +256,7 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         pa1 = None
         self._testJointcalTask(3, dist_rms_relative, self.dist_rms_absolute, pa1, metrics=metrics)
 
-    def test_jointcalTask_3_visits_no_photometry_min_measurements_3(self):
+    def test_jointcalTask_3_visits_simple_astrometry_no_photometry_min_measurements_3(self):
         """Raising min_measurements to 3 will reduce the number of selected
         fitted stars (and thus the chisq and Ndof), but should not change the
         other values."""
