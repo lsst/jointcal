@@ -124,6 +124,7 @@ class JointcalTestDECAM(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Test
                    }
         return relative_error, pa1, metrics
 
+    @unittest.skip("DM-14439 : This test produces different chi2/ndof on centos6/7/Ubuntu and macOS.")
     def test_jointcalTask_2_visits_constrainedAstrometry_no_photometry(self):
         relative_error, pa1, metrics = self.setup_jointcalTask_2_visits_constrainedAstrometry_no_photometry()
 
