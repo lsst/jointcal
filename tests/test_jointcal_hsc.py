@@ -25,6 +25,7 @@ import os
 from astropy import units as u
 
 import lsst.afw.geom
+import lsst.pex.config
 import lsst.utils
 import lsst.pex.exceptions
 
@@ -149,6 +150,30 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         metrics['photometry_final_ndof'] = 1074
 
         self._testJointcalTask(2, None, None, pa1, metrics=metrics)
+
+    def test_jointcalTask_2_visits_simpleMagnitude_colorterms(self):
+        """Test that colorterms are applied and change the fit."""
+        pa1, metrics = self.setup_jointcalTask_2_visits_simplePhotometry()
+        self.config.photometryModel = "simpleMagnitude"
+        test_config = os.path.join(lsst.utils.getPackageDir('jointcal'),
+                                   'tests/config/hsc-colorterms-config.py')
+        self.configfiles.append(test_config)
+
+        # Final chi2 should be different, but I don't have an a-priori reason
+        # to expect it to be larger or smaller.
+        metrics['photometry_final_chi2'] = 1966.67
+
+        self._testJointcalTask(2, None, None, pa1, metrics=metrics)
+
+    def test_jointcalTask_2_visits_simpleMagnitude_colorterms_no_library(self):
+        """Fail Config validation if the color term library isn't defined."""
+        pa1, metrics = self.setup_jointcalTask_2_visits_simplePhotometry()
+        test_config = os.path.join(lsst.utils.getPackageDir('jointcal'),
+                                   'tests/config/hsc-colorterms_no_library-config.py')
+        self.configfiles.append(test_config)
+
+        with self.assertRaises(lsst.pex.config.FieldValidationError):
+            self._testJointcalTask(2, None, None, pa1)
 
     def testJointcalTask_2_visits_simple_astrometry_no_photometry(self):
         """Test turning off fitting photometry."""

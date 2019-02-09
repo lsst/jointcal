@@ -70,8 +70,7 @@ class PhotometryModelTestBase:
         self.refStar = lsst.jointcal.star.RefStar(self.fittedStar.x,
                                                   self.fittedStar.y,
                                                   self.fittedStar.flux + 50,
-                                                  self.fittedStar.fluxErr * 0.01,
-                                                  [], [])
+                                                  self.fittedStar.fluxErr * 0.01)
 
         self.firstIndex = 0  # for assignIndices
 

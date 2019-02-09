@@ -21,15 +21,18 @@
 
 import collections
 import numpy as np
+import astropy.units as u
 
 import lsst.utils
 import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 import lsst.afw.image as afwImage
+from lsst.afw.image import fluxErrFromABMagErr
 import lsst.afw.geom as afwGeom
 import lsst.pex.exceptions as pexExceptions
 import lsst.afw.table
 import lsst.meas.algorithms
+from lsst.pipe.tasks.colorterms import ColortermLibrary
 from lsst.verify import Job, Measurement
 
 from lsst.meas.algorithms import LoadIndexedReferenceObjectsTask
@@ -224,6 +227,16 @@ class JointcalConfig(pexConfig.Config):
                  " fitting in magnitude space.",
                  }
     )
+    applyColorTerms = pexConfig.Field(
+        doc="Apply photometric color terms to reference stars?"
+            "Requires that colorterms be set to a ColortermLibrary",
+        dtype=bool,
+        default=False
+    )
+    colorterms = pexConfig.ConfigField(
+        doc="Library of photometric reference catalog name to color term dict.",
+        dtype=ColortermLibrary,
+    )
     photometryVisitOrder = pexConfig.Field(
         doc="Order of the per-visit polynomial transform for the constrained photometry model.",
         dtype=int,
@@ -285,6 +298,12 @@ class JointcalConfig(pexConfig.Config):
         doc="Source flux field to use in source selection and to get fluxes from the catalog.",
         default='Calib'
     )
+
+    def validate(self):
+        super().validate()
+        if self.applyColorTerms and len(self.colorterms.data) == 0:
+            msg = "applyColorTerms=True requires the `colorterms` field be set to a ColortermLibrary."
+            raise pexConfig.FieldValidationError(JointcalConfig.colorterms, self, msg)
 
     def setDefaults(self):
         sourceSelector = self.sourceSelector["astrometry"]
@@ -559,36 +578,12 @@ class JointcalTask(pipeBase.CmdLineTask):
         add_measurement(self.job, 'jointcal.associated_%s_fittedStars' % name,
                         associations.fittedStarListSize())
 
-        skyCircle = refObjLoader.loadSkyCircle(center,
-                                               afwGeom.Angle(radius, afwGeom.radians),
-                                               defaultFilter)
-
-        # Need memory contiguity to get reference filters as a vector.
-        if not skyCircle.refCat.isContiguous():
-            refCat = skyCircle.refCat.copy(deep=True)
-        else:
-            refCat = skyCircle.refCat
-
-        # load the reference catalog fluxes.
-        # TODO: Simon will file a ticket for making this better (and making it use the color terms)
-        refFluxes = {}
-        refFluxErrs = {}
-        for filt in filters:
-            filtKeys = lsst.meas.algorithms.getRefFluxKeys(refCat.schema, filt)
-            # TODO: need to scale these until RFC-549 is completed and refcats return nanojansky
-            refFluxes[filt] = 1e9*refCat.get(filtKeys[0])
-            refFluxErrs[filt] = 1e9*refCat.get(filtKeys[1])
-
-        # TODO: need to scale these until RFC-549 is completed and refcats return nanojansky
-        refCat[skyCircle.fluxField] *= 1e9
-        try:
-            refCat[skyCircle.fluxField+'Err'] *= 1e9
-        except KeyError:
-            # not all existing refcats have an error field.
-            pass
+        applyColorterms = False if name == "Astrometry" else self.config.applyColorTerms
+        refCat, fluxField = self._load_reference_catalog(refObjLoader, center, radius, defaultFilter,
+                                                         applyColorterms=applyColorterms)
 
         associations.collectRefStars(refCat, self.config.matchCut*afwGeom.arcseconds,
-                                     skyCircle.fluxField, refFluxes, refFluxErrs, reject_bad_fluxes)
+                                     fluxField, reject_bad_fluxes)
         add_measurement(self.job, 'jointcal.collected_%s_refStars' % name,
                         associations.refStarListSize())
 
@@ -613,6 +608,67 @@ class JointcalTask(pipeBase.CmdLineTask):
             result.fit.saveChi2Contributions(baseName)
 
         return result
+
+    def _load_reference_catalog(self, refObjLoader, center, radius, filterName,
+                                applyColorterms=False):
+        """Load the necessary reference catalog sources, convert fluxes to
+        correct units, and apply color term corrections if requested.
+
+        Parameters
+        ----------
+        refObjLoader : `lsst.meas.algorithms.LoadReferenceObjectsTask`
+            The reference catalog loader to use to get the data.
+        center : `lsst.geom.SpherePoint`
+            The center around which to load sources.
+        radius : `lsst.geom.Angle`
+            The radius around ``center`` to load sources in.
+        filterName : `str`
+            The name of the camera filter to load fluxes for.
+        applyColorterms : `bool`
+            Apply colorterm corrections to the refcat for ``filterName``?
+
+        Returns
+        -------
+        refCat : `lsst.afw.table.SimpleCatalog`
+            The loaded reference catalog.
+        fluxField : `str`
+            The name of the reference catalog flux field appropriate for ``filterName``.
+        """
+        skyCircle = refObjLoader.loadSkyCircle(center,
+                                               afwGeom.Angle(radius, afwGeom.radians),
+                                               filterName)
+
+        # Need memory contiguity to get reference filters as a vector.
+        if not skyCircle.refCat.isContiguous():
+            refCat = skyCircle.refCat.copy(deep=True)
+        else:
+            refCat = skyCircle.refCat
+
+        if applyColorterms:
+            try:
+                refCatName = refObjLoader.ref_dataset_name
+            except AttributeError:
+                # NOTE: we need this try:except: block in place until we've completely removed a.net support.
+                raise RuntimeError("Cannot perform colorterm corrections with a.net refcats.")
+            self.log.info("Applying color terms for filterName=%r reference catalog=%s",
+                          filterName, refCatName)
+            colorterm = self.config.colorterms.getColorterm(
+                filterName=filterName, photoCatName=refCatName, doRaise=True)
+
+            refMag, refMagErr = colorterm.getCorrectedMagnitudes(refCat, filterName)
+            refCat[skyCircle.fluxField] = u.Magnitude(refMag, u.ABmag).to_value(u.nJy)
+            # TODO: I didn't want to use this, but I'll deal with it in DM-16903
+            refCat[skyCircle.fluxField+'Err'] = fluxErrFromABMagErr(refMagErr, refMag) * 1e9
+        else:
+            # TODO: need to scale these until RFC-549 is completed and refcats return nanojansky
+            refCat[skyCircle.fluxField] *= 1e9
+            try:
+                refCat[skyCircle.fluxField+'Err'] *= 1e9
+            except KeyError:
+                # not all existing refcats have an error field.
+                pass
+
+        return refCat, skyCircle.fluxField
 
     def _check_star_lists(self, associations, name):
         # TODO: these should be len(blah), but we need this properly wrapped first.

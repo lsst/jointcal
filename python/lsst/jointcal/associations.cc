@@ -46,7 +46,6 @@ void declareAssociations(py::module &mod) {
     cls.def("associateCatalogs", &Associations::associateCatalogs, "matchCutInArcsec"_a = 0,
             "useFittedList"_a = false, "enlargeFittedList"_a = true);
     cls.def("collectRefStars", &Associations::collectRefStars, "refCat"_a, "matchCut"_a, "fluxField"_a,
-            "refFluxMap"_a = RefFluxMapType(), "refFluxErrMap"_a = RefFluxMapType(),
             "rejectBadFluxes"_a = false);
     cls.def("deprojectFittedStars", &Associations::deprojectFittedStars);
     cls.def("nCcdImagesValidForFit", &Associations::nCcdImagesValidForFit);

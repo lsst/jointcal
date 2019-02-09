@@ -27,6 +27,10 @@ import numpy as np
 import lsst.log
 import lsst.utils
 
+import lsst.afw.table
+import lsst.geom
+from lsst.meas.algorithms import getRefFluxField, LoadIndexedReferenceObjectsTask
+import lsst.pipe.base
 import lsst.jointcal
 from lsst.jointcal import MinimizeResult
 import lsst.jointcal.chi2
@@ -36,6 +40,17 @@ import lsst.jointcal.testUtils
 # for MemoryTestCase
 def setup_module(module):
     lsst.utils.tests.init()
+
+
+def make_fake_refcat(center, flux, filterName):
+    """Make a fake reference catalog."""
+    schema = LoadIndexedReferenceObjectsTask.makeMinimalSchema([filterName])
+    catalog = lsst.afw.table.SimpleCatalog(schema)
+    record = catalog.addNew()
+    record.setCoord(center)
+    record[filterName + '_flux'] = flux
+    record[filterName + '_fluxErr'] = flux*0.1
+    return catalog
 
 
 class TestJointcalIterateFit(lsst.utils.tests.TestCase):
@@ -125,6 +140,29 @@ class TestJointcalIterateFit(lsst.utils.tests.TestCase):
         self.fitter.computeChi2.return_value = self.nanChi2
         with(self.assertRaises(FloatingPointError)):
             self.jointcal._logChi2AndValidate(self.associations, self.fitter, self.model)
+
+    def _make_fake_refcat(self):
+        center = lsst.geom.SpherePoint(30, -30, lsst.geom.degrees)
+        flux = 10
+        radius = 1 * lsst.geom.degrees
+        filterName = 'fake'
+
+        fakeRefCat = make_fake_refcat(center, flux, filterName)
+        fluxField = getRefFluxField(fakeRefCat.schema, filterName)
+        returnStruct = lsst.pipe.base.Struct(refCat=fakeRefCat, fluxField=fluxField)
+        refObjLoader = unittest.mock.Mock(spec=LoadIndexedReferenceObjectsTask)
+        refObjLoader.loadSkyCircle.return_value = returnStruct
+
+        return refObjLoader, center, radius, filterName, fakeRefCat
+
+    def test_load_reference_catalog(self):
+        refObjLoader, center, radius, filterName, fakeRefCat = self._make_fake_refcat()
+
+        refCat, fluxField = self.jointcal._load_reference_catalog(refObjLoader,
+                                                                  center,
+                                                                  radius,
+                                                                  filterName)
+        self.assertEqual(refCat, fakeRefCat)
 
 
 class MemoryTester(lsst.utils.tests.MemoryTestCase):
