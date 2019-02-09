@@ -9,5 +9,4 @@ jointcal documentation preview
 .. toctree::
    :maxdepth: 1
 
-   jointcal/index
    lsst.jointcal/index
