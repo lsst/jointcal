@@ -133,7 +133,7 @@ CcdImage::CcdImage(afw::table::SourceCatalog &catalog, std::shared_ptr<lsst::afw
     _lstObs = visitInfo->getEra();
     _hourAngle = visitInfo->getBoresightHourAngle();
 
-    // lsstSim doesn't manage ERA (and thus Hour Angle) properly, so it's going to be NaN.
+    // Some cameras don't manage ERA (and thus Hour Angle) properly, so it's going to be NaN.
     // Because we need the refraction vector later, go with 0 HA to prevent crashes on that NaN.
     if (std::isnan(_hourAngle) == true) {
         _hourAngle = 0;

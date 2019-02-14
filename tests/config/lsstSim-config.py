@@ -1,3 +1,0 @@
-from lsst.meas.extensions.astrometryNet import LoadAstrometryNetObjectsTask
-config.photometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
-config.astrometryRefObjLoader.retarget(LoadAstrometryNetObjectsTask)
