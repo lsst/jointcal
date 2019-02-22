@@ -648,7 +648,8 @@ class JointcalTask(pipeBase.CmdLineTask):
             try:
                 refCatName = refObjLoader.ref_dataset_name
             except AttributeError:
-                # NOTE: we need this try:except: block in place until we've completely removed a.net support.
+                # NOTE: RFC-562 we need this try:except: block in place
+                # until we've completely removed a.net support.
                 raise RuntimeError("Cannot perform colorterm corrections with a.net refcats.")
             self.log.info("Applying color terms for filterName=%r reference catalog=%s",
                           filterName, refCatName)

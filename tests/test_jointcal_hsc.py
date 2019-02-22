@@ -205,7 +205,7 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         self.config = lsst.jointcal.jointcal.JointcalConfig()
         self.config.astrometryModel = "simple"
         self.config.photometryModel = "simpleFlux"
-        # use the a.net refcat for photometry, gaia for astrometry
+        # use the SDSS refcat for photometry, gaia for astrometry
         self.config.sourceSelector['astrometry'].badFlags.append("base_PixelFlags_flag_interpolated")
         test_config = os.path.join(lsst.utils.getPackageDir('jointcal'), 'tests/config/hsc-gaia-config.py')
         self.configfiles.append(test_config)
@@ -230,7 +230,7 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
                    'photometry_final_chi2': 1811.45,
                    'photometry_final_ndof': 1072
                    }
-        # NOTE: The astrometry/photometry tests are computed using the a.net SDSS refcat,
+        # NOTE: The astrometry/photometry tests are computed using the SDSS refcat,
         # so the absolute astrometry RMS will be larger (because GAIA is better, so
         # comparing against SDSS will look "worse").
         dist_rms_absolute = 56e-3*u.arcsecond

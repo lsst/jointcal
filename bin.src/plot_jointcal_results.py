@@ -30,7 +30,7 @@ produces a new "wcs" component of the repository.
 import os
 
 import lsst.daf.persistence
-from lsst.meas.extensions.astrometryNet import LoadAstrometryNetObjectsTask, LoadAstrometryNetObjectsConfig
+from lsst.meas.algorithms import LoadIndexedReferenceObjectsTask, LoadIndexedReferenceObjectsConfig
 import lsst.afw.image
 from lsst.afw.geom import degrees
 
@@ -46,18 +46,20 @@ def get_valid_dataIds(butler, dataset_type='wcs'):
     return data_ids
 
 
-def prep_reference_loader(center, radius):
+def prep_reference_loader(center, radius, butler):
     """
     Return an astrometry.net reference loader.
 
     Parameters
     ----------
-    center: lsst.afw.SpherePoint
+    center: `lsst.afw.SpherePoint`
         The center of the field you're testing on.
-    radius: lsst.afw.geom.angle
+    radius: `lsst.afw.geom.angle`
         The radius to load objects around center.
+    butler: `lsst.daf.persistence.Butler`
+        A butler object for the refObjLoader.
     """
-    refLoader = LoadAstrometryNetObjectsTask(LoadAstrometryNetObjectsConfig())
+    refLoader = LoadIndexedReferenceObjectsTask(butler, config=LoadIndexedReferenceObjectsConfig())
     # Make a copy of the reference catalog for in-memory contiguity.
     return refLoader.loadSkyCircle(center, radius, filterName='r').refCat.copy()
 
@@ -107,7 +109,7 @@ def main():
     else:
         center = (args.ra, args.dec)
 
-    reference = prep_reference_loader(center, args.radius*degrees)
+    reference = prep_reference_loader(center, args.radius*degrees, butler)
 
     jointcalStatistics = utils.JointcalStatistics(verbose=args.verbose)
     jointcalStatistics.compute_rms(data_refs, reference)
