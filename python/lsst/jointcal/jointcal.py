@@ -303,6 +303,11 @@ class JointcalConfig(pexConfig.Config):
         doc="Write .csv files containing the contributions to chi2 for the initialization and final fit.",
         default=False
     )
+    writeChi2FilesOuterLoop = pexConfig.Field(
+        dtype=bool,
+        doc="Write .csv files containing the contributions to chi2 for the outer fit loop.",
+        default=False
+    )
     sourceFluxType = pexConfig.Field(
         dtype=str,
         doc="Source flux field to use in source selection and to get fluxes from the catalog.",
@@ -976,13 +981,15 @@ class JointcalTask(pipeBase.CmdLineTask):
         """
         dumpMatrixFile = "%s_postinit" % name if self.config.writeInitMatrix else ""
         for i in range(max_steps):
+            writeChi2Name = f"{name}_iterate_{i}_chi2-{dataName}.csv"
             result = fitter.minimize(whatToFit,
                                      self.config.outlierRejectSigma,
                                      doRankUpdate=doRankUpdate,
                                      doLineSearch=doLineSearch,
                                      dumpMatrixFile=dumpMatrixFile)
             dumpMatrixFile = ""  # clear it so we don't write the matrix again.
-            chi2 = self._logChi2AndValidate(associations, fitter, fitter.getModel())
+            chi2 = self._logChi2AndValidate(associations, fitter, fitter.getModel(),
+                                            writeChi2Name=writeChi2Name)
 
             if result == MinimizeResult.Converged:
                 if doRankUpdate:

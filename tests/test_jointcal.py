@@ -77,6 +77,7 @@ class JointcalTestBase:
 
         self.maxSteps = 20
         self.name = "testing"
+        self.dataName = "fake-fake"
         self.whatToFit = ""  # unneeded, since we're mocking the fitter
 
         # so the refObjLoaders have something to call `get()` on
@@ -106,6 +107,16 @@ class TestJointcalIterateFit(JointcalTestBase, lsst.utils.tests.TestCase):
         self.assertEqual(chi2, self.goodChi2)
         # Once for the for loop, the second time for the rank update.
         self.assertEqual(self.fitter.minimize.call_count, 2)
+
+    def test_iterateFit_writeChi2Outer(self):
+        chi2 = self.jointcal._iterate_fit(self.associations, self.fitter,
+                                          self.maxSteps, self.name, self.whatToFit,
+                                          dataName=self.dataName)
+        self.assertEqual(chi2, self.goodChi2)
+        # Once for the for loop, the second time for the rank update.
+        self.assertEqual(self.fitter.minimize.call_count, 2)
+        filename = f"{self.name}_iterate_0_chi2-{self.dataName}.csv"
+        self.fitter.saveChi2Contributions.assert_called_with(filename)
 
     def test_iterateFit_failed(self):
         self.fitter.minimize.return_value = MinimizeResult.Failed
