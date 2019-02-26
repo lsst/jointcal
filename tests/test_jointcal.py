@@ -148,6 +148,12 @@ class TestJointcalIterateFit(JointcalTestBase, lsst.utils.tests.TestCase):
         with(self.assertRaises(FloatingPointError)):
             self.jointcal._logChi2AndValidate(self.associations, self.fitter, self.model)
 
+    def test_writeChi2(self):
+        filename = "somefile.csv"
+        self.jointcal._logChi2AndValidate(self.associations, self.fitter, self.model,
+                                          writeChi2Name=filename)
+        self.fitter.saveChi2Contributions.assert_called_with(filename)
+
 
 class TestJointcalLoadRefCat(JointcalTestBase, lsst.utils.tests.TestCase):
 

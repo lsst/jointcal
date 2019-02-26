@@ -298,9 +298,9 @@ class JointcalConfig(pexConfig.Config):
             "Note that these files are the dense versions of the matrix, and so may be very large.",
         default=False
     )
-    writeChi2ContributionFiles = pexConfig.Field(
+    writeChi2FilesInitialFinal = pexConfig.Field(
         dtype=bool,
-        doc="Write initial/final fit files containing the contributions to chi2.",
+        doc="Write .csv files containing the contributions to chi2 for the initialization and final fit.",
         default=False
     )
     sourceFluxType = pexConfig.Field(
@@ -628,7 +628,7 @@ class JointcalTask(pipeBase.CmdLineTask):
             result = fit_function(associations, dataName)
         # TODO DM-12446: turn this into a "butler save" somehow.
         # Save reference and measurement chi2 contributions for this data
-        if self.config.writeChi2ContributionFiles:
+        if self.config.writeChi2FilesInitialFinal:
             baseName = "{}_final_chi2-{}.csv".format(name, dataName)
             result.fit.saveChi2Contributions(baseName)
 
@@ -707,8 +707,35 @@ class JointcalTask(pipeBase.CmdLineTask):
         if associations.refStarListSize() == 0:
             raise RuntimeError('No stars in the {} reference star list!'.format(name))
 
-    def _logChi2AndValidate(self, associations, fit, model, chi2Label="Model"):
-        """Compute chi2, log it, validate the model, and return chi2."""
+    def _logChi2AndValidate(self, associations, fit, model, chi2Label="Model",
+                            writeChi2Name=None):
+        """Compute chi2, log it, validate the model, and return chi2.
+
+        Parameters
+        ----------
+        associations : `lsst.jointcal.Associations`
+            The star/reference star associations to fit.
+        fit : `lsst.jointcal.FitterBase`
+            The fitter to use for minimization.
+        model : `lsst.jointcal.Model`
+            The model being fit.
+        chi2Label : str, optional
+            Label to describe the chi2 (e.g. "Initialized", "Final").
+        writeChi2Name : `str`, optional
+            Filename to write the chi2 contributions to.
+
+        Returns
+        -------
+        chi2: `lsst.jointcal.Chi2Accumulator`
+            The chi2 object for the current fitter and model.
+
+        Raises
+        ------
+        FloatingPointError
+            Raised if chi2 is infinite or NaN.
+        ValueError
+            Raised if the model is not valid.
+        """
         chi2 = fit.computeChi2()
         self.log.info("%s %s", chi2Label, chi2)
         self._check_stars(associations)
@@ -716,6 +743,8 @@ class JointcalTask(pipeBase.CmdLineTask):
             raise FloatingPointError('%s chi2 is invalid: %s', chi2Label, chi2)
         if not model.validate(associations.getCcdImageList()):
             raise ValueError("Model is not valid: check log messages for warnings.")
+        if writeChi2Name is not None:
+            fit.saveChi2Contributions(writeChi2Name)
         return chi2
 
     def _fit_photometry(self, associations, dataName=None):
@@ -765,13 +794,13 @@ class JointcalTask(pipeBase.CmdLineTask):
             doLineSearch = False  # purely linear in model parameters, so no line search needed
 
         fit = lsst.jointcal.PhotometryFit(associations, model)
-        self._logChi2AndValidate(associations, fit, model, "Initialized")
-
         # TODO DM-12446: turn this into a "butler save" somehow.
         # Save reference and measurement chi2 contributions for this data
-        if self.config.writeChi2ContributionFiles:
+        if self.config.writeChi2FilesInitialFinal:
             baseName = "photometry_initial_chi2-{}.csv".format(dataName)
-            fit.saveChi2Contributions(baseName)
+        else:
+            baseName = None
+        self._logChi2AndValidate(associations, fit, model, "Initialized", writeChi2Name=baseName)
 
         # The constrained model needs the visit transform fit first; the chip
         # transform is initialized from the singleFrame PhotoCalib, so it's close.
@@ -853,13 +882,13 @@ class JointcalTask(pipeBase.CmdLineTask):
                                                         order=self.config.astrometrySimpleOrder)
 
         fit = lsst.jointcal.AstrometryFit(associations, model, self.config.positionErrorPedestal)
-        self._logChi2AndValidate(associations, fit, model, "Initial")
-
         # TODO DM-12446: turn this into a "butler save" somehow.
         # Save reference and measurement chi2 contributions for this data
-        if self.config.writeChi2ContributionFiles:
+        if self.config.writeChi2FilesInitialFinal:
             baseName = "astrometry_initial_chi2-{}.csv".format(dataName)
-            fit.saveChi2Contributions(baseName)
+        else:
+            baseName = None
+        self._logChi2AndValidate(associations, fit, model, "Initial", writeChi2Name=baseName)
 
         dumpMatrixFile = "astrometry_preinit" if self.config.writeInitMatrix else ""
         # The constrained model needs the visit transform fit first; the chip
