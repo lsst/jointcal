@@ -149,12 +149,6 @@ public:
      */
     virtual void saveChi2Contributions(std::string const &baseName) const;
 
-    /// Save a CSV file containing residuals of measurement terms.
-    virtual void saveChi2MeasContributions(std::string const &filename) const = 0;
-
-    /// Save a CSV file containing residuals of reference terms.
-    virtual void saveChi2RefContributions(std::string const &filename) const = 0;
-
 protected:
     std::shared_ptr<Associations> _associations;
     std::string _whatToFit;
@@ -165,6 +159,12 @@ protected:
 
     // lsst.logging instance, to be created by subclass so that messages have consistent name while fitting.
     LOG_LOGGER _log;
+
+    /// Save a CSV file containing residuals of measurement terms.
+    virtual void saveChi2MeasContributions(std::string const &filename) const = 0;
+
+    /// Save a CSV file containing residuals of reference terms.
+    virtual void saveChi2RefContributions(std::string const &filename) const = 0;
 
     /**
      * Find Measurements and references contributing more than a cut, computed as

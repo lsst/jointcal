@@ -84,14 +84,15 @@ public:
 
     void offsetParams(Eigen::VectorXd const &delta) override;
 
+    /// Return the model being fit.
+    std::shared_ptr<PhotometryModel> getModel() const { return _photometryModel; }
+
+protected:
     /// @copydoc FitterBase::saveChi2MeasContributions
     void saveChi2MeasContributions(std::string const &filename) const override;
 
     /// @copydoc FitterBase::saveChi2RefContributions
     void saveChi2RefContributions(std::string const &filename) const override;
-
-    /// Return the model being fit.
-    std::shared_ptr<PhotometryModel> getModel() const { return _photometryModel; }
 
 private:
     bool _fittingModel, _fittingFluxes;
