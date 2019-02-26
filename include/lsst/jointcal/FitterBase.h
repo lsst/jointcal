@@ -150,10 +150,10 @@ public:
     virtual void saveChi2Contributions(std::string const &baseName) const;
 
     /// Save a CSV file containing residuals of measurement terms.
-    virtual void saveChi2MeasContributions(std::string const &baseName) const = 0;
+    virtual void saveChi2MeasContributions(std::string const &filename) const = 0;
 
     /// Save a CSV file containing residuals of reference terms.
-    virtual void saveChi2RefContributions(std::string const &baseName) const = 0;
+    virtual void saveChi2RefContributions(std::string const &filename) const = 0;
 
 protected:
     std::shared_ptr<Associations> _associations;

@@ -539,8 +539,8 @@ void AstrometryFit::checkStuff() {
     }
 }
 
-void AstrometryFit::saveChi2MeasContributions(std::string const &baseName) const {
-    std::ofstream ofile(baseName.c_str());
+void AstrometryFit::saveChi2MeasContributions(std::string const &filename) const {
+    std::ofstream ofile(filename.c_str());
     std::string separator = "\t";
 
     ofile << "#id" << separator << "xccd" << separator << "yccd " << separator;
@@ -613,8 +613,8 @@ void AstrometryFit::saveChi2MeasContributions(std::string const &baseName) const
     }      // loop on images
 }
 
-void AstrometryFit::saveChi2RefContributions(std::string const &baseName) const {
-    std::ofstream ofile(baseName.c_str());
+void AstrometryFit::saveChi2RefContributions(std::string const &filename) const {
+    std::ofstream ofile(filename.c_str());
     std::string separator = "\t";
 
     ofile << "#ra" << separator << "dec " << separator;

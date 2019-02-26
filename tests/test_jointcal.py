@@ -115,8 +115,8 @@ class TestJointcalIterateFit(JointcalTestBase, lsst.utils.tests.TestCase):
         self.assertEqual(chi2, self.goodChi2)
         # Once for the for loop, the second time for the rank update.
         self.assertEqual(self.fitter.minimize.call_count, 2)
-        filename = f"{self.name}_iterate_0_chi2-{self.dataName}.csv"
-        self.fitter.saveChi2Contributions.assert_called_with(filename)
+        filename = f"{self.name}_iterate_0_chi2-{self.dataName}"
+        self.fitter.saveChi2Contributions.assert_called_with(filename+"{type}")
 
     def test_iterateFit_failed(self):
         self.fitter.minimize.return_value = MinimizeResult.Failed
@@ -160,10 +160,10 @@ class TestJointcalIterateFit(JointcalTestBase, lsst.utils.tests.TestCase):
             self.jointcal._logChi2AndValidate(self.associations, self.fitter, self.model)
 
     def test_writeChi2(self):
-        filename = "somefile.csv"
+        filename = "somefile"
         self.jointcal._logChi2AndValidate(self.associations, self.fitter, self.model,
                                           writeChi2Name=filename)
-        self.fitter.saveChi2Contributions.assert_called_with(filename)
+        self.fitter.saveChi2Contributions.assert_called_with(filename+"{type}")
 
 
 class TestJointcalLoadRefCat(JointcalTestBase, lsst.utils.tests.TestCase):

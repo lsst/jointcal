@@ -227,8 +227,8 @@ void PhotometryFit::offsetParams(Eigen::VectorXd const &delta) {
     }
 }
 
-void PhotometryFit::saveChi2MeasContributions(std::string const &baseName) const {
-    std::ofstream ofile(baseName.c_str());
+void PhotometryFit::saveChi2MeasContributions(std::string const &filename) const {
+    std::ofstream ofile(filename.c_str());
     std::string separator = "\t";
 
     ofile << "#id" << separator << "xccd" << separator << "yccd" << separator;
@@ -288,8 +288,8 @@ void PhotometryFit::saveChi2MeasContributions(std::string const &baseName) const
     }      // loop on images
 }
 
-void PhotometryFit::saveChi2RefContributions(std::string const &baseName) const {
-    std::ofstream ofile(baseName.c_str());
+void PhotometryFit::saveChi2RefContributions(std::string const &filename) const {
+    std::ofstream ofile(filename.c_str());
     std::string separator = "\t";
 
     ofile << "#ra" << separator << "dec " << separator;

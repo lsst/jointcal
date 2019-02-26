@@ -634,8 +634,8 @@ class JointcalTask(pipeBase.CmdLineTask):
         # TODO DM-12446: turn this into a "butler save" somehow.
         # Save reference and measurement chi2 contributions for this data
         if self.config.writeChi2FilesInitialFinal:
-            baseName = "{}_final_chi2-{}.csv".format(name, dataName)
-            result.fit.saveChi2Contributions(baseName)
+            baseName = f"{name}_final_chi2-{dataName}"
+            result.fit.saveChi2Contributions(baseName+"{type}")
 
         return result
 
@@ -727,7 +727,8 @@ class JointcalTask(pipeBase.CmdLineTask):
         chi2Label : str, optional
             Label to describe the chi2 (e.g. "Initialized", "Final").
         writeChi2Name : `str`, optional
-            Filename to write the chi2 contributions to.
+            Filename prefix to write the chi2 contributions to.
+            Do not supply an extension: an appropriate one will be added.
 
         Returns
         -------
@@ -741,6 +742,10 @@ class JointcalTask(pipeBase.CmdLineTask):
         ValueError
             Raised if the model is not valid.
         """
+        if writeChi2Name is not None:
+            fit.saveChi2Contributions(writeChi2Name+"{type}")
+            self.log.info("Wrote chi2 contributions files: %s", writeChi2Name)
+
         chi2 = fit.computeChi2()
         self.log.info("%s %s", chi2Label, chi2)
         self._check_stars(associations)
@@ -748,8 +753,6 @@ class JointcalTask(pipeBase.CmdLineTask):
             raise FloatingPointError('%s chi2 is invalid: %s', chi2Label, chi2)
         if not model.validate(associations.getCcdImageList()):
             raise ValueError("Model is not valid: check log messages for warnings.")
-        if writeChi2Name is not None:
-            fit.saveChi2Contributions(writeChi2Name)
         return chi2
 
     def _fit_photometry(self, associations, dataName=None):
@@ -802,7 +805,7 @@ class JointcalTask(pipeBase.CmdLineTask):
         # TODO DM-12446: turn this into a "butler save" somehow.
         # Save reference and measurement chi2 contributions for this data
         if self.config.writeChi2FilesInitialFinal:
-            baseName = "photometry_initial_chi2-{}.csv".format(dataName)
+            baseName = f"photometry_initial_chi2-{dataName}"
         else:
             baseName = None
         self._logChi2AndValidate(associations, fit, model, "Initialized", writeChi2Name=baseName)
@@ -890,7 +893,7 @@ class JointcalTask(pipeBase.CmdLineTask):
         # TODO DM-12446: turn this into a "butler save" somehow.
         # Save reference and measurement chi2 contributions for this data
         if self.config.writeChi2FilesInitialFinal:
-            baseName = "astrometry_initial_chi2-{}.csv".format(dataName)
+            baseName = f"astrometry_initial_chi2-{dataName}"
         else:
             baseName = None
         self._logChi2AndValidate(associations, fit, model, "Initial", writeChi2Name=baseName)
@@ -981,7 +984,7 @@ class JointcalTask(pipeBase.CmdLineTask):
         """
         dumpMatrixFile = "%s_postinit" % name if self.config.writeInitMatrix else ""
         for i in range(max_steps):
-            writeChi2Name = f"{name}_iterate_{i}_chi2-{dataName}.csv"
+            writeChi2Name = f"{name}_iterate_{i}_chi2-{dataName}"
             result = fitter.minimize(whatToFit,
                                      self.config.outlierRejectSigma,
                                      doRankUpdate=doRankUpdate,
