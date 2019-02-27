@@ -331,12 +331,12 @@ class JointcalTask(pipeBase.CmdLineTask):
 
         Parameters
         ----------
-        butler : lsst.daf.persistence.Butler
+        butler : `lsst.daf.persistence.Butler`
             The butler is passed to the refObjLoader constructor in case it is
             needed. Ignored if the refObjLoader argument provides a loader directly.
             Used to initialize the astrometry and photometry refObjLoaders.
-        profile_jointcal : bool
-            set to True to profile different stages of this jointcal run.
+        profile_jointcal : `bool`
+            Set to True to profile different stages of this jointcal run.
         """
         pipeBase.CmdLineTask.__init__(self, **kwargs)
         self.profile_jointcal = profile_jointcal
@@ -378,22 +378,24 @@ class JointcalTask(pipeBase.CmdLineTask):
 
         Parameters
         ----------
-        dataRef : lsst.daf.persistence.ButlerDataRef
-            dataRef to extract info from.
-        associations : lsst.jointcal.Associations
-            object to add the info to, to construct a new CcdImage
-        jointcalControl : jointcal.JointcalControl
-            control object for associations management
+        dataRef : `lsst.daf.persistence.ButlerDataRef`
+            DataRef to extract info from.
+        associations : `lsst.jointcal.Associations`
+            Object to add the info to, to construct a new CcdImage
+        jointcalControl : `jointcal.JointcalControl`
+            Control object for associations management
 
         Returns
         ------
         namedtuple
-            wcs : lsst.afw.geom.SkyWcs
-                the TAN WCS of this image, read from the calexp
-            key : namedtuple
-                a key to identify this dataRef by its visit and ccd ids
-            filter : str
-                this calexp's filter
+            ``wcs``
+                The TAN WCS of this image, read from the calexp
+                (`lsst.afw.geom.SkyWcs`).
+            ``key``
+                A key to identify this dataRef by its visit and ccd ids
+                (`namedtuple`).
+            ``filter``
+                This calexp's filter (`str`).
         """
         if "visit" in dataRef.dataId.keys():
             visit = dataRef.dataId["visit"]
@@ -444,18 +446,22 @@ class JointcalTask(pipeBase.CmdLineTask):
 
         Parameters
         ----------
-        dataRefs : list of lsst.daf.persistence.ButlerDataRef
+        dataRefs : `list` of `lsst.daf.persistence.ButlerDataRef`
             List of data references to the exposures to be fit.
-        profile_jointcal : bool
+        profile_jointcal : `bool`
             Profile the individual steps of jointcal.
 
         Returns
         -------
-        pipe.base.Struct
-            struct containing:
-            * dataRefs: the provided data references that were fit (with updated WCSs)
-            * oldWcsList: the original WCS from each dataRef
-            * metrics: dictionary of internally-computed metrics for testing/validation.
+        result : `lsst.pipe.base.Struct`
+            Struct of metadata from the fit, containing:
+
+            ``dataRefs``
+                The provided data references that were fit (with updated WCSs)
+            ``oldWcsList``
+                The original WCS from each dataRef
+            ``metrics``
+                Dictionary of internally-computed metrics for testing/validation.
         """
         if len(dataRefs) == 0:
             raise ValueError('Need a non-empty list of data references!')
@@ -546,35 +552,36 @@ class JointcalTask(pipeBase.CmdLineTask):
 
         Parameters
         ----------
-        associations : lsst.jointcal.Associations
+        associations : `lsst.jointcal.Associations`
             The star/reference star associations to fit.
-        defaultFilter : str
+        defaultFilter : `str`
             filter to load from reference catalog.
-        center : lsst.afw.geom.SpherePoint
+        center : `lsst.afw.geom.SpherePoint`
             ICRS center of field to load from reference catalog.
-        radius : lsst.afw.geom.Angle
+        radius : `lsst.afw.geom.Angle`
             On-sky radius to load from reference catalog.
-        name : str
+        name : `str`
             Name of thing being fit: "Astrometry" or "Photometry".
-        refObjLoader : lsst.meas.algorithms.LoadReferenceObjectsTask
+        refObjLoader : `lsst.meas.algorithms.LoadReferenceObjectsTask`
             Reference object loader to load from for fit.
-        filters : list of str, optional
+        filters : `list` of `str`, optional
             List of filters to load from the reference catalog.
-        fit_function : function
-            function to call to perform fit (takes associations object).
-        tract : str
+        fit_function : callable
+            Function to call to perform fit (takes associations object).
+        tract : `str`
             Name of tract currently being fit.
-        profile_jointcal : bool, optional
+        profile_jointcal : `bool`, optional
             Separately profile the fitting step.
-        match_cut : float, optional
+        match_cut : `float`, optional
             Radius in arcseconds to find cross-catalog matches to during
             associations.associateCatalogs.
-        reject_bad_fluxes : bool, optional
+        reject_bad_fluxes : `bool`, optional
             Reject refCat sources with NaN/inf flux or NaN/0 fluxErr.
 
         Returns
         -------
-        Result of `fit_function()`
+        result : `Photometry` or `Astrometry`
+            Result of `fit_function()`
         """
         self.log.info("====== Now processing %s...", name)
         # TODO: this should not print "trying to invert a singular transformation:"
@@ -702,18 +709,18 @@ class JointcalTask(pipeBase.CmdLineTask):
 
         Parameters
         ----------
-        associations : lsst.jointcal.Associations
+        associations : `lsst.jointcal.Associations`
             The star/reference star associations to fit.
-        dataName : str
+        dataName : `str`
             Name of the data being processed (e.g. "1234_HSC-Y"), for
             identifying debugging files.
 
         Returns
         -------
-        namedtuple
-            fit : lsst.jointcal.PhotometryFit
+        fit_result : `namedtuple`
+            fit : `lsst.jointcal.PhotometryFit`
                 The photometric fitter used to perform the fit.
-            model : lsst.jointcal.PhotometryModel
+            model : `lsst.jointcal.PhotometryModel`
                 The photometric model that was fit.
         """
         self.log.info("=== Starting photometric fitting...")
@@ -792,20 +799,20 @@ class JointcalTask(pipeBase.CmdLineTask):
 
         Parameters
         ----------
-        associations : lsst.jointcal.Associations
+        associations : `lsst.jointcal.Associations`
             The star/reference star associations to fit.
-        dataName : str
+        dataName : `str`
             Name of the data being processed (e.g. "1234_HSC-Y"), for
             identifying debugging files.
 
         Returns
         -------
-        namedtuple
-            fit : lsst.jointcal.AstrometryFit
+        fit_result : `namedtuple`
+            fit : `lsst.jointcal.AstrometryFit`
                 The astrometric fitter used to perform the fit.
-            model : lsst.jointcal.AstrometryModel
+            model : `lsst.jointcal.AstrometryModel`
                 The astrometric model that was fit.
-            sky_to_tan_projection : lsst.jointcal.ProjectionHandler
+            sky_to_tan_projection : `lsst.jointcal.ProjectionHandler`
                 The model for the sky to tangent plane projection that was used in the fit.
         """
 
@@ -901,13 +908,13 @@ class JointcalTask(pipeBase.CmdLineTask):
             What type of data are we fitting (for logs and debugging files).
         whatToFit : `str`
             Passed to ``fitter.minimize()`` to define the parameters to fit.
-        dataName : str, optional
+        dataName : `str`, optional
             Descriptive name for this dataset (e.g. tract and filter),
             for debugging.
-        doRankUpdate : bool, optional
+        doRankUpdate : `bool`, optional
             Do an Eigen rank update during minimization, or recompute the full
             matrix and gradient?
-        doLineSearch : bool, optional
+        doLineSearch : `bool`, optional
             Do a line search for the optimum step during minimization?
 
         Returns
@@ -969,12 +976,12 @@ class JointcalTask(pipeBase.CmdLineTask):
 
         Parameters
         ----------
-        associations : lsst.jointcal.Associations
+        associations : `lsst.jointcal.Associations`
             The star/reference star associations to fit.
-        model : lsst.jointcal.AstrometryModel
+        model : `lsst.jointcal.AstrometryModel`
             The astrometric model that was fit.
-        visit_ccd_to_dataRef : dict of Key: lsst.daf.persistence.ButlerDataRef
-            dict of ccdImage identifiers to dataRefs that were fit
+        visit_ccd_to_dataRef : `dict` of Key: `lsst.daf.persistence.ButlerDataRef`
+            Dict of ccdImage identifiers to dataRefs that were fit.
         """
 
         ccdImageList = associations.getCcdImageList()
@@ -997,12 +1004,12 @@ class JointcalTask(pipeBase.CmdLineTask):
 
         Parameters
         ----------
-        associations : lsst.jointcal.Associations
+        associations : `lsst.jointcal.Associations`
             The star/reference star associations to fit.
-        model : lsst.jointcal.PhotometryModel
+        model : `lsst.jointcal.PhotometryModel`
             The photoometric model that was fit.
-        visit_ccd_to_dataRef : dict of Key: lsst.daf.persistence.ButlerDataRef
-            dict of ccdImage identifiers to dataRefs that were fit
+        visit_ccd_to_dataRef : `dict` of Key: `lsst.daf.persistence.ButlerDataRef`
+            Dict of ccdImage identifiers to dataRefs that were fit.
         """
 
         ccdImageList = associations.getCcdImageList()
