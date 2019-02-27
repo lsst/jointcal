@@ -35,7 +35,7 @@ import lsst.meas.algorithms
 from lsst.pipe.tasks.colorterms import ColortermLibrary
 from lsst.verify import Job, Measurement
 
-from lsst.meas.algorithms import LoadIndexedReferenceObjectsTask
+from lsst.meas.algorithms import LoadIndexedReferenceObjectsTask, ReferenceSourceSelectorTask
 from lsst.meas.algorithms.sourceSelector import sourceSelectorRegistry
 
 from .dataIds import PerTractCcdDataIdContainer
@@ -281,6 +281,10 @@ class JointcalConfig(pexConfig.Config):
         doc="How to select sources for cross-matching",
         default="astrometry"
     )
+    referenceSelector = pexConfig.ConfigurableField(
+        target=ReferenceSourceSelectorTask,
+        doc="How to down-select the loaded reference catalog.",
+    )
     writeInitMatrix = pexConfig.Field(
         dtype=bool,
         doc="Write the pre/post-initialization Hessian and gradient to text files, for debugging."
@@ -337,6 +341,7 @@ class JointcalTask(pipeBase.CmdLineTask):
         pipeBase.CmdLineTask.__init__(self, **kwargs)
         self.profile_jointcal = profile_jointcal
         self.makeSubtask("sourceSelector")
+        self.makeSubtask("referenceSelector")
         if self.config.doAstrometry:
             self.makeSubtask('astrometryRefObjLoader', butler=butler)
         else:
@@ -638,11 +643,12 @@ class JointcalTask(pipeBase.CmdLineTask):
                                                afwGeom.Angle(radius, afwGeom.radians),
                                                filterName)
 
+        selected = self.referenceSelector.run(skyCircle.refCat)
         # Need memory contiguity to get reference filters as a vector.
-        if not skyCircle.refCat.isContiguous():
-            refCat = skyCircle.refCat.copy(deep=True)
+        if not selected.sourceCat.isContiguous():
+            refCat = selected.sourceCat.copy(deep=True)
         else:
-            refCat = skyCircle.refCat
+            refCat = selected.sourceCat
 
         if applyColorterms:
             try:

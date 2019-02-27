@@ -162,7 +162,29 @@ class TestJointcalIterateFit(lsst.utils.tests.TestCase):
                                                                   center,
                                                                   radius,
                                                                   filterName)
-        self.assertEqual(refCat, fakeRefCat)
+        # operator== isn't implemented for Catalogs, so we have to check like
+        # this, in case the records are copied during load.
+        self.assertEqual(len(refCat), len(fakeRefCat))
+        for r1, r2 in zip(refCat, fakeRefCat):
+            self.assertEqual(r1, r2)
+
+    def test_load_reference_catalog_subselect(self):
+        """Test that we can select out the one source in the fake refcat
+        with a ridiculous S/N cut.
+        """
+        refObjLoader, center, radius, filterName, fakeRefCat = self._make_fake_refcat()
+
+        config = lsst.jointcal.jointcal.JointcalConfig()
+        config.doAstrometry = False
+        config.doPhotometry = False
+        config.referenceSelector.doSignalToNoise = True
+        config.referenceSelector.signalToNoise.minimum = 1e10
+        config.referenceSelector.signalToNoise.fluxField = "fake_flux"
+        config.referenceSelector.signalToNoise.errField = "fake_fluxErr"
+        jointcal = lsst.jointcal.JointcalTask(config=config)
+
+        refCat, fluxField = jointcal._load_reference_catalog(refObjLoader, center, radius, filterName)
+        self.assertEqual(len(refCat), 0)
 
 
 class MemoryTester(lsst.utils.tests.MemoryTestCase):
