@@ -810,6 +810,12 @@ class JointcalTask(pipeBase.CmdLineTask):
             baseName = None
         self._logChi2AndValidate(associations, fit, model, "Initialized", writeChi2Name=baseName)
 
+        def getChi2Name(whatToFit):
+            if self.config.writeChi2FilesOuterLoop:
+                return f"photometry_init-%s_chi2-{dataName}" % whatToFit
+            else:
+                return None
+
         # The constrained model needs the visit transform fit first; the chip
         # transform is initialized from the singleFrame PhotoCalib, so it's close.
         dumpMatrixFile = "photometry_preinit" if self.config.writeInitMatrix else ""
@@ -817,17 +823,18 @@ class JointcalTask(pipeBase.CmdLineTask):
             # no line search: should be purely (or nearly) linear,
             # and we want a large step size to initialize with.
             fit.minimize("ModelVisit", dumpMatrixFile=dumpMatrixFile)
-            self._logChi2AndValidate(associations, fit, model)
+            self._logChi2AndValidate(associations, fit, model, writeChi2Name=getChi2Name("ModelVisit"))
             dumpMatrixFile = ""  # so we don't redo the output on the next step
 
         fit.minimize("Model", doLineSearch=doLineSearch, dumpMatrixFile=dumpMatrixFile)
-        self._logChi2AndValidate(associations, fit, model)
+        self._logChi2AndValidate(associations, fit, model, writeChi2Name=getChi2Name("Model"))
 
         fit.minimize("Fluxes")  # no line search: always purely linear.
-        self._logChi2AndValidate(associations, fit, model)
+        self._logChi2AndValidate(associations, fit, model, writeChi2Name=getChi2Name("Fluxes"))
 
         fit.minimize("Model Fluxes", doLineSearch=doLineSearch)
-        self._logChi2AndValidate(associations, fit, model, "Fit prepared")
+        self._logChi2AndValidate(associations, fit, model, "Fit prepared",
+                                 writeChi2Name=getChi2Name("ModelFluxes"))
 
         model.freezeErrorTransform()
         self.log.debug("Photometry error scales are frozen.")
@@ -898,22 +905,29 @@ class JointcalTask(pipeBase.CmdLineTask):
             baseName = None
         self._logChi2AndValidate(associations, fit, model, "Initial", writeChi2Name=baseName)
 
+        def getChi2Name(whatToFit):
+            if self.config.writeChi2FilesOuterLoop:
+                return f"astrometry_init-%s_chi2-{dataName}" % whatToFit
+            else:
+                return None
+
         dumpMatrixFile = "astrometry_preinit" if self.config.writeInitMatrix else ""
         # The constrained model needs the visit transform fit first; the chip
         # transform is initialized from the detector's cameraGeom, so it's close.
         if self.config.astrometryModel == "constrained":
             fit.minimize("DistortionsVisit", dumpMatrixFile=dumpMatrixFile)
-            self._logChi2AndValidate(associations, fit, model)
+            self._logChi2AndValidate(associations, fit, model, writeChi2Name=getChi2Name("DistortionsVisit"))
             dumpMatrixFile = ""  # so we don't redo the output on the next step
 
         fit.minimize("Distortions", dumpMatrixFile=dumpMatrixFile)
-        self._logChi2AndValidate(associations, fit, model)
+        self._logChi2AndValidate(associations, fit, model, writeChi2Name=getChi2Name("Distortions"))
 
         fit.minimize("Positions")
-        self._logChi2AndValidate(associations, fit, model)
+        self._logChi2AndValidate(associations, fit, model, writeChi2Name=getChi2Name("Positions"))
 
         fit.minimize("Distortions Positions")
-        self._logChi2AndValidate(associations, fit, model, "Fit prepared")
+        self._logChi2AndValidate(associations, fit, model, "Fit prepared",
+                                 writeChi2Name=getChi2Name("DistortionsPositions"))
 
         chi2 = self._iterate_fit(associations,
                                  fit,
