@@ -281,9 +281,13 @@ class JointcalConfig(pexConfig.Config):
         doc="How to select sources for cross-matching",
         default="astrometry"
     )
-    referenceSelector = pexConfig.ConfigurableField(
+    astrometryReferenceSelector = pexConfig.ConfigurableField(
         target=ReferenceSourceSelectorTask,
-        doc="How to down-select the loaded reference catalog.",
+        doc="How to down-select the loaded astrometry reference catalog.",
+    )
+    photometryReferenceSelector = pexConfig.ConfigurableField(
+        target=ReferenceSourceSelectorTask,
+        doc="How to down-select the loaded photometry reference catalog.",
     )
     writeInitMatrix = pexConfig.Field(
         dtype=bool,
@@ -341,13 +345,14 @@ class JointcalTask(pipeBase.CmdLineTask):
         pipeBase.CmdLineTask.__init__(self, **kwargs)
         self.profile_jointcal = profile_jointcal
         self.makeSubtask("sourceSelector")
-        self.makeSubtask("referenceSelector")
         if self.config.doAstrometry:
             self.makeSubtask('astrometryRefObjLoader', butler=butler)
+            self.makeSubtask("astrometryReferenceSelector")
         else:
             self.astrometryRefObjLoader = None
         if self.config.doPhotometry:
             self.makeSubtask('photometryRefObjLoader', butler=butler)
+            self.makeSubtask("photometryReferenceSelector")
         else:
             self.photometryRefObjLoader = None
 
@@ -516,6 +521,7 @@ class JointcalTask(pipeBase.CmdLineTask):
             astrometry = self._do_load_refcat_and_fit(associations, defaultFilter, center, radius,
                                                       name="astrometry",
                                                       refObjLoader=self.astrometryRefObjLoader,
+                                                      referenceSelector=self.astrometryReferenceSelector,
                                                       fit_function=self._fit_astrometry,
                                                       profile_jointcal=profile_jointcal,
                                                       tract=tract)
@@ -527,6 +533,7 @@ class JointcalTask(pipeBase.CmdLineTask):
             photometry = self._do_load_refcat_and_fit(associations, defaultFilter, center, radius,
                                                       name="photometry",
                                                       refObjLoader=self.photometryRefObjLoader,
+                                                      referenceSelector=self.photometryReferenceSelector,
                                                       fit_function=self._fit_photometry,
                                                       profile_jointcal=profile_jointcal,
                                                       tract=tract,
@@ -545,7 +552,8 @@ class JointcalTask(pipeBase.CmdLineTask):
                                exitStatus=exitStatus)
 
     def _do_load_refcat_and_fit(self, associations, defaultFilter, center, radius,
-                                name="", refObjLoader=None, filters=[], fit_function=None,
+                                name="", refObjLoader=None, referenceSelector=None,
+                                filters=[], fit_function=None,
                                 tract=None, profile_jointcal=False, match_cut=3.0,
                                 reject_bad_fluxes=False):
         """Load reference catalog, perform the fit, and return the result.
@@ -591,7 +599,12 @@ class JointcalTask(pipeBase.CmdLineTask):
                         associations.fittedStarListSize())
 
         applyColorterms = False if name == "Astrometry" else self.config.applyColorTerms
-        refCat, fluxField = self._load_reference_catalog(refObjLoader, center, radius, defaultFilter,
+        if name == "Astrometry":
+            referenceSelector = self.config.astrometryReferenceSelector
+        elif name == "Photometry":
+            referenceSelector = self.config.photometryReferenceSelector
+        refCat, fluxField = self._load_reference_catalog(refObjLoader, referenceSelector,
+                                                         center, radius, defaultFilter,
                                                          applyColorterms=applyColorterms)
 
         associations.collectRefStars(refCat, self.config.matchCut*afwGeom.arcseconds,
@@ -621,7 +634,7 @@ class JointcalTask(pipeBase.CmdLineTask):
 
         return result
 
-    def _load_reference_catalog(self, refObjLoader, center, radius, filterName,
+    def _load_reference_catalog(self, refObjLoader, referenceSelector, center, radius, filterName,
                                 applyColorterms=False):
         """Load the necessary reference catalog sources, convert fluxes to
         correct units, and apply color term corrections if requested.
@@ -630,6 +643,8 @@ class JointcalTask(pipeBase.CmdLineTask):
         ----------
         refObjLoader : `lsst.meas.algorithms.LoadReferenceObjectsTask`
             The reference catalog loader to use to get the data.
+        referenceSelector : `lsst.meas.algorithms.ReferenceSourceSelectorTask`
+            Source selector to apply to loaded reference catalog.
         center : `lsst.geom.SpherePoint`
             The center around which to load sources.
         radius : `lsst.geom.Angle`
@@ -650,7 +665,7 @@ class JointcalTask(pipeBase.CmdLineTask):
                                                afwGeom.Angle(radius, afwGeom.radians),
                                                filterName)
 
-        selected = self.referenceSelector.run(skyCircle.refCat)
+        selected = referenceSelector.run(skyCircle.refCat)
         # Need memory contiguity to get reference filters as a vector.
         if not selected.sourceCat.isContiguous():
             refCat = selected.sourceCat.copy(deep=True)

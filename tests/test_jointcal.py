@@ -28,8 +28,9 @@ import lsst.log
 import lsst.utils
 
 import lsst.afw.table
+import lsst.daf.persistence
 import lsst.geom
-from lsst.meas.algorithms import getRefFluxField, LoadIndexedReferenceObjectsTask
+from lsst.meas.algorithms import getRefFluxField, LoadIndexedReferenceObjectsTask, DatasetConfig
 import lsst.pipe.base
 import lsst.jointcal
 from lsst.jointcal import MinimizeResult
@@ -53,19 +54,13 @@ def make_fake_refcat(center, flux, filterName):
     return catalog
 
 
-class TestJointcalIterateFit(lsst.utils.tests.TestCase):
+class JointcalTestBase:
     def setUp(self):
         struct = lsst.jointcal.testUtils.createTwoFakeCcdImages(100, 100)
         self.ccdImageList = struct.ccdImageList
         # so that countStars() returns nonzero results
         for ccdImage in self.ccdImageList:
             ccdImage.resetCatalogForFit()
-
-        self.config = lsst.jointcal.jointcal.JointcalConfig()
-        # disable both, so it doesn't configure any refObjLoaders
-        self.config.doAstrometry = False
-        self.config.doPhotometry = False
-        self.jointcal = lsst.jointcal.JointcalTask(config=self.config)
 
         self.goodChi2 = lsst.jointcal.chi2.Chi2Statistic()
         # chi2/ndof == 2.0 should be non-bad
@@ -84,6 +79,15 @@ class TestJointcalIterateFit(lsst.utils.tests.TestCase):
         self.name = "testing"
         self.whatToFit = ""  # unneeded, since we're mocking the fitter
 
+        # so the refObjLoaders have something to call `get()` on
+        self.butler = unittest.mock.Mock(spec=lsst.daf.persistence.Butler)
+        self.butler.get.return_value.indexer = DatasetConfig().indexer
+
+
+class TestJointcalIterateFit(JointcalTestBase, lsst.utils.tests.TestCase):
+    def setUp(self):
+        super().setUp()
+
         # Mock the fitter, association manager, and model, so we can force particular
         # return values/exceptions. Default to "good" return values.
         self.fitter = unittest.mock.Mock(spec=lsst.jointcal.PhotometryFit)
@@ -92,6 +96,9 @@ class TestJointcalIterateFit(lsst.utils.tests.TestCase):
         self.associations = unittest.mock.Mock(spec=lsst.jointcal.Associations)
         self.associations.getCcdImageList.return_value = self.ccdImageList
         self.model = unittest.mock.Mock(spec=lsst.jointcal.SimpleFluxModel)
+
+        self.config = lsst.jointcal.jointcal.JointcalConfig()
+        self.jointcal = lsst.jointcal.JointcalTask(config=self.config, butler=self.butler)
 
     def test_iterateFit_success(self):
         chi2 = self.jointcal._iterate_fit(self.associations, self.fitter,
@@ -141,7 +148,11 @@ class TestJointcalIterateFit(lsst.utils.tests.TestCase):
         with(self.assertRaises(FloatingPointError)):
             self.jointcal._logChi2AndValidate(self.associations, self.fitter, self.model)
 
+
+class TestJointcalLoadRefCat(JointcalTestBase, lsst.utils.tests.TestCase):
+
     def _make_fake_refcat(self):
+        """Make a fake reference catalog and the bits necessary to use it."""
         center = lsst.geom.SpherePoint(30, -30, lsst.geom.degrees)
         flux = 10
         radius = 1 * lsst.geom.degrees
@@ -158,10 +169,14 @@ class TestJointcalIterateFit(lsst.utils.tests.TestCase):
     def test_load_reference_catalog(self):
         refObjLoader, center, radius, filterName, fakeRefCat = self._make_fake_refcat()
 
-        refCat, fluxField = self.jointcal._load_reference_catalog(refObjLoader,
-                                                                  center,
-                                                                  radius,
-                                                                  filterName)
+        config = lsst.jointcal.jointcal.JointcalConfig()
+        jointcal = lsst.jointcal.JointcalTask(config=config, butler=self.butler)
+
+        refCat, fluxField = jointcal._load_reference_catalog(refObjLoader,
+                                                             jointcal.astrometryReferenceSelector,
+                                                             center,
+                                                             radius,
+                                                             filterName)
         # operator== isn't implemented for Catalogs, so we have to check like
         # this, in case the records are copied during load.
         self.assertEqual(len(refCat), len(fakeRefCat))
@@ -175,15 +190,17 @@ class TestJointcalIterateFit(lsst.utils.tests.TestCase):
         refObjLoader, center, radius, filterName, fakeRefCat = self._make_fake_refcat()
 
         config = lsst.jointcal.jointcal.JointcalConfig()
-        config.doAstrometry = False
-        config.doPhotometry = False
-        config.referenceSelector.doSignalToNoise = True
-        config.referenceSelector.signalToNoise.minimum = 1e10
-        config.referenceSelector.signalToNoise.fluxField = "fake_flux"
-        config.referenceSelector.signalToNoise.errField = "fake_fluxErr"
-        jointcal = lsst.jointcal.JointcalTask(config=config)
+        config.astrometryReferenceSelector.doSignalToNoise = True
+        config.astrometryReferenceSelector.signalToNoise.minimum = 1e10
+        config.astrometryReferenceSelector.signalToNoise.fluxField = "fake_flux"
+        config.astrometryReferenceSelector.signalToNoise.errField = "fake_fluxErr"
+        jointcal = lsst.jointcal.JointcalTask(config=config, butler=self.butler)
 
-        refCat, fluxField = jointcal._load_reference_catalog(refObjLoader, center, radius, filterName)
+        refCat, fluxField = jointcal._load_reference_catalog(refObjLoader,
+                                                             jointcal.astrometryReferenceSelector,
+                                                             center,
+                                                             radius,
+                                                             filterName)
         self.assertEqual(len(refCat), 0)
 
 
