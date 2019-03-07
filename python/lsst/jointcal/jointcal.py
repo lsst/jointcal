@@ -289,6 +289,11 @@ class JointcalConfig(pexConfig.Config):
         target=ReferenceSourceSelectorTask,
         doc="How to down-select the loaded photometry reference catalog.",
     )
+    photometryRejectBadFluxes = pexConfig.Field(
+        doc="Reject bad fluxes/errors when reading in photometry refcat",
+        dtype=bool,
+        default=True,
+    )
     writeInitMatrix = pexConfig.Field(
         dtype=bool,
         doc="Write the pre/post-initialization Hessian and gradient to text files, for debugging."
@@ -538,7 +543,7 @@ class JointcalTask(pipeBase.CmdLineTask):
                                                       profile_jointcal=profile_jointcal,
                                                       tract=tract,
                                                       filters=filters,
-                                                      reject_bad_fluxes=True)
+                                                      reject_bad_fluxes=self.config.photometryRejectBadFluxes)
             self._write_photometry_results(associations, photometry.model, visit_ccd_to_dataRef)
         else:
             photometry = Photometry(None, None)
