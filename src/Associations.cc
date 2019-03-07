@@ -199,7 +199,7 @@ void Associations::collectRefStars(afw::table::SimpleCatalog &refCat, afw::geom:
             fluxErr = record->get(fluxErrKey);
         } else {
             //fluxErr = std::numeric_limits<double>::quiet_NaN();
-            fluxErr = 0.0
+            fluxErr = 0.0;
         }
         double ra = lsst::afw::geom::radToDeg(coord.getLongitude());
         double dec = lsst::afw::geom::radToDeg(coord.getLatitude());
