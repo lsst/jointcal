@@ -38,6 +38,13 @@ def setup_module(module):
 
 
 class JointcalTestCFHTMinimal(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCase):
+    """
+    Test with a stripped down CFHT dataset containing 3 stars, so by-hand
+    calculation of metrics is possible.
+
+    See `notebooks/cfht_minimal_direct_calculation.ipynb` for numpy-based
+    computations of chi2, etc. using this dataset.
+    """
     @classmethod
     def setUpClass(cls):
         cls.data_dir = os.path.join(lsst.utils.getPackageDir('jointcal'), 'tests/data')
@@ -79,6 +86,8 @@ class JointcalTestCFHTMinimal(jointcalTestBase.JointcalTestBase, lsst.utils.test
 
         # The output repo is named after this method.
         caller = inspect.stack()[0].function
+        # we use _runJointcalTask instead of _test here because we aren't doing
+        # full calulation of PA1: the above chi2 is exact.
         self._runJointcalTask(2, caller, metrics=metrics)
 
         # Check that the Hessian/gradient files were written.
