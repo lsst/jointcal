@@ -91,6 +91,15 @@ class JointcalTestCFHTMinimal(jointcalTestBase.JointcalTestBase, lsst.utils.test
         self.assertTrue(os.path.exists("photometry_postinit-grad.txt"))
         os.remove("photometry_postinit-grad.txt")
 
+        # Check that the config was persisted, we can read it, and it matches the settings above
+        output_dir = os.path.join('.test', self.__class__.__name__, caller)
+        self.assertTrue(os.path.exists(os.path.join(output_dir, 'config/jointcal.py')))
+        butler = lsst.daf.persistence.Butler(output_dir)
+        config = butler.get('jointcal_config')
+        self.assertEqual(config.photometryModel, self.config.photometryModel)
+        self.assertEqual(config.doAstrometry, self.config.doAstrometry)
+        self.assertEqual(config.writeInitMatrix, self.config.writeInitMatrix)
+
     def test_jointcalTask_2_visits_photometry_magnitude(self):
         self.config = lsst.jointcal.jointcal.JointcalConfig()
         self.config.photometryModel = "simpleMagnitude"
