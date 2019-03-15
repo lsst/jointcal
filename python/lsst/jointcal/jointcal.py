@@ -359,11 +359,9 @@ class JointcalTask(pipeBase.CmdLineTask):
         # To hold various computed metrics for use by tests
         self.job = Job.load_metrics_package(subset='jointcal')
 
-    # We don't need to persist config and metadata at this stage.
-    # In this way, we don't need to put a specific entry in the camera mapper policy file
-    def _getConfigName(self):
-        return None
-
+    # We don't currently need to persist the metadata.
+    # If we do in the future, we will have to add appropriate dataset templates
+    # to each obs package (the metadata template should look like `jointcal_wcs`).
     def _getMetadataName(self):
         return None
 

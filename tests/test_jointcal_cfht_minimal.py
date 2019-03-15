@@ -38,6 +38,13 @@ def setup_module(module):
 
 
 class JointcalTestCFHTMinimal(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCase):
+    """
+    Test with a stripped down CFHT dataset containing 3 stars, so by-hand
+    calculation of metrics is possible.
+
+    See `notebooks/cfht_minimal_direct_calculation.ipynb` for numpy-based
+    computations of chi2, etc. using this dataset.
+    """
     @classmethod
     def setUpClass(cls):
         cls.data_dir = os.path.join(lsst.utils.getPackageDir('jointcal'), 'tests/data')
@@ -79,6 +86,8 @@ class JointcalTestCFHTMinimal(jointcalTestBase.JointcalTestBase, lsst.utils.test
 
         # The output repo is named after this method.
         caller = inspect.stack()[0].function
+        # we use _runJointcalTask instead of _test here because we aren't doing
+        # full calulation of PA1: the above chi2 is exact.
         self._runJointcalTask(2, caller, metrics=metrics)
 
         # Check that the Hessian/gradient files were written.
@@ -90,6 +99,15 @@ class JointcalTestCFHTMinimal(jointcalTestBase.JointcalTestBase, lsst.utils.test
         os.remove("photometry_postinit-mat.txt")
         self.assertTrue(os.path.exists("photometry_postinit-grad.txt"))
         os.remove("photometry_postinit-grad.txt")
+
+        # Check that the config was persisted, we can read it, and it matches the settings above
+        output_dir = os.path.join('.test', self.__class__.__name__, caller)
+        self.assertTrue(os.path.exists(os.path.join(output_dir, 'config/jointcal.py')))
+        butler = lsst.daf.persistence.Butler(output_dir)
+        config = butler.get('jointcal_config')
+        self.assertEqual(config.photometryModel, self.config.photometryModel)
+        self.assertEqual(config.doAstrometry, self.config.doAstrometry)
+        self.assertEqual(config.writeInitMatrix, self.config.writeInitMatrix)
 
     def test_jointcalTask_2_visits_photometry_magnitude(self):
         self.config = lsst.jointcal.jointcal.JointcalConfig()
