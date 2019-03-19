@@ -122,7 +122,7 @@ def makePhotoCalibImages(visit, butler, step=8, chips=[], tract=None,
     if meanCalib:
         meanCalibScaling = 0
         for ccd in chips:
-            calib = butler.get('calexp_calib', dataId=dict(visit=int(visit), ccd=int(ccd), tract=tract))
+            calib = butler.get('calexp_photoCalib', dataId=dict(visit=int(visit), ccd=int(ccd), tract=tract))
             meanCalibScaling += calib.getFluxMag0()[0]
         meanCalibScaling /= len(chips)
         if verbose:

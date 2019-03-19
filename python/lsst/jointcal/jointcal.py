@@ -26,7 +26,6 @@ import astropy.units as u
 import lsst.utils
 import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
-import lsst.afw.image as afwImage
 from lsst.afw.image import fluxErrFromABMagErr
 import lsst.afw.geom as afwGeom
 import lsst.pex.exceptions as pexExceptions
@@ -417,16 +416,11 @@ class JointcalTask(pipeBase.CmdLineTask):
         visitInfo = dataRef.get('calexp_visitInfo')
         detector = dataRef.get('calexp_detector')
         ccdId = detector.getId()
-        calib = dataRef.get('calexp_calib')
+        photoCalib = dataRef.get('calexp_photoCalib')
         tanWcs = dataRef.get('calexp_wcs')
         bbox = dataRef.get('calexp_bbox')
         filt = dataRef.get('calexp_filter')
         filterName = filt.getName()
-        fluxMag0 = calib.getFluxMag0()
-        # TODO: need to scale these until DM-10153 is completed and PhotoCalib has replaced Calib entirely
-        referenceFlux = 1e23 * 10**(48.6 / -2.5) * 1e9
-        photoCalib = afwImage.PhotoCalib(referenceFlux/fluxMag0[0],
-                                         referenceFlux*fluxMag0[1]/fluxMag0[0]**2, bbox)
 
         goodSrc = self.sourceSelector.run(src)
 
