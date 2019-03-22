@@ -125,6 +125,8 @@ class JointcalRunner(pipeBase.ButlerInitializedTaskRunner):
                 tract = dataRefList[0].dataId['tract']
                 task.log.fatal("Failed processing tract %s, %s: %s", tract, eName, e)
 
+        # Put the butler back into kwargs for the other Tasks.
+        kwargs['butler'] = butler
         if self.doReturnResults:
             return pipeBase.Struct(result=result, exitStatus=exitStatus)
         else:
