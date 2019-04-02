@@ -163,7 +163,7 @@ class JointcalTestDECAM(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Test
         self.config.doAstrometry = False
         self.jointcalStatistics.do_astrometry = False
 
-        self.other_args.extend(['--config', 'writeChi2ContributionFiles=True'])
+        self.other_args.extend(['--config', 'writeChi2FilesInitialFinal=True'])
 
         # See Readme for an explanation of these empirical values.
         pa1 = 0.11

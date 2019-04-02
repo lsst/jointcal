@@ -74,7 +74,7 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
         self.config.sourceSelector['astrometry'].badFlags.append("base_PixelFlags_flag_interpolated")
 
         # to test whether we got the expected chi2 contribution files.
-        self.other_args.extend(['--config', 'writeChi2ContributionFiles=True'])
+        self.other_args.extend(['--config', 'writeChi2FilesInitialFinal=True'])
 
         # See Readme for an explanation of these empirical values.
         dist_rms_relative = 11e-3*u.arcsecond

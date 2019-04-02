@@ -118,12 +118,6 @@ public:
 
     void offsetParams(Eigen::VectorXd const &delta) override;
 
-    /// @copydoc FitterBase::saveChi2MeasContributions
-    void saveChi2MeasContributions(std::string const &baseName) const override;
-
-    /// @copydoc FitterBase::saveChi2RefContributions
-    void saveChi2RefContributions(std::string const &baseName) const override;
-
     /// Return the model being fit.
     std::shared_ptr<AstrometryModel> getModel() const { return _astrometryModel; }
 
@@ -131,6 +125,13 @@ public:
      * DEBUGGING routine
      */
     void checkStuff();
+
+protected:
+    /// @copydoc FitterBase::saveChi2MeasContributions
+    void saveChi2MeasContributions(std::string const &filename) const override;
+
+    /// @copydoc FitterBase::saveChi2RefContributions
+    void saveChi2RefContributions(std::string const &filename) const override;
 
 private:
     bool _fittingDistortions, _fittingPos, _fittingRefrac, _fittingPM;

@@ -39,6 +39,12 @@ void declareProjectionHandler(py::module &mod) {
     py::class_<ProjectionHandler, std::shared_ptr<ProjectionHandler>> cls(mod, "ProjectionHandler");
 }
 
+void declareIdentityProjectionHandler(py::module &mod) {
+    py::class_<IdentityProjectionHandler, std::shared_ptr<IdentityProjectionHandler>, ProjectionHandler> cls(
+            mod, "IdentityProjectionHandler");
+    cls.def(py::init());
+}
+
 void declareOneTPPerVisitHandler(py::module &mod) {
     py::class_<OneTPPerVisitHandler, std::shared_ptr<OneTPPerVisitHandler>, ProjectionHandler> cls(
             mod, "OneTPPerVisitHandler");
@@ -48,6 +54,7 @@ void declareOneTPPerVisitHandler(py::module &mod) {
 PYBIND11_MODULE(projectionHandler, mod) {
     py::module::import("lsst.jointcal.ccdImage");
     declareProjectionHandler(mod);
+    declareIdentityProjectionHandler(mod);
     declareOneTPPerVisitHandler(mod);
 }
 }  // namespace

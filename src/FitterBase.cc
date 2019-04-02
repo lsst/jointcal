@@ -323,17 +323,14 @@ void FitterBase::leastSquareDerivatives(TripletList &tripletList, Eigen::VectorX
 }
 
 void FitterBase::saveChi2Contributions(std::string const &baseName) const {
-    /* cook-up 2 different file names by inserting something just before
-   the dot (if any), and within the actual file name. */
-    size_t dot = baseName.rfind('.');
-    size_t slash = baseName.rfind('/');
-    if (dot == std::string::npos || (slash != std::string::npos && dot < slash)) dot = baseName.size();
-    std::string measTuple(baseName);
-    measTuple.insert(dot, "-meas");
-    saveChi2MeasContributions(measTuple);
-    std::string refTuple(baseName);
-    refTuple.insert(dot, "-ref");
-    saveChi2RefContributions(refTuple);
+    std::string replaceStr = "{type}";
+    auto pos = baseName.find(replaceStr);
+    std::string measFilename(baseName);
+    measFilename.replace(pos, replaceStr.size(), "-meas.csv");
+    std::string refFilename(baseName);
+    refFilename.replace(pos, replaceStr.size(), "-ref.csv");
+    saveChi2MeasContributions(measFilename);
+    saveChi2RefContributions(refFilename);
 }
 
 double FitterBase::_lineSearch(Eigen::VectorXd const &delta) {

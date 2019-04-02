@@ -20,7 +20,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import unittest
-import unittest.mock
+from unittest import mock
 
 import numpy as np
 
@@ -77,27 +77,31 @@ class JointcalTestBase:
 
         self.maxSteps = 20
         self.name = "testing"
+        self.dataName = "fake"
         self.whatToFit = ""  # unneeded, since we're mocking the fitter
 
-        # so the refObjLoaders have something to call `get()` on
+        # Mock a Butler so the refObjLoaders have something to call `get()` on.
         self.butler = unittest.mock.Mock(spec=lsst.daf.persistence.Butler)
         self.butler.get.return_value.indexer = DatasetConfig().indexer
+
+        # Mock the association manager and give it access to the ccd list above.
+        self.associations = mock.Mock(spec=lsst.jointcal.Associations)
+        self.associations.getCcdImageList.return_value = self.ccdImageList
+
+        # a default config to be modified by individual tests
+        self.config = lsst.jointcal.jointcal.JointcalConfig()
 
 
 class TestJointcalIterateFit(JointcalTestBase, lsst.utils.tests.TestCase):
     def setUp(self):
         super().setUp()
-
-        # Mock the fitter, association manager, and model, so we can force particular
+        # Mock the fitter and model, so we can force particular
         # return values/exceptions. Default to "good" return values.
-        self.fitter = unittest.mock.Mock(spec=lsst.jointcal.PhotometryFit)
+        self.fitter = mock.Mock(spec=lsst.jointcal.PhotometryFit)
         self.fitter.computeChi2.return_value = self.goodChi2
         self.fitter.minimize.return_value = MinimizeResult.Converged
-        self.associations = unittest.mock.Mock(spec=lsst.jointcal.Associations)
-        self.associations.getCcdImageList.return_value = self.ccdImageList
-        self.model = unittest.mock.Mock(spec=lsst.jointcal.SimpleFluxModel)
+        self.model = mock.Mock(spec=lsst.jointcal.SimpleFluxModel)
 
-        self.config = lsst.jointcal.jointcal.JointcalConfig()
         self.jointcal = lsst.jointcal.JointcalTask(config=self.config, butler=self.butler)
 
     def test_iterateFit_success(self):
@@ -106,6 +110,16 @@ class TestJointcalIterateFit(JointcalTestBase, lsst.utils.tests.TestCase):
         self.assertEqual(chi2, self.goodChi2)
         # Once for the for loop, the second time for the rank update.
         self.assertEqual(self.fitter.minimize.call_count, 2)
+
+    def test_iterateFit_writeChi2Outer(self):
+        chi2 = self.jointcal._iterate_fit(self.associations, self.fitter,
+                                          self.maxSteps, self.name, self.whatToFit,
+                                          dataName=self.dataName)
+        self.assertEqual(chi2, self.goodChi2)
+        # Once for the for loop, the second time for the rank update.
+        self.assertEqual(self.fitter.minimize.call_count, 2)
+        filename = f"{self.name}_iterate_0_chi2-{self.dataName}"
+        self.fitter.saveChi2Contributions.assert_called_with(filename+"{type}")
 
     def test_iterateFit_failed(self):
         self.fitter.minimize.return_value = MinimizeResult.Failed
@@ -116,7 +130,7 @@ class TestJointcalIterateFit(JointcalTestBase, lsst.utils.tests.TestCase):
         self.assertEqual(self.fitter.minimize.call_count, 1)
 
     def test_iterateFit_badFinalChi2(self):
-        log = unittest.mock.Mock(spec=lsst.log.Log)
+        log = mock.Mock(spec=lsst.log.Log)
         self.jointcal.log = log
         self.fitter.computeChi2.return_value = self.badChi2
 
@@ -127,7 +141,7 @@ class TestJointcalIterateFit(JointcalTestBase, lsst.utils.tests.TestCase):
         log.error.assert_called_with("Potentially bad fit: High chi-squared/ndof.")
 
     def test_iterateFit_exceedMaxSteps(self):
-        log = unittest.mock.Mock(spec=lsst.log.Log)
+        log = mock.Mock(spec=lsst.log.Log)
         self.jointcal.log = log
         self.fitter.minimize.return_value = MinimizeResult.Chi2Increased
         maxSteps = 3
@@ -148,6 +162,12 @@ class TestJointcalIterateFit(JointcalTestBase, lsst.utils.tests.TestCase):
         with(self.assertRaises(FloatingPointError)):
             self.jointcal._logChi2AndValidate(self.associations, self.fitter, self.model)
 
+    def test_writeChi2(self):
+        filename = "somefile"
+        self.jointcal._logChi2AndValidate(self.associations, self.fitter, self.model,
+                                          writeChi2Name=filename)
+        self.fitter.saveChi2Contributions.assert_called_with(filename+"{type}")
+
 
 class TestJointcalLoadRefCat(JointcalTestBase, lsst.utils.tests.TestCase):
 
@@ -161,7 +181,7 @@ class TestJointcalLoadRefCat(JointcalTestBase, lsst.utils.tests.TestCase):
         fakeRefCat = make_fake_refcat(center, flux, filterName)
         fluxField = getRefFluxField(fakeRefCat.schema, filterName)
         returnStruct = lsst.pipe.base.Struct(refCat=fakeRefCat, fluxField=fluxField)
-        refObjLoader = unittest.mock.Mock(spec=LoadIndexedReferenceObjectsTask)
+        refObjLoader = mock.Mock(spec=LoadIndexedReferenceObjectsTask)
         refObjLoader.loadSkyCircle.return_value = returnStruct
 
         return refObjLoader, center, radius, filterName, fakeRefCat
@@ -202,6 +222,49 @@ class TestJointcalLoadRefCat(JointcalTestBase, lsst.utils.tests.TestCase):
                                                              radius,
                                                              filterName)
         self.assertEqual(len(refCat), 0)
+
+
+class TestJointcalFitModel(JointcalTestBase, lsst.utils.tests.TestCase):
+    def test_fit_photometry_writeChi2(self):
+        """Test that we are calling saveChi2 with appropriate file prefixes."""
+        self.config.photometryModel = "constrainedFlux"
+        self.config.writeChi2FilesOuterLoop = True
+        jointcal = lsst.jointcal.JointcalTask(config=self.config, butler=self.butler)
+        jointcal.focalPlaneBBox = lsst.geom.Box2D()
+
+        # Mock the fitter, so we can pretend it found a good fit
+        with mock.patch("lsst.jointcal.PhotometryFit", autospect=True) as fitPatch:
+            fitPatch.return_value.computeChi2.return_value = self.goodChi2
+            fitPatch.return_value.minimize.return_value = MinimizeResult.Converged
+
+            expected = ["photometry_init-ModelVisit_chi2", "photometry_init-Model_chi2",
+                        "photometry_init-Fluxes_chi2", "photometry_init-ModelFluxes_chi2"]
+            expected = [mock.call(x+"-fake{type}") for x in expected]
+            jointcal._fit_photometry(self.associations, dataName=self.dataName)
+            fitPatch.return_value.saveChi2Contributions.assert_has_calls(expected)
+
+    def test_fit_astrometry_writeChi2(self):
+        """Test that we are calling saveChi2 with appropriate file prefixes."""
+        self.config.astrometryModel = "constrained"
+        self.config.writeChi2FilesOuterLoop = True
+        jointcal = lsst.jointcal.JointcalTask(config=self.config, butler=self.butler)
+        jointcal.focalPlaneBBox = lsst.geom.Box2D()
+
+        # Mock the fitter, so we can pretend it found a good fit
+        fitPatch = mock.patch("lsst.jointcal.AstrometryFit")
+        # Mock the projection handler so we don't segfault due to not-fully initialized ccdImages
+        projectorPatch = mock.patch("lsst.jointcal.OneTPPerVisitHandler")
+        with fitPatch as fit, projectorPatch as projector:
+            fit.return_value.computeChi2.return_value = self.goodChi2
+            fit.return_value.minimize.return_value = MinimizeResult.Converged
+            # return a real ProjectionHandler to keep ConstrainedAstrometryModel() happy
+            projector.return_value = lsst.jointcal.IdentityProjectionHandler()
+
+            expected = ["astrometry_init-DistortionsVisit_chi2", "astrometry_init-Distortions_chi2",
+                        "astrometry_init-Positions_chi2", "astrometry_init-DistortionsPositions_chi2"]
+            expected = [mock.call(x+"-fake{type}") for x in expected]
+            jointcal._fit_astrometry(self.associations, dataName=self.dataName)
+            fit.return_value.saveChi2Contributions.assert_has_calls(expected)
 
 
 class MemoryTester(lsst.utils.tests.MemoryTestCase):
