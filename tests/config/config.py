@@ -8,3 +8,4 @@ config.photometryRefObjLoader.ref_dataset_name = "sdss-dr9-fink-v5b"
 config.sourceSelector.name = "astrometry"
 config.sourceSelector["astrometry"].sourceFluxType = "Calib"
 config.sourceSelector["astrometry"].badFlags.extend(["slot_Shape_flag", "base_PixelFlags_flag_interpolated"])
+config.astrometryReferenceErr = 100  # milli-arcsecond

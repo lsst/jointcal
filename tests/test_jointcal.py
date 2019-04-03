@@ -190,6 +190,7 @@ class TestJointcalLoadRefCat(JointcalTestBase, lsst.utils.tests.TestCase):
         refObjLoader, center, radius, filterName, fakeRefCat = self._make_fake_refcat()
 
         config = lsst.jointcal.jointcal.JointcalConfig()
+        config.astrometryReferenceErr = 0.1  # our test refcats don't have coord errors
         jointcal = lsst.jointcal.JointcalTask(config=config, butler=self.butler)
 
         refCat, fluxField = jointcal._load_reference_catalog(refObjLoader,
@@ -210,6 +211,7 @@ class TestJointcalLoadRefCat(JointcalTestBase, lsst.utils.tests.TestCase):
         refObjLoader, center, radius, filterName, fakeRefCat = self._make_fake_refcat()
 
         config = lsst.jointcal.jointcal.JointcalConfig()
+        config.astrometryReferenceErr = 0.1  # our test refcats don't have coord errors
         config.astrometryReferenceSelector.doSignalToNoise = True
         config.astrometryReferenceSelector.signalToNoise.minimum = 1e10
         config.astrometryReferenceSelector.signalToNoise.fluxField = "fake_flux"

@@ -135,11 +135,14 @@ public:
      * @param[in]  matchCut       Separation radius to match fitted and
      *                            reference stars.
      * @param      fluxField      The field name in refCat to get the flux from.
+     * @param      refCoordinateErr Error on reference catalog coordinates [mas]. If not NaN, this
+     *                              overrides the `coord_*_err` values in the reference catalog itself.
+     *                              This value is divided by cos(dec) before being used for ra_err.
      * @param      rejectBadFluxes  Reject reference sources with flux=NaN or 0 and/or fluxErr=NaN or 0.
      *                              Typically false for astrometry and true for photometry.
      */
     void collectRefStars(afw::table::SimpleCatalog &refCat, afw::geom::Angle matchCut,
-                         std::string const &fluxField, bool rejectBadFluxes = false);
+                         std::string const &fluxField, float refCoordinateErr, bool rejectBadFluxes = false);
 
     //! Sends back the fitted stars coordinates on the sky FittedStarsList::inTangentPlaneCoordinates keeps
     //! track of that.
