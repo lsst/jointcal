@@ -45,11 +45,19 @@ namespace lsst {
 namespace jointcal {
 
 /**
+ * A multi-component model, fitting mappings for sensors and visits simultaneously.
+ *
  * This is the model used to fit mappings as the combination of a
  * transformation depending on the chip number (instrument model) and a
  * transformation per visit (anamorphism). The two-transformation Mapping
  * required for this model is ChipVisitAstrometryMapping. This modeling of distortions
  * is meant for a set of images from a single mosaic imager.
+ *
+ * @param ccdImageList The exposures that will be fit.
+ * @param projectionHandler The projection from "Sky" (where the "true" coordinates live) to "Tangent Plane"
+ *                          (where the fitting occurs).
+ * @param chipOrder The polynomial order of the pixel->focal plane mapping for each sensor.
+ * @param visitOrder The polynomial order of the focal plane->tangent plane mapping for each visit.
  */
 class ConstrainedAstrometryModel : public AstrometryModel {
 public:

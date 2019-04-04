@@ -43,6 +43,10 @@ namespace jointcal {
 
 class PhotometryModel {
 public:
+    /**
+     * @param log Logger to send messages to, to keep names consistent when logging.
+     * @param errorPedestal_ Pedestal on flux/magnitude error (percent of flux or delta magnitude).
+     */
     PhotometryModel(LOG_LOGGER log, double errorPedestal_ = 0) : _log(log), errorPedestal(errorPedestal_) {}
 
     /**

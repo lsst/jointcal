@@ -47,11 +47,20 @@ separate transfrom per CcdImage. One could chose other setups.
 
 */
 
-//! this is the model used to fit independent CCDs, meaning that there is no instrument model.
-/* This modeling of distortions can even accommodate images set mixing instruments */
+/**
+ * A model where there is one independent transform per CcdImage.
+ *
+ * This modeling of distortions can even accommodate images set mixing instruments
+ *
+ * @param ccdImageList The exposures that will be fit.
+ * @param projectionHandler The projection from "Sky" (where the "true" coordinates live) to "Tangent Plane"
+ * (where the fitting occurs).
+ * @param initFromWCS Initialize the model parameters from the original exposure Wcs parameters?
+ * @param nNotFit How many exposure to hold fixed and not be fit? (the first n will be selected) .
+ * @param order The polynomial order of each exposure's pixel-tangent plane mapping.
+ */
 class SimpleAstrometryModel : public AstrometryModel {
 public:
-    //! Sky2TP is just a name, it can be anything
     SimpleAstrometryModel(CcdImageList const &ccdImageList,
                           const std::shared_ptr<ProjectionHandler const> projectionHandler, bool initFromWCS,
                           unsigned nNotFit = 0, unsigned order = 3);
