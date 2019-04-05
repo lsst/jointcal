@@ -138,11 +138,7 @@ class JointcalStatistics:
         # TODO: we can make this a listcomp again once DM-10153 is finished.
         old_calibs = []
         if self.do_photometry:
-            for ref in data_refs:
-                calib = ref.get('calexp_calib')
-                fluxMag0 = calib.getFluxMag0()
-                # TODO: the old Calib is defined in Jy, so convert to nJy (goes away post-DM-10153)
-                old_calibs.append(lsst.afw.image.PhotoCalib(1e9/fluxMag0[0], 1e9*fluxMag0[1]/fluxMag0[0]**2))
+            old_calibs = [ref.get('calexp_photoCalib') for ref in data_refs]
 
         self.old_dist, self.old_flux, self.old_ref_flux, self.old_source = compute(old_cats, old_calibs)
 

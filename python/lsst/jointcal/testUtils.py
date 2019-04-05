@@ -52,7 +52,7 @@ def createTwoFakeCcdImages(num1=4, num2=4, seed=100, fakeCcdId=12,
     seed : `int`, optional
         Seed value for np.random.
     fakeCcdId : `int`, optional
-        Sensor identifier to use for both CcdImages. The wcs, bbox, calib, etc.
+        Sensor identifier to use for both CcdImages. The wcs, bbox, photoCalib, etc.
         will still be drawn from the CFHT ccd=12 files, as that is the only
         testdata that is included in this simple test dataset.
     photoCalibMean1, photoCalibMean2: `float`, optional
