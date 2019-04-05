@@ -366,9 +366,8 @@ class JointcalStatistics:
                 else:
                     ref_flux = refcalib.instFluxToNanojansky(match[0], ref_flux_key).value
             else:
-                # refcat fluxes are already in Janskys.
-                # TODO: Once RFC-549 is fully implemented, we can remove the 1e9 prefactor.
-                ref_flux = 1e9 * match[0][ref_flux_key.format(filt)]
+                # refcat fluxes are already in nanojansky.
+                ref_flux = match[0][ref_flux_key.format(filt)]
                 if ref_flux < 0:
                     return None
 

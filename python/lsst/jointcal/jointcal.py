@@ -692,14 +692,6 @@ class JointcalTask(pipeBase.CmdLineTask):
             refCat[skyCircle.fluxField] = u.Magnitude(refMag, u.ABmag).to_value(u.nJy)
             # TODO: I didn't want to use this, but I'll deal with it in DM-16903
             refCat[skyCircle.fluxField+'Err'] = fluxErrFromABMagErr(refMagErr, refMag) * 1e9
-        else:
-            # TODO: need to scale these until RFC-549 is completed and refcats return nanojansky
-            refCat[skyCircle.fluxField] *= 1e9
-            try:
-                refCat[skyCircle.fluxField+'Err'] *= 1e9
-            except KeyError:
-                # not all existing refcats have an error field.
-                pass
 
         return refCat, skyCircle.fluxField
 
