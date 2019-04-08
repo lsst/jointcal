@@ -153,9 +153,9 @@ protected:
     std::shared_ptr<Associations> _associations;
     std::string _whatToFit;
 
-    int _lastNTrip;  // last triplet count, used to speed up allocation
-    unsigned int _nParTot;
-    unsigned _nMeasuredStars;
+    std::ptrdiff_t _lastNTrip;  // last triplet count, used to speed up allocation
+    std::ptrdiff_t _nParTot;
+    std::ptrdiff_t _nMeasuredStars;
 
     // lsst.logging instance, to be created by subclass so that messages have consistent name while fitting.
     LOG_LOGGER _log;
@@ -199,7 +199,7 @@ protected:
 
     /// Set the indices of a measured star from the full matrix, for outlier removal.
     virtual void getIndicesOfMeasuredStar(MeasuredStar const &measuredStar,
-                                          std::vector<unsigned> &indices) const = 0;
+                                          std::vector<std::ptrdiff_t> &indices) const = 0;
 
     /// Compute the chi2 (per star or total, depending on which Chi2Accumulator is used) for measurements.
     virtual void accumulateStatImageList(CcdImageList const &ccdImageList, Chi2Accumulator &accum) const = 0;

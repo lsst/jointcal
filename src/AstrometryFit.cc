@@ -131,11 +131,11 @@ void AstrometryFit::leastSquareDerivativesMeasurement(CcdImage const &ccdImage, 
     unsigned npar_pos = (_fittingPos) ? 2 : 0;
     unsigned npar_refrac = (_fittingRefrac) ? 1 : 0;
     unsigned npar_pm = (_fittingPM) ? NPAR_PM : 0;
-    unsigned npar_tot = npar_mapping + npar_pos + npar_refrac + npar_pm;
+    std::ptrdiff_t npar_tot = npar_mapping + npar_pos + npar_refrac + npar_pm;
     // if (npar_tot == 0) this CcdImage does not contribute
     // any constraint to the fit, so :
     if (npar_tot == 0) return;
-    std::vector<unsigned> indices(npar_tot, -1);
+    std::vector<std::ptrdiff_t> indices(npar_tot, -1);
     if (_fittingDistortions) mapping->getMappingIndices(indices);
 
     // proper motion stuff
@@ -153,7 +153,7 @@ void AstrometryFit::leastSquareDerivativesMeasurement(CcdImage const &ccdImage, 
     Eigen::Matrix2d alpha(2, 2);
     Eigen::VectorXd grad(npar_tot);
     // current position in the Jacobian
-    unsigned kTriplets = tripletList.getNextFreeIndex();
+    std::ptrdiff_t kTriplets = tripletList.getNextFreeIndex();
     const MeasuredStarList &catalog = (msList) ? *msList : ccdImage.getCatalogForFit();
 
     for (auto &i : catalog) {
@@ -238,7 +238,7 @@ void AstrometryFit::leastSquareDerivativesMeasurement(CcdImage const &ccdImage, 
         HW = H * transW;
         grad = HW * res;
         // now feed in triplets and fullGrad
-        for (unsigned ipar = 0; ipar < npar_tot; ++ipar) {
+        for (std::ptrdiff_t ipar = 0; ipar < npar_tot; ++ipar) {
             for (unsigned ic = 0; ic < 2; ++ic) {
                 double val = halpha(ipar, ic);
                 if (val == 0) continue;
@@ -271,8 +271,8 @@ void AstrometryFit::leastSquareDerivativesReference(FittedStarList const &fitted
     Eigen::Matrix2d H(2, 2), halpha(2, 2), HW(2, 2);
     AstrometryTransformLinear der;
     Eigen::Vector2d res, grad;
-    unsigned indices[2 + NPAR_PM];
-    unsigned kTriplets = tripletList.getNextFreeIndex();
+    std::ptrdiff_t indices[2 + NPAR_PM];
+    std::ptrdiff_t kTriplets = tripletList.getNextFreeIndex();
     /* We cannot use the spherical coordinates directly to evaluate
        Euclidean distances, we have to use a projector on some plane in
        order to express least squares. Not projecting could lead to a
@@ -329,7 +329,7 @@ void AstrometryFit::leastSquareDerivativesReference(FittedStarList const &fitted
         HW = H * W;
         grad = HW * res;
         // now feed in triplets and fullGrad
-        for (unsigned ipar = 0; ipar < npar_tot; ++ipar) {
+        for (std::ptrdiff_t ipar = 0; ipar < npar_tot; ++ipar) {
             for (unsigned ic = 0; ic < 2; ++ic) {
                 double val = halpha(ipar, ic);
                 if (val == 0) continue;
@@ -429,13 +429,13 @@ void AstrometryFit::accumulateStatRefStars(Chi2Accumulator &accum) const {
 /*! it fills the array of indices of parameters that a Measured star
     constrains. Not really all of them if you check. */
 void AstrometryFit::getIndicesOfMeasuredStar(MeasuredStar const &measuredStar,
-                                             std::vector<unsigned> &indices) const {
+                                             std::vector<std::ptrdiff_t> &indices) const {
     if (_fittingDistortions) {
         const AstrometryMapping *mapping = _astrometryModel->getMapping(measuredStar.getCcdImage());
         mapping->getMappingIndices(indices);
     }
     std::shared_ptr<FittedStar const> const fs = measuredStar.getFittedStar();
-    unsigned fsIndex = fs->getIndexInMatrix();
+    std::ptrdiff_t fsIndex = fs->getIndexInMatrix();
     if (_fittingPos) {
         indices.push_back(fsIndex);
         indices.push_back(fsIndex + 1);
@@ -464,7 +464,7 @@ void AstrometryFit::assignIndices(std::string const &whatToFit) {
 
     _nParDistortions = 0;
     if (_fittingDistortions) _nParDistortions = _astrometryModel->assignIndices(_whatToFit, 0);
-    unsigned ipar = _nParDistortions;
+    std::ptrdiff_t ipar = _nParDistortions;
 
     if (_fittingPos) {
         FittedStarList &fittedStarList = _associations->fittedStarList;
@@ -500,7 +500,7 @@ void AstrometryFit::offsetParams(Eigen::VectorXd const &delta) {
             // the parameter layout here is used also
             // - when filling the derivatives
             // - when assigning indices (assignIndices())
-            unsigned index = fs.getIndexInMatrix();
+            std::ptrdiff_t index = fs.getIndexInMatrix();
             fs.x += delta(index);
             fs.y += delta(index + 1);
             if ((_fittingPM)&fs.mightMove) {

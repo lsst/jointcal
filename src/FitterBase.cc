@@ -147,7 +147,7 @@ unsigned FitterBase::findOutliers(double nSigmaCut, MeasuredStarList &msOutliers
 
 namespace {
 /// Return a Hessian matrix filled from tripletList of size nParTot x nParTot.
-SparseMatrixD createHessian(int nParTot, TripletList const &tripletList) {
+SparseMatrixD createHessian(std::ptrdiff_t nParTot, TripletList const &tripletList) {
     SparseMatrixD jacobian(nParTot, tripletList.getNextFreeIndex());
     jacobian.setFromTriplets(tripletList.begin(), tripletList.end());
     return jacobian * jacobian.transpose();
@@ -175,7 +175,7 @@ MinimizeResult FitterBase::minimize(std::string const &whatToFit, double nSigmaC
     MinimizeResult returnCode = MinimizeResult::Converged;
 
     // TODO : write a guesser for the number of triplets
-    unsigned nTrip = (_lastNTrip) ? _lastNTrip : 1e6;
+    std::ptrdiff_t nTrip = (_lastNTrip) ? _lastNTrip : 1e6;
     TripletList tripletList(nTrip);
     Eigen::VectorXd grad(_nParTot);
     grad.setZero();

@@ -43,7 +43,7 @@ namespace jointcal {
  */
 class Chi2Accumulator {
 public:
-    virtual void addEntry(double inc, unsigned dof, std::shared_ptr<BaseStar> star) = 0;
+    virtual void addEntry(double inc, std::ptrdiff_t dof, std::shared_ptr<BaseStar> star) = 0;
 
     virtual ~Chi2Accumulator(){};
 };
@@ -52,7 +52,7 @@ public:
 class Chi2Statistic : public Chi2Accumulator {
 public:
     double chi2;
-    unsigned ndof;
+    std::ptrdiff_t ndof;
 
     Chi2Statistic() : chi2(0), ndof(0){};
 
@@ -62,7 +62,7 @@ public:
     }
 
     // Addentry has an ignored third argument in order to make it compatible with Chi2List.
-    void addEntry(double inc, unsigned dof, std::shared_ptr<BaseStar>) override {
+    void addEntry(double inc, std::ptrdiff_t dof, std::shared_ptr<BaseStar>) override {
         chi2 += inc;
         ndof += dof;
     }
@@ -99,7 +99,7 @@ struct Chi2Star {
 /// Structure to accumulate the chi2 contributions per each star (to help find outliers).
 class Chi2List : public Chi2Accumulator, public std::vector<Chi2Star> {
 public:
-    void addEntry(double chi2, unsigned ndof, std::shared_ptr<BaseStar> star) override {
+    void addEntry(double chi2, std::ptrdiff_t ndof, std::shared_ptr<BaseStar> star) override {
         push_back(Chi2Star(chi2, std::move(star)));
     }
 
