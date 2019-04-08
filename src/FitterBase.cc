@@ -81,7 +81,7 @@ unsigned FitterBase::findOutliers(double nSigmaCut, MeasuredStarList &msOutliers
     // start from the strongest outliers.
     for (auto chi2 = chi2List.rbegin(); chi2 != chi2List.rend(); ++chi2) {
         if (chi2->chi2 < cut) break;  // because the array is sorted.
-        std::vector<unsigned> indices;
+        std::vector<std::ptrdiff_t> indices;
         /* now, we want to get the indices of the parameters this chi2
            term depends on. We have to figure out which kind of term it
            is; we use for that the type of the star attached to the Chi2Star. */

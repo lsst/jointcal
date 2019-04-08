@@ -54,7 +54,7 @@ public:
     SimplePhotometryModel &operator=(SimplePhotometryModel &&) = delete;
 
     /// @copydoc PhotometryModel::assignIndices
-    unsigned assignIndices(std::string const &whatToFit, unsigned firstIndex) override;
+    std::ptrdiff_t assignIndices(std::string const &whatToFit, std::ptrdiff_t firstIndex) override;
 
     /// @copydoc PhotometryModel::offsetParams
     void offsetParams(Eigen::VectorXd const &delta) override;
@@ -63,7 +63,7 @@ public:
     void freezeErrorTransform() override;
 
     /// @copydoc PhotometryModel::getMappingIndices
-    void getMappingIndices(CcdImage const &ccdImage, std::vector<unsigned> &indices) const override;
+    void getMappingIndices(CcdImage const &ccdImage, std::vector<std::ptrdiff_t> &indices) const override;
 
     /// @copydoc PhotometryModel::getTotalParameters
     int getTotalParameters() const override;

@@ -40,14 +40,16 @@ class TripletList : public std::vector<Trip> {
 public:
     TripletList(int count) : _nextFreeIndex(0) { reserve(count); };
 
-    void addTriplet(const unsigned i, const unsigned j, double val) { push_back(Trip(i, j, val)); }
+    void addTriplet(const std::ptrdiff_t i, const std::ptrdiff_t j, double val) {
+        push_back(Trip(i, j, val));
+    }
 
-    unsigned getNextFreeIndex() const { return _nextFreeIndex; }
+    std::ptrdiff_t getNextFreeIndex() const { return _nextFreeIndex; }
 
-    void setNextFreeIndex(unsigned index) { _nextFreeIndex = index; }
+    void setNextFreeIndex(std::ptrdiff_t index) { _nextFreeIndex = index; }
 
 private:
-    unsigned _nextFreeIndex;
+    std::ptrdiff_t _nextFreeIndex;
 };
 }  // namespace jointcal
 }  // namespace lsst

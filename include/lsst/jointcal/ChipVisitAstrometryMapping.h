@@ -50,7 +50,7 @@ public:
     //!
     unsigned getNpar() const;
 
-    void getMappingIndices(std::vector<unsigned> &indices) const;
+    void getMappingIndices(std::vector<std::ptrdiff_t> &indices) const;
 
     //!
     void computeTransformAndDerivatives(FatPoint const &where, FatPoint &outPoint, Eigen::MatrixX2d &H) const;
