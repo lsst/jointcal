@@ -55,15 +55,15 @@ void PhotometryFit::leastSquareDerivativesMeasurement(CcdImage const &ccdImage, 
        Ccd should match the one(s) in the list. */
     if (measuredStarList) assert(&(measuredStarList->front()->getCcdImage()) == &ccdImage);
 
-    unsigned nparModel = (_fittingModel) ? _photometryModel->getNpar(ccdImage) : 0;
-    unsigned nparFlux = (_fittingFluxes) ? 1 : 0;
-    unsigned nparTotal = nparModel + nparFlux;
-    std::vector<unsigned> indices(nparModel, -1);
+    std::size_t nparModel = (_fittingModel) ? _photometryModel->getNpar(ccdImage) : 0;
+    std::size_t nparFlux = (_fittingFluxes) ? 1 : 0;
+    std::size_t nparTotal = nparModel + nparFlux;
+    IndexVector indices(nparModel, -1);
     if (_fittingModel) _photometryModel->getMappingIndices(ccdImage, indices);
 
     Eigen::VectorXd H(nparTotal);  // derivative matrix
     // current position in the Jacobian
-    unsigned kTriplets = tripletList.getNextFreeIndex();
+    TripletList::Index kTriplets = tripletList.getNextFreeIndex();
     const MeasuredStarList &catalog = (measuredStarList) ? *measuredStarList : ccdImage.getCatalogForFit();
 
     for (auto const &measuredStar : catalog) {
@@ -76,14 +76,14 @@ void PhotometryFit::leastSquareDerivativesMeasurement(CcdImage const &ccdImage, 
 
         if (_fittingModel) {
             _photometryModel->computeParameterDerivatives(*measuredStar, ccdImage, H);
-            for (unsigned k = 0; k < indices.size(); k++) {
-                unsigned l = indices[k];
+            for (std::size_t k = 0; k < indices.size(); k++) {
+                Eigen::Index l = indices[k];
                 tripletList.addTriplet(l, kTriplets, H[k] * inverseSigma);
                 grad[l] += H[k] * W * residual;
             }
         }
         if (_fittingFluxes) {
-            unsigned index = measuredStar->getFittedStar()->getIndexInMatrix();
+            Eigen::Index index = measuredStar->getFittedStar()->getIndexInMatrix();
             // Note: H = dR/dFittedStarFlux == -1
             tripletList.addTriplet(index, kTriplets, -1.0 * inverseSigma);
             grad[index] += -1.0 * W * residual;
@@ -106,7 +106,7 @@ void PhotometryFit::leastSquareDerivativesReference(FittedStarList const &fitted
     // Can't compute anything if there are no refStars.
     if (_associations->refStarList.size() == 0) return;
 
-    unsigned kTriplets = tripletList.getNextFreeIndex();
+    TripletList::Index kTriplets = tripletList.getNextFreeIndex();
 
     for (auto const &fittedStar : fittedStarList) {
         auto refStar = fittedStar->getRefStar();
@@ -122,7 +122,7 @@ void PhotometryFit::leastSquareDerivativesReference(FittedStarList const &fitted
         // Residual is fittedStar - refStar for consistency with measurement terms.
         double residual = _photometryModel->computeRefResidual(*fittedStar, *refStar);
 
-        unsigned index = fittedStar->getIndexInMatrix();
+        Eigen::Index index = fittedStar->getIndexInMatrix();
         // Note: H = dR/dFittedStar == 1
         tripletList.addTriplet(index, kTriplets, 1.0 * inverseSigma);
         grad(index) += 1.0 * std::pow(inverseSigma, 2) * residual;
@@ -171,14 +171,14 @@ void PhotometryFit::accumulateStatRefStars(Chi2Accumulator &accum) const {
 /*! it fills the array of indices of parameters that a Measured star
     constrains. Not really all of them if you check. */
 void PhotometryFit::getIndicesOfMeasuredStar(MeasuredStar const &measuredStar,
-                                             std::vector<unsigned> &indices) const {
+                                             IndexVector &indices) const {
     indices.clear();
     if (_fittingModel) {
         _photometryModel->getMappingIndices(measuredStar.getCcdImage(), indices);
     }
     if (_fittingFluxes) {
         std::shared_ptr<FittedStar const> const fs = measuredStar.getFittedStar();
-        unsigned fsIndex = fs->getIndexInMatrix();
+        Eigen::Index fsIndex = fs->getIndexInMatrix();
         indices.push_back(fsIndex);
     }
 }
@@ -191,7 +191,7 @@ void PhotometryFit::assignIndices(std::string const &whatToFit) {
     // When entering here, we assume that whatToFit has already been interpreted.
 
     _nParModel = (_fittingModel) ? _photometryModel->assignIndices(whatToFit, 0) : 0;
-    unsigned ipar = _nParModel;
+    std::size_t ipar = _nParModel;
 
     if (_fittingFluxes) {
         for (auto &fittedStar : _associations->fittedStarList) {
@@ -221,7 +221,7 @@ void PhotometryFit::offsetParams(Eigen::VectorXd const &delta) {
             // the parameter layout here is used also
             // - when filling the derivatives
             // - when assigning indices (assignIndices())
-            unsigned index = fittedStar->getIndexInMatrix();
+            Eigen::Index index = fittedStar->getIndexInMatrix();
             _photometryModel->offsetFittedStar(*fittedStar, delta(index));
         }
     }

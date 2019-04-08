@@ -282,7 +282,7 @@ void Associations::prepareFittedStars(int minMeasurements) {
 void Associations::selectFittedStars(int minMeasurements) {
     LOGLS_INFO(_log, "Fitted stars before measurement # cut: " << fittedStarList.size());
 
-    std::size_t totalMeasured = 0, validMeasured = 0;
+    int totalMeasured = 0, validMeasured = 0;
 
     // first pass: remove objects that have less than a certain number of measurements.
     for (auto const &ccdImage : ccdImageList) {

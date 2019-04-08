@@ -213,21 +213,21 @@ std::unique_ptr<AstrometryTransform> AstrometryTransform::roughInverse(const Fra
 
 // not dummy : what it does is virtual because paramRef is virtual.
 void AstrometryTransform::getParams(double *params) const {
-    int npar = getNpar();
-    for (int i = 0; i < npar; ++i) params[i] = paramRef(i);
+    std::size_t npar = getNpar();
+    for (std::size_t i = 0; i < npar; ++i) params[i] = paramRef(i);
 }
 
 void AstrometryTransform::offsetParams(Eigen::VectorXd const &delta) {
-    int npar = getNpar();
-    for (int i = 0; i < npar; ++i) paramRef(i) += delta[i];
+    std::size_t npar = getNpar();
+    for (std::size_t i = 0; i < npar; ++i) paramRef(i) += delta[i];
 }
 
-double AstrometryTransform::paramRef(const int) const {
+double AstrometryTransform::paramRef(Eigen::Index const) const {
     throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,
                       std::string("AstrometryTransform::paramRef should never be called "));
 }
 
-double &AstrometryTransform::paramRef(const int) {
+double &AstrometryTransform::paramRef(Eigen::Index const) {
     throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,
                       "AstrometryTransform::paramRef should never be called ");
 }
@@ -465,7 +465,7 @@ void AstrometryTransformIdentity::read(istream &stream) {
 
 //! Default transform : identity for all orders (>=1 )
 
-AstrometryTransformPolynomial::AstrometryTransformPolynomial(const unsigned order) : _order(order) {
+AstrometryTransformPolynomial::AstrometryTransformPolynomial(std::size_t order) : _order(order) {
     _nterms = (order + 1) * (order + 2) / 2;
 
     // allocate and fill coefficients
@@ -479,8 +479,8 @@ AstrometryTransformPolynomial::AstrometryTransformPolynomial(const unsigned orde
 
 //#ifdef TO_BE_FIXED
 AstrometryTransformPolynomial::AstrometryTransformPolynomial(const AstrometryTransform *transform,
-                                                             const Frame &frame, unsigned order,
-                                                             unsigned nPoint) {
+                                                             const Frame &frame, std::size_t order,
+                                                             std::size_t nPoint) {
     StarMatchList sm;
 
     double step = std::sqrt(fabs(frame.getArea()) / double(nPoint));
@@ -502,14 +502,14 @@ AstrometryTransformPolynomial::AstrometryTransformPolynomial(const AstrometryTra
 
 AstrometryTransformPolynomial::AstrometryTransformPolynomial(
         std::shared_ptr<afw::geom::TransformPoint2ToPoint2> transform, jointcal::Frame const &domain,
-        unsigned const order, unsigned const nSteps) {
+        std::size_t order, std::size_t nSteps) {
     jointcal::StarMatchList starMatchList;
     double xStart = domain.xMin;
     double yStart = domain.yMin;
     double xStep = domain.getWidth() / (nSteps + 1);
     double yStep = domain.getHeight() / (nSteps + 1);
-    for (unsigned i = 0; i < nSteps; ++i) {
-        for (unsigned j = 0; j < nSteps; ++j) {
+    for (std::size_t i = 0; i < nSteps; ++i) {
+        for (std::size_t j = 0; j < nSteps; ++j) {
             // TODO: once DM-4044 is done, we can remove the redundancy in `Point`/`Point2D` here
             jointcal::Point in(xStart + i * xStep, yStart + j * yStep);
             afw::geom::Point2D inAfw(in.x, in.y);
@@ -526,7 +526,7 @@ AstrometryTransformPolynomial::AstrometryTransformPolynomial(
 void AstrometryTransformPolynomial::computeMonomials(double xIn, double yIn, double *monomial) const {
     /* The ordering of monomials is implemented here.
        You may not change it without updating the "mapping" routines
-      coeff(unsigned, unsigned, unsigned).
+      coeff(std::size_t, std::size_t, std::size_t).
       I (P.A.) did not find a clever way to loop over monomials.
       Improvements welcome.
       This routine is used also by the fit to fill monomials.
@@ -534,10 +534,10 @@ void AstrometryTransformPolynomial::computeMonomials(double xIn, double yIn, dou
     */
 
     double xx = 1;
-    for (unsigned ix = 0; ix <= _order; ++ix) {
+    for (std::size_t ix = 0; ix <= _order; ++ix) {
         double yy = 1;
-        unsigned k = ix * (ix + 1) / 2;
-        for (unsigned iy = 0; iy <= _order - ix; ++iy) {
+        std::size_t k = ix * (ix + 1) / 2;
+        for (std::size_t iy = 0; iy <= _order - ix; ++iy) {
             monomial[k] = xx * yy;
             yy *= yIn;
             k += ix + iy + 2;
@@ -546,9 +546,9 @@ void AstrometryTransformPolynomial::computeMonomials(double xIn, double yIn, dou
     }
 }
 
-void AstrometryTransformPolynomial::setOrder(const unsigned order) {
+void AstrometryTransformPolynomial::setOrder(std::size_t order) {
     _order = order;
-    unsigned old_nterms = _nterms;
+    std::size_t old_nterms = _nterms;
     _nterms = (_order + 1) * (_order + 2) / 2;
 
     // temporarily save coefficients
@@ -557,10 +557,10 @@ void AstrometryTransformPolynomial::setOrder(const unsigned order) {
     _coeffs.resize(2 * _nterms);
     // reassign to zero (this is necessary because ycoeffs
     // are after xcoeffs and so their meaning changes
-    for (unsigned k = 0; k < _nterms; ++k) _coeffs[k] = 0;
+    for (std::size_t k = 0; k < _nterms; ++k) _coeffs[k] = 0;
     // put back what we had before
-    unsigned kmax = min(old_nterms, _nterms);
-    for (unsigned k = 0; k < kmax; ++k) {
+    std::size_t kmax = min(old_nterms, _nterms);
+    for (std::size_t k = 0; k < kmax; ++k) {
         _coeffs[k] = old_coeffs[k];                         // x terms
         _coeffs[k + _nterms] = old_coeffs[k + old_nterms];  // y terms
     }
@@ -608,14 +608,14 @@ void AstrometryTransformPolynomial::computeDerivative(Point const &where,
 
     double xx = 1;
     double xxm1 = 1;  // xx^(ix-1)
-    for (unsigned ix = 0; ix <= _order; ++ix) {
-        unsigned k = (ix) * (ix + 1) / 2;
+    for (std::size_t ix = 0; ix <= _order; ++ix) {
+        std::size_t k = (ix) * (ix + 1) / 2;
         // iy = 0
         dermx[k] = ix * xxm1;
         dermy[k] = 0;
         k += ix + 2;
         double yym1 = 1;  // yy^(iy-1)
-        for (unsigned iy = 1; iy <= _order - ix; ++iy) {
+        for (std::size_t iy = 1; iy <= _order - ix; ++iy) {
             dermx[k] = ix * xxm1 * yym1 * yin;
             dermy[k] = iy * xx * yym1;
             yym1 *= yin;
@@ -675,8 +675,8 @@ void AstrometryTransformPolynomial::transformPosAndErrors(FatPoint const &in, Fa
 
     double xx = 1;
     double xxm1 = 1;  // xx^(ix-1)
-    for (unsigned ix = 0; ix <= _order; ++ix) {
-        unsigned k = (ix) * (ix + 1) / 2;
+    for (std::size_t ix = 0; ix <= _order; ++ix) {
+        std::size_t k = (ix) * (ix + 1) / 2;
         // iy = 0
         dermx[k] = ix * xxm1;
         dermy[k] = 0;
@@ -684,7 +684,7 @@ void AstrometryTransformPolynomial::transformPosAndErrors(FatPoint const &in, Fa
         k += ix + 2;
         double yy = yin;
         double yym1 = 1;  // yy^(iy-1)
-        for (unsigned iy = 1; iy <= _order - ix; ++iy) {
+        for (std::size_t iy = 1; iy <= _order - ix; ++iy) {
             monomials[k] = xx * yy;
             dermx[k] = ix * xxm1 * yy;
             dermy[k] = iy * xx * yym1;
@@ -735,8 +735,8 @@ void AstrometryTransformPolynomial::transformPosAndErrors(FatPoint const &in, Fa
    AstrometryTransformPolynomial::apply, AstrometryTransformPolynomial::Derivative, ... routines
    Change all or none ! */
 
-double AstrometryTransformPolynomial::coeff(const unsigned degX, const unsigned degY,
-                                            const unsigned whichCoord) const {
+double AstrometryTransformPolynomial::coeff(std::size_t degX, std::size_t degY,
+                                            std::size_t whichCoord) const {
     assert((degX + degY <= _order) && whichCoord < 2);
     /* this assertion above is enough to ensure that the index used just
        below is within bounds since the reserved length is
@@ -744,14 +744,14 @@ double AstrometryTransformPolynomial::coeff(const unsigned degX, const unsigned 
     return _coeffs[(degX + degY) * (degX + degY + 1) / 2 + degY + whichCoord * _nterms];
 }
 
-double &AstrometryTransformPolynomial::coeff(const unsigned degX, const unsigned degY,
-                                             const unsigned whichCoord) {
+double &AstrometryTransformPolynomial::coeff(std::size_t degX, std::size_t degY,
+                                             std::size_t whichCoord) {
     assert((degX + degY <= _order) && whichCoord < 2);
     return _coeffs[(degX + degY) * (degX + degY + 1) / 2 + degY + whichCoord * _nterms];
 }
 
-double AstrometryTransformPolynomial::coeffOrZero(const unsigned degX, const unsigned degY,
-                                                  const unsigned whichCoord) const {
+double AstrometryTransformPolynomial::coeffOrZero(std::size_t degX, std::size_t degY,
+                                                  std::size_t whichCoord) const {
     //  assert((degX+degY<=order) && whichCoord<2);
     assert(whichCoord < 2);
     if (degX + degY <= _order)
@@ -760,27 +760,27 @@ double AstrometryTransformPolynomial::coeffOrZero(const unsigned degX, const uns
 }
 
 /* parameter serialization for "virtual" fits */
-double AstrometryTransformPolynomial::paramRef(const int i) const {
-    assert(unsigned(i) < 2 * _nterms);
+double AstrometryTransformPolynomial::paramRef(Eigen::Index const i) const {
+    assert(i < 2 * Eigen::Index(_nterms));
     return _coeffs[i];
 }
 
-double &AstrometryTransformPolynomial::paramRef(const int i) {
-    assert(unsigned(i) < 2 * _nterms);
+double &AstrometryTransformPolynomial::paramRef(Eigen::Index const i) {
+    assert(i < 2 * Eigen::Index(_nterms));
     return _coeffs[i];
 }
 
 void AstrometryTransformPolynomial::paramDerivatives(Point const &where, double *dx, double *dy)
         const { /* first half : dxout/dpar, second half : dyout/dpar */
     computeMonomials(where.x, where.y, dx);
-    for (unsigned k = 0; k < _nterms; ++k) {
+    for (std::size_t k = 0; k < _nterms; ++k) {
         dy[_nterms + k] = dx[k];
         dx[_nterms + k] = dy[k] = 0;
     }
 }
 
 /* utility for the dump(ostream&) routine */
-static string monomialString(const unsigned powX, const unsigned powY) {
+static string monomialString(std::size_t powX, std::size_t powY) {
     stringstream ss;
     if (powX + powY) ss << "*";
     if (powX > 0) ss << "x";
@@ -793,13 +793,13 @@ static string monomialString(const unsigned powX, const unsigned powY) {
 void AstrometryTransformPolynomial::dump(ostream &stream) const {
     auto oldPrecision = stream.precision();
     stream.precision(12);
-    for (unsigned ic = 0; ic < 2; ++ic) {
+    for (std::size_t ic = 0; ic < 2; ++ic) {
         if (ic == 0)
             stream << "newx = ";
         else
             stream << "newy = ";
-        for (unsigned p = 0; p <= _order; ++p)
-            for (unsigned py = 0; py <= p; ++py) {
+        for (std::size_t p = 0; p <= _order; ++p)
+            for (std::size_t py = 0; py <= p; ++py) {
                 if (p + py != 0) stream << " + ";
                 stream << coeff(p - py, py, ic) << monomialString(p - py, py);
             }
@@ -886,8 +886,8 @@ double AstrometryTransformPolynomial::computeFit(StarMatchList const &starMatchL
 
         double bxcoeff = wxx * resx + wxy * resy;
         double bycoeff = wyy * resy + wxy * resx;
-        for (unsigned j = 0; j < _nterms; ++j) {
-            for (unsigned i = j; i < _nterms; ++i) {
+        for (std::size_t j = 0; j < _nterms; ++j) {
+            for (std::size_t i = j; i < _nterms; ++i) {
                 A(i, j) += wxx * monomials[i] * monomials[j];
                 A(i + _nterms, j + _nterms) += wyy * monomials[i] * monomials[j];
                 A(j, i + _nterms) = A(i, j + _nterms) += wxy * monomials[i] * monomials[j];
@@ -904,7 +904,7 @@ double AstrometryTransformPolynomial::computeFit(StarMatchList const &starMatchL
     }
 
     Eigen::VectorXd sol = factor.solve(B);
-    for (unsigned k = 0; k < 2 * _nterms; ++k) _coeffs[k] += sol(k);
+    for (std::size_t k = 0; k < 2 * _nterms; ++k) _coeffs[k] += sol(k);
     if (starMatchList.size() == _nterms) return 0;
     return (sumr2 - B.dot(sol));
 }
@@ -945,8 +945,8 @@ std::unique_ptr<AstrometryTransform> AstrometryTransformPolynomial::composeAndRe
 */
 
 class PolyXY {
-    unsigned order;
-    unsigned nterms;
+    std::size_t order;
+    std::size_t nterms;
     vector<long double> coeffs;
 
 public:
@@ -955,20 +955,20 @@ public:
         coeffs.insert(coeffs.begin(), nterms, 0L);  // fill & initialize to 0.
     }
 
-    unsigned getOrder() const { return order; }
+    std::size_t getOrder() const { return order; }
 
-    PolyXY(AstrometryTransformPolynomial const &transform, const unsigned whichCoord)
+    PolyXY(AstrometryTransformPolynomial const &transform, std::size_t whichCoord)
             : order(transform.getOrder()), nterms((order + 1) * (order + 2) / 2), coeffs(nterms, 0L) {
-        for (unsigned px = 0; px <= order; ++px)
-            for (unsigned py = 0; py <= order - px; ++py) coeff(px, py) = transform.coeff(px, py, whichCoord);
+        for (std::size_t px = 0; px <= order; ++px)
+            for (std::size_t py = 0; py <= order - px; ++py) coeff(px, py) = transform.coeff(px, py, whichCoord);
     }
 
-    long double coeff(const unsigned powX, const unsigned powY) const {
+    long double coeff(std::size_t powX, std::size_t powY) const {
         assert(powX + powY <= order);
         return coeffs.at((powX + powY) * (powX + powY + 1) / 2 + powY);
     }
 
-    long double &coeff(const unsigned powX, const unsigned powY) {
+    long double &coeff(std::size_t powX, std::size_t powY) {
         assert(powX + powY <= order);
         return coeffs.at((powX + powY) * (powX + powY + 1) / 2 + powY);
     }
@@ -977,53 +977,53 @@ public:
 /* =====================  PolyXY Algebra routines ================== */
 
 static void operator+=(PolyXY &left, const PolyXY &right) {
-    unsigned rdeg = right.getOrder();
+    std::size_t rdeg = right.getOrder();
     assert(left.getOrder() >= rdeg);
-    for (unsigned i = 0; i <= rdeg; ++i)
-        for (unsigned j = 0; j <= rdeg - i; ++j) left.coeff(i, j) += right.coeff(i, j);
+    for (std::size_t i = 0; i <= rdeg; ++i)
+        for (std::size_t j = 0; j <= rdeg - i; ++j) left.coeff(i, j) += right.coeff(i, j);
 }
 
 /* multiplication by a scalar */
 static PolyXY operator*(const long double &a, const PolyXY &polyXY) {
     PolyXY result(polyXY);
     // no direct access to coefficients: do it the soft way
-    unsigned order = polyXY.getOrder();
-    for (unsigned i = 0; i <= order; ++i)
-        for (unsigned j = 0; j <= order - i; ++j) result.coeff(i, j) *= a;
+    std::size_t order = polyXY.getOrder();
+    for (std::size_t i = 0; i <= order; ++i)
+        for (std::size_t j = 0; j <= order - i; ++j) result.coeff(i, j) *= a;
     return result;
 }
 
 /*! result(x,y) = p1(x,y)*p2(x,y) */
 static PolyXY product(const PolyXY &p1, const PolyXY &p2) {
-    unsigned deg1 = p1.getOrder();
-    unsigned deg2 = p2.getOrder();
+    std::size_t deg1 = p1.getOrder();
+    std::size_t deg2 = p2.getOrder();
     PolyXY result(deg1 + deg2);
-    for (unsigned i1 = 0; i1 <= deg1; ++i1)
-        for (unsigned j1 = 0; j1 <= deg1 - i1; ++j1)
-            for (unsigned i2 = 0; i2 <= deg2; ++i2)
-                for (unsigned j2 = 0; j2 <= deg2 - i2; ++j2)
+    for (std::size_t i1 = 0; i1 <= deg1; ++i1)
+        for (std::size_t j1 = 0; j1 <= deg1 - i1; ++j1)
+            for (std::size_t i2 = 0; i2 <= deg2; ++i2)
+                for (std::size_t j2 = 0; j2 <= deg2 - i2; ++j2)
                     result.coeff(i1 + i2, j1 + j2) += p1.coeff(i1, j1) * p2.coeff(i2, j2);
     return result;
 }
 
 /* powers[k](x,y) = polyXY(x,y)**k, 0 <= k <= maxP */
-static void computePowers(const PolyXY &polyXY, const unsigned maxP, vector<PolyXY> &powers) {
+static void computePowers(const PolyXY &polyXY, std::size_t maxP, vector<PolyXY> &powers) {
     powers.reserve(maxP + 1);
     powers.push_back(PolyXY(0));
     powers[0].coeff(0, 0) = 1L;
-    for (unsigned k = 1; k <= maxP; ++k) powers.push_back(product(powers[k - 1], polyXY));
+    for (std::size_t k = 1; k <= maxP; ++k) powers.push_back(product(powers[k - 1], polyXY));
 }
 
 /*! result(x,y) = polyXY(polyX(x,y),polyY(x,y)) */
 static PolyXY composition(const PolyXY &polyXY, const PolyXY &polyX, const PolyXY &polyY) {
-    unsigned pdeg = polyXY.getOrder();
+    std::size_t pdeg = polyXY.getOrder();
     PolyXY result(pdeg * max(polyX.getOrder(), polyY.getOrder()));
     vector<PolyXY> pXPowers;
     vector<PolyXY> pYPowers;
     computePowers(polyX, pdeg, pXPowers);
     computePowers(polyY, pdeg, pYPowers);
-    for (unsigned px = 0; px <= pdeg; ++px)
-        for (unsigned py = 0; py <= pdeg - px; ++py)
+    for (std::size_t px = 0; px <= pdeg; ++px)
+        for (std::size_t py = 0; py <= pdeg - px; ++py)
             result += polyXY.coeff(px, py) * product(pXPowers.at(px), pYPowers.at(py));
     return result;
 }
@@ -1046,8 +1046,8 @@ AstrometryTransformPolynomial AstrometryTransformPolynomial::operator*(
 
     // copy the results the hard way.
     AstrometryTransformPolynomial result(_order * right._order);
-    for (unsigned px = 0; px <= result._order; ++px)
-        for (unsigned py = 0; py <= result._order - px; ++py) {
+    for (std::size_t px = 0; px <= result._order; ++px)
+        for (std::size_t py = 0; py <= result._order - px; ++py) {
             result.coeff(px, py, 0) = rx.coeff(px, py);
             result.coeff(px, py, 1) = ry.coeff(px, py);
         }
@@ -1058,8 +1058,8 @@ AstrometryTransformPolynomial AstrometryTransformPolynomial::operator+(
         AstrometryTransformPolynomial const &right) const {
     if (_order >= right._order) {
         AstrometryTransformPolynomial res(*this);
-        for (unsigned i = 0; i <= right._order; ++i)
-            for (unsigned j = 0; j <= right._order - i; ++j) {
+        for (std::size_t i = 0; i <= right._order; ++i)
+            for (std::size_t j = 0; j <= right._order - i; ++j) {
                 res.coeff(i, j, 0) += right.coeff(i, j, 0);
                 res.coeff(i, j, 1) += right.coeff(i, j, 1);
             }
@@ -1071,8 +1071,8 @@ AstrometryTransformPolynomial AstrometryTransformPolynomial::operator+(
 AstrometryTransformPolynomial AstrometryTransformPolynomial::operator-(
         AstrometryTransformPolynomial const &right) const {
     AstrometryTransformPolynomial res(std::max(_order, right._order));
-    for (unsigned i = 0; i <= res._order; ++i)
-        for (unsigned j = 0; j <= res._order - i; ++j) {
+    for (std::size_t i = 0; i <= res._order; ++i)
+        for (std::size_t j = 0; j <= res._order - i; ++j) {
             res.coeff(i, j, 0) = coeffOrZero(i, j, 0) - right.coeffOrZero(i, j, 0);
             res.coeff(i, j, 1) = coeffOrZero(i, j, 1) - right.coeffOrZero(i, j, 1);
         }
@@ -1089,7 +1089,7 @@ void AstrometryTransformPolynomial::write(ostream &s) const {
     s << "order " << _order << endl;
     int oldprec = s.precision();
     s << setprecision(12);
-    for (unsigned k = 0; k < 2 * _nterms; ++k) s << _coeffs[k] << ' ';
+    for (std::size_t k = 0; k < 2 * _nterms; ++k) s << _coeffs[k] << ' ';
     s << endl;
     s << setprecision(oldprec);
 }
@@ -1107,17 +1107,17 @@ void AstrometryTransformPolynomial::read(istream &s) {
         throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,
                           " AstrometryTransformPolynomial::read : expecting \"order\" and found " + order);
     setOrder(_order);
-    for (unsigned k = 0; k < 2 * _nterms; ++k) s >> _coeffs[k];
+    for (std::size_t k = 0; k < 2 * _nterms; ++k) s >> _coeffs[k];
 }
 
 ndarray::Array<double, 2, 2> AstrometryTransformPolynomial::toAstPolyMapCoefficients() const {
-    int nCoeffs = _coeffs.size();
-    ndarray::Array<double, 2, 2> result = ndarray::allocate(ndarray::makeVector(nCoeffs, 4));
+    std::size_t nCoeffs = _coeffs.size();
+    ndarray::Array<double, 2, 2> result = ndarray::allocate(ndarray::makeVector(nCoeffs, std::size_t(4)));
 
     ndarray::Size k = 0;
-    for (unsigned iCoord = 0; iCoord < 2; ++iCoord) {
-        for (unsigned p = 0; p <= _order; ++p) {
-            for (unsigned py = 0; py <= p; ++py, ++k) {
+    for (std::size_t iCoord = 0; iCoord < 2; ++iCoord) {
+        for (std::size_t p = 0; p <= _order; ++p) {
+            for (std::size_t py = 0; py <= p; ++py, ++k) {
                 result[k][0] = coeff(p - py, py, iCoord);
                 result[k][1] = iCoord + 1;
                 result[k][2] = p - py;
@@ -1132,21 +1132,21 @@ ndarray::Array<double, 2, 2> AstrometryTransformPolynomial::toAstPolyMapCoeffici
 std::shared_ptr<AstrometryTransformPolynomial> inversePolyTransform(AstrometryTransform const &forward,
                                                                     Frame const &domain,
                                                                     double const precision,
-                                                                    int const maxOrder,
-                                                                    unsigned const nSteps) {
+                                                                    std::size_t maxOrder,
+                                                                    std::size_t nSteps) {
     StarMatchList sm;
     double xStart = domain.xMin;
     double yStart = domain.yMin;
     double xStep = domain.getWidth() / (nSteps - 1);
     double yStep = domain.getHeight() / (nSteps - 1);
-    for (unsigned i = 0; i < nSteps; ++i) {
-        for (unsigned j = 0; j < nSteps; ++j) {
+    for (std::size_t i = 0; i < nSteps; ++i) {
+        for (std::size_t j = 0; j < nSteps; ++j) {
             Point in(xStart + i * xStep, yStart + j * yStep);
             Point out(forward.apply(in));
             sm.push_back(StarMatch(out, in, nullptr, nullptr));
         }
     }
-    unsigned npairs = sm.size();
+    std::size_t npairs = sm.size();
     int order;
     std::shared_ptr<AstrometryTransformPolynomial> poly;
     std::shared_ptr<AstrometryTransformPolynomial> oldPoly;
@@ -1279,7 +1279,7 @@ double AstrometryTransformLinearRot::fit(StarMatchList const &) {
 }
 
 double AstrometryTransformLinearShift::fit(StarMatchList const &starMatchList) {
-    int npairs = starMatchList.size();
+    std::size_t npairs = starMatchList.size();
     if (npairs < 3) {
         LOGLS_FATAL(_log, "AstrometryTransformLinearShift::fit trying to fit a linear transform with only "
                                   << npairs << " matches.");

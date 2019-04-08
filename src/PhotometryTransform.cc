@@ -42,9 +42,9 @@ namespace {
 // The CoeffGetter argument g is something that behaves like an array, providing access
 // to the coefficients.
 template <typename CoeffGetter>
-double evaluateFunction1d(CoeffGetter g, double x, int size) {
+double evaluateFunction1d(CoeffGetter g, double x, std::size_t size) {
     double b_kp2 = 0.0, b_kp1 = 0.0;
-    for (int k = (size - 1); k > 0; --k) {
+    for (std::size_t k = (size - 1); k > 0; --k) {
         double b_k = g[k] + 2 * x * b_kp1 - b_kp2;
         b_kp2 = b_kp1;
         b_kp1 = b_k;
@@ -58,7 +58,7 @@ double evaluateFunction1d(CoeffGetter g, double x, int size) {
 // the result of that to evaluateFunction1d with the results as the "coefficients" associated
 // with the T_j(y) functions.
 struct RecursionArrayImitator {
-    double operator[](int i) const {
+    double operator[](Eigen::Index i) const {
         return evaluateFunction1d(coefficients[i], x, coefficients.getSize<1>());
     }
 

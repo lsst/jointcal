@@ -32,7 +32,10 @@
 
 typedef Eigen::Matrix<double, Eigen::Dynamic, 2> MatrixX2d;
 
-typedef Eigen::SparseMatrix<double> SparseMatrixD;
+typedef Eigen::SparseMatrix<double, 0, Eigen::Index> SparseMatrixD;
+
+// To make our indices and triplets conform to Eigen's desire for taking a signed type
+typedef std::vector<std::ptrdiff_t> IndexVector;
 
 /* Cholesky factorization class using cholmod, with the small-rank update capability.
  *
@@ -72,11 +75,11 @@ public:
         /* We have to apply the magic permutation to the update matrix,
         read page 117 of Cholmod UserGuide.pdf */
         cholmod_sparse *C_cs_perm =
-                cholmod_submatrix(&C_cs, (int *)Base::m_cholmodFactor->Perm, Base::m_cholmodFactor->n,
-                                  nullptr, -1, true, true, &this->cholmod());
+                cholmod_l_submatrix(&C_cs, (Eigen::Index*)Base::m_cholmodFactor->Perm,
+                                  Base::m_cholmodFactor->n, nullptr, -1, true, true, &this->cholmod());
         assert(C_cs_perm);
-        int isOk = cholmod_updown(UpOrDown, C_cs_perm, Base::m_cholmodFactor, &this->cholmod());
-        cholmod_free_sparse(&C_cs_perm, &this->cholmod());
+        int isOk = cholmod_l_updown(UpOrDown, C_cs_perm, Base::m_cholmodFactor, &this->cholmod());
+        cholmod_l_free_sparse(&C_cs_perm, &this->cholmod());
         if (!isOk) {
             throw(LSST_EXCEPT(lsst::pex::exceptions::RuntimeError, "cholmod_update failed!"));
         }

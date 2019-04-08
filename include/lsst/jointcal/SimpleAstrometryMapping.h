@@ -66,7 +66,7 @@ public:
     // interface Mapping functions:
 
     //!
-    unsigned getNpar() const {
+    std::size_t getNpar() const {
         if (toBeFit)
             return transform->getNpar();
         else
@@ -74,9 +74,9 @@ public:
     }
 
     //!
-    void getMappingIndices(std::vector<unsigned> &indices) const {
+    void getMappingIndices(IndexVector &indices) const {
         if (indices.size() < getNpar()) indices.resize(getNpar());
-        for (unsigned k = 0; k < getNpar(); ++k) indices[k] = index + k;
+        for (std::size_t k = 0; k < getNpar(); ++k) indices[k] = index + k;
     }
 
     //!
@@ -110,10 +110,10 @@ public:
     }
 
     //! position of the parameters within the grand fitting scheme
-    unsigned getIndex() const { return index; }
+    Eigen::Index getIndex() const { return index; }
 
     //!
-    void setIndex(unsigned i) { index = i; }
+    void setIndex(Eigen::Index i) { index = i; }
 
     virtual void computeTransformAndDerivatives(FatPoint const &where, FatPoint &outPoint,
                                                 Eigen::MatrixX2d &H) const {
@@ -132,7 +132,7 @@ public:
 protected:
     // Whether this Mapping is fit as part of a Model.
     bool toBeFit;
-    unsigned index;
+    Eigen::Index index;
     /* inheritance may also work. Perhaps with some trouble because
        some routines in Mapping and AstrometryTransform have the same name */
     std::shared_ptr<AstrometryTransform> transform;

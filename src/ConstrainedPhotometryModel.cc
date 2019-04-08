@@ -41,8 +41,11 @@
 namespace lsst {
 namespace jointcal {
 
-unsigned ConstrainedPhotometryModel::assignIndices(std::string const &whatToFit, unsigned firstIndex) {
-    unsigned index = firstIndex;
+Eigen::Index ConstrainedPhotometryModel::assignIndices(
+    std::string const &whatToFit,
+    Eigen::Index firstIndex
+) {
+    Eigen::Index index = firstIndex;
     if (whatToFit.find("Model") == std::string::npos) {
         LOGLS_WARN(_log, "assignIndices was called and Model is *not* in whatToFit");
         return index;
@@ -105,13 +108,13 @@ void ConstrainedPhotometryModel::freezeErrorTransform() {
 }
 
 void ConstrainedPhotometryModel::getMappingIndices(CcdImage const &ccdImage,
-                                                   std::vector<unsigned> &indices) const {
+                                                   IndexVector &indices) const {
     auto mapping = findMapping(ccdImage);
     mapping->getMappingIndices(indices);
 }
 
-int ConstrainedPhotometryModel::getTotalParameters() const {
-    int total = 0;
+std::size_t ConstrainedPhotometryModel::getTotalParameters() const {
+    std::size_t total = 0;
     for (auto &idMapping : _chipMap) {
         total += idMapping.second->getNpar();
     }
@@ -133,7 +136,8 @@ namespace {
 ndarray::Array<double, 2, 2> toChebyMapCoeffs(std::shared_ptr<PhotometryTransformChebyshev> transform) {
     auto coeffs = transform->getCoefficients();
     // 4 x nPar: ChebyMap wants rows that look like (a_ij, 1, i, j) for out += a_ij*T_i(x)*T_j(y)
-    ndarray::Array<double, 2, 2> chebyCoeffs = allocate(ndarray::makeVector(transform->getNpar(), 4));
+    ndarray::Array<double, 2, 2> chebyCoeffs = allocate(ndarray::makeVector(transform->getNpar(),
+                                                                            std::size_t(4)));
     Eigen::VectorXd::Index k = 0;
     auto order = transform->getOrder();
     for (ndarray::Size j = 0; j <= order; ++j) {

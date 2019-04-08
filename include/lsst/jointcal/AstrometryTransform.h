@@ -162,10 +162,10 @@ public:
     void offsetParams(Eigen::VectorXd const &delta);
 
     //!
-    virtual double paramRef(const int i) const;
+    virtual double paramRef(Eigen::Index const i) const;
 
     //!
-    virtual double &paramRef(const int i);
+    virtual double &paramRef(Eigen::Index const i);
 
     //! Derivative w.r.t parameters. Derivatives should be al least 2*NPar long. first Npar, for x, last Npar
     //! for y.
@@ -177,7 +177,7 @@ public:
     virtual std::unique_ptr<AstrometryTransform> roughInverse(const Frame &region) const;
 
     //! returns the number of parameters (to compute chi2's)
-    virtual int getNpar() const { return 0; }
+    virtual std::size_t getNpar() const { return 0; }
 
     /**
      * Create an equivalent AST mapping for this transformation, including an analytic inverse if possible.
@@ -240,7 +240,7 @@ public:
 
     void dump(std::ostream &stream = std::cout) const override { stream << "x' = x\ny' = y" << std::endl; }
 
-    int getNpar() const override { return 0; }
+    std::size_t getNpar() const override { return 0; }
 
     std::unique_ptr<AstrometryTransform> clone() const override {
         return std::unique_ptr<AstrometryTransform>(new AstrometryTransformIdentity);
@@ -285,11 +285,11 @@ public:
      *
      * @param order The highest total power (x+y) of monomials of this polynomial.
      */
-    AstrometryTransformPolynomial(const unsigned order = 1);
+    AstrometryTransformPolynomial(std::size_t order = 1);
 
     //! Constructs a "polynomial image" from an existing transform, over a specified domain
-    AstrometryTransformPolynomial(const AstrometryTransform *transform, const Frame &frame, unsigned order,
-                                  unsigned nPoint = 1000);
+    AstrometryTransformPolynomial(const AstrometryTransform *transform, const Frame &frame,
+                                  std::size_t order, std::size_t nPoint = 1000);
 
     /**
      * Constructs a polynomial approximation to an afw::geom::TransformPoint2ToPoint2.
@@ -300,13 +300,13 @@ public:
      * @param[in] nSteps The number of sample points per axis (nSteps^2 total points).
      */
     AstrometryTransformPolynomial(std::shared_ptr<afw::geom::TransformPoint2ToPoint2> transform,
-                                  jointcal::Frame const &domain, unsigned const order,
-                                  unsigned const nSteps = 50);
+                                  jointcal::Frame const &domain, std::size_t order,
+                                  std::size_t nSteps = 50);
 
     /// Sets the polynomial order (the highest sum of exponents of the largest monomial).
-    void setOrder(const unsigned order);
+    void setOrder(std::size_t order);
     /// Returns the polynomial order.
-    unsigned getOrder() const { return _order; }
+    std::size_t getOrder() const { return _order; }
 
     using AstrometryTransform::apply;  // to unhide AstrometryTransform::apply(Point const &)
 
@@ -320,7 +320,7 @@ public:
     virtual void transformPosAndErrors(const FatPoint &in, FatPoint &out) const override;
 
     //! total number of parameters
-    int getNpar() const override { return 2 * _nterms; }
+    std::size_t getNpar() const override { return 2 * _nterms; }
 
     //! print out of coefficients in a readable form.
     void dump(std::ostream &stream = std::cout) const override;
@@ -348,21 +348,21 @@ public:
     }
 
     //! access to coefficients (read only)
-    double coeff(const unsigned powX, const unsigned powY, const unsigned whichCoord) const;
+    double coeff(std::size_t powX, std::size_t powY, std::size_t whichCoord) const;
 
     //! write access
-    double &coeff(const unsigned powX, const unsigned powY, const unsigned whichCoord);
+    double &coeff(std::size_t powX, std::size_t powY, std::size_t whichCoord);
 
     //! read access, zero if beyond order
-    double coeffOrZero(const unsigned powX, const unsigned powY, const unsigned whichCoord) const;
+    double coeffOrZero(std::size_t powX, std::size_t powY, std::size_t whichCoord) const;
 
     double determinant() const;
 
     //!
-    double paramRef(const int i) const override;
+    double paramRef(Eigen::Index const i) const override;
 
     //!
-    double &paramRef(const int i) override;
+    double &paramRef(Eigen::Index const i) override;
 
     //! Derivative w.r.t parameters. Derivatives should be al least 2*NPar long. first Npar, for x, last Npar
     //! for y.
@@ -378,8 +378,8 @@ private:
     double computeFit(StarMatchList const &starMatchList, AstrometryTransform const &shiftToCenter,
                       const bool useErrors);
 
-    unsigned _order;              // The highest sum of exponents of the largest monomial.
-    unsigned _nterms;             // number of parameters per coordinate
+    std::size_t _order;              // The highest sum of exponents of the largest monomial.
+    std::size_t _nterms;             // number of parameters per coordinate
     std::vector<double> _coeffs;  // the actual coefficients
                                   // both polynomials in a single vector to speed up allocation and copies
 
@@ -416,8 +416,8 @@ private:
 std::shared_ptr<AstrometryTransformPolynomial> inversePolyTransform(AstrometryTransform const &forward,
                                                                     Frame const &domain,
                                                                     double const precision,
-                                                                    int const maxOrder = 9,
-                                                                    unsigned const nSteps = 50);
+                                                                    std::size_t maxOrder = 9,
+                                                                    std::size_t nSteps = 50);
 
 AstrometryTransformLinear normalizeCoordinatesTransform(const Frame &frame);
 
@@ -484,7 +484,7 @@ protected:
     friend class AstrometryTransformPolynomial;  // // for AstrometryTransform::Derivative
 
 private:
-    void setOrder(const unsigned order);  // to hide AstrometryTransformPolynomial::setOrder
+    void setOrder(std::size_t order);  // to hide AstrometryTransformPolynomial::setOrder
 };
 
 /*=============================================================*/
@@ -500,7 +500,7 @@ public:
             : AstrometryTransformLinear(point.x, point.y, 1., 0., 0., 1.){};
     double fit(StarMatchList const &starMatchList);
 
-    int getNpar() const { return 2; }
+    std::size_t getNpar() const { return 2; }
 };
 
 /*=============================================================*/
@@ -514,7 +514,7 @@ public:
                                  const double scaleFactor = 1.0);
     double fit(StarMatchList const &starMatchList);
 
-    int getNpar() const { return 4; }
+    std::size_t getNpar() const { return 4; }
 };
 
 /*=============================================================*/
@@ -530,7 +530,7 @@ public:
     AstrometryTransformLinearScale(const double scaleX, const double scaleY)
             : AstrometryTransformLinear(0.0, 0.0, scaleX, 0., 0., scaleY){};
 
-    int getNpar() const { return 2; }
+    std::size_t getNpar() const { return 2; }
 };
 
 /**

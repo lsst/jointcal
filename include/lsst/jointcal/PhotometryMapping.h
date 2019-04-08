@@ -53,7 +53,7 @@ public:
     PhotometryMappingBase &operator=(PhotometryMappingBase &&) = delete;
 
     /// Number of total parameters in this mapping
-    virtual unsigned getNpar() const = 0;
+    virtual std::size_t getNpar() const = 0;
 
     /**
      * Return the on-sky transformed flux for measuredStar on ccdImage.
@@ -106,20 +106,20 @@ public:
      * Gets how this set of parameters (of length getNpar()) map into the "grand" fit.
      * Expects that indices has enough space reserved.
      */
-    virtual void getMappingIndices(std::vector<unsigned> &indices) const = 0;
+    virtual void getMappingIndices(IndexVector &indices) const = 0;
 
     /// Dump the contents of the transforms, for debugging.
     virtual void dump(std::ostream &stream = std::cout) const = 0;
 
     /// Get the index of this mapping in the grand fit.
-    unsigned getIndex() { return index; }
+    Eigen::Index getIndex() { return index; }
 
     /// Set the index of this mapping in the grand fit.
-    void setIndex(unsigned i) { index = i; }
+    void setIndex(Eigen::Index i) { index = i; }
 
 protected:
     // Start index of this mapping in the "grand" fit
-    unsigned index;
+    Eigen::Index index;
     // Should this mapping be varied during fitting?
     bool fixed;
 };
@@ -138,7 +138,7 @@ public:
             : PhotometryMappingBase(), _transform(std::move(transform)), _transformErrors(_transform) {}
 
     /// @copydoc PhotometryMappingBase::getNpar
-    unsigned getNpar() const override {
+    std::size_t getNpar() const override {
         if (fixed) {
             return 0;
         } else {
@@ -183,9 +183,9 @@ public:
     Eigen::VectorXd getParameters() override { return _transform->getParameters(); }
 
     /// @copydoc PhotometryMappingBase::getMappingIndices
-    void getMappingIndices(std::vector<unsigned> &indices) const override {
+    void getMappingIndices(IndexVector &indices) const override {
         if (indices.size() < getNpar()) indices.resize(getNpar());
-        for (unsigned k = 0; k < getNpar(); ++k) {
+        for (std::size_t k = 0; k < getNpar(); ++k) {
             indices[k] = index + k;
         }
     }
@@ -221,7 +221,7 @@ public:
               _visitMapping(std::move(visitMapping)) {}
 
     /// @copydoc PhotometryMappingBase::getNpar
-    unsigned getNpar() const override { return _nParChip + _nParVisit; }
+    std::size_t getNpar() const override { return _nParChip + _nParVisit; }
 
     /// @copydoc PhotometryMappingBase::transform
     double transform(MeasuredStar const &measuredStar, double value) const override {
@@ -244,7 +244,7 @@ public:
     }
 
     /// @copydoc PhotometryMappingBase::getMappingIndices
-    void getMappingIndices(std::vector<unsigned> &indices) const override;
+    void getMappingIndices(IndexVector &indices) const override;
 
     /**
      * Set whether to fit chips or visits.
@@ -268,12 +268,12 @@ public:
     std::shared_ptr<PhotometryMapping> getChipMapping() const { return _chipMapping; }
     std::shared_ptr<PhotometryMapping> getVisitMapping() const { return _visitMapping; }
 
-    unsigned getNParChip() const { return _nParChip; }
-    unsigned getNParVisit() const { return _nParVisit; }
+    std::size_t getNParChip() const { return _nParChip; }
+    std::size_t getNParVisit() const { return _nParVisit; }
 
 protected:
     // These are either transform.getNpar() or 0, depending on whether we are fitting that component or not.
-    unsigned _nParChip, _nParVisit;
+    std::size_t _nParChip, _nParVisit;
 
     // the actual transformation to be fit
     std::shared_ptr<PhotometryMapping> _chipMapping;

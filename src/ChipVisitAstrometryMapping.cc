@@ -40,10 +40,10 @@ ChipVisitAstrometryMapping::ChipVisitAstrometryMapping(std::shared_ptr<SimpleAst
     setWhatToFit(true, true);
 }
 
-unsigned ChipVisitAstrometryMapping::getNpar() const { return _nPar1 + _nPar2; }
+std::size_t ChipVisitAstrometryMapping::getNpar() const { return _nPar1 + _nPar2; }
 
-void ChipVisitAstrometryMapping::getMappingIndices(std::vector<unsigned> &indices) const {
-    unsigned npar = getNpar();
+void ChipVisitAstrometryMapping::getMappingIndices(IndexVector &indices) const {
+    std::size_t npar = getNpar();
     if (indices.size() < npar) indices.resize(npar);
     // in case we are only fitting one of the two transforms
     if (_nPar1)
@@ -54,9 +54,9 @@ void ChipVisitAstrometryMapping::getMappingIndices(std::vector<unsigned> &indice
     }
     // if we get here we are fitting both
     // there is probably a more elegant way to feed a subpart of a std::vector
-    std::vector<unsigned> ind2(_nPar2);
+    IndexVector ind2(_nPar2);
     _m2->getMappingIndices(ind2);
-    for (unsigned k = 0; k < _nPar2; ++k) indices.at(k + _nPar1) = ind2.at(k);
+    for (Eigen::Index k = 0; k < _nPar2; ++k) indices.at(k + _nPar1) = ind2.at(k);
 }
 
 void ChipVisitAstrometryMapping::computeTransformAndDerivatives(FatPoint const &where, FatPoint &outPoint,

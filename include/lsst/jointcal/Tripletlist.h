@@ -38,16 +38,20 @@ typedef Eigen::Triplet<double> Trip;
 // it would be wise to implement it differently if talking to cholmod
 class TripletList : public std::vector<Trip> {
 public:
+    using Index = Eigen::Index;
+
     TripletList(int count) : _nextFreeIndex(0) { reserve(count); };
 
-    void addTriplet(const unsigned i, const unsigned j, double val) { push_back(Trip(i, j, val)); }
+    void addTriplet(Index i, Index j, double val) {
+        push_back(Trip(i, j, val));
+    }
 
-    unsigned getNextFreeIndex() const { return _nextFreeIndex; }
+    Index getNextFreeIndex() const { return _nextFreeIndex; }
 
-    void setNextFreeIndex(unsigned index) { _nextFreeIndex = index; }
+    void setNextFreeIndex(Index index) { _nextFreeIndex = index; }
 
 private:
-    unsigned _nextFreeIndex;
+    Index _nextFreeIndex;
 };
 }  // namespace jointcal
 }  // namespace lsst
