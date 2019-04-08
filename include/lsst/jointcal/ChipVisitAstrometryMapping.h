@@ -48,9 +48,9 @@ public:
     ChipVisitAstrometryMapping &operator=(ChipVisitAstrometryMapping &&) = delete;
 
     //!
-    unsigned getNpar() const;
+    std::size_t getNpar() const;
 
-    void getMappingIndices(std::vector<unsigned> &indices) const;
+    void getMappingIndices(IndexVector &indices) const;
 
     //!
     void computeTransformAndDerivatives(FatPoint const &where, FatPoint &outPoint, Eigen::MatrixX2d &H) const;
@@ -86,7 +86,7 @@ private:
     void setWhatToFit(const bool fittingT1, const bool fittingT2);
 
     std::shared_ptr<SimpleAstrometryMapping> _m1, _m2;
-    unsigned _nPar1, _nPar2;
+    Eigen::Index _nPar1, _nPar2;
     struct tmpVars  // just there to get around constness issues
     {
         Eigen::MatrixX2d h1, h2;

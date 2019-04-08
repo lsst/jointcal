@@ -49,8 +49,8 @@ Chi2Statistic FitterBase::computeChi2() const {
     return chi2;
 }
 
-unsigned FitterBase::findOutliers(double nSigmaCut, MeasuredStarList &msOutliers,
-                                  FittedStarList &fsOutliers) const {
+std::size_t FitterBase::findOutliers(double nSigmaCut, MeasuredStarList &msOutliers,
+                                     FittedStarList &fsOutliers) const {
     // collect chi2 contributions
     Chi2List chi2List;
     chi2List.reserve(_nMeasuredStars + _associations->refStarList.size());
@@ -77,11 +77,11 @@ unsigned FitterBase::findOutliers(double nSigmaCut, MeasuredStarList &msOutliers
     Eigen::VectorXi affectedParams(_nParTot);
     affectedParams.setZero();
 
-    unsigned nOutliers = 0;  // returned to the caller
+    std::size_t nOutliers = 0;  // returned to the caller
     // start from the strongest outliers.
     for (auto chi2 = chi2List.rbegin(); chi2 != chi2List.rend(); ++chi2) {
         if (chi2->chi2 < cut) break;  // because the array is sorted.
-        std::vector<unsigned> indices;
+        IndexVector indices;
         /* now, we want to get the indices of the parameters this chi2
            term depends on. We have to figure out which kind of term it
            is; we use for that the type of the star attached to the Chi2Star. */
@@ -147,7 +147,7 @@ unsigned FitterBase::findOutliers(double nSigmaCut, MeasuredStarList &msOutliers
 
 namespace {
 /// Return a Hessian matrix filled from tripletList of size nParTot x nParTot.
-SparseMatrixD createHessian(int nParTot, TripletList const &tripletList) {
+SparseMatrixD createHessian(std::size_t nParTot, TripletList const &tripletList) {
     SparseMatrixD jacobian(nParTot, tripletList.getNextFreeIndex());
     jacobian.setFromTriplets(tripletList.begin(), tripletList.end());
     return jacobian * jacobian.transpose();
@@ -175,7 +175,7 @@ MinimizeResult FitterBase::minimize(std::string const &whatToFit, double nSigmaC
     MinimizeResult returnCode = MinimizeResult::Converged;
 
     // TODO : write a guesser for the number of triplets
-    unsigned nTrip = (_lastNTrip) ? _lastNTrip : 1e6;
+    std::size_t nTrip = (_lastNTrip) ? _lastNTrip : 1e6;
     TripletList tripletList(nTrip);
     Eigen::VectorXd grad(_nParTot);
     grad.setZero();
@@ -209,8 +209,8 @@ MinimizeResult FitterBase::minimize(std::string const &whatToFit, double nSigmaC
         return MinimizeResult::Failed;
     }
 
-    unsigned totalMeasOutliers = 0;
-    unsigned totalRefOutliers = 0;
+    std::size_t totalMeasOutliers = 0;
+    std::size_t totalRefOutliers = 0;
     double oldChi2 = computeChi2().chi2;
 
     while (true) {
@@ -237,7 +237,7 @@ MinimizeResult FitterBase::minimize(std::string const &whatToFit, double nSigmaC
         MeasuredStarList msOutliers;
         FittedStarList fsOutliers;
         // keep nOutliers so we don't have to sum msOutliers.size()+fsOutliers.size() twice below.
-        int nOutliers = findOutliers(nSigmaCut, msOutliers, fsOutliers);
+        std::size_t nOutliers = findOutliers(nSigmaCut, msOutliers, fsOutliers);
         totalMeasOutliers += msOutliers.size();
         totalRefOutliers += fsOutliers.size();
         if (nOutliers == 0) break;

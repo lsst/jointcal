@@ -99,15 +99,15 @@ private:
     std::shared_ptr<PhotometryModel> _photometryModel;
 
     // counts in parameter subsets.
-    unsigned int _nParModel;
-    unsigned int _nParFluxes;
+    std::size_t _nParModel;
+    std::size_t _nParFluxes;
 
     void accumulateStatImageList(CcdImageList const &ccdImageList, Chi2Accumulator &accum) const override;
 
     void accumulateStatRefStars(Chi2Accumulator &accum) const override;
 
     void getIndicesOfMeasuredStar(MeasuredStar const &measuredStar,
-                                  std::vector<unsigned> &indices) const override;
+                                  IndexVector &indices) const override;
 
     void leastSquareDerivativesMeasurement(CcdImage const &ccdImage, TripletList &tripletList,
                                            Eigen::VectorXd &grad,

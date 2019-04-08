@@ -138,13 +138,13 @@ private:
     std::shared_ptr<AstrometryModel> _astrometryModel;
     double _referenceColor, _sigCol;  // average and r.m.s color
     double _refractionCoefficient;    // fit parameter
-    unsigned int _refracPosInMatrix;  // where it stands
+    Eigen::Index _refracPosInMatrix;  // where it stands
     double _JDRef;                    // average Julian date
 
     // counts in parameter subsets.
-    unsigned int _nParDistortions;
-    unsigned int _nParPositions;
-    unsigned int _nParRefrac;
+    std::size_t _nParDistortions;
+    std::size_t _nParPositions;
+    std::size_t _nParRefrac;
 
     double _posError;  // constant term on error on position (in pixel unit)
 
@@ -160,7 +160,7 @@ private:
     void accumulateStatRefStars(Chi2Accumulator &accum) const override;
 
     void getIndicesOfMeasuredStar(MeasuredStar const &measuredStar,
-                                  std::vector<unsigned> &indices) const override;
+                                  IndexVector &indices) const override;
 
     Point transformFittedStar(FittedStar const &fittedStar, AstrometryTransform const &sky2TP,
                               Point const &refractionVector, double refractionCoeff, double mjd) const;

@@ -74,7 +74,7 @@ public:
     }
 
     /// Return the number of parameters (used to compute chisq)
-    virtual int getNpar() const = 0;
+    virtual std::size_t getNpar() const = 0;
 
     /**
      * Offset the parameters by some (negative) amount during fitting.
@@ -115,7 +115,7 @@ public:
     void dump(std::ostream &stream = std::cout) const override { stream << std::setprecision(10) << _value; }
 
     /// @copydoc PhotometryTransform::getNpar
-    int getNpar() const override { return 1; }
+    std::size_t getNpar() const override { return 1; }
 
     /// @copydoc PhotometryTransform::offsetParams
     void offsetParams(Eigen::VectorXd const &delta) override { _value -= delta[0]; };
@@ -245,7 +245,7 @@ public:
     void dump(std::ostream &stream = std::cout) const override { stream << _coefficients; }
 
     /// @copydoc PhotometryTransform::getNpar
-    int getNpar() const override { return _nParameters; }
+    std::size_t getNpar() const override { return _nParameters; }
 
     /// @copydoc PhotometryTransform::offsetParams
     void offsetParams(Eigen::VectorXd const &delta) override;

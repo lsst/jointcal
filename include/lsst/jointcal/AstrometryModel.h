@@ -51,14 +51,14 @@ public:
     AstrometryModel(LOG_LOGGER log) : _log(log) {}
 
     /// Return the number of parameters in the mapping of CcdImage
-    int getNpar(CcdImage const &ccdImage) const { return findMapping(ccdImage)->getNpar(); }
+    std::size_t getNpar(CcdImage const &ccdImage) const { return findMapping(ccdImage)->getNpar(); }
 
     //! Mapping associated to a given CcdImage
     virtual const AstrometryMapping *getMapping(CcdImage const &) const = 0;
 
     //! Assign indices to parameters involved in mappings, starting at firstIndex. Returns the highest
     //! assigned index.
-    virtual unsigned assignIndices(std::string const &whatToFit, unsigned firstIndex) = 0;
+    virtual Eigen::Index assignIndices(std::string const &whatToFit, Eigen::Index firstIndex) = 0;
 
     /**
      * Offset the parameters by the provided amounts (by -delta).
@@ -88,7 +88,7 @@ public:
     virtual void freezeErrorTransform() = 0;
 
     /// Return the total number of parameters in this model.
-    virtual int getTotalParameters() const = 0;
+    virtual std::size_t getTotalParameters() const = 0;
 
     virtual ~AstrometryModel(){};
 

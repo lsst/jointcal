@@ -45,7 +45,7 @@ SimpleAstrometryModel::SimpleAstrometryModel(CcdImageList const &ccdImageList,
           _skyToTangentPlane(projectionHandler)
 
 {
-    unsigned count = 0;
+    std::size_t count = 0;
 
     for (auto i = ccdImageList.cbegin(); i != ccdImageList.cend(); ++i, ++count) {
         const CcdImage &im = **i;
@@ -67,7 +67,7 @@ SimpleAstrometryModel::SimpleAstrometryModel(CcdImageList const &ccdImageList,
             AstrometryTransformPolynomial pol(order);
             if (pol.getOrder() > 0)  // if not, it cannot be decreased
             {
-                while (unsigned(pol.getNpar()) > 2 * nObj) {
+                while (pol.getNpar() > 2 * nObj) {
                     LOGLS_WARN(_log, "Reducing polynomial order from "
                                              << pol.getOrder() << ", due to too few sources (" << nObj
                                              << " vs. " << pol.getNpar() << " parameters)");
@@ -98,12 +98,12 @@ const AstrometryMapping *SimpleAstrometryModel::getMapping(CcdImage const &ccdIm
     return findMapping(ccdImage);
 }
 
-unsigned SimpleAstrometryModel::assignIndices(std::string const &whatToFit, unsigned firstIndex) {
+Eigen::Index SimpleAstrometryModel::assignIndices(std::string const &whatToFit, Eigen::Index firstIndex) {
     if (whatToFit.find("Distortions") == std::string::npos) {
         LOGLS_ERROR(_log, "AssignIndices was called and Distortions is *not* in whatToFit.");
         return 0;
     }
-    unsigned index = firstIndex;
+    Eigen::Index index = firstIndex;
     for (auto i = _myMap.begin(); i != _myMap.end(); ++i) {
         SimplePolyMapping *p = dynamic_cast<SimplePolyMapping *>(&*(i->second));
         if (!p) continue;  // it should be AstrometryTransformIdentity
@@ -124,8 +124,8 @@ void SimpleAstrometryModel::freezeErrorTransform() {
     for (auto &i : _myMap) i.second->freezeErrorTransform();
 }
 
-int SimpleAstrometryModel::getTotalParameters() const {
-    int total = 0;
+std::size_t SimpleAstrometryModel::getTotalParameters() const {
+    std::size_t total = 0;
     for (auto &i : _myMap) {
         total += i.second->getNpar();
     }

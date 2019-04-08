@@ -57,7 +57,7 @@ public:
      *
      * @return     The highest assigned index.
      */
-    virtual unsigned assignIndices(std::string const &whatToFit, unsigned firstIndex) = 0;
+    virtual Eigen::Index assignIndices(std::string const &whatToFit, Eigen::Index firstIndex) = 0;
 
     /**
      * Offset the parameters by the provided amounts (by -delta).
@@ -126,7 +126,7 @@ public:
      * @param[in]  ccdImage  The ccdImage to look up.
      * @param[out] indices   The indices of the mapping associated with ccdImage.
      */
-    virtual void getMappingIndices(CcdImage const &ccdImage, std::vector<unsigned> &indices) const = 0;
+    virtual void getMappingIndices(CcdImage const &ccdImage, IndexVector &indices) const = 0;
 
     /**
      * Compute the parametric derivatives of this model.
@@ -150,7 +150,7 @@ public:
     virtual std::shared_ptr<afw::image::PhotoCalib> toPhotoCalib(CcdImage const &ccdImage) const = 0;
 
     /// Return the number of parameters in the mapping of CcdImage
-    unsigned getNpar(CcdImage const &ccdImage) const { return findMapping(ccdImage)->getNpar(); }
+    std::size_t getNpar(CcdImage const &ccdImage) const { return findMapping(ccdImage)->getNpar(); }
 
     /// Get the mapping associated with ccdImage.
     PhotometryMappingBase const &getMapping(CcdImage const &ccdImage) const {
@@ -158,7 +158,7 @@ public:
     }
 
     /// Return the total number of parameters in this model.
-    virtual int getTotalParameters() const = 0;
+    virtual std::size_t getTotalParameters() const = 0;
 
     /// Dump the contents of the transforms, for debugging.
     virtual void dump(std::ostream &stream = std::cout) const = 0;

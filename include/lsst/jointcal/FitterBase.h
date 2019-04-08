@@ -153,9 +153,9 @@ protected:
     std::shared_ptr<Associations> _associations;
     std::string _whatToFit;
 
-    int _lastNTrip;  // last triplet count, used to speed up allocation
-    unsigned int _nParTot;
-    unsigned _nMeasuredStars;
+    Eigen::Index _lastNTrip;  // last triplet count, used to speed up allocation
+    Eigen::Index _nParTot;
+    Eigen::Index _nMeasuredStars;
 
     // lsst.logging instance, to be created by subclass so that messages have consistent name while fitting.
     LOG_LOGGER _log;
@@ -182,7 +182,8 @@ protected:
      *
      * @return     Total number of outliers that were removed.
      */
-    unsigned findOutliers(double nSigmaCut, MeasuredStarList &msOutliers, FittedStarList &fsOutliers) const;
+    std::size_t findOutliers(double nSigmaCut, MeasuredStarList &msOutliers,
+                             FittedStarList &fsOutliers) const;
 
     /**
      * Contributions to derivatives from (presumably) outlier terms. No
@@ -199,7 +200,7 @@ protected:
 
     /// Set the indices of a measured star from the full matrix, for outlier removal.
     virtual void getIndicesOfMeasuredStar(MeasuredStar const &measuredStar,
-                                          std::vector<unsigned> &indices) const = 0;
+                                          IndexVector &indices) const = 0;
 
     /// Compute the chi2 (per star or total, depending on which Chi2Accumulator is used) for measurements.
     virtual void accumulateStatImageList(CcdImageList const &ccdImageList, Chi2Accumulator &accum) const = 0;
