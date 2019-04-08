@@ -80,7 +80,7 @@ public:
     void freezeErrorTransform() override;
 
     /// @copydoc PhotometryModel::getMappingIndices
-    void getMappingIndices(CcdImage const &ccdImage, std::vector<std::ptrdiff_t> &indices) const override;
+    void getMappingIndices(CcdImage const &ccdImage, IndexVector &indices) const override;
 
     /// @copydoc PhotometryModel::getTotalParameters
     int getTotalParameters() const override;

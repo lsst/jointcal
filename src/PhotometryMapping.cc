@@ -36,7 +36,7 @@ LOG_LOGGER _log = LOG_GET("jointcal.PhotometryMapping");
 namespace lsst {
 namespace jointcal {
 
-void ChipVisitPhotometryMapping::getMappingIndices(std::vector<std::ptrdiff_t> &indices) const {
+void ChipVisitPhotometryMapping::getMappingIndices(IndexVector &indices) const {
     if (indices.size() < getNpar()) indices.resize(getNpar());
     // If we're fitting the chip mapping, fill those indices.
     if (_nParChip > 0) {
@@ -46,7 +46,7 @@ void ChipVisitPhotometryMapping::getMappingIndices(std::vector<std::ptrdiff_t> &
     if (_nParVisit > 0) {
         // TODO DM-12169: there is probably a better way to feed a subpart of a std::vector
         // (maybe a view or iterators?)
-        std::vector<std::ptrdiff_t> tempIndices(_visitMapping->getNpar());
+        IndexVector tempIndices(_visitMapping->getNpar());
         _visitMapping->getMappingIndices(tempIndices);
         // We have to insert the visit indices starting after the chip indices.
         for (std::ptrdiff_t k = 0; k < _visitMapping->getNpar(); ++k) {

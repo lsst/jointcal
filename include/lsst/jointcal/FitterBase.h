@@ -29,6 +29,7 @@
 #include "lsst/jointcal/Associations.h"
 #include "lsst/jointcal/CcdImage.h"
 #include "lsst/jointcal/Chi2.h"
+#include "lsst/jointcal/Eigenstuff.h"
 #include "lsst/jointcal/FittedStar.h"
 #include "lsst/jointcal/MeasuredStar.h"
 #include "lsst/jointcal/Tripletlist.h"
@@ -198,8 +199,7 @@ protected:
     void removeRefOutliers(FittedStarList &outliers);
 
     /// Set the indices of a measured star from the full matrix, for outlier removal.
-    virtual void getIndicesOfMeasuredStar(MeasuredStar const &measuredStar,
-                                          std::vector<std::ptrdiff_t> &indices) const = 0;
+    virtual void getIndicesOfMeasuredStar(MeasuredStar const &measuredStar, IndexVector &indices) const = 0;
 
     /// Compute the chi2 (per star or total, depending on which Chi2Accumulator is used) for measurements.
     virtual void accumulateStatImageList(CcdImageList const &ccdImageList, Chi2Accumulator &accum) const = 0;

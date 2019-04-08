@@ -106,7 +106,7 @@ public:
      * Gets how this set of parameters (of length getNpar()) map into the "grand" fit.
      * Expects that indices has enough space reserved.
      */
-    virtual void getMappingIndices(std::vector<std::ptrdiff_t> &indices) const = 0;
+    virtual void getMappingIndices(IndexVector &indices) const = 0;
 
     /// Dump the contents of the transforms, for debugging.
     virtual void dump(std::ostream &stream = std::cout) const = 0;
@@ -183,7 +183,7 @@ public:
     Eigen::VectorXd getParameters() override { return _transform->getParameters(); }
 
     /// @copydoc PhotometryMappingBase::getMappingIndices
-    void getMappingIndices(std::vector<std::ptrdiff_t> &indices) const override {
+    void getMappingIndices(IndexVector &indices) const override {
         if (indices.size() < getNpar()) indices.resize(getNpar());
         for (std::ptrdiff_t k = 0; k < getNpar(); ++k) {
             indices[k] = index + k;
@@ -244,7 +244,7 @@ public:
     }
 
     /// @copydoc PhotometryMappingBase::getMappingIndices
-    void getMappingIndices(std::vector<std::ptrdiff_t> &indices) const override;
+    void getMappingIndices(IndexVector &indices) const override;
 
     /**
      * Set whether to fit chips or visits.

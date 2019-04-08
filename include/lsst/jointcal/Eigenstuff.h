@@ -30,6 +30,9 @@
 #include "Eigen/CholmodSupport"  // to switch to cholmod
 #include "Eigen/Core"
 
+// To make our indices and triplets conform to Eigen's desire for taking a signed type
+using IndexVector = std::vector<std::ptrdiff_t>;
+
 typedef Eigen::Matrix<double, Eigen::Dynamic, 2> MatrixX2d;
 
 typedef Eigen::SparseMatrix<double> SparseMatrixD;

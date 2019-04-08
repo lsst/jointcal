@@ -42,7 +42,7 @@ public:
 
     /// Sets how this set of parameters (of length Npar()) map into the "grand" fit
     /// Expects that indices has enough space reserved.
-    virtual void getMappingIndices(std::vector<std::ptrdiff_t> &indices) const = 0;
+    virtual void getMappingIndices(IndexVector &indices) const = 0;
 
     //! Actually applies the AstrometryMapping and evaluates the derivatives w.r.t the fitted parameters.
     /*! This is grouped into a single call because for most models,

@@ -106,8 +106,7 @@ private:
 
     void accumulateStatRefStars(Chi2Accumulator &accum) const override;
 
-    void getIndicesOfMeasuredStar(MeasuredStar const &measuredStar,
-                                  std::vector<std::ptrdiff_t> &indices) const override;
+    void getIndicesOfMeasuredStar(MeasuredStar const &measuredStar, IndexVector &indices) const override;
 
     void leastSquareDerivativesMeasurement(CcdImage const &ccdImage, TripletList &tripletList,
                                            Eigen::VectorXd &grad,

@@ -74,7 +74,7 @@ public:
     }
 
     //!
-    void getMappingIndices(std::vector<std::ptrdiff_t> &indices) const {
+    void getMappingIndices(IndexVector &indices) const {
         if (indices.size() < getNpar()) indices.resize(getNpar());
         for (std::ptrdiff_t k = 0; k < getNpar(); ++k) indices[k] = index + k;
     }

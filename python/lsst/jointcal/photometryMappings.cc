@@ -56,7 +56,7 @@ void declarePhotometryMappingBase(py::module &mod) {
     cls.def("getParameters", &PhotometryMappingBase::getParameters);
 
     cls.def("getMappingIndices", [](PhotometryMappingBase const &self) {
-        std::vector<std::ptrdiff_t> indices(0);
+        IndexVector indices(0);
         self.getMappingIndices(indices);
         return indices;
     });

@@ -135,7 +135,7 @@ void AstrometryFit::leastSquareDerivativesMeasurement(CcdImage const &ccdImage, 
     // if (npar_tot == 0) this CcdImage does not contribute
     // any constraint to the fit, so :
     if (npar_tot == 0) return;
-    std::vector<std::ptrdiff_t> indices(npar_tot, -1);
+    IndexVector indices(npar_tot, -1);
     if (_fittingDistortions) mapping->getMappingIndices(indices);
 
     // proper motion stuff
@@ -428,8 +428,7 @@ void AstrometryFit::accumulateStatRefStars(Chi2Accumulator &accum) const {
 //! this routine is to be used only in the framework of outlier removal
 /*! it fills the array of indices of parameters that a Measured star
     constrains. Not really all of them if you check. */
-void AstrometryFit::getIndicesOfMeasuredStar(MeasuredStar const &measuredStar,
-                                             std::vector<std::ptrdiff_t> &indices) const {
+void AstrometryFit::getIndicesOfMeasuredStar(MeasuredStar const &measuredStar, IndexVector &indices) const {
     if (_fittingDistortions) {
         const AstrometryMapping *mapping = _astrometryModel->getMapping(measuredStar.getCcdImage());
         mapping->getMappingIndices(indices);

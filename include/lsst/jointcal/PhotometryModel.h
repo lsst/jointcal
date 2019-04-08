@@ -122,7 +122,7 @@ public:
      * @param[in]  ccdImage  The ccdImage to look up.
      * @param[out] indices   The indices of the mapping associated with ccdImage.
      */
-    virtual void getMappingIndices(CcdImage const &ccdImage, std::vector<std::ptrdiff_t> &indices) const = 0;
+    virtual void getMappingIndices(CcdImage const &ccdImage, IndexVector &indices) const = 0;
 
     /**
      * Compute the parametric derivatives of this model.

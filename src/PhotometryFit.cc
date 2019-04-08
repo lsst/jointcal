@@ -58,7 +58,7 @@ void PhotometryFit::leastSquareDerivativesMeasurement(CcdImage const &ccdImage, 
     unsigned nparModel = (_fittingModel) ? _photometryModel->getNpar(ccdImage) : 0;
     unsigned nparFlux = (_fittingFluxes) ? 1 : 0;
     std::ptrdiff_t nparTotal = nparModel + nparFlux;
-    std::vector<std::ptrdiff_t> indices(nparModel, -1);
+    IndexVector indices(nparModel, -1);
     if (_fittingModel) _photometryModel->getMappingIndices(ccdImage, indices);
 
     Eigen::VectorXd H(nparTotal);  // derivative matrix
@@ -76,7 +76,7 @@ void PhotometryFit::leastSquareDerivativesMeasurement(CcdImage const &ccdImage, 
 
         if (_fittingModel) {
             _photometryModel->computeParameterDerivatives(*measuredStar, ccdImage, H);
-            for (std::ptrdiff_t k = 0; k < indices.size(); k++) {
+            for (IndexVector::size_type k = 0; k < indices.size(); k++) {
                 std::ptrdiff_t l = indices[k];
                 tripletList.addTriplet(l, kTriplets, H[k] * inverseSigma);
                 grad[l] += H[k] * W * residual;
@@ -170,8 +170,7 @@ void PhotometryFit::accumulateStatRefStars(Chi2Accumulator &accum) const {
 //! this routine is to be used only in the framework of outlier removal
 /*! it fills the array of indices of parameters that a Measured star
     constrains. Not really all of them if you check. */
-void PhotometryFit::getIndicesOfMeasuredStar(MeasuredStar const &measuredStar,
-                                             std::vector<std::ptrdiff_t> &indices) const {
+void PhotometryFit::getIndicesOfMeasuredStar(MeasuredStar const &measuredStar, IndexVector &indices) const {
     indices.clear();
     if (_fittingModel) {
         _photometryModel->getMappingIndices(measuredStar.getCcdImage(), indices);

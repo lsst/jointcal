@@ -105,8 +105,7 @@ void ConstrainedPhotometryModel::freezeErrorTransform() {
     }
 }
 
-void ConstrainedPhotometryModel::getMappingIndices(CcdImage const &ccdImage,
-                                                   std::vector<std::ptrdiff_t> &indices) const {
+void ConstrainedPhotometryModel::getMappingIndices(CcdImage const &ccdImage, IndexVector &indices) const {
     auto mapping = findMapping(ccdImage);
     mapping->getMappingIndices(indices);
 }

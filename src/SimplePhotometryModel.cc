@@ -58,8 +58,7 @@ void SimplePhotometryModel::freezeErrorTransform() {
     }
 }
 
-void SimplePhotometryModel::getMappingIndices(CcdImage const &ccdImage,
-                                              std::vector<std::ptrdiff_t> &indices) const {
+void SimplePhotometryModel::getMappingIndices(CcdImage const &ccdImage, IndexVector &indices) const {
     auto mapping = findMapping(ccdImage);
     if (indices.size() < mapping->getNpar()) indices.resize(mapping->getNpar());
     indices[0] = mapping->getIndex();
