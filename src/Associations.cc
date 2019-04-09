@@ -282,12 +282,15 @@ void Associations::prepareFittedStars(int minMeasurements) {
 void Associations::selectFittedStars(int minMeasurements) {
     LOGLS_INFO(_log, "Fitted stars before measurement # cut: " << fittedStarList.size());
 
+    std::size_t totalMeasured = 0, validMeasured = 0;
+
     // first pass: remove objects that have less than a certain number of measurements.
     for (auto const &ccdImage : ccdImageList) {
         MeasuredStarList &catalog = ccdImage->getCatalogForFit();
         // Iteration happens internal to the loop, as we may delete measuredStars from catalog.
         for (MeasuredStarIterator mi = catalog.begin(); mi != catalog.end();) {
             MeasuredStar &mstar = **mi;
+            ++totalMeasured;
 
             auto fittedStar = mstar.getFittedStar();
             // measuredStar has no fittedStar: move on.
@@ -302,6 +305,7 @@ void Associations::selectFittedStars(int minMeasurements) {
                 fittedStar->getMeasurementCount()--;
                 mi = catalog.erase(mi);  // mi now points to the next measuredStar.
             } else {
+                ++validMeasured;
                 ++mi;
             }
         }  // end loop on objects in catalog
@@ -317,6 +321,7 @@ void Associations::selectFittedStars(int minMeasurements) {
     }
 
     LOGLS_INFO(_log, "Fitted stars after measurement # cut: " << fittedStarList.size());
+    LOGLS_INFO(_log, "Total, valid number of Measured stars: " << totalMeasured << ", " << validMeasured);
 }
 
 void Associations::normalizeFittedStars() const {
