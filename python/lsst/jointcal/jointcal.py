@@ -984,7 +984,10 @@ class JointcalTask(pipeBase.CmdLineTask):
         """
         dumpMatrixFile = "%s_postinit" % name if self.config.writeInitMatrix else ""
         for i in range(max_steps):
-            writeChi2Name = f"{name}_iterate_{i}_chi2-{dataName}"
+            if self.config.writeChi2FilesOuterLoop:
+                writeChi2Name = f"{name}_iterate_{i}_chi2-{dataName}"
+            else:
+                writeChi2Name = None
             result = fitter.minimize(whatToFit,
                                      self.config.outlierRejectSigma,
                                      doRankUpdate=doRankUpdate,

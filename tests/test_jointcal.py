@@ -118,8 +118,8 @@ class TestJointcalIterateFit(JointcalTestBase, lsst.utils.tests.TestCase):
         self.assertEqual(chi2, self.goodChi2)
         # Once for the for loop, the second time for the rank update.
         self.assertEqual(self.fitter.minimize.call_count, 2)
-        filename = f"{self.name}_iterate_0_chi2-{self.dataName}"
-        self.fitter.saveChi2Contributions.assert_called_with(filename+"{type}")
+        # Default config should not call saveChi2Contributions
+        self.fitter.saveChi2Contributions.assert_not_called()
 
     def test_iterateFit_failed(self):
         self.fitter.minimize.return_value = MinimizeResult.Failed
