@@ -71,7 +71,6 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         self.config = lsst.jointcal.jointcal.JointcalConfig()
         self.config.astrometryModel = "simple"
         self.config.photometryModel = "simpleFlux"
-        self.config.sourceSelector['astrometry'].badFlags.append("base_PixelFlags_flag_interpolated")
 
         # See Readme for an explanation of these empirical values.
         dist_rms_relative = 17e-3*u.arcsecond
@@ -101,7 +100,6 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         self.config = lsst.jointcal.jointcal.JointcalConfig()
         self.config.astrometryModel = "simple"
         self.config.doPhotometry = False
-        self.config.sourceSelector['astrometry'].badFlags.append("base_PixelFlags_flag_interpolated")
         self.jointcalStatistics.do_photometry = False
 
         # See Readme for an explanation of these empirical values.
@@ -124,7 +122,6 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         self.config = lsst.jointcal.jointcal.JointcalConfig()
         self.config.photometryModel = "simpleFlux"
         self.config.doAstrometry = False
-        self.config.sourceSelector['astrometry'].badFlags.append("base_PixelFlags_flag_interpolated")
         self.jointcalStatistics.do_astrometry = False
 
         # See Readme for an explanation of these empirical values.
@@ -191,7 +188,6 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         self.config = lsst.jointcal.jointcal.JointcalConfig()
         self.config.astrometryModel = "simple"
         self.config.doPhotometry = False
-        self.config.sourceSelector['astrometry'].badFlags.append("base_PixelFlags_flag_interpolated")
         self.jointcalStatistics.do_photometry = False
 
         data_refs = self._testJointcalTask(2, dist_rms_relative, self.dist_rms_absolute,
@@ -206,7 +202,6 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         self.config.astrometryModel = "simple"
         self.config.photometryModel = "simpleFlux"
         # use the a.net refcat for photometry, gaia for astrometry
-        self.config.sourceSelector['astrometry'].badFlags.append("base_PixelFlags_flag_interpolated")
         test_config = os.path.join(lsst.utils.getPackageDir('jointcal'), 'tests/config/hsc-gaia-config.py')
         self.configfiles.append(test_config)
         dist_rms_relative = 17e-3*u.arcsecond
@@ -243,7 +238,6 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         self.config.astrometryModel = "simple"
         self.config.matchCut = 10.0  # TODO: once DM-6885 is fixed, we need to put `*lsst.afw.geom.arcseconds`
         self.config.doPhotometry = False
-        self.config.sourceSelector['astrometry'].badFlags.append("base_PixelFlags_flag_interpolated")
         self.jointcalStatistics.do_photometry = False
 
         # See Readme for an explanation of these empirical values.
@@ -265,7 +259,6 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         self.config.astrometryModel = "simple"
         self.config.minMeasurements = 2
         self.config.doPhotometry = False
-        self.config.sourceSelector['astrometry'].badFlags.append("base_PixelFlags_flag_interpolated")
         self.jointcalStatistics.do_photometry = False
 
         # See Readme for an explanation of these empirical values.
@@ -289,7 +282,6 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         self.config.minMeasurements = 3
         self.config.astrometryModel = "simple"
         self.config.doPhotometry = False
-        self.config.sourceSelector['astrometry'].badFlags.append("base_PixelFlags_flag_interpolated")
         self.jointcalStatistics.do_photometry = False
 
         # See Readme for an explanation of these empirical values.
