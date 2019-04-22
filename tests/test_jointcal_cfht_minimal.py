@@ -37,6 +37,7 @@ def setup_module(module):
     lsst.utils.tests.init()
 
 
+@unittest.skipUnless(lsst.jointcal.testUtils.canRunTests(), "obs_cfht not available to use cfht_minimal.")
 class JointcalTestCFHTMinimal(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCase):
     """
     Test with a stripped down CFHT dataset containing 3 stars, so by-hand

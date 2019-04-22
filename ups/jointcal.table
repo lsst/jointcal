@@ -14,7 +14,8 @@ setupRequired(jointcal_cholmod)
 setupRequired(meas_extensions_astrometryNet)
 setupRequired(verify)
 setupRequired(verify_metrics)
-setupRequired(obs_cfht)
+# tests/data/ includes some stripped-down cfht data for testing
+setupOptional(obs_cfht)
 
 # data files for the unittests
 setupOptional(testdata_jointcal)
