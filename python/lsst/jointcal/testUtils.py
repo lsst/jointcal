@@ -24,6 +24,8 @@
 __all__ = ['createFakeCatalog', 'createTwoFakeCcdImages', 'getMeasuredStarsFromCatalog']
 
 import os
+import unittest
+
 import numpy as np
 
 import lsst.afw.geom
@@ -32,6 +34,19 @@ import lsst.daf.persistence
 import lsst.pipe.base
 
 import lsst.jointcal.star
+
+
+def canRunTests():
+    """Returns True if the necessary packages and files are available.
+
+    We need ``obs_cfht`` to load the test/data/cfht_minimal dataset, which
+    includes the metadata that is used to build the fake catalogs.
+    """
+    try:
+        import lsst.obs.cfht  # noqa: F401
+        return True
+    except ImportError:
+        return False
 
 
 def createTwoFakeCcdImages(num1=4, num2=4, seed=100, fakeCcdId=12,
@@ -73,6 +88,10 @@ def createTwoFakeCcdImages(num1=4, num2=4, seed=100, fakeCcdId=12,
        - `bbox` : Bounding Box of the image (`lsst.afw.geom.Box2I`).
        - 'fluxFieldName' : name of the instFlux field in the catalogs ('str').
     """
+    if not canRunTests():
+        msg = "Necessary packages not available to run tests that use the cfht_minimal dataset."
+        raise unittest.SkipTest(msg)
+
     np.random.seed(seed)
 
     visit1 = 849375
