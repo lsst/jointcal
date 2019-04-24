@@ -27,6 +27,8 @@
 
 #include "memory"
 
+#include "lsst/log/Log.h"
+
 #include "lsst/jointcal/CcdImage.h"
 #include "lsst/jointcal/AstrometryTransform.h"
 #include "lsst/jointcal/Eigenstuff.h"
@@ -38,12 +40,16 @@ namespace jointcal {
 class CcdImage;
 class AstrometryTransform;
 
-//! Interface class between AstrometryFit and an actual model for the Mapping (s) from pixels to some tangent
-//! plane (aka distortions).
-/* For an implementation example, see SimplePolyModel, and the comments at
-the top of simplepolymodel.h */
+/**
+ * Interface between AstrometryFit and the combinations of Mappings from pixels to some tangent
+ * plane (aka distortions).
+ *
+ * @param log Logger to send messages to, to keep names consistent when logging.
+ */
 class AstrometryModel {
 public:
+    AstrometryModel(LOG_LOGGER log) : _log(log) {}
+
     /// Return the number of parameters in the mapping of CcdImage
     int getNpar(CcdImage const &ccdImage) const { return findMapping(ccdImage)->getNpar(); }
 
@@ -89,15 +95,17 @@ public:
     /**
      * Return true if this is a "reasonable" model.
      *
-     * Not yet implemented: DM-16324
-     * An example might be that the model produces finite RA/Dec on each sensor's bounding box.
-     *
      * @param ccdImageList The ccdImages to test the model validity on.
+     * @param ndof The number of degrees of freedom in the fit, e.g. from Fitterbase.computeChi2().
+     *
      * @return True if the model is valid on all ccdImages.
      */
-    bool validate(CcdImageList const &ccdImageList) const { return true; }
+    bool validate(CcdImageList const &ccdImageList, int ndof) const;
 
 protected:
+    /// lsst.logging instance, to be created by a subclass so that messages have consistent name.
+    LOG_LOGGER _log;
+
     /// Return a pointer to the mapping associated with this ccdImage.
     virtual AstrometryMapping *findMapping(CcdImage const &ccdImage) const = 0;
 };

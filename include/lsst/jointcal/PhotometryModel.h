@@ -43,6 +43,10 @@ namespace jointcal {
 
 class PhotometryModel {
 public:
+    /**
+     * @param log Logger to send messages to, to keep names consistent when logging.
+     * @param errorPedestal_ Pedestal on flux/magnitude error (percent of flux or delta magnitude).
+     */
     PhotometryModel(LOG_LOGGER log, double errorPedestal_ = 0) : _log(log), errorPedestal(errorPedestal_) {}
 
     /**
@@ -165,9 +169,11 @@ public:
      * A valid photometry model is positive within each sensor's bounding box.
      *
      * @param ccdImageList The ccdImages to test the model validity on.
+     * @param ndof The number of degrees of freedom in the fit, e.g. from Fitterbase.computeChi2().
+     *
      * @return True if the model is valid on all ccdImages.
      */
-    bool validate(CcdImageList const &ccdImageList) const;
+    bool validate(CcdImageList const &ccdImageList, int ndof) const;
 
     /**
      * Check that the model is positive on the ccdImage bbox.

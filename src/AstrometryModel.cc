@@ -22,20 +22,13 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "lsst/log/Log.h"
-
-#include "lsst/jointcal/CcdImage.h"
-#include "lsst/jointcal/PhotometryModel.h"
+#include "lsst/jointcal/AstrometryModel.h"
 
 namespace lsst {
 namespace jointcal {
 
-bool PhotometryModel::validate(CcdImageList const &ccdImageList, int ndof) const {
+bool AstrometryModel::validate(CcdImageList const &ccdImageList, int ndof) const {
     bool check = true;
-    for (auto const &ccdImage : ccdImageList) {
-        // Don't short circuit so that we log every place the model is negative.
-        check &= checkPositiveOnBBox(*ccdImage);
-    }
     if (ndof < 0) {
         check &= false;
         LOGLS_ERROR(_log, "This model only has "
@@ -43,25 +36,6 @@ bool PhotometryModel::validate(CcdImageList const &ccdImageList, int ndof) const
                                   << " total parameters. Reduce the model complexity (e.g. polynomial order)"
                                      " to better match the number of measured sources.");
     }
-    return check;
-}
-
-bool PhotometryModel::checkPositiveOnBBox(CcdImage const &ccdImage) const {
-    bool check = true;
-    auto bbox = ccdImage.getImageFrame();
-    for (auto const &x : {bbox.xMin, bbox.getCenter().x, bbox.xMax})
-        for (auto const &y : {bbox.yMin, bbox.getCenter().y, bbox.yMax}) {
-            // flux, fluxErr, instFlux, instFluxErr all 1
-            jointcal::MeasuredStar star(jointcal::BaseStar(x, y, 1, 1));
-            star.setInstFluxAndErr(1, 1);
-            double result = transform(ccdImage, star);
-            // Don't short circuit so that we log every place the model is negative.
-            if (result < 0) {
-                LOGLS_WARN(_log, "CcdImage " << ccdImage.getName() << " is negative at (" << x << "," << y
-                                             << "): " << result);
-                check = false;
-            }
-        }
     return check;
 }
 
