@@ -63,7 +63,7 @@ void PhotometryFit::leastSquareDerivativesMeasurement(CcdImage const &ccdImage, 
 
     Eigen::VectorXd H(nparTotal);  // derivative matrix
     // current position in the Jacobian
-    TripletList::Index kTriplets = tripletList.getNextFreeIndex();
+    Eigen::Index kTriplets = tripletList.getNextFreeIndex();
     const MeasuredStarList &catalog = (measuredStarList) ? *measuredStarList : ccdImage.getCatalogForFit();
 
     for (auto const &measuredStar : catalog) {
@@ -106,7 +106,7 @@ void PhotometryFit::leastSquareDerivativesReference(FittedStarList const &fitted
     // Can't compute anything if there are no refStars.
     if (_associations->refStarList.size() == 0) return;
 
-    TripletList::Index kTriplets = tripletList.getNextFreeIndex();
+    Eigen::Index kTriplets = tripletList.getNextFreeIndex();
 
     for (auto const &fittedStar : fittedStarList) {
         auto refStar = fittedStar->getRefStar();

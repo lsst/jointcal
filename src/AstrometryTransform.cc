@@ -1147,7 +1147,7 @@ std::shared_ptr<AstrometryTransformPolynomial> inversePolyTransform(AstrometryTr
         }
     }
     std::size_t npairs = sm.size();
-    int order;
+    std::size_t order;
     std::shared_ptr<AstrometryTransformPolynomial> poly;
     std::shared_ptr<AstrometryTransformPolynomial> oldPoly;
     double chi2 = 0;

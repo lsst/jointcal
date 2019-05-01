@@ -153,7 +153,7 @@ void AstrometryFit::leastSquareDerivativesMeasurement(CcdImage const &ccdImage, 
     Eigen::Matrix2d alpha(2, 2);
     Eigen::VectorXd grad(npar_tot);
     // current position in the Jacobian
-    TripletList::Index kTriplets = tripletList.getNextFreeIndex();
+    Eigen::Index kTriplets = tripletList.getNextFreeIndex();
     const MeasuredStarList &catalog = (msList) ? *msList : ccdImage.getCatalogForFit();
 
     for (auto &i : catalog) {
@@ -271,8 +271,8 @@ void AstrometryFit::leastSquareDerivativesReference(FittedStarList const &fitted
     Eigen::Matrix2d H(2, 2), halpha(2, 2), HW(2, 2);
     AstrometryTransformLinear der;
     Eigen::Vector2d res, grad;
-    TripletList::Index indices[2 + NPAR_PM];
-    TripletList::Index kTriplets = tripletList.getNextFreeIndex();
+    Eigen::Index indices[2 + NPAR_PM];
+    Eigen::Index kTriplets = tripletList.getNextFreeIndex();
     /* We cannot use the spherical coordinates directly to evaluate
        Euclidean distances, we have to use a projector on some plane in
        order to express least squares. Not projecting could lead to a

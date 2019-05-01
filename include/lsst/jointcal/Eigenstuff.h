@@ -74,6 +74,7 @@ public:
         cholmod_sparse C_cs = viewAsCholmod(H);
         /* We have to apply the magic permutation to the update matrix,
         read page 117 of Cholmod UserGuide.pdf */
+        // Using cholmod_l_* functions instead of cholmod_* because index is Eigen::Index instead of int.
         cholmod_sparse *C_cs_perm =
                 cholmod_l_submatrix(&C_cs, (Eigen::Index*)Base::m_cholmodFactor->Perm,
                                   Base::m_cholmodFactor->n, nullptr, -1, true, true, &this->cholmod());
