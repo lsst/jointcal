@@ -59,7 +59,7 @@ AstrometryFit::AstrometryFit(std::shared_ptr<Associations> associations,
 
     _referenceColor = 0;
     _sigCol = 0;
-    unsigned count = 0;
+    std::size_t count = 0;
     for (auto const &i : _associations->fittedStarList) {
         _referenceColor += i->color;
         _sigCol += std::pow(i->color, 2);
@@ -127,15 +127,15 @@ void AstrometryFit::leastSquareDerivativesMeasurement(CcdImage const &ccdImage, 
     // get the Mapping
     const AstrometryMapping *mapping = _astrometryModel->getMapping(ccdImage);
     // count parameters
-    unsigned npar_mapping = (_fittingDistortions) ? mapping->getNpar() : 0;
-    unsigned npar_pos = (_fittingPos) ? 2 : 0;
-    unsigned npar_refrac = (_fittingRefrac) ? 1 : 0;
-    unsigned npar_pm = (_fittingPM) ? NPAR_PM : 0;
-    unsigned npar_tot = npar_mapping + npar_pos + npar_refrac + npar_pm;
+    std::size_t npar_mapping = (_fittingDistortions) ? mapping->getNpar() : 0;
+    std::size_t npar_pos = (_fittingPos) ? 2 : 0;
+    std::size_t npar_refrac = (_fittingRefrac) ? 1 : 0;
+    std::size_t npar_pm = (_fittingPM) ? NPAR_PM : 0;
+    std::size_t npar_tot = npar_mapping + npar_pos + npar_refrac + npar_pm;
     // if (npar_tot == 0) this CcdImage does not contribute
     // any constraint to the fit, so :
     if (npar_tot == 0) return;
-    std::vector<unsigned> indices(npar_tot, -1);
+    IndexVector indices(npar_tot, -1);
     if (_fittingDistortions) mapping->getMappingIndices(indices);
 
     // proper motion stuff
@@ -153,7 +153,7 @@ void AstrometryFit::leastSquareDerivativesMeasurement(CcdImage const &ccdImage, 
     Eigen::Matrix2d alpha(2, 2);
     Eigen::VectorXd grad(npar_tot);
     // current position in the Jacobian
-    unsigned kTriplets = tripletList.getNextFreeIndex();
+    Eigen::Index kTriplets = tripletList.getNextFreeIndex();
     const MeasuredStarList &catalog = (msList) ? *msList : ccdImage.getCatalogForFit();
 
     for (auto &i : catalog) {
@@ -170,7 +170,7 @@ void AstrometryFit::leastSquareDerivativesMeasurement(CcdImage const &ccdImage, 
         else
             mapping->transformPosAndErrors(inPos, outPos);
 
-        unsigned ipar = npar_mapping;
+        std::size_t ipar = npar_mapping;
         double det = outPos.vx * outPos.vy - std::pow(outPos.vxy, 2);
         if (det <= 0 || outPos.vx <= 0 || outPos.vy <= 0) {
             LOGLS_WARN(_log, "Inconsistent measurement errors: drop measurement at "
@@ -238,8 +238,8 @@ void AstrometryFit::leastSquareDerivativesMeasurement(CcdImage const &ccdImage, 
         HW = H * transW;
         grad = HW * res;
         // now feed in triplets and fullGrad
-        for (unsigned ipar = 0; ipar < npar_tot; ++ipar) {
-            for (unsigned ic = 0; ic < 2; ++ic) {
+        for (std::size_t ipar = 0; ipar < npar_tot; ++ipar) {
+            for (std::size_t ic = 0; ic < 2; ++ic) {
                 double val = halpha(ipar, ic);
                 if (val == 0) continue;
                 tripletList.addTriplet(indices[ipar], kTriplets + ic, val);
@@ -271,8 +271,8 @@ void AstrometryFit::leastSquareDerivativesReference(FittedStarList const &fitted
     Eigen::Matrix2d H(2, 2), halpha(2, 2), HW(2, 2);
     AstrometryTransformLinear der;
     Eigen::Vector2d res, grad;
-    unsigned indices[2 + NPAR_PM];
-    unsigned kTriplets = tripletList.getNextFreeIndex();
+    Eigen::Index indices[2 + NPAR_PM];
+    Eigen::Index kTriplets = tripletList.getNextFreeIndex();
     /* We cannot use the spherical coordinates directly to evaluate
        Euclidean distances, we have to use a projector on some plane in
        order to express least squares. Not projecting could lead to a
@@ -329,7 +329,7 @@ void AstrometryFit::leastSquareDerivativesReference(FittedStarList const &fitted
         HW = H * W;
         grad = HW * res;
         // now feed in triplets and fullGrad
-        for (unsigned ipar = 0; ipar < npar_tot; ++ipar) {
+        for (std::size_t ipar = 0; ipar < npar_tot; ++ipar) {
             for (unsigned ic = 0; ic < 2; ++ic) {
                 double val = halpha(ipar, ic);
                 if (val == 0) continue;
@@ -429,20 +429,20 @@ void AstrometryFit::accumulateStatRefStars(Chi2Accumulator &accum) const {
 /*! it fills the array of indices of parameters that a Measured star
     constrains. Not really all of them if you check. */
 void AstrometryFit::getIndicesOfMeasuredStar(MeasuredStar const &measuredStar,
-                                             std::vector<unsigned> &indices) const {
+                                             IndexVector &indices) const {
     if (_fittingDistortions) {
         const AstrometryMapping *mapping = _astrometryModel->getMapping(measuredStar.getCcdImage());
         mapping->getMappingIndices(indices);
     }
     std::shared_ptr<FittedStar const> const fs = measuredStar.getFittedStar();
-    unsigned fsIndex = fs->getIndexInMatrix();
+    Eigen::Index fsIndex = fs->getIndexInMatrix();
     if (_fittingPos) {
         indices.push_back(fsIndex);
         indices.push_back(fsIndex + 1);
     }
     // For securing the outlier removal, the next block is just useless
     if (_fittingPM) {
-        for (unsigned k = 0; k < NPAR_PM; ++k) indices.push_back(fsIndex + 2 + k);
+        for (std::size_t k = 0; k < NPAR_PM; ++k) indices.push_back(fsIndex + 2 + k);
     }
     /* Should not put the index of refaction stuff or we will not be
        able to remove more than 1 star at a time. */
@@ -464,7 +464,7 @@ void AstrometryFit::assignIndices(std::string const &whatToFit) {
 
     _nParDistortions = 0;
     if (_fittingDistortions) _nParDistortions = _astrometryModel->assignIndices(_whatToFit, 0);
-    unsigned ipar = _nParDistortions;
+    std::size_t ipar = _nParDistortions;
 
     if (_fittingPos) {
         FittedStarList &fittedStarList = _associations->fittedStarList;
@@ -500,7 +500,7 @@ void AstrometryFit::offsetParams(Eigen::VectorXd const &delta) {
             // the parameter layout here is used also
             // - when filling the derivatives
             // - when assigning indices (assignIndices())
-            unsigned index = fs.getIndexInMatrix();
+            Eigen::Index index = fs.getIndexInMatrix();
             fs.x += delta(index);
             fs.y += delta(index + 1);
             if ((_fittingPM)&fs.mightMove) {

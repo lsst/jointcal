@@ -76,9 +76,8 @@ void declareAstrometryTransformPolynomial(py::module &mod) {
 
     cls.def(py::init<const unsigned>(), "order"_a);
     cls.def("getOrder", &AstrometryTransformPolynomial::getOrder);
-    cls.def("coeff", (double (AstrometryTransformPolynomial::*)(unsigned const, unsigned const,
-                                                                unsigned const) const) &
-                             AstrometryTransformPolynomial::coeff);
+    cls.def("coeff", py::overload_cast<std::size_t, std::size_t, std::size_t>(
+                &AstrometryTransformPolynomial::coeff, py::const_));
     cls.def("determinant", &AstrometryTransformPolynomial::determinant);
     cls.def("getNpar", &AstrometryTransformPolynomial::getNpar);
     cls.def("toAstMap", &AstrometryTransformPolynomial::toAstMap);

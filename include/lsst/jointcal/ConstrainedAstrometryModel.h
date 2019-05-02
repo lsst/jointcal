@@ -79,7 +79,7 @@ public:
      * Positions the various parameter sets into the parameter vector, starting at
      * firstIndex.
      */
-    unsigned assignIndices(std::string const &whatToFit, unsigned firstIndex) override;
+    Eigen::Index assignIndices(std::string const &whatToFit, Eigen::Index firstIndex) override;
 
     /**
      * Dispaches the offsets after a fit step into the actual locations of
@@ -94,7 +94,7 @@ public:
     void freezeErrorTransform() override;
 
     /// @copydoc AstrometryModel::getTotalParameters
-    int getTotalParameters() const override;
+    std::size_t getTotalParameters() const override;
 
     //! Access to mappings
     AstrometryTransform const &getChipTransform(CcdIdType const chip) const;
