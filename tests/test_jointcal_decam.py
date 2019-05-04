@@ -75,7 +75,6 @@ class JointcalTestDECAM(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Test
         self.config = lsst.jointcal.jointcal.JointcalConfig()
         self.config.astrometryModel = "simple"
         self.config.photometryModel = "simpleFlux"
-        self.config.sourceSelector['astrometry'].badFlags.append("base_PixelFlags_flag_interpolated")
 
         # See Readme for an explanation of these empirical values.
         # NOTE: the photometry and astrometry refstars numbers are different
@@ -108,7 +107,6 @@ class JointcalTestDECAM(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Test
         self.config = lsst.jointcal.jointcal.JointcalConfig()
         self.config.astrometryModel = "constrained"
         self.config.doPhotometry = False
-        self.config.sourceSelector['astrometry'].badFlags.append("base_PixelFlags_flag_interpolated")
         self.jointcalStatistics.do_photometry = False
 
         # See Readme for an explanation of these empirical values.
@@ -159,7 +157,6 @@ class JointcalTestDECAM(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Test
         """
         self.config = lsst.jointcal.jointcal.JointcalConfig()
         self.config.photometryModel = "constrainedFlux"
-        self.config.sourceSelector['astrometry'].badFlags.append("base_PixelFlags_flag_interpolated")
         self.config.doAstrometry = False
         self.jointcalStatistics.do_astrometry = False
 

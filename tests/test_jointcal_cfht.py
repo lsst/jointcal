@@ -71,8 +71,6 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
         self.config.astrometryModel = "simple"
         self.config.photometryModel = "simpleFlux"
 
-        self.config.sourceSelector['astrometry'].badFlags.append("base_PixelFlags_flag_interpolated")
-
         # to test whether we got the expected chi2 contribution files.
         self.other_args.extend(['--config', 'writeChi2FilesInitialFinal=True'])
 
@@ -115,7 +113,6 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
         self.config = lsst.jointcal.jointcal.JointcalConfig()
         self.config.astrometryModel = "constrained"
         self.config.doPhotometry = False
-        self.config.sourceSelector['astrometry'].badFlags.append("base_PixelFlags_flag_interpolated")
         self.jointcalStatistics.do_photometry = False
 
         # See Readme for an explanation of these empirical values.
@@ -161,7 +158,6 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
         self.config = lsst.jointcal.jointcal.JointcalConfig()
         self.config.photometryModel = "constrainedFlux"
         self.config.doAstrometry = False
-        self.config.sourceSelector['astrometry'].badFlags.append("base_PixelFlags_flag_interpolated")
         self.jointcalStatistics.do_astrometry = False
 
         # See Readme for an explanation of these empirical values.
@@ -211,11 +207,9 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
     def test_jointcalTask_2_visits_constrainedPhotometry_flagged(self):
         """Test the use of the FlaggedSourceSelector."""
         pa1, metrics = self.setup_jointcalTask_2_visits_constrainedPhotometry()
-        self.config.sourceSelector.name = "flagged"
-        # Calib flag names changed with RFC-498 (DM-14997).  The following sets the config to use the
-        # old names associated with the current data in testdata_jointcal that was processed pre-RFC-498.
-        # Remove line if the data in testdata_jointcal are ever reprocessed post-RFC-498.
-        self.config.sourceSelector.active.field = "calib_psfUsed"
+        test_config = os.path.join(lsst.utils.getPackageDir('jointcal'),
+                                   'tests/config/cfht-flagged-config.py')
+        self.configfiles.append(test_config)
         # Reduce warnings due to flaggedSourceSelector having fewer sources than astrometrySourceSelector.
         self.config.minMeasuredStarsPerCcd = 30
         self.config.minRefStarsPerCcd = 20

@@ -320,12 +320,28 @@ class JointcalConfig(pexConfig.Config):
             raise pexConfig.FieldValidationError(JointcalConfig.colorterms, self, msg)
 
     def setDefaults(self):
-        sourceSelector = self.sourceSelector["astrometry"]
-        sourceSelector.setDefaults()
-        # don't want to lose existing flags, just add to them.
-        sourceSelector.badFlags.extend(["slot_Shape_flag"])
-        # This should be used to set the FluxField value in jointcal::JointcalControl
-        sourceSelector.sourceFluxType = self.sourceFluxType
+        # Use science source selector which can filter on extendedness, SNR, and whether blended
+        self.sourceSelector.name = 'science'
+        # Use only stars because aperture fluxes of galaxies are biased and depend on seeing
+        self.sourceSelector['science'].doUnresolved = True
+        # with dependable signal to noise ratio.
+        self.sourceSelector['science'].doSignalToNoise = True
+        # Min SNR must be > 0 because jointcal cannot handle negative fluxes,
+        # and S/N > 10 to use sources that are not too faint, and thus better measured.
+        self.sourceSelector['science'].signalToNoise.minimum = 10.
+        # Base SNR on CalibFlux because that is the flux jointcal that fits and must be positive
+        fluxField = f"slot_{self.sourceFluxType}Flux_instFlux"
+        self.sourceSelector['science'].signalToNoise.fluxField = fluxField
+        self.sourceSelector['science'].signalToNoise.errField = fluxField + "Err"
+        # Do not trust blended sources' aperture fluxes which also depend on seeing
+        self.sourceSelector['science'].doIsolated = True
+        # Do not trust either flux or centroid measurements with flags,
+        # chosen from the usual QA flags for stars)
+        self.sourceSelector['science'].doFlags = True
+        badFlags = ['base_PixelFlags_flag_edge', 'base_PixelFlags_flag_saturated',
+                    'base_PixelFlags_flag_interpolatedCenter', 'base_SdssCentroid_flag',
+                    'base_PsfFlux_flag', 'base_PixelFlags_flag_suspectCenter']
+        self.sourceSelector['science'].flags.bad = badFlags
 
 
 class JointcalTask(pipeBase.CmdLineTask):
