@@ -27,6 +27,7 @@ from astropy import units as u
 import lsst.afw.geom
 import lsst.utils
 import lsst.pex.exceptions
+import lsst.pex.config
 
 import jointcalTestBase
 
@@ -150,6 +151,29 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
         metrics['astrometry_final_ndof'] = 3232
 
         self._testJointcalTask(2, dist_rms_relative, self.dist_rms_absolute, None, metrics=metrics)
+
+    def test_jointcalTask_2_visits_constrainedAstrometry_astrometryReferenceUncertainty_smaller(self):
+        """Test with a smaller fake reference uncertainty: chi2 will be higher."""
+        dist_rms_relative, metrics = self.setup_jointcalTask_2_visits_constrainedAstrometry()
+        test_config = os.path.join(lsst.utils.getPackageDir('jointcal'),
+                                   'tests/config/astrometryReferenceErr-config.py')
+        self.configfiles.append(test_config)
+        metrics['astrometry_final_chi2'] = 11522.9
+        metrics['astrometry_final_ndof'] = 3406
+
+        self._testJointcalTask(2, dist_rms_relative, self.dist_rms_absolute, None, metrics=metrics)
+
+    def test_jointcalTask_2_visits_constrainedAstrometry_astrometryReferenceUncertainty_None_fails(self):
+        """The default `None` should fail for the existing refcats that have no position errors."""
+        dist_rms_relative, metrics = self.setup_jointcalTask_2_visits_constrainedAstrometry()
+        # This is the default, but we override it in tests/config/config.py,
+        # because none of the existing test refcats have errors. So we have to
+        # re-override it here.
+        test_config = os.path.join(lsst.utils.getPackageDir('jointcal'),
+                                   'tests/config/astrometryReferenceErr-None-config.py')
+        self.configfiles.append(test_config)
+        with self.assertRaises(lsst.pex.config.FieldValidationError):
+            self._testJointcalTask(2, None, None, None)
 
     def setup_jointcalTask_2_visits_constrainedPhotometry(self):
         """Set default values for the constrainedPhotometry tests, and make

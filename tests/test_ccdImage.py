@@ -86,7 +86,7 @@ class CcdImageTestCase(lsst.utils.tests.TestCase):
         skyWcs = ccdImage.getReadWcs().getSkyWcs()
         self.refCat = testUtils.createFakeCatalog(nStars, self.bbox, "refFlux", skyWcs=skyWcs, refCat=True)
         # associate the reference stars
-        self.associations.collectRefStars(self.refCat, matchCut, 'refFlux_instFlux')
+        self.associations.collectRefStars(self.refCat, matchCut, 'refFlux_instFlux', 0.1)
         measStars, refStars = ccdImage.countStars()
         self.assertEqual(measStars, nStars)
         self.assertEqual(refStars, nStars)
