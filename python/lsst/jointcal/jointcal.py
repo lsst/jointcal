@@ -611,10 +611,6 @@ class JointcalTask(pipeBase.CmdLineTask):
                         associations.fittedStarListSize())
 
         applyColorterms = False if name.lower() == "astrometry" else self.config.applyColorTerms
-        if name.lower() == "astrometry":
-            referenceSelector = self.config.astrometryReferenceSelector
-        elif name.lower() == "photometry":
-            referenceSelector = self.config.photometryReferenceSelector
         refCat, fluxField = self._load_reference_catalog(refObjLoader, referenceSelector,
                                                          center, radius, defaultFilter,
                                                          applyColorterms=applyColorterms)
