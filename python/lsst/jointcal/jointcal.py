@@ -581,7 +581,7 @@ class JointcalTask(pipeBase.CmdLineTask):
         radius : `lsst.afw.geom.Angle`
             On-sky radius to load from reference catalog.
         name : `str`
-            Name of thing being fit: "Astrometry" or "Photometry".
+            Name of thing being fit: "astrometry" or "photometry".
         refObjLoader : `lsst.meas.algorithms.LoadReferenceObjectsTask`
             Reference object loader to load from for fit.
         filters : `list` of `str`, optional
@@ -610,10 +610,10 @@ class JointcalTask(pipeBase.CmdLineTask):
         add_measurement(self.job, 'jointcal.associated_%s_fittedStars' % name,
                         associations.fittedStarListSize())
 
-        applyColorterms = False if name == "Astrometry" else self.config.applyColorTerms
-        if name == "Astrometry":
+        applyColorterms = False if name.lower() == "astrometry" else self.config.applyColorTerms
+        if name.lower() == "astrometry":
             referenceSelector = self.config.astrometryReferenceSelector
-        elif name == "Photometry":
+        elif name.lower() == "photometry":
             referenceSelector = self.config.photometryReferenceSelector
         refCat, fluxField = self._load_reference_catalog(refObjLoader, referenceSelector,
                                                          center, radius, defaultFilter,
