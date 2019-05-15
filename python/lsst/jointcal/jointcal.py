@@ -291,9 +291,9 @@ class JointcalConfig(pexConfig.Config):
         doc="How to down-select the loaded photometry reference catalog.",
     )
     astrometryReferenceErr = pexConfig.Field(
-        doc="Uncertainty on reference catalog coordinates [mas] to use in place of the `coord_*_err` fields."
+        doc="Uncertainty on reference catalog coordinates [mas] to use in place of the `coord_*Err` fields."
             " If None, then raise an exception if the reference catalog is missing coordinate errors."
-            " If specified, overrides any existing `coord_*_err` values.",
+            " If specified, overrides any existing `coord_*Err` values.",
         dtype=float,
         default=None,
         optional=True
@@ -692,14 +692,14 @@ class JointcalTask(pipeBase.CmdLineTask):
         else:
             refCat = selected.sourceCat
 
-        if self.config.astrometryReferenceErr is None and 'coord_ra_err' not in refCat.schema:
+        if self.config.astrometryReferenceErr is None and 'coord_raErr' not in refCat.schema:
             msg = ("Reference catalog does not contain coordinate errors, "
                    "and config.astrometryReferenceErr not supplied.")
             raise pexConfig.FieldValidationError(JointcalConfig.astrometryReferenceErr,
                                                  self.config,
                                                  msg)
 
-        if self.config.astrometryReferenceErr is not None and 'coord_ra_err' in refCat.schema:
+        if self.config.astrometryReferenceErr is not None and 'coord_raErr' in refCat.schema:
             self.log.warn("Overriding reference catalog coordinate errors with %f/coordinate [mas]",
                           self.config.astrometryReferenceErr)
 
