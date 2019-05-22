@@ -82,8 +82,8 @@ class JointcalTestDECAM(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Test
         # those are rejected for photometric calibration, but not astrometric.
         relative_error = 19e-3*u.arcsecond
         pa1 = 0.14
-        metrics = {'collected_astrometry_refStars': 8869,
-                   'collected_photometry_refStars': 8858,
+        metrics = {'collected_astrometry_refStars': 8871,
+                   'collected_photometry_refStars': 8860,
                    'selected_astrometry_refStars': 1604,
                    'selected_photometry_refStars': 1604,
                    'associated_astrometry_fittedStars': 6749,
@@ -112,7 +112,7 @@ class JointcalTestDECAM(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Test
         # See Readme for an explanation of these empirical values.
         relative_error = 17e-3*u.arcsecond
         pa1 = None
-        metrics = {'collected_astrometry_refStars': 8869,
+        metrics = {'collected_astrometry_refStars': 8871,
                    'selected_astrometry_refStars': 1604,
                    'associated_astrometry_fittedStars': 6749,
                    'selected_astrometry_fittedStars': 2709,
