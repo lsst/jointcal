@@ -50,7 +50,9 @@ def canRunTests():
 
 
 def createTwoFakeCcdImages(num1=4, num2=4, seed=100, fakeCcdId=12,
-                           photoCalibMean1=1e-2, photoCalibMean2=1.2e-2):
+                           photoCalibMean1=1e-2, photoCalibMean2=1.2e-2,
+                           fakeWcses=(None, None),
+                           fakeVisitInfos=(None, None)):
     """Return two fake ccdImages built on CFHT Megacam metadata.
 
     If ``num1 == num2``, the catalogs will align on-sky so each source will
@@ -73,6 +75,10 @@ def createTwoFakeCcdImages(num1=4, num2=4, seed=100, fakeCcdId=12,
     photoCalibMean1, photoCalibMean2: `float`, optional
         The mean photometric calibration to pass to each ccdImage construction.
         Note: this value is 1/instFluxMag0, so it should be less than 1.
+    fakeWcses : `list` [`lsst.afw.geom.SkyWcs`], optional
+        The SkyWcses to use instead of the ones read from disk.
+    fakeWcses : `list` [`lsst.afw.image.VisitInfo`], optional
+        The VisitInfos to use instead of the ones read from disk.
 
     Returns
     -------
@@ -107,19 +113,23 @@ def createTwoFakeCcdImages(num1=4, num2=4, seed=100, fakeCcdId=12,
     camera = butler.get('camera', visit=visit1)
 
     struct1 = createFakeCcdImage(butler, visit1, num1, fluxFieldName,
-                                 photoCalibMean=photoCalibMean1, photoCalibErr=1.0, fakeCcdId=fakeCcdId)
+                                 photoCalibMean=photoCalibMean1, photoCalibErr=1.0, fakeCcdId=fakeCcdId,
+                                 fakeWcs=fakeWcses[0], fakeVisitInfo=fakeVisitInfos[0])
     struct2 = createFakeCcdImage(butler, visit2, num2, fluxFieldName,
-                                 photoCalibMean=photoCalibMean2, photoCalibErr=5.0, fakeCcdId=fakeCcdId)
+                                 photoCalibMean=photoCalibMean2, photoCalibErr=5.0, fakeCcdId=fakeCcdId,
+                                 fakeWcs=fakeWcses[1], fakeVisitInfo=fakeVisitInfos[1])
 
     return lsst.pipe.base.Struct(camera=camera,
                                  catalogs=[struct1.catalog, struct2.catalog],
                                  ccdImageList=[struct1.ccdImage, struct2.ccdImage],
                                  bbox=struct1.bbox,
+                                 skyWcs=[struct1.skyWcs, struct2.skyWcs],
                                  fluxFieldName=fluxFieldName)
 
 
 def createFakeCcdImage(butler, visit, num, fluxFieldName,
-                       photoCalibMean=1e-2, photoCalibErr=1.0, fakeCcdId=12):
+                       photoCalibMean=1e-2, photoCalibErr=1.0, fakeCcdId=12,
+                       fakeWcs=None, fakeVisitInfo=None):
     """Create a fake CcdImage by making a fake catalog.
 
     Parameters
@@ -141,6 +151,10 @@ def createFakeCcdImage(butler, visit, num, fluxFieldName,
         Value to set for calibrationErr in the created PhotoCalib.
     fakeCcdId : `int`, optional
         Use this as the ccdId in the returned CcdImage.
+    fakeWcs : `lsst.afw.geom.SkyWcs`, optional
+        A SkyWcs to use instead of one read from disk.
+    fakeVisitInfo : `lsst.afw.image.VisitInfo`, optional
+        A VisitInfo to use instead of one read from disk.
 
     Returns
     -------
@@ -152,12 +166,13 @@ def createFakeCcdImage(butler, visit, num, fluxFieldName,
        - `ccdImage` : CcdImage containing the metadata and fake sources
            (`lsst.jointcal.CcdImage`).
        - `bbox` : Bounding Box of the image (`lsst.afw.geom.Box2I`).
+       - `skyWcs` : SkyWcs of the image (`lsst.afw.geom.SkyWcs`).
     """
     ccdId = 12  # we only have data for ccd=12
 
     dataId = dict(visit=visit, ccd=ccdId)
-    skyWcs = butler.get('calexp_wcs', dataId=dataId)
-    visitInfo = butler.get('calexp_visitInfo', dataId=dataId)
+    skyWcs = fakeWcs if fakeWcs is not None else butler.get('calexp_wcs', dataId=dataId)
+    visitInfo = fakeVisitInfo if fakeVisitInfo is not None else butler.get('calexp_visitInfo', dataId=dataId)
     bbox = butler.get('calexp_bbox', dataId=dataId)
     detector = butler.get('calexp_detector', dataId=dataId)
     filt = butler.get("calexp_filter", dataId=dataId).getName()
@@ -167,7 +182,7 @@ def createFakeCcdImage(butler, visit, num, fluxFieldName,
     ccdImage = lsst.jointcal.ccdImage.CcdImage(catalog, skyWcs, visitInfo, bbox, filt, photoCalib,
                                                detector, visit, fakeCcdId, fluxFieldName)
 
-    return lsst.pipe.base.Struct(catalog=catalog, ccdImage=ccdImage, bbox=bbox)
+    return lsst.pipe.base.Struct(catalog=catalog, ccdImage=ccdImage, bbox=bbox, skyWcs=skyWcs)
 
 
 def createFakeCatalog(num, bbox, fluxFieldName, skyWcs=None, refCat=False):
