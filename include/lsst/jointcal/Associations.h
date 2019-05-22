@@ -124,6 +124,11 @@ public:
                         std::shared_ptr<afw::cameraGeom::Detector> detector, int visit, int ccd,
                         lsst::jointcal::JointcalControl const &control);
 
+    /**
+     * Add a pre-constructed ccdImage to the ccdImageList.
+     */
+    void addCcdImage(std::shared_ptr<CcdImage> const ccdImage) { ccdImageList.push_back(ccdImage); }
+
     //! incrementaly builds a merged catalog of all image catalogs
     void associateCatalogs(const double matchCutInArcsec = 0, const bool useFittedList = false,
                            const bool enlargeFittedList = true);
