@@ -29,6 +29,7 @@ import lsst.utils
 
 import lsst.afw.table
 import lsst.daf.persistence
+from lsst.daf.base import DateTime
 import lsst.geom
 from lsst.meas.algorithms import getRefFluxField, LoadIndexedReferenceObjectsTask, DatasetConfig
 import lsst.pipe.base
@@ -267,6 +268,81 @@ class TestJointcalFitModel(JointcalTestBase, lsst.utils.tests.TestCase):
             expected = [mock.call(x+"-fake{type}") for x in expected]
             jointcal._fit_astrometry(self.associations, dataName=self.dataName)
             fit.return_value.saveChi2Contributions.assert_has_calls(expected)
+
+
+class TestComputeBoundingCircle(lsst.utils.tests.TestCase):
+    """Tests of Associations.computeBoundingCircle()"""
+    def _checkPointsInCircle(self, points, center, radius):
+        """Check that all points are within the (center, radius) circle.
+
+        The test is whether the max(points - center) separation is equal to
+        (or slightly less than) radius.
+        """
+        maxSeparation = 0*lsst.geom.degrees
+        for point in points:
+            maxSeparation = max(maxSeparation, center.separation(point))
+        self.assertAnglesAlmostEqual(maxSeparation, radius, maxDiff=3*lsst.geom.arcseconds)
+        self.assertLess(maxSeparation, radius)
+
+    def _testPoints(self, ccdImage1, ccdImage2, skyWcs1, skyWcs2, bbox):
+        """Fill an Associations object and test that it computes the correct
+        bounding circle for the input data.
+
+        Parameters
+        ----------
+        ccdImage1, ccdImage2 : `lsst.jointcal.CcdImage`
+            The CcdImages to add to the Associations object.
+        skyWcs1, skyWcs2 : `lsst.afw.geom.SkyWcs`
+            The WCS of each of the above images.
+        bbox : `lsst.geom.Box2D`
+            The ccd bounding box of both images.
+        """
+        lsst.log.setLevel('jointcal', lsst.log.DEBUG)
+        associations = lsst.jointcal.Associations()
+        associations.addCcdImage(ccdImage1)
+        associations.addCcdImage(ccdImage2)
+        associations.computeCommonTangentPoint()
+
+        circle = associations.computeBoundingCircle()
+        center = lsst.geom.SpherePoint(circle.getCenter())
+        radius = lsst.geom.Angle(circle.getOpeningAngle().asRadians(), lsst.geom.radians)
+        points = [lsst.geom.SpherePoint(skyWcs1.pixelToSky(lsst.geom.Point2D(x)))
+                  for x in bbox.getCorners()]
+        points.extend([lsst.geom.SpherePoint(skyWcs2.pixelToSky(lsst.geom.Point2D(x)))
+                      for x in bbox.getCorners()])
+        self._checkPointsInCircle(points, center, radius)
+
+    def testPoints(self):
+        """Test for points in an "easy" area, far from RA=0 or the poles."""
+        struct = lsst.jointcal.testUtils.createTwoFakeCcdImages()
+        self._testPoints(struct.ccdImageList[0], struct.ccdImageList[1],
+                         struct.skyWcs[0], struct.skyWcs[1], struct.bbox)
+
+    def testPointsRA0(self):
+        """Test for CcdImages crossing RA=0; this demonstrates a fix for
+        the bug described in DM-19802.
+        """
+        # Use the same pixel origins as the cfht_minimal data, but put the sky origin at RA=0
+        crpix = lsst.geom.Point2D(931.517869, 2438.572109)
+        cd = np.array([[5.19513851e-05, -2.81124812e-07],
+                      [-3.25186974e-07, -5.19112119e-05]])
+        crval1 = lsst.geom.SpherePoint(0.01, -0.01, lsst.geom.degrees)
+        crval2 = lsst.geom.SpherePoint(-0.01, 0.01, lsst.geom.degrees)
+        wcs1 = lsst.afw.geom.makeSkyWcs(crpix, crval1, cd)
+        wcs2 = lsst.afw.geom.makeSkyWcs(crpix, crval2, cd)
+
+        # Put the visit boresights at the WCS origin, for consistency
+        visitInfo1 = lsst.afw.image.VisitInfo(exposureId=30577512,
+                                              date=DateTime(65321.1),
+                                              boresightRaDec=wcs1.getSkyOrigin())
+        visitInfo2 = lsst.afw.image.VisitInfo(exposureId=30621144,
+                                              date=DateTime(65322.1),
+                                              boresightRaDec=wcs1.getSkyOrigin())
+
+        struct = lsst.jointcal.testUtils.createTwoFakeCcdImages(fakeWcses=[wcs1, wcs2],
+                                                                fakeVisitInfos=[visitInfo1, visitInfo2])
+        self._testPoints(struct.ccdImageList[0], struct.ccdImageList[1],
+                         struct.skyWcs[0], struct.skyWcs[1], struct.bbox)
 
 
 class MemoryTester(lsst.utils.tests.MemoryTestCase):

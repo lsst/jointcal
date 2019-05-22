@@ -35,6 +35,7 @@
 #include "lsst/afw/image/VisitInfo.h"
 #include "lsst/daf/base/PropertySet.h"
 #include "lsst/afw/geom/Box.h"
+#include "lsst/sphgeom/Circle.h"
 
 #include "lsst/jointcal/RefStar.h"
 #include "lsst/jointcal/FittedStar.h"
@@ -172,8 +173,13 @@ public:
     //! Number of different bands in the input image list. Not implemented so far
     unsigned getNFilters() const { return 1; }
 
-    // Return the bounding box in (ra, dec) coordinates containing the whole catalog
-    const lsst::afw::geom::Box2D getRaDecBBox();
+    /**
+     * Return the bounding circle in on-sky (RA, Dec) coordinates containing all CcdImages.
+     *
+     * Requires that computeCommonTangentPoint() be called first, so that sensor bounding boxes can be
+     * transformed into the common tangent plane.
+     */
+    lsst::sphgeom::Circle computeBoundingCircle() const;
 
     /**
      * @brief      return the number of CcdImages with non-empty catalogs to-be-fit.

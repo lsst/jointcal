@@ -27,6 +27,7 @@
 
 #include "lsst/jointcal/Associations.h"
 #include "lsst/jointcal/CcdImage.h"
+#include "lsst/sphgeom/Circle.h"
 
 namespace py = pybind11;
 using namespace pybind11::literals;
@@ -59,8 +60,7 @@ void declareAssociations(py::module &mod) {
     cls.def_property_readonly("ccdImageList", &Associations::getCcdImageList,
                               py::return_value_policy::reference_internal);
 
-    cls.def("getRaDecBBox", &Associations::getRaDecBBox);
-    cls.def_property_readonly("raDecBBox", &Associations::getRaDecBBox);
+    cls.def("computeBoundingCircle", &Associations::computeBoundingCircle);
 
     cls.def("getCommonTangentPoint", &Associations::getCommonTangentPoint);
     cls.def("setCommonTangentPoint", &Associations::setCommonTangentPoint);
@@ -69,6 +69,7 @@ void declareAssociations(py::module &mod) {
 
 PYBIND11_MODULE(associations, mod) {
     py::module::import("lsst.jointcal.ccdImage");
+    py::module::import("lsst.sphgeom");
     declareAssociations(mod);
 }
 }  // namespace
