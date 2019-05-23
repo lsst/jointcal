@@ -23,11 +23,11 @@ import collections
 import numpy as np
 import astropy.units as u
 
+import lsst.geom
 import lsst.utils
 import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 from lsst.afw.image import fluxErrFromABMagErr
-import lsst.afw.geom as afwGeom
 import lsst.pex.exceptions as pexExceptions
 import lsst.afw.table
 import lsst.meas.algorithms
@@ -518,20 +518,9 @@ class JointcalTask(pipeBase.CmdLineTask):
 
         associations.computeCommonTangentPoint()
 
-        # Use external reference catalogs handled by LSST stack mechanism
-        # Get the bounding box overlapping all associated images
-        # ==> This is probably a bad idea to do it this way <== To be improved
-        bbox = associations.getRaDecBBox()
-        bboxCenter = bbox.getCenter()
-        center = afwGeom.SpherePoint(bboxCenter[0], bboxCenter[1], afwGeom.degrees)
-        bboxMax = bbox.getMax()
-        corner = afwGeom.SpherePoint(bboxMax[0], bboxMax[1], afwGeom.degrees)
-        radius = center.separation(corner).asRadians()
-
-        # Get astrometry_net_data path
-        anDir = lsst.utils.getPackageDir('astrometry_net_data')
-        if anDir is None:
-            raise RuntimeError("astrometry_net_data is not setup")
+        boundingCircle = associations.computeBoundingCircle()
+        center = lsst.geom.SpherePoint(boundingCircle.getCenter())
+        radius = lsst.geom.Angle(boundingCircle.getOpeningAngle().asRadians(), lsst.geom.radians)
 
         # Determine a default filter associated with the catalog. See DM-9093
         defaultFilter = filters.most_common(1)[0][0]
@@ -636,7 +625,7 @@ class JointcalTask(pipeBase.CmdLineTask):
             refCoordErr = self.config.astrometryReferenceErr
 
         associations.collectRefStars(refCat,
-                                     self.config.matchCut*afwGeom.arcseconds,
+                                     self.config.matchCut*lsst.geom.arcseconds,
                                      fluxField,
                                      refCoordinateErr=refCoordErr,
                                      rejectBadFluxes=reject_bad_fluxes)
@@ -693,7 +682,7 @@ class JointcalTask(pipeBase.CmdLineTask):
             The name of the reference catalog flux field appropriate for ``filterName``.
         """
         skyCircle = refObjLoader.loadSkyCircle(center,
-                                               afwGeom.Angle(radius, afwGeom.radians),
+                                               radius,
                                                filterName)
 
         selected = referenceSelector.run(skyCircle.refCat)

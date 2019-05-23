@@ -46,6 +46,10 @@
 #include "lsst/afw/geom/Point.h"
 #include "lsst/afw/image/Calib.h"
 
+#include "lsst/sphgeom/LonLat.h"
+#include "lsst/sphgeom/Circle.h"
+#include "lsst/sphgeom/ConvexPolygon.h"
+
 namespace jointcal = lsst::jointcal;
 
 namespace {
@@ -83,6 +87,35 @@ void Associations::computeCommonTangentPoint() {
 void Associations::setCommonTangentPoint(lsst::afw::geom::Point2D const &commonTangentPoint) {
     _commonTangentPoint = Point(commonTangentPoint.getX(), commonTangentPoint.getY());  // a jointcal::Point
     for (auto &ccdImage : ccdImageList) ccdImage->setCommonTangentPoint(_commonTangentPoint);
+}
+
+lsst::sphgeom::Circle Associations::computeBoundingCircle() const {
+    // Compute the frame on the common tangent plane that contains all input images.
+    Frame tangentPlaneFrame;
+
+    for (auto const &ccdImage : ccdImageList) {
+        Frame CTPFrame = ccdImage->getPixelToCommonTangentPlane()->apply(ccdImage->getImageFrame(), false);
+        if (tangentPlaneFrame.getArea() == 0)
+            tangentPlaneFrame = CTPFrame;
+        else
+            tangentPlaneFrame += CTPFrame;
+    }
+
+    // Convert tangent plane coordinates to RaDec.
+    AstrometryTransformLinear identity;
+    TanPixelToRaDec commonTangentPlaneToRaDec(identity, _commonTangentPoint);
+    Frame raDecFrame = commonTangentPlaneToRaDec.apply(tangentPlaneFrame, false);
+
+    std::vector<sphgeom::UnitVector3d> points;
+    points.reserve(4);
+    // raDecFrame is in on-sky (RA,Dec) degrees stored as an x/y box:
+    // the on-sky bounding box it represents is given by the corners of that box.
+    points.emplace_back(sphgeom::LonLat::fromDegrees(raDecFrame.xMin, raDecFrame.yMin));
+    points.emplace_back(sphgeom::LonLat::fromDegrees(raDecFrame.xMax, raDecFrame.yMin));
+    points.emplace_back(sphgeom::LonLat::fromDegrees(raDecFrame.xMin, raDecFrame.yMax));
+    points.emplace_back(sphgeom::LonLat::fromDegrees(raDecFrame.xMax, raDecFrame.yMax));
+
+    return sphgeom::ConvexPolygon::convexHull(points).getBoundingCircle();
 }
 
 void Associations::associateCatalogs(const double matchCutInArcSec, const bool useFittedList,
@@ -234,30 +267,6 @@ void Associations::collectRefStars(afw::table::SimpleCatalog &refCat, afw::geom:
     TanRaDecToPixel raDecToCommonTangentPlane(identity, _commonTangentPoint);
 
     associateRefStars(matchCut.asArcseconds(), &raDecToCommonTangentPlane);
-}
-
-const lsst::afw::geom::Box2D Associations::getRaDecBBox() {
-    // compute the frame on the CTP that contains all input images
-    Frame tangentPlaneFrame;
-
-    for (auto const &ccdImage : ccdImageList) {
-        Frame CTPFrame = ccdImage->getPixelToCommonTangentPlane()->apply(ccdImage->getImageFrame(), false);
-        if (tangentPlaneFrame.getArea() == 0)
-            tangentPlaneFrame = CTPFrame;
-        else
-            tangentPlaneFrame += CTPFrame;
-    }
-
-    // convert tangent plane coordinates to RaDec:
-    AstrometryTransformLinear identity;
-    TanPixelToRaDec commonTangentPlaneToRaDec(identity, _commonTangentPoint);
-    Frame raDecFrame = commonTangentPlaneToRaDec.apply(tangentPlaneFrame, false);
-
-    lsst::afw::geom::Point<double> min(raDecFrame.xMin, raDecFrame.yMin);
-    lsst::afw::geom::Point<double> max(raDecFrame.xMax, raDecFrame.yMax);
-    lsst::afw::geom::Box2D box(min, max);
-
-    return box;
 }
 
 void Associations::associateRefStars(double matchCutInArcSec, const AstrometryTransform *transform) {

@@ -30,6 +30,7 @@ import lsst.pex.exceptions
 
 import jointcalTestBase
 from lsst.jointcal import jointcal
+import lsst.jointcal.testUtils
 
 
 # for MemoryTestCase

@@ -78,8 +78,8 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
         # See Readme for an explanation of these empirical values.
         dist_rms_relative = 11e-3*u.arcsecond
         pa1 = 0.014
-        metrics = {'collected_astrometry_refStars': 1767,
-                   'collected_photometry_refStars': 1767,
+        metrics = {'collected_astrometry_refStars': 1770,
+                   'collected_photometry_refStars': 1770,
                    'selected_astrometry_refStars': 747,
                    'selected_photometry_refStars': 747,
                    'associated_astrometry_fittedStars': 2269,
@@ -118,7 +118,7 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
 
         # See Readme for an explanation of these empirical values.
         dist_rms_relative = 12e-3*u.arcsecond
-        metrics = {'collected_astrometry_refStars': 1767,
+        metrics = {'collected_astrometry_refStars': 1770,
                    'selected_astrometry_refStars': 747,
                    'associated_astrometry_fittedStars': 2269,
                    'selected_astrometry_fittedStars': 1408,
@@ -186,7 +186,7 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
 
         # See Readme for an explanation of these empirical values.
         pa1 = 0.017
-        metrics = {'collected_photometry_refStars': 1767,
+        metrics = {'collected_photometry_refStars': 1770,
                    'selected_photometry_refStars': 747,
                    'associated_photometry_fittedStars': 2269,
                    'selected_photometry_fittedStars': 1408,
