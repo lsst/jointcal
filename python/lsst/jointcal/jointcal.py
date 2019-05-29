@@ -569,10 +569,11 @@ class JointcalTask(pipeBase.CmdLineTask):
                                exitStatus=exitStatus)
 
     def _do_load_refcat_and_fit(self, associations, defaultFilter, center, radius,
+                                filters=[],
+                                tract="", profile_jointcal=False, match_cut=3.0,
+                                reject_bad_fluxes=False, *,
                                 name="", refObjLoader=None, referenceSelector=None,
-                                filters=[], fit_function=None,
-                                tract=None, profile_jointcal=False, match_cut=3.0,
-                                reject_bad_fluxes=False):
+                                fit_function=None):
         """Load reference catalog, perform the fit, and return the result.
 
         Parameters
@@ -588,12 +589,14 @@ class JointcalTask(pipeBase.CmdLineTask):
         name : `str`
             Name of thing being fit: "astrometry" or "photometry".
         refObjLoader : `lsst.meas.algorithms.LoadReferenceObjectsTask`
-            Reference object loader to load from for fit.
-        filters : `list` of `str`, optional
-            List of filters to load from the reference catalog.
+            Reference object loader to use to load a reference catalog.
+        referenceSelector : `lsst.meas.algorithms.ReferenceSourceSelectorTask`
+            Selector to use to pick objects from the loaded reference catalog.
         fit_function : callable
-            Function to call to perform fit (takes associations object).
-        tract : `str`
+            Function to call to perform fit (takes Associations object).
+        filters : `list` [`str`], optional
+            List of filters to load from the reference catalog.
+        tract : `str`, optional
             Name of tract currently being fit.
         profile_jointcal : `bool`, optional
             Separately profile the fitting step.
