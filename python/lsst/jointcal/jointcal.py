@@ -30,6 +30,7 @@ import lsst.pipe.base as pipeBase
 from lsst.afw.image import fluxErrFromABMagErr
 import lsst.pex.exceptions as pexExceptions
 import lsst.afw.table
+import lsst.log
 import lsst.meas.algorithms
 from lsst.pipe.tasks.colorterms import ColortermLibrary
 from lsst.verify import Job, Measurement
@@ -323,9 +324,13 @@ class JointcalConfig(pexConfig.Config):
 
     def validate(self):
         super().validate()
-        if self.applyColorTerms and len(self.colorterms.data) == 0:
+        if self.doPhotometry and self.applyColorTerms and len(self.colorterms.data) == 0:
             msg = "applyColorTerms=True requires the `colorterms` field be set to a ColortermLibrary."
             raise pexConfig.FieldValidationError(JointcalConfig.colorterms, self, msg)
+        if self.doAstrometry and not self.doPhotometry and self.applyColorTerms:
+            msg = ("Only doing astrometry, but Colorterms are not applied for astrometry;"
+                   "applyColorTerms=True will be ignored.")
+            lsst.log.warn(msg)
 
     def setDefaults(self):
         # Use science source selector which can filter on extendedness, SNR, and whether blended
