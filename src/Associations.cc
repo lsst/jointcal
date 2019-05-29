@@ -215,8 +215,8 @@ void Associations::collectRefStars(afw::table::SimpleCatalog &refCat, afw::geom:
     afw::table::Key<float> raErrKey;
     afw::table::Key<float> decErrKey;
     if (std::isnan(refCoordinateErr)) {
-        raErrKey = refCat.getSchema()["coord_ra_err"];
-        decErrKey = refCat.getSchema()["coord_dec_err"];
+        raErrKey = refCat.getSchema()["coord_raErr"];
+        decErrKey = refCat.getSchema()["coord_decErr"];
     }
 
     auto fluxKey = refCat.getSchema().find<double>(fluxField).key;

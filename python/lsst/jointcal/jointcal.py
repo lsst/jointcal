@@ -30,6 +30,7 @@ import lsst.pipe.base as pipeBase
 from lsst.afw.image import fluxErrFromABMagErr
 import lsst.pex.exceptions as pexExceptions
 import lsst.afw.table
+import lsst.log
 import lsst.meas.algorithms
 from lsst.pipe.tasks.colorterms import ColortermLibrary
 from lsst.verify import Job, Measurement
@@ -291,9 +292,9 @@ class JointcalConfig(pexConfig.Config):
         doc="How to down-select the loaded photometry reference catalog.",
     )
     astrometryReferenceErr = pexConfig.Field(
-        doc="Uncertainty on reference catalog coordinates [mas] to use in place of the `coord_*_err` fields."
+        doc="Uncertainty on reference catalog coordinates [mas] to use in place of the `coord_*Err` fields."
             " If None, then raise an exception if the reference catalog is missing coordinate errors."
-            " If specified, overrides any existing `coord_*_err` values.",
+            " If specified, overrides any existing `coord_*Err` values.",
         dtype=float,
         default=None,
         optional=True
@@ -323,9 +324,13 @@ class JointcalConfig(pexConfig.Config):
 
     def validate(self):
         super().validate()
-        if self.applyColorTerms and len(self.colorterms.data) == 0:
+        if self.doPhotometry and self.applyColorTerms and len(self.colorterms.data) == 0:
             msg = "applyColorTerms=True requires the `colorterms` field be set to a ColortermLibrary."
             raise pexConfig.FieldValidationError(JointcalConfig.colorterms, self, msg)
+        if self.doAstrometry and not self.doPhotometry and self.applyColorTerms:
+            msg = ("Only doing astrometry, but Colorterms are not applied for astrometry;"
+                   "applyColorTerms=True will be ignored.")
+            lsst.log.warn(msg)
 
     def setDefaults(self):
         # Use science source selector which can filter on extendedness, SNR, and whether blended
@@ -564,10 +569,11 @@ class JointcalTask(pipeBase.CmdLineTask):
                                exitStatus=exitStatus)
 
     def _do_load_refcat_and_fit(self, associations, defaultFilter, center, radius,
+                                filters=[],
+                                tract="", profile_jointcal=False, match_cut=3.0,
+                                reject_bad_fluxes=False, *,
                                 name="", refObjLoader=None, referenceSelector=None,
-                                filters=[], fit_function=None,
-                                tract=None, profile_jointcal=False, match_cut=3.0,
-                                reject_bad_fluxes=False):
+                                fit_function=None):
         """Load reference catalog, perform the fit, and return the result.
 
         Parameters
@@ -581,14 +587,16 @@ class JointcalTask(pipeBase.CmdLineTask):
         radius : `lsst.afw.geom.Angle`
             On-sky radius to load from reference catalog.
         name : `str`
-            Name of thing being fit: "Astrometry" or "Photometry".
+            Name of thing being fit: "astrometry" or "photometry".
         refObjLoader : `lsst.meas.algorithms.LoadReferenceObjectsTask`
-            Reference object loader to load from for fit.
-        filters : `list` of `str`, optional
-            List of filters to load from the reference catalog.
+            Reference object loader to use to load a reference catalog.
+        referenceSelector : `lsst.meas.algorithms.ReferenceSourceSelectorTask`
+            Selector to use to pick objects from the loaded reference catalog.
         fit_function : callable
-            Function to call to perform fit (takes associations object).
-        tract : `str`
+            Function to call to perform fit (takes Associations object).
+        filters : `list` [`str`], optional
+            List of filters to load from the reference catalog.
+        tract : `str`, optional
             Name of tract currently being fit.
         profile_jointcal : `bool`, optional
             Separately profile the fitting step.
@@ -610,11 +618,7 @@ class JointcalTask(pipeBase.CmdLineTask):
         add_measurement(self.job, 'jointcal.associated_%s_fittedStars' % name,
                         associations.fittedStarListSize())
 
-        applyColorterms = False if name == "Astrometry" else self.config.applyColorTerms
-        if name == "Astrometry":
-            referenceSelector = self.config.astrometryReferenceSelector
-        elif name == "Photometry":
-            referenceSelector = self.config.photometryReferenceSelector
+        applyColorterms = False if name.lower() == "astrometry" else self.config.applyColorTerms
         refCat, fluxField = self._load_reference_catalog(refObjLoader, referenceSelector,
                                                          center, radius, defaultFilter,
                                                          applyColorterms=applyColorterms)
@@ -692,14 +696,14 @@ class JointcalTask(pipeBase.CmdLineTask):
         else:
             refCat = selected.sourceCat
 
-        if self.config.astrometryReferenceErr is None and 'coord_ra_err' not in refCat.schema:
+        if self.config.astrometryReferenceErr is None and 'coord_raErr' not in refCat.schema:
             msg = ("Reference catalog does not contain coordinate errors, "
                    "and config.astrometryReferenceErr not supplied.")
             raise pexConfig.FieldValidationError(JointcalConfig.astrometryReferenceErr,
                                                  self.config,
                                                  msg)
 
-        if self.config.astrometryReferenceErr is not None and 'coord_ra_err' in refCat.schema:
+        if self.config.astrometryReferenceErr is not None and 'coord_raErr' in refCat.schema:
             self.log.warn("Overriding reference catalog coordinate errors with %f/coordinate [mas]",
                           self.config.astrometryReferenceErr)
 
