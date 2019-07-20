@@ -24,7 +24,7 @@ import os
 
 from astropy import units as u
 
-import lsst.afw.geom
+import lsst.geom
 import lsst.utils
 import lsst.pex.exceptions
 
@@ -52,8 +52,8 @@ class JointcalTestDECAM(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Test
         do_plot = False
 
         # center of the decam validation_data catalog
-        center = lsst.afw.geom.SpherePoint(150.1191666, 2.20583333, lsst.afw.geom.degrees)
-        radius = 3*lsst.afw.geom.degrees
+        center = lsst.geom.SpherePoint(150.1191666, 2.20583333, lsst.geom.degrees)
+        radius = 3*lsst.geom.degrees
 
         input_dir = os.path.join(self.data_dir, 'decam')
         all_visits = [176837, 176846]

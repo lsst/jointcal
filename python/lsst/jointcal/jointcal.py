@@ -162,7 +162,7 @@ class JointcalConfig(pexConfig.Config):
         dtype=float,
         default=0.0,
     )
-    # TODO: DM-6885 matchCut should be an afw.geom.Angle
+    # TODO: DM-6885 matchCut should be an geom.Angle
     matchCut = pexConfig.Field(
         doc="Matching radius between fitted and reference stars (arcseconds)",
         dtype=float,
@@ -582,9 +582,9 @@ class JointcalTask(pipeBase.CmdLineTask):
             The star/reference star associations to fit.
         defaultFilter : `str`
             filter to load from reference catalog.
-        center : `lsst.afw.geom.SpherePoint`
+        center : `lsst.geom.SpherePoint`
             ICRS center of field to load from reference catalog.
-        radius : `lsst.afw.geom.Angle`
+        radius : `lsst.geom.Angle`
             On-sky radius to load from reference catalog.
         name : `str`
             Name of thing being fit: "astrometry" or "photometry".

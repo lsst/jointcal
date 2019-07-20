@@ -25,7 +25,7 @@ import unittest
 import lsst.utils.tests
 from lsst.jointcal import testUtils
 
-import lsst.afw.geom
+import lsst.geom
 import lsst.jointcal
 
 
@@ -71,7 +71,7 @@ class CcdImageTestCase(lsst.utils.tests.TestCase):
         self.assertEqual(refStars, 0)
 
         # Cross match catalogs: there will still be no refcat matches.
-        matchCut = 3.0 * lsst.afw.geom.arcseconds
+        matchCut = 3.0 * lsst.geom.arcseconds
         # There should be no fittedStars until we associate the catalogs.
         self.assertEqual(self.associations.fittedStarListSize(), 0)
         self.associations.computeCommonTangentPoint()

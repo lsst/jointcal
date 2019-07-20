@@ -22,8 +22,8 @@
 import os
 import inspect
 
-import lsst.afw.geom
 import lsst.afw.image.utils
+import lsst.geom
 
 from lsst.jointcal import jointcal, utils
 
@@ -36,7 +36,7 @@ class JointcalTestBase:
     """
 
     def setUp_base(self, center, radius,
-                   match_radius=0.1*lsst.afw.geom.arcseconds,
+                   match_radius=0.1*lsst.geom.arcseconds,
                    input_dir="",
                    all_visits=None,
                    other_args=None,
@@ -47,11 +47,11 @@ class JointcalTestBase:
 
         Parameters
         ----------
-        center : lsst.afw.geom.SpherePoint
+        center : lsst.geom.SpherePoint
             Center of the reference catalog.
-        radius : lsst.afw.geom.Angle
+        radius : lsst.geom.Angle
             Radius from center to load reference catalog objects inside.
-        match_radius : lsst.afw.geom.Angle
+        match_radius : lsst.geom.Angle
             matching radius when calculating RMS of result.
         input_dir : str
             Directory of input butler repository.

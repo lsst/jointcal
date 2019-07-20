@@ -24,7 +24,7 @@ import os
 
 from astropy import units as u
 
-import lsst.afw.geom
+import lsst.geom
 import lsst.pex.config
 import lsst.utils
 import lsst.pex.exceptions
@@ -53,8 +53,8 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         do_plot = False
 
         # center of the hsc validation_data catalog
-        center = lsst.afw.geom.SpherePoint(320.367492, 0.3131554, lsst.afw.geom.degrees)
-        radius = 5*lsst.afw.geom.degrees
+        center = lsst.geom.SpherePoint(320.367492, 0.3131554, lsst.geom.degrees)
+        radius = 5*lsst.geom.degrees
 
         input_dir = os.path.join(self.data_dir, 'hsc')
         all_visits = [903334, 903336, 903338, 903342, 903344, 903346, 903986, 903988, 903990, 904010, 904014]
@@ -236,7 +236,7 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         """
         self.config = lsst.jointcal.jointcal.JointcalConfig()
         self.config.astrometryModel = "simple"
-        self.config.matchCut = 10.0  # TODO: once DM-6885 is fixed, we need to put `*lsst.afw.geom.arcseconds`
+        self.config.matchCut = 10.0  # TODO: once DM-6885 is fixed, we need to put `*lsst.geom.arcseconds`
         self.config.doPhotometry = False
         self.jointcalStatistics.do_photometry = False
 

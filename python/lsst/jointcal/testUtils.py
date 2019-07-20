@@ -91,7 +91,7 @@ def createTwoFakeCcdImages(num1=4, num2=4, seed=100, fakeCcdId=12,
            (`list` of `lsst.afw.table.SourceCatalog`).
        - `ccdImageList` : CcdImages containing the metadata and fake sources
            (`list` of `lsst.jointcal.CcdImage`).
-       - `bbox` : Bounding Box of the image (`lsst.afw.geom.Box2I`).
+       - `bbox` : Bounding Box of the image (`lsst.geom.Box2I`).
        - 'fluxFieldName' : name of the instFlux field in the catalogs ('str').
     """
     if not canRunTests():
@@ -165,7 +165,7 @@ def createFakeCcdImage(butler, visit, num, fluxFieldName,
            (`lsst.afw.table.SourceCatalog`).
        - `ccdImage` : CcdImage containing the metadata and fake sources
            (`lsst.jointcal.CcdImage`).
-       - `bbox` : Bounding Box of the image (`lsst.afw.geom.Box2I`).
+       - `bbox` : Bounding Box of the image (`lsst.geom.Box2I`).
        - `skyWcs` : SkyWcs of the image (`lsst.afw.geom.SkyWcs`).
     """
     ccdId = 12  # we only have data for ccd=12
@@ -193,7 +193,7 @@ def createFakeCatalog(num, bbox, fluxFieldName, skyWcs=None, refCat=False):
     num : `int`
         Number of sources to put in the catalogs. Should be
         a square, to have sqrt(num) centroids on a grid.
-    bbox : `lsst.afw.geom.Box2I`
+    bbox : `lsst.geom.Box2I`
         Bounding Box of the detector to populate.
     fluxFieldName : `str`
         Name of the flux field to populate in the catalog, without `_instFlux`
@@ -241,7 +241,7 @@ def fillCatalog(schema, num, bbox,
         Pre-built schema to make the catalog from.
     num : `int`
         Number of sources to put in the catalog.
-    bbox : `lsst.afw.geom.Box2I`
+    bbox : `lsst.geom.Box2I`
         Bounding box of the ccd to put sources in.
     centroidKey : `lsst.afw.table.Key`
         Key for the centroid field to populate.
@@ -291,7 +291,7 @@ def fillCatalog(schema, num, bbox,
     for i, (x, y) in enumerate(zip(xv.ravel(), yv.ravel())):
         record = catalog.addNew()
         record.set('id', i)
-        record.set(centroidKey, lsst.afw.geom.Point2D(x, y))
+        record.set(centroidKey, lsst.geom.Point2D(x, y))
         record.set(shapeKey, lsst.afw.geom.ellipses.Quadrupole(mxx, myy, mxy))
 
     if skyWcs is not None:
@@ -328,7 +328,7 @@ def getMeasuredStarsFromCatalog(catalog, pixToFocal):
         star.y = record.getY()
         star.setInstFluxAndErr(record.getCalibInstFlux(), record.getCalibInstFluxErr())
         # TODO: cleanup after DM-4044
-        point = lsst.afw.geom.Point2D(star.x, star.y)
+        point = lsst.geom.Point2D(star.x, star.y)
         pointFocal = pixToFocal.applyForward(point)
         star.setXFocal(pointFocal.getX())
         star.setYFocal(pointFocal.getY())
