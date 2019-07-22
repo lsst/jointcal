@@ -34,8 +34,8 @@
 #include "lsst/afw/image/PhotoCalib.h"
 #include "lsst/afw/image/VisitInfo.h"
 #include "lsst/daf/base/PropertySet.h"
-#include "lsst/afw/geom/Box.h"
-#include "lsst/afw/geom/SpherePoint.h"
+#include "lsst/geom/Box.h"
+#include "lsst/geom/SpherePoint.h"
 #include "lsst/jointcal/MeasuredStar.h"
 #include "lsst/jointcal/AstrometryTransform.h"
 #include "lsst/jointcal/Frame.h"
@@ -64,7 +64,7 @@ std::ostream &operator<<(std::ostream &out, CcdImageKey const &key);
 class CcdImage {
 public:
     CcdImage(afw::table::SourceCatalog &record, std::shared_ptr<lsst::afw::geom::SkyWcs> wcs,
-             std::shared_ptr<lsst::afw::image::VisitInfo> visitInfo, afw::geom::Box2I const &bbox,
+             std::shared_ptr<lsst::afw::image::VisitInfo> visitInfo, lsst::geom::Box2I const &bbox,
              std::string const &filter, std::shared_ptr<afw::image::PhotoCalib> photoCalib,
              std::shared_ptr<afw::cameraGeom::Detector> detector, int visit, int ccd,
              std::string const &fluxField);
@@ -163,7 +163,7 @@ public:
     /**
      * @brief      Gets the boresight RA/Dec.
      */
-    lsst::afw::geom::SpherePoint getBoresightRaDec() const { return _boresightRaDec; }
+    lsst::geom::SpherePoint getBoresightRaDec() const { return _boresightRaDec; }
 
     double getHourAngle() const { return _hourAngle; }
 
@@ -214,7 +214,7 @@ private:
     CcdIdType _ccdId;
     VisitIdType _visit;
 
-    lsst::afw::geom::SpherePoint _boresightRaDec;
+    lsst::geom::SpherePoint _boresightRaDec;
     double _airMass;  // airmass value.
     double _mjd;      // modified julian date
     std::shared_ptr<afw::image::PhotoCalib> _photoCalib;

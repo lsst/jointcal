@@ -58,7 +58,7 @@ public:
      * @param[in]  errorPedestal_ A pedestal in flux or magnitude to apply to all MeasuredStar flux errors.
      */
     explicit ConstrainedPhotometryModel(CcdImageList const &ccdImageList,
-                                        afw::geom::Box2D const &focalPlaneBBox, LOG_LOGGER log,
+                                        geom::Box2D const &focalPlaneBBox, LOG_LOGGER log,
                                         int visitOrder = 7, double errorPedestal_ = 0)
             : PhotometryModel(log, errorPedestal_), _fittingChips(false), _fittingVisits(false) {
         _chipVisitMap.reserve(ccdImageList.size());
@@ -113,7 +113,7 @@ protected:
      * Initialize the chip, visit, and chipVisit mappings by creating appropriate transforms and mappings.
      */
     template <class ChipTransform, class VisitTransform, class ChipVisitMapping>
-    void initialize(CcdImageList const &ccdImageList, afw::geom::Box2D const &focalPlaneBBox, int visitOrder);
+    void initialize(CcdImageList const &ccdImageList, geom::Box2D const &focalPlaneBBox, int visitOrder);
 
     /// Return the initial calibration to use from this photoCalib.
     virtual double initialChipCalibration(std::shared_ptr<afw::image::PhotoCalib const> photoCalib) = 0;
@@ -137,7 +137,7 @@ private:
 
 class ConstrainedFluxModel : public ConstrainedPhotometryModel {
 public:
-    explicit ConstrainedFluxModel(CcdImageList const &ccdImageList, afw::geom::Box2D const &focalPlaneBBox,
+    explicit ConstrainedFluxModel(CcdImageList const &ccdImageList, geom::Box2D const &focalPlaneBBox,
                                   int visitOrder = 7, double errorPedestal_ = 0)
             : ConstrainedPhotometryModel(ccdImageList, focalPlaneBBox,
                                          LOG_GET("jointcal.ConstrainedFluxModel"), visitOrder,
@@ -181,7 +181,7 @@ protected:
 class ConstrainedMagnitudeModel : public ConstrainedPhotometryModel {
 public:
     explicit ConstrainedMagnitudeModel(CcdImageList const &ccdImageList,
-                                       afw::geom::Box2D const &focalPlaneBBox, int visitOrder = 7,
+                                       geom::Box2D const &focalPlaneBBox, int visitOrder = 7,
                                        double errorPedestal_ = 0)
             : ConstrainedPhotometryModel(ccdImageList, focalPlaneBBox,
                                          LOG_GET("jointcal.ConstrainedMagnitudeModel"), visitOrder,

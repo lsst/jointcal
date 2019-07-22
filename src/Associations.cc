@@ -42,8 +42,8 @@
 #include "lsst/daf/base/PropertySet.h"
 
 #include "lsst/pex/exceptions.h"
-#include "lsst/afw/geom/Box.h"
-#include "lsst/afw/geom/Point.h"
+#include "lsst/geom/Box.h"
+#include "lsst/geom/Point.h"
 #include "lsst/afw/image/Calib.h"
 
 #include "lsst/sphgeom/LonLat.h"
@@ -62,7 +62,7 @@ namespace jointcal {
 void Associations::createCcdImage(afw::table::SourceCatalog &catalog,
                                   std::shared_ptr<lsst::afw::geom::SkyWcs> wcs,
                                   std::shared_ptr<lsst::afw::image::VisitInfo> visitInfo,
-                                  lsst::afw::geom::Box2I const &bbox, std::string const &filter,
+                                  lsst::geom::Box2I const &bbox, std::string const &filter,
                                   std::shared_ptr<afw::image::PhotoCalib> photoCalib,
                                   std::shared_ptr<afw::cameraGeom::Detector> detector, int visit, int ccd,
                                   lsst::jointcal::JointcalControl const &control) {
@@ -74,17 +74,17 @@ void Associations::createCcdImage(afw::table::SourceCatalog &catalog,
 }
 
 void Associations::computeCommonTangentPoint() {
-    std::vector<afw::geom::SpherePoint> centers;
+    std::vector<geom::SpherePoint> centers;
     centers.reserve(ccdImageList.size());
     for (auto const &ccdImage : ccdImageList) {
         centers.push_back(ccdImage->getBoresightRaDec());
     }
-    auto commonTangentPoint = afw::geom::averageSpherePoint(centers);
-    LOGLS_DEBUG(_log, "Using common tangent point: " << commonTangentPoint.getPosition(afw::geom::degrees));
-    setCommonTangentPoint(commonTangentPoint.getPosition(afw::geom::degrees));
+    auto commonTangentPoint = geom::averageSpherePoint(centers);
+    LOGLS_DEBUG(_log, "Using common tangent point: " << commonTangentPoint.getPosition(geom::degrees));
+    setCommonTangentPoint(commonTangentPoint.getPosition(geom::degrees));
 }
 
-void Associations::setCommonTangentPoint(lsst::afw::geom::Point2D const &commonTangentPoint) {
+void Associations::setCommonTangentPoint(lsst::geom::Point2D const &commonTangentPoint) {
     _commonTangentPoint = Point(commonTangentPoint.getX(), commonTangentPoint.getY());  // a jointcal::Point
     for (auto &ccdImage : ccdImageList) ccdImage->setCommonTangentPoint(_commonTangentPoint);
 }
@@ -202,7 +202,7 @@ void Associations::associateCatalogs(const double matchCutInArcSec, const bool u
     // assignMags();
 }
 
-void Associations::collectRefStars(afw::table::SimpleCatalog &refCat, afw::geom::Angle matchCut,
+void Associations::collectRefStars(afw::table::SimpleCatalog &refCat, geom::Angle matchCut,
                                    std::string const &fluxField, float refCoordinateErr,
                                    bool rejectBadFluxes) {
     if (refCat.size() == 0) {
@@ -242,8 +242,8 @@ void Associations::collectRefStars(afw::table::SimpleCatalog &refCat, afw::geom:
         } else {
             fluxErr = std::numeric_limits<double>::quiet_NaN();
         }
-        double ra = lsst::afw::geom::radToDeg(coord.getLongitude());
-        double dec = lsst::afw::geom::radToDeg(coord.getLatitude());
+        double ra = lsst::geom::radToDeg(coord.getLongitude());
+        double dec = lsst::geom::radToDeg(coord.getLatitude());
         auto star = std::make_shared<RefStar>(ra, dec, flux, fluxErr);
 
         if (std::isnan(refCoordinateErr)) {

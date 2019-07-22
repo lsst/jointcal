@@ -146,9 +146,9 @@ std::shared_ptr<afw::geom::SkyWcs> SimpleAstrometryModel::makeSkyWcs(CcdImage co
 
     // make a basic SkyWcs and extract the IWC portion
     auto iwcToSkyWcs = afw::geom::makeSkyWcs(
-            afw::geom::Point2D(0, 0),
-            afw::geom::SpherePoint(tangentPoint.x, tangentPoint.y, afw::geom::degrees),
-            afw::geom::makeCdMatrix(1.0 * afw::geom::degrees, 0 * afw::geom::degrees, true));
+            geom::Point2D(0, 0),
+            geom::SpherePoint(tangentPoint.x, tangentPoint.y, geom::degrees),
+            afw::geom::makeCdMatrix(1.0 * geom::degrees, 0 * geom::degrees, true));
     auto iwcToSkyMap = iwcToSkyWcs->getFrameDict()->getMapping("PIXELS", "SKY");
     auto skyFrame = iwcToSkyWcs->getFrameDict()->getFrame("SKY");
 

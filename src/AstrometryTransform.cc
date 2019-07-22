@@ -34,7 +34,7 @@
 #include "Eigen/Core"
 
 #include "lsst/log/Log.h"
-#include "lsst/afw/geom/Point.h"
+#include "lsst/geom/Point.h"
 #include "lsst/jointcal/AstrometryTransform.h"
 #include "lsst/jointcal/Frame.h"
 #include "lsst/jointcal/StarMatch.h"
@@ -512,8 +512,8 @@ AstrometryTransformPolynomial::AstrometryTransformPolynomial(
         for (std::size_t j = 0; j < nSteps; ++j) {
             // TODO: once DM-4044 is done, we can remove the redundancy in `Point`/`Point2D` here
             jointcal::Point in(xStart + i * xStep, yStart + j * yStep);
-            afw::geom::Point2D inAfw(in.x, in.y);
-            afw::geom::Point2D outAfw = transform->applyForward(inAfw);
+            geom::Point2D inAfw(in.x, in.y);
+            geom::Point2D outAfw = transform->applyForward(inAfw);
             jointcal::Point out(outAfw.getX(), outAfw.getY());
             starMatchList.emplace_back(in, out, nullptr, nullptr);
         }
@@ -1446,7 +1446,7 @@ AstrometryTransformSkyWcs::AstrometryTransformSkyWcs(std::shared_ptr<afw::geom::
         : _skyWcs(skyWcs) {}
 
 void AstrometryTransformSkyWcs::apply(const double xIn, const double yIn, double &xOut, double &yOut) const {
-    auto const outCoord = _skyWcs->pixelToSky(afw::geom::Point2D(xIn, yIn));
+    auto const outCoord = _skyWcs->pixelToSky(geom::Point2D(xIn, yIn));
     xOut = outCoord[0].asDegrees();
     yOut = outCoord[1].asDegrees();
 }
