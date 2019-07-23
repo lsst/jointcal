@@ -25,7 +25,7 @@ import abc
 import unittest
 import lsst.utils.tests
 
-import lsst.afw.geom
+import lsst.geom
 import lsst.jointcal.photometryMappings
 import lsst.jointcal.photometryTransform
 import lsst.jointcal.star
@@ -101,7 +101,7 @@ class PhotometryMappingTestCase(PhotometryMappingTestBase, lsst.utils.tests.Test
 class ChipVisitPhotometryMappingTestCase(PhotometryMappingTestBase, abc.ABC):
     def setUp(self):
         super().setUp()
-        self.bbox = lsst.afw.geom.Box2D(lsst.afw.geom.Point2D(-5, -6), lsst.afw.geom.Point2D(7, 8))
+        self.bbox = lsst.geom.Box2D(lsst.geom.Point2D(-5, -6), lsst.geom.Point2D(7, 8))
         self.order = 1
         self.coefficients = np.array([[5, 2], [3, 0]], dtype=float)
         self.chipScale = 2

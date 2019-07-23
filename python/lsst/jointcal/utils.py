@@ -39,7 +39,7 @@ from astropy import units as u
 import lsst.log
 import lsst.afw.table
 import lsst.afw.image
-from lsst.afw.geom import arcseconds
+from lsst.geom import arcseconds
 
 __all__ = ['JointcalStatistics']
 
@@ -63,7 +63,7 @@ class JointcalStatistics:
         """
         Parameters
         ----------
-        match_radius : lsst.afw.geom.Angle
+        match_radius : lsst.geom.Angle
             match sources within this radius for RMS statistics
         flux_limit : float
             Signal/Noise (flux/fluxErr) for sources to be included in the RMS cross-match.

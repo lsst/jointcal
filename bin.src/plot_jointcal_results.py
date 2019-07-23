@@ -32,7 +32,7 @@ import os
 import lsst.daf.persistence
 from lsst.meas.extensions.astrometryNet import LoadAstrometryNetObjectsTask, LoadAstrometryNetObjectsConfig
 import lsst.afw.image
-from lsst.afw.geom import degrees
+from lsst.geom import degrees
 
 from lsst.jointcal import utils
 

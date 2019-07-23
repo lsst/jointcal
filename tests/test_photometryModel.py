@@ -28,7 +28,6 @@ import lsst.jointcal.testUtils
 from astropy import units
 
 import lsst.afw.cameraGeom
-import lsst.afw.geom
 import lsst.afw.table
 import lsst.afw.image
 import lsst.afw.image.utils

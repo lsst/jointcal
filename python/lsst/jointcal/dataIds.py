@@ -107,7 +107,7 @@ class PerTractCcdDataIdContainer(CoaddDataIdContainer):
                     visitRefs[visit].append(ref)
 
                     wcs = ref.get("calexp_wcs", immediate=True)
-                    box = lsst.afw.geom.Box2D(ref.get("calexp_bbox"))
+                    box = lsst.geom.Box2D(ref.get("calexp_bbox"))
                     # Going with just the nearest tract.  Since we're throwing all tracts for the visit
                     # together, this shouldn't be a problem unless the tracts are much smaller than a CCD.
                     tract = skymap.findTract(wcs.pixelToSky(box.getCenter()))

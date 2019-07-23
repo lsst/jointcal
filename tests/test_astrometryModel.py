@@ -36,6 +36,7 @@ import lsst.afw.table
 import lsst.afw.image
 import lsst.afw.image.utils
 import lsst.daf.persistence
+import lsst.geom
 import lsst.jointcal
 from lsst.jointcal import astrometryModels
 from lsst.meas.algorithms import astrometrySourceSelector
@@ -212,7 +213,7 @@ class AstrometryModelTestBase:
         num = 200
         xx = np.linspace(bbox.getMinX(), bbox.getMaxX(), num)
         yy = np.linspace(bbox.getMinY(), bbox.getMaxY(), num)
-        points = [lsst.afw.geom.Point2D(*xy) for xy in itertools.product(xx, yy)]
+        points = [lsst.geom.Point2D(*xy) for xy in itertools.product(xx, yy)]
 
         expects = []
         forwards = []
@@ -225,13 +226,13 @@ class AstrometryModelTestBase:
             # jointcal's pixel->tangent-plane mapping
             star = lsst.jointcal.star.BaseStar(point.getX(), point.getY(), 0, 0)
             tpExpect = mapping.transformPosAndErrors(star)
-            expects.append(lsst.afw.geom.Point2D(tpExpect.x, tpExpect.y))
+            expects.append(lsst.geom.Point2D(tpExpect.x, tpExpect.y))
 
             # skywcs takes pixel->sky, and we then have to go sky->tangent-plane
             onSky = lsst.jointcal.star.BaseStar(spherePoint.getLongitude().asDegrees(),
                                                 spherePoint.getLatitude().asDegrees(), 0, 0)
             result = skyToTangentPlane.apply(onSky)
-            forwards.append(lsst.afw.geom.Point2D(result.x, result.y))
+            forwards.append(lsst.geom.Point2D(result.x, result.y))
 
         self.assertPairListsAlmostEqual(forwards, expects)
         self.assertPairListsAlmostEqual(inverses, points, maxDiff=inverseMaxDiff)

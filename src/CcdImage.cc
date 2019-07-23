@@ -31,8 +31,8 @@
 #include "lsst/pex/exceptions.h"
 #include "lsst/afw/image/Image.h"
 #include "lsst/afw/image/PhotoCalib.h"
-#include "lsst/afw/geom/Angle.h"
-#include "lsst/afw/geom/Point.h"
+#include "lsst/geom/Angle.h"
+#include "lsst/geom/Point.h"
 
 #include "lsst/log/Log.h"
 #include "lsst/jointcal/CcdImage.h"
@@ -94,8 +94,8 @@ void CcdImage::loadCatalog(afw::table::SourceCatalog const &catalog, std::string
         ms->setInstFluxAndErr(record.get(instFluxKey), record.get(instFluxErrKey));
         // TODO: the below lines will be less clumsy once DM-4044 is cleaned up and we can say:
         // TODO: instFluxToNanojansky(ms->getInstFlux(), ms) (because ms will be derived from
-        // afw::geom::Point).
-        afw::geom::Point<double, 2> point(ms->x, ms->y);
+        // geom::Point).
+        geom::Point<double, 2> point(ms->x, ms->y);
         auto flux = _photoCalib->instFluxToNanojansky(ms->getInstFlux(), ms->getInstFluxErr(), point);
         ms->setFlux(flux.value);
         ms->setFluxErr(flux.error);
@@ -109,7 +109,7 @@ void CcdImage::loadCatalog(afw::table::SourceCatalog const &catalog, std::string
 }
 
 CcdImage::CcdImage(afw::table::SourceCatalog &catalog, std::shared_ptr<lsst::afw::geom::SkyWcs> wcs,
-                   std::shared_ptr<lsst::afw::image::VisitInfo> visitInfo, afw::geom::Box2I const &bbox,
+                   std::shared_ptr<lsst::afw::image::VisitInfo> visitInfo, geom::Box2I const &bbox,
                    std::string const &filter, std::shared_ptr<afw::image::PhotoCalib> photoCalib,
                    std::shared_ptr<afw::cameraGeom::Detector> detector, int visit, int ccdId,
                    std::string const &fluxField)

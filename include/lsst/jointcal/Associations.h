@@ -34,7 +34,7 @@
 #include "lsst/afw/image/Calib.h"
 #include "lsst/afw/image/VisitInfo.h"
 #include "lsst/daf/base/PropertySet.h"
-#include "lsst/afw/geom/Box.h"
+#include "lsst/geom/Box.h"
 #include "lsst/sphgeom/Circle.h"
 
 #include "lsst/jointcal/RefStar.h"
@@ -99,7 +99,7 @@ public:
      *
      * @param      commonTangentPoint  The common tangent point of all input images (decimal degrees).
      */
-    void setCommonTangentPoint(lsst::afw::geom::Point2D const &commonTangentPoint);
+    void setCommonTangentPoint(lsst::geom::Point2D const &commonTangentPoint);
 
     //! can be used to project sidereal coordinates related to the image set on a plane.
     Point getCommonTangentPoint() const { return _commonTangentPoint; }
@@ -120,7 +120,7 @@ public:
      */
     void createCcdImage(afw::table::SourceCatalog &catalog, std::shared_ptr<lsst::afw::geom::SkyWcs> wcs,
                         std::shared_ptr<lsst::afw::image::VisitInfo> visitInfo,
-                        lsst::afw::geom::Box2I const &bbox, std::string const &filter,
+                        lsst::geom::Box2I const &bbox, std::string const &filter,
                         std::shared_ptr<afw::image::PhotoCalib> photoCalib,
                         std::shared_ptr<afw::cameraGeom::Detector> detector, int visit, int ccd,
                         lsst::jointcal::JointcalControl const &control);
@@ -147,7 +147,7 @@ public:
      * @param      rejectBadFluxes  Reject reference sources with flux=NaN or 0 and/or fluxErr=NaN or 0.
      *                              Typically false for astrometry and true for photometry.
      */
-    void collectRefStars(afw::table::SimpleCatalog &refCat, afw::geom::Angle matchCut,
+    void collectRefStars(afw::table::SimpleCatalog &refCat, geom::Angle matchCut,
                          std::string const &fluxField, float refCoordinateErr, bool rejectBadFluxes = false);
 
     //! Sends back the fitted stars coordinates on the sky FittedStarsList::inTangentPlaneCoordinates keeps

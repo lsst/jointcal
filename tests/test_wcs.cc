@@ -32,8 +32,8 @@
 #include "lsst/jointcal/StarMatch.h"
 #include "lsst/jointcal/AstrometryTransform.h"
 #include "lsst/jointcal/Frame.h"
-#include "lsst/afw/geom/Angle.h"
-#include "lsst/afw/geom/Point.h"
+#include "lsst/geom/Angle.h"
+#include "lsst/geom/Point.h"
 #include "lsst/afw/geom/SkyWcs.h"
 #include "lsst/afw/image/Utils.h"
 #include "lsst/afw/image/Image.h"
@@ -74,9 +74,9 @@ BOOST_AUTO_TEST_CASE(test_wcs) {
     jointcal::Point outPol = astrometryTransformSkyWcs.apply(where);
     std::cout << std::setprecision(12) << "Poloka : " << outPol.x << ' ' << outPol.y << std::endl;
 
-    lsst::afw::geom::Point2D whereSame(100., 200.);
+    lsst::geom::Point2D whereSame(100., 200.);
     auto skyPos = skyWcs->pixelToSky(whereSame);
-    lsst::afw::geom::Point2D outDeg = skyPos.getPosition(lsst::afw::geom::degrees);
+    lsst::geom::Point2D outDeg = skyPos.getPosition(lsst::geom::degrees);
     std::cout << "Stack : " << outDeg[0] << ' ' << outDeg[1] << std::endl;
 
     BOOST_CHECK_CLOSE(outPol.x, outDeg[0], .000001);

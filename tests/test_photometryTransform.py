@@ -26,7 +26,7 @@ import numpy as np
 import unittest
 import lsst.utils.tests
 
-import lsst.afw.geom
+import lsst.geom
 from lsst.jointcal import photometryTransform
 
 
@@ -157,7 +157,7 @@ class PhotometryTransformChebyshevTestCase(PhotometryTransformTestBase, abc.ABC)
         and self.transform2 from self.coefficients.
         """
         super().setUp()
-        self.bbox = lsst.afw.geom.Box2D(lsst.afw.geom.Point2D(-5, -6), lsst.afw.geom.Point2D(7, 8))
+        self.bbox = lsst.geom.Box2D(lsst.geom.Point2D(-5, -6), lsst.geom.Point2D(7, 8))
         self.order1 = 2
         self.coefficients = np.array([[5, 3], [4, 0]], dtype=float)
 

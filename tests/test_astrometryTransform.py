@@ -25,6 +25,7 @@ import numpy as np
 import unittest
 import lsst.utils.tests
 
+import lsst.geom
 import lsst.log
 import lsst.jointcal
 from lsst.jointcal.astrometryTransform import AstrometryTransformPolynomial, inversePolyTransform
@@ -70,7 +71,7 @@ class AstrometryTransformPolynomialBase:
         self.points = []
         for x in xx:
             for y in yy:
-                self.points.append(lsst.afw.geom.Point2D(x, y))
+                self.points.append(lsst.geom.Point2D(x, y))
 
 
 class InversePolyTransformTestCase(AstrometryTransformPolynomialBase, lsst.utils.tests.TestCase):
@@ -81,7 +82,7 @@ class InversePolyTransformTestCase(AstrometryTransformPolynomialBase, lsst.utils
             # TODO: Fix these "Point"s once DM-4044 is done.
             tempPoint = lsst.jointcal.star.Point(point[0], point[1])
             result = inverse.apply(poly.apply(tempPoint))
-            results.append(lsst.afw.geom.Point2D(result.x, result.y))
+            results.append(lsst.geom.Point2D(result.x, result.y))
 
         self.assertPairListsAlmostEqual(results, self.points, maxDiff=maxDiff)
 
@@ -142,7 +143,7 @@ class AstrometryTransformPolynomialTestCase(AstrometryTransformPolynomialBase, l
             # TODO: Fix these "Point"s once DM-4044 is done.
             tempPoint = lsst.jointcal.star.Point(point[0], point[1])
             expect = poly.apply(tempPoint)
-            expects.append(lsst.afw.geom.Point2D(expect.x, expect.y))
+            expects.append(lsst.geom.Point2D(expect.x, expect.y))
             result = astMap.applyForward(point)
             forwards.append(result)
             inverses.append(astMap.applyInverse(result))

@@ -31,6 +31,7 @@
 
 #include "astshim.h"
 #include "astshim/ChebyMap.h"
+#include "lsst/geom.h"
 #include "lsst/afw/geom/Transform.h"
 #include "lsst/afw/image/PhotoCalib.h"
 #include "lsst/afw/math/TransformBoundedField.h"
@@ -175,7 +176,7 @@ PhotometryMappingBase *ConstrainedPhotometryModel::findMapping(CcdImage const &c
 
 template <class ChipTransform, class VisitTransform, class ChipVisitMapping>
 void ConstrainedPhotometryModel::initialize(CcdImageList const &ccdImageList,
-                                            afw::geom::Box2D const &focalPlaneBBox, int visitOrder) {
+                                            geom::Box2D const &focalPlaneBBox, int visitOrder) {
     // keep track of which chip we want to constrain (the one closest to the middle of the focal plane)
     double minRadius2 = std::numeric_limits<double>::infinity();
     CcdIdType constrainedChip = -1;
@@ -348,10 +349,10 @@ std::shared_ptr<afw::image::PhotoCalib> ConstrainedMagnitudeModel::toPhotoCalib(
 // explicit instantiation of templated function, so pybind11 can
 template void ConstrainedPhotometryModel::initialize<FluxTransformSpatiallyInvariant, FluxTransformChebyshev,
                                                      ChipVisitFluxMapping>(CcdImageList const &,
-                                                                           afw::geom::Box2D const &, int);
+                                                                           geom::Box2D const &, int);
 template void ConstrainedPhotometryModel::initialize<MagnitudeTransformSpatiallyInvariant,
                                                      MagnitudeTransformChebyshev, ChipVisitMagnitudeMapping>(
-        CcdImageList const &, afw::geom::Box2D const &, int);
+        CcdImageList const &, geom::Box2D const &, int);
 
 }  // namespace jointcal
 }  // namespace lsst

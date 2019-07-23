@@ -24,7 +24,7 @@ import inspect
 import unittest
 import os
 
-import lsst.afw.geom
+import lsst.geom
 import lsst.utils
 import lsst.pex.exceptions
 
@@ -55,8 +55,8 @@ class JointcalTestCFHTMinimal(jointcalTestBase.JointcalTestBase, lsst.utils.test
         do_plot = False
 
         # center of the cfht validation_data catalog
-        center = lsst.afw.geom.SpherePoint(214.884832, 52.6622199, lsst.afw.geom.degrees)
-        radius = 3*lsst.afw.geom.degrees
+        center = lsst.geom.SpherePoint(214.884832, 52.6622199, lsst.geom.degrees)
+        radius = 3*lsst.geom.degrees
 
         input_dir = os.path.join(self.data_dir, 'cfht_minimal')
         all_visits = [849375, 850587]
