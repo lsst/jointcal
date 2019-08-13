@@ -1,8 +1,4 @@
-setupRequired(scons)
 setupRequired(sconsUtils)
-setupRequired(pybind11)
-setupRequired(eigen)
-setupRequired(boost)
 setupRequired(afw)
 setupRequired(daf_persistence)
 setupRequired(obs_base)
