@@ -59,8 +59,8 @@ bool isIntegerShift(const AstrometryTransform *transform) {
 
     static const double eps = 1e-5;
 
-    double dx = shift->coeff(0, 0, 0);
-    double dy = shift->coeff(0, 0, 1);
+    double dx = shift->getCoefficient(0, 0, 0);
+    double dy = shift->getCoefficient(0, 0, 1);
 
     static Point dumb(4000, 4000);
     if (fabs(dx - int(floor(dx + 0.5))) < eps && fabs(dy - int(floor(dy + 0.5))) < eps &&
@@ -472,8 +472,8 @@ AstrometryTransformPolynomial::AstrometryTransformPolynomial(std::size_t order) 
     _coeffs.resize(2 * _nterms, 0.);
     // the default is supposed to be the identity, (for order>=1).
     if (_order >= 1) {
-        coeff(1, 0, 0) = 1;
-        coeff(0, 1, 1) = 1;
+        getCoefficient(1, 0, 0) = 1;
+        getCoefficient(0, 1, 1) = 1;
     }
 }
 
@@ -526,7 +526,7 @@ AstrometryTransformPolynomial::AstrometryTransformPolynomial(
 void AstrometryTransformPolynomial::computeMonomials(double xIn, double yIn, double *monomial) const {
     /* The ordering of monomials is implemented here.
        You may not change it without updating the "mapping" routines
-      coeff(std::size_t, std::size_t, std::size_t).
+      getCoefficient(std::size_t, std::size_t, std::size_t).
       I (P.A.) did not find a clever way to loop over monomials.
       Improvements welcome.
       This routine is used also by the fit to fill monomials.
@@ -735,8 +735,8 @@ void AstrometryTransformPolynomial::transformPosAndErrors(FatPoint const &in, Fa
    AstrometryTransformPolynomial::apply, AstrometryTransformPolynomial::Derivative, ... routines
    Change all or none ! */
 
-double AstrometryTransformPolynomial::coeff(std::size_t degX, std::size_t degY,
-                                            std::size_t whichCoord) const {
+double AstrometryTransformPolynomial::getCoefficient(std::size_t degX, std::size_t degY,
+                                                     std::size_t whichCoord) const {
     assert((degX + degY <= _order) && whichCoord < 2);
     /* this assertion above is enough to ensure that the index used just
        below is within bounds since the reserved length is
@@ -744,8 +744,8 @@ double AstrometryTransformPolynomial::coeff(std::size_t degX, std::size_t degY,
     return _coeffs[(degX + degY) * (degX + degY + 1) / 2 + degY + whichCoord * _nterms];
 }
 
-double &AstrometryTransformPolynomial::coeff(std::size_t degX, std::size_t degY,
-                                             std::size_t whichCoord) {
+double &AstrometryTransformPolynomial::getCoefficient(std::size_t degX, std::size_t degY,
+                                                      std::size_t whichCoord) {
     assert((degX + degY <= _order) && whichCoord < 2);
     return _coeffs[(degX + degY) * (degX + degY + 1) / 2 + degY + whichCoord * _nterms];
 }
@@ -801,7 +801,7 @@ void AstrometryTransformPolynomial::dump(ostream &stream) const {
         for (std::size_t p = 0; p <= _order; ++p)
             for (std::size_t py = 0; py <= p; ++py) {
                 if (p + py != 0) stream << " + ";
-                stream << coeff(p - py, py, ic) << monomialString(p - py, py);
+                stream << getCoefficient(p - py, py, ic) << monomialString(p - py, py);
             }
         stream << endl;
     }
@@ -810,7 +810,9 @@ void AstrometryTransformPolynomial::dump(ostream &stream) const {
 }
 
 double AstrometryTransformPolynomial::determinant() const {
-    if (_order >= 1) return coeff(1, 0, 0) * coeff(0, 1, 1) - coeff(0, 1, 0) * coeff(1, 0, 1);
+    if (_order >= 1)
+        return getCoefficient(1, 0, 0) * getCoefficient(0, 1, 1) -
+               getCoefficient(0, 1, 0) * getCoefficient(1, 0, 1);
     return 0;
 }
 
@@ -960,15 +962,16 @@ public:
     PolyXY(AstrometryTransformPolynomial const &transform, std::size_t whichCoord)
             : order(transform.getOrder()), nterms((order + 1) * (order + 2) / 2), coeffs(nterms, 0L) {
         for (std::size_t px = 0; px <= order; ++px)
-            for (std::size_t py = 0; py <= order - px; ++py) coeff(px, py) = transform.coeff(px, py, whichCoord);
+            for (std::size_t py = 0; py <= order - px; ++py)
+                getCoefficient(px, py) = transform.getCoefficient(px, py, whichCoord);
     }
 
-    long double coeff(std::size_t powX, std::size_t powY) const {
+    long double getCoefficient(std::size_t powX, std::size_t powY) const {
         assert(powX + powY <= order);
         return coeffs.at((powX + powY) * (powX + powY + 1) / 2 + powY);
     }
 
-    long double &coeff(std::size_t powX, std::size_t powY) {
+    long double &getCoefficient(std::size_t powX, std::size_t powY) {
         assert(powX + powY <= order);
         return coeffs.at((powX + powY) * (powX + powY + 1) / 2 + powY);
     }
@@ -980,7 +983,7 @@ static void operator+=(PolyXY &left, const PolyXY &right) {
     std::size_t rdeg = right.getOrder();
     assert(left.getOrder() >= rdeg);
     for (std::size_t i = 0; i <= rdeg; ++i)
-        for (std::size_t j = 0; j <= rdeg - i; ++j) left.coeff(i, j) += right.coeff(i, j);
+        for (std::size_t j = 0; j <= rdeg - i; ++j) left.getCoefficient(i, j) += right.getCoefficient(i, j);
 }
 
 /* multiplication by a scalar */
@@ -989,7 +992,7 @@ static PolyXY operator*(const long double &a, const PolyXY &polyXY) {
     // no direct access to coefficients: do it the soft way
     std::size_t order = polyXY.getOrder();
     for (std::size_t i = 0; i <= order; ++i)
-        for (std::size_t j = 0; j <= order - i; ++j) result.coeff(i, j) *= a;
+        for (std::size_t j = 0; j <= order - i; ++j) result.getCoefficient(i, j) *= a;
     return result;
 }
 
@@ -1002,7 +1005,8 @@ static PolyXY product(const PolyXY &p1, const PolyXY &p2) {
         for (std::size_t j1 = 0; j1 <= deg1 - i1; ++j1)
             for (std::size_t i2 = 0; i2 <= deg2; ++i2)
                 for (std::size_t j2 = 0; j2 <= deg2 - i2; ++j2)
-                    result.coeff(i1 + i2, j1 + j2) += p1.coeff(i1, j1) * p2.coeff(i2, j2);
+                    result.getCoefficient(i1 + i2, j1 + j2) +=
+                            p1.getCoefficient(i1, j1) * p2.getCoefficient(i2, j2);
     return result;
 }
 
@@ -1010,7 +1014,7 @@ static PolyXY product(const PolyXY &p1, const PolyXY &p2) {
 static void computePowers(const PolyXY &polyXY, std::size_t maxP, vector<PolyXY> &powers) {
     powers.reserve(maxP + 1);
     powers.push_back(PolyXY(0));
-    powers[0].coeff(0, 0) = 1L;
+    powers[0].getCoefficient(0, 0) = 1L;
     for (std::size_t k = 1; k <= maxP; ++k) powers.push_back(product(powers[k - 1], polyXY));
 }
 
@@ -1024,7 +1028,7 @@ static PolyXY composition(const PolyXY &polyXY, const PolyXY &polyX, const PolyX
     computePowers(polyY, pdeg, pYPowers);
     for (std::size_t px = 0; px <= pdeg; ++px)
         for (std::size_t py = 0; py <= pdeg - px; ++py)
-            result += polyXY.coeff(px, py) * product(pXPowers.at(px), pYPowers.at(py));
+            result += polyXY.getCoefficient(px, py) * product(pXPowers.at(px), pYPowers.at(py));
     return result;
 }
 
@@ -1048,8 +1052,8 @@ AstrometryTransformPolynomial AstrometryTransformPolynomial::operator*(
     AstrometryTransformPolynomial result(_order * right._order);
     for (std::size_t px = 0; px <= result._order; ++px)
         for (std::size_t py = 0; py <= result._order - px; ++py) {
-            result.coeff(px, py, 0) = rx.coeff(px, py);
-            result.coeff(px, py, 1) = ry.coeff(px, py);
+            result.getCoefficient(px, py, 0) = rx.getCoefficient(px, py);
+            result.getCoefficient(px, py, 1) = ry.getCoefficient(px, py);
         }
     return result;
 }
@@ -1060,8 +1064,8 @@ AstrometryTransformPolynomial AstrometryTransformPolynomial::operator+(
         AstrometryTransformPolynomial res(*this);
         for (std::size_t i = 0; i <= right._order; ++i)
             for (std::size_t j = 0; j <= right._order - i; ++j) {
-                res.coeff(i, j, 0) += right.coeff(i, j, 0);
-                res.coeff(i, j, 1) += right.coeff(i, j, 1);
+                res.getCoefficient(i, j, 0) += right.getCoefficient(i, j, 0);
+                res.getCoefficient(i, j, 1) += right.getCoefficient(i, j, 1);
             }
         return res;
     } else
@@ -1073,8 +1077,8 @@ AstrometryTransformPolynomial AstrometryTransformPolynomial::operator-(
     AstrometryTransformPolynomial res(std::max(_order, right._order));
     for (std::size_t i = 0; i <= res._order; ++i)
         for (std::size_t j = 0; j <= res._order - i; ++j) {
-            res.coeff(i, j, 0) = coeffOrZero(i, j, 0) - right.coeffOrZero(i, j, 0);
-            res.coeff(i, j, 1) = coeffOrZero(i, j, 1) - right.coeffOrZero(i, j, 1);
+            res.getCoefficient(i, j, 0) = coeffOrZero(i, j, 0) - right.coeffOrZero(i, j, 0);
+            res.getCoefficient(i, j, 1) = coeffOrZero(i, j, 1) - right.coeffOrZero(i, j, 1);
         }
     return res;
 }
@@ -1118,7 +1122,7 @@ ndarray::Array<double, 2, 2> AstrometryTransformPolynomial::toAstPolyMapCoeffici
     for (std::size_t iCoord = 0; iCoord < 2; ++iCoord) {
         for (std::size_t p = 0; p <= _order; ++p) {
             for (std::size_t py = 0; py <= p; ++py, ++k) {
-                result[k][0] = coeff(p - py, py, iCoord);
+                result[k][0] = getCoefficient(p - py, py, iCoord);
                 result[k][1] = iCoord + 1;
                 result[k][2] = p - py;
                 result[k][3] = py;
@@ -1234,8 +1238,8 @@ AstrometryTransformLinear AstrometryTransformLinear::operator*(AstrometryTransfo
 void AstrometryTransformLinear::computeDerivative(Point const &, AstrometryTransformLinear &derivative,
                                                   const double) const {
     derivative = *this;
-    derivative.coeff(0, 0, 0) = 0;
-    derivative.coeff(0, 0, 1) = 0;
+    derivative.getCoefficient(0, 0, 0) = 0;
+    derivative.getCoefficient(0, 0, 1) = 0;
 }
 
 AstrometryTransformLinear AstrometryTransformLinear::linearApproximation(Point const &, const double) const {

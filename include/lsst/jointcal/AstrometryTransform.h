@@ -288,8 +288,8 @@ public:
     AstrometryTransformPolynomial(std::size_t order = 1);
 
     //! Constructs a "polynomial image" from an existing transform, over a specified domain
-    AstrometryTransformPolynomial(const AstrometryTransform *transform, const Frame &frame,
-                                  std::size_t order, std::size_t nPoint = 1000);
+    AstrometryTransformPolynomial(const AstrometryTransform *transform, const Frame &frame, std::size_t order,
+                                  std::size_t nPoint = 1000);
 
     /**
      * Constructs a polynomial approximation to an afw::geom::TransformPoint2ToPoint2.
@@ -300,8 +300,7 @@ public:
      * @param[in] nSteps The number of sample points per axis (nSteps^2 total points).
      */
     AstrometryTransformPolynomial(std::shared_ptr<afw::geom::TransformPoint2ToPoint2> transform,
-                                  jointcal::Frame const &domain, std::size_t order,
-                                  std::size_t nSteps = 50);
+                                  jointcal::Frame const &domain, std::size_t order, std::size_t nSteps = 50);
 
     /// Sets the polynomial order (the highest sum of exponents of the largest monomial).
     void setOrder(std::size_t order);
@@ -348,10 +347,10 @@ public:
     }
 
     //! access to coefficients (read only)
-    double coeff(std::size_t powX, std::size_t powY, std::size_t whichCoord) const;
+    double getCoefficient(std::size_t powX, std::size_t powY, std::size_t whichCoord) const;
 
     //! write access
-    double &coeff(std::size_t powX, std::size_t powY, std::size_t whichCoord);
+    double &getCoefficient(std::size_t powX, std::size_t powY, std::size_t whichCoord);
 
     //! read access, zero if beyond order
     double coeffOrZero(std::size_t powX, std::size_t powY, std::size_t whichCoord) const;
@@ -378,8 +377,8 @@ private:
     double computeFit(StarMatchList const &starMatchList, AstrometryTransform const &shiftToCenter,
                       const bool useErrors);
 
-    std::size_t _order;              // The highest sum of exponents of the largest monomial.
-    std::size_t _nterms;             // number of parameters per coordinate
+    std::size_t _order;           // The highest sum of exponents of the largest monomial.
+    std::size_t _nterms;          // number of parameters per coordinate
     std::vector<double> _coeffs;  // the actual coefficients
                                   // both polynomials in a single vector to speed up allocation and copies
 
@@ -464,20 +463,20 @@ public:
 
     std::unique_ptr<AstrometryTransform> inverseTransform(const double precision, const Frame &region) const;
 
-    double A11() const { return coeff(1, 0, 0); }
-    double A12() const { return coeff(0, 1, 0); }
-    double A21() const { return coeff(1, 0, 1); }
-    double A22() const { return coeff(0, 1, 1); }
-    double Dx() const { return coeff(0, 0, 0); }
-    double Dy() const { return coeff(0, 0, 1); }
+    double A11() const { return getCoefficient(1, 0, 0); }
+    double A12() const { return getCoefficient(0, 1, 0); }
+    double A21() const { return getCoefficient(1, 0, 1); }
+    double A22() const { return getCoefficient(0, 1, 1); }
+    double Dx() const { return getCoefficient(0, 0, 0); }
+    double Dy() const { return getCoefficient(0, 0, 1); }
 
 protected:
-    double &a11() { return coeff(1, 0, 0); }
-    double &a12() { return coeff(0, 1, 0); }
-    double &a21() { return coeff(1, 0, 1); }
-    double &a22() { return coeff(0, 1, 1); }
-    double &dx() { return coeff(0, 0, 0); }
-    double &dy() { return coeff(0, 0, 1); }
+    double &a11() { return getCoefficient(1, 0, 0); }
+    double &a12() { return getCoefficient(0, 1, 0); }
+    double &a21() { return getCoefficient(1, 0, 1); }
+    double &a22() { return getCoefficient(0, 1, 1); }
+    double &dx() { return getCoefficient(0, 0, 0); }
+    double &dy() { return getCoefficient(0, 0, 1); }
 
     friend class AstrometryTransform;
     friend class AstrometryTransformIdentity;    // for AstrometryTransform::Derivative

@@ -50,16 +50,16 @@ void SimpleAstrometryMapping::transformPosAndErrors(FatPoint const &where, FatPo
 void SimpleAstrometryMapping::positionDerivative(Point const &where, Eigen::Matrix2d &derivative,
                                                  double epsilon) const {
     errorProp->computeDerivative(where, *lin, epsilon);
-    derivative(0, 0) = lin->coeff(1, 0, 0);
+    derivative(0, 0) = lin->getCoefficient(1, 0, 0);
     //
     /* This does not work : it was proved by rotating the frame
        see the compilation switch ROTATE_T2 in constrainedAstrometryModel.cc
-    derivative(1,0) = lin->coeff(1,0,1);
-    derivative(0,1) = lin->coeff(0,1,0);
+    derivative(1,0) = lin->getCoefficient(1,0,1);
+    derivative(0,1) = lin->getCoefficient(0,1,0);
     */
-    derivative(1, 0) = lin->coeff(0, 1, 0);
-    derivative(0, 1) = lin->coeff(1, 0, 1);
-    derivative(1, 1) = lin->coeff(0, 1, 1);
+    derivative(1, 0) = lin->getCoefficient(0, 1, 0);
+    derivative(0, 1) = lin->getCoefficient(1, 0, 1);
+    derivative(1, 1) = lin->getCoefficient(0, 1, 1);
 }
 
 void SimpleAstrometryMapping::computeTransformAndDerivatives(FatPoint const &where, FatPoint &outPoint,
@@ -75,10 +75,10 @@ SimplePolyMapping::SimplePolyMapping(AstrometryTransformLinear const &CenterAndS
     // transform = pixToTangentPlane*CenterAndScale.inverted(), so we do not touch transform.
     /* store the (spatial) derivative of _centerAndScale. For the extra
        diagonal terms, just copied the ones in positionDerivatives */
-    preDer(0, 0) = _centerAndScale.coeff(1, 0, 0);
-    preDer(1, 0) = _centerAndScale.coeff(0, 1, 0);
-    preDer(0, 1) = _centerAndScale.coeff(1, 0, 1);
-    preDer(1, 1) = _centerAndScale.coeff(0, 1, 1);
+    preDer(0, 0) = _centerAndScale.getCoefficient(1, 0, 0);
+    preDer(1, 0) = _centerAndScale.getCoefficient(0, 1, 0);
+    preDer(0, 1) = _centerAndScale.getCoefficient(1, 0, 1);
+    preDer(1, 1) = _centerAndScale.getCoefficient(0, 1, 1);
 
     // check of matrix indexing (once for all)
     MatrixX2d H(3, 2);
@@ -89,16 +89,16 @@ void SimplePolyMapping::positionDerivative(Point const &where, Eigen::Matrix2d &
                                            double epsilon) const {
     Point tmp = _centerAndScale.apply(where);
     errorProp->computeDerivative(tmp, *lin, epsilon);
-    derivative(0, 0) = lin->coeff(1, 0, 0);
+    derivative(0, 0) = lin->getCoefficient(1, 0, 0);
     //
     /* This does not work : it was proved by rotating the frame
        see the compilation switch ROTATE_T2 in constrainedAstrometryModel.cc
-    derivative(1,0) = lin->coeff(1,0,1);
-    derivative(0,1) = lin->coeff(0,1,0);
+    derivative(1,0) = lin->getCoefficient(1,0,1);
+    derivative(0,1) = lin->getCoefficient(0,1,0);
     */
-    derivative(1, 0) = lin->coeff(0, 1, 0);
-    derivative(0, 1) = lin->coeff(1, 0, 1);
-    derivative(1, 1) = lin->coeff(0, 1, 1);
+    derivative(1, 0) = lin->getCoefficient(0, 1, 0);
+    derivative(0, 1) = lin->getCoefficient(1, 0, 1);
+    derivative(1, 1) = lin->getCoefficient(0, 1, 1);
     derivative = preDer * derivative;
 }
 
