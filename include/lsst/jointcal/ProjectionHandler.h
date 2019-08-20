@@ -62,7 +62,8 @@ class IdentityProjectionHandler : public ProjectionHandler {
     std::shared_ptr<AstrometryTransformIdentity> id;
 
 public:
-    const std::shared_ptr<const AstrometryTransform> getSkyToTangentPlane(const CcdImage &ccdImage) const {
+    const std::shared_ptr<const AstrometryTransform> getSkyToTangentPlane(
+            const CcdImage &ccdImage) const override {
         return id;
     };
     /// @copydoc AstrometryModel::toString
@@ -83,7 +84,9 @@ class OneTPPerVisitHandler : public ProjectionHandler {
 public:
     OneTPPerVisitHandler(const CcdImageList &ccdImageList);
 
-    const std::shared_ptr<const AstrometryTransform> getSkyToTangentPlane(const CcdImage &ccdImage) const;
+    const std::shared_ptr<const AstrometryTransform> getSkyToTangentPlane(
+            const CcdImage &ccdImage) const override;
+
     /// @copydoc AstrometryModel::toString
     std::string toString() const override;
 };

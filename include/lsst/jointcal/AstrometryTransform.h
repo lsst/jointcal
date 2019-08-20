@@ -438,13 +438,16 @@ public:
     //! returns the inverse: T1 = T2.inverted();
     AstrometryTransformLinear inverted() const;
 
+    void dump(std::ostream &stream = std::cout) const override;
+
     // useful?    double jacobian(const double x, const double y) const { return determinant();}
 
     //!
     void computeDerivative(Point const &where, AstrometryTransformLinear &derivative,
-                           const double step = 0.01) const;
+                           const double step = 0.01) const override;
     //!
-    AstrometryTransformLinear linearApproximation(Point const &where, const double step = 0.01) const;
+    AstrometryTransformLinear linearApproximation(Point const &where,
+                                                  const double step = 0.01) const override;
 
     //  void dump(std::ostream &stream = std::cout) const;
 
@@ -457,11 +460,12 @@ public:
     //! Handy converter:
     AstrometryTransformLinear(AstrometryTransformIdentity const &) : AstrometryTransformPolynomial(1){};
 
-    std::unique_ptr<AstrometryTransform> clone() const {
+    std::unique_ptr<AstrometryTransform> clone() const override {
         return std::unique_ptr<AstrometryTransform>(new AstrometryTransformLinear(*this));
     }
 
-    std::unique_ptr<AstrometryTransform> inverseTransform(const double precision, const Frame &region) const;
+    std::unique_ptr<AstrometryTransform> inverseTransform(const double precision,
+                                                          const Frame &region) const override;
 
     double A11() const { return getCoefficient(1, 0, 0); }
     double A12() const { return getCoefficient(0, 1, 0); }
