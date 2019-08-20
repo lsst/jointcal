@@ -27,6 +27,7 @@
 #include <iterator> /* for ostream_iterator */
 #include <limits>
 #include <cmath>
+#include <math.h>
 #include <fstream>
 #include "assert.h"
 #include <sstream>
@@ -401,6 +402,7 @@ void AstrometryTransformComposition::apply(const double xIn, const double yIn, d
 }
 
 void AstrometryTransformComposition::dump(ostream &stream) const {
+    stream << "Composted AstrometryTransform consisting of:" << std::endl;
     _first->dump(stream);
     _second->dump(stream);
 }
@@ -793,19 +795,30 @@ static string monomialString(std::size_t powX, std::size_t powY) {
 void AstrometryTransformPolynomial::dump(ostream &stream) const {
     auto oldPrecision = stream.precision();
     stream.precision(12);
+    stream << "AstrometryTransformPolynomial: order=" << getOrder() << std::endl;
     for (std::size_t ic = 0; ic < 2; ++ic) {
         if (ic == 0)
             stream << "newx = ";
         else
             stream << "newy = ";
+        bool printed = false;  // whether we've printed any monomials
         for (std::size_t p = 0; p <= _order; ++p)
             for (std::size_t py = 0; py <= p; ++py) {
-                if (p + py != 0) stream << " + ";
-                stream << getCoefficient(p - py, py, ic) << monomialString(p - py, py);
+                double coefficient = getCoefficient(p - py, py, ic);
+                if (coefficient != 0 || isnan(coefficient)) {
+                    // Only print "interesting" coefficients.
+                    if (printed && p + py != 0) stream << " + ";
+                    printed = true;
+                    stream << coefficient << monomialString(p - py, py);
+                }
             }
+        // if all components are zero, nothing is output by the loops above
+        if (!printed) {
+            stream << 0;
+        }
         stream << endl;
     }
-    if (_order > 0) stream << " Linear determinant = " << determinant() << endl;
+    if (_order > 0) stream << "Linear determinant = " << determinant();
     stream.precision(oldPrecision);
 }
 
@@ -1278,6 +1291,17 @@ std::unique_ptr<AstrometryTransform> AstrometryTransformLinear::inverseTransform
     return std::unique_ptr<AstrometryTransform>(new AstrometryTransformLinear(inverted()));
 }
 
+void AstrometryTransformLinear::dump(ostream &stream) const {
+    auto oldPrecision = stream.precision();
+    stream.precision(12);
+    stream << "Linear AstrometryTransform:" << std::endl;
+    stream << A11() << " " << A12() << " + " << Dx() << std::endl;
+    stream << A21() << " " << A22() << " + " << Dy() << std::endl;
+    stream.precision(oldPrecision);
+    stream << "determinant = " << determinant();
+    stream.precision(oldPrecision);
+}  // namespace jointcal
+
 double AstrometryTransformLinearRot::fit(StarMatchList const &) {
     throw pexExcept::NotFoundError("AstrometryTransformLinearRot::fit not implemented! aborting");
 }
@@ -1734,7 +1758,8 @@ TanPixelToRaDec TanRaDecToPixel::inverted() const {
 
 void TanRaDecToPixel::dump(ostream &stream) const {
     Point tp = getTangentPoint();
-    stream << " tan2pix " << linTan2Pix << " tangent point " << tp.x << ' ' << tp.y << endl;
+    stream << "tan2pix " << linTan2Pix << std::endl;
+    stream << "tangent point " << tp.x << ' ' << tp.y << endl;
 }
 
 std::unique_ptr<AstrometryTransform> TanRaDecToPixel::roughInverse(const Frame &) const {

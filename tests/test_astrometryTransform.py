@@ -28,7 +28,8 @@ import lsst.utils.tests
 import lsst.geom
 import lsst.log
 import lsst.jointcal
-from lsst.jointcal.astrometryTransform import AstrometryTransformPolynomial, inversePolyTransform
+from lsst.jointcal.astrometryTransform import (AstrometryTransformLinear,
+                                               AstrometryTransformPolynomial, inversePolyTransform)
 
 
 class AstrometryTransformPolynomialBase:
@@ -72,6 +73,23 @@ class AstrometryTransformPolynomialBase:
         for x in xx:
             for y in yy:
                 self.points.append(lsst.geom.Point2D(x, y))
+
+
+class LinearTransformTestCase(AstrometryTransformPolynomialBase, lsst.utils.tests.TestCase):
+    def test_str(self):
+        """Check that the string representations of a linear transform is reasonable.
+        """
+        # an identity polynomial
+        linear = AstrometryTransformLinear()
+        expect = "1 0 + 0\n0 1 + 0"
+        self.assertIn(expect, str(linear))
+
+        # make the zeroth-order newy term non-zero
+        linear.setCoefficient(0, 0, 1, 2.0)
+        # make the first-order x term of newx zero
+        linear.setCoefficient(1, 0, 0, 0)
+        expect = "0 0 + 0\n0 1 + 2"
+        self.assertIn(expect, str(linear))
 
 
 class InversePolyTransformTestCase(AstrometryTransformPolynomialBase, lsst.utils.tests.TestCase):
@@ -170,6 +188,26 @@ class AstrometryTransformPolynomialTestCase(AstrometryTransformPolynomialBase, l
     def testToAstMapOrder9(self):
         # looser tolerance: 9th order polynomials are harder to get a good inverse for.
         self.checkToAstMap(self.poly9, inverseMaxDiff=4e-5)
+
+    def test_str(self):
+        """Check that the string representations of polynomials are reasonable.
+        """
+        # an identity polynomial
+        poly2 = AstrometryTransformPolynomial(2)
+        expect = "newx = 1*x\nnewy = 1*y"
+        self.assertIn(expect, str(poly2))
+
+        # make the zeroth-order newy term non-zero
+        poly2.setCoefficient(0, 0, 1, 2.0)
+        # make the first-order x term of newx zero
+        poly2.setCoefficient(1, 0, 0, 0)
+        expect = "newx = 0\nnewy = 2 + 1*y"
+        self.assertIn(expect, str(poly2))
+
+        # make the second-order y term of newx non-zero
+        poly2.setCoefficient(0, 2, 0, 2.0)
+        expect = "newx = 2*y^2\nnewy = 2 + 1*y"
+        self.assertIn(expect, str(poly2))
 
 
 class MemoryTester(lsst.utils.tests.MemoryTestCase):

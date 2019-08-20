@@ -55,8 +55,8 @@ void declareAstrometryModel(py::module &mod) {
     cls.def("makeSkyWcs", &AstrometryModel::makeSkyWcs);
     cls.def("getTotalParameters", &AstrometryModel::getTotalParameters);
     cls.def("validate", &AstrometryModel::validate);
-    utils::python::addOutputOp(cls, "__str__");
     utils::python::addOutputOp(cls, "__repr__");
+    cls.def("__str__", [](AstrometryModel const &self) { return "AstrometryModel"; });
 }
 
 void declareSimpleAstrometryModel(py::module &mod) {
@@ -69,6 +69,7 @@ void declareSimpleAstrometryModel(py::module &mod) {
 
     cls.def("getTransform", &SimpleAstrometryModel::getTransform,
             py::return_value_policy::reference_internal);
+    cls.def("__str__", [](SimpleAstrometryModel const &self) { return "SimpleAstrometryModel"; });
 }
 
 void declareConstrainedAstrometryModel(py::module &mod) {
@@ -82,6 +83,7 @@ void declareConstrainedAstrometryModel(py::module &mod) {
             py::return_value_policy::reference_internal);
     cls.def("getVisitTransform", &ConstrainedAstrometryModel::getVisitTransform,
             py::return_value_policy::reference_internal);
+    cls.def("__str__", [](ConstrainedAstrometryModel const &self) { return "ConstrainedAstrometryModel"; });
 }
 
 PYBIND11_MODULE(astrometryModels, mod) {
