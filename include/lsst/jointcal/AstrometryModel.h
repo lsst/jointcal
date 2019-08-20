@@ -90,6 +90,9 @@ public:
     /// Return the total number of parameters in this model.
     virtual std::size_t getTotalParameters() const = 0;
 
+    /// Return a string representation of this model.
+    virtual std::string toString() const = 0;
+
     virtual ~AstrometryModel(){};
 
     /**
@@ -109,6 +112,9 @@ protected:
     /// Return a pointer to the mapping associated with this ccdImage.
     virtual AstrometryMapping *findMapping(CcdImage const &ccdImage) const = 0;
 };
+
+std::ostream &operator<<(std::ostream &stream, AstrometryModel const &model);
+
 }  // namespace jointcal
 }  // namespace lsst
 

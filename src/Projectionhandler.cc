@@ -31,7 +31,10 @@ namespace jointcal {
 
 class Mapping;
 
-/**********   Stuff for providing SkyToTangentPlane transforms to an AstrometryModel ***/
+std::ostream &operator<<(std::ostream &stream, ProjectionHandler const &projectionHandler) {
+    stream << projectionHandler.toString();
+    return stream;
+}
 
 OneTPPerVisitHandler::OneTPPerVisitHandler(const CcdImageList &ccdImageList) {
     for (auto const &i : ccdImageList) {
@@ -46,5 +49,16 @@ const std::shared_ptr<const AstrometryTransform> OneTPPerVisitHandler::getSkyToT
     if (it == tMap.end()) return nullptr;
     return it->second;
 }
+
+std::string OneTPPerVisitHandler::toString() const {
+    std::stringstream out;
+    out << "Sky->Tangent Plane projection per visit:" << std::endl;
+    for (auto &i : tMap) {
+        out << "Visit: " << i.first << std::endl;
+        out << *(i.second) << std::endl;
+    }
+    return out.str();
+}
+
 }  // namespace jointcal
 }  // namespace lsst

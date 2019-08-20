@@ -45,7 +45,13 @@ struct ProjectionHandler {
             const CcdImage &ccdImage) const = 0;
 
     virtual ~ProjectionHandler(){};
+
+    /// Return a string representation of this projection
+    virtual std::string toString() const = 0;
 };
+
+/// Delegates to toString()
+std::ostream &operator<<(std::ostream &stream, ProjectionHandler const &projectionHandler);
 
 /**
  * The simplest implementation of ProjectionHandler. Means that coordinates of
@@ -59,6 +65,8 @@ public:
     const std::shared_ptr<const AstrometryTransform> getSkyToTangentPlane(const CcdImage &ccdImage) const {
         return id;
     };
+    /// @copydoc AstrometryModel::toString
+    std::string toString() const override { return "Identity Projection"; }
 };
 
 /**
@@ -76,6 +84,8 @@ public:
     OneTPPerVisitHandler(const CcdImageList &ccdImageList);
 
     const std::shared_ptr<const AstrometryTransform> getSkyToTangentPlane(const CcdImage &ccdImage) const;
+    /// @copydoc AstrometryModel::toString
+    std::string toString() const override;
 };
 }  // namespace jointcal
 }  // namespace lsst

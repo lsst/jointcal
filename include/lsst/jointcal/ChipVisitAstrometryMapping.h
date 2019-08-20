@@ -80,6 +80,9 @@ public:
     //! Currently not implemented
     void freezeErrorTransform();
 
+    /// @copydoc AstrometryMapping::toString
+    std::string toString() const override;
+
 private:
     friend class ConstrainedAstrometryModel;
     //!

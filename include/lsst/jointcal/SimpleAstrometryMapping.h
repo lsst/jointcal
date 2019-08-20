@@ -97,6 +97,9 @@ public:
     /// Set whether this Mapping is to be fit as part of a Model.
     void setToBeFit(bool value) { toBeFit = value; }
 
+    /// @copydoc AstrometryMapping::toString
+    std::string toString() const override;
+
 protected:
     // Whether this Mapping is fit as part of a Model.
     bool toBeFit;

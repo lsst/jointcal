@@ -68,6 +68,12 @@ void SimpleAstrometryMapping::computeTransformAndDerivatives(FatPoint const &whe
     transform->paramDerivatives(where, &H(0, 0), &H(0, 1));
 }
 
+std::string SimpleAstrometryMapping::toString() const {
+    std::stringstream out;
+    out << *transform;
+    return out.str();
+}
+
 SimplePolyMapping::SimplePolyMapping(AstrometryTransformLinear const &CenterAndScale,
                                      AstrometryTransformPolynomial const &transform)
         : SimpleAstrometryMapping(transform), _centerAndScale(CenterAndScale) {

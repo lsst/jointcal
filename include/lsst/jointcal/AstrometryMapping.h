@@ -62,6 +62,9 @@ public:
     virtual void positionDerivative(Point const &where, Eigen::Matrix2d &derivative,
                                     double epsilon) const = 0;
 
+    /// Return a string representation of this mapping.
+    virtual std::string toString() const = 0;
+
     //!
     virtual ~AstrometryMapping(){};
 };

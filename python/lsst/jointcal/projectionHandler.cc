@@ -25,6 +25,8 @@
 #include "pybind11/pybind11.h"
 #include "pybind11/stl.h"
 
+#include "lsst/utils/python.h"
+
 #include "lsst/jointcal/ProjectionHandler.h"
 #include "lsst/jointcal/CcdImage.h"
 
@@ -37,6 +39,8 @@ namespace {
 
 void declareProjectionHandler(py::module &mod) {
     py::class_<ProjectionHandler, std::shared_ptr<ProjectionHandler>> cls(mod, "ProjectionHandler");
+    utils::python::addOutputOp(cls, "__str__");
+    utils::python::addOutputOp(cls, "__repr__");
 }
 
 void declareIdentityProjectionHandler(py::module &mod) {
