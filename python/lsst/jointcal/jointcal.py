@@ -20,6 +20,8 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import collections
+import os
+
 import numpy as np
 import astropy.units as u
 
@@ -302,8 +304,8 @@ class JointcalConfig(pexConfig.Config):
     writeInitMatrix = pexConfig.Field(
         dtype=bool,
         doc="Write the pre/post-initialization Hessian and gradient to text files, for debugging."
-            "The output files will be of the form 'astrometry_preinit-mat.txt', in the current directory."
-            "Note that these files are the dense versions of the matrix, and so may be very large.",
+            " The output files will be of the form 'astrometry_preinit-mat.txt', in the current directory."
+            " Note that these files are the dense versions of the matrix, and so may be very large.",
         default=False
     )
     writeChi2FilesInitialFinal = pexConfig.Field(
@@ -315,6 +317,18 @@ class JointcalConfig(pexConfig.Config):
         dtype=bool,
         doc="Write .csv files containing the contributions to chi2 for the outer fit loop.",
         default=False
+    )
+    writeInitialModel = pexConfig.Field(
+        dtype=bool,
+        doc=("Write the pre-initialization model to text files, for debugging."
+             " Output is written to `initial[Astro|Photo]metryModel.txt` in the current working directory."),
+        default=False
+    )
+    debugOutputPath = pexConfig.Field(
+        dtype=str,
+        default=".",
+        doc=("Path to write debug output files to. Used by "
+             "`writeInitialModel`, `writeChi2Files*`, `writeInitMatrix`.")
     )
     sourceFluxType = pexConfig.Field(
         dtype=str,
@@ -355,6 +369,13 @@ class JointcalConfig(pexConfig.Config):
                     'base_PixelFlags_flag_interpolatedCenter', 'base_SdssCentroid_flag',
                     'base_PsfFlux_flag', 'base_PixelFlags_flag_suspectCenter']
         self.sourceSelector['science'].flags.bad = badFlags
+
+
+def writeModel(model, filename, log):
+    """Write model to outfile."""
+    with open(filename, "w") as file:
+        file.write(repr(model))
+    log.info("Wrote %s to file: %s", model, filename)
 
 
 class JointcalTask(pipeBase.CmdLineTask):
@@ -471,6 +492,11 @@ class JointcalTask(pipeBase.CmdLineTask):
         Result = collections.namedtuple('Result_from_build_CcdImage', ('wcs', 'key', 'filter'))
         Key = collections.namedtuple('Key', ('visit', 'ccd'))
         return Result(tanWcs, Key(visit, ccdId), filterName)
+
+    def _getDebugPath(self, filename):
+        """Constructs a path to filename using the configured debug path.
+        """
+        return os.path.join(self.config.debugOutputPath, filename)
 
     @pipeBase.timeMethod
     def runDataRef(self, dataRefs, profile_jointcal=False):
@@ -653,8 +679,9 @@ class JointcalTask(pipeBase.CmdLineTask):
         # TODO DM-12446: turn this into a "butler save" somehow.
         # Save reference and measurement chi2 contributions for this data
         if self.config.writeChi2FilesInitialFinal:
-            baseName = f"{name}_final_chi2-{dataName}"
+            baseName = self._getDebugPath(f"{name}_final_chi2-{dataName}")
             result.fit.saveChi2Contributions(baseName+"{type}")
+            self.log.info("Wrote chi2 contributions files: %s", baseName)
 
         return result
 
@@ -765,8 +792,9 @@ class JointcalTask(pipeBase.CmdLineTask):
             Raised if the model is not valid.
         """
         if writeChi2Name is not None:
-            fit.saveChi2Contributions(writeChi2Name+"{type}")
-            self.log.info("Wrote chi2 contributions files: %s", writeChi2Name)
+            fullpath = self._getDebugPath(writeChi2Name)
+            fit.saveChi2Contributions(fullpath+"{type}")
+            self.log.info("Wrote chi2 contributions files: %s", fullpath)
 
         chi2 = fit.computeChi2()
         self.log.info("%s %s", chi2Label, chi2)
@@ -830,6 +858,9 @@ class JointcalTask(pipeBase.CmdLineTask):
             baseName = f"photometry_initial_chi2-{dataName}"
         else:
             baseName = None
+        if self.config.writeInitialModel:
+            fullpath = self._getDebugPath("initialPhotometryModel.txt")
+            writeModel(model, fullpath, self.log)
         self._logChi2AndValidate(associations, fit, model, "Initialized", writeChi2Name=baseName)
 
         def getChi2Name(whatToFit):
@@ -840,7 +871,7 @@ class JointcalTask(pipeBase.CmdLineTask):
 
         # The constrained model needs the visit transform fit first; the chip
         # transform is initialized from the singleFrame PhotoCalib, so it's close.
-        dumpMatrixFile = "photometry_preinit" if self.config.writeInitMatrix else ""
+        dumpMatrixFile = self._getDebugPath("photometry_preinit") if self.config.writeInitMatrix else ""
         if self.config.photometryModel.startswith("constrained"):
             # no line search: should be purely (or nearly) linear,
             # and we want a large step size to initialize with.
@@ -925,6 +956,9 @@ class JointcalTask(pipeBase.CmdLineTask):
             baseName = f"astrometry_initial_chi2-{dataName}"
         else:
             baseName = None
+        if self.config.writeInitialModel:
+            fullpath = self._getDebugPath("initialAstrometryModel.txt")
+            writeModel(model, fullpath, self.log)
         self._logChi2AndValidate(associations, fit, model, "Initial", writeChi2Name=baseName)
 
         def getChi2Name(whatToFit):
@@ -933,7 +967,7 @@ class JointcalTask(pipeBase.CmdLineTask):
             else:
                 return None
 
-        dumpMatrixFile = "astrometry_preinit" if self.config.writeInitMatrix else ""
+        dumpMatrixFile = self._getDebugPath("astrometry_preinit") if self.config.writeInitMatrix else ""
         # The constrained model needs the visit transform fit first; the chip
         # transform is initialized from the detector's cameraGeom, so it's close.
         if self.config.astrometryModel == "constrained":
@@ -1018,7 +1052,7 @@ class JointcalTask(pipeBase.CmdLineTask):
             Raised if the fitter fails for some other reason;
             log messages will provide further details.
         """
-        dumpMatrixFile = "%s_postinit" % name if self.config.writeInitMatrix else ""
+        dumpMatrixFile = self._getDebugPath(f"{name}_postinit") if self.config.writeInitMatrix else ""
         for i in range(max_steps):
             if self.config.writeChi2FilesOuterLoop:
                 writeChi2Name = f"{name}_iterate_{i}_chi2-{dataName}"
@@ -1049,9 +1083,9 @@ class JointcalTask(pipeBase.CmdLineTask):
             elif result == MinimizeResult.Chi2Increased:
                 self.log.warn("still some outliers but chi2 increases - retry")
             elif result == MinimizeResult.NonFinite:
-                filename = "{}_failure-nonfinite_chi2-{}.csv".format(name, dataName)
+                filename = self._getDebugPath("{}_failure-nonfinite_chi2-{}.csv".format(name, dataName))
                 # TODO DM-12446: turn this into a "butler save" somehow.
-                fitter.saveChi2Contributions(filename)
+                fitter.saveChi2Contributions(filename+"{type}")
                 msg = "Nonfinite value in chi2 minimization, cannot complete fit. Dumped star tables to: {}"
                 raise FloatingPointError(msg.format(filename))
             elif result == MinimizeResult.Failed:
