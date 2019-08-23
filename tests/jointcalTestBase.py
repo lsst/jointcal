@@ -23,6 +23,7 @@ import os
 import inspect
 
 import lsst.afw.image.utils
+import lsst.obs.base
 import lsst.geom
 
 from lsst.jointcal import jointcal, utils
@@ -89,7 +90,7 @@ class JointcalTestBase:
 
         # Ensure that the filter list is reset for each test so that we avoid
         # confusion or contamination from other instruments.
-        lsst.afw.image.utils.resetFilters()
+        lsst.obs.base.FilterDefinitionCollection.reset()
 
     def tearDown(self):
         if getattr(self, 'reference', None) is not None:
