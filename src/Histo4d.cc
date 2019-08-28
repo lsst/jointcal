@@ -159,7 +159,7 @@ void SparseHisto4d::binLimits(const double x[4], const int iDim, double &xMin, d
     xMax = xCenter[iDim] + 0.5 / _scale[iDim];
 }
 
-void SparseHisto4d::dump() const {
+void SparseHisto4d::print() const {
     for (int i = 0; i < _ndata; ++i)  // DEBUG
         std::cout << _data[i] << ' ';
     std::cout << std::endl;

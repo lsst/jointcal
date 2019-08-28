@@ -160,8 +160,8 @@ public:
     /// Return the total number of parameters in this model.
     virtual std::size_t getTotalParameters() const = 0;
 
-    /// Dump the contents of the transforms, for debugging.
-    virtual void dump(std::ostream &stream = std::cout) const = 0;
+    /// Print the contents of the transforms, for debugging.
+    virtual void print(std::ostream &stream = std::cout) const = 0;
 
     /**
      * Return true if this is a "reasonable" model.
@@ -184,7 +184,7 @@ public:
     bool checkPositiveOnBBox(CcdImage const &ccdImage) const;
 
     friend std::ostream &operator<<(std::ostream &s, PhotometryModel const &model) {
-        model.dump(s);
+        model.print(s);
         return s;
     }
 

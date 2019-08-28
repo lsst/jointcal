@@ -206,7 +206,7 @@ public:
     int recoveredNumber(double mindist) const;
 
     //! print the matching transformation quality (transform, chi2, residual)
-    void dumpTransform(std::ostream &stream = std::cout) const;
+    void printTransform(std::ostream &stream = std::cout) const;
 
     ~StarMatchList(){/* should delete the transform.... or use counted refs*/};
 

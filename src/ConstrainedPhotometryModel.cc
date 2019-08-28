@@ -42,10 +42,8 @@
 namespace lsst {
 namespace jointcal {
 
-Eigen::Index ConstrainedPhotometryModel::assignIndices(
-    std::string const &whatToFit,
-    Eigen::Index firstIndex
-) {
+Eigen::Index ConstrainedPhotometryModel::assignIndices(std::string const &whatToFit,
+                                                       Eigen::Index firstIndex) {
     Eigen::Index index = firstIndex;
     if (whatToFit.find("Model") == std::string::npos) {
         LOGLS_WARN(_log, "assignIndices was called and Model is *not* in whatToFit");
@@ -108,8 +106,7 @@ void ConstrainedPhotometryModel::freezeErrorTransform() {
     }
 }
 
-void ConstrainedPhotometryModel::getMappingIndices(CcdImage const &ccdImage,
-                                                   IndexVector &indices) const {
+void ConstrainedPhotometryModel::getMappingIndices(CcdImage const &ccdImage, IndexVector &indices) const {
     auto mapping = findMapping(ccdImage);
     mapping->getMappingIndices(indices);
 }
@@ -137,8 +134,8 @@ namespace {
 ndarray::Array<double, 2, 2> toChebyMapCoeffs(std::shared_ptr<PhotometryTransformChebyshev> transform) {
     auto coeffs = transform->getCoefficients();
     // 4 x nPar: ChebyMap wants rows that look like (a_ij, 1, i, j) for out += a_ij*T_i(x)*T_j(y)
-    ndarray::Array<double, 2, 2> chebyCoeffs = allocate(ndarray::makeVector(transform->getNpar(),
-                                                                            std::size_t(4)));
+    ndarray::Array<double, 2, 2> chebyCoeffs =
+            allocate(ndarray::makeVector(transform->getNpar(), std::size_t(4)));
     Eigen::VectorXd::Index k = 0;
     auto order = transform->getOrder();
     for (ndarray::Size j = 0; j <= order; ++j) {
@@ -154,16 +151,16 @@ ndarray::Array<double, 2, 2> toChebyMapCoeffs(std::shared_ptr<PhotometryTransfor
 }
 }  // namespace
 
-void ConstrainedPhotometryModel::dump(std::ostream &stream) const {
+void ConstrainedPhotometryModel::print(std::ostream &stream) const {
     for (auto &idMapping : _chipMap) {
         stream << "Sensor: " << idMapping.first << std::endl;
-        idMapping.second->dump(stream);
+        idMapping.second->print(stream);
         stream << std::endl;
     }
     stream << std::endl;
     for (auto &idMapping : _visitMap) {
         stream << "Visit: " << idMapping.first << std::endl;
-        idMapping.second->dump(stream);
+        idMapping.second->print(stream);
         stream << std::endl;
     }
 }
@@ -303,9 +300,9 @@ std::shared_ptr<afw::image::PhotoCalib> ConstrainedFluxModel::toPhotoCalib(CcdIm
                                                     boundedField, false);
 }
 
-void ConstrainedFluxModel::dump(std::ostream &stream) const {
+void ConstrainedFluxModel::print(std::ostream &stream) const {
     stream << "ConstrainedFluxModel:" << std::endl;
-    ConstrainedPhotometryModel::dump(stream);
+    ConstrainedPhotometryModel::print(stream);
 }
 
 // ConstrainedMagnitudeModel methods
@@ -353,10 +350,10 @@ std::shared_ptr<afw::image::PhotoCalib> ConstrainedMagnitudeModel::toPhotoCalib(
                                                     boundedField, false);
 }
 
-void ConstrainedMagnitudeModel::dump(std::ostream &stream) const {
+void ConstrainedMagnitudeModel::print(std::ostream &stream) const {
     stream << "ConstrainedMagnitudeModel (" << _chipVisitMap.size() << " composite mappings; "
            << _chipMap.size() << " sensor mappings, " << _visitMap.size() << " visit mappings):" << std::endl;
-    ConstrainedPhotometryModel::dump(stream);
+    ConstrainedPhotometryModel::print(stream);
 }
 
 // explicit instantiation of templated function, so pybind11 can

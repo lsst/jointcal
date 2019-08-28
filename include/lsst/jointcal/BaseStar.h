@@ -75,11 +75,11 @@ public:
 
     //! allows std::cout << aBaseStar;
     friend std::ostream &operator<<(std::ostream &stream, BaseStar const &s) {
-        s.dump(stream);
+        s.print(stream);
         return stream;
     }
 
-    virtual void dump(std::ostream &stream = std::cout) const {
+    virtual void print(std::ostream &stream = std::cout) const {
         stream << "x: " << x << " y: " << y << " flux: " << _flux << " fluxErr: " << _fluxErr;
     }
 

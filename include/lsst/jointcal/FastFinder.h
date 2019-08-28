@@ -82,7 +82,7 @@ public:
                                                   bool (*SkipIt)(const BaseStar &) = nullptr) const;
 
     //! mostly for debugging
-    void dump() const;
+    void print() const;
 
     //! Iterator meant to traverse objects within some limiting distance. Initializer is beginScan and end
     //! condition is (*it == NULL). Used by findClosest & co.

@@ -72,8 +72,8 @@ public:
     void computeParameterDerivatives(MeasuredStar const &measuredStar, CcdImage const &ccdImage,
                                      Eigen::VectorXd &derivatives) const override;
 
-    /// @copydoc PhotometryModel::dump
-    virtual void dump(std::ostream &stream = std::cout) const override;
+    /// @copydoc PhotometryModel::print
+    virtual void print(std::ostream &stream = std::cout) const override;
 
 protected:
     typedef std::unordered_map<CcdImageKey, std::unique_ptr<PhotometryMapping>> MapType;
@@ -116,8 +116,8 @@ public:
      */
     std::shared_ptr<afw::image::PhotoCalib> toPhotoCalib(CcdImage const &ccdImage) const override;
 
-    /// @copydoc PhotometryModel::dump
-    void dump(std::ostream &stream = std::cout) const override;
+    /// @copydoc PhotometryModel::print
+    void print(std::ostream &stream = std::cout) const override;
 };
 
 class SimpleMagnitudeModel : public SimplePhotometryModel {
@@ -153,8 +153,8 @@ public:
      */
     std::shared_ptr<afw::image::PhotoCalib> toPhotoCalib(CcdImage const &ccdImage) const override;
 
-    /// @copydoc PhotometryModel::dump
-    void dump(std::ostream &stream = std::cout) const override;
+    /// @copydoc PhotometryModel::print
+    void print(std::ostream &stream = std::cout) const override;
 };
 
 }  // namespace jointcal

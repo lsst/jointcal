@@ -59,7 +59,7 @@ public:
     int code_value(const double x[4]) const;
     void inverse_code(const int code, double x[4]) const;
     void sort();
-    void dump() const;
+    void print() const;
 
 private:
     std::unique_ptr<int[]> _data;

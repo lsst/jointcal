@@ -57,9 +57,8 @@ public:
      * @param[in]  visitOrder    The order of the visit polynomial.
      * @param[in]  errorPedestal_ A pedestal in flux or magnitude to apply to all MeasuredStar flux errors.
      */
-    explicit ConstrainedPhotometryModel(CcdImageList const &ccdImageList,
-                                        geom::Box2D const &focalPlaneBBox, LOG_LOGGER log,
-                                        int visitOrder = 7, double errorPedestal_ = 0)
+    explicit ConstrainedPhotometryModel(CcdImageList const &ccdImageList, geom::Box2D const &focalPlaneBBox,
+                                        LOG_LOGGER log, int visitOrder = 7, double errorPedestal_ = 0)
             : PhotometryModel(log, errorPedestal_), _fittingChips(false), _fittingVisits(false) {
         _chipVisitMap.reserve(ccdImageList.size());
     }
@@ -89,8 +88,8 @@ public:
     void computeParameterDerivatives(MeasuredStar const &measuredStar, CcdImage const &ccdImage,
                                      Eigen::VectorXd &derivatives) const override;
 
-    /// @copydoc PhotometryModel::dump
-    virtual void dump(std::ostream &stream = std::cout) const override;
+    /// @copydoc PhotometryModel::print
+    virtual void print(std::ostream &stream = std::cout) const override;
 
 protected:
     PhotometryMappingBase *findMapping(CcdImage const &ccdImage) const override;
@@ -171,8 +170,8 @@ public:
     /// @copydoc PhotometryModel::toPhotoCalib
     std::shared_ptr<afw::image::PhotoCalib> toPhotoCalib(CcdImage const &ccdImage) const override;
 
-    /// @copydoc PhotometryModel::dump
-    void dump(std::ostream &stream = std::cout) const override;
+    /// @copydoc PhotometryModel::print
+    void print(std::ostream &stream = std::cout) const override;
 
 protected:
     /// @copydoc ConstrainedPhotometryModel::initialChipCalibration
@@ -183,9 +182,8 @@ protected:
 
 class ConstrainedMagnitudeModel : public ConstrainedPhotometryModel {
 public:
-    explicit ConstrainedMagnitudeModel(CcdImageList const &ccdImageList,
-                                       geom::Box2D const &focalPlaneBBox, int visitOrder = 7,
-                                       double errorPedestal_ = 0)
+    explicit ConstrainedMagnitudeModel(CcdImageList const &ccdImageList, geom::Box2D const &focalPlaneBBox,
+                                       int visitOrder = 7, double errorPedestal_ = 0)
             : ConstrainedPhotometryModel(ccdImageList, focalPlaneBBox,
                                          LOG_GET("jointcal.ConstrainedMagnitudeModel"), visitOrder,
                                          errorPedestal_) {
@@ -218,8 +216,8 @@ public:
     /// @copydoc PhotometryModel::toPhotoCalib
     std::shared_ptr<afw::image::PhotoCalib> toPhotoCalib(CcdImage const &ccdImage) const override;
 
-    /// @copydoc PhotometryModel::dump
-    void dump(std::ostream &stream = std::cout) const override;
+    /// @copydoc PhotometryModel::print
+    void print(std::ostream &stream = std::cout) const override;
 
 protected:
     /// @copydoc ConstrainedPhotometryModel::initialChipCalibration

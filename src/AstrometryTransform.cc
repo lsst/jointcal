@@ -239,7 +239,7 @@ void AstrometryTransform::paramDerivatives(Point const &, double *, double *) co
 }
 
 ostream &operator<<(ostream &stream, AstrometryTransform const &transform) {
-    transform.dump(stream);
+    transform.print(stream);
     return stream;
 }
 
@@ -278,7 +278,7 @@ public:
     //! direct transform per iteration.
     void apply(const double xIn, const double yIn, double &xOut, double &yOut) const;
 
-    void dump(ostream &stream) const;
+    void print(ostream &stream) const;
 
     double fit(StarMatchList const &starMatchList);
 
@@ -350,7 +350,7 @@ void AstrometryTransformInverse::apply(const double xIn, const double yIn, doubl
     yOut = outGuess.y;
 }
 
-void AstrometryTransformInverse::dump(ostream &stream) const {
+void AstrometryTransformInverse::print(ostream &stream) const {
     stream << " AstrometryTransformInverse of  :" << endl << *_direct << endl;
 }
 
@@ -379,7 +379,7 @@ public:
 
     //! return second(first(xIn,yIn))
     void apply(const double xIn, const double yIn, double &xOut, double &yOut) const;
-    void dump(ostream &stream = cout) const;
+    void print(ostream &stream = cout) const;
 
     //!
     double fit(StarMatchList const &starMatchList);
@@ -401,10 +401,10 @@ void AstrometryTransformComposition::apply(const double xIn, const double yIn, d
     _second->apply(xout, yout, xOut, yOut);
 }
 
-void AstrometryTransformComposition::dump(ostream &stream) const {
+void AstrometryTransformComposition::print(ostream &stream) const {
     stream << "Composted AstrometryTransform consisting of:" << std::endl;
-    _first->dump(stream);
-    _second->dump(stream);
+    _first->print(stream);
+    _second->print(stream);
 }
 
 double AstrometryTransformComposition::fit(StarMatchList const &starMatchList) {
@@ -781,7 +781,7 @@ void AstrometryTransformPolynomial::paramDerivatives(Point const &where, double 
     }
 }
 
-/* utility for the dump(ostream&) routine */
+/* utility for the print(ostream&) routine */
 static string monomialString(std::size_t powX, std::size_t powY) {
     stringstream ss;
     if (powX + powY) ss << "*";
@@ -792,7 +792,7 @@ static string monomialString(std::size_t powX, std::size_t powY) {
     return ss.str();
 }
 
-void AstrometryTransformPolynomial::dump(ostream &stream) const {
+void AstrometryTransformPolynomial::print(ostream &stream) const {
     auto oldPrecision = stream.precision();
     stream.precision(12);
     stream << "AstrometryTransformPolynomial: order=" << getOrder() << std::endl;
@@ -1275,7 +1275,7 @@ AstrometryTransformLinear AstrometryTransformLinear::inverted() const {
         LOGL_FATAL(_log,
                    "AstrometryTransformLinear::invert singular transformation: transform contents will be "
                    "dumped to stderr.");
-        dump(cerr);
+        print(cerr);
     }
 
     AstrometryTransformLinear result(0, 0, a22 / d, -a12 / d, -a21 / d, a11 / d);
@@ -1291,7 +1291,7 @@ std::unique_ptr<AstrometryTransform> AstrometryTransformLinear::inverseTransform
     return std::unique_ptr<AstrometryTransform>(new AstrometryTransformLinear(inverted()));
 }
 
-void AstrometryTransformLinear::dump(ostream &stream) const {
+void AstrometryTransformLinear::print(ostream &stream) const {
     auto oldPrecision = stream.precision();
     stream.precision(12);
     stream << "Linear AstrometryTransform:" << std::endl;
@@ -1479,7 +1479,7 @@ void AstrometryTransformSkyWcs::apply(const double xIn, const double yIn, double
     yOut = outCoord[1].asDegrees();
 }
 
-void AstrometryTransformSkyWcs::dump(std::ostream &stream) const {
+void AstrometryTransformSkyWcs::print(std::ostream &stream) const {
     stream << "AstrometryTransformSkyWcs(" << *_skyWcs << ")";
 }
 
@@ -1560,7 +1560,7 @@ std::unique_ptr<AstrometryTransform> TanPixelToRaDec::clone() const {
             new TanPixelToRaDec(getLinPart(), getTangentPoint(), corr.get()));
 }
 
-void TanPixelToRaDec::dump(ostream &stream) const {
+void TanPixelToRaDec::print(ostream &stream) const {
     stream << " TanPixelToRaDec, lin part :" << endl << linPixelToTan;
     Point tp = getTangentPoint();
     stream << " tangent point " << tp.x << ' ' << tp.y << endl;
@@ -1631,7 +1631,7 @@ std::unique_ptr<AstrometryTransform> TanSipPixelToRaDec::clone() const {
             new TanSipPixelToRaDec(getLinPart(), getTangentPoint(), corr.get()));
 }
 
-void TanSipPixelToRaDec::dump(ostream &stream) const {
+void TanSipPixelToRaDec::print(ostream &stream) const {
     stream << " TanSipPixelToRaDec, lin part :" << endl << linPixelToTan;
     Point tp = getTangentPoint();
     stream << " tangent point " << tp.x << ' ' << tp.y << endl;
@@ -1756,7 +1756,7 @@ TanPixelToRaDec TanRaDecToPixel::inverted() const {
     return TanPixelToRaDec(getLinPart().inverted(), getTangentPoint());
 }
 
-void TanRaDecToPixel::dump(ostream &stream) const {
+void TanRaDecToPixel::print(ostream &stream) const {
     Point tp = getTangentPoint();
     stream << "tan2pix " << linTan2Pix << std::endl;
     stream << "tangent point " << tp.x << ' ' << tp.y << endl;
@@ -1791,7 +1791,7 @@ void UserTransform::apply(const double xIn, const double yIn, double &xOut, doub
     _userFun(xIn, yIn, xOut, yOut, _userData);
 }
 
-void UserTransform::dump(ostream &stream) const {
+void UserTransform::print(ostream &stream) const {
     stream << "UserTransform with user function @ " << _userFun << "and userData@ " << _userData << endl;
 }
 

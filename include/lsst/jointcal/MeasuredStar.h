@@ -81,8 +81,8 @@ public:
         _fittedStar = std::move(fittedStar);
     }
 
-    void dump(std::ostream &stream = std::cout) const {
-        BaseStar::dump(stream);
+    void print(std::ostream &stream = std::cout) const {
+        BaseStar::print(stream);
         stream << " instFlux: " << _instFlux << " instFluxErr: " << _instFluxErr << " id: " << _id
                << " valid: " << _valid;
     }

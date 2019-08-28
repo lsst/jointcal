@@ -80,10 +80,10 @@ void SimplePhotometryModel::computeParameterDerivatives(MeasuredStar const &meas
     mapping->computeParameterDerivatives(measuredStar, measuredStar.getInstFlux(), derivatives);
 }
 
-void SimplePhotometryModel::dump(std::ostream &stream) const {
+void SimplePhotometryModel::print(std::ostream &stream) const {
     for (auto &i : _myMap) {
         stream << i.first << ": ";
-        i.second->dump(stream);
+        i.second->print(stream);
         stream << std::endl;
     }
 }
@@ -128,9 +128,9 @@ std::shared_ptr<afw::image::PhotoCalib> SimpleFluxModel::toPhotoCalib(CcdImage c
     return std::make_unique<afw::image::PhotoCalib>(calibration, oldPhotoCalib->getCalibrationErr());
 }
 
-void SimpleFluxModel::dump(std::ostream &stream) const {
+void SimpleFluxModel::print(std::ostream &stream) const {
     stream << "SimpleFluxModel (" << _myMap.size() << " mappings):" << std::endl;
-    SimplePhotometryModel::dump(stream);
+    SimplePhotometryModel::print(stream);
 }
 
 SimpleMagnitudeModel::SimpleMagnitudeModel(CcdImageList const &ccdImageList, double errorPedestal_)
@@ -169,9 +169,9 @@ std::shared_ptr<afw::image::PhotoCalib> SimpleMagnitudeModel::toPhotoCalib(CcdIm
     return std::make_unique<afw::image::PhotoCalib>(calibration, oldPhotoCalib->getCalibrationErr());
 }
 
-void SimpleMagnitudeModel::dump(std::ostream &stream) const {
+void SimpleMagnitudeModel::print(std::ostream &stream) const {
     stream << "SimpleMagnitudeModel (" << _myMap.size() << " mappings):" << std::endl;
-    SimplePhotometryModel::dump(stream);
+    SimplePhotometryModel::print(stream);
 }
 
 }  // namespace jointcal

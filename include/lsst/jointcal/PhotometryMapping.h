@@ -108,8 +108,8 @@ public:
      */
     virtual void getMappingIndices(IndexVector &indices) const = 0;
 
-    /// Dump the contents of the transforms, for debugging.
-    virtual void dump(std::ostream &stream = std::cout) const = 0;
+    /// Print the contents of the transforms, for debugging.
+    virtual void print(std::ostream &stream = std::cout) const = 0;
 
     /// Get the index of this mapping in the grand fit.
     Eigen::Index getIndex() { return index; }
@@ -190,10 +190,10 @@ public:
         }
     }
 
-    /// @copydoc PhotometryMappingBase::dump
-    void dump(std::ostream &stream = std::cout) const override {
+    /// @copydoc PhotometryMappingBase::print
+    void print(std::ostream &stream = std::cout) const override {
         stream << "index: " << index << " fixed: " << fixed << " transform parameters: ";
-        _transform->dump(stream);
+        _transform->print(stream);
     }
 
     std::shared_ptr<PhotometryTransform> getTransform() const { return _transform; }
@@ -257,12 +257,12 @@ public:
      */
     void setWhatToFit(bool const fittingChips, bool const fittingVisits);
 
-    /// @copydoc PhotometryMappingBase::dump
-    void dump(std::ostream &stream = std::cout) const override {
+    /// @copydoc PhotometryMappingBase::print
+    void print(std::ostream &stream = std::cout) const override {
         stream << "index: " << index << std::endl << "chip mapping: ";
-        _chipMapping->dump(stream);
+        _chipMapping->print(stream);
         stream << std::endl << "visit mapping: ";
-        _visitMapping->dump(stream);
+        _visitMapping->print(stream);
     }
 
     std::shared_ptr<PhotometryMapping> getChipMapping() const { return _chipMapping; }

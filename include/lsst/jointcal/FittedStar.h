@@ -87,8 +87,8 @@ public:
     }
 
     //!
-    void dump(std::ostream& stream = std::cout) const {
-        BaseStar::dump(stream);
+    void print(std::ostream& stream = std::cout) const {
+        BaseStar::print(stream);
         stream << " mcount: " << _measurementCount;
     }
 

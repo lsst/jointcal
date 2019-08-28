@@ -72,12 +72,11 @@ FastFinder::FastFinder(const BaseStarList &list, const unsigned nXSlice)
                  return (E1->y < E2->y);
              });  // sort each slice in y.
     }
-    // dump();
 }
 
-void FastFinder::dump() const {
+void FastFinder::print() const {
     for (unsigned i = 0; i < count; ++i) {
-        stars[i]->dump();
+        stars[i]->print();
     }
 }
 
