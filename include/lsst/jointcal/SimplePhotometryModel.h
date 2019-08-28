@@ -73,7 +73,7 @@ public:
                                      Eigen::VectorXd &derivatives) const override;
 
     /// @copydoc PhotometryModel::dump
-    void dump(std::ostream &stream = std::cout) const override;
+    virtual void dump(std::ostream &stream = std::cout) const override;
 
 protected:
     typedef std::unordered_map<CcdImageKey, std::unique_ptr<PhotometryMapping>> MapType;
@@ -115,6 +115,9 @@ public:
      * @note SimplePhotometryModel uses a spatially-invariant transform, so we can simplify the PhotoCalib.
      */
     std::shared_ptr<afw::image::PhotoCalib> toPhotoCalib(CcdImage const &ccdImage) const override;
+
+    /// @copydoc PhotometryModel::dump
+    void dump(std::ostream &stream = std::cout) const override;
 };
 
 class SimpleMagnitudeModel : public SimplePhotometryModel {
@@ -149,6 +152,9 @@ public:
      * @note SimplePhotometryModel uses a spatially-invariant transform, so we can simplify the PhotoCalib.
      */
     std::shared_ptr<afw::image::PhotoCalib> toPhotoCalib(CcdImage const &ccdImage) const override;
+
+    /// @copydoc PhotometryModel::dump
+    void dump(std::ostream &stream = std::cout) const override;
 };
 
 }  // namespace jointcal

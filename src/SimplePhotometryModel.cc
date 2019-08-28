@@ -84,7 +84,7 @@ void SimplePhotometryModel::dump(std::ostream &stream) const {
     for (auto &i : _myMap) {
         stream << i.first << ": ";
         i.second->dump(stream);
-        stream << ", ";
+        stream << std::endl;
     }
 }
 
@@ -128,6 +128,11 @@ std::shared_ptr<afw::image::PhotoCalib> SimpleFluxModel::toPhotoCalib(CcdImage c
     return std::make_unique<afw::image::PhotoCalib>(calibration, oldPhotoCalib->getCalibrationErr());
 }
 
+void SimpleFluxModel::dump(std::ostream &stream) const {
+    stream << "SimpleFluxModel (" << _myMap.size() << " mappings):" << std::endl;
+    SimplePhotometryModel::dump(stream);
+}
+
 SimpleMagnitudeModel::SimpleMagnitudeModel(CcdImageList const &ccdImageList, double errorPedestal_)
         : SimplePhotometryModel(ccdImageList, LOG_GET("jointcal.SimpleMagnitudeModel"), errorPedestal_) {
     for (auto const &ccdImage : ccdImageList) {
@@ -162,6 +167,11 @@ std::shared_ptr<afw::image::PhotoCalib> SimpleMagnitudeModel::toPhotoCalib(CcdIm
     double calibration = utils::ABMagnitudeToNanojansky(findMapping(ccdImage)->getParameters()[0]);
     auto oldPhotoCalib = ccdImage.getPhotoCalib();
     return std::make_unique<afw::image::PhotoCalib>(calibration, oldPhotoCalib->getCalibrationErr());
+}
+
+void SimpleMagnitudeModel::dump(std::ostream &stream) const {
+    stream << "SimpleMagnitudeModel (" << _myMap.size() << " mappings):" << std::endl;
+    SimplePhotometryModel::dump(stream);
 }
 
 }  // namespace jointcal

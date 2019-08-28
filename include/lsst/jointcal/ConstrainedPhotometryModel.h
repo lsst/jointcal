@@ -90,7 +90,7 @@ public:
                                      Eigen::VectorXd &derivatives) const override;
 
     /// @copydoc PhotometryModel::dump
-    void dump(std::ostream &stream = std::cout) const override;
+    virtual void dump(std::ostream &stream = std::cout) const override;
 
 protected:
     PhotometryMappingBase *findMapping(CcdImage const &ccdImage) const override;
@@ -171,6 +171,9 @@ public:
     /// @copydoc PhotometryModel::toPhotoCalib
     std::shared_ptr<afw::image::PhotoCalib> toPhotoCalib(CcdImage const &ccdImage) const override;
 
+    /// @copydoc PhotometryModel::dump
+    void dump(std::ostream &stream = std::cout) const override;
+
 protected:
     /// @copydoc ConstrainedPhotometryModel::initialChipCalibration
     double initialChipCalibration(std::shared_ptr<afw::image::PhotoCalib const> photoCalib) override {
@@ -214,6 +217,9 @@ public:
 
     /// @copydoc PhotometryModel::toPhotoCalib
     std::shared_ptr<afw::image::PhotoCalib> toPhotoCalib(CcdImage const &ccdImage) const override;
+
+    /// @copydoc PhotometryModel::dump
+    void dump(std::ostream &stream = std::cout) const override;
 
 protected:
     /// @copydoc ConstrainedPhotometryModel::initialChipCalibration

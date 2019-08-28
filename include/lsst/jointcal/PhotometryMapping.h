@@ -259,9 +259,9 @@ public:
 
     /// @copydoc PhotometryMappingBase::dump
     void dump(std::ostream &stream = std::cout) const override {
-        stream << "index: " << index << " chipMapping: ";
+        stream << "index: " << index << std::endl << "chip mapping: ";
         _chipMapping->dump(stream);
-        stream << "visitMapping: ";
+        stream << std::endl << "visit mapping: ";
         _visitMapping->dump(stream);
     }
 

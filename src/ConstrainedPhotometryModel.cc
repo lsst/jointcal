@@ -156,11 +156,13 @@ ndarray::Array<double, 2, 2> toChebyMapCoeffs(std::shared_ptr<PhotometryTransfor
 
 void ConstrainedPhotometryModel::dump(std::ostream &stream) const {
     for (auto &idMapping : _chipMap) {
+        stream << "Sensor: " << idMapping.first << std::endl;
         idMapping.second->dump(stream);
         stream << std::endl;
     }
     stream << std::endl;
     for (auto &idMapping : _visitMap) {
+        stream << "Visit: " << idMapping.first << std::endl;
         idMapping.second->dump(stream);
         stream << std::endl;
     }
@@ -301,6 +303,11 @@ std::shared_ptr<afw::image::PhotoCalib> ConstrainedFluxModel::toPhotoCalib(CcdIm
                                                     boundedField, false);
 }
 
+void ConstrainedFluxModel::dump(std::ostream &stream) const {
+    stream << "ConstrainedFluxModel:" << std::endl;
+    ConstrainedPhotometryModel::dump(stream);
+}
+
 // ConstrainedMagnitudeModel methods
 
 double ConstrainedMagnitudeModel::computeResidual(CcdImage const &ccdImage,
@@ -344,6 +351,12 @@ std::shared_ptr<afw::image::PhotoCalib> ConstrainedMagnitudeModel::toPhotoCalib(
     auto boundedField = std::make_shared<afw::math::TransformBoundedField>(ccdBBox, *transform);
     return std::make_shared<afw::image::PhotoCalib>(mean, ccdImage.getPhotoCalib()->getCalibrationErr(),
                                                     boundedField, false);
+}
+
+void ConstrainedMagnitudeModel::dump(std::ostream &stream) const {
+    stream << "ConstrainedMagnitudeModel (" << _chipVisitMap.size() << " composite mappings; "
+           << _chipMap.size() << " sensor mappings, " << _visitMap.size() << " visit mappings):" << std::endl;
+    ConstrainedPhotometryModel::dump(stream);
 }
 
 // explicit instantiation of templated function, so pybind11 can
