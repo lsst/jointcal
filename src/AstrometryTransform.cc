@@ -975,8 +975,9 @@ public:
     PolyXY(AstrometryTransformPolynomial const &transform, std::size_t whichCoord)
             : order(transform.getOrder()), nterms((order + 1) * (order + 2) / 2), coeffs(nterms, 0L) {
         for (std::size_t px = 0; px <= order; ++px)
-            for (std::size_t py = 0; py <= order - px; ++py)
+            for (std::size_t py = 0; py <= order - px; ++py) {
                 getCoefficient(px, py) = transform.getCoefficient(px, py, whichCoord);
+            }
     }
 
     long double getCoefficient(std::size_t powX, std::size_t powY) const {
