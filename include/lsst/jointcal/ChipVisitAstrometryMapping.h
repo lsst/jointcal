@@ -74,7 +74,6 @@ public:
     //! access to transforms
     AstrometryTransform const &getTransform2() const { return _m2->getTransform(); }
 
-    //! Currently *not* implemented
     void positionDerivative(Point const &where, Eigen::Matrix2d &derivative, double epsilon) const override;
 
     //! Currently not implemented
