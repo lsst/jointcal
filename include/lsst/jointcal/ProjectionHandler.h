@@ -65,7 +65,7 @@ public:
             const CcdImage &ccdImage) const override {
         return id;
     };
-    /// @copydoc AstrometryModel::toString
+    /// @copydoc ProjectionHandler::toString
     std::string toString() const override { return "Identity Projection"; }
 };
 

@@ -40,8 +40,7 @@ bool AstrometryModel::validate(CcdImageList const &ccdImageList, int ndof) const
 }
 
 std::ostream &operator<<(std::ostream &stream, AstrometryModel const &model) {
-    stream << model.toString();
-    return stream;
+    return stream << model.toString();
 }
 
 }  // namespace jointcal
