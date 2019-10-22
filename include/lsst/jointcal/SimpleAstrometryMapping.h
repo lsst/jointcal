@@ -52,7 +52,6 @@ public:
     SimpleAstrometryMapping &operator=(SimpleAstrometryMapping const &) = delete;
     SimpleAstrometryMapping &operator=(SimpleAstrometryMapping &&) = delete;
 
-    /// @copydoc AstrometryMapping::freezeErrorTransform
     virtual void freezeErrorTransform() {
         // from there on, updating the transform does not change the errors.
         errorProp = transform->clone();
@@ -83,6 +82,7 @@ public:
     //! position of the parameters within the grand fitting scheme
     Eigen::Index getIndex() const { return index; }
 
+    /// Set the index of this mapping in the grand fit.
     void setIndex(Eigen::Index i) { index = i; }
 
     /// @copydoc AstrometryMapping::computeTransformAndDerivatives

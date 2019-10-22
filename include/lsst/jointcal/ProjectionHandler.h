@@ -50,7 +50,6 @@ struct ProjectionHandler {
     virtual std::string toString() const = 0;
 };
 
-/// Delegates to toString()
 std::ostream &operator<<(std::ostream &stream, ProjectionHandler const &projectionHandler);
 
 /**

@@ -197,7 +197,6 @@ public:
     virtual ~AstrometryTransform(){};
 };
 
-/// Delegates to transform.print()
 std::ostream &operator<<(std::ostream &stream, AstrometryTransform const &transform);
 
 /**
@@ -346,11 +345,13 @@ public:
         return std::unique_ptr<AstrometryTransform>(new AstrometryTransformPolynomial(*this));
     }
 
-    //! access to coefficients (read only)
+    /**
+     *  Get the coefficient of a given power in x and y, for either the x or y coordinate.
+     * @{
+     */
     double getCoefficient(std::size_t powX, std::size_t powY, std::size_t whichCoord) const;
-
-    //! write access
     double &getCoefficient(std::size_t powX, std::size_t powY, std::size_t whichCoord);
+    /** @} */
 
     //! read access, zero if beyond order
     double coeffOrZero(std::size_t powX, std::size_t powY, std::size_t whichCoord) const;
