@@ -79,8 +79,8 @@ public:
         return stream;
     }
 
-    virtual void print(std::ostream &stream = std::cout) const {
-        stream << "x: " << x << " y: " << y << " flux: " << _flux << " fluxErr: " << _fluxErr;
+    virtual void print(std::ostream &out) const {
+        out << "x: " << x << " y: " << y << " flux: " << _flux << " fluxErr: " << _fluxErr;
     }
 
     BaseStar &operator=(Point const &point) {

@@ -161,7 +161,7 @@ public:
     virtual std::size_t getTotalParameters() const = 0;
 
     /// Print the contents of the transforms, for debugging.
-    virtual void print(std::ostream &stream = std::cout) const = 0;
+    virtual void print(std::ostream &out) const = 0;
 
     /**
      * Return true if this is a "reasonable" model.

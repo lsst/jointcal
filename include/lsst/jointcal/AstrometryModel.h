@@ -25,6 +25,7 @@
 #ifndef LSST_JOINTCAL_ASTROMETRY_MODEL_H
 #define LSST_JOINTCAL_ASTROMETRY_MODEL_H
 
+#include <iostream>
 #include "memory"
 
 #include "lsst/log/Log.h"
@@ -90,8 +91,8 @@ public:
     /// Return the total number of parameters in this model.
     virtual std::size_t getTotalParameters() const = 0;
 
-    /// Return a string representation of this model.
-    virtual std::string toString() const = 0;
+    /// Print a string representation of the contents of this mapping, for debugging.
+    virtual void print(std::ostream &out) const = 0;
 
     virtual ~AstrometryModel(){};
 

@@ -278,7 +278,7 @@ public:
     //! direct transform per iteration.
     void apply(const double xIn, const double yIn, double &xOut, double &yOut) const;
 
-    void print(ostream &stream) const;
+    void print(ostream &out) const;
 
     double fit(StarMatchList const &starMatchList);
 
@@ -379,7 +379,7 @@ public:
 
     //! return second(first(xIn,yIn))
     void apply(const double xIn, const double yIn, double &xOut, double &yOut) const;
-    void print(ostream &stream = cout) const;
+    void print(ostream &stream) const;
 
     //!
     double fit(StarMatchList const &starMatchList);
@@ -1301,7 +1301,7 @@ void AstrometryTransformLinear::print(ostream &stream) const {
     stream.precision(oldPrecision);
     stream << "determinant = " << determinant();
     stream.precision(oldPrecision);
-}  // namespace jointcal
+}
 
 double AstrometryTransformLinearRot::fit(StarMatchList const &) {
     throw pexExcept::NotFoundError("AstrometryTransformLinearRot::fit not implemented! aborting");
@@ -1480,8 +1480,8 @@ void AstrometryTransformSkyWcs::apply(const double xIn, const double yIn, double
     yOut = outCoord[1].asDegrees();
 }
 
-void AstrometryTransformSkyWcs::print(std::ostream &stream) const {
-    stream << "AstrometryTransformSkyWcs(" << *_skyWcs << ")";
+void AstrometryTransformSkyWcs::print(std::ostream &out) const {
+    out << "AstrometryTransformSkyWcs(" << *_skyWcs << ")";
 }
 
 double AstrometryTransformSkyWcs::fit(const StarMatchList &starMatchList) {

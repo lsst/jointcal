@@ -25,6 +25,7 @@
 #ifndef LSST_JOINTCAL_ASTROMETRY_MAPPING_H
 #define LSST_JOINTCAL_ASTROMETRY_MAPPING_H
 
+#include <iostream>
 #include <vector>
 #include "lsst/jointcal/Eigenstuff.h"
 
@@ -62,12 +63,18 @@ public:
     virtual void positionDerivative(Point const &where, Eigen::Matrix2d &derivative,
                                     double epsilon) const = 0;
 
-    /// Return a string representation of this mapping.
-    virtual std::string toString() const = 0;
+    /// Print a string representation of the contents of this mapping, for debugging.
+    virtual void print(std::ostream &out) const = 0;
 
     //!
     virtual ~AstrometryMapping(){};
 };
+
+inline std::ostream &operator<<(std::ostream &stream, AstrometryMapping const &mapping) {
+    mapping.print(stream);
+    return stream;
+}
+
 }  // namespace jointcal
 }  // namespace lsst
 #endif  // LSST_JOINTCAL_ASTROMETRY_MAPPING_H

@@ -151,17 +151,17 @@ ndarray::Array<double, 2, 2> toChebyMapCoeffs(std::shared_ptr<PhotometryTransfor
 }
 }  // namespace
 
-void ConstrainedPhotometryModel::print(std::ostream &stream) const {
+void ConstrainedPhotometryModel::print(std::ostream &out) const {
     for (auto &idMapping : _chipMap) {
-        stream << "Sensor: " << idMapping.first << std::endl;
-        idMapping.second->print(stream);
-        stream << std::endl;
+        out << "Sensor: " << idMapping.first << std::endl;
+        idMapping.second->print(out);
+        out << std::endl;
     }
-    stream << std::endl;
+    out << std::endl;
     for (auto &idMapping : _visitMap) {
-        stream << "Visit: " << idMapping.first << std::endl;
-        idMapping.second->print(stream);
-        stream << std::endl;
+        out << "Visit: " << idMapping.first << std::endl;
+        idMapping.second->print(out);
+        out << std::endl;
     }
 }
 
@@ -300,9 +300,9 @@ std::shared_ptr<afw::image::PhotoCalib> ConstrainedFluxModel::toPhotoCalib(CcdIm
                                                     boundedField, false);
 }
 
-void ConstrainedFluxModel::print(std::ostream &stream) const {
-    stream << "ConstrainedFluxModel:" << std::endl;
-    ConstrainedPhotometryModel::print(stream);
+void ConstrainedFluxModel::print(std::ostream &out) const {
+    out << "ConstrainedFluxModel:" << std::endl;
+    ConstrainedPhotometryModel::print(out);
 }
 
 // ConstrainedMagnitudeModel methods
@@ -350,10 +350,10 @@ std::shared_ptr<afw::image::PhotoCalib> ConstrainedMagnitudeModel::toPhotoCalib(
                                                     boundedField, false);
 }
 
-void ConstrainedMagnitudeModel::print(std::ostream &stream) const {
-    stream << "ConstrainedMagnitudeModel (" << _chipVisitMap.size() << " composite mappings; "
-           << _chipMap.size() << " sensor mappings, " << _visitMap.size() << " visit mappings):" << std::endl;
-    ConstrainedPhotometryModel::print(stream);
+void ConstrainedMagnitudeModel::print(std::ostream &out) const {
+    out << "ConstrainedMagnitudeModel (" << _chipVisitMap.size() << " composite mappings; " << _chipMap.size()
+        << " sensor mappings, " << _visitMap.size() << " visit mappings):" << std::endl;
+    ConstrainedPhotometryModel::print(out);
 }
 
 // explicit instantiation of templated function, so pybind11 can

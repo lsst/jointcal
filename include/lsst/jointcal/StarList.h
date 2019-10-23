@@ -69,8 +69,8 @@ public:
     virtual ~StarList(){};
 
     //! invokes print(stream) for all Stars in the std::list.
-    void print(std::ostream &stream = std::cout) const {
-        for (auto &p : *this) p->print(stream);
+    void print(std::ostream &out) const {
+        for (auto &p : *this) p->print(out);
     }
 
     //! a model routine to sort the std::list

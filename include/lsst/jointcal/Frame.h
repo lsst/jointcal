@@ -98,7 +98,7 @@ public:
     //! distance to closest boundary.
     double minDistToEdges(const Point &point) const;
 
-    void print(std::ostream &stream = std::cout) const;
+    void print(std::ostream &out) const;
 
     //! allows \verbatim std::cout << frame; \endverbatim.
     friend std::ostream &operator<<(std::ostream &stream, const Frame &right) {

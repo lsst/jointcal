@@ -132,17 +132,15 @@ std::size_t SimpleAstrometryModel::getTotalParameters() const {
     return total;
 }
 
-std::string SimpleAstrometryModel::toString() const {
-    std::stringstream out;
+void SimpleAstrometryModel::print(std::ostream &out) const {
     out << "SimpleAstrometryModel: " << _myMap.size() << " mappings" << std::endl;
     out << *_skyToTangentPlane << std::endl;
     out << "Sensor to sky transforms:" << std::endl;
     for (auto &i : _myMap) {
         out << i.first << std::endl;
-        out << i.second->toString() << std::endl;
+        out << *(i.second) << std::endl;
         out << std::endl;
     }
-    return out.str();
 }
 
 const AstrometryTransform &SimpleAstrometryModel::getTransform(CcdImage const &ccdImage) const {

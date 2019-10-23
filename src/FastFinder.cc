@@ -74,9 +74,9 @@ FastFinder::FastFinder(const BaseStarList &list, const unsigned nXSlice)
     }
 }
 
-void FastFinder::print() const {
+void FastFinder::print(std::ostream &out) const {
     for (unsigned i = 0; i < count; ++i) {
-        stars[i]->print();
+        stars[i]->print(out);
     }
 }
 

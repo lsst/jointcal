@@ -95,8 +95,7 @@ public:
     /// @copydoc AstrometryModel::getTotalParameters
     std::size_t getTotalParameters() const override;
 
-    /// @copydoc AstrometryModel::toString
-    std::string toString() const override;
+    void print(std::ostream &out) const override;
 
     //! Access to mappings
     AstrometryTransform const &getTransform(CcdImage const &ccdImage) const;

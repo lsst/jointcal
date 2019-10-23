@@ -25,6 +25,7 @@
 #ifndef LSST_JOINTCAL_PROJECTION_HANDLER_H
 #define LSST_JOINTCAL_PROJECTION_HANDLER_H
 
+#include <iostream>
 #include "lsst/jointcal/CcdImage.h"
 #include "lsst/jointcal/AstrometryTransform.h"
 #include "map"
@@ -46,8 +47,8 @@ struct ProjectionHandler {
 
     virtual ~ProjectionHandler(){};
 
-    /// Return a string representation of this projection
-    virtual std::string toString() const = 0;
+    /// Print a string representation of the contents of this mapping, for debugging.
+    virtual void print(std::ostream &out) const = 0;
 };
 
 std::ostream &operator<<(std::ostream &stream, ProjectionHandler const &projectionHandler);
@@ -65,8 +66,8 @@ public:
             const CcdImage &ccdImage) const override {
         return id;
     };
-    /// @copydoc ProjectionHandler::toString
-    std::string toString() const override { return "Identity Projection"; }
+
+    void print(std::ostream &out) const override { out << "Identity Projection"; }
 };
 
 /**
@@ -86,8 +87,7 @@ public:
     const std::shared_ptr<const AstrometryTransform> getSkyToTangentPlane(
             const CcdImage &ccdImage) const override;
 
-    /// @copydoc AstrometryModel::toString
-    std::string toString() const override;
+    void print(std::ostream &out) const override;
 };
 }  // namespace jointcal
 }  // namespace lsst

@@ -122,12 +122,10 @@ void ChipVisitAstrometryMapping::freezeErrorTransform() {
                       "useless and is not implemented (yet)");
 }
 
-std::string ChipVisitAstrometryMapping::toString() const {
-    std::stringstream out;
+void ChipVisitAstrometryMapping::print(std::ostream &out) const {
     out << "Composed Astrometry Mapping:" << std::endl;
-    out << "Sensor f(x,y)->(u,v): " << _m1->toString() << std::endl;
-    out << "Visit f(u,v)->alpha,delta: " << _m2->toString() << std::endl;
-    return out.str();
+    out << "Sensor f(x,y)->(u,v): " << *_m1 << std::endl;
+    out << "Visit f(u,v)->alpha,delta: " << *_m2 << std::endl;
 }
 
 }  // namespace jointcal

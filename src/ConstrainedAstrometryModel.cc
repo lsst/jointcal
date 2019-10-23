@@ -256,17 +256,15 @@ std::shared_ptr<afw::geom::SkyWcs> ConstrainedAstrometryModel::makeSkyWcs(CcdIma
     return std::make_shared<afw::geom::SkyWcs>(frameDict);
 }
 
-std::string ConstrainedAstrometryModel::toString() const {
-    std::stringstream out;
+void ConstrainedAstrometryModel::print(std::ostream &out) const {
     out << "Constrained Astrometry Model (" << _mappings.size() << " composite mappings; " << _chipMap.size()
         << " sensor mappings, " << _visitMap.size() << " visit mappings):" << std::endl;
     out << *_skyToTangentPlane << std::endl;
     out << "Sensor to sky transforms:" << std::endl;
     for (auto &i : _mappings) {
         out << i.first << std::endl;
-        out << i.second->toString() << std::endl;
+        out << *(i.second) << std::endl;
     }
-    return out.str();
 }
 
 AstrometryMapping *ConstrainedAstrometryModel::findMapping(CcdImage const &ccdImage) const {

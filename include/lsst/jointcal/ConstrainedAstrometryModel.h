@@ -118,8 +118,7 @@ public:
     /// @copydoc AstrometryModel::makeSkyWcs
     std::shared_ptr<afw::geom::SkyWcs> makeSkyWcs(CcdImage const &ccdImage) const override;
 
-    /// @copydoc AstrometryModel::toString
-    std::string toString() const override;
+    void print(std::ostream &out) const override;
 
 private:
     std::unordered_map<CcdImageKey, std::unique_ptr<ChipVisitAstrometryMapping>> _mappings;

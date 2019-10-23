@@ -32,7 +32,7 @@ namespace jointcal {
 class Mapping;
 
 std::ostream &operator<<(std::ostream &stream, ProjectionHandler const &projectionHandler) {
-    stream << projectionHandler.toString();
+    projectionHandler.print(stream);
     return stream;
 }
 
@@ -50,14 +50,12 @@ const std::shared_ptr<const AstrometryTransform> OneTPPerVisitHandler::getSkyToT
     return it->second;
 }
 
-std::string OneTPPerVisitHandler::toString() const {
-    std::stringstream out;
+void OneTPPerVisitHandler::print(std::ostream &out) const {
     out << "Sky->Tangent Plane projection per visit:" << std::endl;
     for (auto &i : tMap) {
         out << "Visit: " << i.first << std::endl;
         out << *(i.second) << std::endl;
     }
-    return out.str();
 }
 
 }  // namespace jointcal

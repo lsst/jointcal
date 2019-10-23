@@ -89,7 +89,7 @@ public:
     Frame apply(Frame const &inputframe, bool inscribed) const;
 
     //! prints the transform coefficients to stream.
-    virtual void print(std::ostream &stream = std::cout) const = 0;
+    virtual void print(std::ostream &out) const = 0;
 
     std::string __str__() {
         std::stringstream s;
@@ -237,7 +237,7 @@ public:
         return right.clone();
     }
 
-    void print(std::ostream &stream = std::cout) const override { stream << "x' = x\ny' = y" << std::endl; }
+    void print(std::ostream &out) const override { out << "x' = x\ny' = y" << std::endl; }
 
     std::size_t getNpar() const override { return 0; }
 
@@ -321,7 +321,7 @@ public:
     std::size_t getNpar() const override { return 2 * _nterms; }
 
     //! print out of coefficients in a readable form.
-    void print(std::ostream &stream = std::cout) const override;
+    void print(std::ostream &out) const override;
 
     //! guess what
     double fit(StarMatchList const &starMatchList) override;
@@ -439,7 +439,7 @@ public:
     //! returns the inverse: T1 = T2.inverted();
     AstrometryTransformLinear inverted() const;
 
-    void print(std::ostream &stream = std::cout) const override;
+    void print(std::ostream &out) const override;
 
     // useful?    double jacobian(const double x, const double y) const { return determinant();}
 
@@ -450,7 +450,7 @@ public:
     AstrometryTransformLinear linearApproximation(Point const &where,
                                                   const double step = 0.01) const override;
 
-    //  void print(std::ostream &stream = std::cout) const;
+    //  void print(std::ostream &out) const;
 
     // double fit(StarMatchList const &starMatchList);
 
@@ -556,7 +556,7 @@ public:
     // Input is x, y pixels; output is ICRS RA, Dec in degrees
     void apply(const double xIn, const double yIn, double &xOut, double &yOut) const override;
 
-    void print(std::ostream &stream = std::cout) const override;
+    void print(std::ostream &out) const override;
 
     /// Not implemented; throws pex::exceptions::LogicError
     double fit(const StarMatchList &starMatchList) override;
@@ -662,7 +662,7 @@ public:
 
     std::unique_ptr<AstrometryTransform> clone() const;
 
-    void print(std::ostream &stream) const;
+    void print(std::ostream &out) const;
 
     //! Not implemented yet, because we do it otherwise.
     double fit(StarMatchList const &starMatchList);
@@ -691,7 +691,7 @@ public:
 
     std::unique_ptr<AstrometryTransform> clone() const;
 
-    void print(std::ostream &stream) const;
+    void print(std::ostream &out) const;
 
     //! Not implemented yet, because we do it otherwise.
     double fit(StarMatchList const &starMatchList);
@@ -738,7 +738,7 @@ public:
     //! Inverse transform: returns a TanPixelToRaDec.
     std::unique_ptr<AstrometryTransform> inverseTransform(const double precision, const Frame &region) const;
 
-    void print(std::ostream &stream) const;
+    void print(std::ostream &out) const;
 
     std::unique_ptr<AstrometryTransform> clone() const;
 
@@ -766,7 +766,7 @@ public:
 
     void apply(const double xIn, const double yIn, double &xOut, double &yOut) const;
 
-    void print(std::ostream &stream = std::cout) const;
+    void print(std::ostream &out) const;
 
     double fit(StarMatchList const &starMatchList);
 
