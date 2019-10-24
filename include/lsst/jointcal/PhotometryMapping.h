@@ -108,7 +108,12 @@ public:
      */
     virtual void getMappingIndices(IndexVector &indices) const = 0;
 
-    /// Print the contents of the transforms, for debugging.
+    /**
+     * Print a string representation of the contents of this mapping, for debugging.
+     *
+     * This string representation can be very verbose, as it contains all of the parameters
+     * of all of the transforms in this mapping.
+     */
     virtual void print(std::ostream &out) const = 0;
 
     /// Get the index of this mapping in the grand fit.

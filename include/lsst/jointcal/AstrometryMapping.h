@@ -63,7 +63,12 @@ public:
     virtual void positionDerivative(Point const &where, Eigen::Matrix2d &derivative,
                                     double epsilon) const = 0;
 
-    /// Print a string representation of the contents of this mapping, for debugging.
+    /**
+     * Print a string representation of the contents of this mapping, for debugging.
+     *
+     * This string representation can be very verbose, as it contains all of the parameters
+     * of all of the transforms in this mapping.
+     */
     virtual void print(std::ostream &out) const = 0;
 
     //!

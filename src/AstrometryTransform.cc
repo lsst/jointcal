@@ -402,7 +402,7 @@ void AstrometryTransformComposition::apply(const double xIn, const double yIn, d
 }
 
 void AstrometryTransformComposition::print(ostream &stream) const {
-    stream << "Composted AstrometryTransform consisting of:" << std::endl;
+    stream << "Composed AstrometryTransform consisting of:" << std::endl;
     _first->print(stream);
     _second->print(stream);
 }
