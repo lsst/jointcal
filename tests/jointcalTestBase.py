@@ -237,7 +237,7 @@ class JointcalTestBase:
         for key in result:
             if expect[key.metric] is not None:
                 value = result[key].quantity.value
-                if type(value) == float:
+                if isinstance(value, float):
                     self.assertFloatsAlmostEqual(value, expect[key.metric], msg=key.metric, rtol=1e-5)
                 else:
                     self.assertEqual(value, expect[key.metric], msg=key.metric)
