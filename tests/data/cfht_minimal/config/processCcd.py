@@ -994,9 +994,6 @@ config.isr.flatUserScale=1.0
 # Name of mask plane to use in saturation detection and interpolation
 config.isr.saturatedMaskName='SAT'
 
-# Kernel file used for the brighter fatter correction
-config.isr.brighterFatterKernelFile=''
-
 # Apply dark frame correction?
 config.isr.doDark=False
 
