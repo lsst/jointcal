@@ -45,9 +45,9 @@ class PhotometryModel {
 public:
     /**
      * @param log Logger to send messages to, to keep names consistent when logging.
-     * @param errorPedestal_ Pedestal on flux/magnitude error (percent of flux or delta magnitude).
+     * @param errorPedestal Pedestal on flux/magnitude error (percent of flux or delta magnitude).
      */
-    PhotometryModel(LOG_LOGGER log, double errorPedestal_ = 0) : _log(log), errorPedestal(errorPedestal_) {}
+    PhotometryModel(LOG_LOGGER log, double errorPedestal = 0) : _log(log), errorPedestal(errorPedestal) {}
 
     /**
      * Assign indices in the full matrix to the parameters being fit in the mappings, starting at firstIndex.

@@ -42,8 +42,8 @@ class Point;
 //! Photometric response model which has a single photometric factor per CcdImage.
 class SimplePhotometryModel : public PhotometryModel {
 public:
-    SimplePhotometryModel(CcdImageList const &ccdImageList, LOG_LOGGER log, double errorPedestal_ = 0)
-            : PhotometryModel(log, errorPedestal_) {
+    SimplePhotometryModel(CcdImageList const &ccdImageList, LOG_LOGGER log, double errorPedestal = 0)
+            : PhotometryModel(log, errorPedestal) {
         _myMap.reserve(ccdImageList.size());
     }
 
@@ -85,7 +85,7 @@ protected:
 
 class SimpleFluxModel : public SimplePhotometryModel {
 public:
-    SimpleFluxModel(CcdImageList const &ccdImageList, double errorPedestal_ = 0);
+    SimpleFluxModel(CcdImageList const &ccdImageList, double errorPedestal = 0);
 
     /// @copydoc PhotometryModel::offsetFittedStar
     void offsetFittedStar(FittedStar &fittedStar, double delta) const override {
@@ -122,7 +122,7 @@ public:
 
 class SimpleMagnitudeModel : public SimplePhotometryModel {
 public:
-    SimpleMagnitudeModel(CcdImageList const &ccdImageList, double errorPedestal_ = 0);
+    SimpleMagnitudeModel(CcdImageList const &ccdImageList, double errorPedestal = 0);
 
     /// @copydoc PhotometryModel::offsetFittedStar
     void offsetFittedStar(FittedStar &fittedStar, double delta) const override {
