@@ -112,7 +112,9 @@ public:
     explicit PhotometryTransformSpatiallyInvariant(double value) : _value(value) {}
 
     /// @copydoc PhotometryTransform::print
-    void print(std::ostream &out) const override { out << std::setprecision(10) << _value; }
+    void print(std::ostream &out) const override {
+        out << "PhotometryTransformSpatiallyInvariant: " << std::setprecision(10) << _value;
+    }
 
     /// @copydoc PhotometryTransform::getNpar
     std::size_t getNpar() const override { return 1; }
@@ -242,7 +244,7 @@ public:
     double transformError(double x, double y, double value, double valueErr) const override { return 0; }
 
     /// @copydoc PhotometryTransform::print
-    void print(std::ostream &out) const override { out << _coefficients; }
+    void print(std::ostream &out) const override { out << "PhotometryTransformChebyshev: " << _coefficients; }
 
     /// @copydoc PhotometryTransform::getNpar
     std::size_t getNpar() const override { return _nParameters; }

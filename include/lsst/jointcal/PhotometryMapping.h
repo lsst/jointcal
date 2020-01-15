@@ -197,7 +197,7 @@ public:
 
     /// @copydoc PhotometryMappingBase::print
     void print(std::ostream &out) const override {
-        out << "index: " << index << " fixed: " << fixed << " transform parameters: ";
+        out << "index: " << index << " fixed: " << fixed << " ";
         _transform->print(out);
     }
 
@@ -264,7 +264,8 @@ public:
 
     /// @copydoc PhotometryMappingBase::print
     void print(std::ostream &out) const override {
-        out << "index: " << index << std::endl << "chip mapping: ";
+        out << "index: " << index << std::endl;
+        out << "chip mapping: ";
         _chipMapping->print(out);
         out << std::endl << "visit mapping: ";
         _visitMapping->print(out);
