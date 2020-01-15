@@ -247,14 +247,14 @@ class JointcalConfig(pexConfig.Config):
         default=7,
     )
     photometryDoRankUpdate = pexConfig.Field(
-        doc="Do the rank update step during minimization. "
-        "Skipping this can help deal with models that are too non-linear.",
+        doc=("Do the rank update step during minimization. "
+             "Skipping this can help deal with models that are too non-linear."),
         dtype=bool,
         default=True,
     )
     astrometryDoRankUpdate = pexConfig.Field(
-        doc="Do the rank update step during minimization (should not change the astrometry fit). "
-        "Skipping this can help deal with models that are too non-linear.",
+        doc=("Do the rank update step during minimization (should not change the astrometry fit). "
+             "Skipping this can help deal with models that are too non-linear."),
         dtype=bool,
         default=True,
     )
@@ -294,18 +294,18 @@ class JointcalConfig(pexConfig.Config):
         doc="How to down-select the loaded photometry reference catalog.",
     )
     astrometryReferenceErr = pexConfig.Field(
-        doc="Uncertainty on reference catalog coordinates [mas] to use in place of the `coord_*Err` fields."
-            " If None, then raise an exception if the reference catalog is missing coordinate errors."
-            " If specified, overrides any existing `coord_*Err` values.",
+        doc=("Uncertainty on reference catalog coordinates [mas] to use in place of the `coord_*Err` fields. "
+             "If None, then raise an exception if the reference catalog is missing coordinate errors. "
+             "If specified, overrides any existing `coord_*Err` values."),
         dtype=float,
         default=None,
         optional=True
     )
     writeInitMatrix = pexConfig.Field(
         dtype=bool,
-        doc="Write the pre/post-initialization Hessian and gradient to text files, for debugging."
-            " The output files will be of the form 'astrometry_preinit-mat.txt', in the current directory."
-            " Note that these files are the dense versions of the matrix, and so may be very large.",
+        doc=("Write the pre/post-initialization Hessian and gradient to text files, for debugging. "
+             "The output files will be of the form 'astrometry_preinit-mat.txt', in the current directory. "
+             "Note that these files are the dense versions of the matrix, and so may be very large."),
         default=False
     )
     writeChi2FilesInitialFinal = pexConfig.Field(
