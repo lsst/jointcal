@@ -46,8 +46,8 @@ public:
     FatPoint(const double X, const double Y, const double Vx = 1, const double Vy = 1, const double Vxy = 0)
             : Point(X, Y), vx(Vx), vy(Vy), vxy(Vxy){};
 
-    void dump(std::ostream& s = std::cout) const {
-        Point::dump(s);
+    void print(std::ostream& s = std::cout) const {
+        Point::print(s);
         s << " vxx,vyy,vxy " << vx << ' ' << vy << ' ' << vxy;
     }
 };

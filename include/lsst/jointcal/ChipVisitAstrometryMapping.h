@@ -47,15 +47,15 @@ public:
     ChipVisitAstrometryMapping &operator=(ChipVisitAstrometryMapping const &) = delete;
     ChipVisitAstrometryMapping &operator=(ChipVisitAstrometryMapping &&) = delete;
 
-    //!
-    std::size_t getNpar() const;
+    std::size_t getNpar() const override;
 
-    void getMappingIndices(IndexVector &indices) const;
+    void getMappingIndices(IndexVector &indices) const override;
 
     //!
-    void computeTransformAndDerivatives(FatPoint const &where, FatPoint &outPoint, Eigen::MatrixX2d &H) const;
+    void computeTransformAndDerivatives(FatPoint const &where, FatPoint &outPoint,
+                                        Eigen::MatrixX2d &H) const override;
     //!
-    void transformPosAndErrors(FatPoint const &where, FatPoint &outPoint) const;
+    void transformPosAndErrors(FatPoint const &where, FatPoint &outPoint) const override;
 
     /**
      * @copydoc AstrometryMapping::offsetParams
@@ -63,7 +63,7 @@ public:
      * @note  this routine is not used when fitting (the Model manages the mappings separately),
      *        but can be useful for debugging
      */
-    void offsetParams(Eigen::VectorXd const &delta) {
+    void offsetParams(Eigen::VectorXd const &delta) override {
         _m1->offsetParams(delta.segment(_m1->getIndex(), _m1->getNpar()));
         _m2->offsetParams(delta.segment(_m2->getIndex() + _m1->getNpar(), _m2->getNpar()));
     }
@@ -74,11 +74,12 @@ public:
     //! access to transforms
     AstrometryTransform const &getTransform2() const { return _m2->getTransform(); }
 
-    //! Currently *not* implemented
-    void positionDerivative(Point const &where, Eigen::Matrix2d &derivative, double epsilon) const;
+    void positionDerivative(Point const &where, Eigen::Matrix2d &derivative, double epsilon) const override;
 
     //! Currently not implemented
     void freezeErrorTransform();
+
+    void print(std::ostream &out) const override;
 
 private:
     friend class ConstrainedAstrometryModel;

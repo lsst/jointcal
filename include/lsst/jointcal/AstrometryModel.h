@@ -25,6 +25,7 @@
 #ifndef LSST_JOINTCAL_ASTROMETRY_MODEL_H
 #define LSST_JOINTCAL_ASTROMETRY_MODEL_H
 
+#include <iostream>
 #include "memory"
 
 #include "lsst/log/Log.h"
@@ -90,6 +91,14 @@ public:
     /// Return the total number of parameters in this model.
     virtual std::size_t getTotalParameters() const = 0;
 
+    /**
+     * Print a string representation of the contents of this mapping, for debugging.
+     *
+     * This string representation can be very verbose, as it contains all of the parameters
+     * of all of the transforms in this model.
+     */
+    virtual void print(std::ostream &out) const = 0;
+
     virtual ~AstrometryModel(){};
 
     /**
@@ -109,6 +118,9 @@ protected:
     /// Return a pointer to the mapping associated with this ccdImage.
     virtual AstrometryMapping *findMapping(CcdImage const &ccdImage) const = 0;
 };
+
+std::ostream &operator<<(std::ostream &stream, AstrometryModel const &model);
+
 }  // namespace jointcal
 }  // namespace lsst
 

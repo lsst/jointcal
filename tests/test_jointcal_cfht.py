@@ -21,6 +21,7 @@
 
 import unittest
 import os
+import tempfile
 
 from astropy import units as u
 
@@ -68,44 +69,53 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
                         log_level="DEBUG")
 
     def test_jointcalTask_2_visits(self):
+        """Test the simple models with two visits and check that some debug
+        output files also get created.
+        """
         self.config = lsst.jointcal.jointcal.JointcalConfig()
         self.config.astrometryModel = "simple"
         self.config.photometryModel = "simpleFlux"
-
+        self.config.writeInitialModel = True  # write the initial models
         # to test whether we got the expected chi2 contribution files.
-        self.other_args.extend(['--config', 'writeChi2FilesInitialFinal=True'])
+        self.config.writeChi2FilesInitialFinal = True
+        # use a temporary directory for debug output, to prevent test collisions
+        with tempfile.TemporaryDirectory() as tempdir:
+            self.config.debugOutputPath = tempdir
 
-        # See Readme for an explanation of these empirical values.
-        dist_rms_relative = 11e-3*u.arcsecond
-        pa1 = 0.014
-        metrics = {'collected_astrometry_refStars': 1770,
-                   'collected_photometry_refStars': 1770,
-                   'selected_astrometry_refStars': 747,
-                   'selected_photometry_refStars': 747,
-                   'associated_astrometry_fittedStars': 2269,
-                   'associated_photometry_fittedStars': 2269,
-                   'selected_astrometry_fittedStars': 1408,
-                   'selected_photometry_fittedStars': 1408,
-                   'selected_astrometry_ccdImages': 12,
-                   'selected_photometry_ccdImages': 12,
-                   'astrometry_final_chi2': 1609.29,
-                   'astrometry_final_ndof': 3332,
-                   'photometry_final_chi2': 3632.26,
-                   'photometry_final_ndof': 1693
-                   }
+            # See Readme for an explanation of these empirical values.
+            dist_rms_relative = 11e-3*u.arcsecond
+            pa1 = 0.014
+            metrics = {'collected_astrometry_refStars': 1770,
+                       'collected_photometry_refStars': 1770,
+                       'selected_astrometry_refStars': 747,
+                       'selected_photometry_refStars': 747,
+                       'associated_astrometry_fittedStars': 2269,
+                       'associated_photometry_fittedStars': 2269,
+                       'selected_astrometry_fittedStars': 1408,
+                       'selected_photometry_fittedStars': 1408,
+                       'selected_astrometry_ccdImages': 12,
+                       'selected_photometry_ccdImages': 12,
+                       'astrometry_final_chi2': 1609.29,
+                       'astrometry_final_ndof': 3332,
+                       'photometry_final_chi2': 3632.26,
+                       'photometry_final_ndof': 1693
+                       }
 
-        self._testJointcalTask(2, dist_rms_relative, self.dist_rms_absolute, pa1, metrics=metrics)
+            self._testJointcalTask(2, dist_rms_relative, self.dist_rms_absolute, pa1, metrics=metrics)
 
-        # Check for the existence of the chi2 contribution files.
-        expected = ['photometry_initial_chi2-0_r', 'astrometry_initial_chi2-0_r',
-                    'photometry_final_chi2-0_r', 'astrometry_final_chi2-0_r']
-        for partial in expected:
-            name = partial+'-ref.csv'
-            self.assertTrue(os.path.exists(name), msg="Did not find file %s"%name)
-            os.remove(name)
-            name = partial+'-meas.csv'
-            self.assertTrue(os.path.exists(name), msg='Did not find file %s'%name)
-            os.remove(name)
+            # Check for the existence of the chi2 contribution files.
+            expected = ['photometry_initial_chi2-0_r', 'astrometry_initial_chi2-0_r',
+                        'photometry_final_chi2-0_r', 'astrometry_final_chi2-0_r']
+            for partial in expected:
+                name = os.path.join(tempdir, partial+'-ref.csv')
+                self.assertTrue(os.path.exists(name), msg="Did not find file %s"%name)
+                name = os.path.join(tempdir, partial+'-meas.csv')
+                self.assertTrue(os.path.exists(name), msg='Did not find file %s'%name)
+
+            expected = ["initialAstrometryModel.txt", "initialPhotometryModel.txt"]
+            for name in expected:
+                fullpath = os.path.join(tempdir, name)
+                self.assertTrue(os.path.exists(fullpath), msg=f"Did not find file {fullpath}")
 
     def setup_jointcalTask_2_visits_constrainedAstrometry(self):
         """Set default values for the constrainedAstrometry tests, and make
@@ -131,7 +141,15 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
 
     def test_jointcalTask_2_visits_constrainedAstrometry_no_photometry(self):
         dist_rms_relative, metrics = self.setup_jointcalTask_2_visits_constrainedAstrometry()
-        self._testJointcalTask(2, dist_rms_relative, self.dist_rms_absolute, None, metrics=metrics)
+        self.config.writeInitialModel = True  # write the initial models
+        # use a temporary directory for debug output, to prevent test collisions
+        # use a temporary directory for debug output, to prevent test collisions
+        with tempfile.TemporaryDirectory() as tempdir:
+            self.config.debugOutputPath = tempdir
+
+            self._testJointcalTask(2, dist_rms_relative, self.dist_rms_absolute, None, metrics=metrics)
+            filename = os.path.join(tempdir, "initialAstrometryModel.txt")
+            self.assertTrue(os.path.exists(filename), msg=f"Did not find file {filename}")
 
     def test_jointcalTask_2_visits_constrainedAstrometry_no_rank_update(self):
         """Demonstrate that skipping the rank update doesn't substantially affect astrometry.
@@ -198,8 +216,14 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
 
     def test_jointcalTask_2_visits_constrainedPhotometry_no_astrometry(self):
         pa1, metrics = self.setup_jointcalTask_2_visits_constrainedPhotometry()
+        self.config.writeInitialModel = True  # write the initial models
+        # use a temporary directory for debug output, to prevent test collisions
+        with tempfile.TemporaryDirectory() as tempdir:
+            self.config.debugOutputPath = tempdir
 
-        self._testJointcalTask(2, None, None, pa1, metrics=metrics)
+            self._testJointcalTask(2, None, None, pa1, metrics=metrics)
+            filename = os.path.join(tempdir, "initialPhotometryModel.txt")
+            self.assertTrue(os.path.exists(filename), msg=f"Did not find file {filename}")
 
     def test_jointcalTask_2_visits_constrainedPhotometry_no_rank_update(self):
         """Demonstrate that skipping the rank update doesn't substantially affect photometry.

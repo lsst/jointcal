@@ -167,7 +167,8 @@ class TestJointcalIterateFit(JointcalTestBase, lsst.utils.tests.TestCase):
         filename = "somefile"
         self.jointcal._logChi2AndValidate(self.associations, self.fitter, self.model,
                                           writeChi2Name=filename)
-        self.fitter.saveChi2Contributions.assert_called_with(filename+"{type}")
+        # logChi2AndValidate prepends `config.debugOutputPath` to the filename
+        self.fitter.saveChi2Contributions.assert_called_with("./"+filename+"{type}")
 
 
 class TestJointcalLoadRefCat(JointcalTestBase, lsst.utils.tests.TestCase):
@@ -240,8 +241,9 @@ class TestJointcalFitModel(JointcalTestBase, lsst.utils.tests.TestCase):
             fitPatch.return_value.computeChi2.return_value = self.goodChi2
             fitPatch.return_value.minimize.return_value = MinimizeResult.Converged
 
-            expected = ["photometry_init-ModelVisit_chi2", "photometry_init-Model_chi2",
-                        "photometry_init-Fluxes_chi2", "photometry_init-ModelFluxes_chi2"]
+            # config.debugOutputPath is prepended to the filenames that go into saveChi2Contributions
+            expected = ["./photometry_init-ModelVisit_chi2", "./photometry_init-Model_chi2",
+                        "./photometry_init-Fluxes_chi2", "./photometry_init-ModelFluxes_chi2"]
             expected = [mock.call(x+"-fake{type}") for x in expected]
             jointcal._fit_photometry(self.associations, dataName=self.dataName)
             fitPatch.return_value.saveChi2Contributions.assert_has_calls(expected)
@@ -263,8 +265,9 @@ class TestJointcalFitModel(JointcalTestBase, lsst.utils.tests.TestCase):
             # return a real ProjectionHandler to keep ConstrainedAstrometryModel() happy
             projector.return_value = lsst.jointcal.IdentityProjectionHandler()
 
-            expected = ["astrometry_init-DistortionsVisit_chi2", "astrometry_init-Distortions_chi2",
-                        "astrometry_init-Positions_chi2", "astrometry_init-DistortionsPositions_chi2"]
+            # config.debugOutputPath is prepended to the filenames that go into saveChi2Contributions
+            expected = ["./astrometry_init-DistortionsVisit_chi2", "./astrometry_init-Distortions_chi2",
+                        "./astrometry_init-Positions_chi2", "./astrometry_init-DistortionsPositions_chi2"]
             expected = [mock.call(x+"-fake{type}") for x in expected]
             jointcal._fit_astrometry(self.associations, dataName=self.dataName)
             fit.return_value.saveChi2Contributions.assert_has_calls(expected)

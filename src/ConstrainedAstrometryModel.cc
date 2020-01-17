@@ -137,10 +137,8 @@ const AstrometryMapping *ConstrainedAstrometryModel::getMapping(CcdImage const &
   whatToFit. If whatToFit contains "Distortions" and not
   Distortions<Something>, it is understood as both chips and
   visits. */
-Eigen::Index ConstrainedAstrometryModel::assignIndices(
-    std::string const &whatToFit,
-    Eigen::Index firstIndex
-) {
+Eigen::Index ConstrainedAstrometryModel::assignIndices(std::string const &whatToFit,
+                                                       Eigen::Index firstIndex) {
     Eigen::Index index = firstIndex;
     if (whatToFit.find("Distortions") == std::string::npos) {
         LOGLS_ERROR(_log, "assignIndices was called and Distortions is *not* in whatToFit");
@@ -246,8 +244,7 @@ std::shared_ptr<afw::geom::SkyWcs> ConstrainedAstrometryModel::makeSkyWcs(CcdIma
 
     // make a basic SkyWcs and extract the IWC portion
     auto iwcToSkyWcs = afw::geom::makeSkyWcs(
-            geom::Point2D(0, 0),
-            geom::SpherePoint(tangentPoint.x, tangentPoint.y, geom::degrees),
+            geom::Point2D(0, 0), geom::SpherePoint(tangentPoint.x, tangentPoint.y, geom::degrees),
             afw::geom::makeCdMatrix(1.0 * geom::degrees, 0 * geom::degrees, true));
     auto iwcToSkyMap = iwcToSkyWcs->getFrameDict()->getMapping("PIXELS", "SKY");
     auto skyFrame = iwcToSkyWcs->getFrameDict()->getFrame("SKY");
@@ -257,6 +254,17 @@ std::shared_ptr<afw::geom::SkyWcs> ConstrainedAstrometryModel::makeSkyWcs(CcdIma
     frameDict.addFrame("FOCAL", *focalToIwc, iwcFrame);
     frameDict.addFrame("IWC", *iwcToSkyMap, *skyFrame);
     return std::make_shared<afw::geom::SkyWcs>(frameDict);
+}
+
+void ConstrainedAstrometryModel::print(std::ostream &out) const {
+    out << "Constrained Astrometry Model (" << _mappings.size() << " composite mappings; " << _chipMap.size()
+        << " sensor mappings, " << _visitMap.size() << " visit mappings):" << std::endl;
+    out << *_skyToTangentPlane << std::endl;
+    out << "Sensor to sky transforms:" << std::endl;
+    for (auto &i : _mappings) {
+        out << i.first << std::endl;
+        out << *(i.second) << std::endl;
+    }
 }
 
 AstrometryMapping *ConstrainedAstrometryModel::findMapping(CcdImage const &ccdImage) const {

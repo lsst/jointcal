@@ -121,7 +121,7 @@ bool Frame::inFrame(double x, double y) const {
     return ((x <= xMax) && (y <= yMax) && (x >= xMin) && (y >= yMin));
 }
 
-void Frame::dump(ostream &stream) const {
+void Frame::print(ostream &stream) const {
     stream << "xmin ymin " << xMin << ' ' << yMin << " xmax ymax " << xMax << ' ' << yMax << endl;
 }
 }  // namespace jointcal

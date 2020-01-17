@@ -68,9 +68,9 @@ public:
     /* destructor */
     virtual ~StarList(){};
 
-    //! invokes dump(stream) for all Stars in the std::list.
-    void dump(std::ostream &stream = std::cout) const {
-        for (auto &p : *this) p->dump(stream);
+    //! invokes print(stream) for all Stars in the std::list.
+    void print(std::ostream &out) const {
+        for (auto &p : *this) p->print(out);
     }
 
     //! a model routine to sort the std::list
@@ -103,7 +103,7 @@ public:
 //! enables \verbatim  std::cout << my_list; \endverbatim
 template <class Star>
 std::ostream &operator<<(std::ostream &stream, const StarList<Star> &list) {
-    list.dump(stream);
+    list.print(stream);
     return stream;
 }
 }  // namespace jointcal

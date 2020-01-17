@@ -80,11 +80,11 @@ void SimplePhotometryModel::computeParameterDerivatives(MeasuredStar const &meas
     mapping->computeParameterDerivatives(measuredStar, measuredStar.getInstFlux(), derivatives);
 }
 
-void SimplePhotometryModel::dump(std::ostream &stream) const {
+void SimplePhotometryModel::print(std::ostream &out) const {
     for (auto &i : _myMap) {
-        stream << i.first << ": ";
-        i.second->dump(stream);
-        stream << ", ";
+        out << i.first << ": ";
+        i.second->print(out);
+        out << std::endl;
     }
 }
 
@@ -96,8 +96,8 @@ PhotometryMappingBase *SimplePhotometryModel::findMapping(CcdImage const &ccdIma
     return i->second.get();
 }
 
-SimpleFluxModel::SimpleFluxModel(CcdImageList const &ccdImageList, double errorPedestal_)
-        : SimplePhotometryModel(ccdImageList, LOG_GET("jointcal.SimpleFluxModel"), errorPedestal_) {
+SimpleFluxModel::SimpleFluxModel(CcdImageList const &ccdImageList, double errorPedestal)
+        : SimplePhotometryModel(ccdImageList, LOG_GET("jointcal.SimpleFluxModel"), errorPedestal) {
     for (auto const &ccdImage : ccdImageList) {
         auto photoCalib = ccdImage->getPhotoCalib();
         // Use the single-frame processing calibration from the PhotoCalib as the initial value.
@@ -128,8 +128,13 @@ std::shared_ptr<afw::image::PhotoCalib> SimpleFluxModel::toPhotoCalib(CcdImage c
     return std::make_unique<afw::image::PhotoCalib>(calibration, oldPhotoCalib->getCalibrationErr());
 }
 
-SimpleMagnitudeModel::SimpleMagnitudeModel(CcdImageList const &ccdImageList, double errorPedestal_)
-        : SimplePhotometryModel(ccdImageList, LOG_GET("jointcal.SimpleMagnitudeModel"), errorPedestal_) {
+void SimpleFluxModel::print(std::ostream &out) const {
+    out << "SimpleFluxModel (" << _myMap.size() << " mappings):" << std::endl;
+    SimplePhotometryModel::print(out);
+}
+
+SimpleMagnitudeModel::SimpleMagnitudeModel(CcdImageList const &ccdImageList, double errorPedestal)
+        : SimplePhotometryModel(ccdImageList, LOG_GET("jointcal.SimpleMagnitudeModel"), errorPedestal) {
     for (auto const &ccdImage : ccdImageList) {
         auto photoCalib = ccdImage->getPhotoCalib();
         // Use the single-frame processing calibration from the PhotoCalib as the default.
@@ -162,6 +167,11 @@ std::shared_ptr<afw::image::PhotoCalib> SimpleMagnitudeModel::toPhotoCalib(CcdIm
     double calibration = utils::ABMagnitudeToNanojansky(findMapping(ccdImage)->getParameters()[0]);
     auto oldPhotoCalib = ccdImage.getPhotoCalib();
     return std::make_unique<afw::image::PhotoCalib>(calibration, oldPhotoCalib->getCalibrationErr());
+}
+
+void SimpleMagnitudeModel::print(std::ostream &out) const {
+    out << "SimpleMagnitudeModel (" << _myMap.size() << " mappings):" << std::endl;
+    SimplePhotometryModel::print(out);
 }
 
 }  // namespace jointcal

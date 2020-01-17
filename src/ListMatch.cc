@@ -642,7 +642,7 @@ static bool is_transform_ok(const StarMatchList *match, double pixSizeRatio2, co
         (match->size() > nmin))
         return true;
     LOGL_ERROR(_log, "transform is not ok!");
-    match->dumpTransform();
+    match->printTransform();
     return false;
 }
 

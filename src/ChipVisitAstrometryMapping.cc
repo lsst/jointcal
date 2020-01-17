@@ -121,5 +121,12 @@ void ChipVisitAstrometryMapping::freezeErrorTransform() {
                       " The routine ChipVisitAstrometryMapping::freezeErrorTransform() was thought to be "
                       "useless and is not implemented (yet)");
 }
+
+void ChipVisitAstrometryMapping::print(std::ostream &out) const {
+    out << "Composed Astrometry Mapping:" << std::endl;
+    out << "Sensor f(x,y)->(u,v): " << *_m1 << std::endl;
+    out << "Visit f(u,v)->alpha,delta: " << *_m2 << std::endl;
+}
+
 }  // namespace jointcal
 }  // namespace lsst

@@ -29,7 +29,6 @@
 
 #include "lsst/jointcal/AstrometryMapping.h"
 #include "lsst/jointcal/AstrometryTransform.h"
-#include "lsst/jointcal/CcdImage.h"
 
 //! Class for a simple mapping implementing a generic AstrometryTransform
 /*! It uses a template rather than a pointer so that the derived
@@ -45,12 +44,7 @@ public:
             : toBeFit(toBeFit),
               transform(astrometryTransform.clone()),
               errorProp(transform),
-              lin(new AstrometryTransformLinear) {
-        // in this order:
-        // take a copy of the input transform,
-        // assign the transformation used to propagate errors to the transform itself
-        // reserve some memory space to compute the derivatives (efficiency).
-    }
+              lin(new AstrometryTransformLinear) {}
 
     /// No copy or move: there is only ever one instance of a given mapping (i.e.. per ccd+visit)
     SimpleAstrometryMapping(SimpleAstrometryMapping const &) = delete;
@@ -63,63 +57,37 @@ public:
         errorProp = transform->clone();
     }
 
-    // interface Mapping functions:
-
-    //!
-    std::size_t getNpar() const {
+    /// @copydoc AstrometryMapping::getNpar
+    std::size_t getNpar() const override {
         if (toBeFit)
             return transform->getNpar();
         else
             return 0;
     }
 
-    //!
-    void getMappingIndices(IndexVector &indices) const {
-        if (indices.size() < getNpar()) indices.resize(getNpar());
-        for (std::size_t k = 0; k < getNpar(); ++k) indices[k] = index + k;
-    }
+    /// @copydoc AstrometryMapping::getMappingIndices
+    void getMappingIndices(IndexVector &indices) const override;
 
-    //!
-    void transformPosAndErrors(FatPoint const &where, FatPoint &outPoint) const {
-        transform->transformPosAndErrors(where, outPoint);
-        FatPoint tmp;
-        errorProp->transformPosAndErrors(where, tmp);
-        outPoint.vx = tmp.vx;
-        outPoint.vy = tmp.vy;
-        outPoint.vxy = tmp.vxy;
-    }
+    /// @copydoc AstrometryMapping::transformPosAndErrors
+    void transformPosAndErrors(FatPoint const &where, FatPoint &outPoint) const override;
 
-    //!
-    void positionDerivative(Point const &where, Eigen::Matrix2d &derivative, double epsilon) const {
-        errorProp->computeDerivative(where, *lin, epsilon);
-        derivative(0, 0) = lin->coeff(1, 0, 0);
-        //
-        /* This does not work : it was proved by rotating the frame
-           see the compilation switch ROTATE_T2 in constrainedAstrometryModel.cc
-        derivative(1,0) = lin->coeff(1,0,1);
-        derivative(0,1) = lin->coeff(0,1,0);
-        */
-        derivative(1, 0) = lin->coeff(0, 1, 0);
-        derivative(0, 1) = lin->coeff(1, 0, 1);
-        derivative(1, 1) = lin->coeff(0, 1, 1);
-    }
+    /// @copydoc AstrometryMapping::positionDerivative
+    void positionDerivative(Point const &where, Eigen::Matrix2d &derivative, double epsilon) const override;
 
-    //!
-    void offsetParams(Eigen::VectorXd const &delta) {
+    /// @copydoc AstrometryMapping::offsetParams
+    void offsetParams(Eigen::VectorXd const &delta) override {
         if (toBeFit) transform->offsetParams(delta);
     }
 
     //! position of the parameters within the grand fitting scheme
     Eigen::Index getIndex() const { return index; }
 
-    //!
+    /// Set the index of this mapping in the grand fit.
     void setIndex(Eigen::Index i) { index = i; }
 
+    /// @copydoc AstrometryMapping::computeTransformAndDerivatives
     virtual void computeTransformAndDerivatives(FatPoint const &where, FatPoint &outPoint,
-                                                Eigen::MatrixX2d &H) const {
-        transformPosAndErrors(where, outPoint);
-        transform->paramDerivatives(where, &H(0, 0), &H(0, 1));
-    }
+                                                Eigen::MatrixX2d &H) const override;
 
     //! Access to the (fitted) transform
     virtual AstrometryTransform const &getTransform() const { return *transform; }
@@ -128,6 +96,8 @@ public:
     bool getToBeFit() const { return toBeFit; }
     /// Set whether this Mapping is to be fit as part of a Model.
     void setToBeFit(bool value) { toBeFit = value; }
+
+    void print(std::ostream &out) const override;
 
 protected:
     // Whether this Mapping is fit as part of a Model.
@@ -152,21 +122,7 @@ public:
     /*! The transformation will be initialized to transform, so that the effective transformation
       reads transform*CenterAndScale */
     SimplePolyMapping(AstrometryTransformLinear const &CenterAndScale,
-                      AstrometryTransformPolynomial const &transform)
-            : SimpleAstrometryMapping(transform), _centerAndScale(CenterAndScale) {
-        // We assume that the initialization was done properly, for example that
-        // transform = pixToTangentPlane*CenterAndScale.inverted(), so we do not touch transform.
-        /* store the (spatial) derivative of _centerAndScale. For the extra
-           diagonal terms, just copied the ones in positionDerivatives */
-        preDer(0, 0) = _centerAndScale.coeff(1, 0, 0);
-        preDer(1, 0) = _centerAndScale.coeff(0, 1, 0);
-        preDer(0, 1) = _centerAndScale.coeff(1, 0, 1);
-        preDer(1, 1) = _centerAndScale.coeff(0, 1, 1);
-
-        // check of matrix indexing (once for all)
-        MatrixX2d H(3, 2);
-        assert((&H(1, 0) - &H(0, 0)) == 1);
-    }
+                      AstrometryTransformPolynomial const &transform);
 
     /// No copy or move: there is only ever one instance of a given mapping (i.e.. per ccd+visit)
     SimplePolyMapping(SimplePolyMapping const &) = delete;
@@ -177,59 +133,20 @@ public:
     /* The SimpleAstrometryMapping version does not account for the
        _centerAndScale transform */
 
-    void positionDerivative(Point const &where, Eigen::Matrix2d &derivative, double epsilon) const {
-        Point tmp = _centerAndScale.apply(where);
-        errorProp->computeDerivative(tmp, *lin, epsilon);
-        derivative(0, 0) = lin->coeff(1, 0, 0);
-        //
-        /* This does not work : it was proved by rotating the frame
-           see the compilation switch ROTATE_T2 in constrainedAstrometryModel.cc
-        derivative(1,0) = lin->coeff(1,0,1);
-        derivative(0,1) = lin->coeff(0,1,0);
-        */
-        derivative(1, 0) = lin->coeff(0, 1, 0);
-        derivative(0, 1) = lin->coeff(1, 0, 1);
-        derivative(1, 1) = lin->coeff(0, 1, 1);
-        derivative = preDer * derivative;
-    }
+    void positionDerivative(Point const &where, Eigen::Matrix2d &derivative, double epsilon) const override;
 
     //! Calls the transforms and implements the centering and scaling of coordinates
     /* We should put the computation of error propagation and
        parameter derivatives into the same AstrometryTransform routine because
        it could be significantly faster */
-    virtual void computeTransformAndDerivatives(FatPoint const &where, FatPoint &outPoint,
-                                                Eigen::MatrixX2d &H) const {
-        FatPoint mid;
-        _centerAndScale.transformPosAndErrors(where, mid);
-        transform->transformPosAndErrors(mid, outPoint);
-        FatPoint tmp;
-        errorProp->transformPosAndErrors(mid, tmp);
-        outPoint.vx = tmp.vx;
-        outPoint.vy = tmp.vy;
-        outPoint.vxy = tmp.vxy;
-        transform->paramDerivatives(mid, &H(0, 0), &H(0, 1));
-    }
+    void computeTransformAndDerivatives(FatPoint const &where, FatPoint &outPoint,
+                                        Eigen::MatrixX2d &H) const override;
 
-    //! Implements as well the centering and scaling of coordinates
-    void transformPosAndErrors(FatPoint const &where, FatPoint &outPoint) const {
-        FatPoint mid;
-        _centerAndScale.transformPosAndErrors(where, mid);
-        transform->transformPosAndErrors(mid, outPoint);
-        FatPoint tmp;
-        errorProp->transformPosAndErrors(mid, tmp);
-        outPoint.vx = tmp.vx;
-        outPoint.vy = tmp.vy;
-        outPoint.vxy = tmp.vxy;
-    }
+    /// @copydoc AstrometryMapping::transformPosAndErrors
+    void transformPosAndErrors(FatPoint const &where, FatPoint &outPoint) const override;
 
-    //! Access to the (fitted) transform
-    AstrometryTransform const &getTransform() const {
-        // Cannot fail given the contructor:
-        const AstrometryTransformPolynomial *fittedPoly =
-                dynamic_cast<const AstrometryTransformPolynomial *>(&(*transform));
-        actualResult = (*fittedPoly) * _centerAndScale;
-        return actualResult;
-    }
+    /// @copydoc SimpleAstrometryMapping::getTransform
+    AstrometryTransform const &getTransform() const override;
 
 private:
     /* to better condition the 2nd derivative matrix, the

@@ -76,8 +76,11 @@ void declareAstrometryTransformPolynomial(py::module &mod) {
 
     cls.def(py::init<const unsigned>(), "order"_a);
     cls.def("getOrder", &AstrometryTransformPolynomial::getOrder);
-    cls.def("coeff", py::overload_cast<std::size_t, std::size_t, std::size_t>(
-                &AstrometryTransformPolynomial::coeff, py::const_));
+    cls.def("getCoefficient", py::overload_cast<std::size_t, std::size_t, std::size_t>(
+                                      &AstrometryTransformPolynomial::getCoefficient, py::const_));
+    cls.def("setCoefficient", [](AstrometryTransformPolynomial &self, std::size_t powX, std::size_t powY,
+                                 std::size_t whichCoord,
+                                 double value) { self.getCoefficient(powX, powY, whichCoord) = value; });
     cls.def("determinant", &AstrometryTransformPolynomial::determinant);
     cls.def("getNpar", &AstrometryTransformPolynomial::getNpar);
     cls.def("toAstMap", &AstrometryTransformPolynomial::toAstMap);
@@ -96,6 +99,8 @@ void declareAstrometryTransformLinear(py::module &mod) {
     py::class_<AstrometryTransformLinear, std::shared_ptr<AstrometryTransformLinear>,
                AstrometryTransformPolynomial>
             cls(mod, "AstrometryTransformLinear");
+
+    cls.def(py::init<>());
 }
 
 void declareAstrometryTransformLinearShift(py::module &mod) {

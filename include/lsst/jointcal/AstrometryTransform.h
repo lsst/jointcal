@@ -88,12 +88,12 @@ public:
      */
     Frame apply(Frame const &inputframe, bool inscribed) const;
 
-    //! dumps the transform coefficients to stream.
-    virtual void dump(std::ostream &stream = std::cout) const = 0;
+    //! prints the transform coefficients to stream.
+    virtual void print(std::ostream &out) const = 0;
 
     std::string __str__() {
         std::stringstream s;
-        dump(s);
+        print(s);
         return s.str();
     }
 
@@ -197,7 +197,6 @@ public:
     virtual ~AstrometryTransform(){};
 };
 
-/// Delegates to transform.dump()
 std::ostream &operator<<(std::ostream &stream, AstrometryTransform const &transform);
 
 /**
@@ -238,7 +237,7 @@ public:
         return right.clone();
     }
 
-    void dump(std::ostream &stream = std::cout) const override { stream << "x' = x\ny' = y" << std::endl; }
+    void print(std::ostream &out) const override { out << "x' = x\ny' = y" << std::endl; }
 
     std::size_t getNpar() const override { return 0; }
 
@@ -288,8 +287,8 @@ public:
     AstrometryTransformPolynomial(std::size_t order = 1);
 
     //! Constructs a "polynomial image" from an existing transform, over a specified domain
-    AstrometryTransformPolynomial(const AstrometryTransform *transform, const Frame &frame,
-                                  std::size_t order, std::size_t nPoint = 1000);
+    AstrometryTransformPolynomial(const AstrometryTransform *transform, const Frame &frame, std::size_t order,
+                                  std::size_t nPoint = 1000);
 
     /**
      * Constructs a polynomial approximation to an afw::geom::TransformPoint2ToPoint2.
@@ -300,8 +299,7 @@ public:
      * @param[in] nSteps The number of sample points per axis (nSteps^2 total points).
      */
     AstrometryTransformPolynomial(std::shared_ptr<afw::geom::TransformPoint2ToPoint2> transform,
-                                  jointcal::Frame const &domain, std::size_t order,
-                                  std::size_t nSteps = 50);
+                                  jointcal::Frame const &domain, std::size_t order, std::size_t nSteps = 50);
 
     /// Sets the polynomial order (the highest sum of exponents of the largest monomial).
     void setOrder(std::size_t order);
@@ -323,7 +321,7 @@ public:
     std::size_t getNpar() const override { return 2 * _nterms; }
 
     //! print out of coefficients in a readable form.
-    void dump(std::ostream &stream = std::cout) const override;
+    void print(std::ostream &out) const override;
 
     //! guess what
     double fit(StarMatchList const &starMatchList) override;
@@ -347,11 +345,13 @@ public:
         return std::unique_ptr<AstrometryTransform>(new AstrometryTransformPolynomial(*this));
     }
 
-    //! access to coefficients (read only)
-    double coeff(std::size_t powX, std::size_t powY, std::size_t whichCoord) const;
-
-    //! write access
-    double &coeff(std::size_t powX, std::size_t powY, std::size_t whichCoord);
+    /**
+     *  Get the coefficient of a given power in x and y, for either the x or y coordinate.
+     * @{
+     */
+    double getCoefficient(std::size_t powX, std::size_t powY, std::size_t whichCoord) const;
+    double &getCoefficient(std::size_t powX, std::size_t powY, std::size_t whichCoord);
+    /** @} */
 
     //! read access, zero if beyond order
     double coeffOrZero(std::size_t powX, std::size_t powY, std::size_t whichCoord) const;
@@ -378,8 +378,8 @@ private:
     double computeFit(StarMatchList const &starMatchList, AstrometryTransform const &shiftToCenter,
                       const bool useErrors);
 
-    std::size_t _order;              // The highest sum of exponents of the largest monomial.
-    std::size_t _nterms;             // number of parameters per coordinate
+    std::size_t _order;           // The highest sum of exponents of the largest monomial.
+    std::size_t _nterms;          // number of parameters per coordinate
     std::vector<double> _coeffs;  // the actual coefficients
                                   // both polynomials in a single vector to speed up allocation and copies
 
@@ -439,15 +439,18 @@ public:
     //! returns the inverse: T1 = T2.inverted();
     AstrometryTransformLinear inverted() const;
 
+    void print(std::ostream &out) const override;
+
     // useful?    double jacobian(const double x, const double y) const { return determinant();}
 
     //!
     void computeDerivative(Point const &where, AstrometryTransformLinear &derivative,
-                           const double step = 0.01) const;
+                           const double step = 0.01) const override;
     //!
-    AstrometryTransformLinear linearApproximation(Point const &where, const double step = 0.01) const;
+    AstrometryTransformLinear linearApproximation(Point const &where,
+                                                  const double step = 0.01) const override;
 
-    //  void dump(std::ostream &stream = std::cout) const;
+    //  void print(std::ostream &out) const;
 
     // double fit(StarMatchList const &starMatchList);
 
@@ -458,26 +461,27 @@ public:
     //! Handy converter:
     AstrometryTransformLinear(AstrometryTransformIdentity const &) : AstrometryTransformPolynomial(1){};
 
-    std::unique_ptr<AstrometryTransform> clone() const {
+    std::unique_ptr<AstrometryTransform> clone() const override {
         return std::unique_ptr<AstrometryTransform>(new AstrometryTransformLinear(*this));
     }
 
-    std::unique_ptr<AstrometryTransform> inverseTransform(const double precision, const Frame &region) const;
+    std::unique_ptr<AstrometryTransform> inverseTransform(const double precision,
+                                                          const Frame &region) const override;
 
-    double A11() const { return coeff(1, 0, 0); }
-    double A12() const { return coeff(0, 1, 0); }
-    double A21() const { return coeff(1, 0, 1); }
-    double A22() const { return coeff(0, 1, 1); }
-    double Dx() const { return coeff(0, 0, 0); }
-    double Dy() const { return coeff(0, 0, 1); }
+    double A11() const { return getCoefficient(1, 0, 0); }
+    double A12() const { return getCoefficient(0, 1, 0); }
+    double A21() const { return getCoefficient(1, 0, 1); }
+    double A22() const { return getCoefficient(0, 1, 1); }
+    double Dx() const { return getCoefficient(0, 0, 0); }
+    double Dy() const { return getCoefficient(0, 0, 1); }
 
 protected:
-    double &a11() { return coeff(1, 0, 0); }
-    double &a12() { return coeff(0, 1, 0); }
-    double &a21() { return coeff(1, 0, 1); }
-    double &a22() { return coeff(0, 1, 1); }
-    double &dx() { return coeff(0, 0, 0); }
-    double &dy() { return coeff(0, 0, 1); }
+    double &a11() { return getCoefficient(1, 0, 0); }
+    double &a12() { return getCoefficient(0, 1, 0); }
+    double &a21() { return getCoefficient(1, 0, 1); }
+    double &a22() { return getCoefficient(0, 1, 1); }
+    double &dx() { return getCoefficient(0, 0, 0); }
+    double &dy() { return getCoefficient(0, 0, 1); }
 
     friend class AstrometryTransform;
     friend class AstrometryTransformIdentity;    // for AstrometryTransform::Derivative
@@ -552,7 +556,7 @@ public:
     // Input is x, y pixels; output is ICRS RA, Dec in degrees
     void apply(const double xIn, const double yIn, double &xOut, double &yOut) const override;
 
-    void dump(std::ostream &stream = std::cout) const override;
+    void print(std::ostream &out) const override;
 
     /// Not implemented; throws pex::exceptions::LogicError
     double fit(const StarMatchList &starMatchList) override;
@@ -658,7 +662,7 @@ public:
 
     std::unique_ptr<AstrometryTransform> clone() const;
 
-    void dump(std::ostream &stream) const;
+    void print(std::ostream &out) const;
 
     //! Not implemented yet, because we do it otherwise.
     double fit(StarMatchList const &starMatchList);
@@ -687,7 +691,7 @@ public:
 
     std::unique_ptr<AstrometryTransform> clone() const;
 
-    void dump(std::ostream &stream) const;
+    void print(std::ostream &out) const;
 
     //! Not implemented yet, because we do it otherwise.
     double fit(StarMatchList const &starMatchList);
@@ -734,7 +738,7 @@ public:
     //! Inverse transform: returns a TanPixelToRaDec.
     std::unique_ptr<AstrometryTransform> inverseTransform(const double precision, const Frame &region) const;
 
-    void dump(std::ostream &stream) const;
+    void print(std::ostream &out) const;
 
     std::unique_ptr<AstrometryTransform> clone() const;
 
@@ -762,7 +766,7 @@ public:
 
     void apply(const double xIn, const double yIn, double &xOut, double &yOut) const;
 
-    void dump(std::ostream &stream = std::cout) const;
+    void print(std::ostream &out) const;
 
     double fit(StarMatchList const &starMatchList);
 

@@ -42,8 +42,8 @@ class Point;
 //! Photometric response model which has a single photometric factor per CcdImage.
 class SimplePhotometryModel : public PhotometryModel {
 public:
-    SimplePhotometryModel(CcdImageList const &ccdImageList, LOG_LOGGER log, double errorPedestal_ = 0)
-            : PhotometryModel(log, errorPedestal_) {
+    SimplePhotometryModel(CcdImageList const &ccdImageList, LOG_LOGGER log, double errorPedestal = 0)
+            : PhotometryModel(log, errorPedestal) {
         _myMap.reserve(ccdImageList.size());
     }
 
@@ -72,8 +72,8 @@ public:
     void computeParameterDerivatives(MeasuredStar const &measuredStar, CcdImage const &ccdImage,
                                      Eigen::VectorXd &derivatives) const override;
 
-    /// @copydoc PhotometryModel::dump
-    void dump(std::ostream &stream = std::cout) const override;
+    /// @copydoc PhotometryModel::print
+    virtual void print(std::ostream &out) const override;
 
 protected:
     typedef std::unordered_map<CcdImageKey, std::unique_ptr<PhotometryMapping>> MapType;
@@ -85,7 +85,7 @@ protected:
 
 class SimpleFluxModel : public SimplePhotometryModel {
 public:
-    SimpleFluxModel(CcdImageList const &ccdImageList, double errorPedestal_ = 0);
+    SimpleFluxModel(CcdImageList const &ccdImageList, double errorPedestal = 0);
 
     /// @copydoc PhotometryModel::offsetFittedStar
     void offsetFittedStar(FittedStar &fittedStar, double delta) const override {
@@ -115,11 +115,14 @@ public:
      * @note SimplePhotometryModel uses a spatially-invariant transform, so we can simplify the PhotoCalib.
      */
     std::shared_ptr<afw::image::PhotoCalib> toPhotoCalib(CcdImage const &ccdImage) const override;
+
+    /// @copydoc PhotometryModel::print
+    void print(std::ostream &out) const override;
 };
 
 class SimpleMagnitudeModel : public SimplePhotometryModel {
 public:
-    SimpleMagnitudeModel(CcdImageList const &ccdImageList, double errorPedestal_ = 0);
+    SimpleMagnitudeModel(CcdImageList const &ccdImageList, double errorPedestal = 0);
 
     /// @copydoc PhotometryModel::offsetFittedStar
     void offsetFittedStar(FittedStar &fittedStar, double delta) const override {
@@ -149,6 +152,9 @@ public:
      * @note SimplePhotometryModel uses a spatially-invariant transform, so we can simplify the PhotoCalib.
      */
     std::shared_ptr<afw::image::PhotoCalib> toPhotoCalib(CcdImage const &ccdImage) const override;
+
+    /// @copydoc PhotometryModel::print
+    void print(std::ostream &out) const override;
 };
 
 }  // namespace jointcal

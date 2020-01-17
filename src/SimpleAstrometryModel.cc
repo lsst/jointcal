@@ -132,6 +132,17 @@ std::size_t SimpleAstrometryModel::getTotalParameters() const {
     return total;
 }
 
+void SimpleAstrometryModel::print(std::ostream &out) const {
+    out << "SimpleAstrometryModel: " << _myMap.size() << " mappings" << std::endl;
+    out << *_skyToTangentPlane << std::endl;
+    out << "Sensor to sky transforms:" << std::endl;
+    for (auto &i : _myMap) {
+        out << i.first << std::endl;
+        out << *(i.second) << std::endl;
+        out << std::endl;
+    }
+}
+
 const AstrometryTransform &SimpleAstrometryModel::getTransform(CcdImage const &ccdImage) const {
     return dynamic_cast<const SimplePolyMapping *>(findMapping(ccdImage))->getTransform();
 }
@@ -146,8 +157,7 @@ std::shared_ptr<afw::geom::SkyWcs> SimpleAstrometryModel::makeSkyWcs(CcdImage co
 
     // make a basic SkyWcs and extract the IWC portion
     auto iwcToSkyWcs = afw::geom::makeSkyWcs(
-            geom::Point2D(0, 0),
-            geom::SpherePoint(tangentPoint.x, tangentPoint.y, geom::degrees),
+            geom::Point2D(0, 0), geom::SpherePoint(tangentPoint.x, tangentPoint.y, geom::degrees),
             afw::geom::makeCdMatrix(1.0 * geom::degrees, 0 * geom::degrees, true));
     auto iwcToSkyMap = iwcToSkyWcs->getFrameDict()->getMapping("PIXELS", "SKY");
     auto skyFrame = iwcToSkyWcs->getFrameDict()->getFrame("SKY");

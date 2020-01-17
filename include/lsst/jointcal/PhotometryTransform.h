@@ -65,11 +65,11 @@ public:
         return transformError(in.x, in.y, value, valueErr);
     }
 
-    /// dumps the transform coefficients to stream.
-    virtual void dump(std::ostream &stream = std::cout) const = 0;
+    /// Print the transform coefficients to stream.
+    virtual void print(std::ostream &out) const = 0;
 
     friend std::ostream &operator<<(std::ostream &s, PhotometryTransform const &transform) {
-        transform.dump(s);
+        transform.print(s);
         return s;
     }
 
@@ -111,8 +111,10 @@ class PhotometryTransformSpatiallyInvariant : public PhotometryTransform {
 public:
     explicit PhotometryTransformSpatiallyInvariant(double value) : _value(value) {}
 
-    /// @copydoc PhotometryTransform::dump
-    void dump(std::ostream &stream = std::cout) const override { stream << std::setprecision(10) << _value; }
+    /// @copydoc PhotometryTransform::print
+    void print(std::ostream &out) const override {
+        out << "PhotometryTransformSpatiallyInvariant: " << std::setprecision(10) << _value;
+    }
 
     /// @copydoc PhotometryTransform::getNpar
     std::size_t getNpar() const override { return 1; }
@@ -241,8 +243,8 @@ public:
     /// @copydoc PhotometryTransform::transformError
     double transformError(double x, double y, double value, double valueErr) const override { return 0; }
 
-    /// @copydoc PhotometryTransform::dump
-    void dump(std::ostream &stream = std::cout) const override { stream << _coefficients; }
+    /// @copydoc PhotometryTransform::print
+    void print(std::ostream &out) const override { out << "PhotometryTransformChebyshev: " << _coefficients; }
 
     /// @copydoc PhotometryTransform::getNpar
     std::size_t getNpar() const override { return _nParameters; }

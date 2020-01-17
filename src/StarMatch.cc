@@ -227,7 +227,7 @@ void StarMatchList::applyTransform(StarMatchList &transformed, const AstrometryT
     }
 }
 
-void StarMatchList::dumpTransform(std::ostream &stream) const {
+void StarMatchList::printTransform(std::ostream &stream) const {
     stream << " ================================================================" << std::endl
            << " Transformation between lists of order " << getTransformOrder() << std::endl
            << *_transform  //<< endl

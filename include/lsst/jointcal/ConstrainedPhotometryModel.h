@@ -55,12 +55,11 @@ public:
      *                            visit polynomial.
      * @param[in]  log An lsst::log::Log instance to log messages to.
      * @param[in]  visitOrder    The order of the visit polynomial.
-     * @param[in]  errorPedestal_ A pedestal in flux or magnitude to apply to all MeasuredStar flux errors.
+     * @param[in]  errorPedestal A pedestal in flux or magnitude to apply to all MeasuredStar flux errors.
      */
-    explicit ConstrainedPhotometryModel(CcdImageList const &ccdImageList,
-                                        geom::Box2D const &focalPlaneBBox, LOG_LOGGER log,
-                                        int visitOrder = 7, double errorPedestal_ = 0)
-            : PhotometryModel(log, errorPedestal_), _fittingChips(false), _fittingVisits(false) {
+    explicit ConstrainedPhotometryModel(CcdImageList const &ccdImageList, geom::Box2D const &focalPlaneBBox,
+                                        LOG_LOGGER log, int visitOrder = 7, double errorPedestal = 0)
+            : PhotometryModel(log, errorPedestal), _fittingChips(false), _fittingVisits(false) {
         _chipVisitMap.reserve(ccdImageList.size());
     }
 
@@ -89,8 +88,8 @@ public:
     void computeParameterDerivatives(MeasuredStar const &measuredStar, CcdImage const &ccdImage,
                                      Eigen::VectorXd &derivatives) const override;
 
-    /// @copydoc PhotometryModel::dump
-    void dump(std::ostream &stream = std::cout) const override;
+    /// @copydoc PhotometryModel::print
+    void print(std::ostream &out) const override;
 
 protected:
     PhotometryMappingBase *findMapping(CcdImage const &ccdImage) const override;
@@ -138,10 +137,10 @@ private:
 class ConstrainedFluxModel : public ConstrainedPhotometryModel {
 public:
     explicit ConstrainedFluxModel(CcdImageList const &ccdImageList, geom::Box2D const &focalPlaneBBox,
-                                  int visitOrder = 7, double errorPedestal_ = 0)
+                                  int visitOrder = 7, double errorPedestal = 0)
             : ConstrainedPhotometryModel(ccdImageList, focalPlaneBBox,
                                          LOG_GET("jointcal.ConstrainedFluxModel"), visitOrder,
-                                         errorPedestal_) {
+                                         errorPedestal) {
         initialize<FluxTransformSpatiallyInvariant, FluxTransformChebyshev, ChipVisitFluxMapping>(
                 ccdImageList, focalPlaneBBox, visitOrder);
     }
@@ -171,6 +170,9 @@ public:
     /// @copydoc PhotometryModel::toPhotoCalib
     std::shared_ptr<afw::image::PhotoCalib> toPhotoCalib(CcdImage const &ccdImage) const override;
 
+    /// @copydoc PhotometryModel::print
+    void print(std::ostream &out) const override;
+
 protected:
     /// @copydoc ConstrainedPhotometryModel::initialChipCalibration
     double initialChipCalibration(std::shared_ptr<afw::image::PhotoCalib const> photoCalib) override {
@@ -180,12 +182,11 @@ protected:
 
 class ConstrainedMagnitudeModel : public ConstrainedPhotometryModel {
 public:
-    explicit ConstrainedMagnitudeModel(CcdImageList const &ccdImageList,
-                                       geom::Box2D const &focalPlaneBBox, int visitOrder = 7,
-                                       double errorPedestal_ = 0)
+    explicit ConstrainedMagnitudeModel(CcdImageList const &ccdImageList, geom::Box2D const &focalPlaneBBox,
+                                       int visitOrder = 7, double errorPedestal = 0)
             : ConstrainedPhotometryModel(ccdImageList, focalPlaneBBox,
                                          LOG_GET("jointcal.ConstrainedMagnitudeModel"), visitOrder,
-                                         errorPedestal_) {
+                                         errorPedestal) {
         initialize<MagnitudeTransformSpatiallyInvariant, MagnitudeTransformChebyshev,
                    ChipVisitMagnitudeMapping>(ccdImageList, focalPlaneBBox, visitOrder);
     }
@@ -214,6 +215,9 @@ public:
 
     /// @copydoc PhotometryModel::toPhotoCalib
     std::shared_ptr<afw::image::PhotoCalib> toPhotoCalib(CcdImage const &ccdImage) const override;
+
+    /// @copydoc PhotometryModel::print
+    void print(std::ostream &out) const override;
 
 protected:
     /// @copydoc ConstrainedPhotometryModel::initialChipCalibration

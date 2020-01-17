@@ -75,18 +75,23 @@ void declarePhotometryModel(py::module &mod) {
     cls.def("toPhotoCalib", &PhotometryModel::toPhotoCalib);
     cls.def("getMapping", &PhotometryModel::getMapping, py::return_value_policy::reference_internal);
     cls.def("getTotalParameters", &PhotometryModel::getTotalParameters);
-    utils::python::addOutputOp(cls, "__str__");
+
+    utils::python::addOutputOp(cls, "__repr__");
+    cls.def("__str__", [](PhotometryModel const &self) { return "PhotometryModel"; });
 }
 
 void declareSimplePhotometryModel(py::module &mod) {
     py::class_<SimplePhotometryModel, std::shared_ptr<SimplePhotometryModel>, PhotometryModel> cls(
             mod, "SimplePhotometryModel");
+    cls.def("__str__", [](SimplePhotometryModel const &self) { return "SimplePhotometryModel"; });
 }
 
 void declareSimpleFluxModel(py::module &mod) {
     py::class_<SimpleFluxModel, std::shared_ptr<SimpleFluxModel>, SimplePhotometryModel, PhotometryModel> cls(
             mod, "SimpleFluxModel");
     cls.def(py::init<CcdImageList const &, double>(), "ccdImageList"_a, "errorPedestal"_a = 0);
+
+    cls.def("__str__", [](SimpleFluxModel const &self) { return "SimpleFluxModel"; });
 }
 
 void declareSimpleMagnitudeModel(py::module &mod) {
@@ -94,11 +99,14 @@ void declareSimpleMagnitudeModel(py::module &mod) {
                PhotometryModel>
             cls(mod, "SimpleMagnitudeModel");
     cls.def(py::init<CcdImageList const &, double>(), "ccdImageList"_a, "errorPedestal"_a = 0);
+
+    cls.def("__str__", [](SimpleMagnitudeModel const &self) { return "SimpleMagnitudeModel"; });
 }
 
 void declareConstrainedPhotometryModel(py::module &mod) {
     py::class_<ConstrainedPhotometryModel, std::shared_ptr<ConstrainedPhotometryModel>, PhotometryModel> cls(
             mod, "ConstrainedPhotometryModel");
+    cls.def("__str__", [](ConstrainedPhotometryModel const &self) { return "ConstrainedPhotometryModel"; });
 }
 
 void declareConstrainedFluxModel(py::module &mod) {
@@ -106,6 +114,7 @@ void declareConstrainedFluxModel(py::module &mod) {
             mod, "ConstrainedFluxModel");
     cls.def(py::init<CcdImageList const &, lsst::geom::Box2D const &, int, double>(), "CcdImageList"_a,
             "bbox"_a, "visitOrder"_a = 7, "errorPedestal"_a = 0);
+    cls.def("__str__", [](ConstrainedFluxModel const &self) { return "ConstrainedFluxModel"; });
 }
 
 void declareConstrainedMagnitudeModel(py::module &mod) {
@@ -113,6 +122,7 @@ void declareConstrainedMagnitudeModel(py::module &mod) {
             mod, "ConstrainedMagnitudeModel");
     cls.def(py::init<CcdImageList const &, lsst::geom::Box2D const &, int, double>(), "CcdImageList"_a,
             "bbox"_a, "visitOrder"_a = 7, "errorPedestal"_a = 0);
+    cls.def("__str__", [](ConstrainedMagnitudeModel const &self) { return "ConstrainedMagnitudeModel"; });
 }
 
 PYBIND11_MODULE(photometryModels, mod) {

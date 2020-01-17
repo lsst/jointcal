@@ -63,11 +63,11 @@ public:
     Point operator-(const Point& Right) const { return Point(x - Right.x, y - Right.y); }
 
     //! utility
-    virtual void dump(std::ostream& s = std::cout) const { s << "x: " << x << " y: " << y; }
+    virtual void print(std::ostream& s = std::cout) const { s << "x: " << x << " y: " << y; }
 
     //! -
     friend std::ostream& operator<<(std::ostream& stream, const Point& point) {
-        point.dump(stream);
+        point.print(stream);
         return stream;
     }
 };

@@ -25,6 +25,7 @@
 #ifndef LSST_JOINTCAL_PROJECTION_HANDLER_H
 #define LSST_JOINTCAL_PROJECTION_HANDLER_H
 
+#include <iostream>
 #include "lsst/jointcal/CcdImage.h"
 #include "lsst/jointcal/AstrometryTransform.h"
 #include "map"
@@ -45,7 +46,12 @@ struct ProjectionHandler {
             const CcdImage &ccdImage) const = 0;
 
     virtual ~ProjectionHandler(){};
+
+    /// Print a string representation of the contents of this mapping, for debugging.
+    virtual void print(std::ostream &out) const = 0;
 };
+
+std::ostream &operator<<(std::ostream &stream, ProjectionHandler const &projectionHandler);
 
 /**
  * The simplest implementation of ProjectionHandler. Means that coordinates of
@@ -56,9 +62,12 @@ class IdentityProjectionHandler : public ProjectionHandler {
     std::shared_ptr<AstrometryTransformIdentity> id;
 
 public:
-    const std::shared_ptr<const AstrometryTransform> getSkyToTangentPlane(const CcdImage &ccdImage) const {
+    const std::shared_ptr<const AstrometryTransform> getSkyToTangentPlane(
+            const CcdImage &ccdImage) const override {
         return id;
     };
+
+    void print(std::ostream &out) const override { out << "Identity Projection"; }
 };
 
 /**
@@ -75,7 +84,10 @@ class OneTPPerVisitHandler : public ProjectionHandler {
 public:
     OneTPPerVisitHandler(const CcdImageList &ccdImageList);
 
-    const std::shared_ptr<const AstrometryTransform> getSkyToTangentPlane(const CcdImage &ccdImage) const;
+    const std::shared_ptr<const AstrometryTransform> getSkyToTangentPlane(
+            const CcdImage &ccdImage) const override;
+
+    void print(std::ostream &out) const override;
 };
 }  // namespace jointcal
 }  // namespace lsst
