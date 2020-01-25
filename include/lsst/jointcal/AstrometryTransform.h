@@ -400,6 +400,14 @@ private:
      * @see ast::PolyMap for details of the structure of this matrix.
      */
     ndarray::Array<double, 2, 2> toAstPolyMapCoefficients() const;
+
+    template <class M, class V, class T>
+    double _computeFit(M A, V B, T monomials,
+                       StarMatchList const &starMatchList, AstrometryTransform const &shiftToCenter,
+                       const bool useErrors);
+
+    template <class T>
+    void _transformPosAndErrorsImpl(T monomials, FatPoint const &in, FatPoint &out) const;
 };
 
 /**

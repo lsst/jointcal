@@ -50,7 +50,7 @@ Chi2Statistic FitterBase::computeChi2() const {
 }
 
 std::size_t FitterBase::findOutliers(double nSigmaCut, MeasuredStarList &msOutliers,
-                                     FittedStarList &fsOutliers) const {
+                                     FittedStarList &fsOutliers, std::size_t outlier_iteration) const {
     // collect chi2 contributions
     Chi2List chi2List;
     chi2List.reserve(_nMeasuredStars + _associations->refStarList.size());
@@ -66,8 +66,11 @@ std::size_t FitterBase::findOutliers(double nSigmaCut, MeasuredStarList &msOutli
     double median = (nval & 1) ? chi2List[nval / 2].chi2
                                : 0.5 * (chi2List[nval / 2 - 1].chi2 + chi2List[nval / 2].chi2);
     auto averageAndSigma = chi2List.computeAverageAndSigma();
-    LOGLS_DEBUG(_log, "findOutliers chi2 stat: mean/median/sigma " << averageAndSigma.first << '/' << median
-                                                                   << '/' << averageAndSigma.second);
+    if (outlier_iteration % 100 == 0) {
+        LOGLS_DEBUG(_log, "findOutliers chi2 stat: mean/median/sigma " << averageAndSigma.first << '/' << median
+                                                                       << '/' << averageAndSigma.second
+                                                                       << " on iteration " << outlier_iteration);
+    }
     double cut = averageAndSigma.first + nSigmaCut * averageAndSigma.second;
     /* For each of the parameters, we will not remove more than 1
        measurement that contributes to constraining it. Keep track using
@@ -139,8 +142,10 @@ std::size_t FitterBase::findOutliers(double nSigmaCut, MeasuredStarList &msOutli
             nOutliers++;
         }
     }  // end loop on measurements/references
-    LOGLS_INFO(_log, "findOutliers: found " << msOutliers.size() << " meas outliers and " << fsOutliers.size()
-                                            << " ref outliers ");
+    if (outlier_iteration % 100 == 0) {
+        LOGLS_INFO(_log, "findOutliers: found " << msOutliers.size() << " meas outliers and " << fsOutliers.size()
+                                                << " ref outliers on iteration " << outlier_iteration);
+    }
 
     return nOutliers;
 }
@@ -213,6 +218,7 @@ MinimizeResult FitterBase::minimize(std::string const &whatToFit, double nSigmaC
     std::size_t totalRefOutliers = 0;
     double oldChi2 = computeChi2().chi2;
 
+    std::size_t outlier_iteration = 0;
     while (true) {
         Eigen::VectorXd delta = chol.solve(grad);
         if (doLineSearch) {
@@ -220,7 +226,9 @@ MinimizeResult FitterBase::minimize(std::string const &whatToFit, double nSigmaC
         }
         offsetParams(scale * delta);
         Chi2Statistic currentChi2(computeChi2());
-        LOGLS_DEBUG(_log, currentChi2);
+        if (outlier_iteration % 100 == 0){
+            LOGLS_DEBUG(_log, currentChi2);
+        }
         if (!isfinite(currentChi2.chi2)) {
             LOGL_ERROR(_log, "chi2 is not finite. Aborting outlier rejection.");
             returnCode = MinimizeResult::NonFinite;
@@ -237,7 +245,7 @@ MinimizeResult FitterBase::minimize(std::string const &whatToFit, double nSigmaC
         MeasuredStarList msOutliers;
         FittedStarList fsOutliers;
         // keep nOutliers so we don't have to sum msOutliers.size()+fsOutliers.size() twice below.
-        std::size_t nOutliers = findOutliers(nSigmaCut, msOutliers, fsOutliers);
+        std::size_t nOutliers = findOutliers(nSigmaCut, msOutliers, fsOutliers, outlier_iteration);
         totalMeasOutliers += msOutliers.size();
         totalRefOutliers += fsOutliers.size();
         if (nOutliers == 0) break;
@@ -278,6 +286,7 @@ MinimizeResult FitterBase::minimize(std::string const &whatToFit, double nSigmaC
                 return MinimizeResult::Failed;
             }
         }
+        ++outlier_iteration;
     }
 
     // only print the outlier summary if outlier rejection was turned on.
