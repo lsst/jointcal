@@ -653,7 +653,8 @@ void AstrometryTransformPolynomial::computeDerivative(Point const &where,
     derivative.a22() = a22;
 }
 
-void AstrometryTransformPolynomial::transformPosAndErrors(FatPoint const &in, FatPoint &out) const {
+template<std::size_t order, class T>
+void AstrometryTransformPolynomial::_transformPosAndErrorsImpl(T monomials, FatPoint const &in, FatPoint &out) const {
     /*
        The results from this routine were compared to what comes out
        from apply and transformErrors. The Derivative routine was
@@ -666,12 +667,88 @@ void AstrometryTransformPolynomial::transformPosAndErrors(FatPoint const &in, Fa
        provide the same result. This version is however faster
        (monomials get recycled).
     */
-    double monomials[_nterms];  // VLA
+    std::size_t nterms = monomials.size();
 
     FatPoint res;  // to store the result, because nothing forbids &in == &out.
 
-    double dermx[2 * _nterms];        // monomials for derivative w.r.t. x (VLA)
-    double *dermy = dermx + _nterms;  // same for y
+    double dermx[2 * nterms];        // monomials for derivative w.r.t. x (VLA)
+    double *dermy = dermx + nterms;  // same for y
+    double xin = in.x;
+    double yin = in.y;
+
+    double xx = 1;
+    double xxm1 = 1;  // xx^(ix-1)
+    for (std::size_t ix = 0; ix <= order; ++ix) {
+        std::size_t k = (ix) * (ix + 1) / 2;
+        // iy = 0
+        dermx[k] = ix * xxm1;
+        dermy[k] = 0;
+        monomials[k] = xx;
+        k += ix + 2;
+        double yy = yin;
+        double yym1 = 1;  // yy^(iy-1)
+        for (std::size_t iy = 1; iy <= order - ix; ++iy) {
+            monomials[k] = xx * yy;
+            dermx[k] = ix * xxm1 * yy;
+            dermy[k] = iy * xx * yym1;
+            yym1 *= yin;
+            yy *= yin;
+            k += ix + iy + 2;
+        }
+        xx *= xin;
+        if (ix >= 1) xxm1 *= xin;
+    }
+
+    // output position
+    double xout = 0, yout = 0;
+    const double *c = &_coeffs[0];
+    const double *c2 = &_coeffs[0]+nterms;
+    const double *pm = &monomials[0];
+    const double *mx = &dermx[0];
+    const double *my = &dermy[0];
+    double a11 = 0, a12 = 0;
+    double a21 = 0, a22 = 0;
+    for (int k = nterms; k--;){
+        xout += (*(pm)) * (*(c));
+        yout += (*(pm)) * (*(c2));
+        a11 += (*(mx)) * (*c);
+        a12 += (*(my)) * (*(c++));
+        a21 += (*(mx)) * (*c2);
+        a22 += (*(my)) * (*(c2++));
+        pm++;
+        mx++;
+        my++;
+    }
+    res.x = xout;
+    res.y = yout;
+
+    // output co-variance
+    res.vx = a11 * (a11 * in.vx + 2 * a12 * in.vxy) + a12 * a12 * in.vy;
+    res.vy = a21 * a21 * in.vx + a22 * a22 * in.vy + 2. * a21 * a22 * in.vxy;
+    res.vxy = a21 * a11 * in.vx + a22 * a12 * in.vy + (a21 * a12 + a11 * a22) * in.vxy;
+    out = res;
+}
+
+template<class T>
+void AstrometryTransformPolynomial::_transformPosAndErrorsImplDynamic(T monomials, FatPoint const &in, FatPoint &out) const {
+    /*
+       The results from this routine were compared to what comes out
+       from apply and transformErrors. The Derivative routine was
+       checked against numerical derivatives from
+       AstrometryTransform::Derivative. (P.A dec 2009).
+
+       This routine could be made much simpler by calling apply and
+       Derivative (i.e. you just suppress it, and the fallback is the
+       generic version in AstrometryTransform).  BTW, I checked that both routines
+       provide the same result. This version is however faster
+       (monomials get recycled).
+    */
+    std::size_t nterms = monomials.size();
+
+    FatPoint res;  // to store the result, because nothing forbids &in == &out.
+
+    double dermx[2 * nterms];        // monomials for derivative w.r.t. x (VLA)
+    double *dermy = dermx + nterms;  // same for y
     double xin = in.x;
     double yin = in.y;
 
@@ -701,30 +778,25 @@ void AstrometryTransformPolynomial::transformPosAndErrors(FatPoint const &in, Fa
     // output position
     double xout = 0, yout = 0;
     const double *c = &_coeffs[0];
+    const double *c2 = &_coeffs[0]+nterms;
     const double *pm = &monomials[0];
-    for (int k = _nterms; k--;) xout += (*(pm++)) * (*(c++));
-    pm = &monomials[0];
-    for (int k = _nterms; k--;) yout += (*(pm++)) * (*(c++));
-    res.x = xout;
-    res.y = yout;
-
-    // derivatives
-    c = &_coeffs[0];
     const double *mx = &dermx[0];
     const double *my = &dermy[0];
     double a11 = 0, a12 = 0;
-    for (int k = _nterms; k--;) {
-        a11 += (*(mx++)) * (*c);
-        a12 += (*(my++)) * (*(c++));
-    }
-
     double a21 = 0, a22 = 0;
-    mx = &dermx[0];
-    my = &dermy[0];
-    for (int k = _nterms; k--;) {
-        a21 += (*(mx++)) * (*c);
-        a22 += (*(my++)) * (*(c++));
+    for (int k = nterms; k--;){
+        xout += (*(pm)) * (*(c));
+        yout += (*(pm)) * (*(c2));
+        a11 += (*(mx)) * (*c);
+        a12 += (*(my)) * (*(c++));
+        a21 += (*(mx)) * (*c2);
+        a22 += (*(my)) * (*(c2++));
+        pm++;
+        mx++;
+        my++;
     }
+    res.x = xout;
+    res.y = yout;
 
     // output co-variance
     res.vx = a11 * (a11 * in.vx + 2 * a12 * in.vxy) + a12 * a12 * in.vy;
@@ -732,6 +804,60 @@ void AstrometryTransformPolynomial::transformPosAndErrors(FatPoint const &in, Fa
     res.vxy = a21 * a11 * in.vx + a22 * a12 * in.vy + (a21 * a12 + a11 * a22) * in.vxy;
     out = res;
 }
+
+void AstrometryTransformPolynomial::transformPosAndErrors(FatPoint const &in, FatPoint &out) const {
+    switch (_nterms) {
+        case 3:
+        {
+            Eigen::Matrix<double, 3, 1> monomials;
+            _transformPosAndErrorsImpl<1>(monomials, in, out);
+            break;
+        }
+        case 6:
+        {
+            Eigen::Matrix<double, 6, 1> monomials;
+            _transformPosAndErrorsImpl<2>(monomials, in, out);
+            break;
+        }
+        case 10:
+        {
+            Eigen::Matrix<double, 10, 1> monomials;
+            _transformPosAndErrorsImpl<3>(monomials, in, out);
+            break;
+        }
+        case 15:
+        {
+            Eigen::Matrix<double, 15, 1> monomials;
+            _transformPosAndErrorsImpl<4>(monomials, in, out);
+            break;
+        }
+        case 21:
+        {
+            Eigen::Matrix<double, 21, 1> monomials;
+            _transformPosAndErrorsImpl<5>(monomials, in, out);
+            break;
+        }
+        case 28:
+        {
+            Eigen::Matrix<double, 28, 1> monomials;
+            _transformPosAndErrorsImpl<6>(monomials, in, out);
+            break;
+        }
+        case 36:
+        {
+            Eigen::Matrix<double, 36, 1> monomials;
+            _transformPosAndErrorsImpl<7>(monomials, in, out);
+            break;
+        }
+        default:
+        {
+            Eigen::VectorXd monomials(_nterms);
+            _transformPosAndErrorsImplDynamic(monomials, in, out);
+            break;
+        }
+    }
+}
+
 
 /* The coefficient ordering is defined both here *AND* in the
    AstrometryTransformPolynomial::apply, AstrometryTransformPolynomial::Derivative, ... routines
@@ -864,15 +990,12 @@ static AstrometryTransformLinear shiftAndNormalize(StarMatchList const &starMatc
 
 static double sq(double x) { return x * x; }
 
-double AstrometryTransformPolynomial::computeFit(StarMatchList const &starMatchList,
-                                                 AstrometryTransform const &shiftToCenter,
-                                                 const bool useErrors) {
-    Eigen::MatrixXd A(2 * _nterms, 2 * _nterms);
-    A.setZero();
-    Eigen::VectorXd B(2 * _nterms);
-    B.setZero();
+template <class M, class V, class T>
+double AstrometryTransformPolynomial::_computeFit(M A, V B, T monomials,
+                   StarMatchList const &starMatchList, AstrometryTransform const &shiftToCenter,
+                   const bool useErrors) {
+    double nterms = monomials.size();
     double sumr2 = 0;
-    double monomials[_nterms];
     for (auto it = starMatchList.begin(); it != starMatchList.end(); ++it) {
         const StarMatch &a_match = *it;
         Point tmp = shiftToCenter.apply(a_match.point1);
@@ -880,7 +1003,7 @@ double AstrometryTransformPolynomial::computeFit(StarMatchList const &starMatchL
         FatPoint const &point2 = a_match.point2;
         double wxx, wyy, wxy;
         FatPoint tr1;
-        computeMonomials(point1.x, point1.y, monomials);
+        computeMonomials(point1.x, point1.y, monomials.data());
         if (useErrors) {
             transformPosAndErrors(point1, tr1);  // we might consider recycling the monomials
             double vxx = (tr1.vx + point2.vx);
@@ -901,15 +1024,17 @@ double AstrometryTransformPolynomial::computeFit(StarMatchList const &starMatchL
 
         double bxcoeff = wxx * resx + wxy * resy;
         double bycoeff = wyy * resy + wxy * resx;
-        for (std::size_t j = 0; j < _nterms; ++j) {
-            for (std::size_t i = j; i < _nterms; ++i) {
-                A(i, j) += wxx * monomials[i] * monomials[j];
-                A(i + _nterms, j + _nterms) += wyy * monomials[i] * monomials[j];
-                A(j, i + _nterms) = A(i, j + _nterms) += wxy * monomials[i] * monomials[j];
+        for (std::size_t j = 0; j < nterms; ++j) {
+            for (std::size_t i = j; i < nterms; ++i) {
+                double calc = monomials(i) * monomials(j);
+                A(i, j) += wxx * calc;
+                A(i + nterms, j + nterms) += wyy * calc;
+                A(j, i + nterms) = A(i, j + nterms) += wxy * calc;
             }
-            B(j) += bxcoeff * monomials[j];
-            B(j + _nterms) += bycoeff * monomials[j];
         }
+        B.head(nterms) += bxcoeff * monomials;
+        B.tail(nterms) += bycoeff * monomials;
+
     }  // end loop on points
     Eigen::LDLT<Eigen::MatrixXd, Eigen::Lower> factor(A);
     // should probably throw
@@ -919,9 +1044,106 @@ double AstrometryTransformPolynomial::computeFit(StarMatchList const &starMatchL
     }
 
     Eigen::VectorXd sol = factor.solve(B);
-    for (std::size_t k = 0; k < 2 * _nterms; ++k) _coeffs[k] += sol(k);
-    if (starMatchList.size() == _nterms) return 0;
+    for (std::size_t k = 0; k < 2 * nterms; ++k) _coeffs[k] += sol(k);
+    if (starMatchList.size() == nterms) return 0;
     return (sumr2 - B.dot(sol));
+}
+
+double AstrometryTransformPolynomial::computeFit(StarMatchList const &starMatchList,
+                                                 AstrometryTransform const &shiftToCenter,
+                                                 const bool useErrors) {
+    switch (_nterms) {
+        case 3:
+        {
+            Eigen::Matrix<double, 6, 6> A;
+            A.setZero();
+            Eigen::Matrix<double, 6, 1> B;
+            B.setZero();
+            Eigen::Matrix<double, 3, 1> monomials;
+            return _computeFit(A, B, monomials, starMatchList, shiftToCenter, useErrors);
+            break;
+        }
+        case 6:
+        {
+            Eigen::Matrix<double, 12, 12> A;
+            A.setZero();
+            Eigen::Matrix<double, 12, 1> B;
+            B.setZero();
+            Eigen::Matrix<double, 6, 1> monomials;
+            return _computeFit(A, B, monomials, starMatchList, shiftToCenter, useErrors);
+            break;
+        }
+        case 10:
+        {
+            Eigen::Matrix<double, 20, 20> A;
+            A.setZero();
+            Eigen::Matrix<double, 20, 1> B;
+            B.setZero();
+            Eigen::Matrix<double, 10, 1> monomials;
+            return _computeFit(A, B, monomials, starMatchList, shiftToCenter, useErrors);
+            break;
+        }
+        case 15:
+        {
+            Eigen::Matrix<double, 30, 30> A;
+            A.setZero();
+            Eigen::Matrix<double, 30, 1> B;
+            B.setZero();
+            Eigen::Matrix<double, 15, 1> monomials;
+            return _computeFit(A, B, monomials, starMatchList, shiftToCenter, useErrors);
+            break;
+        }
+        case 21:
+        {
+            Eigen::Matrix<double, 42, 42> A;
+            A.setZero();
+            Eigen::Matrix<double, 42, 1> B;
+            B.setZero();
+            Eigen::Matrix<double, 21, 1> monomials;
+            return _computeFit(A, B, monomials, starMatchList, shiftToCenter, useErrors);
+            break;
+        }
+        case 28:
+        {
+            Eigen::Matrix<double, 56, 56> A;
+            A.setZero();
+            Eigen::Matrix<double, 56, 1> B;
+            B.setZero();
+            Eigen::Matrix<double, 28, 1> monomials;
+            return _computeFit(A, B, monomials, starMatchList, shiftToCenter, useErrors);
+            break;
+        }
+        case 36:
+        {
+            Eigen::Matrix<double, 72, 72> A;
+            A.setZero();
+            Eigen::Matrix<double, 72, 1> B;
+            B.setZero();
+            Eigen::Matrix<double, 36, 1> monomials;
+            return _computeFit(A, B, monomials, starMatchList, shiftToCenter, useErrors);
+            break;
+        }
+        case 37:
+        {
+            Eigen::Matrix<double, 74, 74> A;
+            A.setZero();
+            Eigen::Matrix<double, 74, 1> B;
+            B.setZero();
+            Eigen::Matrix<double, 37, 1> monomials;
+            return _computeFit(A, B, monomials, starMatchList, shiftToCenter, useErrors);
+            break;
+        }
+        default:
+        {
+            Eigen::MatrixXd A(2*_nterms, 2*_nterms);
+            A.setZero();
+            Eigen::VectorXd B(2*_nterms);
+            B.setZero();
+            Eigen::VectorXd monomials(_nterms);
+            return _computeFit(A, B, monomials, starMatchList, shiftToCenter, useErrors);
+            break;
+        }
+    }
 }
 
 double AstrometryTransformPolynomial::fit(StarMatchList const &starMatchList) {

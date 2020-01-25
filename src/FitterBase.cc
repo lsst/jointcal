@@ -139,8 +139,8 @@ std::size_t FitterBase::findOutliers(double nSigmaCut, MeasuredStarList &msOutli
             nOutliers++;
         }
     }  // end loop on measurements/references
-    LOGLS_INFO(_log, "findOutliers: found " << msOutliers.size() << " meas outliers and " << fsOutliers.size()
-                                            << " ref outliers ");
+    LOGLS_INFO(_log, "findOutliers: found " << msOutliers.size() << " meas outliers and "
+                                            << fsOutliers.size());
 
     return nOutliers;
 }
