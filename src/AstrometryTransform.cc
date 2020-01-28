@@ -653,8 +653,84 @@ void AstrometryTransformPolynomial::computeDerivative(Point const &where,
     derivative.a22() = a22;
 }
 
-template<class T>
+template<std::size_t order, class T>
 void AstrometryTransformPolynomial::_transformPosAndErrorsImpl(T monomials, FatPoint const &in, FatPoint &out) const {
+    /*
+       The results from this routine were compared to what comes out
+       from apply and transformErrors. The Derivative routine was
+       checked against numerical derivatives from
+       AstrometryTransform::Derivative. (P.A dec 2009).
+
+       This routine could be made much simpler by calling apply and
+       Derivative (i.e. you just suppress it, and the fallback is the
+       generic version in AstrometryTransform).  BTW, I checked that both routines
+       provide the same result. This version is however faster
+       (monomials get recycled).
+    */
+    std::size_t nterms = monomials.size();
+
+    FatPoint res;  // to store the result, because nothing forbids &in == &out.
+
+    double dermx[2 * nterms];        // monomials for derivative w.r.t. x (VLA)
+    double *dermy = dermx + nterms;  // same for y
+    double xin = in.x;
+    double yin = in.y;
+
+    double xx = 1;
+    double xxm1 = 1;  // xx^(ix-1)
+    for (std::size_t ix = 0; ix <= order; ++ix) {
+        std::size_t k = (ix) * (ix + 1) / 2;
+        // iy = 0
+        dermx[k] = ix * xxm1;
+        dermy[k] = 0;
+        monomials[k] = xx;
+        k += ix + 2;
+        double yy = yin;
+        double yym1 = 1;  // yy^(iy-1)
+        for (std::size_t iy = 1; iy <= order - ix; ++iy) {
+            monomials[k] = xx * yy;
+            dermx[k] = ix * xxm1 * yy;
+            dermy[k] = iy * xx * yym1;
+            yym1 *= yin;
+            yy *= yin;
+            k += ix + iy + 2;
+        }
+        xx *= xin;
+        if (ix >= 1) xxm1 *= xin;
+    }
+
+    // output position
+    double xout = 0, yout = 0;
+    const double *c = &_coeffs[0];
+    const double *c2 = &_coeffs[0]+nterms;
+    const double *pm = &monomials[0];
+    const double *mx = &dermx[0];
+    const double *my = &dermy[0];
+    double a11 = 0, a12 = 0;
+    double a21 = 0, a22 = 0;
+    for (int k = nterms; k--;){
+        xout += (*(pm)) * (*(c));
+        yout += (*(pm)) * (*(c2)); 
+        a11 += (*(mx)) * (*c);
+        a12 += (*(my)) * (*(c++));
+        a21 += (*(mx)) * (*c2);
+        a22 += (*(my)) * (*(c2++));
+        pm++;
+        mx++;
+        my++;
+    }
+    res.x = xout;
+    res.y = yout;
+
+    // output co-variance
+    res.vx = a11 * (a11 * in.vx + 2 * a12 * in.vxy) + a12 * a12 * in.vy;
+    res.vy = a21 * a21 * in.vx + a22 * a22 * in.vy + 2. * a21 * a22 * in.vxy;
+    res.vxy = a21 * a11 * in.vx + a22 * a12 * in.vy + (a21 * a12 + a11 * a22) * in.vxy;
+    out = res;
+}
+
+template<class T>
+void AstrometryTransformPolynomial::_transformPosAndErrorsImplDynamic(T monomials, FatPoint const &in, FatPoint &out) const {
     /*
        The results from this routine were compared to what comes out
        from apply and transformErrors. The Derivative routine was
@@ -721,70 +797,12 @@ void AstrometryTransformPolynomial::_transformPosAndErrorsImpl(T monomials, FatP
     }
     res.x = xout;
     res.y = yout;
-    /*
-    double xout = 0, yout = 0;
-    const double *c = &_coeffs[0];
-    //const double *c2 = &_coeffs[0]+nterms;
-    const double *pm = monomials.data();
-    for (int k = _nterms; k--;) xout += (*(pm++)) * (*(c++));
-    pm = monomials.data();
-    for (int k = _nterms; k--;) yout += (*(pm++)) * (*(c++));
-
-    res.x = xout;
-    res.y = yout;
-
-    // derivatives
-    c = &_coeffs[0];
-    const double *mx = &dermx[0];
-    const double *my = &dermy[0];
-    double a11 = 0, a12 = 0;
-    for (int k = nterms; k--;) {
-        a11 += (*(mx++)) * (*c);
-        a12 += (*(my++)) * (*(c++));
-    }
-
-    double a21 = 0, a22 = 0;
-    mx = &dermx[0];
-    my = &dermy[0];
-    for (int k = nterms; k--;) {
-        a21 += (*(mx++)) * (*c);
-        a22 += (*(my++)) * (*(c++));
-    }
-    */
 
     // output co-variance
     res.vx = a11 * (a11 * in.vx + 2 * a12 * in.vxy) + a12 * a12 * in.vy;
     res.vy = a21 * a21 * in.vx + a22 * a22 * in.vy + 2. * a21 * a22 * in.vxy;
     res.vxy = a21 * a11 * in.vx + a22 * a12 * in.vy + (a21 * a12 + a11 * a22) * in.vxy;
     out = res;
-/*
-    double xout = 0, yout = 0;
-    const double *c = &_coeffs[0];
-    const double *c2 = &_coeffs[0]+nterms;
-    const double *pm = &monomials[0];
-    const double *mx = &dermx[0];
-    const double *my = &dermy[0];
-    double a11 = 0, a12 = 0;
-    double a21 = 0, a22 = 0;
-    for (int k = nterms; k--;){
-        xout += (*(pm)) * (*(c));
-        yout += (*(pm)) * (*(c2)); 
-        a11 += (*(mx)) * (*c);
-        a12 += (*(my)) * (*(c++));
-        a21 += (*(mx)) * (*c2);
-        a22 += (*(my)) * (*(c2++));
-        pm++;
-        mx++;
-        my++;
-    }
-    */
-/*
-    for (int k = nterms; k--;){
-        xout += (*(pm)) * (*(c++));
-        yout += (*(pm)) * (*(c2++)); 
-        pm++;
-    }
-    */
 }
 
 void AstrometryTransformPolynomial::transformPosAndErrors(FatPoint const &in, FatPoint &out) const {
@@ -792,241 +810,241 @@ void AstrometryTransformPolynomial::transformPosAndErrors(FatPoint const &in, Fa
         case 1:
         {
             Eigen::Matrix<double, 1, 1> monomials;
-            _transformPosAndErrorsImpl(monomials, in, out);
+            _transformPosAndErrorsImplDynamic(monomials, in, out);
             break;
         }
         case 2:
         {
             Eigen::Matrix<double, 2, 1> monomials;
-            _transformPosAndErrorsImpl(monomials, in, out);
+            _transformPosAndErrorsImplDynamic(monomials, in, out);
             break;
         }
         case 3:
         {
             Eigen::Matrix<double, 3, 1> monomials;
-            _transformPosAndErrorsImpl(monomials, in, out);
+            _transformPosAndErrorsImpl<1>(monomials, in, out);
             break;
         }
         case 4:
         {
             Eigen::Matrix<double, 4, 1> monomials;
-            _transformPosAndErrorsImpl(monomials, in, out);
+            _transformPosAndErrorsImplDynamic(monomials, in, out);
             break;
         }
         case 5:
         {
             Eigen::Matrix<double, 5, 1> monomials;
-            _transformPosAndErrorsImpl(monomials, in, out);
+            _transformPosAndErrorsImplDynamic(monomials, in, out);
             break;
         }
         case 6:
         {
             Eigen::Matrix<double, 6, 1> monomials;
-            _transformPosAndErrorsImpl(monomials, in, out);
+            _transformPosAndErrorsImpl<2>(monomials, in, out);
             break;
         }
         case 7:
         {
             Eigen::Matrix<double, 7, 1> monomials;
-            _transformPosAndErrorsImpl(monomials, in, out);
+            _transformPosAndErrorsImplDynamic(monomials, in, out);
             break;
         }
         case 8:
         {
             Eigen::Matrix<double, 8, 1> monomials;
-            _transformPosAndErrorsImpl(monomials, in, out);
+            _transformPosAndErrorsImplDynamic(monomials, in, out);
             break;
         }
         case 9:
         {
             Eigen::Matrix<double, 9, 1> monomials;
-            _transformPosAndErrorsImpl(monomials, in, out);
+            _transformPosAndErrorsImplDynamic(monomials, in, out);
             break;
         }
         case 10:
         {
             Eigen::Matrix<double, 10, 1> monomials;
-            _transformPosAndErrorsImpl(monomials, in, out);
+            _transformPosAndErrorsImpl<3>(monomials, in, out);
             break;
         }
         case 11:
         {
             Eigen::Matrix<double, 11, 1> monomials;
-            _transformPosAndErrorsImpl(monomials, in, out);
+            _transformPosAndErrorsImplDynamic(monomials, in, out);
             break;
         }
         case 12:
         {
             Eigen::Matrix<double, 12, 1> monomials;
-            _transformPosAndErrorsImpl(monomials, in, out);
+            _transformPosAndErrorsImplDynamic(monomials, in, out);
             break;
         }
         case 13:
         {
             Eigen::Matrix<double, 13, 1> monomials;
-            _transformPosAndErrorsImpl(monomials, in, out);
+            _transformPosAndErrorsImplDynamic(monomials, in, out);
             break;
         }
         case 14:
         {
             Eigen::Matrix<double, 14, 1> monomials;
-            _transformPosAndErrorsImpl(monomials, in, out);
+            _transformPosAndErrorsImplDynamic(monomials, in, out);
             break;
         }
         case 15:
         {
             Eigen::Matrix<double, 15, 1> monomials;
-            _transformPosAndErrorsImpl(monomials, in, out);
+            _transformPosAndErrorsImpl<4>(monomials, in, out);
             break;
         }
         case 16:
         {
             Eigen::Matrix<double, 16, 1> monomials;
-            _transformPosAndErrorsImpl(monomials, in, out);
+            _transformPosAndErrorsImplDynamic(monomials, in, out);
             break;
         }
         case 17:
         {
             Eigen::Matrix<double, 17, 1> monomials;
-            _transformPosAndErrorsImpl(monomials, in, out);
+            _transformPosAndErrorsImplDynamic(monomials, in, out);
             break;
         }
         case 18:
         {
             Eigen::Matrix<double, 18, 1> monomials;
-            _transformPosAndErrorsImpl(monomials, in, out);
+            _transformPosAndErrorsImplDynamic(monomials, in, out);
             break;
         }
         case 19:
         {
             Eigen::Matrix<double, 19, 1> monomials;
-            _transformPosAndErrorsImpl(monomials, in, out);
+            _transformPosAndErrorsImplDynamic(monomials, in, out);
             break;
         }
         case 20:
         {
             Eigen::Matrix<double, 20, 1> monomials;
-            _transformPosAndErrorsImpl(monomials, in, out);
+            _transformPosAndErrorsImplDynamic(monomials, in, out);
             break;
         }
         case 21:
         {
             Eigen::Matrix<double, 21, 1> monomials;
-            _transformPosAndErrorsImpl(monomials, in, out);
+            _transformPosAndErrorsImpl<5>(monomials, in, out);
             break;
         }
         case 22:
         {
             Eigen::Matrix<double, 22, 1> monomials;
-            _transformPosAndErrorsImpl(monomials, in, out);
+            _transformPosAndErrorsImplDynamic(monomials, in, out);
             break;
         }
         case 23:
         {
             Eigen::Matrix<double, 23, 1> monomials;
-            _transformPosAndErrorsImpl(monomials, in, out);
+            _transformPosAndErrorsImplDynamic(monomials, in, out);
             break;
         }
         case 24:
         {
             Eigen::Matrix<double, 24, 1> monomials;
-            _transformPosAndErrorsImpl(monomials, in, out);
+            _transformPosAndErrorsImplDynamic(monomials, in, out);
             break;
         }
         case 25:
         {
             Eigen::Matrix<double, 25, 1> monomials;
-            _transformPosAndErrorsImpl(monomials, in, out);
+            _transformPosAndErrorsImplDynamic(monomials, in, out);
             break;
         }
         case 26:
         {
             Eigen::Matrix<double, 26, 1> monomials;
-            _transformPosAndErrorsImpl(monomials, in, out);
+            _transformPosAndErrorsImplDynamic(monomials, in, out);
             break;
         }
         case 27:
         {
             Eigen::Matrix<double, 27, 1> monomials;
-            _transformPosAndErrorsImpl(monomials, in, out);
+            _transformPosAndErrorsImplDynamic(monomials, in, out);
             break;
         }
         case 28:
         {
             Eigen::Matrix<double, 28, 1> monomials;
-            _transformPosAndErrorsImpl(monomials, in, out);
+            _transformPosAndErrorsImpl<6>(monomials, in, out);
             break;
         }
         case 29:
         {
             Eigen::Matrix<double, 29, 1> monomials;
-            _transformPosAndErrorsImpl(monomials, in, out);
+            _transformPosAndErrorsImplDynamic(monomials, in, out);
             break;
         }
         case 30:
         {
             Eigen::Matrix<double, 30, 1> monomials;
-            _transformPosAndErrorsImpl(monomials, in, out);
+            _transformPosAndErrorsImplDynamic(monomials, in, out);
             break;
         }
         case 31:
         {
             Eigen::Matrix<double, 31, 1> monomials;
-            _transformPosAndErrorsImpl(monomials, in, out);
+            _transformPosAndErrorsImplDynamic(monomials, in, out);
             break;
         }
         case 32:
         {
             Eigen::Matrix<double, 32, 1> monomials;
-            _transformPosAndErrorsImpl(monomials, in, out);
+            _transformPosAndErrorsImplDynamic(monomials, in, out);
             break;
         }
         case 33:
         {
             Eigen::Matrix<double, 33, 1> monomials;
-            _transformPosAndErrorsImpl(monomials, in, out);
+            _transformPosAndErrorsImplDynamic(monomials, in, out);
             break;
         }
         case 34:
         {
             Eigen::Matrix<double, 34, 1> monomials;
-            _transformPosAndErrorsImpl(monomials, in, out);
+            _transformPosAndErrorsImplDynamic(monomials, in, out);
             break;
         }
         case 35:
         {
             Eigen::Matrix<double, 35, 1> monomials;
-            _transformPosAndErrorsImpl(monomials, in, out);
+            _transformPosAndErrorsImplDynamic(monomials, in, out);
             break;
         }
         case 36:
         {
             Eigen::Matrix<double, 36, 1> monomials;
-            _transformPosAndErrorsImpl(monomials, in, out);
+            _transformPosAndErrorsImpl<7>(monomials, in, out);
             break;
         }
         case 37:
         {
             Eigen::Matrix<double, 37, 1> monomials;
-            _transformPosAndErrorsImpl(monomials, in, out);
+            _transformPosAndErrorsImplDynamic(monomials, in, out);
             break;
         }
         case 38:
         {
             Eigen::Matrix<double, 38, 1> monomials;
-            _transformPosAndErrorsImpl(monomials, in, out);
+            _transformPosAndErrorsImplDynamic(monomials, in, out);
             break;
         }
         case 39:
         {
             Eigen::Matrix<double, 39, 1> monomials;
-            _transformPosAndErrorsImpl(monomials, in, out);
+            _transformPosAndErrorsImplDynamic(monomials, in, out);
             break;
         }
         default:
         {
             Eigen::VectorXd monomials(_nterms);
-            _transformPosAndErrorsImpl(monomials, in, out);
+            _transformPosAndErrorsImplDynamic(monomials, in, out);
             break;
         }
     }

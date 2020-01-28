@@ -406,8 +406,11 @@ private:
                        StarMatchList const &starMatchList, AstrometryTransform const &shiftToCenter,
                        const bool useErrors);
 
-    template <class T>
+    template <std::size_t order, class T>
     void _transformPosAndErrorsImpl(T monomials, FatPoint const &in, FatPoint &out) const;
+
+    template <class T>
+    void _transformPosAndErrorsImplDynamic(T monomials, FatPoint const &in, FatPoint &out) const;
 };
 
 /**
