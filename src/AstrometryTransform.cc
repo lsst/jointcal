@@ -710,7 +710,7 @@ void AstrometryTransformPolynomial::_transformPosAndErrorsImpl(T monomials, FatP
     double a21 = 0, a22 = 0;
     for (int k = nterms; k--;){
         xout += (*(pm)) * (*(c));
-        yout += (*(pm)) * (*(c2)); 
+        yout += (*(pm)) * (*(c2));
         a11 += (*(mx)) * (*c);
         a12 += (*(my)) * (*(c++));
         a21 += (*(mx)) * (*c2);
@@ -786,7 +786,7 @@ void AstrometryTransformPolynomial::_transformPosAndErrorsImplDynamic(T monomial
     double a21 = 0, a22 = 0;
     for (int k = nterms; k--;){
         xout += (*(pm)) * (*(c));
-        yout += (*(pm)) * (*(c2)); 
+        yout += (*(pm)) * (*(c2));
         a11 += (*(mx)) * (*c);
         a12 += (*(my)) * (*(c++));
         a21 += (*(mx)) * (*c2);
@@ -807,34 +807,10 @@ void AstrometryTransformPolynomial::_transformPosAndErrorsImplDynamic(T monomial
 
 void AstrometryTransformPolynomial::transformPosAndErrors(FatPoint const &in, FatPoint &out) const {
     switch (_nterms) {
-        case 1:
-        {
-            Eigen::Matrix<double, 1, 1> monomials;
-            _transformPosAndErrorsImplDynamic(monomials, in, out);
-            break;
-        }
-        case 2:
-        {
-            Eigen::Matrix<double, 2, 1> monomials;
-            _transformPosAndErrorsImplDynamic(monomials, in, out);
-            break;
-        }
         case 3:
         {
             Eigen::Matrix<double, 3, 1> monomials;
             _transformPosAndErrorsImpl<1>(monomials, in, out);
-            break;
-        }
-        case 4:
-        {
-            Eigen::Matrix<double, 4, 1> monomials;
-            _transformPosAndErrorsImplDynamic(monomials, in, out);
-            break;
-        }
-        case 5:
-        {
-            Eigen::Matrix<double, 5, 1> monomials;
-            _transformPosAndErrorsImplDynamic(monomials, in, out);
             break;
         }
         case 6:
@@ -843,52 +819,10 @@ void AstrometryTransformPolynomial::transformPosAndErrors(FatPoint const &in, Fa
             _transformPosAndErrorsImpl<2>(monomials, in, out);
             break;
         }
-        case 7:
-        {
-            Eigen::Matrix<double, 7, 1> monomials;
-            _transformPosAndErrorsImplDynamic(monomials, in, out);
-            break;
-        }
-        case 8:
-        {
-            Eigen::Matrix<double, 8, 1> monomials;
-            _transformPosAndErrorsImplDynamic(monomials, in, out);
-            break;
-        }
-        case 9:
-        {
-            Eigen::Matrix<double, 9, 1> monomials;
-            _transformPosAndErrorsImplDynamic(monomials, in, out);
-            break;
-        }
         case 10:
         {
             Eigen::Matrix<double, 10, 1> monomials;
             _transformPosAndErrorsImpl<3>(monomials, in, out);
-            break;
-        }
-        case 11:
-        {
-            Eigen::Matrix<double, 11, 1> monomials;
-            _transformPosAndErrorsImplDynamic(monomials, in, out);
-            break;
-        }
-        case 12:
-        {
-            Eigen::Matrix<double, 12, 1> monomials;
-            _transformPosAndErrorsImplDynamic(monomials, in, out);
-            break;
-        }
-        case 13:
-        {
-            Eigen::Matrix<double, 13, 1> monomials;
-            _transformPosAndErrorsImplDynamic(monomials, in, out);
-            break;
-        }
-        case 14:
-        {
-            Eigen::Matrix<double, 14, 1> monomials;
-            _transformPosAndErrorsImplDynamic(monomials, in, out);
             break;
         }
         case 15:
@@ -897,76 +831,10 @@ void AstrometryTransformPolynomial::transformPosAndErrors(FatPoint const &in, Fa
             _transformPosAndErrorsImpl<4>(monomials, in, out);
             break;
         }
-        case 16:
-        {
-            Eigen::Matrix<double, 16, 1> monomials;
-            _transformPosAndErrorsImplDynamic(monomials, in, out);
-            break;
-        }
-        case 17:
-        {
-            Eigen::Matrix<double, 17, 1> monomials;
-            _transformPosAndErrorsImplDynamic(monomials, in, out);
-            break;
-        }
-        case 18:
-        {
-            Eigen::Matrix<double, 18, 1> monomials;
-            _transformPosAndErrorsImplDynamic(monomials, in, out);
-            break;
-        }
-        case 19:
-        {
-            Eigen::Matrix<double, 19, 1> monomials;
-            _transformPosAndErrorsImplDynamic(monomials, in, out);
-            break;
-        }
-        case 20:
-        {
-            Eigen::Matrix<double, 20, 1> monomials;
-            _transformPosAndErrorsImplDynamic(monomials, in, out);
-            break;
-        }
         case 21:
         {
             Eigen::Matrix<double, 21, 1> monomials;
             _transformPosAndErrorsImpl<5>(monomials, in, out);
-            break;
-        }
-        case 22:
-        {
-            Eigen::Matrix<double, 22, 1> monomials;
-            _transformPosAndErrorsImplDynamic(monomials, in, out);
-            break;
-        }
-        case 23:
-        {
-            Eigen::Matrix<double, 23, 1> monomials;
-            _transformPosAndErrorsImplDynamic(monomials, in, out);
-            break;
-        }
-        case 24:
-        {
-            Eigen::Matrix<double, 24, 1> monomials;
-            _transformPosAndErrorsImplDynamic(monomials, in, out);
-            break;
-        }
-        case 25:
-        {
-            Eigen::Matrix<double, 25, 1> monomials;
-            _transformPosAndErrorsImplDynamic(monomials, in, out);
-            break;
-        }
-        case 26:
-        {
-            Eigen::Matrix<double, 26, 1> monomials;
-            _transformPosAndErrorsImplDynamic(monomials, in, out);
-            break;
-        }
-        case 27:
-        {
-            Eigen::Matrix<double, 27, 1> monomials;
-            _transformPosAndErrorsImplDynamic(monomials, in, out);
             break;
         }
         case 28:
@@ -975,70 +843,10 @@ void AstrometryTransformPolynomial::transformPosAndErrors(FatPoint const &in, Fa
             _transformPosAndErrorsImpl<6>(monomials, in, out);
             break;
         }
-        case 29:
-        {
-            Eigen::Matrix<double, 29, 1> monomials;
-            _transformPosAndErrorsImplDynamic(monomials, in, out);
-            break;
-        }
-        case 30:
-        {
-            Eigen::Matrix<double, 30, 1> monomials;
-            _transformPosAndErrorsImplDynamic(monomials, in, out);
-            break;
-        }
-        case 31:
-        {
-            Eigen::Matrix<double, 31, 1> monomials;
-            _transformPosAndErrorsImplDynamic(monomials, in, out);
-            break;
-        }
-        case 32:
-        {
-            Eigen::Matrix<double, 32, 1> monomials;
-            _transformPosAndErrorsImplDynamic(monomials, in, out);
-            break;
-        }
-        case 33:
-        {
-            Eigen::Matrix<double, 33, 1> monomials;
-            _transformPosAndErrorsImplDynamic(monomials, in, out);
-            break;
-        }
-        case 34:
-        {
-            Eigen::Matrix<double, 34, 1> monomials;
-            _transformPosAndErrorsImplDynamic(monomials, in, out);
-            break;
-        }
-        case 35:
-        {
-            Eigen::Matrix<double, 35, 1> monomials;
-            _transformPosAndErrorsImplDynamic(monomials, in, out);
-            break;
-        }
         case 36:
         {
             Eigen::Matrix<double, 36, 1> monomials;
             _transformPosAndErrorsImpl<7>(monomials, in, out);
-            break;
-        }
-        case 37:
-        {
-            Eigen::Matrix<double, 37, 1> monomials;
-            _transformPosAndErrorsImplDynamic(monomials, in, out);
-            break;
-        }
-        case 38:
-        {
-            Eigen::Matrix<double, 38, 1> monomials;
-            _transformPosAndErrorsImplDynamic(monomials, in, out);
-            break;
-        }
-        case 39:
-        {
-            Eigen::Matrix<double, 39, 1> monomials;
-            _transformPosAndErrorsImplDynamic(monomials, in, out);
             break;
         }
         default:
@@ -1223,9 +1031,10 @@ double AstrometryTransformPolynomial::_computeFit(M A, V B, T monomials,
                 A(i + nterms, j + nterms) += wyy * calc;
                 A(j, i + nterms) = A(i, j + nterms) += wxy * calc;
             }
-            B(j) += bxcoeff * monomials(j);
-            B(j + nterms) += bycoeff * monomials(j);
         }
+        B.head(nterms) += bxcoeff * monomials;
+        B.tail(nterms) += bycoeff * monomials;
+
     }  // end loop on points
     Eigen::LDLT<Eigen::MatrixXd, Eigen::Lower> factor(A);
     // should probably throw
@@ -1244,26 +1053,6 @@ double AstrometryTransformPolynomial::computeFit(StarMatchList const &starMatchL
                                                  AstrometryTransform const &shiftToCenter,
                                                  const bool useErrors) {
     switch (_nterms) {
-        case 1:
-        {
-            Eigen::Matrix<double, 2, 2> A;
-            A.setZero();
-            Eigen::Matrix<double, 2, 1> B;
-            B.setZero();
-            Eigen::Matrix<double, 1, 1> monomials;
-            return _computeFit(A, B, monomials, starMatchList, shiftToCenter, useErrors);
-            break;
-        }
-        case 2:
-        {
-            Eigen::Matrix<double, 4, 4> A;
-            A.setZero();
-            Eigen::Matrix<double, 4, 1> B;
-            B.setZero();
-            Eigen::Matrix<double, 2, 1> monomials;
-            return _computeFit(A, B, monomials, starMatchList, shiftToCenter, useErrors);
-            break;
-        }
         case 3:
         {
             Eigen::Matrix<double, 6, 6> A;
@@ -1271,26 +1060,6 @@ double AstrometryTransformPolynomial::computeFit(StarMatchList const &starMatchL
             Eigen::Matrix<double, 6, 1> B;
             B.setZero();
             Eigen::Matrix<double, 3, 1> monomials;
-            return _computeFit(A, B, monomials, starMatchList, shiftToCenter, useErrors);
-            break;
-        }
-        case 4:
-        {
-            Eigen::Matrix<double, 8, 8> A;
-            A.setZero();
-            Eigen::Matrix<double, 8, 1> B;
-            B.setZero();
-            Eigen::Matrix<double, 4, 1> monomials;
-            return _computeFit(A, B, monomials, starMatchList, shiftToCenter, useErrors);
-            break;
-        }
-        case 5:
-        {
-            Eigen::Matrix<double, 10, 10> A;
-            A.setZero();
-            Eigen::Matrix<double, 10, 1> B;
-            B.setZero();
-            Eigen::Matrix<double, 5, 1> monomials;
             return _computeFit(A, B, monomials, starMatchList, shiftToCenter, useErrors);
             break;
         }
@@ -1304,36 +1073,6 @@ double AstrometryTransformPolynomial::computeFit(StarMatchList const &starMatchL
             return _computeFit(A, B, monomials, starMatchList, shiftToCenter, useErrors);
             break;
         }
-        case 7:
-        {
-            Eigen::Matrix<double, 14, 14> A;
-            A.setZero();
-            Eigen::Matrix<double, 14, 1> B;
-            B.setZero();
-            Eigen::Matrix<double, 7, 1> monomials;
-            return _computeFit(A, B, monomials, starMatchList, shiftToCenter, useErrors);
-            break;
-        }
-        case 8:
-        {
-            Eigen::Matrix<double, 16, 16> A;
-            A.setZero();
-            Eigen::Matrix<double, 16, 1> B;
-            B.setZero();
-            Eigen::Matrix<double, 8, 1> monomials;
-            return _computeFit(A, B, monomials, starMatchList, shiftToCenter, useErrors);
-            break;
-        }
-        case 9:
-        {
-            Eigen::Matrix<double, 18, 18> A;
-            A.setZero();
-            Eigen::Matrix<double, 18, 1> B;
-            B.setZero();
-            Eigen::Matrix<double, 9, 1> monomials;
-            return _computeFit(A, B, monomials, starMatchList, shiftToCenter, useErrors);
-            break;
-        }
         case 10:
         {
             Eigen::Matrix<double, 20, 20> A;
@@ -1341,46 +1080,6 @@ double AstrometryTransformPolynomial::computeFit(StarMatchList const &starMatchL
             Eigen::Matrix<double, 20, 1> B;
             B.setZero();
             Eigen::Matrix<double, 10, 1> monomials;
-            return _computeFit(A, B, monomials, starMatchList, shiftToCenter, useErrors);
-            break;
-        }
-        case 11:
-        {
-            Eigen::Matrix<double, 22, 22> A;
-            A.setZero();
-            Eigen::Matrix<double, 22, 1> B;
-            B.setZero();
-            Eigen::Matrix<double, 11, 1> monomials;
-            return _computeFit(A, B, monomials, starMatchList, shiftToCenter, useErrors);
-            break;
-        }
-        case 12:
-        {
-            Eigen::Matrix<double, 24, 24> A;
-            A.setZero();
-            Eigen::Matrix<double, 24, 1> B;
-            B.setZero();
-            Eigen::Matrix<double, 12, 1> monomials;
-            return _computeFit(A, B, monomials, starMatchList, shiftToCenter, useErrors);
-            break;
-        }
-        case 13:
-        {
-            Eigen::Matrix<double, 26, 26> A;
-            A.setZero();
-            Eigen::Matrix<double, 26, 1> B;
-            B.setZero();
-            Eigen::Matrix<double, 13, 1> monomials;
-            return _computeFit(A, B, monomials, starMatchList, shiftToCenter, useErrors);
-            break;
-        }
-        case 14:
-        {
-            Eigen::Matrix<double, 28, 28> A;
-            A.setZero();
-            Eigen::Matrix<double, 28, 1> B;
-            B.setZero();
-            Eigen::Matrix<double, 14, 1> monomials;
             return _computeFit(A, B, monomials, starMatchList, shiftToCenter, useErrors);
             break;
         }
@@ -1394,56 +1093,6 @@ double AstrometryTransformPolynomial::computeFit(StarMatchList const &starMatchL
             return _computeFit(A, B, monomials, starMatchList, shiftToCenter, useErrors);
             break;
         }
-        case 16:
-        {
-            Eigen::Matrix<double, 32, 32> A;
-            A.setZero();
-            Eigen::Matrix<double, 32, 1> B;
-            B.setZero();
-            Eigen::Matrix<double, 16, 1> monomials;
-            return _computeFit(A, B, monomials, starMatchList, shiftToCenter, useErrors);
-            break;
-        }
-        case 17:
-        {
-            Eigen::Matrix<double, 34, 34> A;
-            A.setZero();
-            Eigen::Matrix<double, 34, 1> B;
-            B.setZero();
-            Eigen::Matrix<double, 17, 1> monomials;
-            return _computeFit(A, B, monomials, starMatchList, shiftToCenter, useErrors);
-            break;
-        }
-        case 18:
-        {
-            Eigen::Matrix<double, 36, 36> A;
-            A.setZero();
-            Eigen::Matrix<double, 36, 1> B;
-            B.setZero();
-            Eigen::Matrix<double, 18, 1> monomials;
-            return _computeFit(A, B, monomials, starMatchList, shiftToCenter, useErrors);
-            break;
-        }
-        case 19:
-        {
-            Eigen::Matrix<double, 38, 38> A;
-            A.setZero();
-            Eigen::Matrix<double, 38, 1> B;
-            B.setZero();
-            Eigen::Matrix<double, 19, 1> monomials;
-            return _computeFit(A, B, monomials, starMatchList, shiftToCenter, useErrors);
-            break;
-        }
-        case 20:
-        {
-            Eigen::Matrix<double, 40, 40> A;
-            A.setZero();
-            Eigen::Matrix<double, 40, 1> B;
-            B.setZero();
-            Eigen::Matrix<double, 20, 1> monomials;
-            return _computeFit(A, B, monomials, starMatchList, shiftToCenter, useErrors);
-            break;
-        }
         case 21:
         {
             Eigen::Matrix<double, 42, 42> A;
@@ -1454,66 +1103,6 @@ double AstrometryTransformPolynomial::computeFit(StarMatchList const &starMatchL
             return _computeFit(A, B, monomials, starMatchList, shiftToCenter, useErrors);
             break;
         }
-        case 22:
-        {
-            Eigen::Matrix<double, 44, 44> A;
-            A.setZero();
-            Eigen::Matrix<double, 44, 1> B;
-            B.setZero();
-            Eigen::Matrix<double, 22, 1> monomials;
-            return _computeFit(A, B, monomials, starMatchList, shiftToCenter, useErrors);
-            break;
-        }
-        case 23:
-        {
-            Eigen::Matrix<double, 46, 46> A;
-            A.setZero();
-            Eigen::Matrix<double, 46, 1> B;
-            B.setZero();
-            Eigen::Matrix<double, 23, 1> monomials;
-            return _computeFit(A, B, monomials, starMatchList, shiftToCenter, useErrors);
-            break;
-        }
-        case 24:
-        {
-            Eigen::Matrix<double, 48, 48> A;
-            A.setZero();
-            Eigen::Matrix<double, 48, 1> B;
-            B.setZero();
-            Eigen::Matrix<double, 24, 1> monomials;
-            return _computeFit(A, B, monomials, starMatchList, shiftToCenter, useErrors);
-            break;
-        }
-        case 25:
-        {
-            Eigen::Matrix<double, 50, 50> A;
-            A.setZero();
-            Eigen::Matrix<double, 50, 1> B;
-            B.setZero();
-            Eigen::Matrix<double, 25, 1> monomials;
-            return _computeFit(A, B, monomials, starMatchList, shiftToCenter, useErrors);
-            break;
-        }
-        case 26:
-        {
-            Eigen::Matrix<double, 52, 52> A;
-            A.setZero();
-            Eigen::Matrix<double, 52, 1> B;
-            B.setZero();
-            Eigen::Matrix<double, 26, 1> monomials;
-            return _computeFit(A, B, monomials, starMatchList, shiftToCenter, useErrors);
-            break;
-        }
-        case 27:
-        {
-            Eigen::Matrix<double, 54, 54> A;
-            A.setZero();
-            Eigen::Matrix<double, 54, 1> B;
-            B.setZero();
-            Eigen::Matrix<double, 27, 1> monomials;
-            return _computeFit(A, B, monomials, starMatchList, shiftToCenter, useErrors);
-            break;
-        }
         case 28:
         {
             Eigen::Matrix<double, 56, 56> A;
@@ -1521,76 +1110,6 @@ double AstrometryTransformPolynomial::computeFit(StarMatchList const &starMatchL
             Eigen::Matrix<double, 56, 1> B;
             B.setZero();
             Eigen::Matrix<double, 28, 1> monomials;
-            return _computeFit(A, B, monomials, starMatchList, shiftToCenter, useErrors);
-            break;
-        }
-        case 29:
-        {
-            Eigen::Matrix<double, 58, 58> A;
-            A.setZero();
-            Eigen::Matrix<double, 58, 1> B;
-            B.setZero();
-            Eigen::Matrix<double, 29, 1> monomials;
-            return _computeFit(A, B, monomials, starMatchList, shiftToCenter, useErrors);
-            break;
-        }
-        case 30:
-        {
-            Eigen::Matrix<double, 60, 60> A;
-            A.setZero();
-            Eigen::Matrix<double, 60, 1> B;
-            B.setZero();
-            Eigen::Matrix<double, 30, 1> monomials;
-            return _computeFit(A, B, monomials, starMatchList, shiftToCenter, useErrors);
-            break;
-        }
-        case 31:
-        {
-            Eigen::Matrix<double, 62, 62> A;
-            A.setZero();
-            Eigen::Matrix<double, 62, 1> B;
-            B.setZero();
-            Eigen::Matrix<double, 31, 1> monomials;
-            return _computeFit(A, B, monomials, starMatchList, shiftToCenter, useErrors);
-            break;
-        }
-        case 32:
-        {
-            Eigen::Matrix<double, 64, 64> A;
-            A.setZero();
-            Eigen::Matrix<double, 64, 1> B;
-            B.setZero();
-            Eigen::Matrix<double, 32, 1> monomials;
-            return _computeFit(A, B, monomials, starMatchList, shiftToCenter, useErrors);
-            break;
-        }
-        case 33:
-        {
-            Eigen::Matrix<double, 66, 66> A;
-            A.setZero();
-            Eigen::Matrix<double, 66, 1> B;
-            B.setZero();
-            Eigen::Matrix<double, 33, 1> monomials;
-            return _computeFit(A, B, monomials, starMatchList, shiftToCenter, useErrors);
-            break;
-        }
-        case 34:
-        {
-            Eigen::Matrix<double, 68, 68> A;
-            A.setZero();
-            Eigen::Matrix<double, 68, 1> B;
-            B.setZero();
-            Eigen::Matrix<double, 34, 1> monomials;
-            return _computeFit(A, B, monomials, starMatchList, shiftToCenter, useErrors);
-            break;
-        }
-        case 35:
-        {
-            Eigen::Matrix<double, 70, 70> A;
-            A.setZero();
-            Eigen::Matrix<double, 70, 1> B;
-            B.setZero();
-            Eigen::Matrix<double, 35, 1> monomials;
             return _computeFit(A, B, monomials, starMatchList, shiftToCenter, useErrors);
             break;
         }
@@ -1611,26 +1130,6 @@ double AstrometryTransformPolynomial::computeFit(StarMatchList const &starMatchL
             Eigen::Matrix<double, 74, 1> B;
             B.setZero();
             Eigen::Matrix<double, 37, 1> monomials;
-            return _computeFit(A, B, monomials, starMatchList, shiftToCenter, useErrors);
-            break;
-        }
-        case 38:
-        {
-            Eigen::Matrix<double, 76, 76> A;
-            A.setZero();
-            Eigen::Matrix<double, 76, 1> B;
-            B.setZero();
-            Eigen::Matrix<double, 38, 1> monomials;
-            return _computeFit(A, B, monomials, starMatchList, shiftToCenter, useErrors);
-            break;
-        }
-        case 39:
-        {
-            Eigen::Matrix<double, 78, 78> A;
-            A.setZero();
-            Eigen::Matrix<double, 78, 1> B;
-            B.setZero();
-            Eigen::Matrix<double, 39, 1> monomials;
             return _computeFit(A, B, monomials, starMatchList, shiftToCenter, useErrors);
             break;
         }

@@ -183,7 +183,7 @@ protected:
      * @return     Total number of outliers that were removed.
      */
     std::size_t findOutliers(double nSigmaCut, MeasuredStarList &msOutliers,
-                             FittedStarList &fsOutliers, std::size_t outlier_iteration) const;
+                             FittedStarList &fsOutliers) const;
 
     /**
      * Contributions to derivatives from (presumably) outlier terms. No
