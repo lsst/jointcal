@@ -553,6 +553,8 @@ class JointcalTask(pipeBase.CmdLineTask):
         center = lsst.geom.SpherePoint(boundingCircle.getCenter())
         radius = lsst.geom.Angle(boundingCircle.getOpeningAngle().asRadians(), lsst.geom.radians)
 
+        self.log.info(f"Data has center={center} with radius={radius.asDegrees()} degrees.")
+
         # Determine a default filter associated with the catalog. See DM-9093
         defaultFilter = filters.most_common(1)[0][0]
         self.log.debug("Using %s band for reference flux", defaultFilter)
