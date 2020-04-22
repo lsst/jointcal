@@ -370,6 +370,17 @@ class JointcalConfig(pexConfig.Config):
                     'base_PsfFlux_flag', 'base_PixelFlags_flag_suspectCenter']
         self.sourceSelector['science'].flags.bad = badFlags
 
+        # Default to Gaia-DR2 for astrometry and PS1-DR1 for photometry,
+        # with a reasonable initial filterMap.
+        self.astrometryRefObjLoader.ref_dataset_name = "gaia_dr2_20200414"
+        self.astrometryRefObjLoader.filterMap = {'u': 'phot_g_mean',
+                                                 'g': 'phot_g_mean',
+                                                 'r': 'phot_g_mean',
+                                                 'i': 'phot_g_mean',
+                                                 'z': 'phot_g_mean',
+                                                 'y': 'phot_g_mean'}
+        self.photometryRefObjLoader.ref_dataset_name = "ps1_pv3_3pi_20170110"
+
 
 def writeModel(model, filename, log):
     """Write model to outfile."""
