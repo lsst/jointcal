@@ -32,9 +32,9 @@
 #include "Eigen/Core"
 #include "ndarray.h"
 
-#include "lsst/afw/geom/AffineTransform.h"
-#include "lsst/afw/geom/Box.h"
-#include "lsst/afw/geom/Point.h"
+#include "lsst/geom/AffineTransform.h"
+#include "lsst/geom/Box.h"
+#include "lsst/geom/Point.h"
 #include "lsst/jointcal/Point.h"
 
 namespace lsst {
