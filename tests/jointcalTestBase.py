@@ -19,6 +19,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+import copy
 import os
 import inspect
 
@@ -142,24 +143,37 @@ class JointcalTestBase:
         data_refs = result.resultList[0].result.dataRefs
         oldWcsList = result.resultList[0].result.oldWcsList
 
-        # extract a reference catalog to compute statistics against
-        refObjLoader = result.resultList[0].result.photometryRefObjLoader
-        # Not all tests do astrometry, so might not have the above defined.
-        if refObjLoader is None:
-            refObjLoader = result.resultList[0].result.astrometryRefObjLoader
         defaultFilter = result.resultList[0].result.defaultFilter
-        refCat = refObjLoader.loadSkyCircle(self.center, self.radius, defaultFilter).refCat
 
-        rms_result = self.jointcalStatistics.compute_rms(data_refs, refCat)
-        # Make plots before testing, if requested, so we still get plots if tests fail.
-        if self.do_plot:
-            self._plotJointcalTask(data_refs, oldWcsList, caller)
+        def compute_statistics(refObjLoader):
+            refCat = refObjLoader.loadSkyCircle(self.center, self.radius, defaultFilter).refCat
+            rms_result = self.jointcalStatistics.compute_rms(data_refs, refCat)
+            # Make plots before testing, if requested, so we still get plots if tests fail.
+            if self.do_plot:
+                self._plotJointcalTask(data_refs, oldWcsList, caller)
+            return rms_result
 
-        if dist_rms_relative is not None and dist_rms_absolute is not None:
-            self.assertLess(rms_result.dist_relative, dist_rms_relative)
-            self.assertLess(rms_result.dist_absolute, dist_rms_absolute)
-        if pa1 is not None:
-            self.assertLess(rms_result.pa1, pa1)
+        # we now have different astrometry/photometry refcats, so have to
+        # do these calculations separately
+        if self.jointcalStatistics.do_astrometry:
+            refObjLoader = result.resultList[0].result.astrometryRefObjLoader
+            # preserve do_photometry for the next `if`
+            temp = copy.copy(self.jointcalStatistics.do_photometry)
+            self.jointcalStatistics.do_photometry = False
+            rms_result = compute_statistics(refObjLoader)
+            self.jointcalStatistics.do_photometry = temp  # restore do_photometry
+
+            if dist_rms_relative is not None and dist_rms_absolute is not None:
+                self.assertLess(rms_result.dist_relative, dist_rms_relative)
+                self.assertLess(rms_result.dist_absolute, dist_rms_absolute)
+
+        if self.jointcalStatistics.do_photometry:
+            refObjLoader = result.resultList[0].result.photometryRefObjLoader
+            self.jointcalStatistics.do_astrometry = False
+            rms_result = compute_statistics(refObjLoader)
+
+            if pa1 is not None:
+                self.assertLess(rms_result.pa1, pa1)
 
         return data_refs
 
