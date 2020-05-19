@@ -44,8 +44,12 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
     def setUpClass(cls):
         try:
             cls.data_dir = lsst.utils.getPackageDir('testdata_jointcal')
-        except lsst.pex.exceptions.NotFoundError:
+        except LookupError:
             raise unittest.SkipTest("testdata_jointcal not setup")
+        try:
+            lsst.utils.getPackageDir('obs_cfht')
+        except LookupError:
+            raise unittest.SkipTest("obs_cfht not setup")
 
     def setUp(self):
         # We don't want the absolute astrometry to become significantly worse

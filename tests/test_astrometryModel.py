@@ -57,7 +57,7 @@ class AstrometryModelTestBase:
             # below for details. Using it requires having recently-processed
             # singleFrame output in a rerun directory in validation_data_hsc.
             # cls.dataDir = lsst.utils.getPackageDir('validation_data_hsc')
-        except lsst.pex.exceptions.NotFoundError:
+        except LookupError:
             raise unittest.SkipTest("testdata_jointcal not setup")
 
     def setUp(self):

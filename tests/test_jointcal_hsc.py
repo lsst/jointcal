@@ -43,8 +43,12 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
     def setUpClass(cls):
         try:
             cls.data_dir = lsst.utils.getPackageDir('testdata_jointcal')
-        except lsst.pex.exceptions.NotFoundError:
+        except LookupError:
             raise unittest.SkipTest("testdata_jointcal not setup")
+        try:
+            lsst.utils.getPackageDir('obs_subaru')
+        except LookupError:
+            raise unittest.SkipTest("obs_subaru not setup")
 
     def setUp(self):
         # See Readme for an explanation of this empirical value.
