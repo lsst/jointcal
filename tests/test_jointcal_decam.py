@@ -42,8 +42,12 @@ class JointcalTestDECAM(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Test
     def setUpClass(cls):
         try:
             cls.data_dir = lsst.utils.getPackageDir('testdata_jointcal')
-        except lsst.pex.exceptions.NotFoundError:
+        except LookupError:
             raise unittest.SkipTest("testdata_jointcal not setup")
+        try:
+            lsst.utils.getPackageDir('obs_decam')
+        except LookupError:
+            raise unittest.SkipTest("obs_decam not setup")
 
     def setUp(self):
         # See Readme for an explanation of this empirical value.
