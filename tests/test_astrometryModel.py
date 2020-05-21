@@ -39,6 +39,7 @@ import lsst.daf.persistence
 import lsst.geom
 import lsst.jointcal
 from lsst.jointcal import astrometryModels
+import lsst.log
 from lsst.meas.algorithms import astrometrySourceSelector
 
 
@@ -62,6 +63,10 @@ class AstrometryModelTestBase:
 
     def setUp(self):
         np.random.seed(200)
+
+        # DEBUG messages can help track down failures.
+        logger = lsst.log.Log.getLogger('jointcal')
+        logger.setLevel(lsst.log.DEBUG)
 
         # Append `msg` arguments to assert failures.
         self.longMessage = True
@@ -96,14 +101,6 @@ class AstrometryModelTestBase:
         self.ccds = [12, 13, 14, 21, 22, 23]
         self.badVisit = -12345
         self.badCcd = 888
-
-        # NOTE: the below block is to facilitate testing with validation_data_hsc.
-        # NOTE: You need to have recently-processed singleFrame output available in inputDir.
-        # ccd 50 is near the center, 3 is in the SW corner, 62 is on the East side.
-        # ccds 101 and 103 are rotated by 90deg compared with the above.
-        # inputDir = os.path.join(self.dataDir, 'DATA/rerun/20160805')
-        # self.visits = [903982, 904828]  # Only need two visits for this test.
-        # self.ccds = [50, 3, 62, 101, 103]
 
         self.butler = lsst.daf.persistence.Butler(inputDir)
 
@@ -235,6 +232,9 @@ class AstrometryModelTestBase:
             forwards.append(lsst.geom.Point2D(result.x, result.y))
 
         self.assertPairListsAlmostEqual(forwards, expects)
+        # NOTE: assertPairListsAlmostEqual() compares absolute, not relative,
+        # values so the points along the ccd edge may exceed maxDiff while still
+        # being "close enough": set `inverseMaxDiff` accordingly.
         self.assertPairListsAlmostEqual(inverses, points, maxDiff=inverseMaxDiff)
 
 
@@ -250,7 +250,14 @@ class SimpleAstrometryModelTestCase(AstrometryModelTestBase, lsst.utils.tests.Te
                                                              order=self.order1)
 
         self.order2 = 5
-        self.inverseMaxDiff2 = 5e-4
+        # NOTE: because assertPairListsAlmostEqual tests an absolute
+        # difference, we need this to be relatively high to avoid spurious
+        # incorrect values.
+        # Alternately, further increasing the order of the inverse polynomial
+        # in astrometryTransform.toAstMap() can improve the quality of the
+        # SkyWcs inverse, but that may not be wise for the more general use
+        # case due to the inverse then having too many wiggles.
+        self.inverseMaxDiff2 = 2e-3
         self.model2 = astrometryModels.SimpleAstrometryModel(self.associations.getCcdImageList(),
                                                              self.projectionHandler,
                                                              False,
