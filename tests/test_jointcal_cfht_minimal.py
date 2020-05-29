@@ -67,6 +67,8 @@ class JointcalTestCFHTMinimal(jointcalTestBase.JointcalTestBase, lsst.utils.test
                         all_visits=all_visits,
                         other_args=other_args,
                         do_plot=do_plot, log_level="debug")
+        test_config = os.path.join(os.path.dirname(__file__), 'config/cfht_minimal-config.py')
+        self.configfiles.append(test_config)
 
     def test_jointcalTask_2_visits_photometry(self):
         self.config = lsst.jointcal.jointcal.JointcalConfig()

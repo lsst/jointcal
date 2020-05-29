@@ -185,6 +185,13 @@ class JointcalStatistics:
             self.old_dist_total = MatchDict(None, None)
             self.new_dist_total = MatchDict(None, None)
 
+        if self.verbose:
+            if self.do_astrometry:
+                print("relative, absolute astrometry:",
+                      self.new_dist_total.relative,
+                      self.new_dist_total.absolute)
+            if self.do_photometry:
+                print("Photometric Accuracy (PA1):", self.new_PA1)
         Rms_result = collections.namedtuple("Rms_result", ["dist_relative", "dist_absolute", "pa1"])
         return Rms_result(self.new_dist_total.relative, self.new_dist_total.absolute, self.new_PA1)
 

@@ -370,6 +370,17 @@ class JointcalConfig(pexConfig.Config):
                     'base_PsfFlux_flag', 'base_PixelFlags_flag_suspectCenter']
         self.sourceSelector['science'].flags.bad = badFlags
 
+        # Default to Gaia-DR2 for astrometry and PS1-DR1 for photometry,
+        # with a reasonable initial filterMap.
+        self.astrometryRefObjLoader.ref_dataset_name = "gaia_dr2_20200414"
+        self.astrometryRefObjLoader.filterMap = {'u': 'phot_g_mean',
+                                                 'g': 'phot_g_mean',
+                                                 'r': 'phot_g_mean',
+                                                 'i': 'phot_g_mean',
+                                                 'z': 'phot_g_mean',
+                                                 'y': 'phot_g_mean'}
+        self.photometryRefObjLoader.ref_dataset_name = "ps1_pv3_3pi_20170110"
+
 
 def writeModel(model, filename, log):
     """Write model to outfile."""
@@ -596,6 +607,53 @@ class JointcalTask(pipeBase.CmdLineTask):
                                defaultFilter=defaultFilter,
                                exitStatus=exitStatus)
 
+    def _get_refcat_coordinate_error_override(self, refCat, name):
+        """Check whether we should override the refcat coordinate errors, and
+        return the overridden error if necessary.
+
+        Parameters
+        ----------
+        refCat : `lsst.afw.table.SimpleCatalog`
+            The reference catalog to check for a ``coord_raErr`` field.
+        name : `str`
+            Whether we are doing "astrometry" or "photometry".
+
+        Returns
+        -------
+        refCoordErr : `float`
+            The refcat coordinate error to use, or NaN if we are not overriding
+            those fields.
+
+        Raises
+        ------
+        lsst.pex.config.FieldValidationError
+            Raised if the refcat does not contain coordinate errors and
+            ``config.astrometryReferenceErr`` is not set.
+        """
+        # This value doesn't matter for photometry, so just set something to
+        # keep old refcats from causing problems.
+        if name.lower() == "photometry":
+            if 'coord_raErr' not in refCat.schema:
+                return 100
+            else:
+                return float('nan')
+
+        if self.config.astrometryReferenceErr is None and 'coord_raErr' not in refCat.schema:
+            msg = ("Reference catalog does not contain coordinate errors, "
+                   "and config.astrometryReferenceErr not supplied.")
+            raise pexConfig.FieldValidationError(JointcalConfig.astrometryReferenceErr,
+                                                 self.config,
+                                                 msg)
+
+        if self.config.astrometryReferenceErr is not None and 'coord_raErr' in refCat.schema:
+            self.log.warn("Overriding reference catalog coordinate errors with %f/coordinate [mas]",
+                          self.config.astrometryReferenceErr)
+
+        if self.config.astrometryReferenceErr is None:
+            return float('nan')
+        else:
+            return self.config.astrometryReferenceErr
+
     def _do_load_refcat_and_fit(self, associations, defaultFilter, center, radius,
                                 filters=[],
                                 tract="", profile_jointcal=False, match_cut=3.0,
@@ -650,11 +708,7 @@ class JointcalTask(pipeBase.CmdLineTask):
         refCat, fluxField = self._load_reference_catalog(refObjLoader, referenceSelector,
                                                          center, radius, defaultFilter,
                                                          applyColorterms=applyColorterms)
-
-        if self.config.astrometryReferenceErr is None:
-            refCoordErr = float('nan')
-        else:
-            refCoordErr = self.config.astrometryReferenceErr
+        refCoordErr = self._get_refcat_coordinate_error_override(refCat, name)
 
         associations.collectRefStars(refCat,
                                      self.config.matchCut*lsst.geom.arcseconds,
@@ -724,17 +778,6 @@ class JointcalTask(pipeBase.CmdLineTask):
             refCat = selected.sourceCat.copy(deep=True)
         else:
             refCat = selected.sourceCat
-
-        if self.config.astrometryReferenceErr is None and 'coord_raErr' not in refCat.schema:
-            msg = ("Reference catalog does not contain coordinate errors, "
-                   "and config.astrometryReferenceErr not supplied.")
-            raise pexConfig.FieldValidationError(JointcalConfig.astrometryReferenceErr,
-                                                 self.config,
-                                                 msg)
-
-        if self.config.astrometryReferenceErr is not None and 'coord_raErr' in refCat.schema:
-            self.log.warn("Overriding reference catalog coordinate errors with %f/coordinate [mas]",
-                          self.config.astrometryReferenceErr)
 
         if applyColorterms:
             try:
