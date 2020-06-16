@@ -56,6 +56,9 @@ void declareCcdImage(py::module &mod) {
     cls.def("getCcdId", &CcdImage::getCcdId);
     cls.def_property_readonly("ccdId", &CcdImage::getCcdId);
 
+    cls.def("getMjd", &CcdImage::getMjd);
+    cls.def_property_readonly("mjd", &CcdImage::getMjd);
+
     cls.def("getImageFrame", &CcdImage::getImageFrame, py::return_value_policy::reference_internal);
     cls.def_property_readonly("imageFrame", &CcdImage::getImageFrame,
                               py::return_value_policy::reference_internal);
