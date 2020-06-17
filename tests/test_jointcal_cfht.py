@@ -147,7 +147,6 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
         dist_rms_relative, metrics = self.setup_jointcalTask_2_visits_constrainedAstrometry()
         self.config.writeInitialModel = True  # write the initial models
         # use a temporary directory for debug output, to prevent test collisions
-        # use a temporary directory for debug output, to prevent test collisions
         with tempfile.TemporaryDirectory() as tempdir:
             self.config.debugOutputPath = tempdir
 

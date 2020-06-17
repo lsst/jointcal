@@ -55,6 +55,22 @@ def make_fake_refcat(center, flux, filterName):
     return catalog
 
 
+def make_fake_wcs():
+    """Return two simple SkyWcs objects, with slightly different sky positions.
+
+    Use the same pixel origins as the cfht_minimal data, but put the sky origin
+    at RA=0
+    """
+    crpix = lsst.geom.Point2D(931.517869, 2438.572109)
+    cd = np.array([[5.19513851e-05, -2.81124812e-07],
+                   [-3.25186974e-07, -5.19112119e-05]])
+    crval1 = lsst.geom.SpherePoint(0.01, -0.01, lsst.geom.degrees)
+    crval2 = lsst.geom.SpherePoint(-0.01, 0.01, lsst.geom.degrees)
+    wcs1 = lsst.afw.geom.makeSkyWcs(crpix, crval1, cd)
+    wcs2 = lsst.afw.geom.makeSkyWcs(crpix, crval2, cd)
+    return wcs1, wcs2
+
+
 class JointcalTestBase:
     def setUp(self):
         struct = lsst.jointcal.testUtils.createTwoFakeCcdImages(100, 100)
@@ -325,14 +341,7 @@ class TestComputeBoundingCircle(lsst.utils.tests.TestCase):
         """Test for CcdImages crossing RA=0; this demonstrates a fix for
         the bug described in DM-19802.
         """
-        # Use the same pixel origins as the cfht_minimal data, but put the sky origin at RA=0
-        crpix = lsst.geom.Point2D(931.517869, 2438.572109)
-        cd = np.array([[5.19513851e-05, -2.81124812e-07],
-                      [-3.25186974e-07, -5.19112119e-05]])
-        crval1 = lsst.geom.SpherePoint(0.01, -0.01, lsst.geom.degrees)
-        crval2 = lsst.geom.SpherePoint(-0.01, 0.01, lsst.geom.degrees)
-        wcs1 = lsst.afw.geom.makeSkyWcs(crpix, crval1, cd)
-        wcs2 = lsst.afw.geom.makeSkyWcs(crpix, crval2, cd)
+        wcs1, wcs2 = make_fake_wcs()
 
         # Put the visit boresights at the WCS origin, for consistency
         visitInfo1 = lsst.afw.image.VisitInfo(exposureId=30577512,
