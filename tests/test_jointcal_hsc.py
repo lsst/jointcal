@@ -107,7 +107,7 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         self.jointcalStatistics.do_photometry = False
 
         # See Readme for an explanation of these empirical values.
-        dist_rms_absolute = 22e-3*u.arcsecond
+        dist_rms_absolute = 23e-3*u.arcsecond
         dist_rms_relative = 13e-3*u.arcsecond
         pa1 = None
         metrics = {'collected_astrometry_refStars': 1316,
@@ -242,7 +242,7 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
                    'associated_astrometry_fittedStars': 3199,
                    'selected_astrometry_fittedStars': 1282,
                    'selected_astrometry_ccdImages': 9,
-                   'astrometry_final_chi2': 1013.22,
+                   'astrometry_final_chi2': 1013.20,
                    'astrometry_final_ndof': 2900,
                    }
         pa1 = None
@@ -266,7 +266,7 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
                    'associated_astrometry_fittedStars': 3199,
                    'selected_astrometry_fittedStars': 432,
                    'selected_astrometry_ccdImages': 9,
-                   'astrometry_final_chi2': 360.891,
+                   'astrometry_final_chi2': 360.884,
                    'astrometry_final_ndof': 1294,
                    }
         pa1 = None

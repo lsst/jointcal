@@ -19,6 +19,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+import itertools
 import unittest
 from unittest import mock
 
@@ -46,12 +47,16 @@ def setup_module(module):
 
 def make_fake_refcat(center, flux, filterName):
     """Make a fake reference catalog."""
-    schema = LoadIndexedReferenceObjectsTask.makeMinimalSchema([filterName])
+    schema = LoadIndexedReferenceObjectsTask.makeMinimalSchema([filterName],
+                                                               addProperMotion=True)
     catalog = lsst.afw.table.SimpleCatalog(schema)
     record = catalog.addNew()
     record.setCoord(center)
     record[filterName + '_flux'] = flux
     record[filterName + '_fluxErr'] = flux*0.1
+    record['pm_ra'] = lsst.geom.Angle(1)
+    record['pm_dec'] = lsst.geom.Angle(2)
+    record['epoch'] = 65432.1
     return catalog
 
 
@@ -190,7 +195,7 @@ class TestJointcalIterateFit(JointcalTestBase, lsst.utils.tests.TestCase):
 class TestJointcalLoadRefCat(JointcalTestBase, lsst.utils.tests.TestCase):
 
     def _make_fake_refcat(self):
-        """Make a fake reference catalog and the bits necessary to use it."""
+        """Mock a fake reference catalog and the bits necessary to use it."""
         center = lsst.geom.SpherePoint(30, -30, lsst.geom.degrees)
         flux = 10
         radius = 1 * lsst.geom.degrees
@@ -211,6 +216,8 @@ class TestJointcalLoadRefCat(JointcalTestBase, lsst.utils.tests.TestCase):
         config.astrometryReferenceErr = 0.1  # our test refcats don't have coord errors
         jointcal = lsst.jointcal.JointcalTask(config=config, butler=self.butler)
 
+        # NOTE: we cannot test application of proper motion here, because we
+        # mock the refObjLoader, so the real loader is never called.
         refCat, fluxField = jointcal._load_reference_catalog(refObjLoader,
                                                              jointcal.astrometryReferenceSelector,
                                                              center,
@@ -355,6 +362,40 @@ class TestComputeBoundingCircle(lsst.utils.tests.TestCase):
                                                                 fakeVisitInfos=[visitInfo1, visitInfo2])
         self._testPoints(struct.ccdImageList[0], struct.ccdImageList[1],
                          struct.skyWcs[0], struct.skyWcs[1], struct.bbox)
+
+
+class TestJointcalComputePMDate(JointcalTestBase, lsst.utils.tests.TestCase):
+    """Tests of jointcal._compute_proper_motion_epoch()"""
+    def test_compute_proper_motion_epoch(self):
+        mjds = np.array((65432.1, 66666, 65555, 64322.2))
+
+        wcs1, wcs2 = make_fake_wcs()
+        visitInfo1 = lsst.afw.image.VisitInfo(exposureId=30577512,
+                                              date=DateTime(mjds[0]),
+                                              boresightRaDec=wcs1.getSkyOrigin())
+        visitInfo2 = lsst.afw.image.VisitInfo(exposureId=30621144,
+                                              date=DateTime(mjds[1]),
+                                              boresightRaDec=wcs2.getSkyOrigin())
+        visitInfo3 = lsst.afw.image.VisitInfo(exposureId=30577513,
+                                              date=DateTime(mjds[2]),
+                                              boresightRaDec=wcs1.getSkyOrigin())
+        visitInfo4 = lsst.afw.image.VisitInfo(exposureId=30621145,
+                                              date=DateTime(mjds[3]),
+                                              boresightRaDec=wcs2.getSkyOrigin())
+
+        struct1 = lsst.jointcal.testUtils.createTwoFakeCcdImages(fakeWcses=[wcs1, wcs2],
+                                                                 fakeVisitInfos=[visitInfo1, visitInfo2])
+        struct2 = lsst.jointcal.testUtils.createTwoFakeCcdImages(fakeWcses=[wcs1, wcs2],
+                                                                 fakeVisitInfos=[visitInfo3, visitInfo4])
+        ccdImageList = list(itertools.chain(struct1.ccdImageList, struct2.ccdImageList))
+        associations = lsst.jointcal.Associations()
+        for ccdImage in ccdImageList:
+            associations.addCcdImage(ccdImage)
+        associations.computeCommonTangentPoint()
+
+        jointcal = lsst.jointcal.JointcalTask(config=self.config, butler=self.butler)
+        result = jointcal._compute_proper_motion_epoch(ccdImageList)
+        self.assertEqual(result.mjd, mjds.mean())
 
 
 class MemoryTester(lsst.utils.tests.MemoryTestCase):
