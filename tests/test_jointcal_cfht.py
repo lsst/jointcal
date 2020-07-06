@@ -52,10 +52,10 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
             raise unittest.SkipTest("obs_cfht not setup")
 
     def setUp(self):
-        # We don't want the absolute astrometry to become significantly worse
-        # than the single-epoch astrometry (about 0.040").
+        # NOTE: refcat-comparison RMS error is worse now, because the
+        # comparison code is not applying the proper motion data.
         # See Readme for an explanation of this empirical value.
-        self.dist_rms_absolute = 56e-3*u.arcsecond
+        self.dist_rms_absolute = 70e-3*u.arcsecond
 
         do_plot = False
 
@@ -99,8 +99,8 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
                        'selected_photometry_fittedStars': 2232,
                        'selected_astrometry_ccdImages': 12,
                        'selected_photometry_ccdImages': 12,
-                       'astrometry_final_chi2': 1243.59,
-                       'astrometry_final_ndof': 2446,
+                       'astrometry_final_chi2': 1146.81,
+                       'astrometry_final_ndof': 2486,
                        'photometry_final_chi2': 11624.3,
                        'photometry_final_ndof': 2778
                        }
@@ -137,8 +137,8 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
                    'associated_astrometry_fittedStars': 2272,
                    'selected_astrometry_fittedStars': 1229,
                    'selected_astrometry_ccdImages': 12,
-                   'astrometry_final_chi2': 1320.64,
-                   'astrometry_final_ndof': 2532,
+                   'astrometry_final_chi2': 1204.72,
+                   'astrometry_final_ndof': 2576,
                    }
 
         return dist_rms_relative, metrics
@@ -146,7 +146,6 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
     def test_jointcalTask_2_visits_constrainedAstrometry_no_photometry(self):
         dist_rms_relative, metrics = self.setup_jointcalTask_2_visits_constrainedAstrometry()
         self.config.writeInitialModel = True  # write the initial models
-        # use a temporary directory for debug output, to prevent test collisions
         # use a temporary directory for debug output, to prevent test collisions
         with tempfile.TemporaryDirectory() as tempdir:
             self.config.debugOutputPath = tempdir
@@ -169,8 +168,8 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
         """
         dist_rms_relative, metrics = self.setup_jointcalTask_2_visits_constrainedAstrometry()
         self.config.outlierRejectSigma = 4
-        metrics['astrometry_final_chi2'] = 1006.02
-        metrics['astrometry_final_ndof'] = 2386
+        metrics['astrometry_final_chi2'] = 849.75
+        metrics['astrometry_final_ndof'] = 2390
 
         self._testJointcalTask(2, dist_rms_relative, self.dist_rms_absolute, None, metrics=metrics)
 
@@ -180,8 +179,8 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
         test_config = os.path.join(lsst.utils.getPackageDir('jointcal'),
                                    'tests/config/astrometryReferenceErr-config.py')
         self.configfiles.append(test_config)
-        metrics['astrometry_final_chi2'] = 1456.09
-        metrics['astrometry_final_ndof'] = 2170
+        metrics['astrometry_final_chi2'] = 1275.70
+        metrics['astrometry_final_ndof'] = 2062
 
         self._testJointcalTask(2, dist_rms_relative, self.dist_rms_absolute, None, metrics=metrics)
 

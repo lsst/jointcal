@@ -22,6 +22,7 @@
 import collections
 import os
 
+import astropy.time
 import numpy as np
 import astropy.units as u
 
@@ -370,9 +371,10 @@ class JointcalConfig(pexConfig.Config):
                     'base_PsfFlux_flag', 'base_PixelFlags_flag_suspectCenter']
         self.sourceSelector['science'].flags.bad = badFlags
 
-        # Default to Gaia-DR2 for astrometry and PS1-DR1 for photometry,
-        # with a reasonable initial filterMap.
+        # Default to Gaia-DR2 (with proper motions) for astrometry and
+        # PS1-DR1 for photometry, with a reasonable initial filterMap.
         self.astrometryRefObjLoader.ref_dataset_name = "gaia_dr2_20200414"
+        self.astrometryRefObjLoader.requireProperMotion = True
         self.astrometryRefObjLoader.filterMap = {'u': 'phot_g_mean',
                                                  'g': 'phot_g_mean',
                                                  'r': 'phot_g_mean',
@@ -654,6 +656,22 @@ class JointcalTask(pipeBase.CmdLineTask):
         else:
             return self.config.astrometryReferenceErr
 
+    def _compute_proper_motion_epoch(self, ccdImageList):
+        """Return the proper motion correction epoch of the provided images.
+
+        Parameters
+        ----------
+        ccdImageList : `list` [`lsst.jointcal.CcdImage`]
+            The images to compute the appropriate epoch for.
+
+        Returns
+        -------
+        epoch : `astropy.time.Time`
+            The date to use for proper motion corrections.
+        """
+        mjds = [ccdImage.getMjd() for ccdImage in ccdImageList]
+        return astropy.time.Time(np.mean(mjds), format='mjd', scale="tai")
+
     def _do_load_refcat_and_fit(self, associations, defaultFilter, center, radius,
                                 filters=[],
                                 tract="", profile_jointcal=False, match_cut=3.0,
@@ -705,9 +723,11 @@ class JointcalTask(pipeBase.CmdLineTask):
                         associations.fittedStarListSize())
 
         applyColorterms = False if name.lower() == "astrometry" else self.config.applyColorTerms
+        epoch = self._compute_proper_motion_epoch(associations.getCcdImageList())
         refCat, fluxField = self._load_reference_catalog(refObjLoader, referenceSelector,
                                                          center, radius, defaultFilter,
-                                                         applyColorterms=applyColorterms)
+                                                         applyColorterms=applyColorterms,
+                                                         epoch=epoch)
         refCoordErr = self._get_refcat_coordinate_error_override(refCat, name)
 
         associations.collectRefStars(refCat,
@@ -742,7 +762,7 @@ class JointcalTask(pipeBase.CmdLineTask):
         return result
 
     def _load_reference_catalog(self, refObjLoader, referenceSelector, center, radius, filterName,
-                                applyColorterms=False):
+                                applyColorterms=False, epoch=None):
         """Load the necessary reference catalog sources, convert fluxes to
         correct units, and apply color term corrections if requested.
 
@@ -760,6 +780,9 @@ class JointcalTask(pipeBase.CmdLineTask):
             The name of the camera filter to load fluxes for.
         applyColorterms : `bool`
             Apply colorterm corrections to the refcat for ``filterName``?
+        epoch : `astropy.time.Time`, optional
+            Epoch to which to correct refcat proper motion and parallax,
+            or `None` to not apply such corrections.
 
         Returns
         -------
@@ -770,7 +793,8 @@ class JointcalTask(pipeBase.CmdLineTask):
         """
         skyCircle = refObjLoader.loadSkyCircle(center,
                                                radius,
-                                               filterName)
+                                               filterName,
+                                               epoch=epoch)
 
         selected = referenceSelector.run(skyCircle.refCat)
         # Need memory contiguity to get reference filters as a vector.
@@ -780,11 +804,7 @@ class JointcalTask(pipeBase.CmdLineTask):
             refCat = selected.sourceCat
 
         if applyColorterms:
-            try:
-                refCatName = refObjLoader.ref_dataset_name
-            except AttributeError:
-                # NOTE: we need this try:except: block in place until we've completely removed a.net support.
-                raise RuntimeError("Cannot perform colorterm corrections with a.net refcats.")
+            refCatName = refObjLoader.ref_dataset_name
             self.log.info("Applying color terms for filterName=%r reference catalog=%s",
                           filterName, refCatName)
             colorterm = self.config.colorterms.getColorterm(
