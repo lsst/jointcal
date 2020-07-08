@@ -177,16 +177,16 @@ class TestJointcalIterateFit(JointcalTestBase, lsst.utils.tests.TestCase):
     def test_invalid_model(self):
         self.model.validate.return_value = False
         with(self.assertRaises(ValueError)):
-            self.jointcal._logChi2AndValidate(self.associations, self.fitter, self.model)
+            self.jointcal._logChi2AndValidate(self.associations, self.fitter, self.model, "invalid")
 
     def test_nonfinite_chi2(self):
         self.fitter.computeChi2.return_value = self.nanChi2
         with(self.assertRaises(FloatingPointError)):
-            self.jointcal._logChi2AndValidate(self.associations, self.fitter, self.model)
+            self.jointcal._logChi2AndValidate(self.associations, self.fitter, self.model, "nonfinite")
 
     def test_writeChi2(self):
         filename = "somefile"
-        self.jointcal._logChi2AndValidate(self.associations, self.fitter, self.model,
+        self.jointcal._logChi2AndValidate(self.associations, self.fitter, self.model, "writeCh2",
                                           writeChi2Name=filename)
         # logChi2AndValidate prepends `config.debugOutputPath` to the filename
         self.fitter.saveChi2Contributions.assert_called_with("./"+filename+"{type}")
