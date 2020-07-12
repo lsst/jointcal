@@ -826,8 +826,7 @@ class JointcalTask(pipeBase.CmdLineTask):
         if associations.refStarListSize() == 0:
             raise RuntimeError('No stars in the {} reference star list!'.format(name))
 
-    def _logChi2AndValidate(self, associations, fit, model, chi2Label="Model",
-                            writeChi2Name=None):
+    def _logChi2AndValidate(self, associations, fit, model, chi2Label, writeChi2Name=None):
         """Compute chi2, log it, validate the model, and return chi2.
 
         Parameters
@@ -838,7 +837,7 @@ class JointcalTask(pipeBase.CmdLineTask):
             The fitter to use for minimization.
         model : `lsst.jointcal.Model`
             The model being fit.
-        chi2Label : str, optional
+        chi2Label : `str`
             Label to describe the chi2 (e.g. "Initialized", "Final").
         writeChi2Name : `str`, optional
             Filename prefix to write the chi2 contributions to.
@@ -941,17 +940,20 @@ class JointcalTask(pipeBase.CmdLineTask):
             # no line search: should be purely (or nearly) linear,
             # and we want a large step size to initialize with.
             fit.minimize("ModelVisit", dumpMatrixFile=dumpMatrixFile)
-            self._logChi2AndValidate(associations, fit, model, writeChi2Name=getChi2Name("ModelVisit"))
+            self._logChi2AndValidate(associations, fit, model, "Initialize ModelVisit",
+                                     writeChi2Name=getChi2Name("ModelVisit"))
             dumpMatrixFile = ""  # so we don't redo the output on the next step
 
         fit.minimize("Model", doLineSearch=doLineSearch, dumpMatrixFile=dumpMatrixFile)
-        self._logChi2AndValidate(associations, fit, model, writeChi2Name=getChi2Name("Model"))
+        self._logChi2AndValidate(associations, fit, model, "Initialize Model",
+                                 writeChi2Name=getChi2Name("Model"))
 
         fit.minimize("Fluxes")  # no line search: always purely linear.
-        self._logChi2AndValidate(associations, fit, model, writeChi2Name=getChi2Name("Fluxes"))
+        self._logChi2AndValidate(associations, fit, model, "Initialize Fluxes",
+                                 writeChi2Name=getChi2Name("Fluxes"))
 
         fit.minimize("Model Fluxes", doLineSearch=doLineSearch)
-        self._logChi2AndValidate(associations, fit, model, "Fit prepared",
+        self._logChi2AndValidate(associations, fit, model, "Initialize ModelFluxes",
                                  writeChi2Name=getChi2Name("ModelFluxes"))
 
         model.freezeErrorTransform()
@@ -1037,17 +1039,20 @@ class JointcalTask(pipeBase.CmdLineTask):
         # transform is initialized from the detector's cameraGeom, so it's close.
         if self.config.astrometryModel == "constrained":
             fit.minimize("DistortionsVisit", dumpMatrixFile=dumpMatrixFile)
-            self._logChi2AndValidate(associations, fit, model, writeChi2Name=getChi2Name("DistortionsVisit"))
+            self._logChi2AndValidate(associations, fit, model, "Initialize DistortionsVisit",
+                                     writeChi2Name=getChi2Name("DistortionsVisit"))
             dumpMatrixFile = ""  # so we don't redo the output on the next step
 
         fit.minimize("Distortions", dumpMatrixFile=dumpMatrixFile)
-        self._logChi2AndValidate(associations, fit, model, writeChi2Name=getChi2Name("Distortions"))
+        self._logChi2AndValidate(associations, fit, model, "Initialize Distortions",
+                                 writeChi2Name=getChi2Name("Distortions"))
 
         fit.minimize("Positions")
-        self._logChi2AndValidate(associations, fit, model, writeChi2Name=getChi2Name("Positions"))
+        self._logChi2AndValidate(associations, fit, model, "Initialize Positions",
+                                 writeChi2Name=getChi2Name("Positions"))
 
         fit.minimize("Distortions Positions")
-        self._logChi2AndValidate(associations, fit, model, "Fit prepared",
+        self._logChi2AndValidate(associations, fit, model, "Initialize DistortionsPositions",
                                  writeChi2Name=getChi2Name("DistortionsPositions"))
 
         chi2 = self._iterate_fit(associations,
@@ -1130,7 +1135,7 @@ class JointcalTask(pipeBase.CmdLineTask):
                                      dumpMatrixFile=dumpMatrixFile)
             dumpMatrixFile = ""  # clear it so we don't write the matrix again.
             chi2 = self._logChi2AndValidate(associations, fitter, fitter.getModel(),
-                                            writeChi2Name=writeChi2Name)
+                                            f"Fit iteration {i}", writeChi2Name=writeChi2Name)
 
             if result == MinimizeResult.Converged:
                 if doRankUpdate:
