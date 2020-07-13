@@ -41,6 +41,7 @@ void declareChi2(py::module &mod) {
     cls.def(py::init<>());
 
     utils::python::addOutputOp(cls, "__str__");
+    utils::python::addOutputOp(cls, "__repr__");
 
     cls.def_readwrite("chi2", &Chi2Statistic::chi2);
     cls.def_readwrite("ndof", &Chi2Statistic::ndof);
