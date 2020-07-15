@@ -1123,6 +1123,8 @@ class JointcalTask(pipeBase.CmdLineTask):
             log messages will provide further details.
         """
         dumpMatrixFile = self._getDebugPath(f"{name}_postinit") if self.config.writeInitMatrix else ""
+        oldChi2 = lsst.jointcal.Chi2Statistic()
+        oldChi2.chi2 = float("inf")
         for i in range(max_steps):
             if self.config.writeChi2FilesOuterLoop:
                 writeChi2Name = f"{name}_iterate_{i}_chi2-{dataName}"
@@ -1151,7 +1153,23 @@ class JointcalTask(pipeBase.CmdLineTask):
 
                 break
             elif result == MinimizeResult.Chi2Increased:
-                self.log.warn("still some outliers but chi2 increases - retry")
+                self.log.warn("Still some outliers remaining but chi2 increased - retry")
+                # Check whether the increase was large enough to cause trouble.
+                chi2Ratio = chi2.chi2 / oldChi2.chi2
+                if chi2Ratio > 1.5:
+                    self.log.warn('Significant chi2 increase by a factor of %.4g / %.4g = %.4g',
+                                  chi2.chi2, oldChi2.chi2, chi2Ratio)
+                # Based on a variety of HSC jointcal logs (see DM-25779), it
+                # appears that chi2 increases more than a factor of ~2 always
+                # result in the fit diverging rapidly and ending at chi2 > 1e10.
+                # Using 10 as the "failure" threshold gives some room between
+                # leaving a warning and bailing early.
+                if chi2Ratio > 10:
+                    msg = ("Large chi2 increase between steps: fit likely cannot converge."
+                           " Try setting one or more of the `writeChi2*` config fields and looking"
+                           " at how individual star chi2-values evolve during the fit.")
+                    raise RuntimeError(msg)
+                oldChi2 = chi2
             elif result == MinimizeResult.NonFinite:
                 filename = self._getDebugPath("{}_failure-nonfinite_chi2-{}.csv".format(name, dataName))
                 # TODO DM-12446: turn this into a "butler save" somehow.

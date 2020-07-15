@@ -174,6 +174,51 @@ class TestJointcalIterateFit(JointcalTestBase, lsst.utils.tests.TestCase):
         self.assertEqual(self.fitter.minimize.call_count, maxSteps)
         log.error.assert_called_with("testing failed to converge after %s steps" % maxSteps)
 
+    def test_moderate_chi2_increase(self):
+        """DM-25159: warn, but don't fail, on moderate chi2 increases between
+        steps.
+        """
+        chi2_1 = lsst.jointcal.chi2.Chi2Statistic()
+        chi2_1.chi2 = 100.0
+        chi2_1.ndof = 100
+        chi2_2 = lsst.jointcal.chi2.Chi2Statistic()
+        chi2_2.chi2 = 300.0
+        chi2_2.ndof = 100
+
+        chi2s = [self.goodChi2, chi2_1, chi2_2, self.goodChi2, self.goodChi2]
+        self.fitter.computeChi2.side_effect = chi2s
+        self.fitter.minimize.side_effect = [MinimizeResult.Chi2Increased,
+                                            MinimizeResult.Chi2Increased,
+                                            MinimizeResult.Chi2Increased,
+                                            MinimizeResult.Converged,
+                                            MinimizeResult.Converged]
+        with lsst.log.UsePythonLogging():  # so that assertLogs works with lsst.log
+            with self.assertLogs("jointcal", level="WARN") as logger:
+                self.jointcal._iterate_fit(self.associations, self.fitter,
+                                           self.maxSteps, self.name, self.whatToFit)
+            msg = "WARNING:jointcal:Significant chi2 increase by a factor of 300 / 100 = 3"
+            self.assertIn(msg, logger.output)
+
+    def test_large_chi2_increase_fails(self):
+        """DM-25159: fail on large chi2 increases between steps."""
+        chi2_1 = lsst.jointcal.chi2.Chi2Statistic()
+        chi2_1.chi2 = 1e11
+        chi2_1.ndof = 100
+        chi2_2 = lsst.jointcal.chi2.Chi2Statistic()
+        chi2_2.chi2 = 1.123456e13  # to check floating point formatting
+        chi2_2.ndof = 100
+
+        chi2s = [chi2_1, chi2_1, chi2_2]
+        self.fitter.computeChi2.side_effect = chi2s
+        self.fitter.minimize.return_value = MinimizeResult.Chi2Increased
+        with lsst.log.UsePythonLogging():  # so that assertLogs works with lsst.log
+            with self.assertLogs("jointcal", level="WARN") as logger:
+                with(self.assertRaisesRegex(RuntimeError, "Large chi2 increase")):
+                    self.jointcal._iterate_fit(self.associations, self.fitter,
+                                               self.maxSteps, self.name, self.whatToFit)
+            msg = "WARNING:jointcal:Significant chi2 increase by a factor of 1.123e+13 / 1e+11 = 112.3"
+            self.assertIn(msg, logger.output)
+
     def test_invalid_model(self):
         self.model.validate.return_value = False
         with(self.assertRaises(ValueError)):
