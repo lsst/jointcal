@@ -180,7 +180,7 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         with self.assertRaises(lsst.pex.config.FieldValidationError):
             self._testJointcalTask(2, None, None, pa1)
 
-    def testJointcalTask_2_visits_simple_astrometry_no_photometry(self):
+    def test_JointcalTask_2_visits_simple_astrometry_no_photometry(self):
         """Test turning off fitting photometry."""
         metrics = {'collected_astrometry_refStars': 568,
                    'selected_astrometry_refStars': 137,
