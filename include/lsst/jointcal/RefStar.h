@@ -34,8 +34,13 @@
 namespace lsst {
 namespace jointcal {
 
-//! Objects used as position anchors, typically USNO stars. Coordinate system defined by user. The Common
-//! Tangent Plane seems a good idea.
+/**
+ * Objects used as position/flux anchors (e.g. Gaia DR2 stars). Coordinate system should match that of the
+ * fittedStars these are associated with; typically the common tangent plane.
+ *
+ * RefStars should ahve their proper motion and parallax corrections pre-applied, so that they are at
+ * the same epoch as is stored in Associations.
+ */
 class RefStar : public BaseStar {
 public:
     RefStar(double xx, double yy, double flux, double fluxErr) : BaseStar(xx, yy, flux, fluxErr) {}
@@ -48,8 +53,6 @@ public:
 };
 
 /****** RefStarList ***********/
-
-class Frame;
 
 // typedef StarList<RefStar> RefStarList;
 class RefStarList : public StarList<RefStar> {};

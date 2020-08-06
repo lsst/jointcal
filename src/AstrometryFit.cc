@@ -280,7 +280,7 @@ void AstrometryFit::leastSquareDerivativesReference(FittedStarList const &fitted
     TanRaDecToPixel proj(AstrometryTransformLinear(), Point(0., 0.));
     for (auto const &i : fittedStarList) {
         const FittedStar &fs = *i;
-        const RefStar *rs = fs.getRefStar();
+        auto rs = fs.getRefStar();
         if (rs == nullptr) continue;
         proj.setTangentPoint(fs);
         // fs projects to (0,0), no need to compute its transform.
@@ -405,7 +405,7 @@ void AstrometryFit::accumulateStatRefStars(Chi2Accumulator &accum) const {
     FittedStarList &fittedStarList = _associations->fittedStarList;
     TanRaDecToPixel proj(AstrometryTransformLinear(), Point(0., 0.));
     for (auto const &fs : fittedStarList) {
-        const RefStar *rs = fs->getRefStar();
+        auto rs = fs->getRefStar();
         if (rs == nullptr) continue;
         proj.setTangentPoint(*fs);
         // fs projects to (0,0), no need to compute its transform.
@@ -636,7 +636,7 @@ void AstrometryFit::saveChi2RefContributions(std::string const &filename) const 
     TanRaDecToPixel proj(AstrometryTransformLinear(), Point(0., 0.));
     for (auto const &i : fittedStarList) {
         const FittedStar &fs = *i;
-        const RefStar *rs = fs.getRefStar();
+        auto rs = fs.getRefStar();
         if (rs == nullptr) continue;
         proj.setTangentPoint(fs);
         // fs projects to (0,0), no need to compute its transform.
