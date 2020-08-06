@@ -67,9 +67,10 @@ void declareBaseStar(py::module &mod) {
 
     // these three are actually declared in FatPoint, but we didn't want that in Python.
     // NOTE: see DM-9814 about the necessity of the pointer cast below.
-    cls.def_readonly("vx", (double BaseStar::*)&BaseStar::vx);
-    cls.def_readonly("vy", (double BaseStar::*)&BaseStar::vy);
-    cls.def_readonly("vxy", (double BaseStar::*)&BaseStar::vxy);
+    // readwrite so that we can set them in unittests.
+    cls.def_readwrite("vx", (double BaseStar::*)&BaseStar::vx);
+    cls.def_readwrite("vy", (double BaseStar::*)&BaseStar::vy);
+    cls.def_readwrite("vxy", (double BaseStar::*)&BaseStar::vxy);
 
     // cls.def("getFlux", &BaseStar::getFlux);
     cls.def_property_readonly("flux", (double (BaseStar::*)() const) & BaseStar::getFlux);
@@ -82,6 +83,9 @@ void declareRefStar(py::module &mod) {
     py::class_<RefStar, std::shared_ptr<RefStar>, BaseStar> cls(mod, "RefStar");
 
     cls.def(py::init<double, double, double, double>(), "xx"_a, "yy"_a, "flux"_a, "fluxErr"_a);
+
+    cls.def("setProperMotion", py::overload_cast<ProperMotion const &>(&RefStar::setProperMotion));
+    cls.def("applyProperMotion", &RefStar::applyProperMotion);
 }
 
 void declareFittedStar(py::module &mod) {
@@ -111,6 +115,17 @@ void declareMeasuredStar(py::module &mod) {
     cls.def("getYFocal", &MeasuredStar::getYFocal);
 }
 
+void declareProperMotion(py::module &mod) {
+    py::class_<ProperMotion, std::shared_ptr<ProperMotion>> cls(mod, "ProperMotion");
+
+    cls.def(py::init<double, double, double, double, double>(), "ra"_a, "dec"_a, "raErr"_a, "decErr"_a,
+            "raDecCov"_a = 0);
+
+    cls.def("apply", &ProperMotion::apply);
+
+    utils::python::addOutputOp(cls, "__str__");
+}
+
 PYBIND11_MODULE(star, mod) {
     declarePoint(mod);
     declareFatPoint(mod);
@@ -118,6 +133,7 @@ PYBIND11_MODULE(star, mod) {
     declareRefStar(mod);
     declareFittedStar(mod);
     declareMeasuredStar(mod);
+    declareProperMotion(mod);
 }
 }  // namespace
 }  // namespace jointcal

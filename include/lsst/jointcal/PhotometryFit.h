@@ -112,7 +112,7 @@ private:
 
 #ifdef STORAGE
     Point transformFittedStar(FittedStar const &fittedStar, AstrometryTransform const *sky2TP,
-                              Point const &refractionVector, double refractionCoeff, double mjd) const;
+                              Point const &refractionVector, double refractionCoeff, double deltaYears) const;
 #endif
 };
 }  // namespace jointcal

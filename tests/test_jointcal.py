@@ -26,6 +26,7 @@ from unittest import mock
 
 import numpy as np
 import pyarrow.parquet
+import astropy.time
 
 import lsst.log
 import lsst.utils
@@ -447,10 +448,10 @@ class TestComputeBoundingCircle(lsst.utils.tests.TestCase):
 
         # Put the visit boresights at the WCS origin, for consistency
         visitInfo1 = lsst.afw.image.VisitInfo(exposureId=30577512,
-                                              date=DateTime(65321.1),
+                                              date=DateTime(date=65321.1),
                                               boresightRaDec=wcs1.getSkyOrigin())
         visitInfo2 = lsst.afw.image.VisitInfo(exposureId=30621144,
-                                              date=DateTime(65322.1),
+                                              date=DateTime(date=65322.1),
                                               boresightRaDec=wcs1.getSkyOrigin())
 
         struct = lsst.jointcal.testUtils.createTwoFakeCcdImages(fakeWcses=[wcs1, wcs2],
@@ -460,22 +461,22 @@ class TestComputeBoundingCircle(lsst.utils.tests.TestCase):
 
 
 class TestJointcalComputePMDate(JointcalTestBase, lsst.utils.tests.TestCase):
-    """Tests of jointcal._compute_proper_motion_epoch()"""
+    """Tests of jointcal._compute_proper_motion_epoch(), using fake dates."""
     def test_compute_proper_motion_epoch(self):
-        mjds = np.array((65432.1, 66666, 65555, 64322.2))
+        mjds = np.array((65432.1, 66666.0, 55555.0, 44322.2))
 
         wcs1, wcs2 = make_fake_wcs()
         visitInfo1 = lsst.afw.image.VisitInfo(exposureId=30577512,
-                                              date=DateTime(mjds[0]),
+                                              date=DateTime(date=mjds[0]),
                                               boresightRaDec=wcs1.getSkyOrigin())
         visitInfo2 = lsst.afw.image.VisitInfo(exposureId=30621144,
-                                              date=DateTime(mjds[1]),
+                                              date=DateTime(date=mjds[1]),
                                               boresightRaDec=wcs2.getSkyOrigin())
         visitInfo3 = lsst.afw.image.VisitInfo(exposureId=30577513,
-                                              date=DateTime(mjds[2]),
+                                              date=DateTime(date=mjds[2]),
                                               boresightRaDec=wcs1.getSkyOrigin())
         visitInfo4 = lsst.afw.image.VisitInfo(exposureId=30621145,
-                                              date=DateTime(mjds[3]),
+                                              date=DateTime(date=mjds[3]),
                                               boresightRaDec=wcs2.getSkyOrigin())
 
         struct1 = lsst.jointcal.testUtils.createTwoFakeCcdImages(fakeWcses=[wcs1, wcs2],
@@ -490,7 +491,7 @@ class TestJointcalComputePMDate(JointcalTestBase, lsst.utils.tests.TestCase):
 
         jointcal = lsst.jointcal.JointcalTask(config=self.config, butler=self.butler)
         result = jointcal._compute_proper_motion_epoch(ccdImageList)
-        self.assertEqual(result.mjd, mjds.mean())
+        self.assertEqual(result.jyear, (astropy.time.Time(mjds, format="mjd", scale="tai").jyear).mean())
 
 
 class MemoryTester(lsst.utils.tests.MemoryTestCase):

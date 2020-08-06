@@ -228,6 +228,32 @@ void Associations::collectRefStars(afw::table::SimpleCatalog &refCat, geom::Angl
                                  << ") not found in reference catalog. Not using ref flux errors.");
     }
 
+    // Handle reference catalogs that don't have proper motion & error
+    afw::table::Key<geom::Angle> pmRaKey, pmDecKey;
+    afw::table::Key<float> pmRaErrKey, pmDecErrKey, pmRaDecCovKey;
+    try {
+        pmRaKey = refCat.getSchema().find<geom::Angle>("pm_ra").key;
+        pmDecKey = refCat.getSchema().find<geom::Angle>("pm_dec").key;
+    } catch (pex::exceptions::NotFoundError &ex) {
+        LOGLS_WARN(_log, "Not loading proper motions: (pm_ra,pm_dec) fields not found in reference catalog.");
+    } catch (pex::exceptions::TypeError &ex) {
+        LOGLS_WARN(_log, "Not loading proper motions: RA/Dec proper motion values must be `geom:Angle`: "
+                                 << ex.what());
+    }
+    try {
+        pmRaErrKey = refCat.getSchema().find<float>("pm_raErr").key;
+        pmDecErrKey = refCat.getSchema().find<float>("pm_decErr").key;
+    } catch (pex::exceptions::NotFoundError &ex) {
+        LOGLS_WARN(_log, "Not loading proper motions: error fields not available: " << ex.what());
+    }
+
+    // TODO: we aren't getting covariances from Gaia yet, so maybe ignore this for now?
+    try {
+        pmRaDecCovKey = refCat.getSchema().find<float>("pm_ra_Dec_Cov").key;
+    } catch (pex::exceptions::NotFoundError &ex) {
+        LOGLS_WARN(_log, "No ra/dec proper motion covariances in refcat: " << ex.what());
+    }
+
     refStarList.clear();
     for (size_t i = 0; i < refCat.size(); i++) {
         auto const &record = refCat.get(i);
@@ -253,6 +279,19 @@ void Associations::collectRefStars(afw::table::SimpleCatalog &refCat, geom::Angl
             star->vx = std::pow(refCoordinateErr / 1000. / 3600. / std::cos(coord.getLatitude()), 2);
             star->vy = std::pow(refCoordinateErr / 1000. / 3600., 2);
         }
+
+        if (pmRaKey.isValid()) {
+            if (pmRaDecCovKey.isValid()) {
+                star->setProperMotion(std::make_unique<ProperMotion const>(
+                        record->get(pmRaKey).asRadians(), record->get(pmDecKey).asRadians(),
+                        record->get(pmRaErrKey), record->get(pmDecErrKey), record->get(pmRaDecCovKey)));
+            } else {
+                star->setProperMotion(std::make_unique<ProperMotion const>(
+                        record->get(pmRaKey).asRadians(), record->get(pmDecKey).asRadians(),
+                        record->get(pmRaErrKey), record->get(pmDecErrKey)));
+            }
+        }
+
         // TODO: cook up a covariance as none of our current refcats have it
         star->vxy = 0.;
 

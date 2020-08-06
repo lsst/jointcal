@@ -68,12 +68,9 @@ AstrometryFit::AstrometryFit(std::shared_ptr<Associations> associations,
           _astrometryModel(astrometryModel),
           _refractionCoefficient(0),
           _nParRefrac(_associations->getNFilters()),
+          _epoch(_associations->getEpoch()),
           _posError(posError) {
     _log = LOG_GET("jointcal.AstrometryFit");
-    _JDRef = 0;
-
-    _posError = posError;
-
     _referenceColor = 0;
     _sigCol = 0;
     std::size_t count = 0;
@@ -89,19 +86,21 @@ AstrometryFit::AstrometryFit(std::shared_ptr<Associations> associations,
     LOGLS_INFO(_log, "Reference Color: " << _referenceColor << " sig " << _sigCol);
 }
 
-#define NPAR_PM 2
-
 /* ! this routine is used in 3 instances: when computing
 the derivatives, when computing the Chi2, when filling a tuple.
 */
 Point AstrometryFit::transformFittedStar(FittedStar const &fittedStar, AstrometryTransform const &sky2TP,
                                          Point const &refractionVector, double refractionCoeff,
-                                         double mjd) const {
-    Point fittedStarInTP = sky2TP.apply(fittedStar);
-    if (fittedStar.mightMove) {
-        fittedStarInTP.x += fittedStar.pmx * mjd;
-        fittedStarInTP.y += fittedStar.pmy * mjd;
+                                         double deltaYears) const {
+    Point fittedStarInTP;
+    if (fittedStar.getRefStar()) {
+        // PM data is on-sky, not in the tangent plane
+        Point temp = fittedStar.getRefStar()->applyProperMotion(fittedStar, deltaYears);
+        fittedStarInTP = sky2TP.apply(temp);
+    } else {
+        fittedStarInTP = sky2TP.apply(fittedStar);
     }
+
     // account for atmospheric refraction: does nothing if color
     // have not been assigned
     // the color definition shouldbe the same when computing derivatives
@@ -147,7 +146,7 @@ void AstrometryFit::leastSquareDerivativesMeasurement(CcdImage const &ccdImage, 
     std::size_t npar_mapping = (_fittingDistortions) ? mapping->getNpar() : 0;
     std::size_t npar_pos = (_fittingPos) ? 2 : 0;
     std::size_t npar_refrac = (_fittingRefrac) ? 1 : 0;
-    std::size_t npar_pm = (_fittingPM) ? NPAR_PM : 0;
+    std::size_t npar_pm = (_fittingPM) ? 2 : 0;
     std::size_t npar_tot = npar_mapping + npar_pos + npar_refrac + npar_pm;
     // if (npar_tot == 0) this CcdImage does not contribute
     // any constraint to the fit, so :
@@ -155,8 +154,8 @@ void AstrometryFit::leastSquareDerivativesMeasurement(CcdImage const &ccdImage, 
     IndexVector indices(npar_tot, -1);
     if (_fittingDistortions) mapping->getMappingIndices(indices);
 
-    // proper motion stuff
-    double mjd = ccdImage.getMjd() - _JDRef;
+    // FittedStar is "observed" epoch, MeasuredStar is "baseline"
+    double deltaYears = _epoch - ccdImage.getEpoch();
     // refraction stuff
     Point refractionVector = ccdImage.getRefractionVector();
     // transformation from sky to TP
@@ -210,7 +209,7 @@ void AstrometryFit::leastSquareDerivativesMeasurement(CcdImage const &ccdImage, 
         std::shared_ptr<FittedStar const> const fs = ms.getFittedStar();
 
         Point fittedStarInTP =
-                transformFittedStar(*fs, *sky2TP, refractionVector, _refractionCoefficient, mjd);
+                transformFittedStar(*fs, *sky2TP, refractionVector, _refractionCoefficient, deltaYears);
 
         // compute derivative of TP position w.r.t sky position ....
         if (npar_pos > 0)  // ... if actually fitting FittedStar position
@@ -228,13 +227,15 @@ void AstrometryFit::leastSquareDerivativesMeasurement(CcdImage const &ccdImage, 
         }
         /* only consider proper motions of objects allowed to move,
         unless the fit is going to be degenerate */
-        if (_fittingPM && fs->mightMove) {
-            H(ipar, 0) = -mjd;  // Sign unchecked but consistent with above
-            H(ipar + 1, 1) = -mjd;
-            indices[ipar] = fs->getIndexInMatrix() + 2;
-            indices[ipar + 1] = fs->getIndexInMatrix() + 3;
-            ipar += npar_pm;
-        }
+        // TODO: left as reference for when we implement PM fitting
+        // TODO: mjd here would become either deltaYears or maybe associations.epoch? Check the math first!
+        // if (_fittingPM && fs->mightMove) {
+        //     H(ipar, 0) = -mjd;  // Sign unchecked but consistent with above
+        //     H(ipar + 1, 1) = -mjd;
+        //     indices[ipar] = fs->getIndexInMatrix() + 2;
+        //     indices[ipar + 1] = fs->getIndexInMatrix() + 3;
+        //     ipar += npar_pm;
+        // }
         if (_fittingRefrac) {
             /* if the definition of color changes, it has to remain
                consistent with transformFittedStar */
@@ -288,7 +289,7 @@ void AstrometryFit::leastSquareDerivativesReference(FittedStarList const &fitted
     Eigen::Matrix2d H(2, 2), halpha(2, 2), HW(2, 2);
     AstrometryTransformLinear der;
     Eigen::Vector2d res, grad;
-    Eigen::Index indices[2 + NPAR_PM];
+    Eigen::Index indices[2];
     Eigen::Index kTriplets = tripletList.getNextFreeIndex();
     /* We cannot use the spherical coordinates directly to evaluate
        Euclidean distances, we have to use a projector on some plane in
@@ -367,8 +368,8 @@ void AstrometryFit::accumulateStatImage(CcdImage const &ccdImage, Chi2Accumulato
     /* Setup */
     // 1 : get the Mapping's
     const AstrometryMapping *mapping = _astrometryModel->getMapping(ccdImage);
-    // proper motion stuff
-    double mjd = ccdImage.getMjd() - _JDRef;
+    // FittedStar is "observed" epoch, MeasuredStar is "baseline"
+    double deltaYears = _epoch - ccdImage.getEpoch();
     // refraction stuff
     Point refractionVector = ccdImage.getRefractionVector();
     // transformation from sky to TP
@@ -398,7 +399,7 @@ void AstrometryFit::accumulateStatImage(CcdImage const &ccdImage, Chi2Accumulato
 
         std::shared_ptr<FittedStar const> const fs = ms->getFittedStar();
         Point fittedStarInTP =
-                transformFittedStar(*fs, *sky2TP, refractionVector, _refractionCoefficient, mjd);
+                transformFittedStar(*fs, *sky2TP, refractionVector, _refractionCoefficient, deltaYears);
 
         Eigen::Vector2d res(fittedStarInTP.x - outPos.x, fittedStarInTP.y - outPos.y);
         double chi2Val = res.transpose() * transW * res;
@@ -452,7 +453,7 @@ void AstrometryFit::getIndicesOfMeasuredStar(MeasuredStar const &measuredStar, I
     }
     // For securing the outlier removal, the next block is just useless
     if (_fittingPM) {
-        for (std::size_t k = 0; k < NPAR_PM; ++k) indices.push_back(fsIndex + 2 + k);
+        for (std::size_t k = 0; k < 2; ++k) indices.push_back(fsIndex + 2 + k);
     }
     /* Should not put the index of refaction stuff or we will not be
        able to remove more than 1 star at a time. */
@@ -485,7 +486,8 @@ void AstrometryFit::assignIndices(std::string const &whatToFit) {
             // - in GetMeasuredStarIndices
             fittedStar->setIndexInMatrix(ipar);
             ipar += 2;
-            if ((_fittingPM)&fittedStar->mightMove) ipar += NPAR_PM;
+            // TODO: left as reference for when we implement PM fitting
+            // if ((_fittingPM)&fittedStar->mightMove) ipar += 2;
         }
     }
     _nStarParams = ipar - _nModelParams;
@@ -515,10 +517,11 @@ void AstrometryFit::offsetParams(Eigen::VectorXd const &delta) {
             Eigen::Index index = fs.getIndexInMatrix();
             fs.x += delta(index);
             fs.y += delta(index + 1);
-            if ((_fittingPM)&fs.mightMove) {
-                fs.pmx += delta(index + 2);
-                fs.pmy += delta(index + 3);
-            }
+            // TODO: left as reference for when we implement PM fitting
+            // if ((_fittingPM)&fs.mightMove) {
+            //     fs.pmx += delta(index + 2);
+            //     fs.pmy += delta(index + 3);
+            // }
         }
     }
     if (_fittingRefrac) {
@@ -558,7 +561,7 @@ void AstrometryFit::saveChi2MeasContributions(std::string const &filename) const
     ofile << "#id" << separator << "xccd" << separator << "yccd " << separator;
     ofile << "rx" << separator << "ry" << separator;
     ofile << "xtp" << separator << "ytp" << separator;
-    ofile << "mag" << separator << "mjd" << separator;
+    ofile << "mag" << separator << "deltaYears" << separator;
     ofile << "xErr" << separator << "yErr" << separator << "xyCov" << separator;
     ofile << "xtpi" << separator << "ytpi" << separator;
     ofile << "rxi" << separator << "ryi" << separator;
@@ -570,7 +573,7 @@ void AstrometryFit::saveChi2MeasContributions(std::string const &filename) const
     ofile << "#id in source catalog" << separator << "coordinates in CCD (pixels)" << separator << separator;
     ofile << "residual on TP (degrees)" << separator << separator;
     ofile << "transformed coordinate in TP (degrees)" << separator << separator;
-    ofile << "rough magnitude" << separator << "Modified Julian Date of the measurement" << separator;
+    ofile << "rough magnitude" << separator << "Julian epoch year delta from fit epoch" << separator;
     ofile << "transformed measurement uncertainty (degrees)" << separator << separator << separator;
     ofile << "as-read position on TP (degrees)" << separator << separator;
     ofile << "as-read residual on TP (degrees)" << separator << separator;
@@ -586,7 +589,8 @@ void AstrometryFit::saveChi2MeasContributions(std::string const &filename) const
         const AstrometryMapping *mapping = _astrometryModel->getMapping(*ccdImage);
         const auto readTransform = ccdImage->getReadWcs();
         const Point &refractionVector = ccdImage->getRefractionVector();
-        double mjd = ccdImage->getMjd() - _JDRef;
+        // FittedStar is "observed" epoch, MeasuredStar is "baseline"
+        double deltaYears = _epoch - ccdImage->getEpoch();
         for (auto const &ms : cat) {
             if (!ms->isValid()) continue;
             FatPoint tpPos;
@@ -600,7 +604,7 @@ void AstrometryFit::saveChi2MeasContributions(std::string const &filename) const
             std::shared_ptr<FittedStar const> const fs = ms->getFittedStar();
 
             Point fittedStarInTP =
-                    transformFittedStar(*fs, *sky2TP, refractionVector, _refractionCoefficient, mjd);
+                    transformFittedStar(*fs, *sky2TP, refractionVector, _refractionCoefficient, deltaYears);
             Point res = tpPos - fittedStarInTP;
             Point inputRes = inputTpPos - fittedStarInTP;
             double det = tpPos.vx * tpPos.vy - std::pow(tpPos.vxy, 2);
@@ -613,7 +617,7 @@ void AstrometryFit::saveChi2MeasContributions(std::string const &filename) const
             ofile << ms->getId() << separator << ms->x << separator << ms->y << separator;
             ofile << res.x << separator << res.y << separator;
             ofile << tpPos.x << separator << tpPos.y << separator;
-            ofile << fs->getMag() << separator << mjd << separator;
+            ofile << fs->getMag() << separator << deltaYears << separator;
             ofile << tpPos.vx << separator << tpPos.vy << separator << tpPos.vxy << separator;
             ofile << inputTpPos.x << separator << inputTpPos.y << separator;
             ofile << inputRes.x << separator << inputRes.y << separator;

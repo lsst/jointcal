@@ -22,29 +22,30 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <algorithm>
-#include <assert.h>
-#include <iomanip>
-
-#include "lsst/jointcal/RefStar.h"
+#include <cmath>
+#include <iostream>
+#include "lsst/geom/SpherePoint.h"
+#include "lsst/jointcal/ProperMotion.h"
+#include "lsst/jointcal/Point.h"
 
 namespace lsst {
 namespace jointcal {
 
-Point RefStar::applyProperMotion(Point star, double timeDeltaYears) const {
-    if (!_properMotion) {
-        return star;
-    } else {
-        return _properMotion->apply(star, timeDeltaYears);
-    }
+Point ProperMotion::apply(Point star, double timeDeltaYears) const {
+    geom::SpherePoint spherePoint(star.x, star.y, geom::degrees);
+    double amount = std::hypot(_ra * timeDeltaYears, _dec * timeDeltaYears);
+    auto result = spherePoint.offset(_offsetBearing * geom::radians, amount * geom::radians);
+    Point newStar(star);
+    newStar.x = result.getRa().asDegrees();
+    newStar.y = result.getDec().asDegrees();
+    return newStar;
 }
 
-BaseStarList &Ref2Base(RefStarList &This) { return (BaseStarList &)This; }
+std::ostream &operator<<(std::ostream &stream, ProperMotion const &pm) {
+    stream << "pm_ra*cos(dec)=" << pm._ra << "rad/yr, pm_dec=" << pm._dec << "rad/yr, pm_raErr=" << pm._raErr
+           << "rad/yr, pm_decErr=" << pm._decErr << "rad/yr, pm_raDecCov=" << pm._raDecCov;
+    return stream;
+}
 
-BaseStarList *Ref2Base(RefStarList *This) { return (BaseStarList *)This; }
-
-const BaseStarList &Ref2Base(const RefStarList &This) { return (const BaseStarList &)This; }
-
-const BaseStarList *Ref2Base(const RefStarList *This) { return (BaseStarList *)This; }
 }  // namespace jointcal
 }  // namespace lsst

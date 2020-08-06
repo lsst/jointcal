@@ -29,6 +29,7 @@
 #include <fstream>
 
 #include "lsst/jointcal/FittedStar.h"
+#include "lsst/jointcal/ProperMotion.h"
 #include "lsst/jointcal/StarList.h"
 
 namespace lsst {
@@ -38,18 +39,46 @@ namespace jointcal {
  * Objects used as position/flux anchors (e.g. Gaia DR2 stars). Coordinate system should match that of the
  * fittedStars these are associated with; typically the common tangent plane.
  *
- * RefStars should ahve their proper motion and parallax corrections pre-applied, so that they are at
+ * RefStars should have their proper motion and parallax corrections pre-applied, so that they are at
  * the same epoch as is stored in Associations.
  */
 class RefStar : public BaseStar {
 public:
     RefStar(double xx, double yy, double flux, double fluxErr) : BaseStar(xx, yy, flux, fluxErr) {}
 
-    /// No move or copy: each RefStar is unique, and should be accessed/managed via shared_ptr.
+    /// No copy: each RefStar is unique, and should be accessed/managed via shared_ptr.
     RefStar(RefStar const&) = delete;
-    RefStar(RefStar&&) = delete;
-    RefStar& operator=(RefStar const&) = default;
-    RefStar& operator=(RefStar&&) = delete;
+    RefStar(RefStar&&) = default;
+    RefStar& operator=(RefStar const&) = delete;
+    RefStar& operator=(RefStar&&) = default;
+
+    // pybind11 cannot handle unique_ptr as arguments, so provide this for python-level testing.
+    void setProperMotion(ProperMotion const& properMotion) {
+        _properMotion = std::make_unique<ProperMotion>(properMotion);
+    }
+    void setProperMotion(std::unique_ptr<ProperMotion const>&& properMotion) {
+        _properMotion = std::move(properMotion);
+    }
+
+    /**
+     * Apply proper motion correction to the input star, returning a star with PM-corrected
+     * coordinates and coordinate errors.
+     *
+     * Star is returned unchanged if no proper motion data is available.
+     *
+     * @param star The star to correct for this proper motion.
+     * @param timeDeltaYears The difference in time from the correction epoch to correct for, in
+     * years.
+     *
+     * @return The star with corrected coordinates.
+     */
+    Point applyProperMotion(Point star, double timeDeltaYears) const;
+
+private:
+    // RefStars are already PM corrected to a common epoch: this is to correct the associated FittedStar
+    // to each MeasuredStar's epoch. Not all refcats have PM data: this will be nullptr if no PM data is
+    // available for any reason.
+    std::unique_ptr<ProperMotion const> _properMotion;
 };
 
 /****** RefStarList ***********/

@@ -139,11 +139,11 @@ private:
     double _referenceColor, _sigCol;  // average and r.m.s color
     double _refractionCoefficient;    // fit parameter
     Eigen::Index _refracPosInMatrix;  // where it stands
-    double _JDRef;                    // average Julian date
 
     // counts in parameter subsets.
     std::size_t _nParRefrac;
 
+    double _epoch;     // epoch to correct proper motion/parallax to (Julian Epoch year, e.g. J2000.0)
     double _posError;  // constant term on error on position (in pixel unit)
 
     void leastSquareDerivativesMeasurement(CcdImage const &ccdImage, TripletList &tripletList,
@@ -160,7 +160,7 @@ private:
     void getIndicesOfMeasuredStar(MeasuredStar const &measuredStar, IndexVector &indices) const override;
 
     Point transformFittedStar(FittedStar const &fittedStar, AstrometryTransform const &sky2TP,
-                              Point const &refractionVector, double refractionCoeff, double mjd) const;
+                              Point const &refractionVector, double refractionCoeff, double deltaYears) const;
 
     /// Compute the chi2 (per star or total, depending on which Chi2Accumulator is used) from one CcdImage.
     void accumulateStatImage(CcdImage const &ccdImage, Chi2Accumulator &accum) const;

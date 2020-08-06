@@ -29,6 +29,7 @@
 #include <fstream>
 
 #include "Eigen/Core"
+#include "lsst/jointcal/ProperMotion.h"
 #include "lsst/jointcal/BaseStar.h"
 #include "lsst/jointcal/StarList.h"
 
@@ -39,26 +40,14 @@ class MeasuredStar;
 class RefStar;
 class AstrometryTransform;
 
-/*! \file */
-
-//! objects whose position is going to be fitted. Coordinates in Common Tangent Plane.
-
-struct PmBlock {
-    // proper motion in x and y. Units depend on how you fit them
-    double pmx, pmy;
-    double epmx, epmy, epmxy;
-    double color;  // OK it is unrelated, but associated in practice
-    bool mightMove;
-
-    PmBlock() : pmx(0), pmy(0), epmx(0), epmy(0), epmxy(0), color(0), mightMove(false){};
-};
-
 /**
- * The objects which have been measured several times.
+ * FittedStars are objects whose position or flux is going to be fitted, and which come from the association
+ * of multiple MeasuredStars.
  *
+ * x/y Coordinates are in the Common Tangent Plane (degrees).
  * MeasuredStars from different CcdImages that represent the same on-sky object all point to one FittedStar.
  */
-class FittedStar : public BaseStar, public PmBlock {
+class FittedStar : public BaseStar {
 public:
     FittedStar() : BaseStar(), _indexInMatrix(-1), _measurementCount(0), _refStar(nullptr) {}
 
@@ -110,6 +99,8 @@ public:
 
     //! Get the astrometric reference star associated with this star.
     const RefStar* getRefStar() const { return _refStar; };
+
+    double color;  // TODO: remove this holdover from PmBlock class
 
 private:
     Eigen::Index _indexInMatrix;

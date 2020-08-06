@@ -78,12 +78,14 @@ public:
      * parallelize the creation of the ccdImages.
      *
      * @param imageList A pre-built ccdImage list.
+     * @param epoch The julian epoch year to which all proper motion corrections should be made.
      */
-    Associations(CcdImageList const &imageList)
+    Associations(CcdImageList const &imageList, double epoch = 0)
             : ccdImageList(imageList),
               _commonTangentPoint(Point(std::numeric_limits<double>::quiet_NaN(),
                                         std::numeric_limits<double>::quiet_NaN())),
-              _maxMeasuredStars(0) {}
+              _maxMeasuredStars(0),
+              _epoch(epoch) {}
 
     /// No moves or copies: jointcal only ever needs one Associations object.
     Associations(Associations const &) = delete;
@@ -107,6 +109,14 @@ public:
     Point getCommonTangentPoint() const { return _commonTangentPoint; }
 
     size_t getMaxMeasuredStars() const { return _maxMeasuredStars; }
+
+    /**
+     * Common epoch of all of the ccdImages as a Julian Epoch Year (e.g. 2000.0 for J2000).
+     */
+    ///@{
+    double getEpoch() const { return _epoch; }
+    void setEpoch(double epoch) { _epoch = epoch; }
+    ///@}
 
     /**
      * @brief      Create a ccdImage from an exposure catalog and metadata, and add it to the list.
@@ -224,12 +234,17 @@ private:
      */
     void normalizeFittedStars();
 
+    // Common tangent point on-sky of all of the ccdImages, typically determined by computeCommonTangentPoint.
     Point _commonTangentPoint;
 
     // The number of MeasuredStars at the start of fitting, before any outliers are removed.
     // This is used to reserve space in vectors for e.g. outlier removal, but is not updated during outlier
     // removal or cleanup, so should only be used as an upper bound on the number of MeasuredStars.
     size_t _maxMeasuredStars;
+
+    // Julian Epoch Year (e.g. 2000.0 for J2000)
+    // Common epoch of all of the ccdImages, typically computed externally via astropy and then set.
+    double _epoch;
 };
 
 }  // namespace jointcal
