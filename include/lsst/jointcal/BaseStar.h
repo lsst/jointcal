@@ -26,6 +26,7 @@
 #define LSST_JOINTCAL_BASE_STAR_H
 
 #include <iostream>
+#include <iomanip>
 #include <cstdio>
 #include <string>
 #include <sstream>
