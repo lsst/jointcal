@@ -272,35 +272,6 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         pa1 = None
         self._testJointcalTask(3, dist_rms_relative, dist_rms_absolute, pa1, metrics=metrics)
 
-    def test_overrides_jointcalTask_2_visits_simple(self):
-        """DM-25194: this test is to check the HSC jointcal overrides.
-        """
-        self.config = lsst.jointcal.jointcal.JointcalConfig()
-        self.config.astrometryModel = "simple"
-        self.config.photometryModel = "simpleFlux"
-        self.configfiles = []
-
-        # NOTE: the numbers here are different from those in
-        # `test_jointcalTask_2_visits_simple` because the HSC photometry
-        # overrides provide colorterms, while `tests/config/hsc-config.py`
-        # does not.
-        metrics = {'collected_astrometry_refStars': 6521,
-                   'collected_photometry_refStars': 6478,
-                   'selected_astrometry_refStars': 1610,
-                   'selected_photometry_refStars': 1609,
-                   'associated_astrometry_fittedStars': 2070,
-                   'associated_photometry_fittedStars': 2070,
-                   'selected_astrometry_fittedStars': 1731,
-                   'selected_photometry_fittedStars': 1731,
-                   'selected_astrometry_ccdImages': 6,
-                   'selected_photometry_ccdImages': 6,
-                   'astrometry_final_chi2': 66951,
-                   'astrometry_final_ndof': 4480,
-                   'photometry_final_chi2': 4977.20,
-                   'photometry_final_ndof': 2188
-                   }
-        self._testJointcalTask(2, None, None, None, metrics=metrics)
-
 
 class MemoryTester(lsst.utils.tests.MemoryTestCase):
     pass
