@@ -41,8 +41,13 @@ double instMagFromInstFlux(double instFlux) { return -2.5 * std::log10(instFlux)
 
 class CcdImage;
 
-//! objects measured on actual images. Coordinates and uncertainties are expressed in pixel image frame. Flux
-//! expressed in ADU/s.
+/**
+ * Sources measured on images.
+ *
+ * x/y positions and uncertainties (from BaseStar) are in pixels in the image frame.
+ * instFlux[Err] are in counts.
+ * flux[Err] (from BaseStar) are nJy.
+ */
 class MeasuredStar : public BaseStar {
 public:
     MeasuredStar()
