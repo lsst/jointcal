@@ -21,7 +21,6 @@
 
 import copy
 import os
-import inspect
 
 import lsst.afw.image.utils
 import lsst.obs.base
@@ -36,6 +35,9 @@ class JointcalTestBase:
 
     Derive from this first, then from TestCase.
     """
+
+    def set_output_dir(self):
+        self.output_dir = os.path.join('.test', self.__class__.__name__, self.id().split('.')[-1])
 
     def setUp_base(self, center, radius,
                    match_radius=0.1*lsst.geom.arcseconds,
@@ -93,7 +95,11 @@ class JointcalTestBase:
         # confusion or contamination from other instruments.
         lsst.obs.base.FilterDefinitionCollection.reset()
 
+        self.set_output_dir()
+
     def tearDown(self):
+        shutil.rmtree(self.output_dir, ignore_errors=True)
+
         if getattr(self, 'reference', None) is not None:
             del self.reference
         if getattr(self, 'oldWcsList', None) is not None:
@@ -135,10 +141,7 @@ class JointcalTestBase:
             The dataRefs that were processed.
         """
 
-        # the calling method is one step back on the stack: use it to specify the output repo.
-        caller = inspect.stack()[1].function
-
-        result = self._runJointcalTask(nCatalogs, caller, metrics=metrics)
+        result = self._runJointcalTask(nCatalogs, metrics=metrics)
 
         data_refs = result.resultList[0].result.dataRefs
         oldWcsList = result.resultList[0].result.oldWcsList
@@ -150,7 +153,7 @@ class JointcalTestBase:
             rms_result = self.jointcalStatistics.compute_rms(data_refs, refCat)
             # Make plots before testing, if requested, so we still get plots if tests fail.
             if self.do_plot:
-                self._plotJointcalTask(data_refs, oldWcsList, caller)
+                self._plotJointcalTask(data_refs, oldWcsList)
             return rms_result
 
         # we now have different astrometry/photometry refcats, so have to
@@ -177,7 +180,7 @@ class JointcalTestBase:
 
         return data_refs
 
-    def _runJointcalTask(self, nCatalogs, caller, metrics=None):
+    def _runJointcalTask(self, nCatalogs, metrics=None):
         """
         Run jointcalTask on nCatalogs, with the most basic tests.
         Tests for non-empty result list, and that the basic metrics are correct.
@@ -186,8 +189,6 @@ class JointcalTestBase:
         ----------
         nCatalogs : int
             Number of catalogs to test on.
-        caller : str
-            Name of the calling function (to determine output directory).
         metrics : dict, optional
             Dictionary of 'metricName': value to test jointcal's result.metrics
             against.
@@ -198,7 +199,6 @@ class JointcalTestBase:
             The structure returned by jointcalTask.run()
         """
         visits = '^'.join(str(v) for v in self.all_visits[:nCatalogs])
-        output_dir = os.path.join('.test', self.__class__.__name__, caller)
         if self.log_level is not None:
             self.other_args.extend(['--loglevel', 'jointcal=%s'%self.log_level])
 
@@ -206,7 +206,7 @@ class JointcalTestBase:
         test_config = os.path.join(lsst.utils.getPackageDir('jointcal'), 'tests/config/config.py')
         self.configfiles = [test_config] + self.configfiles
 
-        args = [self.input_dir, '--output', output_dir,
+        args = [self.input_dir, '--output', self.output_dir,
                 '--clobber-versions', '--clobber-config',
                 '--doraise', '--configfile', *self.configfiles,
                 '--id', 'visit=%s'%visits]
@@ -219,7 +219,7 @@ class JointcalTestBase:
 
         return result
 
-    def _plotJointcalTask(self, data_refs, oldWcsList, caller):
+    def _plotJointcalTask(self, data_refs, oldWcsList):
         """
         Plot the results of a jointcal run.
 
@@ -229,13 +229,11 @@ class JointcalTestBase:
             The dataRefs that were processed.
         oldWcsList : list of lsst.afw.image.Wcs
             The original WCS from each dataRef.
-        caller : str
-            Name of the calling function (to determine output directory).
         """
         plot_dir = os.path.join('.test', self.__class__.__name__, 'plots')
         if not os.path.isdir(plot_dir):
             os.mkdir(plot_dir)
-        self.jointcalStatistics.make_plots(data_refs, oldWcsList, name=caller, outdir=plot_dir)
+        self.jointcalStatistics.make_plots(data_refs, oldWcsList, name=self.id(), outdir=plot_dir)
         print("Plots saved to: {}".format(plot_dir))
 
     def _test_metrics(self, result, expect):

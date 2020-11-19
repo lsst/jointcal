@@ -20,7 +20,6 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 """Test with a minimal catalog extracted from cfht."""
-import inspect
 import unittest
 import os
 
@@ -88,11 +87,9 @@ class JointcalTestCFHTMinimal(jointcalTestBase.JointcalTestBase, lsst.utils.test
                    'photometry_final_ndof': 1
                    }
 
-        # The output repo is named after this method.
-        caller = inspect.stack()[0].function
         # we use _runJointcalTask instead of _test here because we aren't doing
         # full calulation of PA1: the above chi2 is exact.
-        self._runJointcalTask(2, caller, metrics=metrics)
+        self._runJointcalTask(2, metrics=metrics)
 
         # Check that the Hessian/gradient files were written.
         self.assertTrue(os.path.exists("photometry_preinit-mat.txt"))
@@ -105,9 +102,8 @@ class JointcalTestCFHTMinimal(jointcalTestBase.JointcalTestBase, lsst.utils.test
         os.remove("photometry_postinit-grad.txt")
 
         # Check that the config was persisted, we can read it, and it matches the settings above
-        output_dir = os.path.join('.test', self.__class__.__name__, caller)
-        self.assertTrue(os.path.exists(os.path.join(output_dir, 'config/jointcal.py')))
-        butler = lsst.daf.persistence.Butler(output_dir)
+        self.assertTrue(os.path.exists(os.path.join(self.output_dir, 'config/jointcal.py')))
+        butler = lsst.daf.persistence.Butler(self.output_dir)
         config = butler.get('jointcal_config')
         self.assertEqual(config.photometryModel, self.config.photometryModel)
         self.assertEqual(config.doAstrometry, self.config.doAstrometry)
@@ -130,9 +126,7 @@ class JointcalTestCFHTMinimal(jointcalTestBase.JointcalTestBase, lsst.utils.test
                    'photometry_final_ndof': 1
                    }
 
-        # The output repo is named after this method.
-        caller = inspect.stack()[0].function
-        self._runJointcalTask(2, caller, metrics=metrics)
+        self._runJointcalTask(2, metrics=metrics)
 
     def test_jointcalTask_fails_raise(self):
         """Raise an exception if there is no data to process."""
@@ -143,7 +137,7 @@ class JointcalTestCFHTMinimal(jointcalTestBase.JointcalTestBase, lsst.utils.test
         self.config.doAstrometry = False
 
         # The output repo is named after this method.
-        caller = inspect.stack()[0].function
+        caller = self.id()
         nCatalogs = 2
         visits = '^'.join(str(v) for v in self.all_visits[:nCatalogs])
         output_dir = os.path.join('.test', self.__class__.__name__, caller)
@@ -165,14 +159,11 @@ class JointcalTestCFHTMinimal(jointcalTestBase.JointcalTestBase, lsst.utils.test
         self.config.sourceSelector['astrometry'].minSnr = 10000
         self.config.doAstrometry = False
 
-        # The output repo is named after this method.
-        caller = inspect.stack()[0].function
         nCatalogs = 2
         visits = '^'.join(str(v) for v in self.all_visits[:nCatalogs])
-        output_dir = os.path.join('.test', self.__class__.__name__, caller)
         test_config = os.path.join(lsst.utils.getPackageDir('jointcal'), 'tests/config/config.py')
         self.configfiles = [test_config] + self.configfiles
-        args = [self.input_dir, '--output', output_dir,
+        args = [self.input_dir, '--output', self.output_dir,
                 '--clobber-versions', '--clobber-config', '--configfile', *self.configfiles,
                 '--noExit',  # have to specify noExit, otherwise the test quits
                 '--id', 'visit=%s'%visits]
@@ -188,14 +179,11 @@ class JointcalTestCFHTMinimal(jointcalTestBase.JointcalTestBase, lsst.utils.test
         self.config.sourceSelector['astrometry'].minSnr = 10000
         self.config.doAstrometry = False
 
-        # The output repo is named after this method.
-        caller = inspect.stack()[0].function
         nCatalogs = 2
         visits = '^'.join(str(v) for v in self.all_visits[:nCatalogs])
-        output_dir = os.path.join('.test', self.__class__.__name__, caller)
         test_config = os.path.join(lsst.utils.getPackageDir('jointcal'), 'tests/config/config.py')
         self.configfiles = [test_config] + self.configfiles
-        args = [self.input_dir, '--output', output_dir,
+        args = [self.input_dir, '--output', self.output_dir,
                 '--clobber-versions', '--clobber-config', '--configfile', *self.configfiles,
                 '--noExit',  # have to specify noExit, otherwise the test quits
                 '--id', 'visit=%s'%visits]
