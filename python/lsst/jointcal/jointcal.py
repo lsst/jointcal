@@ -79,7 +79,6 @@ class JointcalRunner(pipeBase.ButlerInitializedTaskRunner):
 
         Jointcal operates on lists of dataRefs simultaneously.
         """
-        kwargs['profile_jointcal'] = parsedCmd.profile_jointcal
         kwargs['butler'] = parsedCmd.butler
 
         # organize data IDs by tract
@@ -222,6 +221,11 @@ class JointcalConfig(pipeBase.PipelineTaskConfig,
         doc="Type of coadd, typically deep or goodSeeing",
         dtype=str,
         default="deep"
+    )
+    sourceFluxType = pexConfig.Field(
+        dtype=str,
+        doc="Source flux field to use in source selection and to get fluxes from the catalog.",
+        default='Calib'
     )
     positionErrorPedestal = pexConfig.Field(
         doc="Systematic term to apply to the measured position error (pixels)",
@@ -371,6 +375,8 @@ class JointcalConfig(pipeBase.PipelineTaskConfig,
         default=None,
         optional=True
     )
+
+    # configs for outputting debug information
     writeInitMatrix = pexConfig.Field(
         dtype=bool,
         doc=("Write the pre/post-initialization Hessian and gradient to text files, for debugging. "
@@ -400,10 +406,10 @@ class JointcalConfig(pipeBase.PipelineTaskConfig,
         doc=("Path to write debug output files to. Used by "
              "`writeInitialModel`, `writeChi2Files*`, `writeInitMatrix`.")
     )
-    sourceFluxType = pexConfig.Field(
-        dtype=str,
-        doc="Source flux field to use in source selection and to get fluxes from the catalog.",
-        default='Calib'
+    detailedProfile = pexConfig.Field(
+        dtype=bool,
+        default=False,
+        doc="Output separate profiling information for different parts of jointcal, e.g. data read, fitting"
     )
 
     def validate(self):
@@ -486,8 +492,6 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
         The butler is passed to the refObjLoader constructor in case it is
         needed. Ignored if the refObjLoader argument provides a loader directly.
         Used to initialize the astrometry and photometry refObjLoaders.
-    profile_jointcal : `bool`
-        Set to True to profile different stages of this jointcal run.
     initInputs : `dict`, optional
         Dictionary used to initialize PipelineTasks (empty for jointcal).
     """
@@ -496,9 +500,8 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
     RunnerClass = JointcalRunner
     _DefaultName = "jointcal"
 
-    def __init__(self, butler=None, profile_jointcal=False, initInputs=None, **kwargs):
+    def __init__(self, butler=None, initInputs=None, **kwargs):
         super().__init__(**kwargs)
-        self.profile_jointcal = profile_jointcal
         self.makeSubtask("sourceSelector")
         if self.config.doAstrometry:
             if initInputs is None:
@@ -801,8 +804,6 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
     def _makeArgumentParser(cls):
         """Create an argument parser"""
         parser = pipeBase.ArgumentParser(name=cls._DefaultName)
-        parser.add_argument("--profile_jointcal", default=False, action="store_true",
-                            help="Profile steps of jointcal separately.")
         parser.add_id_argument("--id", "calexp", help="data ID, e.g. --id visit=6789 ccd=0..9",
                                ContainerClass=PerTractCcdDataIdContainer)
         return parser
@@ -879,12 +880,12 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
                                  bbox=butler.get('calexp_bbox', dataId=dataId),
                                  filter=butler.get('calexp_filterLabel', dataId=dataId))
 
-    def loadData(self, dataRefs, associations, jointcalControl, profile_jointcal=False):
+    def loadData(self, dataRefs, associations, jointcalControl):
         """Read the data that jointcal needs to run. (Gen2 version)"""
         visit_ccd_to_dataRef = {}
         oldWcsList = []
         bands = []
-        load_cat_prof_file = 'jointcal_loadData.prof' if profile_jointcal else ''
+        load_cat_prof_file = 'jointcal_loadData.prof' if self.config.detailedProfile else ''
         with pipeBase.cmdLineTask.profile(load_cat_prof_file):
             # Need the bounding-box of the focal plane (the same for all visits) for photometry visit models
             camera = dataRefs[0].get('camera', immediate=True)
@@ -925,7 +926,7 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
         return boundingCircle, center, radius, defaultBand
 
     @pipeBase.timeMethod
-    def runDataRef(self, dataRefs, profile_jointcal=False):
+    def runDataRef(self, dataRefs):
         """
         Jointly calibrate the astrometry and photometry across a set of images.
 
@@ -935,8 +936,6 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
         ----------
         dataRefs : `list` of `lsst.daf.persistence.ButlerDataRef`
             List of data references to the exposures to be fit.
-        profile_jointcal : `bool`
-            Profile the individual steps of jointcal.
 
         Returns
         -------
@@ -961,8 +960,7 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
 
         oldWcsList, bands, visit_ccd_to_dataRef = self.loadData(dataRefs,
                                                                 associations,
-                                                                jointcalControl,
-                                                                profile_jointcal=profile_jointcal)
+                                                                jointcalControl)
 
         boundingCircle, center, radius, defaultBand = self._prep_sky(associations, bands)
         epoch = self._compute_proper_motion_epoch(associations.getCcdImageList())
@@ -975,7 +973,6 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
                                                       refObjLoader=self.astrometryRefObjLoader,
                                                       referenceSelector=self.astrometryReferenceSelector,
                                                       fit_function=self._fit_astrometry,
-                                                      profile_jointcal=profile_jointcal,
                                                       tract=tract,
                                                       epoch=epoch)
             self._write_astrometry_results(associations, astrometry.model, visit_ccd_to_dataRef)
@@ -988,7 +985,6 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
                                                       refObjLoader=self.photometryRefObjLoader,
                                                       referenceSelector=self.photometryReferenceSelector,
                                                       fit_function=self._fit_photometry,
-                                                      profile_jointcal=profile_jointcal,
                                                       tract=tract,
                                                       epoch=epoch,
                                                       reject_bad_fluxes=True)
@@ -1069,7 +1065,7 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
         return astropy.time.Time(np.mean(mjds), format='mjd', scale="tai")
 
     def _do_load_refcat_and_fit(self, associations, defaultBand, center, radius,
-                                tract="", profile_jointcal=False, match_cut=3.0,
+                                tract="", match_cut=3.0,
                                 reject_bad_fluxes=False, *,
                                 name="", refObjLoader=None, referenceSelector=None,
                                 fit_function=None, epoch=None):
@@ -1095,8 +1091,6 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
             Function to call to perform fit (takes Associations object).
         tract : `str`, optional
             Name of tract currently being fit.
-        profile_jointcal : `bool`, optional
-            Separately profile the fitting step.
         match_cut : `float`, optional
             Radius in arcseconds to find cross-catalog matches to during
             associations.associateCatalogs.
@@ -1143,7 +1137,7 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
         add_measurement(self.job, 'jointcal.selected_%s_ccdImages' % name,
                         associations.nCcdImagesValidForFit())
 
-        load_cat_prof_file = 'jointcal_fit_%s.prof'%name if profile_jointcal else ''
+        load_cat_prof_file = 'jointcal_fit_%s.prof'%name if self.config.detailedProfile else ''
         dataName = "{}_{}".format(tract, defaultBand)
         with pipeBase.cmdLineTask.profile(load_cat_prof_file):
             result = fit_function(associations, dataName)
