@@ -36,11 +36,11 @@ import lsst.pex.exceptions as pexExceptions
 import lsst.afw.cameraGeom
 import lsst.afw.table
 import lsst.log
-import lsst.meas.algorithms
 from lsst.pipe.tasks.colorterms import ColortermLibrary
 from lsst.verify import Job, Measurement
 
-from lsst.meas.algorithms import LoadIndexedReferenceObjectsTask, ReferenceSourceSelectorTask
+from lsst.meas.algorithms import (LoadIndexedReferenceObjectsTask, ReferenceSourceSelectorTask,
+                                  ReferenceObjectLoader)
 from lsst.meas.algorithms.sourceSelector import sourceSelectorRegistry
 
 from .dataIds import PerTractCcdDataIdContainer
@@ -61,7 +61,7 @@ def add_measurement(job, name, value):
 
 
 class JointcalRunner(pipeBase.ButlerInitializedTaskRunner):
-    """Subclass of TaskRunner for jointcalTask
+    """Subclass of TaskRunner for jointcalTask (gen2)
 
     jointcalTask.runDataRef() takes a number of arguments, one of which is a list of dataRefs
     extracted from the command line (whereas most CmdLineTasks' runDataRef methods take
@@ -138,7 +138,74 @@ class JointcalRunner(pipeBase.ButlerInitializedTaskRunner):
             return pipeBase.Struct(exitStatus=exitStatus)
 
 
-class JointcalConfig(pexConfig.Config):
+class JointcalTaskConnections(pipeBase.PipelineTaskConnections,
+                              dimensions=("skymap", "tract", "instrument", "physical_filter")):
+    """Middleware input/output connections for jointcal data."""
+    inputCamera = pipeBase.connectionTypes.Input(
+        doc="The camera instrument that took these observations.",
+        name="camera",
+        storageClass="Camera",
+        dimensions=("instrument",),
+        isCalibration=True
+    )
+    inputSourceTableVisit = pipeBase.connectionTypes.Input(
+        doc="Source table in parquet format, per visit",
+        name="sourceTable_visit",
+        storageClass="DataFrame",
+        dimensions=("instrument", "visit", "physical_filter"),
+        deferLoad=True,
+        multiple=True,
+    )
+    inputVisitSummary = pipeBase.connectionTypes.Input(
+        doc="Visit summary tables built from the calexps for these observations.",
+        name="visitSummary",
+        storageClass="ExposureCatalog",
+        dimensions=("instrument", "visit", "physical_filter"),
+        deferLoad=True,
+        multiple=True,
+    )
+    # TODO DM-28991: This does not load enough refcat data: the graph only to gets
+    # refcats that touch the tract, but we need to go larger because we're
+    # loading visits that may extend further. How to test that?
+    astrometryRefCat = pipeBase.connectionTypes.Input(
+        doc="The astrometry reference catalog to match to loaded input catalog sources.",
+        name="gaia_dr2_20200414",
+        storageClass="SimpleCatalog",
+        dimensions=("htm7",),
+        deferLoad=True,
+        multiple=True
+    )
+    photometryRefCat = pipeBase.connectionTypes.Input(
+        doc="The photometry reference catalog to match to loaded input catalog sources.",
+        name="ps1_pv3_3pi_20170110",
+        storageClass="SimpleCatalog",
+        dimensions=("htm7",),
+        deferLoad=True,
+        multiple=True
+    )
+
+    outputWcs = pipeBase.connectionTypes.Output(
+        doc=("Per-tract, per-visit world coordinate systems derived from the fitted model."
+             " These catalogs only contain entries for detectors with an output, and use"
+             " the detector id for the catalog id, sorted on id for fast lookups of a detector."),
+        name="jointcalSkyWcsCatalog",
+        storageClass="ExposureCatalog",
+        dimensions=("instrument", "visit", "skymap", "tract"),
+        multiple=True
+    )
+    outputPhotoCalib = pipeBase.connectionTypes.Output(
+        doc=("Per-tract, per-visit photometric calibrations derived from the fitted model."
+             " These catalogs only contain entries for detectors with an output, and use"
+             " the detector id for the catalog id, sorted on id for fast lookups of a detector."),
+        name="jointcalPhotoCalibCatalog",
+        storageClass="ExposureCatalog",
+        dimensions=("instrument", "visit", "skymap", "tract"),
+        multiple=True
+    )
+
+
+class JointcalConfig(pipeBase.PipelineTaskConfig,
+                     pipelineConnections=JointcalTaskConnections):
     """Configuration for JointcalTask"""
 
     doAstrometry = pexConfig.Field(
@@ -421,29 +488,175 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
         Used to initialize the astrometry and photometry refObjLoaders.
     profile_jointcal : `bool`
         Set to True to profile different stages of this jointcal run.
+    initInputs : `dict`, optional
+        Dictionary used to initialize PipelineTasks (empty for jointcal).
     """
 
     ConfigClass = JointcalConfig
     RunnerClass = JointcalRunner
     _DefaultName = "jointcal"
 
-    def __init__(self, butler=None, profile_jointcal=False, **kwargs):
+    def __init__(self, butler=None, profile_jointcal=False, initInputs=None, **kwargs):
         super().__init__(**kwargs)
         self.profile_jointcal = profile_jointcal
         self.makeSubtask("sourceSelector")
         if self.config.doAstrometry:
-            self.makeSubtask('astrometryRefObjLoader', butler=butler)
+            if initInputs is None:
+                # gen3 middleware does refcat things internally (and will not have a butler here)
+                self.makeSubtask('astrometryRefObjLoader', butler=butler)
             self.makeSubtask("astrometryReferenceSelector")
         else:
             self.astrometryRefObjLoader = None
         if self.config.doPhotometry:
-            self.makeSubtask('photometryRefObjLoader', butler=butler)
+            if initInputs is None:
+                # gen3 middleware does refcat things internally (and will not have a butler here)
+                self.makeSubtask('photometryRefObjLoader', butler=butler)
             self.makeSubtask("photometryReferenceSelector")
         else:
             self.photometryRefObjLoader = None
 
         # To hold various computed metrics for use by tests
         self.job = Job.load_metrics_package(subset='jointcal')
+
+    def runQuantum(self, butlerQC, inputRefs, outputRefs):
+        # We override runQuantum to set up the refObjLoaders and write the
+        # outputs to the correct refs.
+        inputs = butlerQC.get(inputRefs)
+        # We want the tract number for writing debug files
+        tract = butlerQC.quantum.dataId['tract']
+        if self.config.doAstrometry:
+            self.astrometryRefObjLoader = ReferenceObjectLoader(
+                dataIds=[ref.datasetRef.dataId
+                         for ref in inputRefs.astrometryRefCat],
+                refCats=inputs.pop('astrometryRefCat'),
+                config=self.config.astrometryRefObjLoader,
+                log=self.log)
+        if self.config.doPhotometry:
+            self.photometryRefObjLoader = ReferenceObjectLoader(
+                dataIds=[ref.datasetRef.dataId
+                         for ref in inputRefs.photometryRefCat],
+                refCats=inputs.pop('photometryRefCat'),
+                config=self.config.photometryRefObjLoader,
+                log=self.log)
+        outputs = self.run(**inputs, tract=tract)
+        if self.config.doAstrometry:
+            self._put_output(butlerQC, outputs.outputWcs, outputRefs.outputWcs,
+                             inputs['inputCamera'], "setWcs")
+        if self.config.doPhotometry:
+            self._put_output(butlerQC, outputs.outputPhotoCalib, outputRefs.outputPhotoCalib,
+                             inputs['inputCamera'], "setPhotoCalib")
+
+    def _put_output(self, butlerQC, outputs, outputRefs, camera, setter):
+        """Persist the output datasets to their appropriate datarefs.
+
+        Parameters
+        ----------
+        butlerQC : `ButlerQuantumContext`
+            A butler which is specialized to operate in the context of a
+            `lsst.daf.butler.Quantum`; This is the input to `runQuantum`.
+        outputs : `dict` [`tuple`, `lsst.afw.geom.SkyWcs`] or
+                  `dict` [`tuple, `lsst.afw.image.PhotoCalib`]
+            The fitted objects to persist.
+        outputRefs : `list` [`OutputQuantizedConnection`]
+            The DatasetRefs to persist the data to.
+        camera : `lsst.afw.cameraGeom.Camera`
+            The camera for this instrument, to get detector ids from.
+        setter : `str`
+            The method to call on the ExposureCatalog to set each output.
+        """
+        schema = lsst.afw.table.ExposureTable.makeMinimalSchema()
+        schema.addField('visit', type='I', doc='Visit number')
+
+        def new_catalog(visit, size):
+            """Return an catalog ready to be filled with appropriate output."""
+            catalog = lsst.afw.table.ExposureCatalog(schema)
+            catalog.resize(size)
+            catalog['visit'] = visit
+            metadata = lsst.daf.base.PropertyList()
+            metadata.add("COMMENT", "Catalog id is detector id, sorted.")
+            metadata.add("COMMENT", "Only detectors with data have entries.")
+            return catalog
+
+        # count how many detectors have output for each visit
+        detectors_per_visit = collections.defaultdict(int)
+        for key in outputs:
+            # key is (visit, detector_id), and we only need visit here
+            detectors_per_visit[key[0]] += 1
+
+        for ref in outputRefs:
+            visit = ref.dataId['visit']
+            catalog = new_catalog(visit, detectors_per_visit[visit])
+            # Iterate over every detector and skip the ones we don't have output for.
+            i = 0
+            for detector in camera:
+                detectorId = detector.getId()
+                key = (ref.dataId['visit'], detectorId)
+                if key not in outputs:
+                    # skip detectors we don't have output for
+                    self.log.debug("No %s output for detector %s in visit %s",
+                                   setter[3:], detectorId, visit)
+                    continue
+
+                catalog[i].setId(detectorId)
+                getattr(catalog[i], setter)(outputs[key])
+                i += 1
+
+            catalog.sort()  # ensure that the detectors are in sorted order, for fast lookups
+            butlerQC.put(catalog, ref)
+            self.log.info("Wrote %s detectors to %s", i, ref)
+
+    def run(self, inputSourceTableVisit, inputVisitSummary, inputCamera, tract=None):
+        # Docstring inherited.
+
+        # We take values out of the Parquet table, and put them in "flux_",
+        # and the config.sourceFluxType field is used during that extraction,
+        # so just use "flux" here.
+        sourceFluxField = "flux"
+        jointcalControl = lsst.jointcal.JointcalControl(sourceFluxField)
+        associations = lsst.jointcal.Associations()
+        self.focalPlaneBBox = inputCamera.getFpBBox()
+        oldWcsList, bands = self._load_data(inputSourceTableVisit,
+                                            inputVisitSummary,
+                                            associations,
+                                            jointcalControl)
+
+        boundingCircle, center, radius, defaultFilter = self._prep_sky(associations, bands)
+        epoch = self._compute_proper_motion_epoch(associations.getCcdImageList())
+
+        if self.config.doAstrometry:
+            astrometry = self._do_load_refcat_and_fit(associations, defaultFilter, center, radius,
+                                                      name="astrometry",
+                                                      refObjLoader=self.astrometryRefObjLoader,
+                                                      referenceSelector=self.astrometryReferenceSelector,
+                                                      fit_function=self._fit_astrometry,
+                                                      tract=tract,
+                                                      epoch=epoch)
+            astrometry_output = self._make_output(associations.getCcdImageList(),
+                                                  astrometry.model,
+                                                  "makeSkyWcs")
+        else:
+            astrometry_output = None
+
+        if self.config.doPhotometry:
+            photometry = self._do_load_refcat_and_fit(associations, defaultFilter, center, radius,
+                                                      name="photometry",
+                                                      refObjLoader=self.photometryRefObjLoader,
+                                                      referenceSelector=self.photometryReferenceSelector,
+                                                      fit_function=self._fit_photometry,
+                                                      tract=tract,
+                                                      epoch=epoch,
+                                                      reject_bad_fluxes=True)
+            photometry_output = self._make_output(associations.getCcdImageList(),
+                                                  photometry.model,
+                                                  "toPhotoCalib")
+        else:
+            photometry_output = None
+
+        return pipeBase.Struct(outputWcs=astrometry_output,
+                               outputPhotoCalib=photometry_output,
+                               job=self.job,
+                               astrometryRefObjLoader=self.astrometryRefObjLoader,
+                               photometryRefObjLoader=self.photometryRefObjLoader)
 
     def _make_schema_table(self):
         """Return an afw SourceTable to use as a base for creating the
@@ -1367,6 +1580,34 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
 
         return chi2
 
+    def _make_output(self, ccdImageList, model, func):
+        """Return the internal jointcal models converted to the afw
+        structures that will be saved to disk.
+
+        Parameters
+        ----------
+        ccdImageList : `lsst.jointcal.CcdImageList`
+            The list of CcdImages to get the output for.
+        model : `lsst.jointcal.AstrometryModel` or `lsst.jointcal.PhotometryModel`
+            The internal jointcal model to convert for each `lsst.jointcal.CcdImage`.
+        func : `str`
+            The name of the function to call on ``model`` to get the converted
+            structure. Must accept an `lsst.jointcal.CcdImage`.
+
+        Returns
+        -------
+        output : `dict` [`tuple`, `lsst.jointcal.AstrometryModel`] or
+                 `dict` [`tuple`, `lsst.jointcal.PhotometryModel`]
+            The data to be saved, keyed on (visit, detector).
+        """
+        output = {}
+        for ccdImage in ccdImageList:
+            ccd = ccdImage.ccdId
+            visit = ccdImage.visit
+            self.log.debug("%s for visit: %d, ccd: %d", func, visit, ccd)
+            output[(visit, ccd)] = getattr(model, func)(ccdImage)
+        return output
+
     def _write_astrometry_results(self, associations, model, visit_ccd_to_dataRef):
         """
         Write the fitted astrometric results to a new 'jointcal_wcs' dataRef.
@@ -1380,15 +1621,10 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
         visit_ccd_to_dataRef : `dict` of Key: `lsst.daf.persistence.ButlerDataRef`
             Dict of ccdImage identifiers to dataRefs that were fit.
         """
-
         ccdImageList = associations.getCcdImageList()
-        for ccdImage in ccdImageList:
-            # TODO: there must be a better way to identify this ccdImage than a visit,ccd pair?
-            ccd = ccdImage.ccdId
-            visit = ccdImage.visit
-            dataRef = visit_ccd_to_dataRef[(visit, ccd)]
-            self.log.info("Updating WCS for visit: %d, ccd: %d", visit, ccd)
-            skyWcs = model.makeSkyWcs(ccdImage)
+        output = self._make_output(ccdImageList, model, "makeSkyWcs")
+        for key, skyWcs in output.items():
+            dataRef = visit_ccd_to_dataRef[key]
             try:
                 dataRef.put(skyWcs, 'jointcal_wcs')
             except pexExceptions.Exception as e:
@@ -1410,13 +1646,9 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
         """
 
         ccdImageList = associations.getCcdImageList()
-        for ccdImage in ccdImageList:
-            # TODO: there must be a better way to identify this ccdImage than a visit,ccd pair?
-            ccd = ccdImage.ccdId
-            visit = ccdImage.visit
-            dataRef = visit_ccd_to_dataRef[(visit, ccd)]
-            self.log.info("Updating PhotoCalib for visit: %d, ccd: %d", visit, ccd)
-            photoCalib = model.toPhotoCalib(ccdImage)
+        output = self._make_output(ccdImageList, model, "toPhotoCalib")
+        for key, photoCalib in output.items():
+            dataRef = visit_ccd_to_dataRef[key]
             try:
                 dataRef.put(photoCalib, 'jointcal_photoCalib')
             except pexExceptions.Exception as e:
