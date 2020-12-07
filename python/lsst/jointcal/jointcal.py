@@ -505,6 +505,24 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
         """
         return os.path.join(self.config.debugOutputPath, filename)
 
+    def _prep_sky(self, associations, filters):
+        """Prepare on-sky and other data that must be computed after data has
+        been read.
+        """
+        associations.computeCommonTangentPoint()
+
+        boundingCircle = associations.computeBoundingCircle()
+        center = lsst.geom.SpherePoint(boundingCircle.getCenter())
+        radius = lsst.geom.Angle(boundingCircle.getOpeningAngle().asRadians(), lsst.geom.radians)
+
+        self.log.info(f"Data has center={center} with radius={radius.asDegrees()} degrees.")
+
+        # Determine a default filter associated with the catalog. See DM-9093
+        defaultFilter = filters.most_common(1)[0][0]
+        self.log.debug("Using %s band for reference flux", defaultFilter)
+
+        return boundingCircle, center, radius, defaultFilter
+
     @pipeBase.timeMethod
     def runDataRef(self, dataRefs, profile_jointcal=False):
         """
@@ -554,19 +572,8 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
                 filters.append(result.filter)
         filters = collections.Counter(filters)
 
-        associations.computeCommonTangentPoint()
+        boundingCircle, center, radius, defaultFilter = self._prep_sky(associations, filters)
 
-        boundingCircle = associations.computeBoundingCircle()
-        center = lsst.geom.SpherePoint(boundingCircle.getCenter())
-        radius = lsst.geom.Angle(boundingCircle.getOpeningAngle().asRadians(), lsst.geom.radians)
-
-        self.log.info(f"Data has center={center} with radius={radius.asDegrees()} degrees.")
-
-        # Determine a default filter associated with the catalog. See DM-9093
-        defaultFilter = filters.most_common(1)[0][0]
-        self.log.debug("Using %s band for reference flux", defaultFilter)
-
-        # TODO: need a better way to get the tract.
         tract = dataRefs[0].dataId['tract']
 
         if self.config.doAstrometry:
