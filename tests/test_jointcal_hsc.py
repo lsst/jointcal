@@ -23,7 +23,9 @@ import unittest
 import os
 
 from astropy import units as u
+import numpy as np
 
+from lsst.daf.butler import Butler
 import lsst.geom
 import lsst.pex.config
 import lsst.utils
@@ -96,17 +98,36 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
                    }
         self._testJointcalTask(2, self.dist_rms_relative, self.dist_rms_absolute, pa1, metrics=metrics)
 
-    @unittest.skip("This test cannot be run until gen3 jointcal is fully implemented.")
     def test_jointcalTask_2_visits_simple_gen3(self):
-        self.config = lsst.jointcal.jointcal.JointcalConfig()
-        self.config.astrometryModel = "simple"
-        self.config.photometryModel = "simpleFlux"
-        # TODO DM-27843: use PS1 until the gen3 refcats support `anyFilterMapsToThis`
-        test_config = os.path.join(lsst.utils.getPackageDir('jointcal'), 'tests/config/hsc-gen3-gaia.py')
-        self.configfiles.append(test_config)
+        """Test gen3 butler jointcal."""
+        queryString = "instrument='HSC' and tract=9697 and skymap='hsc_rings_v1' and band='r'"
+        queryString += f" and visit in ({self.all_visits[0]},{self.all_visits[1]})"
+        configOptions = ["astrometryModel=simple", "photometryModel=simpleFlux"]
+        self._runGen3Jointcal("lsst.obs.subaru.HyperSuprimeCam", "HSC", queryString,
+                              configOptions=configOptions)
+        # TODO DM-28863: this does not currently test anything other than the code
+        # running without raising and that it writes non-empty output.
+        butler = Butler(self.repo, collections=['HSC/testdata/jointcal'])
 
-        queryString = "instrument='HSC' and tract=9697 and skymap='deepCoadd_skyMap'"
-        self._runGen3Jointcal("lsst.obs.subaru.HyperSuprimeCam", "HSC", queryString)
+        def check_output(visit, detectors):
+            """Check that there is something for each detector, and only
+            entries for the correct detectors."""
+            dataId = {'visit': visit, 'instrument': 'HSC', 'tract': 9697}
+
+            catalog = butler.get('jointcalPhotoCalibCatalog', dataId)
+            for record in catalog:
+                self.assertIsInstance(record.getPhotoCalib(), lsst.afw.image.PhotoCalib,
+                                      msg=f"visit {visit}: {record}")
+            np.testing.assert_array_equal(catalog['id'], detectors)
+
+            catalog = butler.get('jointcalSkyWcsCatalog', dataId)
+            for record in catalog:
+                self.assertIsInstance(record.getWcs(), lsst.afw.geom.SkyWcs,
+                                      msg=f"visit {visit}: {record}")
+            np.testing.assert_array_equal(catalog['id'], detectors)
+
+        check_output(34648, [51, 59, 67])
+        check_output(34690, [48, 56, 64])
 
     def test_jointcalTask_10_visits_simple_astrometry_no_photometry(self):
         """Test all 10 visits with different filters.
