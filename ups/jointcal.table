@@ -11,6 +11,9 @@ setupRequired(jointcal_cholmod)
 setupRequired(verify)
 setupRequired(verify_metrics)
 
+# for running gen3 middleware tests
+setupRequired(ctrl_mpexec)
+
 # tests/data/ includes some stripped-down cfht data for testing
 setupOptional(obs_cfht)
 

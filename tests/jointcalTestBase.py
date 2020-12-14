@@ -21,9 +21,13 @@
 
 import copy
 import os
-import inspect
+import shutil
+
+import click.testing
 
 import lsst.afw.image.utils
+import lsst.ctrl.mpexec.cli.pipetask
+import lsst.daf.butler
 import lsst.obs.base
 import lsst.geom
 
@@ -36,6 +40,9 @@ class JointcalTestBase:
 
     Derive from this first, then from TestCase.
     """
+
+    def set_output_dir(self):
+        self.output_dir = os.path.join('.test', self.__class__.__name__, self.id().split('.')[-1])
 
     def setUp_base(self, center, radius,
                    match_radius=0.1*lsst.geom.arcseconds,
@@ -93,7 +100,11 @@ class JointcalTestBase:
         # confusion or contamination from other instruments.
         lsst.obs.base.FilterDefinitionCollection.reset()
 
+        self.set_output_dir()
+
     def tearDown(self):
+        shutil.rmtree(self.output_dir, ignore_errors=True)
+
         if getattr(self, 'reference', None) is not None:
             del self.reference
         if getattr(self, 'oldWcsList', None) is not None:
@@ -135,10 +146,7 @@ class JointcalTestBase:
             The dataRefs that were processed.
         """
 
-        # the calling method is one step back on the stack: use it to specify the output repo.
-        caller = inspect.stack()[1].function
-
-        result = self._runJointcalTask(nCatalogs, caller, metrics=metrics)
+        result = self._runJointcalTask(nCatalogs, metrics=metrics)
 
         data_refs = result.resultList[0].result.dataRefs
         oldWcsList = result.resultList[0].result.oldWcsList
@@ -150,7 +158,7 @@ class JointcalTestBase:
             rms_result = self.jointcalStatistics.compute_rms(data_refs, refCat)
             # Make plots before testing, if requested, so we still get plots if tests fail.
             if self.do_plot:
-                self._plotJointcalTask(data_refs, oldWcsList, caller)
+                self._plotJointcalTask(data_refs, oldWcsList)
             return rms_result
 
         # we now have different astrometry/photometry refcats, so have to
@@ -177,7 +185,7 @@ class JointcalTestBase:
 
         return data_refs
 
-    def _runJointcalTask(self, nCatalogs, caller, metrics=None):
+    def _runJointcalTask(self, nCatalogs, metrics=None):
         """
         Run jointcalTask on nCatalogs, with the most basic tests.
         Tests for non-empty result list, and that the basic metrics are correct.
@@ -186,8 +194,6 @@ class JointcalTestBase:
         ----------
         nCatalogs : int
             Number of catalogs to test on.
-        caller : str
-            Name of the calling function (to determine output directory).
         metrics : dict, optional
             Dictionary of 'metricName': value to test jointcal's result.metrics
             against.
@@ -198,7 +204,6 @@ class JointcalTestBase:
             The structure returned by jointcalTask.run()
         """
         visits = '^'.join(str(v) for v in self.all_visits[:nCatalogs])
-        output_dir = os.path.join('.test', self.__class__.__name__, caller)
         if self.log_level is not None:
             self.other_args.extend(['--loglevel', 'jointcal=%s'%self.log_level])
 
@@ -206,7 +211,7 @@ class JointcalTestBase:
         test_config = os.path.join(lsst.utils.getPackageDir('jointcal'), 'tests/config/config.py')
         self.configfiles = [test_config] + self.configfiles
 
-        args = [self.input_dir, '--output', output_dir,
+        args = [self.input_dir, '--output', self.output_dir,
                 '--clobber-versions', '--clobber-config',
                 '--doraise', '--configfile', *self.configfiles,
                 '--id', 'visit=%s'%visits]
@@ -219,7 +224,7 @@ class JointcalTestBase:
 
         return result
 
-    def _plotJointcalTask(self, data_refs, oldWcsList, caller):
+    def _plotJointcalTask(self, data_refs, oldWcsList):
         """
         Plot the results of a jointcal run.
 
@@ -229,13 +234,11 @@ class JointcalTestBase:
             The dataRefs that were processed.
         oldWcsList : list of lsst.afw.image.Wcs
             The original WCS from each dataRef.
-        caller : str
-            Name of the calling function (to determine output directory).
         """
         plot_dir = os.path.join('.test', self.__class__.__name__, 'plots')
         if not os.path.isdir(plot_dir):
             os.mkdir(plot_dir)
-        self.jointcalStatistics.make_plots(data_refs, oldWcsList, name=caller, outdir=plot_dir)
+        self.jointcalStatistics.make_plots(data_refs, oldWcsList, name=self.id(), outdir=plot_dir)
         print("Plots saved to: {}".format(plot_dir))
 
     def _test_metrics(self, result, expect):
@@ -255,3 +258,122 @@ class JointcalTestBase:
                     self.assertFloatsAlmostEqual(value, expect[key.metric], msg=key.metric, rtol=1e-5)
                 else:
                     self.assertEqual(value, expect[key.metric], msg=key.metric)
+
+    def _importRepository(self, instrument, exportPath, exportFile):
+        """Import a gen3 test repository into self.testDir
+
+        Parameters
+        ----------
+        instrument : `str`
+            Full string name for the instrument.
+        exportPath : `str`
+            Path to location of repository to export.
+            This path must contain an `exports.yaml` file containing the
+            description of the exported gen3 repo that will be imported.
+        exportFile : `str`
+            Filename of export data.
+        """
+        self.repo = os.path.join(self.output_dir, 'testrepo')
+
+        # Make the repo and retrieve a writeable Butler
+        _ = lsst.daf.butler.Butler.makeRepo(self.repo)
+        butler = lsst.daf.butler.Butler(self.repo, writeable=True)
+        # Register the instrument
+        instrInstance = lsst.obs.base.utils.getInstrument(instrument)
+        instrInstance.register(butler.registry)
+        # Import the exportFile
+        butler.import_(directory=exportPath, filename=exportFile,
+                       transfer='symlink',
+                       skip_dimensions={'instrument', 'detector', 'physical_filter'})
+
+    def _runPipeline(self, repo, queryString=None,
+                     inputCollections=None, outputCollection=None,
+                     configFiles=None, configOptions=None,
+                     registerDatasetTypes=False):
+        """Run a pipeline via pipetask.
+
+        Parameters
+        ----------
+        repo : `str`
+            Gen3 Butler repository to read from/write to.
+        queryString : `str`, optional
+            String to use for "-d" data query. For example,
+            "instrument='HSC' and tract=9697 and skymap='hsc_rings_v1'"
+        inputCollections : `str`, optional
+            String to use for "-i" input collections (comma delimited).
+            For example, "refcats,HSC/runs/tests,HSC/calib"
+        outputCollection : `str`, optional
+            String to use for "-o" output collection. For example,
+            "HSC/testdata/jointcal"
+        configFiles : `list` [`str`], optional
+            List of config files to use (with "-C").
+        registerDatasetTypes : bool, optional
+            Set "--register-dataset-types" when running the pipeline.
+
+        Returns
+        -------
+        exit_code: `int`
+            The exit code of the executed `click.testing.CliRunner`
+
+        Raises
+        ------
+        RuntimeError
+            Raised if the CliRunner executed pipetask failed.
+
+        Notes
+        -----
+        This approach uses the Click commandline interface, which is not ideal
+        for tests like this. See DM-26239 for the replacement pipetask API, and
+        DM-27940 for the ticket to replace the CliRunner once that API exists.
+        """
+        pipelineArgs = ["run",
+                        "-b", repo,
+                        "-t lsst.jointcal.JointcalTask"]
+
+        if queryString is not None:
+            pipelineArgs.extend(["-d", queryString])
+        if inputCollections is not None:
+            pipelineArgs.extend(["-i", inputCollections])
+        if outputCollection is not None:
+            pipelineArgs.extend(["-o", outputCollection])
+        if configFiles is not None:
+            for configFile in configFiles:
+                pipelineArgs.extend(["-C", configFile])
+        if registerDatasetTypes:
+            pipelineArgs.extend(["--register-dataset-types"])
+
+        # TODO DM-27940: replace CliRunner with pipetask API.
+        runner = click.testing.CliRunner()
+        results = runner.invoke(lsst.ctrl.mpexec.cli.pipetask.cli, pipelineArgs)
+        if results.exception:
+            raise RuntimeError("Pipeline %s failed." % (' '.join(pipelineArgs))) from results.exception
+        return results.exit_code
+
+    def _runGen3Jointcal(self, instrumentClass, instrumentName, queryString):
+        """Create a Butler repo and run jointcal on it.
+
+
+        Parameters
+        ----------
+        instrumentClass : `str`
+            The full module name of the instrument to be registered in the
+            new repo. For example, "lsst.obs.subaru.HyperSuprimeCam"
+        instrumentName : `str`
+            The name of the instrument as it appears in the repo collections.
+            For example, "HSC".
+        queryString : `str`
+            The query string to be run for processing. For example,
+            "instrument='HSC' and tract=9697 and skymap='hsc_rings_v1'".
+        """
+        self._importRepository(instrumentClass,
+                               self.input_dir,
+                               os.path.join(self.input_dir, "exports.yaml"))
+        # TODO post-RFC-741: the names of these collections will have to change
+        # once testdata_jointcal is updated to reflect the collection
+        # conventions in RFC-741 (no ticket for that change yet).
+        inputCollections = f"refcats,{instrumentName}/testdata,{instrumentName}/calib/unbounded"
+        self._runPipeline(self.repo,
+                          outputCollection=f"{instrumentName}/testdata/jointcal",
+                          inputCollections=inputCollections,
+                          queryString=queryString,
+                          registerDatasetTypes=True)

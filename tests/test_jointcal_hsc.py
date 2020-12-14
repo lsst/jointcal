@@ -96,6 +96,18 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
                    }
         self._testJointcalTask(2, self.dist_rms_relative, self.dist_rms_absolute, pa1, metrics=metrics)
 
+    @unittest.skip("This test cannot be run until gen3 jointcal is fully implemented.")
+    def test_jointcalTask_2_visits_simple_gen3(self):
+        self.config = lsst.jointcal.jointcal.JointcalConfig()
+        self.config.astrometryModel = "simple"
+        self.config.photometryModel = "simpleFlux"
+        # TODO DM-27843: use PS1 until the gen3 refcats support `anyFilterMapsToThis`
+        test_config = os.path.join(lsst.utils.getPackageDir('jointcal'), 'tests/config/hsc-gen3-gaia.py')
+        self.configfiles.append(test_config)
+
+        queryString = "instrument='HSC' and tract=9697 and skymap='deepCoadd_skyMap'"
+        self._runGen3Jointcal("lsst.obs.subaru.HyperSuprimeCam", "HSC", queryString)
+
     def test_jointcalTask_10_visits_simple_astrometry_no_photometry(self):
         """Test all 10 visits with different filters.
         Testing photometry doesn't make sense for this currently.
