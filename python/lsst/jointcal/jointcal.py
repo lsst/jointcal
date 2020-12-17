@@ -436,6 +436,15 @@ class JointcalConfig(pipeBase.PipelineTaskConfig,
         dtype=float,
         default=5.0,
     )
+    astrometryOutlierRelativeTolerance = pexConfig.Field(
+        doc=("Convergence tolerance for outlier rejection threshold when fitting astrometry. Iterations will "
+             "stop when the fractional change in the chi2 cut level is below this value. If tolerance is set "
+             "to zero, iterations will continue until there are no more outliers. We suggest a value of 0.002"
+             "as a balance between a shorter minimization runtime and achieving a final fitted model that is"
+             "close to the solution found when removing all outliers."),
+        dtype=float,
+        default=0,
+    )
     maxPhotometrySteps = pexConfig.Field(
         doc="Maximum number of minimize iterations to take when fitting photometry.",
         dtype=int,
@@ -1575,6 +1584,7 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
                                  self.config.maxAstrometrySteps,
                                  "astrometry",
                                  "Distortions Positions",
+                                 sigmaRelativeTolerance=self.config.astrometryOutlierRelativeTolerance,
                                  doRankUpdate=self.config.astrometryDoRankUpdate,
                                  dataName=dataName)
 
@@ -1598,6 +1608,7 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
 
     def _iterate_fit(self, associations, fitter, max_steps, name, whatToFit,
                      dataName="",
+                     sigmaRelativeTolerance=0,
                      doRankUpdate=True,
                      doLineSearch=False):
         """Run fitter.minimize up to max_steps times, returning the final chi2.
@@ -1618,6 +1629,10 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
         dataName : `str`, optional
             Descriptive name for this dataset (e.g. tract and filter),
             for debugging.
+        sigmaRelativeTolerance : `float`, optional
+            Convergence tolerance for the fractional change in the chi2 cut
+            level for determining outliers. If set to zero, iterations will
+            continue until there are no outliers.
         doRankUpdate : `bool`, optional
             Do an Eigen rank update during minimization, or recompute the full
             matrix and gradient?
@@ -1650,6 +1665,7 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
                 writeChi2Name = None
             result = fitter.minimize(whatToFit,
                                      self.config.outlierRejectSigma,
+                                     sigmaRelativeTolerance=sigmaRelativeTolerance,
                                      doRankUpdate=doRankUpdate,
                                      doLineSearch=doLineSearch,
                                      dumpMatrixFile=dumpMatrixFile)
@@ -1662,7 +1678,8 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
                     self.log.debug("fit has converged - no more outliers - redo minimization "
                                    "one more time in case we have lost accuracy in rank update.")
                     # Redo minimization one more time in case we have lost accuracy in rank update
-                    result = fitter.minimize(whatToFit, self.config.outlierRejectSigma)
+                    result = fitter.minimize(whatToFit, self.config.outlierRejectSigma,
+                                             sigmaRelativeTolerance=sigmaRelativeTolerance)
                     chi2 = self._logChi2AndValidate(associations, fitter, fitter.getModel(), "Fit completed")
 
                 # log a message for a large final chi2, TODO: DM-15247 for something better

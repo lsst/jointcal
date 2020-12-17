@@ -74,6 +74,9 @@ public:
      * @param[in]  whatToFit  See child method assignIndices for valid string values.
      * @param[in]  nSigmaCut  How many sigma to reject outliers at. Outlier
      *                        rejection ignored for nSigmaCut=0.
+     * @param[in]  sigmaRelativeTolerance  Percentage change in the chi2 cut for outliers tolerated for
+     *                                     termination. If value is zero, minimization iterations will
+     *                                     continue until there are no outliers.
      * @param[in]  doRankUpdate  Use CholmodSimplicialLDLT2.update() to do a fast rank update after outlier
      *                           removal; otherwise do a slower full recomputation of the matrix.
      *                           Only matters if nSigmaCut != 0.
@@ -102,9 +105,9 @@ public:
      *         the second run with the same "whatToFit" will produce no change in
      *         the fitted parameters, if the calculations and indices are defined correctly.
      */
-    MinimizeResult minimize(std::string const &whatToFit, double const nSigmaCut = 0,
-                            bool const doRankUpdate = true, bool const doLineSearch = false,
-                            std::string const &dumpMatrixFile = "");
+    MinimizeResult minimize(std::string const &whatToFit, double const nSigmaCut = 0, 
+                            double sigmaRelativeTolerance = 0, bool const doRankUpdate = true,
+                            bool const doLineSearch = false, std::string const &dumpMatrixFile = "");
 
     /**
      * Returns the chi2 for the current state.
@@ -179,11 +182,12 @@ protected:
      * @param[in]  nSigmaCut   Number of sigma to select on.
      * @param[out] msOutliers  list of MeasuredStar outliers to populate
      * @param[out] fsOutliers  list of FittedStar outliers to populate
+     * @param[out] cut  value of chi2 that defines which objects are outliers
      *
      * @return     Total number of outliers that were removed.
      */
     std::size_t findOutliers(double nSigmaCut, MeasuredStarList &msOutliers,
-                             FittedStarList &fsOutliers) const;
+                             FittedStarList &fsOutliers, double &cut) const;
 
     /**
      * Contributions to derivatives from (presumably) outlier terms. No
