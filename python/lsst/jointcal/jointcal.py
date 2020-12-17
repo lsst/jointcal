@@ -405,7 +405,7 @@ class JointcalInputData:
     """The WCS of this exposure."""
     bbox: lsst.geom.Box2I
     """The bounding box of this exposure."""
-    filter: lsst.afw.image.Filter
+    filter: lsst.afw.image.FilterLabel
     """The filter of this exposure."""
 
 
@@ -483,8 +483,8 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
             ``key``
                 A key to identify this dataRef by its visit and ccd ids
                 (`namedtuple`).
-            ``filter``
-                This calexp's filter (`str`).
+            ``band``
+                This calexp's filter band (`str`) (used to e.g. load refcats)
         """
         goodSrc = self.sourceSelector.run(data.catalog)
 
@@ -498,16 +498,16 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
                                     data.wcs,
                                     data.visitInfo,
                                     data.bbox,
-                                    data.filter.getName(),
+                                    data.filter.physicalLabel,
                                     data.photoCalib,
                                     data.detector,
                                     data.visit,
                                     data.detector.getId(),
                                     jointcalControl)
 
-        Result = collections.namedtuple('Result_from_build_CcdImage', ('wcs', 'key', 'filter'))
+        Result = collections.namedtuple('Result_from_build_CcdImage', ('wcs', 'key', 'band'))
         Key = collections.namedtuple('Key', ('visit', 'ccd'))
-        return Result(data.wcs, Key(data.visit, data.detector.getId()), data.filter.getName())
+        return Result(data.wcs, Key(data.visit, data.detector.getId()), data.filter.bandLabel)
 
     def _readDataId(self, butler, dataId):
         """Read all of the data for one dataId from the butler. (gen2 version)"""
@@ -527,13 +527,13 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
                                  photoCalib=butler.get('calexp_photoCalib', dataId=dataId),
                                  wcs=butler.get('calexp_wcs', dataId=dataId),
                                  bbox=butler.get('calexp_bbox', dataId=dataId),
-                                 filter=butler.get('calexp_filter', dataId=dataId))
+                                 filter=butler.get('calexp_filterLabel', dataId=dataId))
 
     def loadData(self, dataRefs, associations, jointcalControl, profile_jointcal=False):
         """Read the data that jointcal needs to run. (Gen2 version)"""
         visit_ccd_to_dataRef = {}
         oldWcsList = []
-        filters = []
+        bands = []
         load_cat_prof_file = 'jointcal_loadData.prof' if profile_jointcal else ''
         with pipeBase.cmdLineTask.profile(load_cat_prof_file):
             # Need the bounding-box of the focal plane (the same for all visits) for photometry visit models
@@ -544,17 +544,17 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
                 result = self._build_ccdImage(data, associations, jointcalControl)
                 oldWcsList.append(result.wcs)
                 visit_ccd_to_dataRef[result.key] = dataRef
-                filters.append(result.filter)
-        filters = collections.Counter(filters)
+                bands.append(result.band)
+        bands = collections.Counter(bands)
 
-        return oldWcsList, filters, visit_ccd_to_dataRef
+        return oldWcsList, bands, visit_ccd_to_dataRef
 
     def _getDebugPath(self, filename):
         """Constructs a path to filename using the configured debug path.
         """
         return os.path.join(self.config.debugOutputPath, filename)
 
-    def _prep_sky(self, associations, filters):
+    def _prep_sky(self, associations, bands):
         """Prepare on-sky and other data that must be computed after data has
         been read.
         """
@@ -566,11 +566,11 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
 
         self.log.info(f"Data has center={center} with radius={radius.asDegrees()} degrees.")
 
-        # Determine a default filter associated with the catalog. See DM-9093
-        defaultFilter = filters.most_common(1)[0][0]
-        self.log.debug("Using %s band for reference flux", defaultFilter)
+        # Determine a default filter band associated with the catalog. See DM-9093
+        defaultBand = bands.most_common(1)[0][0]
+        self.log.debug("Using '%s' filter band for reference flux", defaultBand)
 
-        return boundingCircle, center, radius, defaultFilter
+        return boundingCircle, center, radius, defaultBand
 
     @pipeBase.timeMethod
     def runDataRef(self, dataRefs, profile_jointcal=False):
@@ -607,17 +607,17 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
         jointcalControl = lsst.jointcal.JointcalControl(sourceFluxField)
         associations = lsst.jointcal.Associations()
 
-        oldWcsList, filters, visit_ccd_to_dataRef = self.loadData(dataRefs,
-                                                                  associations,
-                                                                  jointcalControl,
-                                                                  profile_jointcal=profile_jointcal)
+        oldWcsList, bands, visit_ccd_to_dataRef = self.loadData(dataRefs,
+                                                                associations,
+                                                                jointcalControl,
+                                                                profile_jointcal=profile_jointcal)
 
-        boundingCircle, center, radius, defaultFilter = self._prep_sky(associations, filters)
+        boundingCircle, center, radius, defaultBand = self._prep_sky(associations, bands)
 
         tract = dataRefs[0].dataId['tract']
 
         if self.config.doAstrometry:
-            astrometry = self._do_load_refcat_and_fit(associations, defaultFilter, center, radius,
+            astrometry = self._do_load_refcat_and_fit(associations, defaultBand, center, radius,
                                                       name="astrometry",
                                                       refObjLoader=self.astrometryRefObjLoader,
                                                       referenceSelector=self.astrometryReferenceSelector,
@@ -629,7 +629,7 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
             astrometry = Astrometry(None, None, None)
 
         if self.config.doPhotometry:
-            photometry = self._do_load_refcat_and_fit(associations, defaultFilter, center, radius,
+            photometry = self._do_load_refcat_and_fit(associations, defaultBand, center, radius,
                                                       name="photometry",
                                                       refObjLoader=self.photometryRefObjLoader,
                                                       referenceSelector=self.photometryReferenceSelector,
@@ -647,7 +647,7 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
                                job=self.job,
                                astrometryRefObjLoader=self.astrometryRefObjLoader,
                                photometryRefObjLoader=self.photometryRefObjLoader,
-                               defaultFilter=defaultFilter,
+                               defaultBand=defaultBand,
                                exitStatus=exitStatus)
 
     def _get_refcat_coordinate_error_override(self, refCat, name):
@@ -713,8 +713,8 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
         mjds = [ccdImage.getMjd() for ccdImage in ccdImageList]
         return astropy.time.Time(np.mean(mjds), format='mjd', scale="tai")
 
-    def _do_load_refcat_and_fit(self, associations, defaultFilter, center, radius,
                                 filters=[],
+    def _do_load_refcat_and_fit(self, associations, defaultBand, center, radius,
                                 tract="", profile_jointcal=False, match_cut=3.0,
                                 reject_bad_fluxes=False, *,
                                 name="", refObjLoader=None, referenceSelector=None,
@@ -725,7 +725,7 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
         ----------
         associations : `lsst.jointcal.Associations`
             The star/reference star associations to fit.
-        defaultFilter : `str`
+        defaultBand : `str`
             filter to load from reference catalog.
         center : `lsst.geom.SpherePoint`
             ICRS center of field to load from reference catalog.
@@ -766,7 +766,7 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
         applyColorterms = False if name.lower() == "astrometry" else self.config.applyColorTerms
         epoch = self._compute_proper_motion_epoch(associations.getCcdImageList())
         refCat, fluxField = self._load_reference_catalog(refObjLoader, referenceSelector,
-                                                         center, radius, defaultFilter,
+                                                         center, radius, defaultBand,
                                                          applyColorterms=applyColorterms,
                                                          epoch=epoch)
         refCoordErr = self._get_refcat_coordinate_error_override(refCat, name)
@@ -790,7 +790,7 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
                         associations.nCcdImagesValidForFit())
 
         load_cat_prof_file = 'jointcal_fit_%s.prof'%name if profile_jointcal else ''
-        dataName = "{}_{}".format(tract, defaultFilter)
+        dataName = "{}_{}".format(tract, defaultBand)
         with pipeBase.cmdLineTask.profile(load_cat_prof_file):
             result = fit_function(associations, dataName)
         # TODO DM-12446: turn this into a "butler save" somehow.

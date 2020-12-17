@@ -119,8 +119,8 @@ class AstrometryModelTestBase:
             ccdId = detector.getId()
             wcs = dataRef.get('calexp_wcs')
             bbox = dataRef.get('calexp_bbox')
-            filt = dataRef.get('calexp_filter')
-            filterName = filt.getName()
+            filt = dataRef.get('calexp_filterLabel')
+            filterName = filt.physicalLabel
             photoCalib = lsst.afw.image.PhotoCalib(100.0, 1.0)
 
             self.catalogs.append(goodSrc)
