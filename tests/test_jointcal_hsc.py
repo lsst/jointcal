@@ -89,8 +89,8 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
                    'selected_photometry_fittedStars': 1731,
                    'selected_astrometry_ccdImages': 6,
                    'selected_photometry_ccdImages': 6,
-                   'astrometry_final_chi2': 683.783,
-                   'astrometry_final_ndof': 1916,
+                   'astrometry_final_chi2': 835.473,
+                   'astrometry_final_ndof': 1918,
                    'photometry_final_chi2': 4997.62,
                    'photometry_final_ndof': 2188
                    }
@@ -127,8 +127,8 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
                    'associated_astrometry_fittedStars': 5860,
                    'selected_astrometry_fittedStars': 3568,
                    'selected_astrometry_ccdImages': 30,
-                   'astrometry_final_chi2': 9621.29,
-                   'astrometry_final_ndof': 18562,
+                   'astrometry_final_chi2': 10218.518,
+                   'astrometry_final_ndof': 18574,
                    }
         self._testJointcalTask(10, dist_rms_relative, dist_rms_absolute, pa1, metrics=metrics)
 
@@ -199,8 +199,8 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
                    'associated_astrometry_fittedStars': 2070,
                    'selected_astrometry_fittedStars': 989,
                    'selected_astrometry_ccdImages': 6,
-                   'astrometry_final_chi2': 683.783,
-                   'astrometry_final_ndof': 1916,
+                   'astrometry_final_chi2': 835.473,
+                   'astrometry_final_ndof': 1918,
                    }
         self.config = lsst.jointcal.jointcal.JointcalConfig()
         self.config.astrometryModel = "simple"
@@ -232,8 +232,8 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
                    'associated_astrometry_fittedStars': 2070,
                    'selected_astrometry_fittedStars': 1042,
                    'selected_astrometry_ccdImages': 6,
-                   'astrometry_final_chi2': 683.369,
-                   'astrometry_final_ndof': 1910,
+                   'astrometry_final_chi2': 800.346,
+                   'astrometry_final_ndof': 1864,
                    }
         pa1 = None
         self._testJointcalTask(2, self.dist_rms_relative, dist_rms_absolute, pa1, metrics=metrics)
@@ -247,15 +247,15 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         self.jointcalStatistics.do_photometry = False
 
         # More visits and slightly worse relative and absolute rms.
-        dist_rms_relative = 8.2e-3*u.arcsecond
+        dist_rms_relative = 8.3e-3*u.arcsecond
         dist_rms_absolute = 24e-3*u.arcsecond
         metrics = {'collected_astrometry_refStars': 1038,
                    'selected_astrometry_refStars': 209,
                    'associated_astrometry_fittedStars': 3199,
                    'selected_astrometry_fittedStars': 1282,
                    'selected_astrometry_ccdImages': 9,
-                   'astrometry_final_chi2': 1013.20,
-                   'astrometry_final_ndof': 2900,
+                   'astrometry_final_chi2': 1221.63,
+                   'astrometry_final_ndof': 2892,
                    }
         pa1 = None
         self._testJointcalTask(3, dist_rms_relative, dist_rms_absolute, pa1, metrics=metrics)
@@ -278,8 +278,8 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
                    'associated_astrometry_fittedStars': 3199,
                    'selected_astrometry_fittedStars': 432,
                    'selected_astrometry_ccdImages': 9,
-                   'astrometry_final_chi2': 360.884,
-                   'astrometry_final_ndof': 1294,
+                   'astrometry_final_chi2': 567.443,
+                   'astrometry_final_ndof': 1286,
                    }
         pa1 = None
         self._testJointcalTask(3, dist_rms_relative, dist_rms_absolute, pa1, metrics=metrics)
