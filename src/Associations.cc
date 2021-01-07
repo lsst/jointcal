@@ -247,10 +247,11 @@ void Associations::collectRefStars(afw::table::SimpleCatalog &refCat, geom::Angl
         auto star = std::make_shared<RefStar>(ra, dec, flux, fluxErr);
 
         if (std::isnan(refCoordinateErr)) {
-            star->vx = record->get(raErrKey);
-            star->vy = record->get(decErrKey);
+            // refcat errors are unitless but stored as radians: convert to deg**2
+            star->vx = std::pow(lsst::geom::radToDeg(record->get(raErrKey)), 2);
+            star->vy = std::pow(lsst::geom::radToDeg(record->get(decErrKey)), 2);
         } else {
-            // Compute and use the fake errors
+            // Convert the fake errors from mas to deg**2
             star->vx = std::pow(refCoordinateErr / 1000. / 3600. / std::cos(coord.getLatitude()), 2);
             star->vy = std::pow(refCoordinateErr / 1000. / 3600., 2);
         }
