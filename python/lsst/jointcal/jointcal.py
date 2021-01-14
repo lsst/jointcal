@@ -636,7 +636,6 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
                                                       fit_function=self._fit_photometry,
                                                       profile_jointcal=profile_jointcal,
                                                       tract=tract,
-                                                      filters=filters,
                                                       reject_bad_fluxes=True)
             self._write_photometry_results(associations, photometry.model, visit_ccd_to_dataRef)
         else:
@@ -713,7 +712,6 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
         mjds = [ccdImage.getMjd() for ccdImage in ccdImageList]
         return astropy.time.Time(np.mean(mjds), format='mjd', scale="tai")
 
-                                filters=[],
     def _do_load_refcat_and_fit(self, associations, defaultBand, center, radius,
                                 tract="", profile_jointcal=False, match_cut=3.0,
                                 reject_bad_fluxes=False, *,
@@ -739,8 +737,6 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
             Selector to use to pick objects from the loaded reference catalog.
         fit_function : callable
             Function to call to perform fit (takes Associations object).
-        filters : `list` [`str`], optional
-            List of filters to load from the reference catalog.
         tract : `str`, optional
             Name of tract currently being fit.
         profile_jointcal : `bool`, optional
