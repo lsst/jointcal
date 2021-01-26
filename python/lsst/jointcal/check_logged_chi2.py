@@ -31,9 +31,9 @@ import re
 
 import numpy as np
 import matplotlib
-matplotlib.use("Agg")  # noqa: E402
-import matplotlib.pyplot as plt
-import seaborn as sns
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt  # noqa: E402
+import seaborn as sns  # noqa: E402
 sns.set_style("ticks", {"legend.frameon": True})
 sns.set_context("talk")
 
