@@ -37,14 +37,13 @@ original calib(s).
 """
 
 import numpy as np
-
-import matplotlib
-matplotlib.use('Agg')  # noqa: E402
-import matplotlib.pyplot as plt
-from mpl_toolkits.axes_grid1 import make_axes_locatable
-
 import lsst.afw.cameraGeom.utils
 import lsst.daf.persistence
+
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt  # noqa: E402
+from mpl_toolkits.axes_grid1 import make_axes_locatable  # noqa: E402
 
 matplotlib.rcParams['figure.dpi'] = 300
 

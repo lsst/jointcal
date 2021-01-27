@@ -339,11 +339,11 @@ class PhotometryTransformChebyshevTestCase(PhotometryTransformTestBase, abc.ABC)
 
         # 5/3528 * (10584*a00 + 756*a01 - 10152*a02 - 2646*a10 - 189*a11 +
         #           2538*a12 - 8036*a20 - 574*a21 + 7708*a22)
-        expect = 5/3528 * (10584*coeffs[0, 0] + 756*coeffs[1, 0] -
-                           10152*coeffs[2, 0] - 2646*coeffs[0, 1] -
-                           189*coeffs[1, 1] + 2538*coeffs[2, 1] -
-                           8036*coeffs[0, 2] - 574*coeffs[1, 2] +
-                           7708*coeffs[2, 2])
+        expect = 5/3528 * (10584*coeffs[0, 0] + 756*coeffs[1, 0]
+                           - 10152*coeffs[2, 0] - 2646*coeffs[0, 1]
+                           - 189*coeffs[1, 1] + 2538*coeffs[2, 1]
+                           - 8036*coeffs[0, 2] - 574*coeffs[1, 2]
+                           + 7708*coeffs[2, 2])
         result = transform.integrate(box)
         self.assertFloatsAlmostEqual(result, expect, rtol=2e-14)
 
