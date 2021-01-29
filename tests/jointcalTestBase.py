@@ -151,10 +151,10 @@ class JointcalTestBase:
         data_refs = result.resultList[0].result.dataRefs
         oldWcsList = result.resultList[0].result.oldWcsList
 
-        defaultFilter = result.resultList[0].result.defaultFilter
+        defaultBand = result.resultList[0].result.defaultBand
 
         def compute_statistics(refObjLoader):
-            refCat = refObjLoader.loadSkyCircle(self.center, self.radius, defaultFilter).refCat
+            refCat = refObjLoader.loadSkyCircle(self.center, self.radius, defaultBand).refCat
             rms_result = self.jointcalStatistics.compute_rms(data_refs, refCat)
             # Make plots before testing, if requested, so we still get plots if tests fail.
             if self.do_plot:

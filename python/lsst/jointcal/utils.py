@@ -105,7 +105,7 @@ class JointcalStatistics:
         """
 
         # DECAM doesn't have "filter" in its registry, so we have to get the filter names directly.
-        self.filters = [ref.get('calexp_filter').getName() for ref in data_refs]
+        self.filters = [ref.get('calexp_filterLabel').bandLabel for ref in data_refs]
         self.visits_per_dataRef = [ref.dataId['visit'] for ref in data_refs]
 
         def compute(catalogs, photoCalibs):
