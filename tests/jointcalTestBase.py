@@ -146,25 +146,24 @@ class JointcalTestBase:
             The dataRefs that were processed.
         """
 
-        result = self._runJointcalTask(nCatalogs, metrics=metrics)
-
-        data_refs = result.resultList[0].result.dataRefs
-        oldWcsList = result.resultList[0].result.oldWcsList
-
-        defaultBand = result.resultList[0].result.defaultBand
+        resultFull = self._runJointcalTask(nCatalogs, metrics=metrics)
+        result = resultFull.resultList[0].result  # shorten this very long thing
 
         def compute_statistics(refObjLoader):
-            refCat = refObjLoader.loadSkyCircle(self.center, self.radius, defaultBand).refCat
-            rms_result = self.jointcalStatistics.compute_rms(data_refs, refCat)
+            refCat = refObjLoader.loadSkyCircle(self.center,
+                                                self.radius,
+                                                result.defaultBand,
+                                                epoch=result.epoch).refCat
+            rms_result = self.jointcalStatistics.compute_rms(result.dataRefs, refCat)
             # Make plots before testing, if requested, so we still get plots if tests fail.
             if self.do_plot:
-                self._plotJointcalTask(data_refs, oldWcsList)
+                self._plotJointcalTask(result.dataRefs, result.oldWcsList)
             return rms_result
 
         # we now have different astrometry/photometry refcats, so have to
         # do these calculations separately
         if self.jointcalStatistics.do_astrometry:
-            refObjLoader = result.resultList[0].result.astrometryRefObjLoader
+            refObjLoader = result.astrometryRefObjLoader
             # preserve do_photometry for the next `if`
             temp = copy.copy(self.jointcalStatistics.do_photometry)
             self.jointcalStatistics.do_photometry = False
@@ -176,14 +175,14 @@ class JointcalTestBase:
                 self.assertLess(rms_result.dist_absolute, dist_rms_absolute)
 
         if self.jointcalStatistics.do_photometry:
-            refObjLoader = result.resultList[0].result.photometryRefObjLoader
+            refObjLoader = result.photometryRefObjLoader
             self.jointcalStatistics.do_astrometry = False
             rms_result = compute_statistics(refObjLoader)
 
             if pa1 is not None:
                 self.assertLess(rms_result.pa1, pa1)
 
-        return data_refs
+        return result.dataRefs
 
     def _runJointcalTask(self, nCatalogs, metrics=None):
         """
