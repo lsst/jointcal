@@ -1,7 +1,8 @@
 # -*- python -*-
 from lsst.sconsUtils import scripts, targets, env
 
-for flag in ("-fexceptions", "-DNSUPERNODAL", "-DNPARTITION"):
+for flag in ("-fexceptions", "-DNSUPERNODAL", "-DNPARTITION",
+             "-faligned-allocation"):
     env["CFLAGS"].append(flag)
     env["CXXFLAGS"].append(flag)
 
