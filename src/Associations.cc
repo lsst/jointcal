@@ -69,8 +69,6 @@ void Associations::createCcdImage(afw::table::SourceCatalog &catalog,
     auto ccdImage = std::make_shared<CcdImage>(catalog, wcs, visitInfo, bbox, filter, photoCalib, detector,
                                                visit, ccd, control.sourceFluxField);
     ccdImageList.push_back(ccdImage);
-    LOGLS_DEBUG(_log, "Catalog " << ccdImage->getName() << " has " << ccdImage->getWholeCatalog().size()
-                                 << " objects.");
 }
 
 void Associations::computeCommonTangentPoint() {
