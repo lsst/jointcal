@@ -445,6 +445,139 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
         # To hold various computed metrics for use by tests
         self.job = Job.load_metrics_package(subset='jointcal')
 
+    def _make_schema_table(self):
+        """Return an afw SourceTable to use as a base for creating the
+        SourceCatalog to insert values from the dataFrame into.
+
+        Returns
+        -------
+        table : `lsst.afw.table.SourceTable`
+            Table with schema and slots to use to make SourceCatalogs.
+        """
+        schema = lsst.afw.table.SourceTable.makeMinimalSchema()
+        schema.addField("centroid_x", "D")
+        schema.addField("centroid_y", "D")
+        schema.addField("centroid_xErr", "F")
+        schema.addField("centroid_yErr", "F")
+        schema.addField("shape_xx", "D")
+        schema.addField("shape_yy", "D")
+        schema.addField("shape_xy", "D")
+        schema.addField("flux_instFlux", "D")
+        schema.addField("flux_instFluxErr", "D")
+        table = lsst.afw.table.SourceTable.make(schema)
+        table.defineCentroid("centroid")
+        table.defineShape("shape")
+        return table
+
+    def _extract_detector_catalog_from_visit_catalog(self, table, visitCatalog, detectorId):
+        """Return an afw SourceCatalog extracted from a visit-level dataframe,
+        limited to just one detector.
+
+        Parameters
+        ----------
+        table : `lsst.afw.table.SourceTable`
+            Table factory to use to make the SourceCatalog that will be
+            populated with data from ``visitCatalog``.
+        visitCatalog : `pandas.DataFrame`
+            DataFrame to extract a detector catalog from.
+        detectorId : `int`
+            Numeric id of the detector to extract from ``visitCatalog``.
+
+        Returns
+        -------
+        catalog : `lsst.afw.table.SourceCatalog`
+            Detector-level catalog extracted from ``visitCatalog``.
+        """
+        # map from dataFrame column to afw table column
+        mapping = {'sourceId': 'id',
+                   'x': 'centroid_x',
+                   'y': 'centroid_y',
+                   'xErr': 'centroid_xErr',
+                   'yErr': 'centroid_yErr',
+                   'Ixx': 'shape_xx',
+                   'Iyy': 'shape_yy',
+                   'Ixy': 'shape_xy',
+                   f'{self.config.sourceFluxType}_instFlux': 'flux_instFlux',
+                   f'{self.config.sourceFluxType}_instFluxErr': 'flux_instFluxErr',
+                   }
+        catalog = lsst.afw.table.SourceCatalog(table)
+        matched = visitCatalog['ccd'] == detectorId
+        catalog.resize(sum(matched))
+        view = visitCatalog.loc[matched]
+        for dfCol, afwCol in mapping.items():
+            catalog[afwCol] = view[dfCol]
+
+        self.log.debug("%d sources selected in visit %d detector %d",
+                       len(catalog),
+                       view['visit'].iloc[0],  # all visits in this catalog are the same, so take the first
+                       detectorId)
+        return catalog
+
+    def _load_data(self, inputSourceTableVisit, inputVisitSummary, associations, jointcalControl):
+        """Read the data that jointcal needs to run. (Gen3 version)
+
+        Modifies ``associations`` in-place with the loaded data.
+
+        Parameters
+        ----------
+        inputSourceTableVisit : `list` [`lsst.daf.butler.DeferredDatasetHandle`]
+            References to visit-level DataFrames to load the catalog data from.
+        inputVisitSummary : `list` [`lsst.daf.butler.DeferredDatasetHandle`]
+            Visit-level exposure summary catalog with metadata.
+        associations : `lsst.jointcal.Associations`
+            Object to add the loaded data to by constructing new CcdImages.
+        jointcalControl : `jointcal.JointcalControl`
+            Control object for C++ associations management.
+
+        Returns
+        -------
+        oldWcsList: `list` [`lsst.afw.geom.SkyWcs`]
+            The original WCS of the input data, to aid in writing tests.
+        bands : `list` [`str`]
+            The filter bands of each input dataset.
+        """
+        oldWcsList = []
+        bands = []
+        load_cat_prof_file = 'jointcal_load_data.prof' if self.config.detailedProfile else ''
+        with pipeBase.cmdLineTask.profile(load_cat_prof_file):
+            table = self._make_schema_table()  # every detector catalog has the same layout
+            # No guarantee that the input is in the same order of visits, so we have to map one of them.
+            catalogMap = {ref.dataId['visit']: i for i, ref in enumerate(inputSourceTableVisit)}
+
+            for visitSummaryRef in inputVisitSummary:
+                visitSummary = visitSummaryRef.get()
+                visitCatalog = inputSourceTableVisit[catalogMap[visitSummaryRef.dataId['visit']]].get()
+                selected = self.sourceSelector.run(visitCatalog)
+
+                # Build a CcdImage for each detector in this visit.
+                detectors = {id: index for index, id in enumerate(visitSummary['detector_id'])}
+                for id, index in detectors.items():
+                    catalog = self._extract_detector_catalog_from_visit_catalog(table, selected.sourceCat, id)
+                    data = self._make_one_input_data(visitSummary[index], catalog)
+                    result = self._build_ccdImage(data, associations, jointcalControl)
+                    if result is not None:
+                        oldWcsList.append(result.wcs)
+
+                # A visit has only one band, so we can just use the first.
+                bands.append(visitSummary[0]['band'])
+        bands = collections.Counter(bands)
+
+        return oldWcsList, bands
+
+    def _make_one_input_data(self, visitRecord, catalog):
+        """Return a data structure for this detector+visit."""
+        return JointcalInputData(visit=visitRecord['visit'],
+                                 catalog=catalog,
+                                 visitInfo=visitRecord.getVisitInfo(),
+                                 detector=visitRecord.getDetector(),
+                                 photoCalib=visitRecord.getPhotoCalib(),
+                                 wcs=visitRecord.getWcs(),
+                                 bbox=visitRecord.getBBox(),
+                                 # ExposureRecord doesn't have a FilterLabel yet,
+                                 # so we have to make one.
+                                 filter=lsst.afw.image.FilterLabel(band=visitRecord['band'],
+                                                                   physical=visitRecord['physical_filter']))
+
     # We don't currently need to persist the metadata.
     # If we do in the future, we will have to add appropriate dataset templates
     # to each obs package (the metadata template should look like `jointcal_wcs`).
@@ -476,7 +609,7 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
 
         Returns
         ------
-        namedtuple
+        namedtuple or `None`
             ``wcs``
                 The TAN WCS of this image, read from the calexp
                 (`lsst.afw.geom.SkyWcs`).
@@ -485,16 +618,14 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
                 (`namedtuple`).
             ``band``
                 This calexp's filter band (`str`) (used to e.g. load refcats)
+            `None`
+            if there are no sources in the loaded catalog.
         """
-        goodSrc = self.sourceSelector.run(data.catalog)
-
-        if len(goodSrc.sourceCat) == 0:
+        if len(data.catalog) == 0:
             self.log.warn("No sources selected in visit %s ccd %s", data.visit, data.detector.getId())
-        else:
-            self.log.info("%d sources selected in visit %d ccd %d", len(goodSrc.sourceCat),
-                          data.visit,
-                          data.detector.getId())
-        associations.createCcdImage(goodSrc.sourceCat,
+            return None
+
+        associations.createCcdImage(data.catalog,
                                     data.wcs,
                                     data.visitInfo,
                                     data.bbox,
@@ -516,14 +647,20 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
             visit = dataId["visit"]
         else:
             visit = butler.getButler().queryMetadata("calexp", ("visit"), butler.dataId)[0]
+        detector = butler.get('calexp_detector', dataId=dataId)
 
         catalog = butler.get('src',
                              flags=lsst.afw.table.SOURCE_IO_NO_FOOTPRINTS,
                              dataId=dataId)
+        goodSrc = self.sourceSelector.run(catalog)
+        self.log.debug("%d sources selected in visit %d detector %d",
+                       len(goodSrc.sourceCat),
+                       visit,
+                       detector.getId())
         return JointcalInputData(visit=visit,
-                                 catalog=catalog,
+                                 catalog=goodSrc.sourceCat,
                                  visitInfo=butler.get('calexp_visitInfo', dataId=dataId),
-                                 detector=butler.get('calexp_detector', dataId=dataId),
+                                 detector=detector,
                                  photoCalib=butler.get('calexp_photoCalib', dataId=dataId),
                                  wcs=butler.get('calexp_wcs', dataId=dataId),
                                  bbox=butler.get('calexp_bbox', dataId=dataId),
@@ -542,6 +679,8 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
             for dataRef in dataRefs:
                 data = self._readDataId(dataRef.getButler(), dataRef.dataId)
                 result = self._build_ccdImage(data, associations, jointcalControl)
+                if result is None:
+                    continue
                 oldWcsList.append(result.wcs)
                 visit_ccd_to_dataRef[result.key] = dataRef
                 bands.append(result.band)

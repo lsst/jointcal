@@ -20,10 +20,12 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import itertools
+import os.path
 import unittest
 from unittest import mock
 
 import numpy as np
+import pyarrow.parquet
 
 import lsst.log
 import lsst.utils
@@ -74,6 +76,49 @@ def make_fake_wcs():
     wcs1 = lsst.afw.geom.makeSkyWcs(crpix, crval1, cd)
     wcs2 = lsst.afw.geom.makeSkyWcs(crpix, crval2, cd)
     return wcs1, wcs2
+
+
+class TestJointcalVisitCatalog(lsst.utils.tests.TestCase):
+    """Tests of jointcal's sourceTable_visit parquet ->single detector afw
+    table catalog unrolling.
+    """
+    def setUp(self):
+        filename = os.path.join(os.path.dirname(__file__),
+                                "data/subselected-sourceTable-0034690.parq")
+        file = pyarrow.parquet.ParquetFile(filename)
+        self.data = file.read(use_pandas_metadata=True).to_pandas()
+        config = lsst.jointcal.jointcal.JointcalConfig()
+        # TODO DM-29008: Remove this (to use the new gen3 default) before gen2 removal.
+        config.sourceFluxType = "ApFlux_12_0"
+        # we don't actually need either fitter to run for these tests
+        config.doAstrometry = False
+        config.doPhotometry = False
+        self.jointcal = lsst.jointcal.JointcalTask(config=config)
+
+    def test_make_catalog_schema(self):
+        """Check that the slot fields required by CcdImage::loadCatalog are in
+        the schema returned by _make_catalog_schema().
+        """
+        table = self.jointcal._make_schema_table()
+        self.assertTrue(table.getCentroidSlot().getMeasKey().isValid())
+        self.assertTrue(table.getCentroidSlot().getErrKey().isValid())
+        self.assertTrue(table.getShapeSlot().getMeasKey().isValid())
+
+    def test_extract_detector_catalog_from_visit_catalog(self):
+        """Spot check a value output by the script that generated the test
+        parquet catalog and check that the size of the returned catalog
+        is correct for each detectior.
+        """
+        detectorId = 56
+        table = self.jointcal._make_schema_table()
+        catalog = self.jointcal._extract_detector_catalog_from_visit_catalog(table, self.data, detectorId)
+
+        # The test catalog has a number of elements for each detector equal to the detector id.
+        self.assertEqual(len(catalog), detectorId)
+        self.assertIn(29798723617816629, catalog['id'])
+        matched = catalog[29798723617816629 == catalog['id']]
+        self.assertEqual(1715.734359473175, matched['slot_Centroid_x'])
+        self.assertEqual(89.06076509964362, matched['slot_Centroid_y'])
 
 
 class JointcalTestBase:
