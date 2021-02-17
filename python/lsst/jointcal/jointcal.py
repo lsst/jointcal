@@ -898,6 +898,8 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
                 oldWcsList.append(result.wcs)
                 visit_ccd_to_dataRef[result.key] = dataRef
                 bands.append(result.band)
+        if len(bands) == 0:
+            raise RuntimeError("No data to process: did source selector remove all sources?")
         bands = collections.Counter(bands)
 
         return oldWcsList, bands, visit_ccd_to_dataRef
