@@ -7,3 +7,5 @@ config.astrometryRefObjLoader.ref_dataset_name = "sdss-dr9-fink-v5b"
 # jointcal overrides the refcat loader default for gaia, so we have to clear it for SDSS
 config.astrometryRefObjLoader.anyFilterMapsToThis = None
 config.astrometryReferenceErr = None
+# This test refcat cannot apply proper motions.
+config.astrometryRefObjLoader.requireProperMotion = False

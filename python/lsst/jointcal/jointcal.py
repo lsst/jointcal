@@ -613,6 +613,7 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
                                                                 profile_jointcal=profile_jointcal)
 
         boundingCircle, center, radius, defaultBand = self._prep_sky(associations, bands)
+        epoch = self._compute_proper_motion_epoch(associations.getCcdImageList())
 
         tract = dataRefs[0].dataId['tract']
 
@@ -623,7 +624,8 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
                                                       referenceSelector=self.astrometryReferenceSelector,
                                                       fit_function=self._fit_astrometry,
                                                       profile_jointcal=profile_jointcal,
-                                                      tract=tract)
+                                                      tract=tract,
+                                                      epoch=epoch)
             self._write_astrometry_results(associations, astrometry.model, visit_ccd_to_dataRef)
         else:
             astrometry = Astrometry(None, None, None)
@@ -636,6 +638,7 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
                                                       fit_function=self._fit_photometry,
                                                       profile_jointcal=profile_jointcal,
                                                       tract=tract,
+                                                      epoch=epoch,
                                                       reject_bad_fluxes=True)
             self._write_photometry_results(associations, photometry.model, visit_ccd_to_dataRef)
         else:
@@ -647,6 +650,7 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
                                astrometryRefObjLoader=self.astrometryRefObjLoader,
                                photometryRefObjLoader=self.photometryRefObjLoader,
                                defaultBand=defaultBand,
+                               epoch=epoch,
                                exitStatus=exitStatus)
 
     def _get_refcat_coordinate_error_override(self, refCat, name):
@@ -716,7 +720,7 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
                                 tract="", profile_jointcal=False, match_cut=3.0,
                                 reject_bad_fluxes=False, *,
                                 name="", refObjLoader=None, referenceSelector=None,
-                                fit_function=None):
+                                fit_function=None, epoch=None):
         """Load reference catalog, perform the fit, and return the result.
 
         Parameters
@@ -746,6 +750,9 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
             associations.associateCatalogs.
         reject_bad_fluxes : `bool`, optional
             Reject refCat sources with NaN/inf flux or NaN/0 fluxErr.
+        epoch : `astropy.time.Time`, optional
+            Epoch to which to correct refcat proper motion and parallax,
+            or `None` to not apply such corrections.
 
         Returns
         -------
@@ -760,7 +767,6 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
                         associations.fittedStarListSize())
 
         applyColorterms = False if name.lower() == "astrometry" else self.config.applyColorTerms
-        epoch = self._compute_proper_motion_epoch(associations.getCcdImageList())
         refCat, fluxField = self._load_reference_catalog(refObjLoader, referenceSelector,
                                                          center, radius, defaultBand,
                                                          applyColorterms=applyColorterms,
