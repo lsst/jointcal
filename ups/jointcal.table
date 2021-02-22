@@ -1,5 +1,4 @@
 setupRequired(sconsUtils)
-setupRequired(eigen)
 setupRequired(afw)
 setupRequired(daf_persistence)
 setupRequired(obs_base)
