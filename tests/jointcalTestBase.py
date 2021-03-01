@@ -56,21 +56,21 @@ class JointcalTestBase:
 
         Parameters
         ----------
-        center : lsst.geom.SpherePoint
+        center : `lsst.geom.SpherePoint`
             Center of the reference catalog.
-        radius : lsst.geom.Angle
+        radius : `lsst.geom.Angle`
             Radius from center to load reference catalog objects inside.
-        match_radius : lsst.geom.Angle
+        match_radius : `lsst.geom.Angle`
             matching radius when calculating RMS of result.
-        input_dir : str
+        input_dir : `str`
             Directory of input butler repository.
-        all_visits : list
+        all_visits : `list` [`int`]
             List of the available visits to generate the parseAndRun arguments.
-        other_args : list
+        other_args : `list` [`str`]
             Optional other arguments for the butler dataId.
-        do_plot : bool
+        do_plot : `bool`
             Set to True for a comparison plot and some diagnostic numbers.
-        log_level : str
+        log_level : `str`
             Set to the default log level you want jointcal to produce while the
             tests are running. See the developer docs about logging for valid
             levels: https://developer.lsst.io/coding/logging.html
@@ -128,23 +128,23 @@ class JointcalTestBase:
 
         Parameters
         ----------
-        nCatalogs : int
+        nCatalogs : `int`
             Number of catalogs to run jointcal on. Used to construct the "id"
             field for parseAndRun.
-        dist_rms_relative : astropy.Quantity
+        dist_rms_relative : `astropy.Quantity`
             Minimum relative astrometric rms post-jointcal to pass the test.
-        dist_rms_absolute : astropy.Quantity
+        dist_rms_absolute : `astropy.Quantity`
             Minimum absolute astrometric rms post-jointcal to pass the test.
-        pa1 : float
+        pa1 : `float`
             Minimum PA1 (from Table 14 of the Science Requirements Document:
             https://ls.st/LPM-17) post-jointcal to pass the test.
-        metrics : dict, optional
+        metrics : `dict`, optional
             Dictionary of 'metricName': value to test jointcal's result.metrics
             against.
 
         Returns
         -------
-        list of lsst.daf.persistence.ButlerDataRef
+        dataRefs : `list` [`lsst.daf.persistence.ButlerDataRef`]
             The dataRefs that were processed.
         """
 
@@ -193,15 +193,15 @@ class JointcalTestBase:
 
         Parameters
         ----------
-        nCatalogs : int
+        nCatalogs : `int`
             Number of catalogs to test on.
-        metrics : dict, optional
+        metrics : `dict`, optional
             Dictionary of 'metricName': value to test jointcal's result.metrics
             against.
 
         Returns
         -------
-        pipe.base.Struct
+        result : `pipe.base.Struct`
             The structure returned by jointcalTask.run()
         """
         visits = '^'.join(str(v) for v in self.all_visits[:nCatalogs])
@@ -231,9 +231,9 @@ class JointcalTestBase:
 
         Parameters
         ----------
-        data_refs : list of lsst.daf.persistence.ButlerDataRef
+        data_refs : `list` [`lsst.daf.persistence.ButlerDataRef`]
             The dataRefs that were processed.
-        oldWcsList : list of lsst.afw.image.Wcs
+        oldWcsList : `list` [`lsst.afw.image.SkyWcs`]
             The original WCS from each dataRef.
         """
         plot_dir = os.path.join('.test', self.__class__.__name__, 'plots')
@@ -247,9 +247,9 @@ class JointcalTestBase:
 
         Parameters
         ----------
-        result : dict
+        result : `dict`
             Result metric dictionary from jointcal.py
-        expect : dict
+        expect : `dict`
             Expected metric dictionary; set a value to None to not test it.
         """
         for key in result:
