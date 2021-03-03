@@ -156,7 +156,9 @@ class JointcalTaskConnections(pipeBase.PipelineTaskConnections,
         multiple=True,
     )
     inputVisitSummary = pipeBase.connectionTypes.Input(
-        doc="Visit summary tables built from the calexps for these observations.",
+        doc=("Per-visit consolidated exposure metadata built from calexps. "
+             "These catalogs use detector id for the id and must be sorted for "
+             "fast lookups of a detector."),
         name="visitSummary",
         storageClass="ExposureCatalog",
         dimensions=("instrument", "visit", "physical_filter"),
@@ -767,7 +769,7 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
                 selected = self.sourceSelector.run(visitCatalog)
 
                 # Build a CcdImage for each detector in this visit.
-                detectors = {id: index for index, id in enumerate(visitSummary['detector_id'])}
+                detectors = {id: index for index, id in enumerate(visitSummary['id'])}
                 for id, index in detectors.items():
                     catalog = self._extract_detector_catalog_from_visit_catalog(table, selected.sourceCat, id)
                     data = self._make_one_input_data(visitSummary[index], catalog)
