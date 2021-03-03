@@ -148,7 +148,7 @@ class JointcalTestCFHTMinimal(jointcalTestBase.JointcalTestBase, lsst.utils.test
                 '--doraise',
                 '--id', 'visit=%s'%visits]
         args.extend(self.other_args)
-        with self.assertRaises(RuntimeError):
+        with self.assertRaisesRegex(RuntimeError, "No data to process"):
             jointcal.JointcalTask.parseAndRun(args=args, doReturnResults=True, config=self.config)
 
     def test_jointcalTask_fails_no_raise(self):

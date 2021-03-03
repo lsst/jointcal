@@ -56,25 +56,27 @@ class JointcalTestBase:
 
         Parameters
         ----------
-        center : lsst.geom.SpherePoint
+        center : `lsst.geom.SpherePoint`
             Center of the reference catalog.
-        radius : lsst.geom.Angle
+        radius : `lsst.geom.Angle`
             Radius from center to load reference catalog objects inside.
-        match_radius : lsst.geom.Angle
+        match_radius : `lsst.geom.Angle`
             matching radius when calculating RMS of result.
-        input_dir : str
+        input_dir : `str`
             Directory of input butler repository.
-        all_visits : list
+        all_visits : `list` [`int`]
             List of the available visits to generate the parseAndRun arguments.
-        other_args : list
+        other_args : `list` [`str`]
             Optional other arguments for the butler dataId.
-        do_plot : bool
+        do_plot : `bool`
             Set to True for a comparison plot and some diagnostic numbers.
-        log_level : str
+        log_level : `str`
             Set to the default log level you want jointcal to produce while the
             tests are running. See the developer docs about logging for valid
             levels: https://developer.lsst.io/coding/logging.html
         """
+        self.path = os.path.dirname(__file__)
+
         self.center = center
         self.radius = radius
         self.jointcalStatistics = utils.JointcalStatistics(match_radius, verbose=True)
@@ -126,23 +128,23 @@ class JointcalTestBase:
 
         Parameters
         ----------
-        nCatalogs : int
+        nCatalogs : `int`
             Number of catalogs to run jointcal on. Used to construct the "id"
             field for parseAndRun.
-        dist_rms_relative : astropy.Quantity
+        dist_rms_relative : `astropy.Quantity`
             Minimum relative astrometric rms post-jointcal to pass the test.
-        dist_rms_absolute : astropy.Quantity
+        dist_rms_absolute : `astropy.Quantity`
             Minimum absolute astrometric rms post-jointcal to pass the test.
-        pa1 : float
+        pa1 : `float`
             Minimum PA1 (from Table 14 of the Science Requirements Document:
             https://ls.st/LPM-17) post-jointcal to pass the test.
-        metrics : dict, optional
+        metrics : `dict`, optional
             Dictionary of 'metricName': value to test jointcal's result.metrics
             against.
 
         Returns
         -------
-        list of lsst.daf.persistence.ButlerDataRef
+        dataRefs : `list` [`lsst.daf.persistence.ButlerDataRef`]
             The dataRefs that were processed.
         """
 
@@ -191,15 +193,15 @@ class JointcalTestBase:
 
         Parameters
         ----------
-        nCatalogs : int
+        nCatalogs : `int`
             Number of catalogs to test on.
-        metrics : dict, optional
+        metrics : `dict`, optional
             Dictionary of 'metricName': value to test jointcal's result.metrics
             against.
 
         Returns
         -------
-        pipe.base.Struct
+        result : `pipe.base.Struct`
             The structure returned by jointcalTask.run()
         """
         visits = '^'.join(str(v) for v in self.all_visits[:nCatalogs])
@@ -207,12 +209,12 @@ class JointcalTestBase:
             self.other_args.extend(['--loglevel', 'jointcal=%s'%self.log_level])
 
         #  Place default configfile first so that specific subclass configfiles are applied after
-        test_config = os.path.join(lsst.utils.getPackageDir('jointcal'), 'tests/config/config.py')
-        self.configfiles = [test_config] + self.configfiles
+        test_config = os.path.join(self.path, 'config/config.py')
+        configfiles = [test_config] + self.configfiles
 
         args = [self.input_dir, '--output', self.output_dir,
                 '--clobber-versions', '--clobber-config',
-                '--doraise', '--configfile', *self.configfiles,
+                '--doraise', '--configfile', *configfiles,
                 '--id', 'visit=%s'%visits]
         args.extend(self.other_args)
         result = jointcal.JointcalTask.parseAndRun(args=args, doReturnResults=True, config=self.config)
@@ -229,9 +231,9 @@ class JointcalTestBase:
 
         Parameters
         ----------
-        data_refs : list of lsst.daf.persistence.ButlerDataRef
+        data_refs : `list` [`lsst.daf.persistence.ButlerDataRef`]
             The dataRefs that were processed.
-        oldWcsList : list of lsst.afw.image.Wcs
+        oldWcsList : `list` [`lsst.afw.image.SkyWcs`]
             The original WCS from each dataRef.
         """
         plot_dir = os.path.join('.test', self.__class__.__name__, 'plots')
@@ -245,9 +247,9 @@ class JointcalTestBase:
 
         Parameters
         ----------
-        result : dict
+        result : `dict`
             Result metric dictionary from jointcal.py
-        expect : dict
+        expect : `dict`
             Expected metric dictionary; set a value to None to not test it.
         """
         for key in result:
@@ -285,7 +287,7 @@ class JointcalTestBase:
                        transfer='symlink',
                        skip_dimensions={'instrument', 'detector', 'physical_filter'})
 
-    def _runPipeline(self, repo, queryString=None,
+    def _runPipeline(self, repo, pipelineFile, queryString=None,
                      inputCollections=None, outputCollection=None,
                      configFiles=None, configOptions=None,
                      registerDatasetTypes=False):
@@ -295,6 +297,8 @@ class JointcalTestBase:
         ----------
         repo : `str`
             Gen3 Butler repository to read from/write to.
+        pipelineFile : `str`
+            The pipeline definition YAML file to execute.
         queryString : `str`, optional
             String to use for "-d" data query. For example,
             "instrument='HSC' and tract=9697 and skymap='hsc_rings_v1'"
@@ -305,7 +309,9 @@ class JointcalTestBase:
             String to use for "-o" output collection. For example,
             "HSC/testdata/jointcal"
         configFiles : `list` [`str`], optional
-            List of config files to use (with "-C").
+            List of jointcal config files to use (with "-C").
+        configOptions : `list` [`str`], optional
+            List of individual jointcal config options to use (with "-c").
         registerDatasetTypes : bool, optional
             Set "--register-dataset-types" when running the pipeline.
 
@@ -327,17 +333,22 @@ class JointcalTestBase:
         """
         pipelineArgs = ["run",
                         "-b", repo,
-                        "-t lsst.jointcal.JointcalTask"]
+                        "-p", pipelineFile]
 
         if queryString is not None:
             pipelineArgs.extend(["-d", queryString])
         if inputCollections is not None:
             pipelineArgs.extend(["-i", inputCollections])
         if outputCollection is not None:
-            pipelineArgs.extend(["-o", outputCollection])
+            # Each test is in it's own butler, so we don't have to worry about collisions,
+            # so we can use `--output-run` instead of just `-o`.
+            pipelineArgs.extend(["--output-run", outputCollection])
         if configFiles is not None:
             for configFile in configFiles:
-                pipelineArgs.extend(["-C", configFile])
+                pipelineArgs.extend(["-C", f"jointcal:{configFile}"])
+        if configOptions is not None:
+            for configOption in configOptions:
+                pipelineArgs.extend(["-c", f"jointcal:{configOption}"])
         if registerDatasetTypes:
             pipelineArgs.extend(["--register-dataset-types"])
 
@@ -348,9 +359,9 @@ class JointcalTestBase:
             raise RuntimeError("Pipeline %s failed." % (' '.join(pipelineArgs))) from results.exception
         return results.exit_code
 
-    def _runGen3Jointcal(self, instrumentClass, instrumentName, queryString):
+    def _runGen3Jointcal(self, instrumentClass, instrumentName, queryString,
+                         configFiles=None, configOptions=None):
         """Create a Butler repo and run jointcal on it.
-
 
         Parameters
         ----------
@@ -363,6 +374,10 @@ class JointcalTestBase:
         queryString : `str`
             The query string to be run for processing. For example,
             "instrument='HSC' and tract=9697 and skymap='hsc_rings_v1'".
+        configFiles : `list` [`str`], optional
+            List of jointcal config files to use (with "-C").
+        configOptions : `list` [`str`], optional
+            List of individual jointcal config options to use (with "-c").
         """
         self._importRepository(instrumentClass,
                                self.input_dir,
@@ -370,9 +385,14 @@ class JointcalTestBase:
         # TODO post-RFC-741: the names of these collections will have to change
         # once testdata_jointcal is updated to reflect the collection
         # conventions in RFC-741 (no ticket for that change yet).
-        inputCollections = f"refcats,{instrumentName}/testdata,{instrumentName}/calib/unbounded"
-        self._runPipeline(self.repo,
+        inputCollections = f"refcats/gen2,{instrumentName}/testdata,{instrumentName}/calib/unbounded"
+
+        pipelineFile = os.path.join(self.path, f"config/jointcalPipeline-{instrumentName}.yaml")
+        configFiles = [os.path.join(self.path, "config/config-gen3.py")] + self.configfiles
+        self._runPipeline(self.repo, pipelineFile,
                           outputCollection=f"{instrumentName}/testdata/jointcal",
                           inputCollections=inputCollections,
                           queryString=queryString,
+                          configFiles=configFiles,
+                          configOptions=configOptions,
                           registerDatasetTypes=True)
