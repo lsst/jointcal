@@ -289,18 +289,18 @@ class TestJointcalLoadRefCat(JointcalTestBase, lsst.utils.tests.TestCase):
         center = lsst.geom.SpherePoint(30, -30, lsst.geom.degrees)
         flux = 10
         radius = 1 * lsst.geom.degrees
-        filterName = 'fake'
+        filter = lsst.afw.image.FilterLabel(band='fake', physical="fake-filter")
 
-        fakeRefCat = make_fake_refcat(center, flux, filterName)
-        fluxField = getRefFluxField(fakeRefCat.schema, filterName)
+        fakeRefCat = make_fake_refcat(center, flux, filter.bandLabel)
+        fluxField = getRefFluxField(fakeRefCat.schema, filter.bandLabel)
         returnStruct = lsst.pipe.base.Struct(refCat=fakeRefCat, fluxField=fluxField)
         refObjLoader = mock.Mock(spec=LoadIndexedReferenceObjectsTask)
         refObjLoader.loadSkyCircle.return_value = returnStruct
 
-        return refObjLoader, center, radius, filterName, fakeRefCat
+        return refObjLoader, center, radius, filter, fakeRefCat
 
     def test_load_reference_catalog(self):
-        refObjLoader, center, radius, filterName, fakeRefCat = self._make_fake_refcat()
+        refObjLoader, center, radius, filterLabel, fakeRefCat = self._make_fake_refcat()
 
         config = lsst.jointcal.jointcal.JointcalConfig()
         config.astrometryReferenceErr = 0.1  # our test refcats don't have coord errors
@@ -312,7 +312,7 @@ class TestJointcalLoadRefCat(JointcalTestBase, lsst.utils.tests.TestCase):
                                                              jointcal.astrometryReferenceSelector,
                                                              center,
                                                              radius,
-                                                             filterName)
+                                                             filterLabel)
         # operator== isn't implemented for Catalogs, so we have to check like
         # this, in case the records are copied during load.
         self.assertEqual(len(refCat), len(fakeRefCat))
@@ -323,7 +323,7 @@ class TestJointcalLoadRefCat(JointcalTestBase, lsst.utils.tests.TestCase):
         """Test that we can select out the one source in the fake refcat
         with a ridiculous S/N cut.
         """
-        refObjLoader, center, radius, filterName, fakeRefCat = self._make_fake_refcat()
+        refObjLoader, center, radius, filterLabel, fakeRefCat = self._make_fake_refcat()
 
         config = lsst.jointcal.jointcal.JointcalConfig()
         config.astrometryReferenceErr = 0.1  # our test refcats don't have coord errors
@@ -337,7 +337,7 @@ class TestJointcalLoadRefCat(JointcalTestBase, lsst.utils.tests.TestCase):
                                                              jointcal.astrometryReferenceSelector,
                                                              center,
                                                              radius,
-                                                             filterName)
+                                                             filterLabel)
         self.assertEqual(len(refCat), 0)
 
 
