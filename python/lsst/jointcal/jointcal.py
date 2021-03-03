@@ -222,6 +222,7 @@ class JointcalConfig(pipeBase.PipelineTaskConfig,
         dtype=str,
         default="deep"
     )
+    # TODO DM-29008: Change this to "ApFlux_12_0" before gen2 removal.
     sourceFluxType = pexConfig.Field(
         dtype=str,
         doc="Source flux field to use in source selection and to get fluxes from the catalog.",
