@@ -783,6 +783,8 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
                         oldWcsList.append(result.wcs)
                         # A visit has only one band, so we can just use the first.
                         filters.append(data.filter)
+        if len(filters) == 0:
+            raise RuntimeError("No data to process: did source selector remove all sources?")
         filters = collections.Counter(filters)
 
         return oldWcsList, filters
