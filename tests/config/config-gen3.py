@@ -21,5 +21,11 @@ config.sourceSelector['science'].isolated.nChildName = 'Deblend_nChild'
 config.sourceFluxType = "ApFlux_12_0"
 
 # TODO DM-27843: workaround for gen3 not supporting anyFilterMapsToThis
-config.astrometryRefObjLoader.filterMap = {'i': 'phot_g_mean', 'r': 'phot_g_mean'}
+config.astrometryRefObjLoader.filterMap = {'g': 'phot_g_mean',
+                                           'r': 'phot_g_mean',
+                                           'i': 'phot_g_mean',
+                                           'z': 'phot_g_mean',
+                                           'y': 'phot_g_mean',
+                                           'N921': 'phot_g_mean',
+                                           }
 config.astrometryRefObjLoader.anyFilterMapsToThis = None
