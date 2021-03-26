@@ -624,7 +624,8 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
         oldWcsList, bands = self._load_data(inputSourceTableVisit,
                                             inputVisitSummary,
                                             associations,
-                                            jointcalControl)
+                                            jointcalControl,
+                                            inputCamera)
 
         boundingCircle, center, radius, defaultFilter = self._prep_sky(associations, bands)
         epoch = self._compute_proper_motion_epoch(associations.getCcdImageList())
@@ -732,7 +733,8 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
                        detectorId)
         return catalog
 
-    def _load_data(self, inputSourceTableVisit, inputVisitSummary, associations, jointcalControl):
+    def _load_data(self, inputSourceTableVisit, inputVisitSummary, associations,
+                   jointcalControl, camera):
         """Read the data that jointcal needs to run. (Gen3 version)
 
         Modifies ``associations`` in-place with the loaded data.
@@ -747,6 +749,8 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
             Object to add the loaded data to by constructing new CcdImages.
         jointcalControl : `jointcal.JointcalControl`
             Control object for C++ associations management.
+        camera : `lsst.afw.cameraGeom.Camera`
+            Camera object for detector geometry.
 
         Returns
         -------
@@ -762,6 +766,7 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
             table = self._make_schema_table()  # every detector catalog has the same layout
             # No guarantee that the input is in the same order of visits, so we have to map one of them.
             catalogMap = {ref.dataId['visit']: i for i, ref in enumerate(inputSourceTableVisit)}
+            detectorDict = {detector.getId(): detector for detector in camera}
 
             for visitSummaryRef in inputVisitSummary:
                 visitSummary = visitSummaryRef.get()
@@ -772,7 +777,7 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
                 detectors = {id: index for index, id in enumerate(visitSummary['id'])}
                 for id, index in detectors.items():
                     catalog = self._extract_detector_catalog_from_visit_catalog(table, selected.sourceCat, id)
-                    data = self._make_one_input_data(visitSummary[index], catalog)
+                    data = self._make_one_input_data(visitSummary[index], catalog, detectorDict)
                     result = self._build_ccdImage(data, associations, jointcalControl)
                     if result is not None:
                         oldWcsList.append(result.wcs)
@@ -783,12 +788,12 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
 
         return oldWcsList, bands
 
-    def _make_one_input_data(self, visitRecord, catalog):
+    def _make_one_input_data(self, visitRecord, catalog, detectorDict):
         """Return a data structure for this detector+visit."""
         return JointcalInputData(visit=visitRecord['visit'],
                                  catalog=catalog,
                                  visitInfo=visitRecord.getVisitInfo(),
-                                 detector=visitRecord.getDetector(),
+                                 detector=detectorDict[visitRecord.getId()],
                                  photoCalib=visitRecord.getPhotoCalib(),
                                  wcs=visitRecord.getWcs(),
                                  bbox=visitRecord.getBBox(),
