@@ -14,12 +14,14 @@ setupRequired(verify_metrics)
 # for running gen3 middleware tests
 setupRequired(ctrl_mpexec)
 
+# tests/data includes HSC output to test making a cameraGeom.
+setupOptional(obs_subaru)
+
 # tests/data/ includes some stripped-down cfht data for testing
 setupOptional(obs_cfht)
 
 # data files for the integration tests, and the obs packages for that data
 setupOptional(testdata_jointcal)
-setupOptional(obs_subaru)
 setupOptional(obs_decam)
 setupOptional(obs_cfht)
 

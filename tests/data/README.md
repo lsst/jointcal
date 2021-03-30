@@ -13,3 +13,8 @@ In jointcal, the photometry fit will contain 3 valid measuredStars, 2 fittedStar
 ## parquet test data
 
 ``extractParquetSubset.py`` trims a ``sourceTable_visit`` parquet catalog from ``testdata_jointcal/hsc`` to use to test jointcal's code to covert a visit-level dataframe into multiple detector-level afw tables.
+
+## output
+
+``HSC-R/9615`` contains a subset of the output from the ``RC/w_2021_10/DM-29074`` gen2 run on lsst-devl, containing 3 visits (23900, 23924, 28976) with four detectors each (37, 49, 90, 103).
+This data is used to test the cameraGeometry calculation code in jointcal.
