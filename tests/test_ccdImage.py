@@ -27,12 +27,16 @@ from lsst.jointcal import testUtils
 
 import lsst.geom
 import lsst.jointcal
+import lsst.obs.base
 
 
 class CcdImageTestCase(lsst.utils.tests.TestCase):
     def setUp(self):
         self.nStars1 = 4
         self.nStars2 = 100
+        # Ensure that the filter list is reset for each test so that we avoid
+        # confusion or contamination each time we create a cfht camera below.
+        lsst.obs.base.FilterDefinitionCollection.reset()
         struct = testUtils.createTwoFakeCcdImages(num1=self.nStars1, num2=self.nStars2)
         self.ccdImage1 = struct.ccdImageList[0]
         self.ccdImage2 = struct.ccdImageList[1]
