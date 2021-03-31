@@ -760,7 +760,7 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
             The filter bands of each input dataset.
         """
         oldWcsList = []
-        bands = []
+        filters = []
         load_cat_prof_file = 'jointcal_load_data.prof' if self.config.detailedProfile else ''
         with pipeBase.cmdLineTask.profile(load_cat_prof_file):
             table = self._make_schema_table()  # every detector catalog has the same layout
@@ -781,12 +781,13 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
                     result = self._build_ccdImage(data, associations, jointcalControl)
                     if result is not None:
                         oldWcsList.append(result.wcs)
+                        # A visit has only one band, so we can just use the first.
+                        filters.append(data.filter)
+        if len(filters) == 0:
+            raise RuntimeError("No data to process: did source selector remove all sources?")
+        filters = collections.Counter(filters)
 
-                # A visit has only one band, so we can just use the first.
-                bands.append(visitSummary[0]['band'])
-        bands = collections.Counter(bands)
-
-        return oldWcsList, bands
+        return oldWcsList, filters
 
     def _make_one_input_data(self, visitRecord, catalog, detectorDict):
         """Return a data structure for this detector+visit."""
@@ -818,7 +819,8 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
 
     def _build_ccdImage(self, data, associations, jointcalControl):
         """
-        Extract the necessary things from this dataRef to add a new ccdImage.
+        Extract the necessary things from this catalog+metadata to add a new
+        ccdImage.
 
         Parameters
         ----------
@@ -838,8 +840,6 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
             ``key``
                 A key to identify this dataRef by its visit and ccd ids
                 (`namedtuple`).
-            ``band``
-                This calexp's filter band (`str`) (used to e.g. load refcats)
             `None`
             if there are no sources in the loaded catalog.
         """
@@ -858,9 +858,9 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
                                     data.detector.getId(),
                                     jointcalControl)
 
-        Result = collections.namedtuple('Result_from_build_CcdImage', ('wcs', 'key', 'band'))
+        Result = collections.namedtuple('Result_from_build_CcdImage', ('wcs', 'key'))
         Key = collections.namedtuple('Key', ('visit', 'ccd'))
-        return Result(data.wcs, Key(data.visit, data.detector.getId()), data.filter.bandLabel)
+        return Result(data.wcs, Key(data.visit, data.detector.getId()))
 
     def _readDataId(self, butler, dataId):
         """Read all of the data for one dataId from the butler. (gen2 version)"""
@@ -892,7 +892,7 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
         """Read the data that jointcal needs to run. (Gen2 version)"""
         visit_ccd_to_dataRef = {}
         oldWcsList = []
-        bands = []
+        filters = []
         load_cat_prof_file = 'jointcal_loadData.prof' if self.config.detailedProfile else ''
         with pipeBase.cmdLineTask.profile(load_cat_prof_file):
             # Need the bounding-box of the focal plane (the same for all visits) for photometry visit models
@@ -905,19 +905,19 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
                     continue
                 oldWcsList.append(result.wcs)
                 visit_ccd_to_dataRef[result.key] = dataRef
-                bands.append(result.band)
-        if len(bands) == 0:
+                filters.append(data.filter)
+        if len(filters) == 0:
             raise RuntimeError("No data to process: did source selector remove all sources?")
-        bands = collections.Counter(bands)
+        filters = collections.Counter(filters)
 
-        return oldWcsList, bands, visit_ccd_to_dataRef
+        return oldWcsList, filters, visit_ccd_to_dataRef
 
     def _getDebugPath(self, filename):
         """Constructs a path to filename using the configured debug path.
         """
         return os.path.join(self.config.debugOutputPath, filename)
 
-    def _prep_sky(self, associations, bands):
+    def _prep_sky(self, associations, filters):
         """Prepare on-sky and other data that must be computed after data has
         been read.
         """
@@ -930,10 +930,10 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
         self.log.info(f"Data has center={center} with radius={radius.asDegrees()} degrees.")
 
         # Determine a default filter band associated with the catalog. See DM-9093
-        defaultBand = bands.most_common(1)[0][0]
-        self.log.debug("Using '%s' filter band for reference flux", defaultBand)
+        defaultFilter = filters.most_common(1)[0][0]
+        self.log.debug("Using '%s' filter for reference flux", defaultFilter.physicalLabel)
 
-        return boundingCircle, center, radius, defaultBand
+        return boundingCircle, center, radius, defaultFilter
 
     @pipeBase.timeMethod
     def runDataRef(self, dataRefs):
@@ -968,17 +968,17 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
         jointcalControl = lsst.jointcal.JointcalControl(sourceFluxField)
         associations = lsst.jointcal.Associations()
 
-        oldWcsList, bands, visit_ccd_to_dataRef = self.loadData(dataRefs,
-                                                                associations,
-                                                                jointcalControl)
+        oldWcsList, filters, visit_ccd_to_dataRef = self.loadData(dataRefs,
+                                                                  associations,
+                                                                  jointcalControl)
 
-        boundingCircle, center, radius, defaultBand = self._prep_sky(associations, bands)
+        boundingCircle, center, radius, defaultFilter = self._prep_sky(associations, filters)
         epoch = self._compute_proper_motion_epoch(associations.getCcdImageList())
 
         tract = dataRefs[0].dataId['tract']
 
         if self.config.doAstrometry:
-            astrometry = self._do_load_refcat_and_fit(associations, defaultBand, center, radius,
+            astrometry = self._do_load_refcat_and_fit(associations, defaultFilter, center, radius,
                                                       name="astrometry",
                                                       refObjLoader=self.astrometryRefObjLoader,
                                                       referenceSelector=self.astrometryReferenceSelector,
@@ -990,7 +990,7 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
             astrometry = Astrometry(None, None, None)
 
         if self.config.doPhotometry:
-            photometry = self._do_load_refcat_and_fit(associations, defaultBand, center, radius,
+            photometry = self._do_load_refcat_and_fit(associations, defaultFilter, center, radius,
                                                       name="photometry",
                                                       refObjLoader=self.photometryRefObjLoader,
                                                       referenceSelector=self.photometryReferenceSelector,
@@ -1007,7 +1007,7 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
                                job=self.job,
                                astrometryRefObjLoader=self.astrometryRefObjLoader,
                                photometryRefObjLoader=self.photometryRefObjLoader,
-                               defaultBand=defaultBand,
+                               defaultFilter=defaultFilter,
                                epoch=epoch,
                                exitStatus=exitStatus)
 
@@ -1074,7 +1074,7 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
         mjds = [ccdImage.getMjd() for ccdImage in ccdImageList]
         return astropy.time.Time(np.mean(mjds), format='mjd', scale="tai")
 
-    def _do_load_refcat_and_fit(self, associations, defaultBand, center, radius,
+    def _do_load_refcat_and_fit(self, associations, defaultFilter, center, radius,
                                 tract="", match_cut=3.0,
                                 reject_bad_fluxes=False, *,
                                 name="", refObjLoader=None, referenceSelector=None,
@@ -1085,7 +1085,7 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
         ----------
         associations : `lsst.jointcal.Associations`
             The star/reference star associations to fit.
-        defaultBand : `str`
+        defaultFilter : `lsst.afw.image.FilterLabel`
             filter to load from reference catalog.
         center : `lsst.geom.SpherePoint`
             ICRS center of field to load from reference catalog.
@@ -1124,7 +1124,7 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
 
         applyColorterms = False if name.lower() == "astrometry" else self.config.applyColorTerms
         refCat, fluxField = self._load_reference_catalog(refObjLoader, referenceSelector,
-                                                         center, radius, defaultBand,
+                                                         center, radius, defaultFilter,
                                                          applyColorterms=applyColorterms,
                                                          epoch=epoch)
         refCoordErr = self._get_refcat_coordinate_error_override(refCat, name)
@@ -1148,7 +1148,7 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
                         associations.nCcdImagesValidForFit())
 
         load_cat_prof_file = 'jointcal_fit_%s.prof'%name if self.config.detailedProfile else ''
-        dataName = "{}_{}".format(tract, defaultBand)
+        dataName = "{}_{}".format(tract, defaultFilter.bandLabel)
         with pipeBase.cmdLineTask.profile(load_cat_prof_file):
             result = fit_function(associations, dataName)
         # TODO DM-12446: turn this into a "butler save" somehow.
@@ -1160,7 +1160,7 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
 
         return result
 
-    def _load_reference_catalog(self, refObjLoader, referenceSelector, center, radius, filterName,
+    def _load_reference_catalog(self, refObjLoader, referenceSelector, center, radius, filterLabel,
                                 applyColorterms=False, epoch=None):
         """Load the necessary reference catalog sources, convert fluxes to
         correct units, and apply color term corrections if requested.
@@ -1175,8 +1175,8 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
             The center around which to load sources.
         radius : `lsst.geom.Angle`
             The radius around ``center`` to load sources in.
-        filterName : `str`
-            The name of the camera filter to load fluxes for.
+        filterLabel : `lsst.afw.image.FilterLabel`
+            The camera filter to load fluxes for.
         applyColorterms : `bool`
             Apply colorterm corrections to the refcat for ``filterName``?
         epoch : `astropy.time.Time`, optional
@@ -1192,7 +1192,7 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
         """
         skyCircle = refObjLoader.loadSkyCircle(center,
                                                radius,
-                                               filterName,
+                                               filterLabel.bandLabel,
                                                epoch=epoch)
 
         selected = referenceSelector.run(skyCircle.refCat)
@@ -1204,12 +1204,13 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
 
         if applyColorterms:
             refCatName = refObjLoader.ref_dataset_name
-            self.log.info("Applying color terms for filterName=%r reference catalog=%s",
-                          filterName, refCatName)
-            colorterm = self.config.colorterms.getColorterm(
-                filterName=filterName, photoCatName=refCatName, doRaise=True)
+            self.log.info("Applying color terms for physical filter=%r reference catalog=%s",
+                          filterLabel.physicalLabel, refCatName)
+            colorterm = self.config.colorterms.getColorterm(filterLabel.physicalLabel,
+                                                            refCatName,
+                                                            doRaise=True)
 
-            refMag, refMagErr = colorterm.getCorrectedMagnitudes(refCat, filterName)
+            refMag, refMagErr = colorterm.getCorrectedMagnitudes(refCat)
             refCat[skyCircle.fluxField] = u.Magnitude(refMag, u.ABmag).to_value(u.nJy)
             # TODO: I didn't want to use this, but I'll deal with it in DM-16903
             refCat[skyCircle.fluxField+'Err'] = fluxErrFromABMagErr(refMagErr, refMag) * 1e9

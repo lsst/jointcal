@@ -154,7 +154,7 @@ class JointcalTestBase:
         def compute_statistics(refObjLoader):
             refCat = refObjLoader.loadSkyCircle(self.center,
                                                 self.radius,
-                                                result.defaultBand,
+                                                result.defaultFilter.bandLabel,
                                                 epoch=result.epoch).refCat
             rms_result = self.jointcalStatistics.compute_rms(result.dataRefs, refCat)
             # Make plots before testing, if requested, so we still get plots if tests fail.

@@ -35,6 +35,7 @@ import lsst.daf.persistence
 import lsst.jointcal.ccdImage
 import lsst.jointcal.photometryModels
 import lsst.jointcal.star
+import lsst.obs.base
 
 
 def getNParametersPolynomial(order):
@@ -49,7 +50,7 @@ class PhotometryModelTestBase:
     def setUp(self):
         # Ensure that the filter list is reset for each test so that we avoid
         # confusion or contamination each time we create a cfht camera below.
-        lsst.afw.image.utils.resetFilters()
+        lsst.obs.base.FilterDefinitionCollection.reset()
 
         struct = lsst.jointcal.testUtils.createTwoFakeCcdImages(100, 100)
         self.ccdImageList = struct.ccdImageList
