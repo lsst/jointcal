@@ -210,7 +210,7 @@ class JointcalTaskConnections(pipeBase.PipelineTaskConnections,
     # TODO DM-28991: This does not load enough refcat data: the graph only to gets
     # refcats that touch the tract, but we need to go larger because we're
     # loading visits that may extend further. How to test that?
-    astrometryRefCat = pipeBase.connectionTypes.Input(
+    astrometryRefCat = pipeBase.connectionTypes.PrerequisiteInput(
         doc="The astrometry reference catalog to match to loaded input catalog sources.",
         name="gaia_dr2_20200414",
         storageClass="SimpleCatalog",
@@ -218,7 +218,7 @@ class JointcalTaskConnections(pipeBase.PipelineTaskConnections,
         deferLoad=True,
         multiple=True
     )
-    photometryRefCat = pipeBase.connectionTypes.Input(
+    photometryRefCat = pipeBase.connectionTypes.PrerequisiteInput(
         doc="The photometry reference catalog to match to loaded input catalog sources.",
         name="ps1_pv3_3pi_20170110",
         storageClass="SimpleCatalog",
