@@ -285,6 +285,21 @@ class JointcalTaskConnections(pipeBase.PipelineTaskConnections,
         multiple=True
     )
 
+    def __init__(self, *, config=None):
+        super().__init__(config=config)
+        # When we are only doing one of astrometry or photometry, we don't
+        # need the reference catalog or produce the outputs for the other.
+        # This informs the middleware of that when the QuantumGraph is
+        # generated, so we don't block on getting something we won't need or
+        # create an expectation that downstream tasks will be able to consume
+        # something we won't produce.
+        if not config.doAstrometry:
+            self.prerequisiteInputs.remove("astrometryRefCat")
+            self.outputs.remove("outputWcs")
+        if not config.doPhotometry:
+            self.prerequisiteInputs.remove("photometryRefCat")
+            self.outputs.remove("outputPhotoCalib")
+
 
 class JointcalConfig(pipeBase.PipelineTaskConfig,
                      pipelineConnections=JointcalTaskConnections):
