@@ -214,7 +214,7 @@ class JointcalTaskConnections(pipeBase.PipelineTaskConnections,
         doc="The astrometry reference catalog to match to loaded input catalog sources.",
         name="gaia_dr2_20200414",
         storageClass="SimpleCatalog",
-        dimensions=("htm7",),
+        dimensions=("skypix",),
         deferLoad=True,
         multiple=True
     )
@@ -222,7 +222,7 @@ class JointcalTaskConnections(pipeBase.PipelineTaskConnections,
         doc="The photometry reference catalog to match to loaded input catalog sources.",
         name="ps1_pv3_3pi_20170110",
         storageClass="SimpleCatalog",
-        dimensions=("htm7",),
+        dimensions=("skypix",),
         deferLoad=True,
         multiple=True
     )
