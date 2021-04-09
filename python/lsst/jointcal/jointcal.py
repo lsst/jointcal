@@ -178,6 +178,46 @@ def lookupStaticCalibrations(datasetType, registry, quantumDataId, collections):
                                   findFirst=True)
 
 
+def lookupVisitRefCats(datasetType, registry, quantumDataId, collections):
+    """Lookup function that finds all refcats for all visits that overlap a
+    tract, rather than just the refcats that directly overlap the tract.
+
+    Parameters
+    ----------
+    datasetType : `lsst.daf.butler.DatasetType`
+        Type of dataset being searched for.
+    registry : `lsst.daf.butler.Registry`
+        Data repository registry to search.
+    quantumDataId : `lsst.daf.butler.DataCoordinate`
+        Data ID of the quantum; expected to be something we can use as a
+        constraint to query for overlapping visits.
+    collections : `Iterable` [ `str` ]
+        Collections to search.
+
+    Returns
+    -------
+    refs : `Iterator` [ `lsst.daf.butler.DatasetRef` ]
+        Iterator over refcat references.
+    """
+    refs = set()
+    # Use .expanded() on the query methods below because we need data IDs with
+    # regions, both in the outer loop over visits (queryDatasets will expand
+    # any data ID we give it, but doing it up-front in bulk is much more
+    # efficient) and in the data IDs of the DatasetRefs this function yields
+    # (because the RefCatLoader relies on them to do some of its own
+    # filtering).
+    for visit_data_id in set(registry.queryDataIds("visit", dataId=quantumDataId).expanded()):
+        refs.update(
+            registry.queryDatasets(
+                datasetType,
+                collections=collections,
+                dataId=visit_data_id,
+                findFirst=True,
+            ).expanded()
+        )
+    yield from refs
+
+
 class JointcalTaskConnections(pipeBase.PipelineTaskConnections,
                               dimensions=("skymap", "tract", "instrument", "physical_filter")):
     """Middleware input/output connections for jointcal data."""
@@ -207,16 +247,14 @@ class JointcalTaskConnections(pipeBase.PipelineTaskConnections,
         deferLoad=True,
         multiple=True,
     )
-    # TODO DM-28991: This does not load enough refcat data: the graph only to gets
-    # refcats that touch the tract, but we need to go larger because we're
-    # loading visits that may extend further. How to test that?
     astrometryRefCat = pipeBase.connectionTypes.PrerequisiteInput(
         doc="The astrometry reference catalog to match to loaded input catalog sources.",
         name="gaia_dr2_20200414",
         storageClass="SimpleCatalog",
         dimensions=("skypix",),
         deferLoad=True,
-        multiple=True
+        multiple=True,
+        lookupFunction=lookupVisitRefCats,
     )
     photometryRefCat = pipeBase.connectionTypes.PrerequisiteInput(
         doc="The photometry reference catalog to match to loaded input catalog sources.",
@@ -224,7 +262,8 @@ class JointcalTaskConnections(pipeBase.PipelineTaskConnections,
         storageClass="SimpleCatalog",
         dimensions=("skypix",),
         deferLoad=True,
-        multiple=True
+        multiple=True,
+        lookupFunction=lookupVisitRefCats,
     )
 
     outputWcs = pipeBase.connectionTypes.Output(
