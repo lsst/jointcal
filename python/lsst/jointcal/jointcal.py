@@ -36,6 +36,7 @@ import lsst.pex.exceptions as pexExceptions
 import lsst.afw.cameraGeom
 import lsst.afw.table
 import lsst.log
+from lsst.obs.base import Instrument
 from lsst.pipe.tasks.colorterms import ColortermLibrary
 from lsst.verify import Job, Measurement
 
@@ -137,15 +138,56 @@ class JointcalRunner(pipeBase.ButlerInitializedTaskRunner):
             return pipeBase.Struct(exitStatus=exitStatus)
 
 
+def lookupStaticCalibrations(datasetType, registry, quantumDataId, collections):
+    """Lookup function that asserts/hopes that a static calibration dataset
+    exists in a particular collection, since this task can't provide a single
+    date/time to use to search for one properly.
+
+    This is mostly useful for the ``camera`` dataset, in cases where the task's
+    quantum dimensions do *not* include something temporal, like ``exposure``
+    or ``visit``.
+
+    Parameters
+    ----------
+    datasetType : `lsst.daf.butler.DatasetType`
+        Type of dataset being searched for.
+    registry : `lsst.daf.butler.Registry`
+        Data repository registry to search.
+    quantumDataId : `lsst.daf.butler.DataCoordinate`
+        Data ID of the quantum this camera should match.
+    collections : `Iterable` [ `str` ]
+        Collections that should be searched - but this lookup function works
+        by ignoring this in favor of a more-or-less hard-coded value.
+
+    Returns
+    -------
+    refs : `Iterator` [ `lsst.daf.butler.DatasetRef` ]
+        Iterator over dataset references; should have only one element.
+
+    Notes
+    -----
+    This implementation duplicates one in fgcmcal, and is at least quite
+    similar to another in cp_pipe.  This duplicate has the most documentation.
+    Fixing this is DM-29661.
+    """
+    instrument = Instrument.fromName(quantumDataId["instrument"], registry)
+    unboundedCollection = instrument.makeUnboundedCalibrationRunName()
+    return registry.queryDatasets(datasetType,
+                                  dataId=quantumDataId,
+                                  collections=[unboundedCollection],
+                                  findFirst=True)
+
+
 class JointcalTaskConnections(pipeBase.PipelineTaskConnections,
                               dimensions=("skymap", "tract", "instrument", "physical_filter")):
     """Middleware input/output connections for jointcal data."""
-    inputCamera = pipeBase.connectionTypes.Input(
+    inputCamera = pipeBase.connectionTypes.PrerequisiteInput(
         doc="The camera instrument that took these observations.",
         name="camera",
         storageClass="Camera",
         dimensions=("instrument",),
-        isCalibration=True
+        isCalibration=True,
+        lookupFunction=lookupStaticCalibrations,
     )
     inputSourceTableVisit = pipeBase.connectionTypes.Input(
         doc="Source table in parquet format, per visit",
