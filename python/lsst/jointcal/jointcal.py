@@ -36,6 +36,7 @@ import lsst.pex.exceptions as pexExceptions
 import lsst.afw.cameraGeom
 import lsst.afw.table
 import lsst.log
+from lsst.obs.base import Instrument
 from lsst.pipe.tasks.colorterms import ColortermLibrary
 from lsst.verify import Job, Measurement
 
@@ -137,15 +138,96 @@ class JointcalRunner(pipeBase.ButlerInitializedTaskRunner):
             return pipeBase.Struct(exitStatus=exitStatus)
 
 
+def lookupStaticCalibrations(datasetType, registry, quantumDataId, collections):
+    """Lookup function that asserts/hopes that a static calibration dataset
+    exists in a particular collection, since this task can't provide a single
+    date/time to use to search for one properly.
+
+    This is mostly useful for the ``camera`` dataset, in cases where the task's
+    quantum dimensions do *not* include something temporal, like ``exposure``
+    or ``visit``.
+
+    Parameters
+    ----------
+    datasetType : `lsst.daf.butler.DatasetType`
+        Type of dataset being searched for.
+    registry : `lsst.daf.butler.Registry`
+        Data repository registry to search.
+    quantumDataId : `lsst.daf.butler.DataCoordinate`
+        Data ID of the quantum this camera should match.
+    collections : `Iterable` [ `str` ]
+        Collections that should be searched - but this lookup function works
+        by ignoring this in favor of a more-or-less hard-coded value.
+
+    Returns
+    -------
+    refs : `Iterator` [ `lsst.daf.butler.DatasetRef` ]
+        Iterator over dataset references; should have only one element.
+
+    Notes
+    -----
+    This implementation duplicates one in fgcmcal, and is at least quite
+    similar to another in cp_pipe.  This duplicate has the most documentation.
+    Fixing this is DM-29661.
+    """
+    instrument = Instrument.fromName(quantumDataId["instrument"], registry)
+    unboundedCollection = instrument.makeUnboundedCalibrationRunName()
+    return registry.queryDatasets(datasetType,
+                                  dataId=quantumDataId,
+                                  collections=[unboundedCollection],
+                                  findFirst=True)
+
+
+def lookupVisitRefCats(datasetType, registry, quantumDataId, collections):
+    """Lookup function that finds all refcats for all visits that overlap a
+    tract, rather than just the refcats that directly overlap the tract.
+
+    Parameters
+    ----------
+    datasetType : `lsst.daf.butler.DatasetType`
+        Type of dataset being searched for.
+    registry : `lsst.daf.butler.Registry`
+        Data repository registry to search.
+    quantumDataId : `lsst.daf.butler.DataCoordinate`
+        Data ID of the quantum; expected to be something we can use as a
+        constraint to query for overlapping visits.
+    collections : `Iterable` [ `str` ]
+        Collections to search.
+
+    Returns
+    -------
+    refs : `Iterator` [ `lsst.daf.butler.DatasetRef` ]
+        Iterator over refcat references.
+    """
+    refs = set()
+    # Use .expanded() on the query methods below because we need data IDs with
+    # regions, both in the outer loop over visits (queryDatasets will expand
+    # any data ID we give it, but doing it up-front in bulk is much more
+    # efficient) and in the data IDs of the DatasetRefs this function yields
+    # (because the RefCatLoader relies on them to do some of its own
+    # filtering).
+    for visit_data_id in set(registry.queryDataIds("visit", dataId=quantumDataId).expanded()):
+        refs.update(
+            registry.queryDatasets(
+                datasetType,
+                collections=collections,
+                dataId=visit_data_id,
+                findFirst=True,
+            ).expanded()
+        )
+    yield from refs
+
+
 class JointcalTaskConnections(pipeBase.PipelineTaskConnections,
                               dimensions=("skymap", "tract", "instrument", "physical_filter")):
     """Middleware input/output connections for jointcal data."""
-    inputCamera = pipeBase.connectionTypes.Input(
+    inputCamera = pipeBase.connectionTypes.PrerequisiteInput(
         doc="The camera instrument that took these observations.",
         name="camera",
         storageClass="Camera",
         dimensions=("instrument",),
-        isCalibration=True
+        isCalibration=True,
+        lookupFunction=lookupStaticCalibrations,
     )
     inputSourceTableVisit = pipeBase.connectionTypes.Input(
         doc="Source table in parquet format, per visit",
@@ -165,24 +247,23 @@ class JointcalTaskConnections(pipeBase.PipelineTaskConnections,
         deferLoad=True,
         multiple=True,
     )
-    # TODO DM-28991: This does not load enough refcat data: the graph only to gets
-    # refcats that touch the tract, but we need to go larger because we're
-    # loading visits that may extend further. How to test that?
-    astrometryRefCat = pipeBase.connectionTypes.Input(
+    astrometryRefCat = pipeBase.connectionTypes.PrerequisiteInput(
         doc="The astrometry reference catalog to match to loaded input catalog sources.",
         name="gaia_dr2_20200414",
         storageClass="SimpleCatalog",
-        dimensions=("htm7",),
+        dimensions=("skypix",),
         deferLoad=True,
-        multiple=True
+        multiple=True,
+        lookupFunction=lookupVisitRefCats,
     )
-    photometryRefCat = pipeBase.connectionTypes.Input(
+    photometryRefCat = pipeBase.connectionTypes.PrerequisiteInput(
         doc="The photometry reference catalog to match to loaded input catalog sources.",
         name="ps1_pv3_3pi_20170110",
         storageClass="SimpleCatalog",
-        dimensions=("htm7",),
+        dimensions=("skypix",),
         deferLoad=True,
-        multiple=True
+        multiple=True,
+        lookupFunction=lookupVisitRefCats,
     )
 
     outputWcs = pipeBase.connectionTypes.Output(
@@ -203,6 +284,21 @@ class JointcalTaskConnections(pipeBase.PipelineTaskConnections,
         dimensions=("instrument", "visit", "skymap", "tract"),
         multiple=True
     )
+
+    def __init__(self, *, config=None):
+        super().__init__(config=config)
+        # When we are only doing one of astrometry or photometry, we don't
+        # need the reference catalog or produce the outputs for the other.
+        # This informs the middleware of that when the QuantumGraph is
+        # generated, so we don't block on getting something we won't need or
+        # create an expectation that downstream tasks will be able to consume
+        # something we won't produce.
+        if not config.doAstrometry:
+            self.prerequisiteInputs.remove("astrometryRefCat")
+            self.outputs.remove("outputWcs")
+        if not config.doPhotometry:
+            self.prerequisiteInputs.remove("photometryRefCat")
+            self.outputs.remove("outputPhotoCalib")
 
 
 class JointcalConfig(pipeBase.PipelineTaskConfig,
@@ -720,8 +816,15 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
                    f'{self.config.sourceFluxType}_instFlux': 'flux_instFlux',
                    f'{self.config.sourceFluxType}_instFluxErr': 'flux_instFluxErr',
                    }
+        # If the DataFrame we're reading was generated by a task running with
+        # Gen2 middleware, the column for the detector will be "ccd" for at
+        # least HSC (who knows what it might be in general!); that would be
+        # true even if the data repo is later converted to Gen3, because that
+        # doesn't touch the files themselves.  In Gen3, the column for the
+        # detector will always be "detector".
+        detector_column = "detector" if "detector" in visitCatalog.columns else "ccd"
         catalog = lsst.afw.table.SourceCatalog(table)
-        matched = visitCatalog['ccd'] == detectorId
+        matched = visitCatalog[detector_column] == detectorId
         catalog.resize(sum(matched))
         view = visitCatalog.loc[matched]
         for dfCol, afwCol in mapping.items():
