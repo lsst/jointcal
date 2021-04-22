@@ -40,6 +40,25 @@
 #include "lsst/jointcal/AstrometryTransform.h"
 #include "lsst/jointcal/Tripletlist.h"
 
+namespace {
+/**
+ * Compute the Chi2 of a refstar projected onto the fittedStar tangent point.
+ *
+ * The x/y position deltas are technically (refStar.x - fittedStar.x), but the latter is 0 because of the
+ * tangent plane definition.
+ *
+ * @param refStar star projected onto the fittedStar tangent point.
+ * @return chi2 contribution from this star.
+ */
+double computeProjectedRefStarChi2(lsst::jointcal::FatPoint refStar) {
+    double det = refStar.vx * refStar.vy - std::pow(refStar.vxy, 2);
+    double wxx = refStar.vy / det;
+    double wyy = refStar.vx / det;
+    double wxy = -refStar.vxy / det;
+    return wxx * std::pow(refStar.x, 2) + 2 * wxy * refStar.x * refStar.y + wyy * std::pow(refStar.y, 2);
+}
+}  // namespace
+
 namespace lsst {
 namespace jointcal {
 
@@ -412,13 +431,7 @@ void AstrometryFit::accumulateStatRefStars(Chi2Accumulator &accum) const {
         FatPoint rsProj;
         proj.transformPosAndErrors(*rs, rsProj);
         // TO DO : account for proper motions.
-        double rx = rsProj.x;  // -fsProj.x (which is 0)
-        double ry = rsProj.y;
-        double det = rsProj.vx * rsProj.vy - std::pow(rsProj.vxy, 2);
-        double wxx = rsProj.vy / det;
-        double wyy = rsProj.vx / det;
-        double wxy = -rsProj.vxy / det;
-        double chi2 = wxx * std::pow(rx, 2) + 2 * wxy * rx * ry + wyy * std::pow(ry, 2);
+        double chi2 = computeProjectedRefStarChi2(rsProj);
         accum.addEntry(chi2, 2, fs);
     }
 }
@@ -642,17 +655,11 @@ void AstrometryFit::saveChi2RefContributions(std::string const &filename) const 
         // fs projects to (0,0), no need to compute its transform.
         FatPoint rsProj;
         proj.transformPosAndErrors(*rs, rsProj);
-        double rx = rsProj.x;  // -fsProj.x (which is 0)
-        double ry = rsProj.y;
-        double det = rsProj.vx * rsProj.vy - std::pow(rsProj.vxy, 2);
-        double wxx = rsProj.vy / det;
-        double wyy = rsProj.vx / det;
-        double wxy = -rsProj.vxy / det;
-        double chi2 = wxx * std::pow(rx, 2) + 2 * wxy * rx * ry + wyy * std::pow(ry, 2);
+        double chi2 = computeProjectedRefStarChi2(rsProj);
 
         ofile << std::setprecision(9);
         ofile << fs.x << separator << fs.y << separator;
-        ofile << rx << separator << ry << separator;
+        ofile << rsProj.x << separator << rsProj.y << separator;
         ofile << fs.getMag() << separator;
         ofile << rsProj.vx << separator << rsProj.vy << separator << rsProj.vxy << separator;
         ofile << fs.color << separator << fs.getIndexInMatrix() << separator;
