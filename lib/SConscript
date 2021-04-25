@@ -1,8 +1,15 @@
 # -*- python -*-
 from lsst.sconsUtils import scripts, targets, env
+import os
 
-for flag in ("-fexceptions", "-DNSUPERNODAL", "-DNPARTITION",
-             "-faligned-allocation"):
+
+flags = ["-fexceptions", "-DNSUPERNODAL", "-DNPARTITION"]
+
+uname = os.uname()
+if uname.sysname == 'Darwin' and uname.machine == 'arm64':
+    flags.append('-faligned-allocation')
+
+for flag in flags:
     env["CFLAGS"].append(flag)
     env["CXXFLAGS"].append(flag)
 
