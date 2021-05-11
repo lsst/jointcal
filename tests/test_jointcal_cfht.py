@@ -108,15 +108,15 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
             self._testJointcalTask(2, dist_rms_relative, self.dist_rms_absolute, pa1, metrics=metrics)
 
             # Check for the existence of the chi2 contribution files.
-            expected = ['photometry_initial_chi2-0_r', 'astrometry_initial_chi2-0_r',
-                        'photometry_final_chi2-0_r', 'astrometry_final_chi2-0_r']
+            expected = ['photometry_initial_chi2-0_r.MP9601', 'astrometry_initial_chi2-0_r.MP9601',
+                        'photometry_final_chi2-0_r.MP9601', 'astrometry_final_chi2-0_r.MP9601']
             for partial in expected:
                 name = os.path.join(tempdir, partial+'-ref.csv')
                 self.assertTrue(os.path.exists(name), msg="Did not find file %s"%name)
                 name = os.path.join(tempdir, partial+'-meas.csv')
                 self.assertTrue(os.path.exists(name), msg='Did not find file %s'%name)
 
-            expected = ["initialAstrometryModel.txt", "initialPhotometryModel.txt"]
+            expected = ["initial_astrometry_model-0_r.MP9601.txt", "initial_photometry_model-0_r.MP9601.txt"]
             for name in expected:
                 fullpath = os.path.join(tempdir, name)
                 self.assertTrue(os.path.exists(fullpath), msg=f"Did not find file {fullpath}")
@@ -151,7 +151,7 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
             self.config.debugOutputPath = tempdir
 
             self._testJointcalTask(2, dist_rms_relative, self.dist_rms_absolute, None, metrics=metrics)
-            filename = os.path.join(tempdir, "initialAstrometryModel.txt")
+            filename = os.path.join(tempdir, "initial_astrometry_model-0_r.MP9601.txt")
             self.assertTrue(os.path.exists(filename), msg=f"Did not find file {filename}")
 
     def test_jointcalTask_2_visits_constrainedAstrometry_no_rank_update(self):
@@ -228,7 +228,7 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
             self.config.debugOutputPath = tempdir
 
             self._testJointcalTask(2, None, None, pa1, metrics=metrics)
-            filename = os.path.join(tempdir, "initialPhotometryModel.txt")
+            filename = os.path.join(tempdir, "initial_photometry_model-0_r.MP9601.txt")
             self.assertTrue(os.path.exists(filename), msg=f"Did not find file {filename}")
 
     def test_jointcalTask_2_visits_constrainedPhotometry_no_rank_update(self):
