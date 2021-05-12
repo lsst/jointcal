@@ -92,14 +92,14 @@ class JointcalTestCFHTMinimal(jointcalTestBase.JointcalTestBase, lsst.utils.test
         self._runJointcalTask(2, metrics=metrics)
 
         # Check that the Hessian/gradient files were written.
-        self.assertTrue(os.path.exists("photometry_preinit-mat.txt"))
-        os.remove("photometry_preinit-mat.txt")
-        self.assertTrue(os.path.exists("photometry_preinit-grad.txt"))
-        os.remove("photometry_preinit-grad.txt")
-        self.assertTrue(os.path.exists("photometry_postinit-mat.txt"))
-        os.remove("photometry_postinit-mat.txt")
-        self.assertTrue(os.path.exists("photometry_postinit-grad.txt"))
-        os.remove("photometry_postinit-grad.txt")
+        self.assertTrue(os.path.exists("photometry_preinit-0_r.MP9601-mat.txt"))
+        os.remove("photometry_preinit-0_r.MP9601-mat.txt")
+        self.assertTrue(os.path.exists("photometry_preinit-0_r.MP9601-grad.txt"))
+        os.remove("photometry_preinit-0_r.MP9601-grad.txt")
+        self.assertTrue(os.path.exists("photometry_postinit-0_r.MP9601-mat.txt"))
+        os.remove("photometry_postinit-0_r.MP9601-mat.txt")
+        self.assertTrue(os.path.exists("photometry_postinit-0_r.MP9601-grad.txt"))
+        os.remove("photometry_postinit-0_r.MP9601-grad.txt")
 
         # Check that the config was persisted, we can read it, and it matches the settings above
         self.assertTrue(os.path.exists(os.path.join(self.output_dir, 'config/jointcal.py')))

@@ -479,24 +479,30 @@ class JointcalConfig(pipeBase.PipelineTaskConfig,
     writeInitMatrix = pexConfig.Field(
         dtype=bool,
         doc=("Write the pre/post-initialization Hessian and gradient to text files, for debugging. "
-             "The output files will be of the form 'astrometry_preinit-mat.txt', in the current directory. "
+             "Output files will be written to `config.debugOutputPath` and will "
+             "be of the form 'astrometry_[pre|post]init-TRACT-FILTER-mat.txt'. "
              "Note that these files are the dense versions of the matrix, and so may be very large."),
         default=False
     )
     writeChi2FilesInitialFinal = pexConfig.Field(
         dtype=bool,
-        doc="Write .csv files containing the contributions to chi2 for the initialization and final fit.",
+        doc=("Write .csv files containing the contributions to chi2 for the initialization and final fit. "
+             "Output files will be written to `config.debugOutputPath` and will "
+             "be of the form `astrometry_[initial|final]_chi2-TRACT-FILTER1."),
         default=False
     )
     writeChi2FilesOuterLoop = pexConfig.Field(
         dtype=bool,
-        doc="Write .csv files containing the contributions to chi2 for the outer fit loop.",
+        doc=("Write .csv files containing the contributions to chi2 for the outer fit loop. "
+             "Output files will be written to `config.debugOutputPath` and will "
+             "be of the form `astrometry_init-NN_chi2-TRACT-FILTER`."),
         default=False
     )
     writeInitialModel = pexConfig.Field(
         dtype=bool,
-        doc=("Write the pre-initialization model to text files, for debugging."
-             " Output is written to `initial[Astro|Photo]metryModel.txt` in the current working directory."),
+        doc=("Write the pre-initialization model to text files, for debugging. "
+             "Output files will be written to `config.debugOutputPath` and will be "
+             "of the form `initial_astrometry_model-TRACT_FILTER.txt`."),
         default=False
     )
     debugOutputPath = pexConfig.Field(
@@ -1251,7 +1257,7 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
                         associations.nCcdImagesValidForFit())
 
         load_cat_prof_file = 'jointcal_fit_%s.prof'%name if self.config.detailedProfile else ''
-        dataName = "{}_{}".format(tract, defaultFilter.bandLabel)
+        dataName = "{}_{}".format(tract, defaultFilter.physicalLabel)
         with pipeBase.cmdLineTask.profile(load_cat_prof_file):
             result = fit_function(associations, dataName)
         # TODO DM-12446: turn this into a "butler save" somehow.
@@ -1426,7 +1432,7 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
         else:
             baseName = None
         if self.config.writeInitialModel:
-            fullpath = self._getDebugPath("initialPhotometryModel.txt")
+            fullpath = self._getDebugPath(f"initial_photometry_model-{dataName}.txt")
             writeModel(model, fullpath, self.log)
         self._logChi2AndValidate(associations, fit, model, "Initialized", writeChi2Name=baseName)
 
@@ -1438,7 +1444,10 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
 
         # The constrained model needs the visit transform fit first; the chip
         # transform is initialized from the singleFrame PhotoCalib, so it's close.
-        dumpMatrixFile = self._getDebugPath("photometry_preinit") if self.config.writeInitMatrix else ""
+        if self.config.writeInitMatrix:
+            dumpMatrixFile = self._getDebugPath(f"photometry_preinit-{dataName}")
+        else:
+            dumpMatrixFile = ""
         if self.config.photometryModel.startswith("constrained"):
             # no line search: should be purely (or nearly) linear,
             # and we want a large step size to initialize with.
@@ -1527,7 +1536,7 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
         else:
             baseName = None
         if self.config.writeInitialModel:
-            fullpath = self._getDebugPath("initialAstrometryModel.txt")
+            fullpath = self._getDebugPath(f"initial_astrometry_model-{dataName}.txt")
             writeModel(model, fullpath, self.log)
         self._logChi2AndValidate(associations, fit, model, "Initial", writeChi2Name=baseName)
 
@@ -1537,7 +1546,10 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
             else:
                 return None
 
-        dumpMatrixFile = self._getDebugPath("astrometry_preinit") if self.config.writeInitMatrix else ""
+        if self.config.writeInitMatrix:
+            dumpMatrixFile = self._getDebugPath(f"astrometry_preinit-{dataName}")
+        else:
+            dumpMatrixFile = ""
         # The constrained model needs the visit transform fit first; the chip
         # transform is initialized from the detector's cameraGeom, so it's close.
         if self.config.astrometryModel == "constrained":
@@ -1625,7 +1637,10 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
             Raised if the fitter fails for some other reason;
             log messages will provide further details.
         """
-        dumpMatrixFile = self._getDebugPath(f"{name}_postinit") if self.config.writeInitMatrix else ""
+        if self.config.writeInitMatrix:
+            dumpMatrixFile = self._getDebugPath(f"{name}_postinit-{dataName}")
+        else:
+            dumpMatrixFile = ""
         oldChi2 = lsst.jointcal.Chi2Statistic()
         oldChi2.chi2 = float("inf")
         for i in range(max_steps):
