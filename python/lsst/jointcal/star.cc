@@ -66,13 +66,11 @@ void declareBaseStar(py::module &mod) {
     cls.def(py::init<double, double, double, double>(), "x"_a, "y"_a, "flux"_a, "fluxErr"_a);
 
     // these three are actually declared in FatPoint, but we didn't want that in Python.
-    // NOTE: see DM-9814 about the necessity of the pointer cast below.
     // readwrite so that we can set them in unittests.
-    cls.def_readwrite("vx", (double BaseStar::*)&BaseStar::vx);
-    cls.def_readwrite("vy", (double BaseStar::*)&BaseStar::vy);
-    cls.def_readwrite("vxy", (double BaseStar::*)&BaseStar::vxy);
+    cls.def_readwrite("vx", &BaseStar::vx);
+    cls.def_readwrite("vy", &BaseStar::vy);
+    cls.def_readwrite("vxy", &BaseStar::vxy);
 
-    // cls.def("getFlux", &BaseStar::getFlux);
     cls.def_property_readonly("flux", (double (BaseStar::*)() const) & BaseStar::getFlux);
     cls.def_property_readonly("fluxErr", (double (BaseStar::*)() const) & BaseStar::getFluxErr);
     cls.def_property_readonly("mag", (double (BaseStar::*)() const) & BaseStar::getMag);
