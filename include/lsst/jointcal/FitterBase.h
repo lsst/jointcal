@@ -53,7 +53,7 @@ enum class MinimizeResult {
 class FitterBase {
 public:
     explicit FitterBase(std::shared_ptr<Associations> associations)
-            : _associations(associations), _whatToFit(""), _lastNTrip(0), _nParTot(0) {}
+            : _associations(associations), _whatToFit(""), _lastNTrip(0), _nTotal(0) {}
 
     /// No copy or move: there is only ever one fitter of a given type.
     FitterBase(FitterBase const &) = delete;
@@ -157,7 +157,7 @@ protected:
     std::string _whatToFit;
 
     Eigen::Index _lastNTrip;  // last triplet count, used to speed up allocation
-    Eigen::Index _nParTot;
+    Eigen::Index _nTotal;     // Total number of parameters being fit.
 
     // lsst.logging instance, to be created by subclass so that messages have consistent name while fitting.
     LOG_LOGGER _log;

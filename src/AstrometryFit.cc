@@ -482,11 +482,11 @@ void AstrometryFit::assignIndices(std::string const &whatToFit) {
         _refracPosInMatrix = ipar;
         ipar += _nParRefrac;
     }
-    _nParTot = ipar;
+    _nTotal = ipar;
 }
 
 void AstrometryFit::offsetParams(Eigen::VectorXd const &delta) {
-    if (delta.size() != _nParTot)
+    if (delta.size() != _nTotal)
         throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,
                           "AstrometryFit::offsetParams : the provided vector length is not compatible with "
                           "the current whatToFit setting");
@@ -528,13 +528,13 @@ void AstrometryFit::checkStuff() {
     for (unsigned k = 0; k < sizeof(what2fit) / sizeof(what2fit[0]); ++k) {
         assignIndices(what2fit[k]);
         TripletList tripletList(10000);
-        Eigen::VectorXd grad(_nParTot);
+        Eigen::VectorXd grad(_nTotal);
         grad.setZero();
         leastSquareDerivatives(tripletList, grad);
-        SparseMatrixD jacobian(_nParTot, tripletList.getNextFreeIndex());
+        SparseMatrixD jacobian(_nTotal, tripletList.getNextFreeIndex());
         jacobian.setFromTriplets(tripletList.begin(), tripletList.end());
         SparseMatrixD hessian = jacobian * jacobian.transpose();
-        LOGLS_DEBUG(_log, "npar : " << _nParTot << ' ' << _nParDistortions);
+        LOGLS_DEBUG(_log, "npar : " << _nTotal << ' ' << _nParDistortions);
     }
 }
 

@@ -45,7 +45,7 @@ Chi2Statistic FitterBase::computeChi2() const {
     accumulateStatRefStars(chi2);
     // chi2.ndof contains the number of squares.
     // So subtract the number of parameters.
-    chi2.ndof -= _nParTot;
+    chi2.ndof -= _nTotal;
     return chi2;
 }
 
@@ -74,7 +74,7 @@ std::size_t FitterBase::findOutliers(double nSigmaCut, MeasuredStarList &msOutli
        of what we are touching using an integer vector. This is the
        trick that Marc Betoule came up to for outlier removals in "star
        flats" fits. */
-    Eigen::VectorXi affectedParams(_nParTot);
+    Eigen::VectorXi affectedParams(_nTotal);
     affectedParams.setZero();
 
     std::size_t nOutliers = 0;  // returned to the caller
@@ -178,7 +178,7 @@ MinimizeResult FitterBase::minimize(std::string const &whatToFit, double nSigmaC
     // TODO : write a guesser for the number of triplets
     std::size_t nTrip = (_lastNTrip) ? _lastNTrip : 1e6;
     TripletList tripletList(nTrip);
-    Eigen::VectorXd grad(_nParTot);
+    Eigen::VectorXd grad(_nTotal);
     grad.setZero();
     double scale = 1.0;
 
@@ -188,7 +188,7 @@ MinimizeResult FitterBase::minimize(std::string const &whatToFit, double nSigmaC
 
     LOGLS_DEBUG(_log, "End of triplet filling, ntrip = " << tripletList.size());
 
-    SparseMatrixD hessian = createHessian(_nParTot, tripletList);
+    SparseMatrixD hessian = createHessian(_nTotal, tripletList);
     tripletList.clear();  // we don't need it any more after we have the hessian.
 
     LOGLS_DEBUG(_log, "Starting factorization, hessian: dim="
@@ -263,7 +263,7 @@ MinimizeResult FitterBase::minimize(std::string const &whatToFit, double nSigmaC
         removeRefOutliers(fsOutliers);
         if (doRankUpdate) {
             // convert triplet list to eigen internal format
-            SparseMatrixD H(_nParTot, outlierTriplets.getNextFreeIndex());
+            SparseMatrixD H(_nTotal, outlierTriplets.getNextFreeIndex());
             H.setFromTriplets(outlierTriplets.begin(), outlierTriplets.end());
             chol.update(H, false /* means downdate */);
             // The contribution of outliers to the gradient is the opposite
@@ -278,7 +278,7 @@ MinimizeResult FitterBase::minimize(std::string const &whatToFit, double nSigmaC
             _lastNTrip = nextTripletList.size();
             LOGLS_DEBUG(_log, "Triplets recomputed, ntrip = " << nextTripletList.size());
 
-            hessian = createHessian(_nParTot, nextTripletList);
+            hessian = createHessian(_nTotal, nextTripletList);
             nextTripletList.clear();  // we don't need it any more after we have the hessian.
 
             LOGLS_DEBUG(_log,
