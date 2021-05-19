@@ -142,8 +142,6 @@ private:
     double _JDRef;                    // average Julian date
 
     // counts in parameter subsets.
-    std::size_t _nParDistortions;
-    std::size_t _nParPositions;
     std::size_t _nParRefrac;
 
     double _posError;  // constant term on error on position (in pixel unit)
