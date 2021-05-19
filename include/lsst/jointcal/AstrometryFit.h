@@ -159,8 +159,7 @@ private:
 
     void accumulateStatRefStars(Chi2Accumulator &accum) const override;
 
-    void getIndicesOfMeasuredStar(MeasuredStar const &measuredStar,
-                                  IndexVector &indices) const override;
+    void getIndicesOfMeasuredStar(MeasuredStar const &measuredStar, IndexVector &indices) const override;
 
     Point transformFittedStar(FittedStar const &fittedStar, AstrometryTransform const &sky2TP,
                               Point const &refractionVector, double refractionCoeff, double mjd) const;

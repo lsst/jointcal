@@ -203,8 +203,7 @@ protected:
     void removeRefOutliers(FittedStarList &outliers);
 
     /// Set the indices of a measured star from the full matrix, for outlier removal.
-    virtual void getIndicesOfMeasuredStar(MeasuredStar const &measuredStar,
-                                          IndexVector &indices) const = 0;
+    virtual void getIndicesOfMeasuredStar(MeasuredStar const &measuredStar, IndexVector &indices) const = 0;
 
     /// Compute the chi2 (per star or total, depending on which Chi2Accumulator is used) for measurements.
     virtual void accumulateStatImageList(CcdImageList const &ccdImageList, Chi2Accumulator &accum) const = 0;

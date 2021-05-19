@@ -428,8 +428,7 @@ void AstrometryFit::accumulateStatRefStars(Chi2Accumulator &accum) const {
 //! this routine is to be used only in the framework of outlier removal
 /*! it fills the array of indices of parameters that a Measured star
     constrains. Not really all of them if you check. */
-void AstrometryFit::getIndicesOfMeasuredStar(MeasuredStar const &measuredStar,
-                                             IndexVector &indices) const {
+void AstrometryFit::getIndicesOfMeasuredStar(MeasuredStar const &measuredStar, IndexVector &indices) const {
     if (_fittingDistortions) {
         const AstrometryMapping *mapping = _astrometryModel->getMapping(measuredStar.getCcdImage());
         mapping->getMappingIndices(indices);

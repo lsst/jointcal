@@ -119,9 +119,8 @@ public:
      * @param[in]  control    The JointcalControl object
      */
     void createCcdImage(afw::table::SourceCatalog &catalog, std::shared_ptr<lsst::afw::geom::SkyWcs> wcs,
-                        std::shared_ptr<lsst::afw::image::VisitInfo> visitInfo,
-                        lsst::geom::Box2I const &bbox, std::string const &filter,
-                        std::shared_ptr<afw::image::PhotoCalib> photoCalib,
+                        std::shared_ptr<lsst::afw::image::VisitInfo> visitInfo, lsst::geom::Box2I const &bbox,
+                        std::string const &filter, std::shared_ptr<afw::image::PhotoCalib> photoCalib,
                         std::shared_ptr<afw::cameraGeom::Detector> detector, int visit, int ccd,
                         lsst::jointcal::JointcalControl const &control);
 

@@ -170,8 +170,7 @@ void PhotometryFit::accumulateStatRefStars(Chi2Accumulator &accum) const {
 //! this routine is to be used only in the framework of outlier removal
 /*! it fills the array of indices of parameters that a Measured star
     constrains. Not really all of them if you check. */
-void PhotometryFit::getIndicesOfMeasuredStar(MeasuredStar const &measuredStar,
-                                             IndexVector &indices) const {
+void PhotometryFit::getIndicesOfMeasuredStar(MeasuredStar const &measuredStar, IndexVector &indices) const {
     indices.clear();
     if (_fittingModel) {
         _photometryModel->getMappingIndices(measuredStar.getCcdImage(), indices);

@@ -40,7 +40,8 @@ namespace jointcal {
 
 SparseHisto4d::SparseHisto4d(const int n1, double min1, double max1, const int n2, double min2, double max2,
                              const int n3, double min3, double max3, const int n4, double min4, double max4,
-                             const int nEntries) : _data(nEntries,0) {
+                             const int nEntries)
+        : _data(nEntries, 0) {
     double indexMax = n1 * n2 * n3 * n4;
     if (indexMax > double(INT_MAX))
         LOGLS_WARN(_log, "Cannot hold a 4D histo with more than " << INT_MAX << " values.");

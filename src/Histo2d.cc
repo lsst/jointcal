@@ -36,7 +36,7 @@ LOG_LOGGER _log = LOG_GET("jointcal.Histo2d");
 namespace lsst {
 namespace jointcal {
 
-Histo2d::Histo2d(int nnx, float mminx, float mmaxx, int nny, float mminy, float mmaxy) : data(nnx*nny,0.) {
+Histo2d::Histo2d(int nnx, float mminx, float mmaxx, int nny, float mminy, float mmaxy) : data(nnx * nny, 0.) {
     nx = nnx;
     ny = nny;
     minx = mminx;
@@ -56,13 +56,13 @@ Histo2d::Histo2d(int nnx, float mminx, float mmaxx, int nny, float mminy, float 
 }
 
 Histo2d::Histo2d(const Histo2d &other) {
-    data=other.data;
-    nx=other.nx; 
-    ny=other.ny;
-    minx=other.minx;
-    miny=other.miny;
-    scalex=other.scalex;
-    scaley=other.scaley;
+    data = other.data;
+    nx = other.nx;
+    ny = other.ny;
+    minx = other.minx;
+    miny = other.miny;
+    scalex = other.scalex;
+    scaley = other.scaley;
 }
 
 bool Histo2d::indices(double x, double y, int &ix, int &iy) const {
@@ -81,7 +81,7 @@ double Histo2d::maxBin(double &x, double &y) const {
     int imax = 0;
     float valmax = -1e30;
 
-    for (std::size_t i=0;i < data.size(); i++) {
+    for (std::size_t i = 0; i < data.size(); i++) {
         if (data[i] > valmax) {
             valmax = data[i];
             imax = i;
