@@ -53,7 +53,7 @@ std::size_t FitterBase::findOutliers(double nSigmaCut, MeasuredStarList &msOutli
                                      FittedStarList &fsOutliers, double &cut) const {
     // collect chi2 contributions
     Chi2List chi2List;
-    chi2List.reserve(_nMeasuredStars + _associations->refStarList.size());
+    chi2List.reserve(_associations->refStarList.size());  // TODO: do we need to reserve anything?
     // contributions from measurement terms:
     accumulateStatImageList(_associations->ccdImageList, chi2List);
     // and from reference terms
