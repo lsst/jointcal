@@ -300,6 +300,10 @@ MinimizeResult FitterBase::minimize(std::string const &whatToFit, double nSigmaC
         }
     }
 
+    if (totalMeasOutliers + totalRefOutliers > 0) {
+        _associations->cleanFittedStars();
+    }
+
     // only print the outlier summary if outlier rejection was turned on.
     if (nSigmaCut != 0) {
         LOGLS_INFO(_log, "Number of outliers (Measured + Reference = Total): "

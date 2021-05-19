@@ -167,6 +167,16 @@ public:
      */
     void prepareFittedStars(int minMeasurements);
 
+    /**
+     * Remove FittedStars that have no measured stars; this can happen after outlier rejection.
+     *
+     * Use this to perform e.g. position minimization with outlier rejection after model minimization has
+     * removed measuredStar outliers, to prevent the matrix from becoming non-positive definite.
+     * Once this has been called, prepareFittedStars() has to be called again if the full
+     * measuredStar->FittedStar relationship needs to be reconstructed.
+     */
+    void cleanFittedStars();
+
     CcdImageList const &getCcdImageList() const { return ccdImageList; }
 
     //! Number of different bands in the input image list. Not implemented so far

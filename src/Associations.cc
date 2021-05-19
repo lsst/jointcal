@@ -379,6 +379,25 @@ void Associations::normalizeFittedStars() const {
     }
 }
 
+void Associations::cleanFittedStars() {
+    auto iter = fittedStarList.begin();
+    auto end = fittedStarList.end();
+    size_t count = 0;
+    while (iter != end) {
+        auto fittedStar = *iter;
+        if (fittedStar->getMeasurementCount() == 0) {
+            LOGLS_TRACE(_log, "Deleting FittedStar (has no measuredStars): " << *fittedStar);
+            iter = fittedStarList.erase(iter);
+            count++;
+        } else {
+            ++iter;
+        }
+    }
+    if (count > 0) {
+        LOGLS_INFO(_log, "Removed " << count << " fittedStars that had no associated measuredStar.");
+    }
+}
+
 void Associations::assignMags() {
     for (auto const &ccdImage : ccdImageList) {
         MeasuredStarList &catalog = ccdImage->getCatalogForFit();
