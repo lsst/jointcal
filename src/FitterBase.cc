@@ -91,7 +91,14 @@ std::size_t FitterBase::findOutliers(double nSigmaCut, MeasuredStarList &msOutli
             // it is a reference outlier
             fittedStar = std::dynamic_pointer_cast<FittedStar>(chi2->star);
             if (fittedStar->getMeasurementCount() == 0) {
-                LOGLS_WARN(_log, "FittedStar with no measuredStars found as an outlier: " << *fittedStar);
+                LOGLS_WARN(_log, "FittedStar with no measuredStars found as an outlier: "
+                                         << *fittedStar << " chi2: " << chi2->chi2);
+                continue;
+            }
+            if (_nStarParams == 0) {
+                LOGLS_TRACE(_log,
+                            "RefStar is outlier but not removed when not fitting FittedStar-RefStar values: "
+                                    << *(fittedStar->getRefStar()) << " chi2: " << chi2->chi2);
                 continue;
             }
             // NOTE: Stars contribute twice to astrometry (x,y), but once to photometry (flux),
