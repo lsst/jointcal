@@ -497,7 +497,7 @@ class JointcalConfig(pipeBase.PipelineTaskConfig,
         dtype=bool,
         doc=("Write .csv files containing the contributions to chi2 for the initialization and final fit. "
              "Output files will be written to `config.debugOutputPath` and will "
-             "be of the form `astrometry_[initial|final]_chi2-TRACT-FILTER1."),
+             "be of the form `astrometry_[initial|final]_chi2-TRACT-FILTER."),
         default=False
     )
     writeChi2FilesOuterLoop = pexConfig.Field(
