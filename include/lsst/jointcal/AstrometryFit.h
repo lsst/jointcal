@@ -159,6 +159,16 @@ private:
 
     void getIndicesOfMeasuredStar(MeasuredStar const &measuredStar, IndexVector &indices) const override;
 
+    /**
+     * Transform the positions of a FittedStar into the frame of a MeasuredStar.
+     *
+     * @param fittedStar The star to transform.
+     * @param sky2TP Transformation from sky coordinates to CcdImage tangent plane.
+     * @param refractionVector On-sky vector to refraction correct position.
+     * @param refractionCoeff Amount of refraction correction to apply.
+     * @param deltaYears Difference in years between FittedStar and MeasuredStar epochs.
+     * @return Corrected position of FittedStar.
+     */
     Point transformFittedStar(FittedStar const &fittedStar, AstrometryTransform const &sky2TP,
                               Point const &refractionVector, double refractionCoeff, double deltaYears) const;
 
