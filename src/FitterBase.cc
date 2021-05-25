@@ -50,7 +50,7 @@ Chi2Statistic FitterBase::computeChi2() const {
 }
 
 std::size_t FitterBase::findOutliers(double nSigmaCut, MeasuredStarList &msOutliers,
-                                     FittedStarList &fsOutliers) const {
+                                     FittedStarList &fsOutliers, double &cut) const {
     // collect chi2 contributions
     Chi2List chi2List;
     chi2List.reserve(_nMeasuredStars + _associations->refStarList.size());
@@ -68,7 +68,7 @@ std::size_t FitterBase::findOutliers(double nSigmaCut, MeasuredStarList &msOutli
     auto averageAndSigma = chi2List.computeAverageAndSigma();
     LOGLS_DEBUG(_log, "findOutliers chi2 stat: mean/median/sigma " << averageAndSigma.first << '/' << median
                                                                    << '/' << averageAndSigma.second);
-    double cut = averageAndSigma.first + nSigmaCut * averageAndSigma.second;
+    cut = averageAndSigma.first + nSigmaCut * averageAndSigma.second;
     /* For each of the parameters, we will not remove more than 1
        measurement that contributes to constraining it. Keep track using
        of what we are touching using an integer vector. This is the
@@ -168,8 +168,9 @@ void dumpMatrixAndGradient(SparseMatrixD const &matrix, Eigen::VectorXd const &g
 }
 }  // namespace
 
-MinimizeResult FitterBase::minimize(std::string const &whatToFit, double nSigmaCut, bool doRankUpdate,
-                                    bool const doLineSearch, std::string const &dumpMatrixFile) {
+MinimizeResult FitterBase::minimize(std::string const &whatToFit, double nSigmaCut,
+                                    double sigmaRelativeTolerance, bool doRankUpdate, bool const doLineSearch,
+                                    std::string const &dumpMatrixFile) {
     assignIndices(whatToFit);
 
     MinimizeResult returnCode = MinimizeResult::Converged;
@@ -212,6 +213,8 @@ MinimizeResult FitterBase::minimize(std::string const &whatToFit, double nSigmaC
     std::size_t totalMeasOutliers = 0;
     std::size_t totalRefOutliers = 0;
     double oldChi2 = computeChi2().chi2;
+    double oldSigmaCut = 0;
+    double sigmaCut;
 
     while (true) {
         Eigen::VectorXd delta = chol.solve(grad);
@@ -237,9 +240,19 @@ MinimizeResult FitterBase::minimize(std::string const &whatToFit, double nSigmaC
         MeasuredStarList msOutliers;
         FittedStarList fsOutliers;
         // keep nOutliers so we don't have to sum msOutliers.size()+fsOutliers.size() twice below.
-        std::size_t nOutliers = findOutliers(nSigmaCut, msOutliers, fsOutliers);
+        std::size_t nOutliers = findOutliers(nSigmaCut, msOutliers, fsOutliers, sigmaCut);
+        double relChange = 1 - sigmaCut / oldSigmaCut;
+        LOGLS_DEBUG(_log, "findOutliers chi2 cut level: " << sigmaCut << ", relative change: " << relChange);
+        // If sigmaRelativeTolerance is set and at least one iteration has been done, break loop when the
+        // fractional change in sigmaCut levels is less than the sigmaRelativeTolerance parameter.
+        if ((sigmaRelativeTolerance > 0) && (oldSigmaCut > 0 && relChange < sigmaRelativeTolerance)){
+            LOGLS_INFO(_log, "Iterations stopped with chi2 cut at " << sigmaCut << " and relative change of "
+                              << relChange);
+            break;  
+        }
         totalMeasOutliers += msOutliers.size();
         totalRefOutliers += fsOutliers.size();
+        oldSigmaCut = sigmaCut;
         if (nOutliers == 0) break;
         TripletList outlierTriplets(nOutliers);
         grad.setZero();  // recycle the gradient

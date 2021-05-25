@@ -176,6 +176,18 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
 
         self._testJointcalTask(2, dist_rms_relative, self.dist_rms_absolute, None, metrics=metrics)
 
+    def test_jointcalTask_2_visits_constrainedAstrometry_astrometryOutlierRelativeTolerance(self):
+        """Test that astrometryOutlierRelativeTolerance changes the fit. Setting
+        1% for the astrometryOutlierRelativeTolerance will result in higher chi2
+        and ndof.
+        """
+        dist_rms_relative, metrics = self.setup_jointcalTask_2_visits_constrainedAstrometry()
+        self.config.astrometryOutlierRelativeTolerance = 0.01
+        metrics['astrometry_final_chi2'] = 1427.11
+        metrics['astrometry_final_ndof'] = 1990
+
+        self._testJointcalTask(2, dist_rms_relative, self.dist_rms_absolute, None, metrics=metrics)
+
     def test_jointcalTask_2_visits_constrainedAstrometry_astrometryReferenceUncertainty_smaller(self):
         """Test with a smaller fake reference uncertainty: chi2 will be higher."""
         dist_rms_relative, metrics = self.setup_jointcalTask_2_visits_constrainedAstrometry()
