@@ -68,7 +68,8 @@ public:
      */
     Associations()
             : _commonTangentPoint(Point(std::numeric_limits<double>::quiet_NaN(),
-                                        std::numeric_limits<double>::quiet_NaN())) {}
+                                        std::numeric_limits<double>::quiet_NaN())),
+              _maxMeasuredStars(0) {}
 
     /**
      * Create an Associations object from a pre-built list of ccdImages.
@@ -81,7 +82,8 @@ public:
     Associations(CcdImageList const &imageList)
             : ccdImageList(imageList),
               _commonTangentPoint(Point(std::numeric_limits<double>::quiet_NaN(),
-                                        std::numeric_limits<double>::quiet_NaN())) {}
+                                        std::numeric_limits<double>::quiet_NaN())),
+              _maxMeasuredStars(0) {}
 
     /// No moves or copies: jointcal only ever needs one Associations object.
     Associations(Associations const &) = delete;
@@ -103,6 +105,8 @@ public:
 
     //! can be used to project sidereal coordinates related to the image set on a plane.
     Point getCommonTangentPoint() const { return _commonTangentPoint; }
+
+    size_t getMaxMeasuredStars() const { return _maxMeasuredStars; }
 
     /**
      * @brief      Create a ccdImage from an exposure catalog and metadata, and add it to the list.
@@ -218,9 +222,14 @@ private:
      * Only call after selectFittedStars() has been called: it assumes that each measuredStar points to a
      * fittedStar, and that the measurementCount for each fittedStar is correct.
      */
-    void normalizeFittedStars() const;
+    void normalizeFittedStars();
 
     Point _commonTangentPoint;
+
+    // The number of MeasuredStars at the start of fitting, before any outliers are removed.
+    // This is used to reserve space in vectors for e.g. outlier removal, but is not updated during outlier
+    // removal or cleanup, so should only be used as an upper bound on the number of MeasuredStars.
+    size_t _maxMeasuredStars;
 };
 
 }  // namespace jointcal
