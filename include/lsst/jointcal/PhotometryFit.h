@@ -109,11 +109,6 @@ private:
     /// Compute the derivatives of the reference terms
     void leastSquareDerivativesReference(FittedStarList const &fittedStarList, TripletList &tripletList,
                                          Eigen::VectorXd &grad) const override;
-
-#ifdef STORAGE
-    Point transformFittedStar(FittedStar const &fittedStar, AstrometryTransform const *sky2TP,
-                              Point const &refractionVector, double refractionCoeff, double deltaYears) const;
-#endif
 };
 }  // namespace jointcal
 }  // namespace lsst
