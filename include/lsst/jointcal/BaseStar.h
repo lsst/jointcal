@@ -80,7 +80,8 @@ public:
     }
 
     virtual void print(std::ostream &out) const {
-        out << "x: " << x << " y: " << y << " flux: " << _flux << " fluxErr: " << _fluxErr;
+        FatPoint::print(out);
+        out << " flux: " << std::setprecision(9) << _flux << " fluxErr: " << _fluxErr;
     }
 
     BaseStar &operator=(Point const &point) {

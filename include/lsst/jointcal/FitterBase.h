@@ -53,7 +53,12 @@ enum class MinimizeResult {
 class FitterBase {
 public:
     explicit FitterBase(std::shared_ptr<Associations> associations)
-            : _associations(associations), _whatToFit(""), _lastNTrip(0), _nParTot(0), _nMeasuredStars(0) {}
+            : _associations(associations),
+              _whatToFit(""),
+              _lastNTrip(0),
+              _nTotal(0),
+              _nModelParams(0),
+              _nStarParams(0) {}
 
     /// No copy or move: there is only ever one fitter of a given type.
     FitterBase(FitterBase const &) = delete;
@@ -156,9 +161,10 @@ protected:
     std::shared_ptr<Associations> _associations;
     std::string _whatToFit;
 
-    Eigen::Index _lastNTrip;  // last triplet count, used to speed up allocation
-    Eigen::Index _nParTot;
-    Eigen::Index _nMeasuredStars;
+    Eigen::Index _lastNTrip;     // last triplet count, used to speed up allocation
+    Eigen::Index _nTotal;        // Total number of parameters being fit.
+    Eigen::Index _nModelParams;  // Number of model parameters that are being fit.
+    Eigen::Index _nStarParams;   // Number of star positions/fluxes that are being fit.
 
     // lsst.logging instance, to be created by subclass so that messages have consistent name while fitting.
     LOG_LOGGER _log;
@@ -203,8 +209,7 @@ protected:
     void removeRefOutliers(FittedStarList &outliers);
 
     /// Set the indices of a measured star from the full matrix, for outlier removal.
-    virtual void getIndicesOfMeasuredStar(MeasuredStar const &measuredStar,
-                                          IndexVector &indices) const = 0;
+    virtual void getIndicesOfMeasuredStar(MeasuredStar const &measuredStar, IndexVector &indices) const = 0;
 
     /// Compute the chi2 (per star or total, depending on which Chi2Accumulator is used) for measurements.
     virtual void accumulateStatImageList(CcdImageList const &ccdImageList, Chi2Accumulator &accum) const = 0;

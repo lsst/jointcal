@@ -344,7 +344,7 @@ void Associations::selectFittedStars(int minMeasurements) {
     LOGLS_INFO(_log, "Total, valid number of Measured stars: " << totalMeasured << ", " << validMeasured);
 }
 
-void Associations::normalizeFittedStars() const {
+void Associations::normalizeFittedStars() {
     // Clear positions in order to take the average of the measuredStars.
     for (auto &fittedStar : fittedStarList) {
         fittedStar->x = 0.0;
@@ -370,12 +370,33 @@ void Associations::normalizeFittedStars() const {
         }
     }
 
+    _maxMeasuredStars = 0;
     for (auto &fi : fittedStarList) {
         auto measurementCount = fi->getMeasurementCount();
+        _maxMeasuredStars += measurementCount;
         fi->x /= measurementCount;
         fi->y /= measurementCount;
         fi->getFlux() /= measurementCount;
         fi->getMag() = utils::nanojanskyToABMagnitude(fi->getFlux());
+    }
+}
+
+void Associations::cleanFittedStars() {
+    auto iter = fittedStarList.begin();
+    auto end = fittedStarList.end();
+    size_t count = 0;
+    while (iter != end) {
+        auto fittedStar = *iter;
+        if (fittedStar->getMeasurementCount() == 0) {
+            LOGLS_TRACE(_log, "Deleting FittedStar (has no measuredStars): " << *fittedStar);
+            iter = fittedStarList.erase(iter);
+            count++;
+        } else {
+            ++iter;
+        }
+    }
+    if (count > 0) {
+        LOGLS_INFO(_log, "Removed " << count << " fittedStars that had no associated measuredStar.");
     }
 }
 

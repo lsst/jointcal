@@ -48,8 +48,6 @@ AstrometryFit::AstrometryFit(std::shared_ptr<Associations> associations,
         : FitterBase(associations),
           _astrometryModel(astrometryModel),
           _refractionCoefficient(0),
-          _nParDistortions(0),
-          _nParPositions(0),
           _nParRefrac(_associations->getNFilters()),
           _posError(posError) {
     _log = LOG_GET("jointcal.AstrometryFit");
@@ -428,8 +426,7 @@ void AstrometryFit::accumulateStatRefStars(Chi2Accumulator &accum) const {
 //! this routine is to be used only in the framework of outlier removal
 /*! it fills the array of indices of parameters that a Measured star
     constrains. Not really all of them if you check. */
-void AstrometryFit::getIndicesOfMeasuredStar(MeasuredStar const &measuredStar,
-                                             IndexVector &indices) const {
+void AstrometryFit::getIndicesOfMeasuredStar(MeasuredStar const &measuredStar, IndexVector &indices) const {
     if (_fittingDistortions) {
         const AstrometryMapping *mapping = _astrometryModel->getMapping(measuredStar.getCcdImage());
         mapping->getMappingIndices(indices);
@@ -462,9 +459,9 @@ void AstrometryFit::assignIndices(std::string const &whatToFit) {
     _fittingPM = (_whatToFit.find("PM") != std::string::npos);
     // When entering here, we assume that whatToFit has already been interpreted.
 
-    _nParDistortions = 0;
-    if (_fittingDistortions) _nParDistortions = _astrometryModel->assignIndices(_whatToFit, 0);
-    std::size_t ipar = _nParDistortions;
+    _nModelParams = 0;
+    if (_fittingDistortions) _nModelParams = _astrometryModel->assignIndices(_whatToFit, 0);
+    std::size_t ipar = _nModelParams;
 
     if (_fittingPos) {
         FittedStarList &fittedStarList = _associations->fittedStarList;
@@ -478,16 +475,18 @@ void AstrometryFit::assignIndices(std::string const &whatToFit) {
             if ((_fittingPM)&fittedStar->mightMove) ipar += NPAR_PM;
         }
     }
-    _nParPositions = ipar - _nParDistortions;
+    _nStarParams = ipar - _nModelParams;
     if (_fittingRefrac) {
         _refracPosInMatrix = ipar;
         ipar += _nParRefrac;
     }
-    _nParTot = ipar;
+    _nTotal = ipar;
+    LOGLS_DEBUG(_log, "nParameters total: " << _nTotal << " model: " << _nModelParams
+                                            << " values: " << _nStarParams);
 }
 
 void AstrometryFit::offsetParams(Eigen::VectorXd const &delta) {
-    if (delta.size() != _nParTot)
+    if (delta.size() != _nTotal)
         throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,
                           "AstrometryFit::offsetParams : the provided vector length is not compatible with "
                           "the current whatToFit setting");
@@ -529,13 +528,13 @@ void AstrometryFit::checkStuff() {
     for (unsigned k = 0; k < sizeof(what2fit) / sizeof(what2fit[0]); ++k) {
         assignIndices(what2fit[k]);
         TripletList tripletList(10000);
-        Eigen::VectorXd grad(_nParTot);
+        Eigen::VectorXd grad(_nTotal);
         grad.setZero();
         leastSquareDerivatives(tripletList, grad);
-        SparseMatrixD jacobian(_nParTot, tripletList.getNextFreeIndex());
+        SparseMatrixD jacobian(_nTotal, tripletList.getNextFreeIndex());
         jacobian.setFromTriplets(tripletList.begin(), tripletList.end());
         SparseMatrixD hessian = jacobian * jacobian.transpose();
-        LOGLS_DEBUG(_log, "npar : " << _nParTot << ' ' << _nParDistortions);
+        LOGLS_DEBUG(_log, "npar : " << _nTotal << ' ' << _nModelParams);
     }
 }
 

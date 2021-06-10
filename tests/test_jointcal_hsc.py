@@ -253,8 +253,8 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
                    'associated_astrometry_fittedStars': 2070,
                    'selected_astrometry_fittedStars': 1042,
                    'selected_astrometry_ccdImages': 6,
-                   'astrometry_final_chi2': 800.346,
-                   'astrometry_final_ndof': 1864,
+                   'astrometry_final_chi2': 819.608,
+                   'astrometry_final_ndof': 1872,
                    }
         pa1 = None
         self._testJointcalTask(2, self.dist_rms_relative, dist_rms_absolute, pa1, metrics=metrics)

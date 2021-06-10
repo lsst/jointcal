@@ -25,6 +25,7 @@
 #ifndef LSST_JOINTCAL_POINT_H
 #define LSST_JOINTCAL_POINT_H
 #include <iostream>
+#include <iomanip>
 #include <cmath>
 
 namespace lsst {
@@ -62,10 +63,10 @@ public:
     //! Difference
     Point operator-(const Point& Right) const { return Point(x - Right.x, y - Right.y); }
 
-    //! utility
-    virtual void print(std::ostream& s = std::cout) const { s << "x: " << x << " y: " << y; }
+    virtual void print(std::ostream& s = std::cout) const {
+        s << std::setprecision(15) << "x: " << x << " y: " << y;
+    }
 
-    //! -
     friend std::ostream& operator<<(std::ostream& stream, const Point& point) {
         point.print(stream);
         return stream;

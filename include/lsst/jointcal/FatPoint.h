@@ -48,7 +48,7 @@ public:
 
     void print(std::ostream& s = std::cout) const {
         Point::print(s);
-        s << " vxx,vyy,vxy " << vx << ' ' << vy << ' ' << vxy;
+        s << std::setprecision(8) << " vxx,vyy,vxy " << vx << ',' << vy << ',' << vxy;
     }
 };
 }  // namespace jointcal

@@ -55,9 +55,7 @@ public:
             : FitterBase(associations),
               _fittingModel(false),
               _fittingFluxes(false),
-              _photometryModel(photometryModel),
-              _nParModel(0),
-              _nParFluxes(0) {
+              _photometryModel(photometryModel) {
         _log = LOG_GET("jointcal.PhotometryFit");
     }
 
@@ -98,16 +96,11 @@ private:
     bool _fittingModel, _fittingFluxes;
     std::shared_ptr<PhotometryModel> _photometryModel;
 
-    // counts in parameter subsets.
-    std::size_t _nParModel;
-    std::size_t _nParFluxes;
-
     void accumulateStatImageList(CcdImageList const &ccdImageList, Chi2Accumulator &accum) const override;
 
     void accumulateStatRefStars(Chi2Accumulator &accum) const override;
 
-    void getIndicesOfMeasuredStar(MeasuredStar const &measuredStar,
-                                  IndexVector &indices) const override;
+    void getIndicesOfMeasuredStar(MeasuredStar const &measuredStar, IndexVector &indices) const override;
 
     void leastSquareDerivativesMeasurement(CcdImage const &ccdImage, TripletList &tripletList,
                                            Eigen::VectorXd &grad,

@@ -142,8 +142,6 @@ private:
     double _JDRef;                    // average Julian date
 
     // counts in parameter subsets.
-    std::size_t _nParDistortions;
-    std::size_t _nParPositions;
     std::size_t _nParRefrac;
 
     double _posError;  // constant term on error on position (in pixel unit)
@@ -159,8 +157,7 @@ private:
 
     void accumulateStatRefStars(Chi2Accumulator &accum) const override;
 
-    void getIndicesOfMeasuredStar(MeasuredStar const &measuredStar,
-                                  IndexVector &indices) const override;
+    void getIndicesOfMeasuredStar(MeasuredStar const &measuredStar, IndexVector &indices) const override;
 
     Point transformFittedStar(FittedStar const &fittedStar, AstrometryTransform const &sky2TP,
                               Point const &refractionVector, double refractionCoeff, double mjd) const;

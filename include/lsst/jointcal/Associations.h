@@ -68,7 +68,8 @@ public:
      */
     Associations()
             : _commonTangentPoint(Point(std::numeric_limits<double>::quiet_NaN(),
-                                        std::numeric_limits<double>::quiet_NaN())) {}
+                                        std::numeric_limits<double>::quiet_NaN())),
+              _maxMeasuredStars(0) {}
 
     /**
      * Create an Associations object from a pre-built list of ccdImages.
@@ -81,7 +82,8 @@ public:
     Associations(CcdImageList const &imageList)
             : ccdImageList(imageList),
               _commonTangentPoint(Point(std::numeric_limits<double>::quiet_NaN(),
-                                        std::numeric_limits<double>::quiet_NaN())) {}
+                                        std::numeric_limits<double>::quiet_NaN())),
+              _maxMeasuredStars(0) {}
 
     /// No moves or copies: jointcal only ever needs one Associations object.
     Associations(Associations const &) = delete;
@@ -104,6 +106,8 @@ public:
     //! can be used to project sidereal coordinates related to the image set on a plane.
     Point getCommonTangentPoint() const { return _commonTangentPoint; }
 
+    size_t getMaxMeasuredStars() const { return _maxMeasuredStars; }
+
     /**
      * @brief      Create a ccdImage from an exposure catalog and metadata, and add it to the list.
      *
@@ -119,9 +123,8 @@ public:
      * @param[in]  control    The JointcalControl object
      */
     void createCcdImage(afw::table::SourceCatalog &catalog, std::shared_ptr<lsst::afw::geom::SkyWcs> wcs,
-                        std::shared_ptr<lsst::afw::image::VisitInfo> visitInfo,
-                        lsst::geom::Box2I const &bbox, std::string const &filter,
-                        std::shared_ptr<afw::image::PhotoCalib> photoCalib,
+                        std::shared_ptr<lsst::afw::image::VisitInfo> visitInfo, lsst::geom::Box2I const &bbox,
+                        std::string const &filter, std::shared_ptr<afw::image::PhotoCalib> photoCalib,
                         std::shared_ptr<afw::cameraGeom::Detector> detector, int visit, int ccd,
                         lsst::jointcal::JointcalControl const &control);
 
@@ -168,6 +171,16 @@ public:
      */
     void prepareFittedStars(int minMeasurements);
 
+    /**
+     * Remove FittedStars that have no measured stars; this can happen after outlier rejection.
+     *
+     * Use this to perform e.g. position minimization with outlier rejection after model minimization has
+     * removed measuredStar outliers, to prevent the matrix from becoming non-positive definite.
+     * Once this has been called, prepareFittedStars() has to be called again if the full
+     * measuredStar->FittedStar relationship needs to be reconstructed.
+     */
+    void cleanFittedStars();
+
     CcdImageList const &getCcdImageList() const { return ccdImageList; }
 
     //! Number of different bands in the input image list. Not implemented so far
@@ -209,9 +222,14 @@ private:
      * Only call after selectFittedStars() has been called: it assumes that each measuredStar points to a
      * fittedStar, and that the measurementCount for each fittedStar is correct.
      */
-    void normalizeFittedStars() const;
+    void normalizeFittedStars();
 
     Point _commonTangentPoint;
+
+    // The number of MeasuredStars at the start of fitting, before any outliers are removed.
+    // This is used to reserve space in vectors for e.g. outlier removal, but is not updated during outlier
+    // removal or cleanup, so should only be used as an upper bound on the number of MeasuredStars.
+    size_t _maxMeasuredStars;
 };
 
 }  // namespace jointcal

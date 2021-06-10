@@ -170,8 +170,7 @@ void PhotometryFit::accumulateStatRefStars(Chi2Accumulator &accum) const {
 //! this routine is to be used only in the framework of outlier removal
 /*! it fills the array of indices of parameters that a Measured star
     constrains. Not really all of them if you check. */
-void PhotometryFit::getIndicesOfMeasuredStar(MeasuredStar const &measuredStar,
-                                             IndexVector &indices) const {
+void PhotometryFit::getIndicesOfMeasuredStar(MeasuredStar const &measuredStar, IndexVector &indices) const {
     indices.clear();
     if (_fittingModel) {
         _photometryModel->getMappingIndices(measuredStar.getCcdImage(), indices);
@@ -190,8 +189,8 @@ void PhotometryFit::assignIndices(std::string const &whatToFit) {
     _fittingFluxes = (_whatToFit.find("Fluxes") != std::string::npos);
     // When entering here, we assume that whatToFit has already been interpreted.
 
-    _nParModel = (_fittingModel) ? _photometryModel->assignIndices(whatToFit, 0) : 0;
-    std::size_t ipar = _nParModel;
+    _nModelParams = (_fittingModel) ? _photometryModel->assignIndices(whatToFit, 0) : 0;
+    std::size_t ipar = _nModelParams;
 
     if (_fittingFluxes) {
         for (auto &fittedStar : _associations->fittedStarList) {
@@ -203,14 +202,14 @@ void PhotometryFit::assignIndices(std::string const &whatToFit) {
             ipar += 1;
         }
     }
-    _nParFluxes = ipar - _nParModel;
-    _nParTot = ipar;
-    LOGLS_DEBUG(_log,
-                "nParameters total: " << _nParTot << " model: " << _nParModel << " fluxes: " << _nParFluxes);
+    _nStarParams = ipar - _nModelParams;
+    _nTotal = ipar;
+    LOGLS_DEBUG(_log, "nParameters total: " << _nTotal << " model: " << _nModelParams
+                                            << " fluxes: " << _nStarParams);
 }
 
 void PhotometryFit::offsetParams(Eigen::VectorXd const &delta) {
-    if (delta.size() != _nParTot)
+    if (delta.size() != _nTotal)
         throw LSST_EXCEPT(pex::exceptions::InvalidParameterError,
                           "PhotometryFit::offsetParams : the provided vector length is not compatible with "
                           "the current whatToFit setting");

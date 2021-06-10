@@ -137,8 +137,8 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
                    'associated_astrometry_fittedStars': 2272,
                    'selected_astrometry_fittedStars': 1229,
                    'selected_astrometry_ccdImages': 12,
-                   'astrometry_final_chi2': 1124.0575,
-                   'astrometry_final_ndof': 1912,
+                   'astrometry_final_chi2': 1144.88,
+                   'astrometry_final_ndof': 1918,
                    }
 
         return dist_rms_relative, metrics
@@ -159,7 +159,7 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
         """
         relative_error, metrics = self.setup_jointcalTask_2_visits_constrainedAstrometry()
         metrics['astrometry_final_chi2'] = 1069.348
-        metrics['astrometry_final_ndof'] = 1900
+        metrics['astrometry_final_ndof'] = 1644
 
         self.config.astrometryDoRankUpdate = False
 
@@ -171,8 +171,8 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
         """
         dist_rms_relative, metrics = self.setup_jointcalTask_2_visits_constrainedAstrometry()
         self.config.outlierRejectSigma = 4
-        metrics['astrometry_final_chi2'] = 757.027
-        metrics['astrometry_final_ndof'] = 1732
+        metrics['astrometry_final_chi2'] = 772.409
+        metrics['astrometry_final_ndof'] = 1744
 
         self._testJointcalTask(2, dist_rms_relative, self.dist_rms_absolute, None, metrics=metrics)
 
@@ -183,8 +183,8 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
         """
         dist_rms_relative, metrics = self.setup_jointcalTask_2_visits_constrainedAstrometry()
         self.config.astrometryOutlierRelativeTolerance = 0.01
-        metrics['astrometry_final_chi2'] = 1427.11
-        metrics['astrometry_final_ndof'] = 1990
+        metrics['astrometry_final_chi2'] = 1400.84
+        metrics['astrometry_final_ndof'] = 1986
 
         self._testJointcalTask(2, dist_rms_relative, self.dist_rms_absolute, None, metrics=metrics)
 
@@ -252,7 +252,7 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
         # The constrainedPhotometry model is not purely linear, so a small
         # change in final chi2 is possible.
         metrics['photometry_final_chi2'] = 11396.27
-        metrics['photometry_final_ndof'] = 2716
+        metrics['photometry_final_ndof'] = 2695
 
         self._testJointcalTask(2, None, None, pa1, metrics=metrics)
 
@@ -268,7 +268,7 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
         # lines in the DEBUG log for values that are not ~1 for proof).
         pa1 = 0.14
         metrics['photometry_final_chi2'] = 10500.4
-        metrics['photometry_final_ndof'] = 2714
+        metrics['photometry_final_ndof'] = 2712
 
         self._testJointcalTask(2, None, None, pa1, metrics=metrics)
 

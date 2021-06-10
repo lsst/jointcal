@@ -451,7 +451,7 @@ class JointcalConfig(pipeBase.PipelineTaskConfig,
         default=20,
     )
     maxAstrometrySteps = pexConfig.Field(
-        doc="Maximum number of minimize iterations to take when fitting photometry.",
+        doc="Maximum number of minimize iterations to take when fitting astrometry.",
         dtype=int,
         default=20,
     )
