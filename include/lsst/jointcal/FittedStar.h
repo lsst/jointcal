@@ -100,8 +100,6 @@ public:
     //! Get the astrometric reference star associated with this star.
     const RefStar* getRefStar() const { return _refStar; };
 
-    double color;  // TODO: remove this holdover from PmBlock class
-
 private:
     Eigen::Index _indexInMatrix;
     int _measurementCount;

@@ -66,31 +66,15 @@ AstrometryFit::AstrometryFit(std::shared_ptr<Associations> associations,
                              std::shared_ptr<AstrometryModel> astrometryModel, double posError)
         : FitterBase(associations),
           _astrometryModel(astrometryModel),
-          _refractionCoefficient(0),
-          _nParRefrac(_associations->getNFilters()),
           _epoch(_associations->getEpoch()),
           _posError(posError) {
     _log = LOG_GET("jointcal.AstrometryFit");
-    _referenceColor = 0;
-    _sigCol = 0;
-    std::size_t count = 0;
-    for (auto const &i : _associations->fittedStarList) {
-        _referenceColor += i->color;
-        _sigCol += std::pow(i->color, 2);
-        count++;
-    }
-    if (count) {
-        _referenceColor /= double(count);
-        if (_sigCol > 0) _sigCol = sqrt(_sigCol / count - std::pow(_referenceColor, 2));
-    }
-    LOGLS_INFO(_log, "Reference Color: " << _referenceColor << " sig " << _sigCol);
 }
 
 /* ! this routine is used in 3 instances: when computing
 the derivatives, when computing the Chi2, when filling a tuple.
 */
 Point AstrometryFit::transformFittedStar(FittedStar const &fittedStar, AstrometryTransform const &sky2TP,
-                                         Point const &refractionVector, double refractionCoeff,
                                          double deltaYears) const {
     Point fittedStarInTP;
     if (fittedStar.getRefStar()) {
@@ -100,13 +84,6 @@ Point AstrometryFit::transformFittedStar(FittedStar const &fittedStar, Astrometr
     } else {
         fittedStarInTP = sky2TP.apply(fittedStar);
     }
-
-    // account for atmospheric refraction: does nothing if color
-    // have not been assigned
-    // the color definition shouldbe the same when computing derivatives
-    double color = fittedStar.color - _referenceColor;
-    fittedStarInTP.x += refractionVector.x * color * refractionCoeff;
-    fittedStarInTP.y += refractionVector.y * color * refractionCoeff;
     return fittedStarInTP;
 }
 
@@ -145,9 +122,8 @@ void AstrometryFit::leastSquareDerivativesMeasurement(CcdImage const &ccdImage, 
     // count parameters
     std::size_t npar_mapping = (_fittingDistortions) ? mapping->getNpar() : 0;
     std::size_t npar_pos = (_fittingPos) ? 2 : 0;
-    std::size_t npar_refrac = (_fittingRefrac) ? 1 : 0;
     std::size_t npar_pm = (_fittingPM) ? 2 : 0;
-    std::size_t npar_tot = npar_mapping + npar_pos + npar_refrac + npar_pm;
+    std::size_t npar_tot = npar_mapping + npar_pos + npar_pm;
     // if (npar_tot == 0) this CcdImage does not contribute
     // any constraint to the fit, so :
     if (npar_tot == 0) return;
@@ -156,8 +132,6 @@ void AstrometryFit::leastSquareDerivativesMeasurement(CcdImage const &ccdImage, 
 
     // FittedStar is "observed" epoch, MeasuredStar is "baseline"
     double deltaYears = _epoch - ccdImage.getEpoch();
-    // refraction stuff
-    Point refractionVector = ccdImage.getRefractionVector();
     // transformation from sky to TP
     auto sky2TP = _astrometryModel->getSkyToTangentPlane(ccdImage);
     // reserve matrices once for all measurements
@@ -208,8 +182,7 @@ void AstrometryFit::leastSquareDerivativesMeasurement(CcdImage const &ccdImage, 
 
         std::shared_ptr<FittedStar const> const fs = ms.getFittedStar();
 
-        Point fittedStarInTP =
-                transformFittedStar(*fs, *sky2TP, refractionVector, _refractionCoefficient, deltaYears);
+        Point fittedStarInTP = transformFittedStar(*fs, *sky2TP, deltaYears);
 
         // compute derivative of TP position w.r.t sky position ....
         if (npar_pos > 0)  // ... if actually fitting FittedStar position
@@ -236,16 +209,6 @@ void AstrometryFit::leastSquareDerivativesMeasurement(CcdImage const &ccdImage, 
         //     indices[ipar + 1] = fs->getIndexInMatrix() + 3;
         //     ipar += npar_pm;
         // }
-        if (_fittingRefrac) {
-            /* if the definition of color changes, it has to remain
-               consistent with transformFittedStar */
-            double color = fs->color - _referenceColor;
-            // sign checked
-            H(ipar, 0) = -refractionVector.x * color;
-            H(ipar, 1) = -refractionVector.y * color;
-            indices[ipar] = _refracPosInMatrix;
-            ipar += 1;
-        }
 
         // We can now compute the residual
         Eigen::Vector2d res(fittedStarInTP.x - outPos.x, fittedStarInTP.y - outPos.y);
@@ -370,8 +333,6 @@ void AstrometryFit::accumulateStatImage(CcdImage const &ccdImage, Chi2Accumulato
     const AstrometryMapping *mapping = _astrometryModel->getMapping(ccdImage);
     // FittedStar is "observed" epoch, MeasuredStar is "baseline"
     double deltaYears = _epoch - ccdImage.getEpoch();
-    // refraction stuff
-    Point refractionVector = ccdImage.getRefractionVector();
     // transformation from sky to TP
     auto sky2TP = _astrometryModel->getSkyToTangentPlane(ccdImage);
     // reserve matrix once for all measurements
@@ -398,8 +359,7 @@ void AstrometryFit::accumulateStatImage(CcdImage const &ccdImage, Chi2Accumulato
         transW(0, 1) = transW(1, 0) = -outPos.vxy / det;
 
         std::shared_ptr<FittedStar const> const fs = ms->getFittedStar();
-        Point fittedStarInTP =
-                transformFittedStar(*fs, *sky2TP, refractionVector, _refractionCoefficient, deltaYears);
+        Point fittedStarInTP = transformFittedStar(*fs, *sky2TP, deltaYears);
 
         Eigen::Vector2d res(fittedStarInTP.x - outPos.x, fittedStarInTP.y - outPos.y);
         double chi2Val = res.transpose() * transW * res;
@@ -464,12 +424,6 @@ void AstrometryFit::assignIndices(std::string const &whatToFit) {
     LOGLS_INFO(_log, "assignIndices: Now fitting " << whatToFit);
     _fittingDistortions = (_whatToFit.find("Distortions") != std::string::npos);
     _fittingPos = (_whatToFit.find("Positions") != std::string::npos);
-    _fittingRefrac = (_whatToFit.find("Refrac") != std::string::npos);
-    if (_sigCol == 0 && _fittingRefrac) {
-        LOGLS_WARN(_log,
-                   "Cannot fit refraction coefficients without a color lever arm. Ignoring refraction.");
-        _fittingRefrac = false;
-    }
     _fittingPM = (_whatToFit.find("PM") != std::string::npos);
     // When entering here, we assume that whatToFit has already been interpreted.
 
@@ -491,10 +445,6 @@ void AstrometryFit::assignIndices(std::string const &whatToFit) {
         }
     }
     _nStarParams = ipar - _nModelParams;
-    if (_fittingRefrac) {
-        _refracPosInMatrix = ipar;
-        ipar += _nParRefrac;
-    }
     _nTotal = ipar;
     LOGLS_DEBUG(_log, "nParameters total: " << _nTotal << " model: " << _nModelParams
                                             << " values: " << _nStarParams);
@@ -524,21 +474,9 @@ void AstrometryFit::offsetParams(Eigen::VectorXd const &delta) {
             // }
         }
     }
-    if (_fittingRefrac) {
-        _refractionCoefficient += delta(_refracPosInMatrix);
-    }
 }
 
 void AstrometryFit::checkStuff() {
-#if (0)
-    const char *what2fit[] = {"Positions",
-                              "Distortions",
-                              "Refrac",
-                              "Positions Distortions",
-                              "Positions Refrac",
-                              "Distortions Refrac",
-                              "Positions Distortions Refrac"};
-#endif
     const char *what2fit[] = {"Positions", "Distortions", "Positions Distortions"};
     // DEBUG
     for (unsigned k = 0; k < sizeof(what2fit) / sizeof(what2fit[0]); ++k) {
@@ -565,7 +503,7 @@ void AstrometryFit::saveChi2MeasContributions(std::string const &filename) const
     ofile << "xErr" << separator << "yErr" << separator << "xyCov" << separator;
     ofile << "xtpi" << separator << "ytpi" << separator;
     ofile << "rxi" << separator << "ryi" << separator;
-    ofile << "color" << separator << "fsindex" << separator;
+    ofile << "fsindex" << separator;
     ofile << "ra" << separator << "dec" << separator;
     ofile << "chi2" << separator << "nm" << separator;
     ofile << "chip" << separator << "visit" << std::endl;
@@ -577,7 +515,7 @@ void AstrometryFit::saveChi2MeasContributions(std::string const &filename) const
     ofile << "transformed measurement uncertainty (degrees)" << separator << separator << separator;
     ofile << "as-read position on TP (degrees)" << separator << separator;
     ofile << "as-read residual on TP (degrees)" << separator << separator;
-    ofile << "currently unused" << separator << "unique index of the fittedStar" << separator;
+    ofile << "unique index of the fittedStar" << separator;
     ofile << "on sky position of fittedStar" << separator << separator;
     ofile << "contribution to Chi2 (2D dofs)" << separator << "number of measurements of this fittedStar"
           << separator;
@@ -588,7 +526,6 @@ void AstrometryFit::saveChi2MeasContributions(std::string const &filename) const
         const MeasuredStarList &cat = ccdImage->getCatalogForFit();
         const AstrometryMapping *mapping = _astrometryModel->getMapping(*ccdImage);
         const auto readTransform = ccdImage->getReadWcs();
-        const Point &refractionVector = ccdImage->getRefractionVector();
         // FittedStar is "observed" epoch, MeasuredStar is "baseline"
         double deltaYears = _epoch - ccdImage->getEpoch();
         for (auto const &ms : cat) {
@@ -603,8 +540,7 @@ void AstrometryFit::saveChi2MeasContributions(std::string const &filename) const
             FatPoint inputTpPos = readPixToTangentPlane->apply(inPos);
             std::shared_ptr<FittedStar const> const fs = ms->getFittedStar();
 
-            Point fittedStarInTP =
-                    transformFittedStar(*fs, *sky2TP, refractionVector, _refractionCoefficient, deltaYears);
+            Point fittedStarInTP = transformFittedStar(*fs, *sky2TP, deltaYears);
             Point res = tpPos - fittedStarInTP;
             Point inputRes = inputTpPos - fittedStarInTP;
             double det = tpPos.vx * tpPos.vy - std::pow(tpPos.vxy, 2);
@@ -621,7 +557,7 @@ void AstrometryFit::saveChi2MeasContributions(std::string const &filename) const
             ofile << tpPos.vx << separator << tpPos.vy << separator << tpPos.vxy << separator;
             ofile << inputTpPos.x << separator << inputTpPos.y << separator;
             ofile << inputRes.x << separator << inputRes.y << separator;
-            ofile << fs->color << separator << fs->getIndexInMatrix() << separator;
+            ofile << fs->getIndexInMatrix() << separator;
             ofile << fs->x << separator << fs->y << separator;
             ofile << chi2 << separator << fs->getMeasurementCount() << separator;
             ofile << ccdImage->getCcdId() << separator << ccdImage->getVisit() << std::endl;
@@ -637,14 +573,14 @@ void AstrometryFit::saveChi2RefContributions(std::string const &filename) const 
     ofile << "rx" << separator << "ry" << separator;
     ofile << "mag" << separator;
     ofile << "xErr" << separator << "yErr" << separator << "xyCov" << separator;
-    ofile << "color" << separator << "fsindex" << separator;
+    ofile << "fsindex" << separator;
     ofile << "chi2" << separator << "nm" << std::endl;
 
     ofile << "#coordinates of fittedStar (degrees)" << separator << separator;
     ofile << "residual on TP (degrees)" << separator << separator;
     ofile << "magnitude" << separator;
     ofile << "refStar transformed measurement uncertainty (degrees)" << separator << separator << separator;
-    ofile << "currently unused" << separator << "unique index of the fittedStar" << separator;
+    ofile << "unique index of the fittedStar" << separator;
     ofile << "refStar contribution to Chi2 (2D dofs)" << separator
           << "number of measurements of this FittedStar" << std::endl;
 
@@ -666,7 +602,7 @@ void AstrometryFit::saveChi2RefContributions(std::string const &filename) const 
         ofile << rsProj.x << separator << rsProj.y << separator;
         ofile << fs.getMag() << separator;
         ofile << rsProj.vx << separator << rsProj.vy << separator << rsProj.vxy << separator;
-        ofile << fs.color << separator << fs.getIndexInMatrix() << separator;
+        ofile << fs.getIndexInMatrix() << separator;
         ofile << chi2 << separator << fs.getMeasurementCount() << std::endl;
     }  // loop on FittedStars
 }

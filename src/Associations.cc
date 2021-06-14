@@ -521,49 +521,6 @@ void Associations::collectMCStars(int realization) {
     }
 }
 
-void Associations::setFittedStarColors(std::string dicStarListName, std::string color,
-                                       double matchCutArcSec) {
-    // decode color string in case it is x-y
-    size_t pos_minus = color.find('-');
-    bool compute_diff = (pos_minus != string::npos);
-    std::string c1, c2;
-    c1 = color.substr(0, pos_minus);  // if pos_minus == npos, means "up to the end"
-    if (compute_diff) c2 = color.substr(pos_minus + 1, string::npos);
-    DicStarList cList(dicStarListName);
-    if (!cList.HasKey(c1))
-        throw(GastroException("Associations::SetFittedstarColors : " + dicStarListName +
-                              " misses  a key named \"" + c1 + "\""));
-    if (compute_diff && !cList.HasKey(c2))
-        throw(GastroException("Associations::SetFittedstarColors : " + dicStarListName +
-                              " misses  a key named \"" + c2 + "\""));
-    // we associate in some tangent plane. The reference catalog is expressed on the sky,
-    // but FittedStar's may be still in this tangent plane.
-    BaseStarList &l1 = (BaseStarList &)fittedStarList;
-    AstrometryTransformIdentity id;
-    TanRaDecToPixel proj(AstrometryTransformLinear(), getCommonTangentPoint());
-    // project or not ?
-    AstrometryTransform *id_or_proj = &proj;
-    if (fittedStarList.inTangentPlaneCoordinates) id_or_proj = &id;
-    // The color List is to be projected:
-    TStarList projected_cList((BaseStarList &)cList, proj);
-    // Associate
-    auto starMatchList = listMatchCollect(Fitted2Base(fittedStarList), (const BaseStarList &)projected_cList,
-                                          id_or_proj, matchCutArcSec / 3600);
-
-    LOGLS_INFO(_log, "Matched " << starMatchList->size() << '/' << fittedStarList.size()
-                                << " FittedStars to color catalog");
-    // Evaluate and assign colors.
-    for (auto i = starMatchList->begin(); i != starMatchList->end(); ++i) {
-        BaseStar *s1 = i->s1;
-        FittedStar *fs = dynamic_cast<FittedStar *>(s1);
-        BaseStar *s2 = i->s2;
-        const TStar *ts = dynamic_cast<const TStar *>(s2);
-        const DicStar *ds = dynamic_cast<const DicStar *>(ts->get_original());
-        fs->color = ds->getval(c1);
-        if (compute_diff) fs->color -= ds->getval(c2);
-    }
-}
-
 #endif /* TODO */
 }  // namespace jointcal
 }  // namespace lsst

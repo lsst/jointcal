@@ -167,13 +167,6 @@ public:
     //! track of that.
     void deprojectFittedStars();
 
-//! Set the color field of FittedStar 's from a colored catalog.
-/* If Color is "g-i", then the color is assigned from columns "g" and "i" of the colored catalog. */
-#ifdef TODO
-    void setFittedStarColors(std::string const &dicStarListName, std::string const &color,
-                             double matchCutArcSec);
-#endif
-
     /**
      * Prepare the fittedStar list by making quality cuts and normalizing measurements.
      *

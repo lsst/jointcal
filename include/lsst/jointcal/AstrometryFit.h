@@ -91,7 +91,7 @@ public:
      * Set parameters to fit and assign indices in the big matrix.
      *
      * @param[in]  whatToFit   Valid strings: zero or more of "Distortions", "Positions",
-     *                         "Refrac", "PM" which define which parameter set
+     *                         "PM" which define which parameter set
      *                         is going to be variable when computing
      *                         derivatives (leastSquareDerivatives) and minimizing
      *                         (minimize()). whatToFit="Positions Distortions"
@@ -134,14 +134,8 @@ protected:
     void saveChi2RefContributions(std::string const &filename) const override;
 
 private:
-    bool _fittingDistortions, _fittingPos, _fittingRefrac, _fittingPM;
+    bool _fittingDistortions, _fittingPos, _fittingPM;
     std::shared_ptr<AstrometryModel> _astrometryModel;
-    double _referenceColor, _sigCol;  // average and r.m.s color
-    double _refractionCoefficient;    // fit parameter
-    Eigen::Index _refracPosInMatrix;  // where it stands
-
-    // counts in parameter subsets.
-    std::size_t _nParRefrac;
 
     double _epoch;     // epoch to correct proper motion/parallax to (Julian Epoch year, e.g. J2000.0)
     double _posError;  // constant term on error on position (in pixel unit)
@@ -164,13 +158,11 @@ private:
      *
      * @param fittedStar The star to transform.
      * @param sky2TP Transformation from sky coordinates to CcdImage tangent plane.
-     * @param refractionVector On-sky vector to refraction correct position.
-     * @param refractionCoeff Amount of refraction correction to apply.
      * @param deltaYears Difference in years between FittedStar and MeasuredStar epochs.
      * @return Corrected position of FittedStar.
      */
     Point transformFittedStar(FittedStar const &fittedStar, AstrometryTransform const &sky2TP,
-                              Point const &refractionVector, double refractionCoeff, double deltaYears) const;
+                              double deltaYears) const;
 
     /// Compute the chi2 (per star or total, depending on which Chi2Accumulator is used) from one CcdImage.
     void accumulateStatImage(CcdImage const &ccdImage, Chi2Accumulator &accum) const;
