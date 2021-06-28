@@ -445,6 +445,12 @@ class JointcalConfig(pipeBase.PipelineTaskConfig,
         dtype=float,
         default=0,
     )
+    astrometryOnlyRejectDistortion = pexConfig.Field(
+        doc=("Only fit the distortion model, not star positions, during the main outlier rejection loop."
+             " This involves ... GIVE DETAILS"),
+        dtype=bool,
+        default=False,
+    )
     maxPhotometrySteps = pexConfig.Field(
         doc="Maximum number of minimize iterations to take when fitting photometry.",
         dtype=int,
@@ -1582,14 +1588,34 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
         self._logChi2AndValidate(associations, fit, model, "Initialize DistortionsPositions",
                                  writeChi2Name=getChi2Name("DistortionsPositions"))
 
+        if self.config.astrometryOnlyRejectDistortion:
+            # Coarsely reject position outliers, to make the distortions-only
+            # outlier rejection minimization less "bad" due to extreme
+            # position outliers.
+            chi2 = self._iterate_fit(associations,
+                                     fit,
+                                     5,
+                                     "astrometry",
+                                     "Distortions Positions",
+                                     sigmaRelativeTolerance=0.05,
+                                     doRankUpdate=self.config.astrometryDoRankUpdate,
+                                     dataName=dataName,
+                                     redoPostRankUpdate=False)
+
+        whatToFit = "Distortions" if self.config.astrometryOnlyRejectDistortion else "Distortions Positions"
         chi2 = self._iterate_fit(associations,
                                  fit,
                                  self.config.maxAstrometrySteps,
                                  "astrometry",
-                                 "Distortions Positions",
+                                 whatToFit,
                                  sigmaRelativeTolerance=self.config.astrometryOutlierRelativeTolerance,
                                  doRankUpdate=self.config.astrometryDoRankUpdate,
                                  dataName=dataName)
+
+        if self.config.astrometryOnlyRejectDistortion:
+            fit.minimize("Distortions Positions")
+            self._logChi2AndValidate(associations, fit, model, "Final DistortionsPositions",
+                                     writeChi2Name=getChi2Name("DistortionsPositionsFinal"))
 
         add_measurement(self.job, 'jointcal.astrometry_final_chi2', chi2.chi2)
         add_measurement(self.job, 'jointcal.astrometry_final_ndof', chi2.ndof)
@@ -1613,7 +1639,8 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
                      dataName="",
                      sigmaRelativeTolerance=0,
                      doRankUpdate=True,
-                     doLineSearch=False):
+                     doLineSearch=False,
+                     redoPostRankUpdate=True):
         """Run fitter.minimize up to max_steps times, returning the final chi2.
 
         Parameters
@@ -1639,6 +1666,9 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
         doRankUpdate : `bool`, optional
             Do an Eigen rank update during minimization, or recompute the full
             matrix and gradient?
+        redoPostRankUpdate : `bool`, optional
+            Redo a full calculation if ``doRankUpdate=True`` after the fit
+            converges; set this to False when running a bulk outlier rejection.
         doLineSearch : `bool`, optional
             Do a line search for the optimum step during minimization?
 
@@ -1677,7 +1707,7 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
                                             f"Fit iteration {i}", writeChi2Name=writeChi2Name)
 
             if result == MinimizeResult.Converged:
-                if doRankUpdate:
+                if doRankUpdate and redoPostRankUpdate:
                     self.log.debug("fit has converged - no more outliers - redo minimization "
                                    "one more time in case we have lost accuracy in rank update.")
                     # Redo minimization one more time in case we have lost accuracy in rank update

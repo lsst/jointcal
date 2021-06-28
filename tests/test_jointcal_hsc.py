@@ -153,6 +153,32 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
                    }
         self._testJointcalTask(10, dist_rms_relative, dist_rms_absolute, pa1, metrics=metrics)
 
+    def test_jointcalTask_10_visits_simple_astrometry_distortions_only(self):
+        """Test all 10 visits with different filters and the
+        astrometryOnlyRejectDistortion config turned on: the final chi2
+        and ndof will be a little worse than the 10_visits test just above.
+        """
+
+        self.config = lsst.jointcal.jointcal.JointcalConfig()
+        self.config.astrometryModel = "simple"
+        self.config.doPhotometry = False
+        self.config.astrometryOnlyRejectDistortion = True
+        self.jointcalStatistics.do_photometry = False
+
+        # See Readme for an explanation of these empirical values.
+        dist_rms_absolute = 23e-3*u.arcsecond
+        dist_rms_relative = 13e-3*u.arcsecond
+        pa1 = None
+        metrics = {'collected_astrometry_refStars': 1316,
+                   'selected_astrometry_refStars': 318,
+                   'associated_astrometry_fittedStars': 5860,
+                   'selected_astrometry_fittedStars': 3568,
+                   'selected_astrometry_ccdImages': 30,
+                   'astrometry_final_chi2': 10345.3,
+                   'astrometry_final_ndof': 18608,
+                   }
+        self._testJointcalTask(10, dist_rms_relative, dist_rms_absolute, pa1, metrics=metrics)
+
     def setup_jointcalTask_2_visits_simplePhotometry(self):
         """Set default values for the simplePhotometry tests, and make it so
         the differences between each test and the defaults are more obvious.
