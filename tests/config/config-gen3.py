@@ -6,14 +6,12 @@
 config.sourceSelector['science'].flags.bad = ['PixelFlags_edge',
                                               'PixelFlags_saturated',
                                               'PixelFlags_interpolatedCenter',
-                                              'PixelFlags_interpolated',
-                                              'PixelFlags_crCenter',
-                                              'PixelFlags_bad',
-                                              'HsmPsfMoments_flag',
-                                              'ApFlux_12_0_flag',
+                                              'Centroid_flag',
+                                              'PsfFlux_flag',
+                                              'PixelFlags_suspectCenter',
                                               ]
-config.sourceSelector['science'].doUnresolved = False
-# config.sourceSelector['science'].unresolved.name = 'extendedness'
+config.sourceSelector['science'].doUnresolved = True
+config.sourceSelector['science'].unresolved.name = 'extendedness'
 config.sourceSelector['science'].signalToNoise.fluxField = 'ApFlux_12_0_instFlux'
 config.sourceSelector['science'].signalToNoise.errField = 'ApFlux_12_0_instFluxErr'
 config.sourceSelector['science'].isolated.parentName = 'parentSourceId'
