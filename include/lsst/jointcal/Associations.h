@@ -99,14 +99,14 @@ public:
     void computeCommonTangentPoint();
 
     /**
-     * @brief      Sets a shared tangent point for all ccdImages.
+     * Shared tangent point for all ccdImages (decimal degrees).
      *
-     * @param      commonTangentPoint  The common tangent point of all input images (decimal degrees).
+     * Used to project sidereal coordinates related to the images onto a single plane.
      */
+    ///@{
     void setCommonTangentPoint(lsst::geom::Point2D const &commonTangentPoint);
-
-    //! can be used to project sidereal coordinates related to the image set on a plane.
     Point getCommonTangentPoint() const { return _commonTangentPoint; }
+    ///@}
 
     size_t getMaxMeasuredStars() const { return _maxMeasuredStars; }
 
@@ -228,6 +228,7 @@ private:
     void normalizeFittedStars();
 
     // Common tangent point on-sky of all of the ccdImages, typically determined by computeCommonTangentPoint.
+    // (decimal degrees)
     Point _commonTangentPoint;
 
     // The number of MeasuredStars at the start of fitting, before any outliers are removed.
