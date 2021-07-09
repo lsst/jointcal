@@ -228,6 +228,32 @@ void Associations::collectRefStars(afw::table::SimpleCatalog &refCat, geom::Angl
                                  << ") not found in reference catalog. Not using ref flux errors.");
     }
 
+    // Handle reference catalogs that don't have proper motion & error
+    afw::table::Key<geom::Angle> pmRaKey, pmDecKey;
+    afw::table::Key<float> pmRaErrKey, pmDecErrKey, pmRaDecCovKey;
+    try {
+        pmRaKey = refCat.getSchema().find<geom::Angle>("pm_ra").key;
+        pmDecKey = refCat.getSchema().find<geom::Angle>("pm_dec").key;
+    } catch (pex::exceptions::NotFoundError &ex) {
+        LOGLS_WARN(_log, "Not loading proper motions: (pm_ra,pm_dec) fields not found in reference catalog.");
+    } catch (pex::exceptions::TypeError &ex) {
+        LOGLS_WARN(_log, "Not loading proper motions: RA/Dec proper motion values must be `geom:Angle`: "
+                                 << ex.what());
+    }
+    try {
+        pmRaErrKey = refCat.getSchema().find<float>("pm_raErr").key;
+        pmDecErrKey = refCat.getSchema().find<float>("pm_decErr").key;
+    } catch (pex::exceptions::NotFoundError &ex) {
+        LOGLS_WARN(_log, "Not loading proper motions: error fields not available: " << ex.what());
+    }
+
+    // TODO: we aren't getting covariances from Gaia yet, so maybe ignore this for now?
+    try {
+        pmRaDecCovKey = refCat.getSchema().find<float>("pm_ra_Dec_Cov").key;
+    } catch (pex::exceptions::NotFoundError &ex) {
+        LOGLS_WARN(_log, "No ra/dec proper motion covariances in refcat: " << ex.what());
+    }
+
     refStarList.clear();
     for (size_t i = 0; i < refCat.size(); i++) {
         auto const &record = refCat.get(i);
@@ -253,6 +279,19 @@ void Associations::collectRefStars(afw::table::SimpleCatalog &refCat, geom::Angl
             star->vx = std::pow(refCoordinateErr / 1000. / 3600. / std::cos(coord.getLatitude()), 2);
             star->vy = std::pow(refCoordinateErr / 1000. / 3600., 2);
         }
+
+        if (pmRaKey.isValid()) {
+            if (pmRaDecCovKey.isValid()) {
+                star->setProperMotion(std::make_unique<ProperMotion const>(
+                        record->get(pmRaKey).asRadians(), record->get(pmDecKey).asRadians(),
+                        record->get(pmRaErrKey), record->get(pmDecErrKey), record->get(pmRaDecCovKey)));
+            } else {
+                star->setProperMotion(std::make_unique<ProperMotion const>(
+                        record->get(pmRaKey).asRadians(), record->get(pmDecKey).asRadians(),
+                        record->get(pmRaErrKey), record->get(pmDecErrKey)));
+            }
+        }
+
         // TODO: cook up a covariance as none of our current refcats have it
         star->vxy = 0.;
 
@@ -479,49 +518,6 @@ void Associations::collectMCStars(int realization) {
             }
         else
             LOGLS_FATAL(_log, "CollectMCStars Unable to match MCTruth w/ catalog!");
-    }
-}
-
-void Associations::setFittedStarColors(std::string dicStarListName, std::string color,
-                                       double matchCutArcSec) {
-    // decode color string in case it is x-y
-    size_t pos_minus = color.find('-');
-    bool compute_diff = (pos_minus != string::npos);
-    std::string c1, c2;
-    c1 = color.substr(0, pos_minus);  // if pos_minus == npos, means "up to the end"
-    if (compute_diff) c2 = color.substr(pos_minus + 1, string::npos);
-    DicStarList cList(dicStarListName);
-    if (!cList.HasKey(c1))
-        throw(GastroException("Associations::SetFittedstarColors : " + dicStarListName +
-                              " misses  a key named \"" + c1 + "\""));
-    if (compute_diff && !cList.HasKey(c2))
-        throw(GastroException("Associations::SetFittedstarColors : " + dicStarListName +
-                              " misses  a key named \"" + c2 + "\""));
-    // we associate in some tangent plane. The reference catalog is expressed on the sky,
-    // but FittedStar's may be still in this tangent plane.
-    BaseStarList &l1 = (BaseStarList &)fittedStarList;
-    AstrometryTransformIdentity id;
-    TanRaDecToPixel proj(AstrometryTransformLinear(), getCommonTangentPoint());
-    // project or not ?
-    AstrometryTransform *id_or_proj = &proj;
-    if (fittedStarList.inTangentPlaneCoordinates) id_or_proj = &id;
-    // The color List is to be projected:
-    TStarList projected_cList((BaseStarList &)cList, proj);
-    // Associate
-    auto starMatchList = listMatchCollect(Fitted2Base(fittedStarList), (const BaseStarList &)projected_cList,
-                                          id_or_proj, matchCutArcSec / 3600);
-
-    LOGLS_INFO(_log, "Matched " << starMatchList->size() << '/' << fittedStarList.size()
-                                << " FittedStars to color catalog");
-    // Evaluate and assign colors.
-    for (auto i = starMatchList->begin(); i != starMatchList->end(); ++i) {
-        BaseStar *s1 = i->s1;
-        FittedStar *fs = dynamic_cast<FittedStar *>(s1);
-        BaseStar *s2 = i->s2;
-        const TStar *ts = dynamic_cast<const TStar *>(s2);
-        const DicStar *ds = dynamic_cast<const DicStar *>(ts->get_original());
-        fs->color = ds->getval(c1);
-        if (compute_diff) fs->color -= ds->getval(c2);
     }
 }
 

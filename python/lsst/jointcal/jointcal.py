@@ -497,7 +497,7 @@ class JointcalConfig(pipeBase.PipelineTaskConfig,
         dtype=bool,
         doc=("Write .csv files containing the contributions to chi2 for the initialization and final fit. "
              "Output files will be written to `config.debugOutputPath` and will "
-             "be of the form `astrometry_[initial|final]_chi2-TRACT-FILTER1."),
+             "be of the form `astrometry_[initial|final]_chi2-TRACT-FILTER."),
         default=False
     )
     writeChi2FilesOuterLoop = pexConfig.Field(
@@ -738,8 +738,7 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
                                             jointcalControl,
                                             inputCamera)
 
-        boundingCircle, center, radius, defaultFilter = self._prep_sky(associations, bands)
-        epoch = self._compute_proper_motion_epoch(associations.getCcdImageList())
+        boundingCircle, center, radius, defaultFilter, epoch = self._prep_sky(associations, bands)
 
         if self.config.doAstrometry:
             astrometry = self._do_load_refcat_and_fit(associations, defaultFilter, center, radius,
@@ -1051,7 +1050,11 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
         defaultFilter = filters.most_common(1)[0][0]
         self.log.debug("Using '%s' filter for reference flux", defaultFilter.physicalLabel)
 
-        return boundingCircle, center, radius, defaultFilter
+        # compute and set the reference epoch of the observations, for proper motion corrections
+        epoch = self._compute_proper_motion_epoch(associations.getCcdImageList())
+        associations.setEpoch(epoch.jyear)
+
+        return boundingCircle, center, radius, defaultFilter, epoch
 
     @pipeBase.timeMethod
     def runDataRef(self, dataRefs):
@@ -1090,8 +1093,7 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
                                                                   associations,
                                                                   jointcalControl)
 
-        boundingCircle, center, radius, defaultFilter = self._prep_sky(associations, filters)
-        epoch = self._compute_proper_motion_epoch(associations.getCcdImageList())
+        boundingCircle, center, radius, defaultFilter, epoch = self._prep_sky(associations, filters)
 
         tract = dataRefs[0].dataId['tract']
 
@@ -1189,8 +1191,9 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
         epoch : `astropy.time.Time`
             The date to use for proper motion corrections.
         """
-        mjds = [ccdImage.getMjd() for ccdImage in ccdImageList]
-        return astropy.time.Time(np.mean(mjds), format='mjd', scale="tai")
+        return astropy.time.Time(np.mean([ccdImage.getEpoch() for ccdImage in ccdImageList]),
+                                 format="jyear",
+                                 scale="tai")
 
     def _do_load_refcat_and_fit(self, associations, defaultFilter, center, radius,
                                 tract="", match_cut=3.0,

@@ -236,7 +236,7 @@ void PhotometryFit::saveChi2MeasContributions(std::string const &filename) const
     ofile << "inputFlux" << separator << "inputFluxErr" << separator;
     ofile << "transformedFlux" << separator << "transformedFluxErr" << separator;
     ofile << "fittedFlux" << separator;
-    ofile << "mjd" << separator << "color" << separator;
+    ofile << "epoch" << separator;
     ofile << "fsindex" << separator;
     ofile << "ra" << separator << "dec" << separator;
     ofile << "chi2" << separator << "nm" << separator;
@@ -249,7 +249,7 @@ void PhotometryFit::saveChi2MeasContributions(std::string const &filename) const
     ofile << "measured flux (nJy)" << separator << "measured flux error" << separator;
     ofile << separator << separator;
     ofile << "fitted flux (nJy)" << separator;
-    ofile << "modified Julian date of the measurement" << separator << "currently unused" << separator;
+    ofile << "Julian Epoch Year of the measurement" << separator;
     ofile << "unique index of the fittedStar" << separator;
     ofile << "on-sky position of fitted star" << separator << separator;
     ofile << "contribution to Chi2 (1 dof)" << separator << "number of measurements of this FittedStar"
@@ -265,7 +265,6 @@ void PhotometryFit::saveChi2MeasContributions(std::string const &filename) const
             double instFluxErr = _photometryModel->tweakFluxError(*measuredStar);
             double flux = _photometryModel->transform(*ccdImage, *measuredStar);
             double fluxErr = _photometryModel->transformError(*ccdImage, *measuredStar);
-            double jd = ccdImage->getMjd();
             std::shared_ptr<FittedStar const> const fittedStar = measuredStar->getFittedStar();
             double residual = _photometryModel->computeResidual(*ccdImage, *measuredStar);
             double chi2Val = std::pow(residual / fluxErr, 2);
@@ -278,7 +277,7 @@ void PhotometryFit::saveChi2MeasContributions(std::string const &filename) const
             ofile << measuredStar->getInstFlux() << separator << instFluxErr << separator;
             ofile << measuredStar->getFlux() << separator << measuredStar->getFluxErr() << separator;
             ofile << flux << separator << fluxErr << separator << fittedStar->getFlux() << separator;
-            ofile << jd << separator << fittedStar->color << separator;
+            ofile << ccdImage->getEpoch() << separator;
             ofile << fittedStar->getIndexInMatrix() << separator;
             ofile << fittedStar->x << separator << fittedStar->y << separator;
             ofile << chi2Val << separator << fittedStar->getMeasurementCount() << separator;
@@ -292,13 +291,13 @@ void PhotometryFit::saveChi2RefContributions(std::string const &filename) const 
     std::string separator = "\t";
 
     ofile << "#ra" << separator << "dec " << separator;
-    ofile << "mag" << separator << "color" << separator;
+    ofile << "mag" << separator;
     ofile << "refFlux" << separator << "refFluxErr" << separator;
     ofile << "fittedFlux" << separator << "fittedFluxErr" << separator;
     ofile << "fsindex" << separator << "chi2" << separator << "nm" << std::endl;
 
     ofile << "#coordinates of fittedStar" << separator << separator;
-    ofile << "magnitude" << separator << "currently unused" << separator;
+    ofile << "magnitude" << separator;
     ofile << "refStar flux (nJy)" << separator << "refStar fluxErr" << separator;
     ofile << "fittedStar flux (nJy)" << separator << "fittedStar fluxErr" << separator;
     ofile << "unique index of the fittedStar" << separator << "refStar contribution to Chi2 (1 dof)"
@@ -314,7 +313,7 @@ void PhotometryFit::saveChi2RefContributions(std::string const &filename) const 
 
         ofile << std::setprecision(9);
         ofile << fittedStar->x << separator << fittedStar->y << separator;
-        ofile << fittedStar->getMag() << separator << fittedStar->color << separator;
+        ofile << fittedStar->getMag() << separator;
         ofile << refStar->getFlux() << separator << refStar->getFluxErr() << separator;
         ofile << fittedStar->getFlux() << separator << fittedStar->getFluxErr() << separator;
         ofile << fittedStar->getIndexInMatrix() << separator << chi2 << separator

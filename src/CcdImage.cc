@@ -128,7 +128,7 @@ CcdImage::CcdImage(afw::table::SourceCatalog &catalog, std::shared_ptr<lsst::afw
 
     _boresightRaDec = visitInfo->getBoresightRaDec();
     _airMass = visitInfo->getBoresightAirmass();
-    _mjd = visitInfo->getDate().get(lsst::daf::base::DateTime::MJD);
+    _epoch = visitInfo->getDate().get(lsst::daf::base::DateTime::EPOCH);
     double latitude = visitInfo->getObservatory().getLatitude();
     _lstObs = visitInfo->getEra();
     _hourAngle = visitInfo->getBoresightHourAngle();

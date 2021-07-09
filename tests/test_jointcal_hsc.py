@@ -148,8 +148,8 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
                    'associated_astrometry_fittedStars': 5860,
                    'selected_astrometry_fittedStars': 3568,
                    'selected_astrometry_ccdImages': 30,
-                   'astrometry_final_chi2': 10218.518,
-                   'astrometry_final_ndof': 18574,
+                   'astrometry_final_chi2': 10225.31,
+                   'astrometry_final_ndof': 18576,
                    }
         self._testJointcalTask(10, dist_rms_relative, dist_rms_absolute, pa1, metrics=metrics)
 
@@ -299,7 +299,7 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
                    'associated_astrometry_fittedStars': 3199,
                    'selected_astrometry_fittedStars': 432,
                    'selected_astrometry_ccdImages': 9,
-                   'astrometry_final_chi2': 567.443,
+                   'astrometry_final_chi2': 567.433,
                    'astrometry_final_ndof': 1286,
                    }
         pa1 = None

@@ -78,12 +78,14 @@ public:
      * parallelize the creation of the ccdImages.
      *
      * @param imageList A pre-built ccdImage list.
+     * @param epoch The julian epoch year to which all proper motion corrections should be made.
      */
-    Associations(CcdImageList const &imageList)
+    Associations(CcdImageList const &imageList, double epoch = 0)
             : ccdImageList(imageList),
               _commonTangentPoint(Point(std::numeric_limits<double>::quiet_NaN(),
                                         std::numeric_limits<double>::quiet_NaN())),
-              _maxMeasuredStars(0) {}
+              _maxMeasuredStars(0),
+              _epoch(epoch) {}
 
     /// No moves or copies: jointcal only ever needs one Associations object.
     Associations(Associations const &) = delete;
@@ -97,16 +99,24 @@ public:
     void computeCommonTangentPoint();
 
     /**
-     * @brief      Sets a shared tangent point for all ccdImages.
+     * Shared tangent point for all ccdImages (decimal degrees).
      *
-     * @param      commonTangentPoint  The common tangent point of all input images (decimal degrees).
+     * Used to project sidereal coordinates related to the images onto a single plane.
      */
+    ///@{
     void setCommonTangentPoint(lsst::geom::Point2D const &commonTangentPoint);
-
-    //! can be used to project sidereal coordinates related to the image set on a plane.
     Point getCommonTangentPoint() const { return _commonTangentPoint; }
+    ///@}
 
     size_t getMaxMeasuredStars() const { return _maxMeasuredStars; }
+
+    /**
+     * Common epoch of all of the ccdImages as a Julian Epoch Year (e.g. 2000.0 for J2000).
+     */
+    ///@{
+    double getEpoch() const { return _epoch; }
+    void setEpoch(double epoch) { _epoch = epoch; }
+    ///@}
 
     /**
      * @brief      Create a ccdImage from an exposure catalog and metadata, and add it to the list.
@@ -156,13 +166,6 @@ public:
     //! Sends back the fitted stars coordinates on the sky FittedStarsList::inTangentPlaneCoordinates keeps
     //! track of that.
     void deprojectFittedStars();
-
-//! Set the color field of FittedStar 's from a colored catalog.
-/* If Color is "g-i", then the color is assigned from columns "g" and "i" of the colored catalog. */
-#ifdef TODO
-    void setFittedStarColors(std::string const &dicStarListName, std::string const &color,
-                             double matchCutArcSec);
-#endif
 
     /**
      * Prepare the fittedStar list by making quality cuts and normalizing measurements.
@@ -224,12 +227,18 @@ private:
      */
     void normalizeFittedStars();
 
+    // Common tangent point on-sky of all of the ccdImages, typically determined by computeCommonTangentPoint.
+    // (decimal degrees)
     Point _commonTangentPoint;
 
     // The number of MeasuredStars at the start of fitting, before any outliers are removed.
     // This is used to reserve space in vectors for e.g. outlier removal, but is not updated during outlier
     // removal or cleanup, so should only be used as an upper bound on the number of MeasuredStars.
     size_t _maxMeasuredStars;
+
+    // Julian Epoch Year (e.g. 2000.0 for J2000)
+    // Common epoch of all of the ccdImages, typically computed externally via astropy and then set.
+    double _epoch;
 };
 
 }  // namespace jointcal

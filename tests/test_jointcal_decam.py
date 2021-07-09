@@ -96,7 +96,7 @@ class JointcalTestDECAM(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Test
                    'selected_photometry_fittedStars': 4637,
                    'selected_astrometry_ccdImages': 15,
                    'selected_photometry_ccdImages': 15,
-                   'astrometry_final_chi2': 2899.14,
+                   'astrometry_final_chi2': 2899.20,
                    'astrometry_final_ndof': 896,
                    'photometry_final_chi2': 16529,
                    'photometry_final_ndof': 3634,

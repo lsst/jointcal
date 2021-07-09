@@ -154,8 +154,7 @@ public:
     //!  Airmass
     double getAirMass() const { return _airMass; }
 
-    //! Julian Date
-    double getMjd() const { return _mjd; }
+    double getEpoch() const { return _epoch; }
 
     //! Return the exposure's photometric calibration
     std::shared_ptr<afw::image::PhotoCalib> getPhotoCalib() const { return _photoCalib; }
@@ -216,7 +215,7 @@ private:
 
     lsst::geom::SpherePoint _boresightRaDec;
     double _airMass;  // airmass value.
-    double _mjd;      // modified julian date
+    double _epoch;    // julian epoch year (e.g. 2000.0 for J2000)
     std::shared_ptr<afw::image::PhotoCalib> _photoCalib;
     std::shared_ptr<afw::cameraGeom::Detector> _detector;
     // refraction

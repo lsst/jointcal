@@ -46,10 +46,10 @@ FittedStar::FittedStar(const MeasuredStar &measuredStar)
 void FittedStar::setRefStar(const RefStar *refStar) {
     if ((_refStar != nullptr) && (refStar != nullptr)) {
         // TODO: should we raise an Exception in this case?
-        LOGLS_WARN(_log,
-                   "FittedStar: " << *this << " is already matched to another RefStar. Clean up your lists.");
-        LOGLS_WARN(_log, "old refStar: " << *_refStar);
-        LOGLS_WARN(_log, "new refStar: " << *refStar);
+        LOGLS_ERROR(_log, "FittedStar: " << *this
+                                         << " is already matched to another RefStar. Clean up your lists.");
+        LOGLS_ERROR(_log, "old refStar: " << *_refStar);
+        LOGLS_ERROR(_log, "new refStar: " << *refStar);
     } else
         _refStar = refStar;
 }
