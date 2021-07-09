@@ -182,8 +182,11 @@ MinimizeResult FitterBase::minimize(std::string const &whatToFit, double nSigmaC
 
     MinimizeResult returnCode = MinimizeResult::Converged;
 
-    // TODO : write a guesser for the number of triplets
-    std::size_t nTrip = (_lastNTrip) ? _lastNTrip : 1e6;
+    // For the initial vector size, use all measured stars + all fitted stars, which should give the
+    // maximum possible number of triplets.
+    std::size_t nTrip = (_lastNTrip)
+                                ? _lastNTrip
+                                : _associations->getMaxMeasuredStars() + _associations->fittedStarList.size();
     TripletList tripletList(nTrip);
     Eigen::VectorXd grad(_nTotal);
     grad.setZero();
