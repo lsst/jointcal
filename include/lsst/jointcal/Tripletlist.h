@@ -38,7 +38,7 @@ typedef Eigen::Triplet<double> Trip;
 // it would be wise to implement it differently if talking to cholmod
 class TripletList : public std::vector<Trip> {
 public:
-    TripletList(int count) : _nextFreeIndex(0) { reserve(count); };
+    TripletList(std::size_t count) : _nextFreeIndex(0) { reserve(count); };
 
     void addTriplet(Eigen::Index i, Eigen::Index j, double val) {
         push_back(Trip(i, j, val));
