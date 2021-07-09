@@ -81,9 +81,13 @@ public:
         stream << " mcount: " << _measurementCount;
     }
 
-    //!
+    /**
+     * The number of MeasuredStars currently associated with this FittedStar.
+     */
+    ///@{
     int getMeasurementCount() const { return _measurementCount; }
     int& getMeasurementCount() { return _measurementCount; }
+    ///@}
 
     /// Add a measuredStar on-sky magnitude.
     void addMagMeasurement(double magValue, double magWeight);

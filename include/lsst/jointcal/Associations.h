@@ -108,6 +108,7 @@ public:
     Point getCommonTangentPoint() const { return _commonTangentPoint; }
     ///@}
 
+    /// The number of MeasuredStars at the start of fitting, before any outliers are removed.
     size_t getMaxMeasuredStars() const { return _maxMeasuredStars; }
 
     /**
