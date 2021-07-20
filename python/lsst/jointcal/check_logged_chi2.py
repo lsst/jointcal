@@ -85,13 +85,21 @@ class LogParser:
         Make plots for each file (saved to the current working directory)?
     verbose : `bool`
         Print extra updates during processing?
+    longlog : `bool`
+        Use a regex designed for the "longlog" format that includes the date,
+        line number, and other info.
     """
-    def __init__(self, plot=True, verbose=True):
+    def __init__(self, plot=True, verbose=True, longlog=False):
         # This regular expression extracts the chi2 values, and the "kind" of
         # chi2 (e.g. "Initial", "Fit iteration").
-        # Chi2 values in the log look like this, for example:
+        # Chi2 values in the log look like this, for example for the "normal" format:
         # jointcal INFO: Initial chi2/ndof : 2.50373e+16/532674=4.7003e+10
-        chi2_re = "jointcal INFO: (?P<kind>.+) chi2/ndof : (?P<chi2>.+)/(?P<ndof>.+)=(?P<reduced_chi2>.+)"
+        if longlog is False:
+            chi2_re = r"jointcal INFO: (?P<kind>.+) chi2/ndof : (?P<chi2>.+)/(?P<ndof>.+)=(?P<reduced_chi2>.+)"  # noqa: E501
+        else:
+            # and for the "longlog" format:
+            # INFO  2021-07-20T11:08:55.715-0500 jointcal ()(jointcal.py:1391)- Initial chi2/ndof : 4.44678e+16/508342=8.74762e+10  # noqa: E501
+            chi2_re = r"INFO (.*) jointcal \(\)(\(jointcal\.py\:[0-9]*\))- (?P<kind>.+) chi2/ndof : (?P<chi2>.+)/(?P<ndof>.+)=(?P<reduced_chi2>.+)"  # noqa: E501
         self.matcher = re.compile(chi2_re)
         self.plot = plot
         self.verbose = verbose
@@ -101,10 +109,12 @@ class LogParser:
 
         # How to find the beginning and end of the relevant parts of the log
         # to scan for chi2 values.
-        self.section_start = {"astrometry": "Starting astrometric fitting...",
-                              "photometry": "Starting photometric fitting..."}
-        self.section_end = {"astrometry": "Updating WCS for visit:",
-                            "photometry": "Updating PhotoCalib for visit:"}
+        self.section_start = {"astrometry": "=== Starting astrometric fitting...",
+                              "photometry": "=== Starting photometric fitting..."}
+        # Scan for astrometry until the "====== Now processing photometry..." line,
+        # and for photometry until the end of the file.
+        self.section_end = {"astrometry": "====== Now processing photometry...",
+                            "photometry": None}
 
     def __call__(self, logfile):
         """Parse logfile to extract chi2 values and generate and save plots.
@@ -116,6 +126,11 @@ class LogParser:
         ----------
         logfile : `str`
             The filename of the jointcal log to process.
+
+        Returns
+        -------
+        astrometry, photometry : `Chi2Data`
+            The chi2 values that were found in the log.
         """
         title = os.path.basename(logfile)
         if self.verbose:
@@ -129,14 +144,17 @@ class LogParser:
             photometry = self._extract_chi2(opened_log, "photometry")
             increased |= self._find_chi2_increase(photometry, title, "photometry")
 
-        if astrometry is None and photometry is None and self.verbose:
+        if astrometry is None and photometry is None:
             print(f"WARNING: No chi2 values found in {logfile}.")
+            print("Try running with/without `--longlog` to read the other log format.")
 
         if increased or self.plot:
             self._plot(astrometry, photometry, title)
             plotfile = f"{os.path.splitext(title)[0]}.png"
             plt.savefig(plotfile, bbox_inches="tight")
             print("Saved plot:", plotfile)
+
+        return astrometry, photometry
 
     def _find_chi2_increase(self, chi2Data, title, label, threshold=1):
         """Return True and print a message if the raw chi2 increases
@@ -155,9 +173,11 @@ class LogParser:
             return True
         return False
 
-    def _extract_chi2(self, opened_log, section):
+    def _extract_chi2(self, opened_log, section, verbose=True):
         """Return the values extracted from the chi2 statements in the logfile.
         """
+        if verbose:
+            print(f"Scanning {section}")
         start = self.section_start[section]
         end = self.section_end[section]
         kind = []
@@ -170,8 +190,8 @@ class LogParser:
                 break
 
         for line in opened_log:
-            # Stop parsing at the section end line.
-            if end in line:
+            # Stop parsing at the section end line, or end of file if end is None.
+            if end is not None and end in line:
                 break
             if "chi2" in line:
                 match = self.matcher.search(line)
@@ -180,6 +200,7 @@ class LogParser:
                     chi2.append(match.group("chi2"))
                     ndof.append(match.group("ndof"))
                     reduced.append(match.group("reduced_chi2"))
+                    print(f"Found: {kind[-1]}: {chi2[-1]}/{ndof[-1]} = {reduced[-1]}")
 
         # No chi2 values were found (e.g., photometry wasn't run).
         if len(kind) == 0:
@@ -264,6 +285,8 @@ def parse_args():
                         help="Log file(s) to extract chi2 values from.")
     parser.add_argument("--plot", action="store_true",
                         help="Generate a plot PNG for each log file, otherwise just for questionable ones.")
+    parser.add_argument("--longlog", action="store_true",
+                        help="Read logs stored in the 'longlog' format that includes the date, etc.")
     parser.add_argument("-v", "--verbose", action="store_true",
                         help="Print extra information during processing.")
     return parser.parse_args()
@@ -271,6 +294,6 @@ def parse_args():
 
 def main():
     args = parse_args()
-    log_parser = LogParser(plot=args.plot, verbose=args.verbose)
+    log_parser = LogParser(plot=args.plot, verbose=args.verbose, longlog=args.longlog)
     for file in args.files:
         log_parser(file)
