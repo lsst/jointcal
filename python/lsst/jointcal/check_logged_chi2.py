@@ -274,23 +274,24 @@ class LogParser:
         # mark the separation between initialization and iteration
         ax0.axvline(chi2Data.init_count-0.5, color='grey', lw=0.9)
         color = next(palette)
-        patch1 = ax0.plot(xrange[:chi2Data.init_count], chi2Data.raw[:chi2Data.init_count], '*', ms=10,
+        ms = 7
+        patch1 = ax0.plot(xrange[:chi2Data.init_count], chi2Data.raw[:chi2Data.init_count], '*', ms=ms,
                           label=f"{label} pre-init", color=color)
-        patch2 = ax0.plot(xrange[chi2Data.init_count:], chi2Data.raw[chi2Data.init_count:], 'o', ms=10,
+        patch2 = ax0.plot(xrange[chi2Data.init_count:], chi2Data.raw[chi2Data.init_count:], 'o', ms=ms,
                           label=f"{label} post-init", color=color)
         patch1 = ax0.plot(xrange[:chi2Data.init_count], chi2Data.reduced[:chi2Data.init_count], '*',
-                          markerfacecolor="none", ms=10, color=color)
+                          markerfacecolor="none", ms=ms, color=color)
         patch2 = ax0.plot(xrange[chi2Data.init_count:], chi2Data.reduced[chi2Data.init_count:], 'o',
-                          markerfacecolor="none", ms=10, label=f"{label} reduced", color=color)
+                          markerfacecolor="none", ms=ms, label=f"{label} reduced", color=color)
 
         ax0.set_xlabel("Iteration #", fontsize=20)
         ax0.set_ylabel(r"$\chi ^2$", fontsize=20)
 
         # mark the separation between initialization and iteration
         ax1.axvline(chi2Data.init_count-0.5, color='grey', lw=0.9)
-        ax1.plot(xrange[:chi2Data.init_count], chi2Data.ndof[:chi2Data.init_count], '*', ms=10,
+        ax1.plot(xrange[:chi2Data.init_count], chi2Data.ndof[:chi2Data.init_count], '*', ms=ms,
                  label="pre-init", color=color)
-        ax1.plot(xrange[chi2Data.init_count:], chi2Data.ndof[chi2Data.init_count:], 'o', ms=10,
+        ax1.plot(xrange[chi2Data.init_count:], chi2Data.ndof[chi2Data.init_count:], 'o', ms=ms,
                  label="post-init", color=color)
 
         ax1.set_xlabel("Iteration #", fontsize=20)
