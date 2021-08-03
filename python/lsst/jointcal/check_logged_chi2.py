@@ -66,6 +66,14 @@ class Chi2Data:
         # Logs pre-DM-25779
         if "Fit prepared" in self.kind:
             return self.kind.index("Fit prepared") + 1
+        # Logs with the findOutliers DEBUG level logging on
+        elif "outlier rejection" in self.kind:
+            for i, (key, group) in enumerate(itertools.groupby(self.kind)):
+                print(i, key, self.kind[i], list(group))
+                if key == "Fit iteration 0":
+                    break
+            # first post-init outlier rejection is the previous time through
+            return i-1
         # Logs post-DM-25779
         elif "Fit iteration 0" in self.kind:
             return self.kind.index("Fit iteration 0")
@@ -96,11 +104,15 @@ class LogParser:
         # jointcal INFO: Initial chi2/ndof : 2.50373e+16/532674=4.7003e+10
         if longlog is False:
             chi2_re = r"jointcal INFO: (?P<kind>.+) chi2/ndof : (?P<chi2>.+)/(?P<ndof>.+)=(?P<reduced_chi2>.+)"  # noqa: E501
+            # For DEBUG logging internal to the fitter (the "inner loop" where outlier rejection happens).
+            debug_re = r"jointcal(.*Fit) DEBUG: ?chi2/ndof : (?P<chi2>.+)/(?P<ndof>.+)=(?P<reduced_chi2>.+)"  # noqa: E501
         else:
             # and for the "longlog" format:
             # INFO  2021-07-20T11:08:55.715-0500 jointcal ()(jointcal.py:1391)- Initial chi2/ndof : 4.44678e+16/508342=8.74762e+10  # noqa: E501
             chi2_re = r"INFO (.*) jointcal \(\)(\(jointcal\.py\:[0-9]*\))- (?P<kind>.+) chi2/ndof : (?P<chi2>.+)/(?P<ndof>.+)=(?P<reduced_chi2>.+)"  # noqa: E501
+            chi2_re = r"DEBUG (.*) jointcal(.*Fit) \(\)(\(jointcal\.py\:[0-9]*\))- chi2/ndof : (?P<chi2>.+)/(?P<ndof>.+)=(?P<reduced_chi2>.+)"  # noqa: E501
         self.matcher = re.compile(chi2_re)
+        self.debug_matcher = re.compile(debug_re)
         self.plot = plot
         self.verbose = verbose
 
@@ -200,7 +212,16 @@ class LogParser:
                     chi2.append(match.group("chi2"))
                     ndof.append(match.group("ndof"))
                     reduced.append(match.group("reduced_chi2"))
-                    print(f"Found: {kind[-1]}: {chi2[-1]}/{ndof[-1]} = {reduced[-1]}")
+                    if self.verbose:
+                        print(f"Found: {kind[-1]}: {chi2[-1]}/{ndof[-1]} = {reduced[-1]}")
+                match = self.debug_matcher.search(line)
+                if match is not None:
+                    kind.append("outlier rejection")
+                    chi2.append(match.group("chi2"))
+                    ndof.append(match.group("ndof"))
+                    reduced.append(match.group("reduced_chi2"))
+                    if self.verbose:
+                        print(f"Found: {kind[-1]}: {chi2[-1]}/{ndof[-1]} = {reduced[-1]}")
 
         # No chi2 values were found (e.g., photometry wasn't run).
         if len(kind) == 0:
