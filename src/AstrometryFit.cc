@@ -496,7 +496,7 @@ void AstrometryFit::saveChi2MeasContributions(std::string const &filename) const
     std::ofstream ofile(filename.c_str());
     std::string separator = "\t";
 
-    ofile << "#id" << separator << "xccd" << separator << "yccd " << separator;
+    ofile << "id" << separator << "xccd" << separator << "yccd " << separator;
     ofile << "rx" << separator << "ry" << separator;
     ofile << "xtp" << separator << "ytp" << separator;
     ofile << "mag" << separator << "deltaYears" << separator;
@@ -506,9 +506,9 @@ void AstrometryFit::saveChi2MeasContributions(std::string const &filename) const
     ofile << "fsindex" << separator;
     ofile << "ra" << separator << "dec" << separator;
     ofile << "chi2" << separator << "nm" << separator;
-    ofile << "chip" << separator << "visit" << std::endl;
+    ofile << "detector" << separator << "visit" << std::endl;
 
-    ofile << "#id in source catalog" << separator << "coordinates in CCD (pixels)" << separator << separator;
+    ofile << "id in source catalog" << separator << "coordinates in CCD (pixels)" << separator << separator;
     ofile << "residual on TP (degrees)" << separator << separator;
     ofile << "transformed coordinate in TP (degrees)" << separator << separator;
     ofile << "rough magnitude" << separator << "Julian epoch year delta from fit epoch" << separator;
@@ -517,9 +517,9 @@ void AstrometryFit::saveChi2MeasContributions(std::string const &filename) const
     ofile << "as-read residual on TP (degrees)" << separator << separator;
     ofile << "unique index of the fittedStar" << separator;
     ofile << "on sky position of fittedStar" << separator << separator;
-    ofile << "contribution to Chi2 (2D dofs)" << separator << "number of measurements of this fittedStar"
+    ofile << "contribution to chi2 (2D dofs)" << separator << "number of measurements of this fittedStar"
           << separator;
-    ofile << "chip id" << separator << "visit id" << std::endl;
+    ofile << "detector id" << separator << "visit id" << std::endl;
 
     const CcdImageList &ccdImageList = _associations->getCcdImageList();
     for (auto const &ccdImage : ccdImageList) {
@@ -569,19 +569,19 @@ void AstrometryFit::saveChi2RefContributions(std::string const &filename) const 
     std::ofstream ofile(filename.c_str());
     std::string separator = "\t";
 
-    ofile << "#ra" << separator << "dec " << separator;
+    ofile << "ra" << separator << "dec " << separator;
     ofile << "rx" << separator << "ry" << separator;
     ofile << "mag" << separator;
     ofile << "xErr" << separator << "yErr" << separator << "xyCov" << separator;
     ofile << "fsindex" << separator;
     ofile << "chi2" << separator << "nm" << std::endl;
 
-    ofile << "#coordinates of fittedStar (degrees)" << separator << separator;
+    ofile << "coordinates of fittedStar (degrees)" << separator << separator;
     ofile << "residual on TP (degrees)" << separator << separator;
     ofile << "magnitude" << separator;
     ofile << "refStar transformed measurement uncertainty (degrees)" << separator << separator << separator;
     ofile << "unique index of the fittedStar" << separator;
-    ofile << "refStar contribution to Chi2 (2D dofs)" << separator
+    ofile << "refStar contribution to chi2 (2D dofs)" << separator
           << "number of measurements of this FittedStar" << std::endl;
 
     // The following loop is heavily inspired from AstrometryFit::computeChi2()
