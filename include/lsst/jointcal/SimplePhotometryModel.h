@@ -75,6 +75,8 @@ public:
     /// @copydoc PhotometryModel::print
     virtual void print(std::ostream &out) const override;
 
+    ~SimplePhotometryModel() = default;
+
 protected:
     typedef std::unordered_map<CcdImageKey, std::unique_ptr<PhotometryMapping>> MapType;
     MapType _myMap;

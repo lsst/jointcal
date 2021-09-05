@@ -91,6 +91,8 @@ public:
     /// @copydoc PhotometryModel::print
     void print(std::ostream &out) const override;
 
+    ~ConstrainedPhotometryModel() = default;
+
 protected:
     PhotometryMappingBase *findMapping(CcdImage const &ccdImage) const override;
 

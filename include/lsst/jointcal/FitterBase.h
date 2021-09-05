@@ -157,6 +157,8 @@ public:
      */
     virtual void saveChi2Contributions(std::string const &baseName) const;
 
+    virtual ~FitterBase() = default;
+
 protected:
     std::shared_ptr<Associations> _associations;
     std::string _whatToFit;
