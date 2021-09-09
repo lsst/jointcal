@@ -213,6 +213,8 @@ public:
         }
     }
 
+    virtual ~PhotometryModel() = default;
+
 protected:
     /// Return a pointer to the mapping associated with this ccdImage.
     virtual PhotometryMappingBase *findMapping(CcdImage const &ccdImage) const = 0;

@@ -102,6 +102,7 @@ public:
 
     /// Get a copy of the parameters of this model, in the same order as `offsetParams`.
     virtual Eigen::VectorXd getParameters() const = 0;
+    virtual ~PhotometryTransform() = default;
 };
 
 /**
