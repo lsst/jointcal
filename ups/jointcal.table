@@ -10,6 +10,7 @@ setupRequired(pipe_tasks)
 setupRequired(jointcal_cholmod)
 setupRequired(verify)
 setupRequired(verify_metrics)
+setupRequired(cpputils)
 
 # for running gen3 middleware tests
 setupRequired(ctrl_mpexec)
