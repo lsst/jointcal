@@ -35,7 +35,6 @@
 #include "lsst/geom/Angle.h"
 #include "lsst/geom/Point.h"
 #include "lsst/afw/geom/SkyWcs.h"
-#include "lsst/afw/image/Utils.h"
 #include "lsst/afw/image/Image.h"
 #include "lsst/afw/fits.h"
 #include "lsst/daf/base.h"
