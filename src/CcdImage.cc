@@ -129,7 +129,6 @@ CcdImage::CcdImage(afw::table::SourceCatalog &catalog, std::shared_ptr<lsst::afw
     _boresightRaDec = visitInfo->getBoresightRaDec();
     _airMass = visitInfo->getBoresightAirmass();
     _epoch = visitInfo->getDate().get(lsst::daf::base::DateTime::EPOCH);
-    double latitude = visitInfo->getObservatory().getLatitude();
     _lstObs = visitInfo->getEra();
     _hourAngle = visitInfo->getBoresightHourAngle();
 
@@ -145,14 +144,9 @@ CcdImage::CcdImage(afw::table::SourceCatalog &catalog, std::shared_ptr<lsst::afw
         double cosz = 1. / _airMass;
         double sinz = std::sqrt(1 - cosz * cosz);  // astronomers usually observe above the horizon
         _tanZ = sinz / cosz;
-        // TODO: as part of DM-12473, we can remove all of this and just call _visitInfo.getParallacticAngle()
-        double dec = _boresightRaDec.getLatitude();
-        // x/y components of refraction angle, eta.]
-        double yEta = std::sin(_hourAngle);
-        double xEta = std::cos(dec) * std::tan(latitude) - std::sin(dec) * std::cos(_hourAngle);
-        double eta = std::atan2(yEta, xEta);
-        _sinEta = std::sin(eta);
-        _cosEta = std::cos(eta);
+        lsst::geom::Angle eta = visitInfo->getBoresightParAngle();
+        _sinEta = std::sin(eta.asRadians());
+        _cosEta = std::cos(eta.asRadians());
     }
 }
 
