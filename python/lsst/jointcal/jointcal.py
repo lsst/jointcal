@@ -1295,7 +1295,7 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
         # TODO: this should not print "trying to invert a singular transformation:"
         # if it does that, something's not right about the WCS...
         associations.associateCatalogs(match_cut)
-        add_measurement(self.job, 'jointcal.associated_%s_fittedStars' % name,
+        add_measurement(self.job, 'jointcal.%s_matched_fittedStars' % name,
                         associations.fittedStarListSize())
 
         applyColorterms = False if name.lower() == "astrometry" else self.config.applyColorTerms
@@ -1310,17 +1310,17 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
                                      fluxField,
                                      refCoordinateErr=refCoordErr,
                                      rejectBadFluxes=reject_bad_fluxes)
-        add_measurement(self.job, 'jointcal.collected_%s_refStars' % name,
+        add_measurement(self.job, 'jointcal.%s_collected_refStars' % name,
                         associations.refStarListSize())
 
         associations.prepareFittedStars(self.config.minMeasurements)
 
         self._check_star_lists(associations, name)
-        add_measurement(self.job, 'jointcal.selected_%s_refStars' % name,
+        add_measurement(self.job, 'jointcal.%s_prepared_refStars' % name,
                         associations.nFittedStarsWithAssociatedRefStar())
-        add_measurement(self.job, 'jointcal.selected_%s_fittedStars' % name,
+        add_measurement(self.job, 'jointcal.%s_prepared_fittedStars' % name,
                         associations.fittedStarListSize())
-        add_measurement(self.job, 'jointcal.selected_%s_ccdImages' % name,
+        add_measurement(self.job, 'jointcal.%s_prepared_ccdImages' % name,
                         associations.nCcdImagesValidForFit())
 
         load_cat_prof_file = 'jointcal_fit_%s.prof'%name if self.config.detailedProfile else ''

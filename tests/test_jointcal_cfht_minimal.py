@@ -78,11 +78,11 @@ class JointcalTestCFHTMinimal(jointcalTestBase.JointcalTestBase, lsst.utils.test
 
         # NOTE: ndof==1 from 4 fit parameters (2 model, 2 fittedStar), and
         # 5 degrees-of-freedom (3 star measurements, with 2 reference stars).
-        metrics = {'collected_photometry_refStars': 346,
-                   'selected_photometry_refStars': 2,
-                   'associated_photometry_fittedStars': 2,
-                   'selected_photometry_fittedStars': 2,
-                   'selected_photometry_ccdImages': 2,
+        metrics = {'photometry_collected_refStars': 346,
+                   'photometry_prepared_refStars': 2,
+                   'photometry_matched_fittedStars': 2,
+                   'photometry_prepared_fittedStars': 2,
+                   'photometry_prepared_ccdImages': 2,
                    'photometry_final_chi2': 2.336915,
                    'photometry_final_ndof': 1
                    }
@@ -117,11 +117,11 @@ class JointcalTestCFHTMinimal(jointcalTestBase.JointcalTestBase, lsst.utils.test
 
         # NOTE: ndof==1 from 4 fit parameters (2 model, 2 fittedStar), and
         # 5 degrees-of-freedom (3 star measurements, with 2 reference stars).
-        metrics = {'collected_photometry_refStars': 346,
-                   'selected_photometry_refStars': 2,
-                   'associated_photometry_fittedStars': 2,
-                   'selected_photometry_fittedStars': 2,
-                   'selected_photometry_ccdImages': 2,
+        metrics = {'photometry_collected_refStars': 346,
+                   'photometry_prepared_refStars': 2,
+                   'photometry_matched_fittedStars': 2,
+                   'photometry_prepared_fittedStars': 2,
+                   'photometry_prepared_ccdImages': 2,
                    'photometry_final_chi2': 2.23008,
                    'photometry_final_ndof': 1
                    }
