@@ -1,6 +1,9 @@
 # Config for gen3 tests, which cannot use astrometrySourceSelector, and which
 # do source selection on Parquet tables, which have different field names.
 
+# TODO DM-31889: Update the field names to the new names when
+# testdata_jointcal is updated to the new column names.
+
 # TODO DM-29008: move these configs into the jointcal defaults before gen2 removal.
 # make science selector look like astrometry selector (see note in tests/config/config.py)
 config.sourceSelector['science'].flags.bad = ['PixelFlags_edge',

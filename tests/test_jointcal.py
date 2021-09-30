@@ -113,7 +113,8 @@ class TestJointcalVisitCatalog(lsst.utils.tests.TestCase):
         """
         detectorId = 56
         table = self.jointcal._make_schema_table()
-        catalog = self.jointcal._extract_detector_catalog_from_visit_catalog(table, self.data, detectorId)
+        catalog = self.jointcal._extract_detector_catalog_from_visit_catalog(table, self.data, detectorId,
+                                                                             'ccd', ['Ixx', 'Iyy', 'Ixy'])
 
         # The test catalog has a number of elements for each detector equal to the detector id.
         self.assertEqual(len(catalog), detectorId)
