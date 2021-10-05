@@ -23,10 +23,8 @@ import copy
 import os
 import shutil
 
-import click.testing
-
 import lsst.afw.image.utils
-import lsst.ctrl.mpexec.cli.pipetask
+from lsst.ctrl.mpexec import SimplePipelineExecutor
 import lsst.daf.butler
 import lsst.obs.base
 import lsst.geom
@@ -50,7 +48,8 @@ class JointcalTestBase:
                    all_visits=None,
                    other_args=None,
                    do_plot=False,
-                   log_level=None):
+                   log_level=None,
+                   where=""):
         """
         Call from your child classes's setUp() to get the necessary variables built.
 
@@ -74,6 +73,8 @@ class JointcalTestBase:
             Set to the default log level you want jointcal to produce while the
             tests are running. See the developer docs about logging for valid
             levels: https://developer.lsst.io/coding/logging.html
+        where : `str`
+            Data ID query for pipetask specifying the data to run on.
         """
         self.path = os.path.dirname(__file__)
 
@@ -97,6 +98,8 @@ class JointcalTestBase:
 
         # Append `msg` arguments to assert failures.
         self.longMessage = True
+
+        self.where = where
 
         # Ensure that the filter list is reset for each test so that we avoid
         # confusion or contamination from other instruments.
@@ -287,80 +290,54 @@ class JointcalTestBase:
                        transfer='symlink',
                        skip_dimensions={'instrument', 'detector', 'physical_filter'})
 
-    def _runPipeline(self, repo, pipelineFile, queryString=None,
-                     inputCollections=None, outputCollection=None,
+    def _runPipeline(self, repo,
+                     inputCollections, outputCollection,
                      configFiles=None, configOptions=None,
-                     registerDatasetTypes=False):
-        """Run a pipeline via pipetask.
+                     registerDatasetTypes=False, whereSuffix=None):
+        """Run a pipeline via the SimplePipelineExecutor.
 
         Parameters
         ----------
         repo : `str`
             Gen3 Butler repository to read from/write to.
-        pipelineFile : `str`
-            The pipeline definition YAML file to execute.
-        queryString : `str`, optional
-            String to use for "-d" data query. For example,
-            "instrument='HSC' and tract=9697 and skymap='hsc_rings_v1'"
-        inputCollections : `str`, optional
+        inputCollections : `list` [`str`]
             String to use for "-i" input collections (comma delimited).
             For example, "refcats,HSC/runs/tests,HSC/calib"
-        outputCollection : `str`, optional
+        outputCollection : `str`
             String to use for "-o" output collection. For example,
             "HSC/testdata/jointcal"
         configFiles : `list` [`str`], optional
-            List of jointcal config files to use (with "-C").
-        configOptions : `list` [`str`], optional
-            List of individual jointcal config options to use (with "-c").
+            List of jointcal config files to use.
+        configOptions : `dict` [`str`], optional
+            Individual jointcal config options (field: value) to override.
         registerDatasetTypes : bool, optional
             Set "--register-dataset-types" when running the pipeline.
+        whereSuffix : `str`, optional
+            Additional parameters to the ``where`` pipetask statement.
 
         Returns
         -------
-        exit_code: `int`
-            The exit code of the executed `click.testing.CliRunner`
-
-        Raises
-        ------
-        RuntimeError
-            Raised if the CliRunner executed pipetask failed.
-
-        Notes
-        -----
-        This approach uses the Click commandline interface, which is not ideal
-        for tests like this. See DM-26239 for the replacement pipetask API, and
-        DM-27940 for the ticket to replace the CliRunner once that API exists.
         """
-        pipelineArgs = ["run",
-                        "-b", repo,
-                        "-p", pipelineFile]
+        config = lsst.jointcal.JointcalConfig()
+        for file in configFiles:
+            config.load(file)
+        for key, value in configOptions.items():
+            setattr(config, key, value)
+        if whereSuffix is not None:
+            where = ' '.join((self.where, whereSuffix))
+        lsst.daf.butler.cli.cliLog.CliLog.initLog(False)
+        butler = SimplePipelineExecutor.prep_butler(repo,
+                                                    inputs=inputCollections,
+                                                    output=outputCollection,
+                                                    output_run=outputCollection.replace("all", "jointcal"))
+        executor = SimplePipelineExecutor.from_task_class(lsst.jointcal.JointcalTask,
+                                                          config=config,
+                                                          where=where,
+                                                          butler=butler)
+        executor.run(register_dataset_types=registerDatasetTypes)
 
-        if queryString is not None:
-            pipelineArgs.extend(["-d", queryString])
-        if inputCollections is not None:
-            pipelineArgs.extend(["-i", inputCollections])
-        if outputCollection is not None:
-            # Each test is in it's own butler, so we don't have to worry about collisions,
-            # so we can use `--output-run` instead of just `-o`.
-            pipelineArgs.extend(["--output-run", outputCollection])
-        if configFiles is not None:
-            for configFile in configFiles:
-                pipelineArgs.extend(["-C", f"jointcal:{configFile}"])
-        if configOptions is not None:
-            for configOption in configOptions:
-                pipelineArgs.extend(["-c", f"jointcal:{configOption}"])
-        if registerDatasetTypes:
-            pipelineArgs.extend(["--register-dataset-types"])
-
-        # TODO DM-27940: replace CliRunner with pipetask API.
-        runner = click.testing.CliRunner()
-        results = runner.invoke(lsst.ctrl.mpexec.cli.pipetask.cli, pipelineArgs)
-        if results.exception:
-            raise RuntimeError("Pipeline %s failed." % (' '.join(pipelineArgs))) from results.exception
-        return results.exit_code
-
-    def _runGen3Jointcal(self, instrumentClass, instrumentName, queryString,
-                         configFiles=None, configOptions=None):
+    def _runGen3Jointcal(self, instrumentClass, instrumentName,
+                         configFiles=None, configOptions=None, whereSuffix=None)
         """Create a Butler repo and run jointcal on it.
 
         Parameters
@@ -371,13 +348,12 @@ class JointcalTestBase:
         instrumentName : `str`
             The name of the instrument as it appears in the repo collections.
             For example, "HSC".
-        queryString : `str`
-            The query string to be run for processing. For example,
-            "instrument='HSC' and tract=9697 and skymap='hsc_rings_v1'".
         configFiles : `list` [`str`], optional
-            List of jointcal config files to use (with "-C").
-        configOptions : `list` [`str`], optional
-            List of individual jointcal config options to use (with "-c").
+            List of jointcal config files to use.
+        configOptions : `dict` [`str`], optional
+            Individual jointcal config options (field: value) to override.
+        whereSuffix : `str`, optional
+            Additional parameters to the ``where`` pipetask statement.
         """
         self._importRepository(instrumentClass,
                                self.input_dir,
@@ -385,14 +361,15 @@ class JointcalTestBase:
         # TODO post-RFC-741: the names of these collections will have to change
         # once testdata_jointcal is updated to reflect the collection
         # conventions in RFC-741 (no ticket for that change yet).
-        inputCollections = f"refcats/gen2,{instrumentName}/testdata,{instrumentName}/calib/unbounded"
+        inputCollections = ["refcats/gen2",
+                            f"{instrumentName}/testdata",
+                            f"{instrumentName}/calib/unbounded"]
 
-        pipelineFile = os.path.join(self.path, f"config/jointcalPipeline-{instrumentName}.yaml")
         configFiles = [os.path.join(self.path, "config/config-gen3.py")] + self.configfiles
-        self._runPipeline(self.repo, pipelineFile,
-                          outputCollection=f"{instrumentName}/testdata/jointcal",
-                          inputCollections=inputCollections,
-                          queryString=queryString,
+        self._runPipeline(self.repo,
+                          inputCollections,
+                          f"{instrumentName}/testdata/all",
                           configFiles=configFiles,
                           configOptions=configOptions,
-                          registerDatasetTypes=True)
+                          registerDatasetTypes=True,
+                          whereSuffix=whereSuffix)

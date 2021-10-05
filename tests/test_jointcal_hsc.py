@@ -66,10 +66,13 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         input_dir = os.path.join(self.data_dir, 'hsc')
         all_visits = [34648, 34690, 34714, 34674, 34670, 36140, 35892, 36192, 36260, 36236]
 
+        where = "instrument='HSC' and tract=9697 and skymap='hsc_rings_v1'"
+
         self.setUp_base(center, radius,
                         input_dir=input_dir,
                         all_visits=all_visits,
-                        do_plot=do_plot)
+                        do_plot=do_plot,
+                        where=where)
 
         test_config = os.path.join(lsst.utils.getPackageDir('jointcal'), 'tests/config/hsc-config.py')
         self.configfiles.append(test_config)
@@ -100,10 +103,9 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
 
     def test_jointcalTask_2_visits_simple_gen3(self):
         """Test gen3 butler jointcal."""
-        queryString = "instrument='HSC' and tract=9697 and skymap='hsc_rings_v1' and band='r'"
-        queryString += f" and visit in ({self.all_visits[0]},{self.all_visits[1]})"
-        configOptions = ["astrometryModel=simple", "photometryModel=simpleFlux"]
-        self._runGen3Jointcal("lsst.obs.subaru.HyperSuprimeCam", "HSC", queryString,
+        configOptions = {"astrometryModel": "simple", "photometryModel": "simpleFlux"}
+        where = f" and visit in ({self.all_visits[0]},{self.all_visits[1]})"
+        self._runGen3Jointcal("lsst.obs.subaru.HyperSuprimeCam", "HSC", whereSuffix=where,
                               configOptions=configOptions)
         # TODO DM-28863: this does not currently test anything other than the code
         # running without raising and that it writes non-empty output.
