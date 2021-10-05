@@ -105,8 +105,24 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         """Test gen3 butler jointcal."""
         configOptions = {"astrometryModel": "simple", "photometryModel": "simpleFlux"}
         where = f" and visit in ({self.all_visits[0]},{self.all_visits[1]})"
+
+        metrics = {'astrometry_collected_refStars': 568,
+                   'photometry_collected_refStars': 6485,
+                   'astrometry_prepared_refStars': 137,
+                   'photometry_prepared_refStars': 1609,
+                   'astrometry_matched_fittedStars': 2070,
+                   'photometry_matched_fittedStars': 2070,
+                   'astrometry_prepared_fittedStars': 989,
+                   'photometry_prepared_fittedStars': 1731,
+                   'astrometry_prepared_ccdImages': 6,
+                   'photometry_prepared_ccdImages': 6,
+                   'astrometry_final_chi2': 835.473,
+                   'astrometry_final_ndof': 1918,
+                   'photometry_final_chi2': 4997.62,
+                   'photometry_final_ndof': 2188
+                   }
         self._runGen3Jointcal("lsst.obs.subaru.HyperSuprimeCam", "HSC", whereSuffix=where,
-                              configOptions=configOptions)
+                              configOptions=configOptions, metrics=metrics)
         # TODO DM-28863: this does not currently test anything other than the code
         # running without raising and that it writes non-empty output.
         butler = Butler(self.repo, collections=['HSC/testdata/jointcal'])

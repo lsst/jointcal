@@ -28,6 +28,7 @@ from lsst.ctrl.mpexec import SimplePipelineExecutor
 import lsst.daf.butler
 import lsst.obs.base
 import lsst.geom
+from lsst.verify.bin.jobReporter import JobReporter
 
 from lsst.jointcal import jointcal, utils
 
@@ -317,6 +318,8 @@ class JointcalTestBase:
 
         Returns
         -------
+        job : `lsst.verify.Job`
+            Job containing the metric measurements from this test run.
         """
         config = lsst.jointcal.JointcalConfig()
         for file in configFiles:
@@ -335,9 +338,15 @@ class JointcalTestBase:
                                                           where=where,
                                                           butler=butler)
         executor.run(register_dataset_types=registerDatasetTypes)
+        # JobReporter bundles all metrics in the collection into one job.
+        jobs = JobReporter(repo, outputCollection, "jointcal", "", "jointcal").run()
+        # should only ever get one job output in tests
+        self.assertEqual(len(jobs), 1)
+        return list(jobs.values())[0]
 
     def _runGen3Jointcal(self, instrumentClass, instrumentName,
-                         configFiles=None, configOptions=None, whereSuffix=None)
+                         configFiles=None, configOptions=None, whereSuffix=None,
+                         metrics=None):
         """Create a Butler repo and run jointcal on it.
 
         Parameters
@@ -354,6 +363,9 @@ class JointcalTestBase:
             Individual jointcal config options (field: value) to override.
         whereSuffix : `str`, optional
             Additional parameters to the ``where`` pipetask statement.
+        metrics : `dict`, optional
+            Dictionary of 'metricName': value to test jointcal's result.metrics
+            against.
         """
         self._importRepository(instrumentClass,
                                self.input_dir,
@@ -366,10 +378,12 @@ class JointcalTestBase:
                             f"{instrumentName}/calib/unbounded"]
 
         configFiles = [os.path.join(self.path, "config/config-gen3.py")] + self.configfiles
-        self._runPipeline(self.repo,
-                          inputCollections,
-                          f"{instrumentName}/testdata/all",
-                          configFiles=configFiles,
-                          configOptions=configOptions,
-                          registerDatasetTypes=True,
-                          whereSuffix=whereSuffix)
+        job = self._runPipeline(self.repo,
+                                inputCollections,
+                                f"{instrumentName}/testdata/all",
+                                configFiles=configFiles,
+                                configOptions=configOptions,
+                                registerDatasetTypes=True,
+                                whereSuffix=whereSuffix)
+
+        self._test_metrics(job.measurements, metrics)
