@@ -534,7 +534,7 @@ class JointcalConfig(pipeBase.PipelineTaskConfig,
         if self.doAstrometry and not self.doPhotometry and self.applyColorTerms:
             msg = ("Only doing astrometry, but Colorterms are not applied for astrometry;"
                    "applyColorTerms=True will be ignored.")
-            lsst.log.warn(msg)
+            lsst.log.warning(msg)
 
     def setDefaults(self):
         # Use science source selector which can filter on extendedness, SNR, and whether blended
@@ -1016,7 +1016,7 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
             if there are no sources in the loaded catalog.
         """
         if len(data.catalog) == 0:
-            self.log.warn("No sources selected in visit %s ccd %s", data.visit, data.detector.getId())
+            self.log.warning("No sources selected in visit %s ccd %s", data.visit, data.detector.getId())
             return None
 
         associations.createCcdImage(data.catalog,
@@ -1225,8 +1225,8 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
                                                  msg)
 
         if self.config.astrometryReferenceErr is not None and 'coord_raErr' in refCat.schema:
-            self.log.warn("Overriding reference catalog coordinate errors with %f/coordinate [mas]",
-                          self.config.astrometryReferenceErr)
+            self.log.warning("Overriding reference catalog coordinate errors with %f/coordinate [mas]",
+                             self.config.astrometryReferenceErr)
 
         if self.config.astrometryReferenceErr is None:
             return float('nan')
@@ -1658,11 +1658,11 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
             self.log.debug("ccdImage %s has %s measured and %s reference stars",
                            ccdImage.getName(), nMeasuredStars, nRefStars)
             if nMeasuredStars < self.config.minMeasuredStarsPerCcd:
-                self.log.warn("ccdImage %s has only %s measuredStars (desired %s)",
-                              ccdImage.getName(), nMeasuredStars, self.config.minMeasuredStarsPerCcd)
+                self.log.warning("ccdImage %s has only %s measuredStars (desired %s)",
+                                 ccdImage.getName(), nMeasuredStars, self.config.minMeasuredStarsPerCcd)
             if nRefStars < self.config.minRefStarsPerCcd:
-                self.log.warn("ccdImage %s has only %s RefStars (desired %s)",
-                              ccdImage.getName(), nRefStars, self.config.minRefStarsPerCcd)
+                self.log.warning("ccdImage %s has only %s RefStars (desired %s)",
+                                 ccdImage.getName(), nRefStars, self.config.minRefStarsPerCcd)
 
     def _iterate_fit(self, associations, fitter, max_steps, name, whatToFit,
                      dataName="",
@@ -1746,12 +1746,12 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
 
                 break
             elif result == MinimizeResult.Chi2Increased:
-                self.log.warn("Still some outliers remaining but chi2 increased - retry")
+                self.log.warning("Still some outliers remaining but chi2 increased - retry")
                 # Check whether the increase was large enough to cause trouble.
                 chi2Ratio = chi2.chi2 / oldChi2.chi2
                 if chi2Ratio > 1.5:
-                    self.log.warn('Significant chi2 increase by a factor of %.4g / %.4g = %.4g',
-                                  chi2.chi2, oldChi2.chi2, chi2Ratio)
+                    self.log.warning('Significant chi2 increase by a factor of %.4g / %.4g = %.4g',
+                                     chi2.chi2, oldChi2.chi2, chi2Ratio)
                 # Based on a variety of HSC jointcal logs (see DM-25779), it
                 # appears that chi2 increases more than a factor of ~2 always
                 # result in the fit diverging rapidly and ending at chi2 > 1e10.
