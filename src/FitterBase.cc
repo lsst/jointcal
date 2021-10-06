@@ -146,8 +146,8 @@ std::size_t FitterBase::findOutliers(double nSigmaCut, MeasuredStarList &msOutli
             nOutliers++;
         }
     }  // end loop on measurements/references
-    LOGLS_INFO(_log, "findOutliers: found " << msOutliers.size() << " meas outliers and " << fsOutliers.size()
-                                            << " ref outliers ");
+    LOGLS_DEBUG(_log, "findOutliers: found " << msOutliers.size() << " meas outliers and "
+                                             << fsOutliers.size() << " ref outliers ");
 
     return nOutliers;
 }
@@ -255,10 +255,10 @@ MinimizeResult FitterBase::minimize(std::string const &whatToFit, double nSigmaC
         LOGLS_DEBUG(_log, "findOutliers chi2 cut level: " << sigmaCut << ", relative change: " << relChange);
         // If sigmaRelativeTolerance is set and at least one iteration has been done, break loop when the
         // fractional change in sigmaCut levels is less than the sigmaRelativeTolerance parameter.
-        if ((sigmaRelativeTolerance > 0) && (oldSigmaCut > 0 && relChange < sigmaRelativeTolerance)){
+        if ((sigmaRelativeTolerance > 0) && (oldSigmaCut > 0 && relChange < sigmaRelativeTolerance)) {
             LOGLS_INFO(_log, "Iterations stopped with chi2 cut at " << sigmaCut << " and relative change of "
-                              << relChange);
-            break;  
+                                                                    << relChange);
+            break;
         }
         totalMeasOutliers += msOutliers.size();
         totalRefOutliers += fsOutliers.size();

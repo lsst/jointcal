@@ -107,19 +107,19 @@ class CameraModel:
         self.fieldAngle = np.mean(self.fieldAngles, axis=0)
         self.fieldAngleStd = np.std(self.fieldAngles, axis=0)
         if self.fieldAngleStd.max() > 1e-4:
-            self.log.warn("Large stddev in computed field angles between visits (max: %s degree).",
-                          self.fieldAngleStd.max())
+            self.log.warning("Large stddev in computed field angles between visits (max: %s degree).",
+                             self.fieldAngleStd.max())
         # import os; print(os.getpid()); import ipdb; ipdb.set_trace();
         self.radialScale = np.mean(self.radialScales, axis=0)
         self.radialScaleStd = np.std(self.radialScales, axis=0)
         if self.radialScaleStd.max() > 1e-4:
-            self.log.warn("Large stddev in computed radial scales between visits (max: %s arcsec).",
-                          self.radialScaleStd.max())
+            self.log.warning("Large stddev in computed radial scales between visits (max: %s arcsec).",
+                             self.radialScaleStd.max())
         self.tangentialScale = np.mean(self.tangentialScales, axis=0)
         self.tangentialScaleStd = np.std(self.tangentialScales, axis=0)
         if self.tangentialScaleStd.max() > 1e-4:
-            self.log.warn("Large stddev in computed tangential scales between visits (max: %s arcsec).",
-                          self.tangentialScaleStd.max())
+            self.log.warning("Large stddev in computed tangential scales between visits (max: %s arcsec).",
+                             self.tangentialScaleStd.max())
 
     def computeCameraPixelScale(self, detector_id=30):
         """Compute the radial and tangential pixel scales using the distortion

@@ -93,7 +93,7 @@ class PerTractCcdDataIdContainer(CoaddDataIdContainer):
 
                 for ref in namespace.butler.subset("calexp", dataId=dataId):
                     if not ref.datasetExists("calexp"):
-                        log.warnf("calexp with dataId: {} not found.", dict(dataId))
+                        log.warning("calexp with dataId: %s not found.", dict(dataId))
                         continue
 
                     # XXX fancier mechanism to select an individual exposure than just pulling out "visit"?

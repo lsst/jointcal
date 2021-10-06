@@ -173,7 +173,7 @@ void Associations::associateCatalogs(const double matchCutInArcSec, const bool u
             ms->setFittedStar(fs);
             matchedCount++;
         }
-        LOGLS_INFO(_log, "Matched " << matchedCount << " objects in " << ccdImage->getName());
+        LOGLS_DEBUG(_log, "Matched " << matchedCount << " objects in " << ccdImage->getName());
 
         // add unmatched objets to FittedStarList
         int unMatchedCount = 0;
@@ -189,7 +189,7 @@ void Associations::associateCatalogs(const double matchCutInArcSec, const bool u
             }
             unMatchedCount++;
         }
-        LOGLS_INFO(_log, "Unmatched objects: " << unMatchedCount);
+        LOGLS_DEBUG(_log, "Unmatched objects: " << unMatchedCount);
     }  // end of loop on CcdImages
 
     // !!!!!!!!!!!!!!!!!
