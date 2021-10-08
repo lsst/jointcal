@@ -89,16 +89,16 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
             # See Readme for an explanation of these empirical values.
             dist_rms_relative = 16e-3*u.arcsecond
             pa1 = 0.049
-            metrics = {'collected_astrometry_refStars': 867,
-                       'collected_photometry_refStars': 11570,
-                       'selected_astrometry_refStars': 332,
-                       'selected_photometry_refStars': 2225,
-                       'associated_astrometry_fittedStars': 2272,
-                       'associated_photometry_fittedStars': 2272,
-                       'selected_astrometry_fittedStars': 1229,
-                       'selected_photometry_fittedStars': 2232,
-                       'selected_astrometry_ccdImages': 12,
-                       'selected_photometry_ccdImages': 12,
+            metrics = {'astrometry_collected_refStars': 867,
+                       'photometry_collected_refStars': 11570,
+                       'astrometry_prepared_refStars': 332,
+                       'photometry_prepared_refStars': 2225,
+                       'astrometry_matched_fittedStars': 2272,
+                       'photometry_matched_fittedStars': 2272,
+                       'astrometry_prepared_fittedStars': 1229,
+                       'photometry_prepared_fittedStars': 2232,
+                       'astrometry_prepared_ccdImages': 12,
+                       'photometry_prepared_ccdImages': 12,
                        'astrometry_final_chi2': 1145.457,
                        'astrometry_final_ndof': 1868,
                        'photometry_final_chi2': 11624.3,
@@ -132,11 +132,11 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
 
         # See Readme for an explanation of these empirical values.
         dist_rms_relative = 16e-3*u.arcsecond
-        metrics = {'collected_astrometry_refStars': 867,
-                   'selected_astrometry_refStars': 332,
-                   'associated_astrometry_fittedStars': 2272,
-                   'selected_astrometry_fittedStars': 1229,
-                   'selected_astrometry_ccdImages': 12,
+        metrics = {'astrometry_collected_refStars': 867,
+                   'astrometry_prepared_refStars': 332,
+                   'astrometry_matched_fittedStars': 2272,
+                   'astrometry_prepared_fittedStars': 1229,
+                   'astrometry_prepared_ccdImages': 12,
                    'astrometry_final_chi2': 1100.75,
                    'astrometry_final_ndof': 1910,
                    }
@@ -222,11 +222,11 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
 
         # See Readme for an explanation of these empirical values.
         pa1 = 0.09
-        metrics = {'collected_photometry_refStars': 11570,
-                   'selected_photometry_refStars': 2225,
-                   'associated_photometry_fittedStars': 2272,
-                   'selected_photometry_fittedStars': 2232,
-                   'selected_photometry_ccdImages': 12,
+        metrics = {'photometry_collected_refStars': 11570,
+                   'photometry_prepared_refStars': 2225,
+                   'photometry_matched_fittedStars': 2272,
+                   'photometry_prepared_fittedStars': 2232,
+                   'photometry_prepared_ccdImages': 12,
                    'photometry_final_chi2': 11649.7,
                    'photometry_final_ndof': 2729
                    }
@@ -283,9 +283,9 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
         self.config.minRefStarsPerCcd = 20
 
         pa1 = 0.026
-        metrics['selected_photometry_refStars'] = 265
-        metrics['associated_photometry_fittedStars'] = 265
-        metrics['selected_photometry_fittedStars'] = 265
+        metrics['photometry_prepared_refStars'] = 265
+        metrics['photometry_matched_fittedStars'] = 265
+        metrics['photometry_prepared_fittedStars'] = 265
         metrics['photometry_final_chi2'] = 392.816
         metrics['photometry_final_ndof'] = 294
 

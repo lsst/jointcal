@@ -66,10 +66,13 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         input_dir = os.path.join(self.data_dir, 'hsc')
         all_visits = [34648, 34690, 34714, 34674, 34670, 36140, 35892, 36192, 36260, 36236]
 
+        where = "instrument='HSC' and tract=9697 and skymap='hsc_rings_v1'"
+
         self.setUp_base(center, radius,
                         input_dir=input_dir,
                         all_visits=all_visits,
-                        do_plot=do_plot)
+                        do_plot=do_plot,
+                        where=where)
 
         test_config = os.path.join(lsst.utils.getPackageDir('jointcal'), 'tests/config/hsc-config.py')
         self.configfiles.append(test_config)
@@ -81,16 +84,16 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
 
         # See Readme for an explanation of these empirical values.
         pa1 = 0.016
-        metrics = {'collected_astrometry_refStars': 568,
-                   'collected_photometry_refStars': 6485,
-                   'selected_astrometry_refStars': 137,
-                   'selected_photometry_refStars': 1609,
-                   'associated_astrometry_fittedStars': 2070,
-                   'associated_photometry_fittedStars': 2070,
-                   'selected_astrometry_fittedStars': 989,
-                   'selected_photometry_fittedStars': 1731,
-                   'selected_astrometry_ccdImages': 6,
-                   'selected_photometry_ccdImages': 6,
+        metrics = {'astrometry_collected_refStars': 568,
+                   'photometry_collected_refStars': 6485,
+                   'astrometry_prepared_refStars': 137,
+                   'photometry_prepared_refStars': 1609,
+                   'astrometry_matched_fittedStars': 2070,
+                   'photometry_matched_fittedStars': 2070,
+                   'astrometry_prepared_fittedStars': 989,
+                   'photometry_prepared_fittedStars': 1731,
+                   'astrometry_prepared_ccdImages': 6,
+                   'photometry_prepared_ccdImages': 6,
                    'astrometry_final_chi2': 835.473,
                    'astrometry_final_ndof': 1918,
                    'photometry_final_chi2': 4997.62,
@@ -100,11 +103,26 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
 
     def test_jointcalTask_2_visits_simple_gen3(self):
         """Test gen3 butler jointcal."""
-        queryString = "instrument='HSC' and tract=9697 and skymap='hsc_rings_v1' and band='r'"
-        queryString += f" and visit in ({self.all_visits[0]},{self.all_visits[1]})"
-        configOptions = ["astrometryModel=simple", "photometryModel=simpleFlux"]
-        self._runGen3Jointcal("lsst.obs.subaru.HyperSuprimeCam", "HSC", queryString,
-                              configOptions=configOptions)
+        configOptions = {"astrometryModel": "simple", "photometryModel": "simpleFlux"}
+        where = f" and visit in ({self.all_visits[0]},{self.all_visits[1]})"
+
+        metrics = {'astrometry_collected_refStars': 568,
+                   'photometry_collected_refStars': 6485,
+                   'astrometry_prepared_refStars': 137,
+                   'photometry_prepared_refStars': 1609,
+                   'astrometry_matched_fittedStars': 2070,
+                   'photometry_matched_fittedStars': 2070,
+                   'astrometry_prepared_fittedStars': 989,
+                   'photometry_prepared_fittedStars': 1731,
+                   'astrometry_prepared_ccdImages': 6,
+                   'photometry_prepared_ccdImages': 6,
+                   'astrometry_final_chi2': 835.473,
+                   'astrometry_final_ndof': 1918,
+                   'photometry_final_chi2': 4997.62,
+                   'photometry_final_ndof': 2188
+                   }
+        self._runGen3Jointcal("lsst.obs.subaru.HyperSuprimeCam", "HSC", whereSuffix=where,
+                              configOptions=configOptions, metrics=metrics)
         # TODO DM-28863: this does not currently test anything other than the code
         # running without raising and that it writes non-empty output.
         butler = Butler(self.repo, collections=['HSC/testdata/jointcal'])
@@ -143,11 +161,11 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         dist_rms_absolute = 23e-3*u.arcsecond
         dist_rms_relative = 13e-3*u.arcsecond
         pa1 = None
-        metrics = {'collected_astrometry_refStars': 1316,
-                   'selected_astrometry_refStars': 318,
-                   'associated_astrometry_fittedStars': 5860,
-                   'selected_astrometry_fittedStars': 3568,
-                   'selected_astrometry_ccdImages': 30,
+        metrics = {'astrometry_collected_refStars': 1316,
+                   'astrometry_prepared_refStars': 318,
+                   'astrometry_matched_fittedStars': 5860,
+                   'astrometry_prepared_fittedStars': 3568,
+                   'astrometry_prepared_ccdImages': 30,
                    'astrometry_final_chi2': 10225.31,
                    'astrometry_final_ndof': 18576,
                    }
@@ -164,11 +182,11 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
 
         # See Readme for an explanation of these empirical values.
         pa1 = 0.016
-        metrics = {'collected_photometry_refStars': 6485,
-                   'selected_photometry_refStars': 1609,
-                   'associated_photometry_fittedStars': 2070,
-                   'selected_photometry_fittedStars': 1731,
-                   'selected_photometry_ccdImages': 6,
+        metrics = {'photometry_collected_refStars': 6485,
+                   'photometry_prepared_refStars': 1609,
+                   'photometry_matched_fittedStars': 2070,
+                   'photometry_prepared_fittedStars': 1731,
+                   'photometry_prepared_ccdImages': 6,
                    'photometry_final_chi2': 4997.62,
                    'photometry_final_ndof': 2188
                    }
@@ -195,7 +213,7 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         self.configfiles.append(test_config)
 
         # slightly fewer refstars because they each need the specific filters required by the colorterms
-        metrics['collected_photometry_refStars'] = 6478
+        metrics['photometry_collected_refStars'] = 6478
         # Final chi2 should be different, but I don't have an a-priori reason
         # to expect it to be larger or smaller.
         metrics['photometry_final_chi2'] = 5181.25
@@ -215,11 +233,11 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
 
     def test_JointcalTask_2_visits_simple_astrometry_no_photometry(self):
         """Test turning off fitting photometry."""
-        metrics = {'collected_astrometry_refStars': 568,
-                   'selected_astrometry_refStars': 137,
-                   'associated_astrometry_fittedStars': 2070,
-                   'selected_astrometry_fittedStars': 989,
-                   'selected_astrometry_ccdImages': 6,
+        metrics = {'astrometry_collected_refStars': 568,
+                   'astrometry_prepared_refStars': 137,
+                   'astrometry_matched_fittedStars': 2070,
+                   'astrometry_prepared_fittedStars': 989,
+                   'astrometry_prepared_ccdImages': 6,
                    'astrometry_final_chi2': 835.473,
                    'astrometry_final_ndof': 1918,
                    }
@@ -248,11 +266,11 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
 
         # Slightly larger absolute astrometry RMS because of the larger matching radius
         dist_rms_absolute = 23e-3*u.arcsecond
-        metrics = {'collected_astrometry_refStars': 568,
-                   'selected_astrometry_refStars': 211,
-                   'associated_astrometry_fittedStars': 2070,
-                   'selected_astrometry_fittedStars': 1042,
-                   'selected_astrometry_ccdImages': 6,
+        metrics = {'astrometry_collected_refStars': 568,
+                   'astrometry_prepared_refStars': 211,
+                   'astrometry_matched_fittedStars': 2070,
+                   'astrometry_prepared_fittedStars': 1042,
+                   'astrometry_prepared_ccdImages': 6,
                    'astrometry_final_chi2': 819.608,
                    'astrometry_final_ndof': 1872,
                    }
@@ -270,11 +288,11 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         # More visits and slightly worse relative and absolute rms.
         dist_rms_relative = 8.3e-3*u.arcsecond
         dist_rms_absolute = 24e-3*u.arcsecond
-        metrics = {'collected_astrometry_refStars': 1038,
-                   'selected_astrometry_refStars': 209,
-                   'associated_astrometry_fittedStars': 3199,
-                   'selected_astrometry_fittedStars': 1282,
-                   'selected_astrometry_ccdImages': 9,
+        metrics = {'astrometry_collected_refStars': 1038,
+                   'astrometry_prepared_refStars': 209,
+                   'astrometry_matched_fittedStars': 3199,
+                   'astrometry_prepared_fittedStars': 1282,
+                   'astrometry_prepared_ccdImages': 9,
                    'astrometry_final_chi2': 1221.63,
                    'astrometry_final_ndof': 2892,
                    }
@@ -294,11 +312,11 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         # More visits and slightly worse relative and absolute rms.
         dist_rms_relative = 11e-3*u.arcsecond
         dist_rms_absolute = 24e-3*u.arcsecond
-        metrics = {'collected_astrometry_refStars': 1038,
-                   'selected_astrometry_refStars': 209,
-                   'associated_astrometry_fittedStars': 3199,
-                   'selected_astrometry_fittedStars': 432,
-                   'selected_astrometry_ccdImages': 9,
+        metrics = {'astrometry_collected_refStars': 1038,
+                   'astrometry_prepared_refStars': 209,
+                   'astrometry_matched_fittedStars': 3199,
+                   'astrometry_prepared_fittedStars': 432,
+                   'astrometry_prepared_ccdImages': 9,
                    'astrometry_final_chi2': 567.433,
                    'astrometry_final_ndof': 1286,
                    }

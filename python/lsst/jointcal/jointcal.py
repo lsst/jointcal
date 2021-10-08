@@ -285,6 +285,54 @@ class JointcalTaskConnections(pipeBase.PipelineTaskConnections,
         multiple=True
     )
 
+    # measurements of metrics
+    # The vars() trick used here allows us to set class attributes
+    # programatically. Taken from:
+    # https://stackoverflow.com/questions/2519807/setting-a-class-attribute-with-a-given-name-in-python-while-defining-the-class
+    for name in ("astrometry", "photometry"):
+        vars()[f"{name}_matched_fittedStars"] = pipeBase.connectionTypes.Output(
+            doc=f"The number of cross-matched fittedStars for {name}",
+            name=f"metricvalue_jointcal_{name}_matched_fittedStars",
+            storageClass="MetricValue",
+            dimensions=("instrument", "skymap", "tract"),
+        )
+        vars()[f"{name}_collected_refStars"] = pipeBase.connectionTypes.Output(
+            doc=f"The number of {name} reference stars drawn from the reference catalog, before matching.",
+            name=f"metricvalue_jointcal_{name}_collected_refStars",
+            storageClass="MetricValue",
+            dimensions=("instrument", "skymap", "tract"),
+        )
+        vars()[f"{name}_prepared_refStars"] = pipeBase.connectionTypes.Output(
+            doc=f"The number of {name} reference stars matched to fittedStars.",
+            name=f"metricvalue_jointcal_{name}_prepared_refStars",
+            storageClass="MetricValue",
+            dimensions=("instrument", "skymap", "tract"),
+        )
+        vars()[f"{name}_prepared_fittedStars"] = pipeBase.connectionTypes.Output(
+            doc=f"The number of cross-matched fittedStars after cleanup, for {name}.",
+            name=f"metricvalue_jointcal_{name}_prepared_fittedStars",
+            storageClass="MetricValue",
+            dimensions=("instrument", "skymap", "tract"),
+        )
+        vars()[f"{name}_prepared_ccdImages"] = pipeBase.connectionTypes.Output(
+            doc=f"The number of ccdImages that will be fit for {name}, after cleanup.",
+            name=f"metricvalue_jointcal_{name}_prepared_ccdImages",
+            storageClass="MetricValue",
+            dimensions=("instrument", "skymap", "tract"),
+        )
+        vars()[f"{name}_final_chi2"] = pipeBase.connectionTypes.Output(
+            doc=f"The final chi2 of the {name} fit.",
+            name=f"metricvalue_jointcal_{name}_final_chi2",
+            storageClass="MetricValue",
+            dimensions=("instrument", "skymap", "tract"),
+        )
+        vars()[f"{name}_final_ndof"] = pipeBase.connectionTypes.Output(
+            doc=f"The number of degrees of freedom of the fitted {name}.",
+            name=f"metricvalue_jointcal_{name}_final_ndof",
+            storageClass="MetricValue",
+            dimensions=("instrument", "skymap", "tract"),
+        )
+
     def __init__(self, *, config=None):
         super().__init__(config=config)
         # When we are only doing one of astrometry or photometry, we don't
@@ -296,9 +344,15 @@ class JointcalTaskConnections(pipeBase.PipelineTaskConnections,
         if not config.doAstrometry:
             self.prerequisiteInputs.remove("astrometryRefCat")
             self.outputs.remove("outputWcs")
+            for key in list(self.outputs.keys()):
+                if "metricvalue_jointcal_astrometry" in key:
+                    self.outputs.remove(key)
         if not config.doPhotometry:
             self.prerequisiteInputs.remove("photometryRefCat")
             self.outputs.remove("outputPhotoCalib")
+            for key in list(self.outputs.keys()):
+                if "metricvalue_jointcal_photometry" in key:
+                    self.outputs.remove(key)
 
 
 class JointcalConfig(pipeBase.PipelineTaskConfig,
@@ -656,6 +710,7 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
                 config=self.config.photometryRefObjLoader,
                 log=self.log)
         outputs = self.run(**inputs, tract=tract)
+        self._put_metrics(butlerQC, outputs.job, outputRefs)
         if self.config.doAstrometry:
             self._put_output(butlerQC, outputs.outputWcs, outputRefs.outputWcs,
                              inputs['inputCamera'], "setWcs")
@@ -663,18 +718,34 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
             self._put_output(butlerQC, outputs.outputPhotoCalib, outputRefs.outputPhotoCalib,
                              inputs['inputCamera'], "setPhotoCalib")
 
+    def _put_metrics(self, butlerQC, job, outputRefs):
+        """Persist all measured metrics stored in a job.
+
+        Parameters
+        ----------
+        butlerQC : `lsst.pipe.base.ButlerQuantumContext`
+            A butler which is specialized to operate in the context of a
+            `lsst.daf.butler.Quantum`; This is the input to `runQuantum`.
+        job : `lsst.verify.job.Job`
+            Measurements of metrics to persist.
+        outputRefs : `list` [`lsst.pipe.base.connectionTypes.OutputQuantizedConnection`]
+            The DatasetRefs to persist the data to.
+        """
+        for key in job.measurements.keys():
+            butlerQC.put(job.measurements[key], getattr(outputRefs, key.fqn.replace('jointcal.', '')))
+
     def _put_output(self, butlerQC, outputs, outputRefs, camera, setter):
         """Persist the output datasets to their appropriate datarefs.
 
         Parameters
         ----------
-        butlerQC : `ButlerQuantumContext`
+        butlerQC : `lsst.pipe.base.ButlerQuantumContext`
             A butler which is specialized to operate in the context of a
             `lsst.daf.butler.Quantum`; This is the input to `runQuantum`.
         outputs : `dict` [`tuple`, `lsst.afw.geom.SkyWcs`] or
                   `dict` [`tuple, `lsst.afw.image.PhotoCalib`]
             The fitted objects to persist.
-        outputRefs : `list` [`OutputQuantizedConnection`]
+        outputRefs : `list` [`lsst.pipe.base.connectionTypes.OutputQuantizedConnection`]
             The DatasetRefs to persist the data to.
         camera : `lsst.afw.cameraGeom.Camera`
             The camera for this instrument, to get detector ids from.
@@ -1295,7 +1366,7 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
         # TODO: this should not print "trying to invert a singular transformation:"
         # if it does that, something's not right about the WCS...
         associations.associateCatalogs(match_cut)
-        add_measurement(self.job, 'jointcal.associated_%s_fittedStars' % name,
+        add_measurement(self.job, 'jointcal.%s_matched_fittedStars' % name,
                         associations.fittedStarListSize())
 
         applyColorterms = False if name.lower() == "astrometry" else self.config.applyColorTerms
@@ -1310,17 +1381,17 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
                                      fluxField,
                                      refCoordinateErr=refCoordErr,
                                      rejectBadFluxes=reject_bad_fluxes)
-        add_measurement(self.job, 'jointcal.collected_%s_refStars' % name,
+        add_measurement(self.job, 'jointcal.%s_collected_refStars' % name,
                         associations.refStarListSize())
 
         associations.prepareFittedStars(self.config.minMeasurements)
 
         self._check_star_lists(associations, name)
-        add_measurement(self.job, 'jointcal.selected_%s_refStars' % name,
+        add_measurement(self.job, 'jointcal.%s_prepared_refStars' % name,
                         associations.nFittedStarsWithAssociatedRefStar())
-        add_measurement(self.job, 'jointcal.selected_%s_fittedStars' % name,
+        add_measurement(self.job, 'jointcal.%s_prepared_fittedStars' % name,
                         associations.fittedStarListSize())
-        add_measurement(self.job, 'jointcal.selected_%s_ccdImages' % name,
+        add_measurement(self.job, 'jointcal.%s_prepared_ccdImages' % name,
                         associations.nCcdImagesValidForFit())
 
         load_cat_prof_file = 'jointcal_fit_%s.prof'%name if self.config.detailedProfile else ''
