@@ -147,6 +147,72 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         check_output(34648, [51, 59, 67])
         check_output(34690, [48, 56, 64])
 
+    def test_jointcalTask_2_visits_simple_astrometry_no_photometry_gen3(self):
+        """Test gen3 butler jointcal, no photometry."""
+        configOptions = {"astrometryModel": "simple", "doPhotometry": False}
+        where = f" and visit in ({self.all_visits[0]},{self.all_visits[1]})"
+
+        metrics = {'astrometry_collected_refStars': 568,
+                   'astrometry_prepared_refStars': 137,
+                   'astrometry_matched_fittedStars': 2070,
+                   'astrometry_prepared_fittedStars': 989,
+                   'astrometry_prepared_ccdImages': 6,
+                   'astrometry_final_chi2': 835.473,
+                   'astrometry_final_ndof': 1918,
+                   }
+        self._runGen3Jointcal("lsst.obs.subaru.HyperSuprimeCam", "HSC", whereSuffix=where,
+                              configOptions=configOptions, metrics=metrics)
+        # TODO DM-28863: this does not currently test anything other than the code
+        # running without raising and that it writes non-empty output.
+        butler = Butler(self.repo, collections=['HSC/testdata/jointcal'])
+
+        def check_output(visit, detectors):
+            """Check that there is something for each detector, and only
+            entries for the correct detectors."""
+            dataId = {'visit': visit, 'instrument': 'HSC', 'tract': 9697}
+
+            catalog = butler.get('jointcalSkyWcsCatalog', dataId)
+            for record in catalog:
+                self.assertIsInstance(record.getWcs(), lsst.afw.geom.SkyWcs,
+                                      msg=f"visit {visit}: {record}")
+            np.testing.assert_array_equal(catalog['id'], detectors)
+
+        check_output(34648, [51, 59, 67])
+        check_output(34690, [48, 56, 64])
+
+    def test_jointcalTask_2_visits_simple_photometry_no_astrometry_gen3(self):
+        """Test gen3 butler jointcal, no astrometry."""
+        configOptions = {"doAstrometry": False, "photometryModel": "simpleFlux"}
+        where = f" and visit in ({self.all_visits[0]},{self.all_visits[1]})"
+
+        metrics = {'photometry_collected_refStars': 6485,
+                   'photometry_prepared_refStars': 1609,
+                   'photometry_matched_fittedStars': 2070,
+                   'photometry_prepared_fittedStars': 1731,
+                   'photometry_prepared_ccdImages': 6,
+                   'photometry_final_chi2': 4997.62,
+                   'photometry_final_ndof': 2188
+                   }
+        self._runGen3Jointcal("lsst.obs.subaru.HyperSuprimeCam", "HSC", whereSuffix=where,
+                              configOptions=configOptions, metrics=metrics)
+        # TODO DM-28863: this does not currently test anything other than the code
+        # running without raising and that it writes non-empty output.
+        butler = Butler(self.repo, collections=['HSC/testdata/jointcal'])
+
+        def check_output(visit, detectors):
+            """Check that there is something for each detector, and only
+            entries for the correct detectors."""
+            dataId = {'visit': visit, 'instrument': 'HSC', 'tract': 9697}
+
+            catalog = butler.get('jointcalPhotoCalibCatalog', dataId)
+            for record in catalog:
+                self.assertIsInstance(record.getPhotoCalib(), lsst.afw.image.PhotoCalib,
+                                      msg=f"visit {visit}: {record}")
+            np.testing.assert_array_equal(catalog['id'], detectors)
+
+        check_output(34648, [51, 59, 67])
+        check_output(34690, [48, 56, 64])
+
     def test_jointcalTask_10_visits_simple_astrometry_no_photometry(self):
         """Test all 10 visits with different filters.
         Testing photometry doesn't make sense for this currently.

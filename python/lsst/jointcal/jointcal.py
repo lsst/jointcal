@@ -344,13 +344,13 @@ class JointcalTaskConnections(pipeBase.PipelineTaskConnections,
         if not config.doAstrometry:
             self.prerequisiteInputs.remove("astrometryRefCat")
             self.outputs.remove("outputWcs")
-            for key in list(self.outputs.keys()):
+            for key in list(self.outputs):
                 if "metricvalue_jointcal_astrometry" in key:
                     self.outputs.remove(key)
         if not config.doPhotometry:
             self.prerequisiteInputs.remove("photometryRefCat")
             self.outputs.remove("outputPhotoCalib")
-            for key in list(self.outputs.keys()):
+            for key in list(self.outputs):
                 if "metricvalue_jointcal_photometry" in key:
                     self.outputs.remove(key)
 
