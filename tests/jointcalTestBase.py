@@ -294,7 +294,8 @@ class JointcalTestBase:
     def _runPipeline(self, repo,
                      inputCollections, outputCollection,
                      configFiles=None, configOptions=None,
-                     registerDatasetTypes=False, whereSuffix=None):
+                     registerDatasetTypes=False, whereSuffix=None,
+                     nJobs=1):
         """Run a pipeline via the SimplePipelineExecutor.
 
         Parameters
@@ -315,6 +316,8 @@ class JointcalTestBase:
             Set "--register-dataset-types" when running the pipeline.
         whereSuffix : `str`, optional
             Additional parameters to the ``where`` pipetask statement.
+        nJobs : `int`, optional
+            Number of quanta expected to be run.
 
         Returns
         -------
@@ -341,12 +344,12 @@ class JointcalTestBase:
         # JobReporter bundles all metrics in the collection into one job.
         jobs = JobReporter(repo, outputCollection, "jointcal", "", "jointcal").run()
         # should only ever get one job output in tests
-        self.assertEqual(len(jobs), 1)
+        self.assertEqual(len(jobs), nJobs)
         return list(jobs.values())[0]
 
     def _runGen3Jointcal(self, instrumentClass, instrumentName,
                          configFiles=None, configOptions=None, whereSuffix=None,
-                         metrics=None):
+                         metrics=None, nJobs=1):
         """Create a Butler repo and run jointcal on it.
 
         Parameters
@@ -366,6 +369,8 @@ class JointcalTestBase:
         metrics : `dict`, optional
             Dictionary of 'metricName': value to test jointcal's result.metrics
             against.
+        nJobs : `int`, optional
+            Number of quanta expected to be run.
         """
         self._importRepository(instrumentClass,
                                self.input_dir,
@@ -384,6 +389,8 @@ class JointcalTestBase:
                                 configFiles=configFiles,
                                 configOptions=configOptions,
                                 registerDatasetTypes=True,
-                                whereSuffix=whereSuffix)
+                                whereSuffix=whereSuffix,
+                                nJobs=nJobs)
 
-        self._test_metrics(job.measurements, metrics)
+        if metrics:
+            self._test_metrics(job.measurements, metrics)

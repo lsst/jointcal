@@ -294,43 +294,43 @@ class JointcalTaskConnections(pipeBase.PipelineTaskConnections,
             doc=f"The number of cross-matched fittedStars for {name}",
             name=f"metricvalue_jointcal_{name}_matched_fittedStars",
             storageClass="MetricValue",
-            dimensions=("instrument", "skymap", "tract"),
+            dimensions=("skymap", "tract", "instrument", "physical_filter"),
         )
         vars()[f"{name}_collected_refStars"] = pipeBase.connectionTypes.Output(
             doc=f"The number of {name} reference stars drawn from the reference catalog, before matching.",
             name=f"metricvalue_jointcal_{name}_collected_refStars",
             storageClass="MetricValue",
-            dimensions=("instrument", "skymap", "tract"),
+            dimensions=("skymap", "tract", "instrument", "physical_filter"),
         )
         vars()[f"{name}_prepared_refStars"] = pipeBase.connectionTypes.Output(
             doc=f"The number of {name} reference stars matched to fittedStars.",
             name=f"metricvalue_jointcal_{name}_prepared_refStars",
             storageClass="MetricValue",
-            dimensions=("instrument", "skymap", "tract"),
+            dimensions=("skymap", "tract", "instrument", "physical_filter"),
         )
         vars()[f"{name}_prepared_fittedStars"] = pipeBase.connectionTypes.Output(
             doc=f"The number of cross-matched fittedStars after cleanup, for {name}.",
             name=f"metricvalue_jointcal_{name}_prepared_fittedStars",
             storageClass="MetricValue",
-            dimensions=("instrument", "skymap", "tract"),
+            dimensions=("skymap", "tract", "instrument", "physical_filter"),
         )
         vars()[f"{name}_prepared_ccdImages"] = pipeBase.connectionTypes.Output(
             doc=f"The number of ccdImages that will be fit for {name}, after cleanup.",
             name=f"metricvalue_jointcal_{name}_prepared_ccdImages",
             storageClass="MetricValue",
-            dimensions=("instrument", "skymap", "tract"),
+            dimensions=("skymap", "tract", "instrument", "physical_filter"),
         )
         vars()[f"{name}_final_chi2"] = pipeBase.connectionTypes.Output(
             doc=f"The final chi2 of the {name} fit.",
             name=f"metricvalue_jointcal_{name}_final_chi2",
             storageClass="MetricValue",
-            dimensions=("instrument", "skymap", "tract"),
+            dimensions=("skymap", "tract", "instrument", "physical_filter"),
         )
         vars()[f"{name}_final_ndof"] = pipeBase.connectionTypes.Output(
             doc=f"The number of degrees of freedom of the fitted {name}.",
             name=f"metricvalue_jointcal_{name}_final_ndof",
             storageClass="MetricValue",
-            dimensions=("instrument", "skymap", "tract"),
+            dimensions=("skymap", "tract", "instrument", "physical_filter"),
         )
 
     def __init__(self, *, config=None):

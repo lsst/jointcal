@@ -147,6 +147,15 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         check_output(34648, [51, 59, 67])
         check_output(34690, [48, 56, 64])
 
+    def test_jointcalTask_ri_visits_2_bands_simple_gen3_dm32207(self):
+        """Test gen3 butler jointcal putting 2 bands in same repo."""
+        configOptions = {"astrometryModel": "simple", "photometryModel": "simpleFlux"}
+        where = (f" and visit in ({self.all_visits[0]},{self.all_visits[1]},"
+                 f"{self.all_visits[5]},{self.all_visits[6]})")
+
+        self._runGen3Jointcal("lsst.obs.subaru.HyperSuprimeCam", "HSC", whereSuffix=where,
+                              configOptions=configOptions, metrics=None, nJobs=2)
+
     def test_jointcalTask_2_visits_simple_astrometry_no_photometry_gen3(self):
         """Test gen3 butler jointcal, no photometry."""
         configOptions = {"astrometryModel": "simple", "doPhotometry": False}
