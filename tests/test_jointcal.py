@@ -245,11 +245,11 @@ class TestJointcalIterateFit(JointcalTestBase, lsst.utils.tests.TestCase):
                                             MinimizeResult.Converged,
                                             MinimizeResult.Converged]
         with lsst.log.UsePythonLogging():  # so that assertLogs works with lsst.log
-            with self.assertLogs("jointcal", level="WARN") as logger:
+            with self.assertLogs("lsst.jointcal", level="WARNING") as logger:
                 self.jointcal._iterate_fit(self.associations, self.fitter,
                                            self.maxSteps, self.name, self.whatToFit)
-            msg = "WARNING:jointcal:Significant chi2 increase by a factor of 300 / 100 = 3"
-            self.assertIn(msg, logger.output)
+            msg = "Significant chi2 increase by a factor of 300 / 100 = 3"
+            self.assertIn(msg, [rec.message for rec in logger.records])
 
     def test_large_chi2_increase_fails(self):
         """DM-25159: fail on large chi2 increases between steps."""
@@ -264,12 +264,12 @@ class TestJointcalIterateFit(JointcalTestBase, lsst.utils.tests.TestCase):
         self.fitter.computeChi2.side_effect = chi2s
         self.fitter.minimize.return_value = MinimizeResult.Chi2Increased
         with lsst.log.UsePythonLogging():  # so that assertLogs works with lsst.log
-            with self.assertLogs("jointcal", level="WARN") as logger:
+            with self.assertLogs("lsst.jointcal", level="WARNING") as logger:
                 with(self.assertRaisesRegex(RuntimeError, "Large chi2 increase")):
                     self.jointcal._iterate_fit(self.associations, self.fitter,
                                                self.maxSteps, self.name, self.whatToFit)
-            msg = "WARNING:jointcal:Significant chi2 increase by a factor of 1.123e+13 / 1e+11 = 112.3"
-            self.assertIn(msg, logger.output)
+            msg = "Significant chi2 increase by a factor of 1.123e+13 / 1e+11 = 112.3"
+            self.assertIn(msg, [rec.message for rec in logger.records])
 
     def test_invalid_model(self):
         self.model.validate.return_value = False

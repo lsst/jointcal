@@ -141,7 +141,7 @@ public:
     explicit ConstrainedFluxModel(CcdImageList const &ccdImageList, geom::Box2D const &focalPlaneBBox,
                                   int visitOrder = 7, double errorPedestal = 0)
             : ConstrainedPhotometryModel(ccdImageList, focalPlaneBBox,
-                                         LOG_GET("jointcal.ConstrainedFluxModel"), visitOrder,
+                                         LOG_GET("lsst.jointcal.ConstrainedFluxModel"), visitOrder,
                                          errorPedestal) {
         initialize<FluxTransformSpatiallyInvariant, FluxTransformChebyshev, ChipVisitFluxMapping>(
                 ccdImageList, focalPlaneBBox, visitOrder);
@@ -187,7 +187,7 @@ public:
     explicit ConstrainedMagnitudeModel(CcdImageList const &ccdImageList, geom::Box2D const &focalPlaneBBox,
                                        int visitOrder = 7, double errorPedestal = 0)
             : ConstrainedPhotometryModel(ccdImageList, focalPlaneBBox,
-                                         LOG_GET("jointcal.ConstrainedMagnitudeModel"), visitOrder,
+                                         LOG_GET("lsst.jointcal.ConstrainedMagnitudeModel"), visitOrder,
                                          errorPedestal) {
         initialize<MagnitudeTransformSpatiallyInvariant, MagnitudeTransformChebyshev,
                    ChipVisitMagnitudeMapping>(ccdImageList, focalPlaneBBox, visitOrder);

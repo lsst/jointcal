@@ -65,7 +65,7 @@ class AstrometryModelTestBase:
         np.random.seed(200)
 
         # DEBUG messages can help track down failures.
-        logger = lsst.log.Log.getLogger('jointcal')
+        logger = lsst.log.Log.getLogger('lsst.jointcal')
         logger.setLevel(lsst.log.DEBUG)
 
         # Append `msg` arguments to assert failures.

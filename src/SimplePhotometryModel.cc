@@ -97,7 +97,7 @@ PhotometryMappingBase *SimplePhotometryModel::findMapping(CcdImage const &ccdIma
 }
 
 SimpleFluxModel::SimpleFluxModel(CcdImageList const &ccdImageList, double errorPedestal)
-        : SimplePhotometryModel(ccdImageList, LOG_GET("jointcal.SimpleFluxModel"), errorPedestal) {
+        : SimplePhotometryModel(ccdImageList, LOG_GET("lsst.jointcal.SimpleFluxModel"), errorPedestal) {
     for (auto const &ccdImage : ccdImageList) {
         auto photoCalib = ccdImage->getPhotoCalib();
         // Use the single-frame processing calibration from the PhotoCalib as the initial value.
@@ -134,7 +134,7 @@ void SimpleFluxModel::print(std::ostream &out) const {
 }
 
 SimpleMagnitudeModel::SimpleMagnitudeModel(CcdImageList const &ccdImageList, double errorPedestal)
-        : SimplePhotometryModel(ccdImageList, LOG_GET("jointcal.SimpleMagnitudeModel"), errorPedestal) {
+        : SimplePhotometryModel(ccdImageList, LOG_GET("lsst.jointcal.SimpleMagnitudeModel"), errorPedestal) {
     for (auto const &ccdImage : ccdImageList) {
         auto photoCalib = ccdImage->getPhotoCalib();
         // Use the single-frame processing calibration from the PhotoCalib as the default.

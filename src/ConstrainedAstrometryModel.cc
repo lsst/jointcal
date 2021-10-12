@@ -64,7 +64,7 @@ namespace jointcal {
 ConstrainedAstrometryModel::ConstrainedAstrometryModel(
         CcdImageList const &ccdImageList, std::shared_ptr<ProjectionHandler const> projectionHandler,
         int chipOrder, int visitOrder)
-        : AstrometryModel(LOG_GET("jointcal.ConstrainedAstrometryModel")),
+        : AstrometryModel(LOG_GET("lsst.jointcal.ConstrainedAstrometryModel")),
           _skyToTangentPlane(projectionHandler) {
     // keep track of which chip we want to hold fixed (the one closest to the middle of the focal plane)
     double minRadius2 = std::numeric_limits<double>::infinity();

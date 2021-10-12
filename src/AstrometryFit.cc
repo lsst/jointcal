@@ -68,7 +68,7 @@ AstrometryFit::AstrometryFit(std::shared_ptr<Associations> associations,
           _astrometryModel(astrometryModel),
           _epoch(_associations->getEpoch()),
           _posError(posError) {
-    _log = LOG_GET("jointcal.AstrometryFit");
+    _log = LOG_GET("lsst.jointcal.AstrometryFit");
 }
 
 /* ! this routine is used in 3 instances: when computing

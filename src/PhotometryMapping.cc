@@ -30,7 +30,7 @@
 #include "lsst/jointcal/PhotometryMapping.h"
 
 namespace {
-LOG_LOGGER _log = LOG_GET("jointcal.PhotometryMapping");
+LOG_LOGGER _log = LOG_GET("lsst.jointcal.PhotometryMapping");
 }
 
 namespace lsst {

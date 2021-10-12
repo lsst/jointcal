@@ -30,7 +30,7 @@
 #include "lsst/jointcal/Histo2d.h"
 
 namespace {
-LOG_LOGGER _log = LOG_GET("jointcal.Histo2d");
+LOG_LOGGER _log = LOG_GET("lsst.jointcal.Histo2d");
 }
 
 namespace lsst {

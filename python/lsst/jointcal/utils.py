@@ -44,6 +44,7 @@ from lsst.geom import arcseconds
 __all__ = ['JointcalStatistics']
 
 MatchDict = collections.namedtuple('MatchDict', ['relative', 'absolute'])
+_LOG = lsst.log.Log.getLogger(__name__)
 
 
 class JointcalStatistics:
@@ -80,7 +81,7 @@ class JointcalStatistics:
         self.do_photometry = do_photometry
         self.do_astrometry = do_astrometry
         self.verbose = verbose
-        self.log = lsst.log.Log.getLogger('JointcalStatistics')
+        self.log = _LOG.getChild('JointcalStatistics')
 
     def compute_rms(self, data_refs, reference):
         """
