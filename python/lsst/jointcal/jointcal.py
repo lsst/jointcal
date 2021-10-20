@@ -43,6 +43,7 @@ from lsst.verify import Job, Measurement
 from lsst.meas.algorithms import (LoadIndexedReferenceObjectsTask, ReferenceSourceSelectorTask,
                                   ReferenceObjectLoader)
 from lsst.meas.algorithms.sourceSelector import sourceSelectorRegistry
+from lsst.utils.timer import timeMethod
 
 from .dataIds import PerTractCcdDataIdContainer
 
@@ -1182,7 +1183,7 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
 
         return boundingCircle, center, radius, defaultFilter, epoch
 
-    @pipeBase.timeMethod
+    @timeMethod
     def runDataRef(self, dataRefs):
         """
         Jointly calibrate the astrometry and photometry across a set of images.
