@@ -163,7 +163,7 @@ void AstrometryFit::leastSquareDerivativesMeasurement(CcdImage const &ccdImage, 
         std::size_t ipar = npar_mapping;
         double det = outPos.vx * outPos.vy - std::pow(outPos.vxy, 2);
         if (det <= 0 || outPos.vx <= 0 || outPos.vy <= 0) {
-            LOGLS_WARN(_log, "Inconsistent measurement errors: drop measurement at "
+            LOGLS_WARN(_log, "Inconsistent measurement errors: dropping measurement at "
                                      << Point(ms) << " in image " << ccdImage.getName());
             continue;
         }
@@ -350,7 +350,7 @@ void AstrometryFit::accumulateStatImage(CcdImage const &ccdImage, Chi2Accumulato
         mapping->transformPosAndErrors(inPos, outPos);
         double det = outPos.vx * outPos.vy - std::pow(outPos.vxy, 2);
         if (det <= 0 || outPos.vx <= 0 || outPos.vy <= 0) {
-            LOGLS_WARN(_log, " Inconsistent measurement errors :drop measurement at "
+            LOGLS_WARN(_log, "Inconsistent measurement errors: dropping measurement at "
                                      << Point(*ms) << " in image " << ccdImage.getName());
             continue;
         }
