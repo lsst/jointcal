@@ -41,6 +41,12 @@
 #include "lsst/jointcal/Tripletlist.h"
 
 namespace {
+
+/// Return the determinant of a star's position error matrix.
+double computeStarDeterminant(lsst::jointcal::FatPoint const &point) {
+    return point.vx * point.vy - std::pow(point.vxy, 2);
+}
+
 /**
  * Compute the Chi2 of a refstar projected onto the fittedStar tangent point.
  *
@@ -51,7 +57,7 @@ namespace {
  * @return chi2 contribution from this star.
  */
 double computeProjectedRefStarChi2(lsst::jointcal::FatPoint refStar) {
-    double det = refStar.vx * refStar.vy - std::pow(refStar.vxy, 2);
+    double det = computeStarDeterminant(refStar);
     double wxx = refStar.vy / det;
     double wyy = refStar.vx / det;
     double wxy = -refStar.vxy / det;
@@ -161,7 +167,7 @@ void AstrometryFit::leastSquareDerivativesMeasurement(CcdImage const &ccdImage, 
             mapping->transformPosAndErrors(inPos, outPos);
 
         std::size_t ipar = npar_mapping;
-        double det = outPos.vx * outPos.vy - std::pow(outPos.vxy, 2);
+        double det = computeStarDeterminant(outPos);
         if (det <= 0 || outPos.vx <= 0 || outPos.vy <= 0) {
             LOGLS_WARN(_log, "Inconsistent measurement errors: dropping measurement at "
                                      << Point(ms) << " in image " << ccdImage.getName());
@@ -277,7 +283,7 @@ void AstrometryFit::leastSquareDerivativesReference(FittedStarList const &fitted
         H(0, 1) = -der.A21();
         H(1, 1) = -der.A22();
         // TO DO : account for proper motions.
-        double det = rsProj.vx * rsProj.vy - std::pow(rsProj.vxy, 2);
+        double det = computeStarDeterminant(rsProj);
         if (rsProj.vx <= 0 || rsProj.vy <= 0 || det <= 0) {
             LOGLS_WARN(_log, "RefStar error matrix not positive definite for:  " << *rs);
             continue;
@@ -348,7 +354,7 @@ void AstrometryFit::accumulateStatImage(CcdImage const &ccdImage, Chi2Accumulato
         FatPoint outPos;
         // should *not* fill H if whatToFit excludes mapping parameters.
         mapping->transformPosAndErrors(inPos, outPos);
-        double det = outPos.vx * outPos.vy - std::pow(outPos.vxy, 2);
+        double det = computeStarDeterminant(outPos);
         if (det <= 0 || outPos.vx <= 0 || outPos.vy <= 0) {
             LOGLS_WARN(_log, "Inconsistent measurement errors: dropping measurement at "
                                      << Point(*ms) << " in image " << ccdImage.getName());
@@ -543,7 +549,7 @@ void AstrometryFit::saveChi2MeasContributions(std::string const &filename) const
             Point fittedStarInTP = transformFittedStar(*fs, *sky2TP, deltaYears);
             Point res = tpPos - fittedStarInTP;
             Point inputRes = inputTpPos - fittedStarInTP;
-            double det = tpPos.vx * tpPos.vy - std::pow(tpPos.vxy, 2);
+            double det = computeStarDeterminant(tpPos);
             double wxx = tpPos.vy / det;
             double wyy = tpPos.vx / det;
             double wxy = -tpPos.vxy / det;
