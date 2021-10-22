@@ -47,6 +47,22 @@ double computeStarDeterminant(lsst::jointcal::FatPoint const &point) {
     return point.vx * point.vy - std::pow(point.vxy, 2);
 }
 
+/// Compute the symmetric weight matrix, W, for a star with uncertainty determinant `det`.
+void computeW(lsst::jointcal::FatPoint const &star, double det, Eigen::Matrix2d &W) {
+    W(0, 0) = star.vy / det;
+    W(1, 1) = star.vx / det;
+    W(0, 1) = W(1, 0) = -star.vxy / det;
+}
+
+/// Compute alpha, a triangular square root of W (i.e. a Cholesky factor: alpha*alphaT = W).
+void computeAlpha(double det, Eigen::Matrix2d const &W, Eigen::Matrix2d &alpha) {
+    alpha(0, 0) = sqrt(W(0, 0));
+    alpha(1, 0) = W(0, 1) / alpha(0, 0);
+    // this is equivalent to: alpha(1,1) = 1./sqrt(star.vy)
+    alpha(1, 1) = 1. / sqrt(det * W(0, 0));
+    alpha(0, 1) = 0;
+}
+
 /**
  * Compute the Chi2 of a refstar projected onto the fittedStar tangent point.
  *
@@ -145,7 +161,7 @@ void AstrometryFit::leastSquareDerivativesMeasurement(CcdImage const &ccdImage, 
     // the shape of H (et al) is required this way in order to be able to
     // separate derivatives along x and y as vectors.
     Eigen::MatrixX2d H(npar_tot, 2), halpha(npar_tot, 2), HW(npar_tot, 2);
-    Eigen::Matrix2d transW(2, 2);
+    Eigen::Matrix2d W(2, 2);
     Eigen::Matrix2d alpha(2, 2);
     Eigen::VectorXd grad(npar_tot);
     // current position in the Jacobian
@@ -173,18 +189,8 @@ void AstrometryFit::leastSquareDerivativesMeasurement(CcdImage const &ccdImage, 
                                      << Point(ms) << " in image " << ccdImage.getName());
             continue;
         }
-        transW(0, 0) = outPos.vy / det;
-        transW(1, 1) = outPos.vx / det;
-        transW(0, 1) = transW(1, 0) = -outPos.vxy / det;
-        // compute alpha, a triangular square root
-        // of transW (i.e. a Cholesky factor)
-        alpha(0, 0) = sqrt(transW(0, 0));
-        // checked that  alpha*alphaT = transW
-        alpha(1, 0) = transW(0, 1) / alpha(0, 0);
-        // DB - I think that the next line is equivalent to : alpha(1,1) = 1./sqrt(outPos.vy)
-        // PA - seems correct !
-        alpha(1, 1) = 1. / sqrt(det * transW(0, 0));
-        alpha(0, 1) = 0;
+        computeW(outPos, det, W);
+        computeAlpha(det, W, alpha);
 
         std::shared_ptr<FittedStar const> const fs = ms.getFittedStar();
 
@@ -219,10 +225,10 @@ void AstrometryFit::leastSquareDerivativesMeasurement(CcdImage const &ccdImage, 
         // We can now compute the residual
         Eigen::Vector2d res(fittedStarInTP.x - outPos.x, fittedStarInTP.y - outPos.y);
 
-        // do not write grad = H*transW*res to avoid
+        // do not write grad = H*W*res to avoid
         // dynamic allocation of a temporary
         halpha = H * alpha;
-        HW = H * transW;
+        HW = H * W;
         grad = HW * res;
         // now feed in triplets and fullGrad
         for (std::size_t ipar = 0; ipar < npar_tot; ++ipar) {
@@ -288,16 +294,9 @@ void AstrometryFit::leastSquareDerivativesReference(FittedStarList const &fitted
             LOGLS_WARN(_log, "RefStar error matrix not positive definite for:  " << *rs);
             continue;
         }
-        W(0, 0) = rsProj.vy / det;
-        W(0, 1) = W(1, 0) = -rsProj.vxy / det;
-        W(1, 1) = rsProj.vx / det;
-        // compute alpha, a triangular square root
-        // of W (i.e. a Cholesky factor)
-        alpha(0, 0) = sqrt(W(0, 0));
-        // checked that  alpha*alphaT = transW
-        alpha(1, 0) = W(0, 1) / alpha(0, 0);
-        alpha(1, 1) = 1. / sqrt(det * W(0, 0));
-        alpha(0, 1) = 0;
+        computeW(rsProj, det, W);
+        computeAlpha(det, W, alpha);
+
         indices[0] = fs.getIndexInMatrix();
         indices[1] = fs.getIndexInMatrix() + 1;
         unsigned npar_tot = 2;
@@ -342,7 +341,7 @@ void AstrometryFit::accumulateStatImage(CcdImage const &ccdImage, Chi2Accumulato
     // transformation from sky to TP
     auto sky2TP = _astrometryModel->getSkyToTangentPlane(ccdImage);
     // reserve matrix once for all measurements
-    Eigen::Matrix2Xd transW(2, 2);
+    Eigen::Matrix2d W(2, 2);
 
     auto &catalog = ccdImage.getCatalogForFit();
     for (auto const &ms : catalog) {
@@ -360,15 +359,13 @@ void AstrometryFit::accumulateStatImage(CcdImage const &ccdImage, Chi2Accumulato
                                      << Point(*ms) << " in image " << ccdImage.getName());
             continue;
         }
-        transW(0, 0) = outPos.vy / det;
-        transW(1, 1) = outPos.vx / det;
-        transW(0, 1) = transW(1, 0) = -outPos.vxy / det;
+        computeW(outPos, det, W);
 
         std::shared_ptr<FittedStar const> const fs = ms->getFittedStar();
         Point fittedStarInTP = transformFittedStar(*fs, *sky2TP, deltaYears);
 
         Eigen::Vector2d res(fittedStarInTP.x - outPos.x, fittedStarInTP.y - outPos.y);
-        double chi2Val = res.transpose() * transW * res;
+        double chi2Val = res.transpose() * W * res;
 
         accum.addEntry(chi2Val, 2, ms);
     }  // end of loop on measurements
