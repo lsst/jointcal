@@ -824,8 +824,7 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
             Detector-level catalog extracted from ``visitCatalog``.
         """
         # map from dataFrame column to afw table column
-        mapping = {'sourceId': 'id',
-                   'x': 'centroid_x',
+        mapping = {'x': 'centroid_x',
                    'y': 'centroid_y',
                    'xErr': 'centroid_xErr',
                    'yErr': 'centroid_yErr',
@@ -840,6 +839,7 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
         matched = visitCatalog[detectorColumn] == detectorId
         catalog.resize(sum(matched))
         view = visitCatalog.loc[matched]
+        catalog['id'] = view.index
         for dfCol, afwCol in mapping.items():
             catalog[afwCol] = view[dfCol]
 
