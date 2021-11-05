@@ -62,7 +62,7 @@ public:
 
     /**
      * Apply proper motion correction to the input star, returning a star with PM-corrected
-     * coordinates and coordinate errors.
+     * coordinates.
      *
      * Star is returned unchanged if no proper motion data is available.
      *

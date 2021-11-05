@@ -93,7 +93,8 @@ private:
         Eigen::MatrixX2d h1, h2;
         Eigen::Matrix2d dt2dx;
     };
-
+    // To hold intermediate calculations of transforms and derivatives, when computing the Hessian
+    // in computeTransformAndDerivatives().
     std::unique_ptr<tmpVars> tmp;
 };
 }  // namespace jointcal
