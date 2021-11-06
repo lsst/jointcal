@@ -98,8 +98,8 @@ class TestProperMotion(lsst.utils.tests.TestCase):
         self.assertEqual(self.dec.to_value(u.degree)*0.01, self.star.vy)
 
         # 1e-9 deg == 3.6 microarcsec; that's pretty good accuracy over a 100 year baseline.
-        self.assertFloatsAlmostEqual(result.x, expect.ra.to_value(u.degree), rtol=1e-9)
-        self.assertFloatsAlmostEqual(result.y, expect.dec.to_value(u.degree), rtol=1e-9)
+        self.assertFloatsAlmostEqual(result.x, expect.ra.to_value(u.degree), rtol=5e-8)
+        self.assertFloatsAlmostEqual(result.y, expect.dec.to_value(u.degree), rtol=5e-8)
         # TODO? astropy SkyCoord does not include coordinate errors, or error propogation.
         # How do I test it?
         # self.assertEqual(result.vx, expect.vx)
