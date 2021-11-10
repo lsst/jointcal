@@ -382,11 +382,13 @@ class JointcalTestBase:
                             f"{instrumentName}/testdata",
                             f"{instrumentName}/calib/unbounded"]
 
-        configFiles = [os.path.join(self.path, "config/config-gen3.py")] + self.configfiles
+        configs = [os.path.join(self.path, "config/config-gen3.py")]
+        configs.extend(self.configfiles or [])
+        configs.extend(configFiles or [])
         job = self._runPipeline(self.repo,
                                 inputCollections,
                                 f"{instrumentName}/testdata/all",
-                                configFiles=configFiles,
+                                configFiles=configs,
                                 configOptions=configOptions,
                                 registerDatasetTypes=True,
                                 whereSuffix=whereSuffix,
