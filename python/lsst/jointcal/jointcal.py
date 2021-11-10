@@ -1451,7 +1451,11 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
             refCat = selected.sourceCat
 
         if applyColorterms:
-            refCatName = refObjLoader.ref_dataset_name
+            try:
+                refCatName = refObjLoader.ref_dataset_name  # Gen2
+            except AttributeError:
+                refCatName = self.config.connections.photometryRefCat  # Gen3
+
             self.log.info("Applying color terms for physical filter=%r reference catalog=%s",
                           filterLabel.physicalLabel, refCatName)
             colorterm = self.config.colorterms.getColorterm(filterLabel.physicalLabel,
