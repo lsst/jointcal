@@ -109,7 +109,7 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         colorterm_config = os.path.join(lsst.utils.getPackageDir('jointcal'),
                                         'tests/config/hsc-colorterms-config.py')
         metrics = {'astrometry_collected_refStars': 568,
-                   'photometry_collected_refStars': 6485,
+                   'photometry_collected_refStars': 6478,
                    'astrometry_prepared_refStars': 137,
                    'photometry_prepared_refStars': 1609,
                    'astrometry_matched_fittedStars': 2070,
@@ -120,7 +120,7 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
                    'photometry_prepared_ccdImages': 6,
                    'astrometry_final_chi2': 835.473,
                    'astrometry_final_ndof': 1918,
-                   'photometry_final_chi2': 4997.62,
+                   'photometry_final_chi2': 4977.2,
                    'photometry_final_ndof': 2188
                    }
         self._runGen3Jointcal("lsst.obs.subaru.HyperSuprimeCam", "HSC", whereSuffix=where,
