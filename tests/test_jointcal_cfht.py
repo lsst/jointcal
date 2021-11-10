@@ -23,8 +23,6 @@ import unittest
 import os
 import tempfile
 
-from astropy import units as u
-
 import lsst.geom
 import lsst.utils
 import lsst.pex.exceptions
@@ -52,11 +50,6 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
             raise unittest.SkipTest("obs_cfht not setup")
 
     def setUp(self):
-        # NOTE: refcat-comparison RMS error is worse now, because the
-        # comparison code is not applying the proper motion data.
-        # See Readme for an explanation of this empirical value.
-        self.dist_rms_absolute = 70e-3*u.arcsecond
-
         do_plot = False
 
         # center of the cfht validation_data catalog
@@ -66,46 +59,49 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
         input_dir = os.path.join(self.data_dir, 'cfht')
         all_visits = [849375, 850587]
 
+        where = "instrument='MegaPrime' and tract=0 and skymap='discrete'"
+        inputCollections = ["singleFrame", "skymaps"]
+        refcats = {"gaia_dr2_20200414": os.path.join(input_dir, "gaia_dr2_20200414.ecsv"),
+                   "ps1_pv3_3pi_20170110": os.path.join(input_dir, "ps1_pv3_3pi_20170110.ecsv"),
+                   "sdss_dr9_fink_v5b": os.path.join(input_dir, "sdss-dr9-fink-v5b.ecsv")}
+
         self.setUp_base(center, radius,
                         input_dir=input_dir,
                         all_visits=all_visits,
                         do_plot=do_plot,
+                        where=where,
+                        inputCollections=inputCollections,
+                        refcats=refcats,
+                        refcatPath=input_dir,
                         log_level="DEBUG")
 
-    def test_jointcalTask_2_visits(self):
+    def test_jointcalTask_2_visits_simple(self):
         """Test the simple models with two visits and check that some debug
         output files also get created.
         """
-        self.config = lsst.jointcal.jointcal.JointcalConfig()
-        self.config.astrometryModel = "simple"
-        self.config.photometryModel = "simpleFlux"
-        self.config.writeInitialModel = True  # write the initial models
-        # to test whether we got the expected chi2 contribution files.
-        self.config.writeChi2FilesInitialFinal = True
+        configOptions = {"astrometryModel": "simple", "photometryModel": "simpleFlux",
+                         "writeInitialModel": True, "writeChi2FilesInitialFinal": True}
+
         # use a temporary directory for debug output, to prevent test collisions
         with tempfile.TemporaryDirectory() as tempdir:
-            self.config.debugOutputPath = tempdir
-
-            # See Readme for an explanation of these empirical values.
-            dist_rms_relative = 16e-3*u.arcsecond
-            pa1 = 0.049
+            configOptions["debugOutputPath"] = tempdir
             metrics = {'astrometry_collected_refStars': 867,
-                       'photometry_collected_refStars': 11570,
-                       'astrometry_prepared_refStars': 332,
-                       'photometry_prepared_refStars': 2225,
-                       'astrometry_matched_fittedStars': 2272,
-                       'photometry_matched_fittedStars': 2272,
-                       'astrometry_prepared_fittedStars': 1229,
-                       'photometry_prepared_fittedStars': 2232,
+                       'photometry_collected_refStars': 11569,
+                       'astrometry_prepared_refStars': 323,
+                       'photometry_prepared_refStars': 2302,
+                       'astrometry_matched_fittedStars': 2399,
+                       'photometry_matched_fittedStars': 2399,
+                       'astrometry_prepared_fittedStars': 1255,
+                       'photometry_prepared_fittedStars': 2317,
                        'astrometry_prepared_ccdImages': 12,
                        'photometry_prepared_ccdImages': 12,
-                       'astrometry_final_chi2': 1145.457,
-                       'astrometry_final_ndof': 1868,
-                       'photometry_final_chi2': 11624.3,
-                       'photometry_final_ndof': 2778
+                       'astrometry_final_chi2': 957.754,
+                       'astrometry_final_ndof': 1872,
+                       'photometry_final_chi2': 11561.1,
+                       'photometry_final_ndof': 2849
                        }
-
-            self._testJointcalTask(2, dist_rms_relative, self.dist_rms_absolute, pa1, metrics=metrics)
+            self._runGen3Jointcal("lsst.obs.cfht.MegaPrime", "MegaPrime",
+                                  configOptions=configOptions, metrics=metrics)
 
             # Check for the existence of the chi2 contribution files.
             expected = ['photometry_initial_chi2-0_r.MP9601', 'astrometry_initial_chi2-0_r.MP9601',
@@ -125,220 +121,215 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
         """Set default values for the constrainedAstrometry tests, and make
         the differences between each test and the defaults more obvious.
         """
-        self.config = lsst.jointcal.jointcal.JointcalConfig()
-        self.config.astrometryModel = "constrained"
-        self.config.doPhotometry = False
-        self.jointcalStatistics.do_photometry = False
+        configOptions = {"astrometryModel": "constrained", "doPhotometry": False}
 
-        # See Readme for an explanation of these empirical values.
-        dist_rms_relative = 16e-3*u.arcsecond
         metrics = {'astrometry_collected_refStars': 867,
-                   'astrometry_prepared_refStars': 332,
-                   'astrometry_matched_fittedStars': 2272,
-                   'astrometry_prepared_fittedStars': 1229,
+                   'astrometry_prepared_refStars': 323,
+                   'astrometry_matched_fittedStars': 2399,
+                   'astrometry_prepared_fittedStars': 1255,
                    'astrometry_prepared_ccdImages': 12,
-                   'astrometry_final_chi2': 1100.75,
-                   'astrometry_final_ndof': 1910,
+                   'astrometry_final_chi2': 1192.41,
+                   'astrometry_final_ndof': 2004,
                    }
 
-        return dist_rms_relative, metrics
+        return configOptions, metrics
 
     def test_jointcalTask_2_visits_constrainedAstrometry_no_photometry(self):
-        dist_rms_relative, metrics = self.setup_jointcalTask_2_visits_constrainedAstrometry()
-        self.config.writeInitialModel = True  # write the initial models
+        configOptions, metrics = self.setup_jointcalTask_2_visits_constrainedAstrometry()
+        configOptions['writeInitialModel'] = True  # write the initial models
         # use a temporary directory for debug output, to prevent test collisions
         with tempfile.TemporaryDirectory() as tempdir:
-            self.config.debugOutputPath = tempdir
+            configOptions['debugOutputPath'] = tempdir
 
-            self._testJointcalTask(2, dist_rms_relative, self.dist_rms_absolute, None, metrics=metrics)
+            self._runGen3Jointcal("lsst.obs.cfht.MegaPrime", "MegaPrime",
+                                  configOptions=configOptions, metrics=metrics)
+
             filename = os.path.join(tempdir, "initial_astrometry_model-0_r.MP9601.txt")
             self.assertTrue(os.path.exists(filename), msg=f"Did not find file {filename}")
 
     def test_jointcalTask_2_visits_constrainedAstrometry_no_rank_update(self):
         """Demonstrate that skipping the rank update doesn't substantially affect astrometry.
         """
-        relative_error, metrics = self.setup_jointcalTask_2_visits_constrainedAstrometry()
-        metrics['astrometry_final_chi2'] = 1069.538
-        metrics['astrometry_final_ndof'] = 1644
+        configOptions, metrics = self.setup_jointcalTask_2_visits_constrainedAstrometry()
+        metrics['astrometry_final_chi2'] = 1095.70
+        metrics['astrometry_final_ndof'] = 1740
 
-        self.config.astrometryDoRankUpdate = False
+        configOptions['astrometryDoRankUpdate'] = False
 
-        self._testJointcalTask(2, relative_error, self.dist_rms_absolute, None, metrics=metrics)
+        self._runGen3Jointcal("lsst.obs.cfht.MegaPrime", "MegaPrime",
+                              configOptions=configOptions, metrics=metrics)
 
     def test_jointcalTask_2_visits_constrainedAstrometry_4sigma_outliers(self):
         """4 sigma outlier rejection means fewer available sources after the
         fitter converges, resulting in a smaller ndof and chi2.
         """
-        dist_rms_relative, metrics = self.setup_jointcalTask_2_visits_constrainedAstrometry()
-        self.config.outlierRejectSigma = 4
-        metrics['astrometry_final_chi2'] = 800.919
-        metrics['astrometry_final_ndof'] = 1796
+        configOptions, metrics = self.setup_jointcalTask_2_visits_constrainedAstrometry()
+        configOptions['outlierRejectSigma'] = 4
+        metrics['astrometry_final_chi2'] = 732.79
+        metrics['astrometry_final_ndof'] = 1814
 
-        self._testJointcalTask(2, dist_rms_relative, self.dist_rms_absolute, None, metrics=metrics)
+        self._runGen3Jointcal("lsst.obs.cfht.MegaPrime", "MegaPrime",
+                              configOptions=configOptions, metrics=metrics)
 
     def test_jointcalTask_2_visits_constrainedAstrometry_astrometryOutlierRelativeTolerance(self):
         """Test that astrometryOutlierRelativeTolerance changes the fit. Setting
         1% for the astrometryOutlierRelativeTolerance will result in higher chi2
         and ndof.
         """
-        dist_rms_relative, metrics = self.setup_jointcalTask_2_visits_constrainedAstrometry()
-        self.config.astrometryOutlierRelativeTolerance = 0.01
-        metrics['astrometry_final_chi2'] = 1393.40
-        metrics['astrometry_final_ndof'] = 1982
+        configOptions, metrics = self.setup_jointcalTask_2_visits_constrainedAstrometry()
+        configOptions['astrometryOutlierRelativeTolerance'] = 0.01
+        metrics['astrometry_final_chi2'] = 1542.03
+        metrics['astrometry_final_ndof'] = 2076
 
-        self._testJointcalTask(2, dist_rms_relative, self.dist_rms_absolute, None, metrics=metrics)
+        self._runGen3Jointcal("lsst.obs.cfht.MegaPrime", "MegaPrime",
+                              configOptions=configOptions, metrics=metrics)
 
     def test_jointcalTask_2_visits_constrainedAstrometry_astrometryReferenceUncertainty_smaller(self):
         """Test with a smaller fake reference uncertainty: chi2 will be higher."""
-        dist_rms_relative, metrics = self.setup_jointcalTask_2_visits_constrainedAstrometry()
-        test_config = os.path.join(lsst.utils.getPackageDir('jointcal'),
-                                   'tests/config/astrometryReferenceErr-config.py')
-        self.configfiles.append(test_config)
-        metrics['astrometry_final_chi2'] = 1303.55
-        metrics['astrometry_final_ndof'] = 2068
+        configOptions, metrics = self.setup_jointcalTask_2_visits_constrainedAstrometry()
+        astrometryRefErrConfig = os.path.join(lsst.utils.getPackageDir('jointcal'),
+                                              'tests/config/astrometryReferenceErr-config.py')
+        metrics['astrometry_final_chi2'] = 1213.51
+        metrics['astrometry_final_ndof'] = 2126
 
-        self._testJointcalTask(2, dist_rms_relative, self.dist_rms_absolute, None, metrics=metrics)
+        self._runGen3Jointcal("lsst.obs.cfht.MegaPrime", "MegaPrime", configFiles=[astrometryRefErrConfig],
+                              configOptions=configOptions, metrics=metrics)
 
     def test_jointcalTask_2_visits_constrainedAstrometry_astrometryReferenceUncertainty_None_fails(self):
-        """The default `None` should fail for the existing refcats that have no position errors."""
-        dist_rms_relative, metrics = self.setup_jointcalTask_2_visits_constrainedAstrometry()
-        # This is the default, but we override it in tests/config/config.py,
-        # because none of the existing test refcats have errors. So we have to
-        # re-override it here.
-        test_config = os.path.join(lsst.utils.getPackageDir('jointcal'),
-                                   'tests/config/astrometryReferenceErr-None-config.py')
-        self.configfiles.append(test_config)
+        """Setting astrometryReferenceUncertainty=None should fail for refcats
+        that have no position errors.
+        """
+        configOptions, metrics = self.setup_jointcalTask_2_visits_constrainedAstrometry()
+        badRefErrConfig = os.path.join(lsst.utils.getPackageDir('jointcal'),
+                                       'tests/config/astrometryReferenceErr-None-config.py')
         with self.assertRaises(lsst.pex.config.FieldValidationError):
-            self._testJointcalTask(2, None, None, None)
+            self._runGen3Jointcal("lsst.obs.cfht.MegaPrime", "MegaPrime", configFiles=[badRefErrConfig],
+                                  configOptions=configOptions, metrics=metrics)
 
     def setup_jointcalTask_2_visits_constrainedPhotometry(self):
         """Set default values for the constrainedPhotometry tests, and make
         the differences between each test and the defaults more obvious.
         """
-        self.config = lsst.jointcal.jointcal.JointcalConfig()
-        self.config.photometryModel = "constrainedFlux"
-        self.config.doAstrometry = False
-        self.jointcalStatistics.do_astrometry = False
+        configOptions = {"photometryModel": "constrainedFlux", "doAstrometry": False}
 
-        # See Readme for an explanation of these empirical values.
-        pa1 = 0.09
-        metrics = {'photometry_collected_refStars': 11570,
-                   'photometry_prepared_refStars': 2225,
-                   'photometry_matched_fittedStars': 2272,
-                   'photometry_prepared_fittedStars': 2232,
+        metrics = {'photometry_collected_refStars': 11569,
+                   'photometry_prepared_refStars': 2302,
+                   'photometry_matched_fittedStars': 2399,
+                   'photometry_prepared_fittedStars': 2317,
                    'photometry_prepared_ccdImages': 12,
-                   'photometry_final_chi2': 11649.7,
-                   'photometry_final_ndof': 2729
+                   'photometry_final_chi2': 11264.28,
+                   'photometry_final_ndof': 2821
                    }
-        return pa1, metrics
+        return configOptions, metrics
 
     def test_jointcalTask_2_visits_constrainedPhotometry_no_astrometry(self):
-        pa1, metrics = self.setup_jointcalTask_2_visits_constrainedPhotometry()
-        self.config.writeInitialModel = True  # write the initial models
+        configOptions, metrics = self.setup_jointcalTask_2_visits_constrainedPhotometry()
+        configOptions['writeInitialModel'] = True  # write the initial models
         # use a temporary directory for debug output, to prevent test collisions
         with tempfile.TemporaryDirectory() as tempdir:
-            self.config.debugOutputPath = tempdir
+            configOptions['debugOutputPath'] = tempdir
 
-            self._testJointcalTask(2, None, None, pa1, metrics=metrics)
+            self._runGen3Jointcal("lsst.obs.cfht.MegaPrime", "MegaPrime",
+                                  configOptions=configOptions, metrics=metrics)
             filename = os.path.join(tempdir, "initial_photometry_model-0_r.MP9601.txt")
             self.assertTrue(os.path.exists(filename), msg=f"Did not find file {filename}")
 
     def test_jointcalTask_2_visits_constrainedPhotometry_no_rank_update(self):
         """Demonstrate that skipping the rank update doesn't substantially affect photometry.
         """
-        pa1, metrics = self.setup_jointcalTask_2_visits_constrainedPhotometry()
-        self.config.photometryDoRankUpdate = False
+        configOptions, metrics = self.setup_jointcalTask_2_visits_constrainedPhotometry()
+        configOptions['photometryDoRankUpdate'] = False
 
         # The constrainedPhotometry model is not purely linear, so a small
         # change in final chi2 is possible.
-        metrics['photometry_final_chi2'] = 11396.27
-        metrics['photometry_final_ndof'] = 2695
+        metrics['photometry_final_chi2'] = 10896.76
+        metrics['photometry_final_ndof'] = 2787
 
-        self._testJointcalTask(2, None, None, pa1, metrics=metrics)
+        self._runGen3Jointcal("lsst.obs.cfht.MegaPrime", "MegaPrime",
+                              configOptions=configOptions, metrics=metrics)
 
     def test_jointcalTask_2_visits_constrainedPhotometry_lineSearch(self):
         """Activating the line search should only slightly change the chi2.
+
+        Activating line search for constrainedPhotometry should result in
+        nearly the same final fit (the system is somewhat non-linear, so it
+        may not be exactly the same: check the "Line search scale factor"
+        lines in the DEBUG log for values that are not ~1 for proof).
         """
-        pa1, metrics = self.setup_jointcalTask_2_visits_constrainedPhotometry()
-        self.config.allowLineSearch = True
+        configOptions, metrics = self.setup_jointcalTask_2_visits_constrainedPhotometry()
+        configOptions['allowLineSearch'] = True
 
-        # Activating line search for constrainedPhotometry should result in
-        # nearly the same final fit (the system is somewhat non-linear, so it
-        # may not be exactly the same: check the "Line search scale factor"
-        # lines in the DEBUG log for values that are not ~1 for proof).
-        pa1 = 0.14
-        metrics['photometry_final_chi2'] = 10500.4
-        metrics['photometry_final_ndof'] = 2712
+        metrics['photometry_final_chi2'] = 10000.87
+        metrics['photometry_final_ndof'] = 2773
 
-        self._testJointcalTask(2, None, None, pa1, metrics=metrics)
+        self._runGen3Jointcal("lsst.obs.cfht.MegaPrime", "MegaPrime",
+                              configOptions=configOptions, metrics=metrics)
 
     def test_jointcalTask_2_visits_constrainedPhotometry_flagged(self):
         """Test the use of the FlaggedSourceSelector."""
-        pa1, metrics = self.setup_jointcalTask_2_visits_constrainedPhotometry()
+        configOptions, metrics = self.setup_jointcalTask_2_visits_constrainedPhotometry()
         test_config = os.path.join(lsst.utils.getPackageDir('jointcal'),
                                    'tests/config/cfht-flagged-config.py')
-        self.configfiles.append(test_config)
         # Reduce warnings due to flaggedSourceSelector having fewer sources than astrometrySourceSelector.
-        self.config.minMeasuredStarsPerCcd = 30
-        self.config.minRefStarsPerCcd = 20
+        configOptions['minMeasuredStarsPerCcd'] = 30
+        configOptions['minRefStarsPerCcd'] = 20
 
-        pa1 = 0.026
         metrics['photometry_prepared_refStars'] = 265
         metrics['photometry_matched_fittedStars'] = 265
         metrics['photometry_prepared_fittedStars'] = 265
         metrics['photometry_final_chi2'] = 392.816
         metrics['photometry_final_ndof'] = 294
 
-        self._testJointcalTask(2, None, None, pa1, metrics=metrics)
+        self._runGen3Jointcal("lsst.obs.cfht.MegaPrime", "MegaPrime", configFiles=[test_config],
+                              configOptions=configOptions, metrics=metrics)
 
     def test_jointcalTask_2_visits_constrainedMagnitude_no_astrometry(self):
-        pa1, metrics = self.setup_jointcalTask_2_visits_constrainedPhotometry()
-        self.config.photometryModel = "constrainedMagnitude"
+        configOptions, metrics = self.setup_jointcalTask_2_visits_constrainedPhotometry()
+        configOptions['photometryModel'] = "constrainedMagnitude"
 
         # The resulting fit should be close to the constrainedFlux model:
         # there are few CCDs and 2 visits, so there's not a lot of complexity
         # in this case to distinguish the flux vs. magnitude models.
-        metrics['photometry_final_chi2'] = 9455.06
-        metrics['photometry_final_ndof'] = 2710
+        metrics['photometry_final_chi2'] = 10276.57
+        metrics['photometry_final_ndof'] = 2823
 
-        self._testJointcalTask(2, None, None, pa1, metrics=metrics)
+        self._runGen3Jointcal("lsst.obs.cfht.MegaPrime", "MegaPrime",
+                              configOptions=configOptions, metrics=metrics)
 
     def test_jointcalTask_2_visits_constrainedFlux_pedestal(self):
         """Test that forcing a systematic flux error results in a lower chi2.
         """
-        pa1, metrics = self.setup_jointcalTask_2_visits_constrainedPhotometry()
+        configOptions, metrics = self.setup_jointcalTask_2_visits_constrainedPhotometry()
         # median fluxErr/flux in ps1 is 0.11, so we have to make this bigger
         # than that to actually allow more slop in the fit.
-        self.config.photometryErrorPedestal = 0.2
+        configOptions['photometryErrorPedestal'] = 0.2
 
-        # We're allowing more error in the fit, so PA1 may be worse.
-        pa1 = 0.21
         # Final chi2 is much lower, because all sources contribute more error.
-        metrics['photometry_final_chi2'] = 3214.78
+        metrics['photometry_final_chi2'] = 3355.96
         # ndof may change; slightly different likelihood contours, and fewer
         # reference sources rejected.
-        metrics['photometry_final_ndof'] = 3154
+        metrics['photometry_final_ndof'] = 3262
 
-        self._testJointcalTask(2, None, None, pa1, metrics=metrics)
+        self._runGen3Jointcal("lsst.obs.cfht.MegaPrime", "MegaPrime",
+                              configOptions=configOptions, metrics=metrics)
 
     def test_jointcalTask_2_visits_constrainedMagnitude_pedestal(self):
         """Test that forcing a systematic flux error results in a lower chi2.
         """
-        pa1, metrics = self.setup_jointcalTask_2_visits_constrainedPhotometry()
-        self.config.photometryModel = "constrainedMagnitude"
+        configOptions, metrics = self.setup_jointcalTask_2_visits_constrainedPhotometry()
+        configOptions['photometryModel'] = "constrainedMagnitude"
         # median fluxErr/flux in ps1 is 0.11, so we have to make this bigger
         # than that to actually allow more slop in the fit.
-        self.config.photometryErrorPedestal = 0.2
+        configOptions['photometryErrorPedestal'] = 0.2
 
-        # We're allowing more error in the fit, so PA1 may be worse.
-        pa1 = 0.19
         # Final chi2 is much lower, because all sources contribute more error.
-        metrics['photometry_final_chi2'] = 3092.39
+        metrics['photometry_final_chi2'] = 3165.87
         # ndof may change; slightly different likelihood contours, and fewer
         # reference sources rejected.
-        metrics['photometry_final_ndof'] = 3129
+        metrics['photometry_final_ndof'] = 3224
 
-        self._testJointcalTask(2, None, None, pa1, metrics=metrics)
+        self._runGen3Jointcal("lsst.obs.cfht.MegaPrime", "MegaPrime",
+                              configOptions=configOptions, metrics=metrics)
 
 
 class MemoryTester(lsst.utils.tests.MemoryTestCase):
