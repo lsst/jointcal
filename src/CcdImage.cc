@@ -86,8 +86,9 @@ void CcdImage::loadCatalog(afw::table::SourceCatalog const &catalog, std::string
         double mxy = record.get(mxyKey);
         ms->vxy = mxy * (ms->vx + ms->vy) / (mxx + myy);
         if (std::isnan(ms->vxy) || ms->vx < 0 || ms->vy < 0 || (ms->vxy * ms->vxy) > (ms->vx * ms->vy)) {
-            LOGLS_WARN(_log, "Bad source detected during loadCatalog id: "
-                                     << ms->getId() << " with vx,vy: " << ms->vx << "," << ms->vy
+            LOGLS_WARN(_log, "Bad source detected during loadCatalog, "
+                                     << "detector=" << _ccdId << ", visit=" << _visit
+                                     << " id: " << ms->getId() << " with vx,vy: " << ms->vx << "," << ms->vy
                                      << " vxy^2: " << ms->vxy * ms->vxy << " vx*vy: " << ms->vx * ms->vy);
             continue;
         }
