@@ -329,12 +329,13 @@ class JointcalTestBase:
             Expected metric dictionary; set a value to None to not test it.
         """
         for key in result:
-            if expect[key.metric] is not None:
-                value = result[key].quantity.value
-                if isinstance(value, float):
-                    self.assertFloatsAlmostEqual(value, expect[key.metric], msg=key.metric, rtol=1e-5)
-                else:
-                    self.assertEqual(value, expect[key.metric], msg=key.metric)
+            with self.subTest(key.metric):
+                if expect[key.metric] is not None:
+                    value = result[key].quantity.value
+                    if isinstance(value, float):
+                        self.assertFloatsAlmostEqual(value, expect[key.metric], msg=key.metric, rtol=1e-5)
+                    else:
+                        self.assertEqual(value, expect[key.metric], msg=key.metric)
 
     def _runPipeline(self, repo,
                      inputCollections, outputCollection,
