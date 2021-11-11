@@ -893,8 +893,9 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
 
         Returns
         -------
-        catalog : `lsst.afw.table.SourceCatalog`
-            Detector-level catalog extracted from ``visitCatalog``.
+        catalog : `lsst.afw.table.SourceCatalog`, or `None`
+            Detector-level catalog extracted from ``visitCatalog``, or `None`
+            if there was no data to load.
         """
         # map from dataFrame column to afw table column
         mapping = {'x': 'centroid_x',
@@ -910,6 +911,9 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
 
         catalog = lsst.afw.table.SourceCatalog(table)
         matched = visitCatalog[detectorColumn] == detectorId
+        n = sum(matched)
+        if n == 0:
+            return None
         catalog.resize(sum(matched))
         view = visitCatalog.loc[matched]
         catalog['id'] = view.index
@@ -975,6 +979,8 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
                 for id, index in detectors.items():
                     catalog = self._extract_detector_catalog_from_visit_catalog(table, selected.sourceCat, id,
                                                                                 detColumn, ixxColumns)
+                    if catalog is None:
+                        continue
                     data = self._make_one_input_data(visitSummary[index], catalog, detectorDict)
                     result = self._build_ccdImage(data, associations, jointcalControl)
                     if result is not None:
