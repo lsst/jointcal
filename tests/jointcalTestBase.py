@@ -19,18 +19,77 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+__all__ = ["importRepository", "JointcalTestBase"]
+
 import copy
 import os
 import shutil
+import tempfile
 
 import lsst.afw.image.utils
 from lsst.ctrl.mpexec import SimplePipelineExecutor
 import lsst.daf.butler
+from lsst.daf.butler.script import ingest_files
 import lsst.obs.base
 import lsst.geom
 from lsst.verify.bin.jobReporter import JobReporter
 
 from lsst.jointcal import jointcal, utils
+
+
+def importRepository(instrument, exportPath, exportFile, outputDir=None,
+                     refcats=None, refcatPath=""):
+    """Import a gen3 test repository into a test path.
+
+    Parameters
+    ----------
+    instrument : `str`
+        Full string name for the instrument.
+    exportPath : `str`
+        Path to location of repository to export.
+    exportFile : `str`
+        Filename of YAML butler export data, describing the data to import.
+    outputDir : `str`, or `None`
+        Root path to put the test repo in; appended with `testrepo/`.
+        If not supplied, a temporary path is generated with mkdtemp; this path
+        must be deleted by the calling code, it is not automatically removed.
+    refcats : `dict` [`str`, `str`]
+        Mapping of refcat name to relative path to .ecsv ingest file.
+    refcatPath : `str`
+        Path prefix for refcat ingest files and files linked therein.
+
+    Returns
+    -------
+    repopath : `str`
+        The path to the newly created butler repo.
+    """
+    if outputDir is None:
+        repopath = tempfile.mkdtemp()
+    else:
+        repopath = os.path.join(outputDir, 'testrepo')
+
+    # Make the repo and retrieve a writeable Butler
+    _ = lsst.daf.butler.Butler.makeRepo(repopath)
+    butler = lsst.daf.butler.Butler(repopath, writeable=True)
+
+    instrInstance = lsst.obs.base.utils.getInstrument(instrument)
+    instrInstance.register(butler.registry)
+
+    # Register refcats first, so the `refcats` collection will exist.
+    if refcats is not None:
+        for name, file in refcats.items():
+            graph = butler.registry.dimensions.extract(["htm7"])
+            datasetType = lsst.daf.butler.DatasetType(name, graph, "SimpleCatalog",
+                                                      universe=butler.registry.dimensions)
+            butler.registry.registerDatasetType(datasetType)
+            ingest_files(repopath, name, "refcats", file, prefix=refcatPath)
+        # New butler to get the refcats collections to be visible
+        butler = lsst.daf.butler.Butler(repopath, writeable=True)
+
+    butler.import_(directory=exportPath, filename=exportFile,
+                   transfer='symlink',
+                   skip_dimensions={'instrument', 'detector', 'physical_filter'})
+    return repopath
 
 
 class JointcalTestBase:
@@ -50,7 +109,10 @@ class JointcalTestBase:
                    other_args=None,
                    do_plot=False,
                    log_level=None,
-                   where=""):
+                   where="",
+                   refcats=None,
+                   refcatPath="",
+                   inputCollections=None):
         """
         Call from your child classes's setUp() to get the necessary variables built.
 
@@ -76,6 +138,13 @@ class JointcalTestBase:
             levels: https://developer.lsst.io/coding/logging.html
         where : `str`
             Data ID query for pipetask specifying the data to run on.
+        refcats : `dict` [`str`, `str`]
+            Mapping of refcat name to relative path to .ecsv ingest file.
+        refcatPath : `str`
+            Path prefix for refcat ingest files and files linked therein.
+        inputCollections : `list` [`str`]
+            String to use for "-i" input collections (comma delimited).
+            For example, "refcats,HSC/runs/tests,HSC/calib"
         """
         self.path = os.path.dirname(__file__)
 
@@ -101,6 +170,9 @@ class JointcalTestBase:
         self.longMessage = True
 
         self.where = where
+        self.refcats = refcats
+        self.refcatPath = refcatPath
+        self.inputCollections = inputCollections
 
         # Ensure that the filter list is reset for each test so that we avoid
         # confusion or contamination from other instruments.
@@ -264,33 +336,6 @@ class JointcalTestBase:
                 else:
                     self.assertEqual(value, expect[key.metric], msg=key.metric)
 
-    def _importRepository(self, instrument, exportPath, exportFile):
-        """Import a gen3 test repository into self.testDir
-
-        Parameters
-        ----------
-        instrument : `str`
-            Full string name for the instrument.
-        exportPath : `str`
-            Path to location of repository to export.
-            This path must contain an `exports.yaml` file containing the
-            description of the exported gen3 repo that will be imported.
-        exportFile : `str`
-            Filename of export data.
-        """
-        self.repo = os.path.join(self.output_dir, 'testrepo')
-
-        # Make the repo and retrieve a writeable Butler
-        _ = lsst.daf.butler.Butler.makeRepo(self.repo)
-        butler = lsst.daf.butler.Butler(self.repo, writeable=True)
-        # Register the instrument
-        instrInstance = lsst.obs.base.utils.getInstrument(instrument)
-        instrInstance.register(butler.registry)
-        # Import the exportFile
-        butler.import_(directory=exportPath, filename=exportFile,
-                       transfer='symlink',
-                       skip_dimensions={'instrument', 'detector', 'physical_filter'})
-
     def _runPipeline(self, repo,
                      inputCollections, outputCollection,
                      configFiles=None, configOptions=None,
@@ -306,7 +351,7 @@ class JointcalTestBase:
             String to use for "-i" input collections (comma delimited).
             For example, "refcats,HSC/runs/tests,HSC/calib"
         outputCollection : `str`
-            String to use for "-o" output collection. For example,
+            Name of the output collection to write to. For example,
             "HSC/testdata/jointcal"
         configFiles : `list` [`str`], optional
             List of jointcal config files to use.
@@ -329,8 +374,7 @@ class JointcalTestBase:
             config.load(file)
         for key, value in configOptions.items():
             setattr(config, key, value)
-        if whereSuffix is not None:
-            where = ' '.join((self.where, whereSuffix))
+        where = ' '.join((self.where, whereSuffix)) if whereSuffix is not None else self.where
         lsst.daf.butler.cli.cliLog.CliLog.initLog(False)
         butler = SimplePipelineExecutor.prep_butler(repo,
                                                     inputs=inputCollections,
@@ -343,7 +387,7 @@ class JointcalTestBase:
         executor.run(register_dataset_types=registerDatasetTypes)
         # JobReporter bundles all metrics in the collection into one job.
         jobs = JobReporter(repo, outputCollection, "jointcal", "", "jointcal").run()
-        # should only ever get one job output in tests
+        # should only ever get one job output in tests, unless specified
         self.assertEqual(len(jobs), nJobs)
         return list(jobs.values())[0]
 
@@ -371,23 +415,24 @@ class JointcalTestBase:
             against.
         nJobs : `int`, optional
             Number of quanta expected to be run.
-        """
-        self._importRepository(instrumentClass,
-                               self.input_dir,
-                               os.path.join(self.input_dir, "exports.yaml"))
-        # TODO post-RFC-741: the names of these collections will have to change
-        # once testdata_jointcal is updated to reflect the collection
-        # conventions in RFC-741 (no ticket for that change yet).
-        inputCollections = ["refcats/gen2",
-                            f"{instrumentName}/testdata",
-                            f"{instrumentName}/calib/unbounded"]
 
+        Returns
+        -------
+        repopath : `str`
+            The path to the newly created butler repo.
+        """
+        repopath = importRepository(instrumentClass,
+                                    os.path.join(self.input_dir, "repo"),
+                                    os.path.join(self.input_dir, "exports.yaml"),
+                                    self.output_dir,
+                                    refcats=self.refcats,
+                                    refcatPath=self.refcatPath)
         configs = [os.path.join(self.path, "config/config-gen3.py")]
         configs.extend(self.configfiles or [])
         configs.extend(configFiles or [])
-        job = self._runPipeline(self.repo,
-                                inputCollections,
-                                f"{instrumentName}/testdata/all",
+        job = self._runPipeline(repopath,
+                                self.inputCollections,
+                                f"{instrumentName}/tests/all",
                                 configFiles=configs,
                                 configOptions=configOptions,
                                 registerDatasetTypes=True,
@@ -396,3 +441,5 @@ class JointcalTestBase:
 
         if metrics:
             self._test_metrics(job.measurements, metrics)
+
+        return repopath
