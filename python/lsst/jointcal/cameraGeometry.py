@@ -30,6 +30,8 @@ import astshim as ast
 import lsst.log
 from lsst.geom import SpherePoint, Point2D, radians
 
+_LOG = lsst.log.Log.getLogger(__name__)
+
 
 class CameraModel:
     """Convert a jointcal `~lsst.afw.geom.SkyWcs` into a distortion model and
@@ -69,7 +71,7 @@ class CameraModel:
         self.radialScaleStd = None
         self.tangentialScaleStd = None
 
-        self.log = lsst.log.Log.getLogger("jointcal.cameraGeom.CameraModel")
+        self.log = _LOG.getChild("CameraModel")
 
     def computeDistortionModel(self):
         """Calculate the afw cameraGeom distortion model to be included in an

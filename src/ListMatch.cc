@@ -41,7 +41,7 @@
 #include "lsst/jointcal/ListMatch.h"
 
 namespace {
-LOG_LOGGER _log = LOG_GET("jointcal.ListMatch");
+LOG_LOGGER _log = LOG_GET("lsst.jointcal.ListMatch");
 }
 
 namespace lsst {

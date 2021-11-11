@@ -81,7 +81,7 @@ class PerTractCcdDataIdContainer(CoaddDataIdContainer):
         if self.datasetType is None:
             raise RuntimeError("Must call setDatasetType first")
         skymap = None
-        log = lsst.log.Log.getLogger("jointcal.dataIds")
+        log = lsst.log.Log.getLogger(__name__)
         visitTract = {}  # Set of tracts for each visit
         visitRefs = {}  # List of data references for each visit
         for dataId in self.idList:

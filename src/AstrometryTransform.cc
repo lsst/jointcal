@@ -47,7 +47,7 @@ namespace pexExcept = lsst::pex::exceptions;
 using namespace std;
 
 namespace {
-LOG_LOGGER _log = LOG_GET("jointcal.AstrometryTransform");
+LOG_LOGGER _log = LOG_GET("lsst.jointcal.AstrometryTransform");
 }
 
 namespace lsst {

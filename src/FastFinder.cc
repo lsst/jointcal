@@ -29,7 +29,7 @@
 #include "lsst/jointcal/FastFinder.h"
 
 namespace {
-LOG_LOGGER _log = LOG_GET("jointcal.FastFinder");
+LOG_LOGGER _log = LOG_GET("lsst.jointcal.FastFinder");
 }
 
 namespace lsst {

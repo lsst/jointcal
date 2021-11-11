@@ -53,7 +53,7 @@
 namespace jointcal = lsst::jointcal;
 
 namespace {
-LOG_LOGGER _log = LOG_GET("jointcal.Associations");
+LOG_LOGGER _log = LOG_GET("lsst.jointcal.Associations");
 }
 
 namespace lsst {

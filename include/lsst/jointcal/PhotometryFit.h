@@ -56,7 +56,7 @@ public:
               _fittingModel(false),
               _fittingFluxes(false),
               _photometryModel(photometryModel) {
-        _log = LOG_GET("jointcal.PhotometryFit");
+        _log = LOG_GET("lsst.jointcal.PhotometryFit");
     }
 
     /// No copy or move: there is only ever one fitter of a given type.

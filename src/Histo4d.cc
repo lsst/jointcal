@@ -32,7 +32,7 @@
 #include "lsst/jointcal/Histo4d.h"
 
 namespace {
-LOG_LOGGER _log = LOG_GET("jointcal.Histo4d");
+LOG_LOGGER _log = LOG_GET("lsst.jointcal.Histo4d");
 }
 
 namespace lsst {

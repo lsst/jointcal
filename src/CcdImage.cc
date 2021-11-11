@@ -43,7 +43,7 @@ namespace jointcal = lsst::jointcal;
 namespace afwImg = lsst::afw::image;
 
 namespace {
-LOG_LOGGER _log = LOG_GET("jointcal.CcdImage");
+LOG_LOGGER _log = LOG_GET("lsst.jointcal.CcdImage");
 }
 
 namespace lsst {

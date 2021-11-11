@@ -33,7 +33,7 @@
 #include "lsst/jointcal/StarList.h"
 
 namespace {
-LOG_LOGGER _log = LOG_GET("jointcal.FastFinder");
+LOG_LOGGER _log = LOG_GET("lsst.jointcal.FastFinder");
 }
 
 namespace lsst {
