@@ -1,1 +1,0 @@
-config.sourceSelector.name = "flagged"

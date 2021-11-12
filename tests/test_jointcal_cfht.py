@@ -265,24 +265,6 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
         self._runGen3Jointcal("lsst.obs.cfht.MegaPrime", "MegaPrime",
                               configOptions=configOptions, metrics=metrics)
 
-    def test_jointcalTask_2_visits_constrainedPhotometry_flagged(self):
-        """Test the use of the FlaggedSourceSelector."""
-        configOptions, metrics = self.setup_jointcalTask_2_visits_constrainedPhotometry()
-        test_config = os.path.join(lsst.utils.getPackageDir('jointcal'),
-                                   'tests/config/cfht-flagged-config.py')
-        # Reduce warnings due to flaggedSourceSelector having fewer sources than astrometrySourceSelector.
-        configOptions['minMeasuredStarsPerCcd'] = 30
-        configOptions['minRefStarsPerCcd'] = 20
-
-        metrics['photometry_prepared_refStars'] = 265
-        metrics['photometry_matched_fittedStars'] = 265
-        metrics['photometry_prepared_fittedStars'] = 265
-        metrics['photometry_final_chi2'] = 392.816
-        metrics['photometry_final_ndof'] = 294
-
-        self._runGen3Jointcal("lsst.obs.cfht.MegaPrime", "MegaPrime", configFiles=[test_config],
-                              configOptions=configOptions, metrics=metrics)
-
     def test_jointcalTask_2_visits_constrainedMagnitude_no_astrometry(self):
         configOptions, metrics = self.setup_jointcalTask_2_visits_constrainedPhotometry()
         configOptions['photometryModel'] = "constrainedMagnitude"
