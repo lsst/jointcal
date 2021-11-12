@@ -372,6 +372,7 @@ class JointcalConfig(pipeBase.PipelineTaskConfig,
     )
     coaddName = pexConfig.Field(
         doc="Type of coadd, typically deep or goodSeeing",
+        deprecated="Only applies to gen2; will be removed when gen2 support is removed (DM-20572).",
         dtype=str,
         default="deep"
     )
