@@ -202,7 +202,8 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
         configOptions, metrics = self.setup_jointcalTask_2_visits_constrainedAstrometry()
         badRefErrConfig = os.path.join(lsst.utils.getPackageDir('jointcal'),
                                        'tests/config/astrometryReferenceErr-None-config.py')
-        with self.assertRaises(lsst.pex.config.FieldValidationError):
+        with self.assertRaisesRegex(lsst.pex.config.FieldValidationError,
+                                    "Reference catalog does not contain coordinate errors"):
             self._runGen3Jointcal("lsst.obs.cfht.MegaPrime", "MegaPrime", configFiles=[badRefErrConfig],
                                   configOptions=configOptions, metrics=metrics)
 
