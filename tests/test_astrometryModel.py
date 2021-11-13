@@ -26,6 +26,7 @@ Includes tests of producing a Wcs from a model.
 import itertools
 import os
 import numpy as np
+import shutil
 
 import unittest
 import lsst.utils.tests
@@ -37,10 +38,13 @@ import lsst.afw.image
 import lsst.afw.image.utils
 import lsst.daf.persistence
 import lsst.geom
-import lsst.jointcal
-from lsst.jointcal import astrometryModels
 import lsst.log
-from lsst.meas.algorithms import astrometrySourceSelector
+
+import lsst.jointcal
+from lsst.jointcal.jointcal import (make_schema_table, get_sourceTable_visit_columns,
+                                    extract_detector_catalog_from_visit_catalog)
+from lsst.jointcal import astrometryModels
+from jointcalTestBase import importRepository
 
 
 def getNParametersPolynomial(order):
@@ -49,6 +53,8 @@ def getNParametersPolynomial(order):
 
 
 class AstrometryModelTestBase:
+    """Test the jointcal AstrometryModel concrete classes, using CFHT data.
+    """
     @classmethod
     def setUpClass(cls):
         try:
@@ -60,6 +66,21 @@ class AstrometryModelTestBase:
             # cls.dataDir = lsst.utils.getPackageDir('validation_data_hsc')
         except LookupError:
             raise unittest.SkipTest("testdata_jointcal not setup")
+
+        refcatPath = os.path.join(cls.dataDir, "cfht")
+        refcats = {"gaia_dr2_20200414": os.path.join(refcatPath, "gaia_dr2_20200414.ecsv"),
+                   "ps1_pv3_3pi_20170110": os.path.join(refcatPath, "ps1_pv3_3pi_20170110.ecsv"),
+                   "sdss_dr9_fink_v5b": os.path.join(refcatPath, "sdss-dr9-fink-v5b.ecsv")}
+        # Share one repo, since none of these tests write anything.
+        cls.repopath = importRepository("lsst.obs.cfht.MegaPrime",
+                                        os.path.join(cls.dataDir, 'cfht/repo/'),
+                                        os.path.join(cls.dataDir, 'cfht/exports.yaml'),
+                                        refcats=refcats,
+                                        refcatPath=refcatPath)
+
+    @classmethod
+    def tearDownClass(cls):
+        shutil.rmtree(cls.repopath, ignore_errors=True)
 
     def setUp(self):
         np.random.seed(200)
@@ -83,43 +104,47 @@ class AstrometryModelTestBase:
         matchCut = 2.0  # arcseconds
         minMeasurements = 2  # accept all star pairs.
 
-        jointcalControl = lsst.jointcal.JointcalControl("slot_CalibFlux")
+        jointcalControl = lsst.jointcal.JointcalControl("flux")
         self.associations = lsst.jointcal.Associations()
-        # Work around the fact that the testdata_jointcal catalogs were produced
-        # before DM-13493, and so have a different definition of the interpolated flag.
-        sourceSelectorConfig = astrometrySourceSelector.AstrometrySourceSelectorConfig()
-        sourceSelectorConfig.badFlags.append("base_PixelFlags_flag_interpolated")
-        sourceSelector = astrometrySourceSelector.AstrometrySourceSelectorTask(config=sourceSelectorConfig)
+        config = lsst.jointcal.JointcalConfig()
+        config.load(os.path.join(os.path.dirname(__file__), "config/config-gen3.py"))
+        sourceSelector = config.sourceSelector.target(config=config.sourceSelector['science'])
 
         # Ensure that the filter list is reset for each test so that we avoid
         # confusion or contamination each time we create a cfht camera below.
         lsst.afw.image.utils.resetFilters()
 
         # jointcal's cfht test data has 6 ccds and 2 visits.
-        inputDir = os.path.join(self.dataDir, 'cfht')
         self.visits = [849375, 850587]
-        self.ccds = [12, 13, 14, 21, 22, 23]
+        self.detectors = [12, 13, 14, 21, 22, 23]
         self.badVisit = -12345
         self.badCcd = 888
 
-        self.butler = lsst.daf.persistence.Butler(inputDir)
+        butler = lsst.daf.butler.Butler(self.repopath, collections='singleFrame', instrument="MegaPrime")
 
         self.catalogs = []
         self.ccdImageList = []
-        for (visit, ccd) in itertools.product(self.visits, self.ccds):
-            dataRef = self.butler.dataRef('calexp', visit=visit, ccd=ccd)
-
-            src = dataRef.get("src", flags=lsst.afw.table.SOURCE_IO_NO_FOOTPRINTS, immediate=True)
-            goodSrc = sourceSelector.run(src)
-            # Need memory contiguity to do vector-like things on the sourceCat.
-            goodSrc = goodSrc.sourceCat.copy(deep=True)
-
-            visitInfo = dataRef.get('calexp_visitInfo')
-            detector = dataRef.get('calexp_detector')
+        table = make_schema_table()
+        inColumns = butler.get("sourceTable_visit", visit=self.visits[0])
+        columns, detColumn, ixxColumns = get_sourceTable_visit_columns(inColumns, config, sourceSelector)
+        catalogs = {v: sourceSelector.run(butler.get('sourceTable_visit',
+                                                     visit=v,
+                                                     parameters={'columns': columns})) for v in self.visits}
+        for (visit, detector) in itertools.product(self.visits, self.detectors):
+            goodSrc = extract_detector_catalog_from_visit_catalog(table,
+                                                                  catalogs[visit].sourceCat,
+                                                                  detector,
+                                                                  detColumn,
+                                                                  ixxColumns,
+                                                                  config.sourceFluxType,
+                                                                  logger)
+            dataId = {"detector": detector, "visit": visit}
+            visitInfo = butler.get('calexp.visitInfo', dataId=dataId)
+            detector = butler.get('calexp.detector', dataId=dataId)
             ccdId = detector.getId()
-            wcs = dataRef.get('calexp_wcs')
-            bbox = dataRef.get('calexp_bbox')
-            filt = dataRef.get('calexp_filterLabel')
+            wcs = butler.get('calexp.wcs', dataId=dataId)
+            bbox = butler.get('calexp.bbox', dataId=dataId)
+            filt = butler.get('calexp.filterLabel', dataId=dataId)
             filterName = filt.physicalLabel
             photoCalib = lsst.afw.image.PhotoCalib(100.0, 1.0)
 
@@ -158,12 +183,12 @@ class AstrometryModelTestBase:
         self.fitter2 = lsst.jointcal.AstrometryFit(self.associations, self.model2, posError)
 
     def testMakeSkyWcsModel1(self):
-        self.CheckMakeSkyWcsModel(self.model1, self.fitter1, self.inverseMaxDiff1)
+        self.checkMakeSkyWcsModel(self.model1, self.fitter1, self.inverseMaxDiff1)
 
     def testMakeSkyWcsModel2(self):
-        self.CheckMakeSkyWcsModel(self.model2, self.fitter2, self.inverseMaxDiff2)
+        self.checkMakeSkyWcsModel(self.model2, self.fitter2, self.inverseMaxDiff2)
 
-    def CheckMakeSkyWcsModel(self, model, fitter, inverseMaxDiff):
+    def checkMakeSkyWcsModel(self, model, fitter, inverseMaxDiff):
         """Test producing a SkyWcs on a model for every cdImage,
         both post-initialization and after one fitting step.
 
@@ -243,7 +268,7 @@ class SimpleAstrometryModelTestCase(AstrometryModelTestBase, lsst.utils.tests.Te
     def setUp(self):
         super().setUp()
         self.order1 = 3
-        self.inverseMaxDiff1 = 2e-5
+        self.inverseMaxDiff1 = 2e-4
         self.model1 = astrometryModels.SimpleAstrometryModel(self.associations.getCcdImageList(),
                                                              self.projectionHandler,
                                                              True,
@@ -257,7 +282,7 @@ class SimpleAstrometryModelTestCase(AstrometryModelTestBase, lsst.utils.tests.Te
         # in astrometryTransform.toAstMap() can improve the quality of the
         # SkyWcs inverse, but that may not be wise for the more general use
         # case due to the inverse then having too many wiggles.
-        self.inverseMaxDiff2 = 2e-3
+        self.inverseMaxDiff2 = 2e-2
         self.model2 = astrometryModels.SimpleAstrometryModel(self.associations.getCcdImageList(),
                                                              self.projectionHandler,
                                                              False,
@@ -303,7 +328,7 @@ class ConstrainedAstrometryModelTestCase(AstrometryModelTestBase, lsst.utils.tes
 
         self.visitOrder2 = 5
         self.chipOrder2 = 2
-        self.inverseMaxDiff2 = 5e-5
+        self.inverseMaxDiff2 = 8e-5
         self.model2 = astrometryModels.ConstrainedAstrometryModel(self.associations.getCcdImageList(),
                                                                   self.projectionHandler,
                                                                   chipOrder=self.chipOrder2,
@@ -345,7 +370,7 @@ class ConstrainedAstrometryModelTestCase(AstrometryModelTestBase, lsst.utils.tes
     def _testGetTotalParameters(self, model, chipOrder, visitOrder):
         result = model.getTotalParameters()
         # one sensor is held fixed, hence len(ccds)-1
-        expect = getNParametersPolynomial(chipOrder)*(len(self.ccds) - 1) + \
+        expect = getNParametersPolynomial(chipOrder)*(len(self.detectors) - 1) + \
             getNParametersPolynomial(visitOrder)*len(self.visits)
         self.assertEqual(result, expect)
 
@@ -357,7 +382,7 @@ class ConstrainedAstrometryModelTestCase(AstrometryModelTestBase, lsst.utils.tes
 
     def checkGetChipTransform(self, model):
         # Check valid ccds
-        for ccd in self.ccds:
+        for ccd in self.detectors:
             try:
                 model.getChipTransform(ccd)
             except lsst.pex.exceptions.wrappers.InvalidParameterError:
@@ -366,7 +391,7 @@ class ConstrainedAstrometryModelTestCase(AstrometryModelTestBase, lsst.utils.tes
         # Check an invalid ccd
         with self.assertRaises(lsst.pex.exceptions.wrappers.InvalidParameterError) as cm:
             model.getChipTransform(self.badCcd)
-        errMsg = "No such chipId: {} among [{}]".format(self.badCcd, ", ".join(str(ccd) for ccd in self.ccds))
+        errMsg = f"No such chipId: {self.badCcd} among [{', '.join(str(d) for d in self.detectors)}]"
         self.assertIn(errMsg, str(cm.exception))
 
     def testGetChipTransform(self):

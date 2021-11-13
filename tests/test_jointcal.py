@@ -39,6 +39,7 @@ from lsst.meas.algorithms import getRefFluxField, LoadIndexedReferenceObjectsTas
 import lsst.obs.base
 import lsst.pipe.base
 import lsst.jointcal
+from lsst.jointcal.jointcal import make_schema_table, extract_detector_catalog_from_visit_catalog
 from lsst.jointcal import MinimizeResult
 import lsst.jointcal.chi2
 import lsst.jointcal.testUtils
@@ -89,19 +90,19 @@ class TestJointcalVisitCatalog(lsst.utils.tests.TestCase):
                                 "data/subselected-sourceTable-0034690.parq")
         file = pyarrow.parquet.ParquetFile(filename)
         self.data = file.read(use_pandas_metadata=True).to_pandas()
-        config = lsst.jointcal.jointcal.JointcalConfig()
+        self.config = lsst.jointcal.jointcal.JointcalConfig()
         # TODO DM-29008: Remove this (to use the new gen3 default) before gen2 removal.
-        config.sourceFluxType = "ApFlux_12_0"
+        self.config.sourceFluxType = "ApFlux_12_0"
         # we don't actually need either fitter to run for these tests
-        config.doAstrometry = False
-        config.doPhotometry = False
-        self.jointcal = lsst.jointcal.JointcalTask(config=config)
+        self.config.doAstrometry = False
+        self.config.doPhotometry = False
+        self.jointcal = lsst.jointcal.JointcalTask(config=self.config)
 
     def test_make_catalog_schema(self):
         """Check that the slot fields required by CcdImage::loadCatalog are in
         the schema returned by _make_catalog_schema().
         """
-        table = self.jointcal._make_schema_table()
+        table = make_schema_table()
         self.assertTrue(table.getCentroidSlot().getMeasKey().isValid())
         self.assertTrue(table.getCentroidSlot().getErrKey().isValid())
         self.assertTrue(table.getShapeSlot().getMeasKey().isValid())
@@ -112,9 +113,14 @@ class TestJointcalVisitCatalog(lsst.utils.tests.TestCase):
         is correct for each detectior.
         """
         detectorId = 56
-        table = self.jointcal._make_schema_table()
-        catalog = self.jointcal._extract_detector_catalog_from_visit_catalog(table, self.data, detectorId,
-                                                                             'ccd', ['Ixx', 'Iyy', 'Ixy'])
+        table = make_schema_table()
+        catalog = extract_detector_catalog_from_visit_catalog(table,
+                                                              self.data,
+                                                              detectorId,
+                                                              'ccd',
+                                                              ['Ixx', 'Iyy', 'Ixy'],
+                                                              self.config.sourceFluxType,
+                                                              self.jointcal.log)
 
         # The test catalog has a number of elements for each detector equal to the detector id.
         self.assertEqual(len(catalog), detectorId)
