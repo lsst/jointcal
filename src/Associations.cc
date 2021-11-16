@@ -108,6 +108,7 @@ lsst::sphgeom::Circle Associations::computeBoundingCircle() const {
     points.reserve(4);
     // raDecFrame is in on-sky (RA,Dec) degrees stored as an x/y box:
     // the on-sky bounding box it represents is given by the corners of that box.
+    LOGLS_INFO(_log, "Computed tangent plane box for data (degrees): " << raDecFrame);
     points.emplace_back(sphgeom::LonLat::fromDegrees(raDecFrame.xMin, raDecFrame.yMin));
     points.emplace_back(sphgeom::LonLat::fromDegrees(raDecFrame.xMax, raDecFrame.yMin));
     points.emplace_back(sphgeom::LonLat::fromDegrees(raDecFrame.xMin, raDecFrame.yMax));
