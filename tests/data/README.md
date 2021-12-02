@@ -10,6 +10,9 @@ Two sources in one catalog have a refcat match (using the `cfht` `sdss-dr9-fink-
 Contains `ccd=12` with (0-indexed) `rows=336,337` of `visit=850587` and `rows=139,140` for `visit=849375`, all taken from the `cfht/` repo in [testdata_jointcal](https://github.com/lsst/testdata_jointcal)
 In jointcal, the photometry fit will contain 3 valid measuredStars, 2 fittedStars, and 2 refStars.
 
+It also contains a working gen3 butler repo, generated with `make_butler_repo.py`, which allows `testUtils.py` to use this data to construct simulated ccdImages.
+The `exports.yaml` file (used to create that gen3 repo and to create temporary repos in `test_jointcal_chft_minimal.py`) was hand-edited from the one included in the `testdata_jointcal` package's `cfht/` directory; see that package for how that file was created.
+
 ## parquet test data
 
 ``extractParquetSubset.py`` trims a ``sourceTable_visit`` parquet catalog from ``testdata_jointcal/hsc`` to use to test jointcal's code to covert a visit-level dataframe into multiple detector-level afw tables.
