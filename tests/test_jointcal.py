@@ -32,7 +32,7 @@ import lsst.log
 import lsst.utils
 
 import lsst.afw.table
-import lsst.daf.persistence
+import lsst.daf.butler
 from lsst.daf.base import DateTime
 import lsst.geom
 from lsst.meas.algorithms import getRefFluxField, LoadIndexedReferenceObjectsTask, DatasetConfig
@@ -161,7 +161,7 @@ class JointcalTestBase:
         self.whatToFit = ""  # unneeded, since we're mocking the fitter
 
         # Mock a Butler so the refObjLoaders have something to call `get()` on.
-        self.butler = unittest.mock.Mock(spec=lsst.daf.persistence.Butler)
+        self.butler = unittest.mock.Mock(spec=lsst.daf.butler.Butler)
         self.butler.get.return_value.indexer = DatasetConfig().indexer
 
         # Mock the association manager and give it access to the ccd list above.

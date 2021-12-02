@@ -31,7 +31,6 @@ import lsst.afw.cameraGeom
 import lsst.afw.table
 import lsst.afw.image
 import lsst.afw.image.utils
-import lsst.daf.persistence
 import lsst.jointcal.ccdImage
 import lsst.jointcal.photometryModels
 import lsst.jointcal.star
@@ -212,11 +211,13 @@ class ConstrainedPhotometryModelTestCase(PhotometryModelTestBase):
         # in `test_assignIndices()`.
         # createTwoFakeCcdImages() always uses the same two visitIds,
         # so there will be 2 visits total here.
-        struct1 = lsst.jointcal.testUtils.createTwoFakeCcdImages(100, 100, seed=100, fakeCcdId=12,
+        struct1 = lsst.jointcal.testUtils.createTwoFakeCcdImages(100, 100, seed=100,
+                                                                 fakeDetectorId=12,
                                                                  photoCalibMean1=1e-2,
                                                                  photoCalibMean2=1.2e-2)
         self.ccdImageList2 = struct1.ccdImageList
-        struct2 = lsst.jointcal.testUtils.createTwoFakeCcdImages(100, 100, seed=101, fakeCcdId=13,
+        struct2 = lsst.jointcal.testUtils.createTwoFakeCcdImages(100, 100, seed=101,
+                                                                 fakeDetectorId=13,
                                                                  photoCalibMean1=2.0e-2,
                                                                  photoCalibMean2=2.2e-2)
         self.ccdImageList2.extend(struct2.ccdImageList)
