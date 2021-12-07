@@ -122,7 +122,8 @@ bool Frame::inFrame(double x, double y) const {
 }
 
 void Frame::print(ostream &stream) const {
-    stream << "xmin ymin " << xMin << ' ' << yMin << " xmax ymax " << xMax << ' ' << yMax << endl;
+    stream << "(xMin,yMin), (xMax,yMax): (" << std::setprecision(12) << xMin << ", " << yMin << "), (" << xMax
+           << ", " << yMax << ")";
 }
 }  // namespace jointcal
 }  // namespace lsst

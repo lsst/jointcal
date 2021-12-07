@@ -372,6 +372,7 @@ class JointcalConfig(pipeBase.PipelineTaskConfig,
     )
     coaddName = pexConfig.Field(
         doc="Type of coadd, typically deep or goodSeeing",
+        deprecated="Only applies to gen2; will be removed when gen2 support is removed (DM-20572).",
         dtype=str,
         default="deep"
     )
@@ -847,80 +848,6 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
                                astrometryRefObjLoader=self.astrometryRefObjLoader,
                                photometryRefObjLoader=self.photometryRefObjLoader)
 
-    def _make_schema_table(self):
-        """Return an afw SourceTable to use as a base for creating the
-        SourceCatalog to insert values from the dataFrame into.
-
-        Returns
-        -------
-        table : `lsst.afw.table.SourceTable`
-            Table with schema and slots to use to make SourceCatalogs.
-        """
-        schema = lsst.afw.table.SourceTable.makeMinimalSchema()
-        schema.addField("centroid_x", "D")
-        schema.addField("centroid_y", "D")
-        schema.addField("centroid_xErr", "F")
-        schema.addField("centroid_yErr", "F")
-        schema.addField("shape_xx", "D")
-        schema.addField("shape_yy", "D")
-        schema.addField("shape_xy", "D")
-        schema.addField("flux_instFlux", "D")
-        schema.addField("flux_instFluxErr", "D")
-        table = lsst.afw.table.SourceTable.make(schema)
-        table.defineCentroid("centroid")
-        table.defineShape("shape")
-        return table
-
-    def _extract_detector_catalog_from_visit_catalog(self, table, visitCatalog, detectorId,
-                                                     detectorColumn, ixxColumns):
-        """Return an afw SourceCatalog extracted from a visit-level dataframe,
-        limited to just one detector.
-
-        Parameters
-        ----------
-        table : `lsst.afw.table.SourceTable`
-            Table factory to use to make the SourceCatalog that will be
-            populated with data from ``visitCatalog``.
-        visitCatalog : `pandas.DataFrame`
-            DataFrame to extract a detector catalog from.
-        detectorId : `int`
-            Numeric id of the detector to extract from ``visitCatalog``.
-        detectorColumn : `str`
-            Name of the detector column in the catalog.
-        ixxColumns : `list` [`str`]
-            Names of the ixx/iyy/ixy columns in the catalog.
-
-        Returns
-        -------
-        catalog : `lsst.afw.table.SourceCatalog`
-            Detector-level catalog extracted from ``visitCatalog``.
-        """
-        # map from dataFrame column to afw table column
-        mapping = {'x': 'centroid_x',
-                   'y': 'centroid_y',
-                   'xErr': 'centroid_xErr',
-                   'yErr': 'centroid_yErr',
-                   ixxColumns[0]: 'shape_xx',
-                   ixxColumns[1]: 'shape_yy',
-                   ixxColumns[2]: 'shape_xy',
-                   f'{self.config.sourceFluxType}_instFlux': 'flux_instFlux',
-                   f'{self.config.sourceFluxType}_instFluxErr': 'flux_instFluxErr',
-                   }
-
-        catalog = lsst.afw.table.SourceCatalog(table)
-        matched = visitCatalog[detectorColumn] == detectorId
-        catalog.resize(sum(matched))
-        view = visitCatalog.loc[matched]
-        catalog['id'] = view.index
-        for dfCol, afwCol in mapping.items():
-            catalog[afwCol] = view[dfCol]
-
-        self.log.debug("%d sources selected in visit %d detector %d",
-                       len(catalog),
-                       view['visit'].iloc[0],  # all visits in this catalog are the same, so take the first
-                       detectorId)
-        return catalog
-
     def _load_data(self, inputSourceTableVisit, inputVisitSummary, associations,
                    jointcalControl, camera):
         """Read the data that jointcal needs to run. (Gen3 version)
@@ -951,7 +878,7 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
         filters = []
         load_cat_prof_file = 'jointcal_load_data.prof' if self.config.detailedProfile else ''
         with pipeBase.cmdLineTask.profile(load_cat_prof_file):
-            table = self._make_schema_table()  # every detector catalog has the same layout
+            table = make_schema_table()  # every detector catalog has the same layout
             # No guarantee that the input is in the same order of visits, so we have to map one of them.
             catalogMap = {ref.dataId['visit']: i for i, ref in enumerate(inputSourceTableVisit)}
             detectorDict = {detector.getId(): detector for detector in camera}
@@ -964,7 +891,9 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
                 dataRef = inputSourceTableVisit[catalogMap[visitSummaryRef.dataId['visit']]]
                 if columns is None:
                     inColumns = dataRef.get(component='columns')
-                    columns, detColumn, ixxColumns = self._get_sourceTable_visit_columns(inColumns)
+                    columns, detColumn, ixxColumns = get_sourceTable_visit_columns(inColumns,
+                                                                                   self.config,
+                                                                                   self.sourceSelector)
                 visitCatalog = dataRef.get(parameters={'columns': columns})
 
                 selected = self.sourceSelector.run(visitCatalog)
@@ -972,8 +901,15 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
                 # Build a CcdImage for each detector in this visit.
                 detectors = {id: index for index, id in enumerate(visitSummary['id'])}
                 for id, index in detectors.items():
-                    catalog = self._extract_detector_catalog_from_visit_catalog(table, selected.sourceCat, id,
-                                                                                detColumn, ixxColumns)
+                    catalog = extract_detector_catalog_from_visit_catalog(table,
+                                                                          selected.sourceCat,
+                                                                          id,
+                                                                          detColumn,
+                                                                          ixxColumns,
+                                                                          self.config.sourceFluxType,
+                                                                          self.log)
+                    if catalog is None:
+                        continue
                     data = self._make_one_input_data(visitSummary[index], catalog, detectorDict)
                     result = self._build_ccdImage(data, associations, jointcalControl)
                     if result is not None:
@@ -999,53 +935,6 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
                                  # so we have to make one.
                                  filter=lsst.afw.image.FilterLabel(band=visitRecord['band'],
                                                                    physical=visitRecord['physical_filter']))
-
-    def _get_sourceTable_visit_columns(self, inColumns):
-        """
-        Get the sourceTable_visit columns from the config.
-
-        Parameters
-        ----------
-        inColumns : `list`
-            List of columns available in the sourceTable_visit
-
-        Returns
-        -------
-        columns : `list`
-            List of columns to read from sourceTable_visit.
-        detectorColumn : `str`
-            Name of the detector column.
-        ixxColumns : `list`
-            Name of the ixx/iyy/ixy columns.
-        """
-        if 'detector' in inColumns:
-            # Default name for Gen3.
-            detectorColumn = 'detector'
-        else:
-            # Default name for Gen2 and Gen2 conversions.
-            detectorColumn = 'ccd'
-
-        columns = ['visit', detectorColumn,
-                   'sourceId', 'x', 'xErr', 'y', 'yErr',
-                   self.config.sourceFluxType + '_instFlux', self.config.sourceFluxType + '_instFluxErr']
-
-        if 'ixx' in inColumns:
-            # New columns post-DM-31825
-            ixxColumns = ['ixx', 'iyy', 'ixy']
-        else:
-            # Old columns pre-DM-31825
-            ixxColumns = ['Ixx', 'Iyy', 'Ixy']
-        columns.extend(ixxColumns)
-
-        if self.sourceSelector.config.doFlags:
-            columns.extend(self.sourceSelector.config.flags.bad)
-        if self.sourceSelector.config.doUnresolved:
-            columns.append(self.sourceSelector.config.unresolved.name)
-        if self.sourceSelector.config.doIsolated:
-            columns.append(self.sourceSelector.config.isolated.parentName)
-            columns.append(self.sourceSelector.config.isolated.nChildName)
-
-        return columns, detectorColumn, ixxColumns
 
     # We don't currently need to persist the metadata.
     # If we do in the future, we will have to add appropriate dataset templates
@@ -1928,3 +1817,139 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
             except pexExceptions.Exception as e:
                 self.log.fatal('Failed to write updated PhotoCalib: %s', str(e))
                 raise e
+
+
+def make_schema_table():
+    """Return an afw SourceTable to use as a base for creating the
+    SourceCatalog to insert values from the dataFrame into.
+
+    Returns
+    -------
+    table : `lsst.afw.table.SourceTable`
+        Table with schema and slots to use to make SourceCatalogs.
+    """
+    schema = lsst.afw.table.SourceTable.makeMinimalSchema()
+    schema.addField("centroid_x", "D")
+    schema.addField("centroid_y", "D")
+    schema.addField("centroid_xErr", "F")
+    schema.addField("centroid_yErr", "F")
+    schema.addField("shape_xx", "D")
+    schema.addField("shape_yy", "D")
+    schema.addField("shape_xy", "D")
+    schema.addField("flux_instFlux", "D")
+    schema.addField("flux_instFluxErr", "D")
+    table = lsst.afw.table.SourceTable.make(schema)
+    table.defineCentroid("centroid")
+    table.defineShape("shape")
+    return table
+
+
+def get_sourceTable_visit_columns(inColumns, config, sourceSelector):
+    """
+    Get the sourceTable_visit columns to load from the catalogs.
+
+    Parameters
+    ----------
+    inColumns : `list`
+        List of columns known to be available in the sourceTable_visit.
+    config : `JointcalConfig`
+        A filled-in config to to help define column names.
+    sourceSelector : `lsst.meas.algorithms.BaseSourceSelectorTask`
+        A configured source selector to define column names to load.
+
+    Returns
+    -------
+    columns : `list`
+        List of columns to read from sourceTable_visit.
+    detectorColumn : `str`
+        Name of the detector column.
+    ixxColumns : `list`
+        Name of the ixx/iyy/ixy columns.
+    """
+    if 'detector' in inColumns:
+        # Default name for Gen3.
+        detectorColumn = 'detector'
+    else:
+        # Default name for Gen2 and Gen2 conversions.
+        detectorColumn = 'ccd'
+
+    columns = ['visit', detectorColumn,
+               'sourceId', 'x', 'xErr', 'y', 'yErr',
+               config.sourceFluxType + '_instFlux', config.sourceFluxType + '_instFluxErr']
+
+    if 'ixx' in inColumns:
+        # New columns post-DM-31825
+        ixxColumns = ['ixx', 'iyy', 'ixy']
+    else:
+        # Old columns pre-DM-31825
+        ixxColumns = ['Ixx', 'Iyy', 'Ixy']
+    columns.extend(ixxColumns)
+
+    if sourceSelector.config.doFlags:
+        columns.extend(sourceSelector.config.flags.bad)
+    if sourceSelector.config.doUnresolved:
+        columns.append(sourceSelector.config.unresolved.name)
+    if sourceSelector.config.doIsolated:
+        columns.append(sourceSelector.config.isolated.parentName)
+        columns.append(sourceSelector.config.isolated.nChildName)
+
+    return columns, detectorColumn, ixxColumns
+
+
+def extract_detector_catalog_from_visit_catalog(table, visitCatalog, detectorId,
+                                                detectorColumn, ixxColumns, sourceFluxType, log):
+    """Return an afw SourceCatalog extracted from a visit-level dataframe,
+    limited to just one detector.
+
+    Parameters
+    ----------
+    table : `lsst.afw.table.SourceTable`
+        Table factory to use to make the SourceCatalog that will be
+        populated with data from ``visitCatalog``.
+    visitCatalog : `pandas.DataFrame`
+        DataFrame to extract a detector catalog from.
+    detectorId : `int`
+        Numeric id of the detector to extract from ``visitCatalog``.
+    detectorColumn : `str`
+        Name of the detector column in the catalog.
+    ixxColumns : `list` [`str`]
+        Names of the ixx/iyy/ixy columns in the catalog.
+    sourceFluxType : `str`
+        Name of the catalog field to load instFluxes from.
+    log : `lsst.log.Log`
+        Logging instance to log to.
+
+    Returns
+    -------
+    catalog : `lsst.afw.table.SourceCatalog`, or `None`
+        Detector-level catalog extracted from ``visitCatalog``, or `None`
+        if there was no data to load.
+    """
+    # map from dataFrame column to afw table column
+    mapping = {'x': 'centroid_x',
+               'y': 'centroid_y',
+               'xErr': 'centroid_xErr',
+               'yErr': 'centroid_yErr',
+               ixxColumns[0]: 'shape_xx',
+               ixxColumns[1]: 'shape_yy',
+               ixxColumns[2]: 'shape_xy',
+               f'{sourceFluxType}_instFlux': 'flux_instFlux',
+               f'{sourceFluxType}_instFluxErr': 'flux_instFluxErr',
+               }
+
+    catalog = lsst.afw.table.SourceCatalog(table)
+    matched = visitCatalog[detectorColumn] == detectorId
+    n = sum(matched)
+    if n == 0:
+        return None
+    catalog.resize(sum(matched))
+    view = visitCatalog.loc[matched]
+    catalog['id'] = view.index
+    for dfCol, afwCol in mapping.items():
+        catalog[afwCol] = view[dfCol]
+
+    log.debug("%d sources selected in visit %d detector %d",
+              len(catalog),
+              view['visit'].iloc[0],  # all visits in this catalog are the same, so take the first
+              detectorId)
+    return catalog

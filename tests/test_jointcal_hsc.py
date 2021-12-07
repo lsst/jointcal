@@ -67,12 +67,16 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         all_visits = [34648, 34690, 34714, 34674, 34670, 36140, 35892, 36192, 36260, 36236]
 
         where = "instrument='HSC' and tract=9697 and skymap='hsc_rings_v1'"
+        inputCollections = ["refcats/gen2",
+                            "HSC/testdata",
+                            "HSC/calib/unbounded"]
 
         self.setUp_base(center, radius,
                         input_dir=input_dir,
                         all_visits=all_visits,
                         do_plot=do_plot,
-                        where=where)
+                        where=where,
+                        inputCollections=inputCollections)
 
         test_config = os.path.join(lsst.utils.getPackageDir('jointcal'), 'tests/config/hsc-config.py')
         self.configfiles.append(test_config)
@@ -81,6 +85,7 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         self.config = lsst.jointcal.jointcal.JointcalConfig()
         self.config.astrometryModel = "simple"
         self.config.photometryModel = "simpleFlux"
+        self.input_dir = os.path.join(self.data_dir, 'hsc/repo')
 
         # See Readme for an explanation of these empirical values.
         pa1 = 0.016
@@ -108,6 +113,10 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         # test colorterm loading in gen3 (see DM-29884)
         colorterm_config = os.path.join(lsst.utils.getPackageDir('jointcal'),
                                         'tests/config/hsc-colorterms-config.py')
+        configFiles = [os.path.join(lsst.utils.getPackageDir('jointcal'),
+                                    'tests/config/config-gen3-hsc.py'),
+                       colorterm_config]
+
         metrics = {'astrometry_collected_refStars': 568,
                    'photometry_collected_refStars': 6478,
                    'astrometry_prepared_refStars': 137,
@@ -123,16 +132,16 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
                    'photometry_final_chi2': 4977.2,
                    'photometry_final_ndof': 2188
                    }
-        self._runGen3Jointcal("lsst.obs.subaru.HyperSuprimeCam", "HSC", whereSuffix=where,
-                              configOptions=configOptions, metrics=metrics, configFiles=[colorterm_config])
+        repo = self._runGen3Jointcal("lsst.obs.subaru.HyperSuprimeCam", "HSC", whereSuffix=where,
+                                     configOptions=configOptions, configFiles=configFiles, metrics=metrics)
         # TODO DM-28863: this does not currently test anything other than the code
         # running without raising and that it writes non-empty output.
-        butler = Butler(self.repo, collections=['HSC/testdata/jointcal'])
+        butler = Butler(repo, collections=['HSC/tests/all'])
 
         def check_output(visit, detectors):
             """Check that there is something for each detector, and only
             entries for the correct detectors."""
-            dataId = {'visit': visit, 'instrument': 'HSC', 'tract': 9697}
+            dataId = {'visit': visit, 'instrument': 'HSC', 'tract': 9697, 'skymap': 'hsc_rings_v1'}
 
             catalog = butler.get('jointcalPhotoCalibCatalog', dataId)
             for record in catalog:
@@ -154,14 +163,18 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         configOptions = {"astrometryModel": "simple", "photometryModel": "simpleFlux"}
         where = (f" and visit in ({self.all_visits[0]},{self.all_visits[1]},"
                  f"{self.all_visits[5]},{self.all_visits[6]})")
+        configFiles = [os.path.join(lsst.utils.getPackageDir('jointcal'),
+                                    'tests/config/config-gen3-hsc.py')]
 
         self._runGen3Jointcal("lsst.obs.subaru.HyperSuprimeCam", "HSC", whereSuffix=where,
-                              configOptions=configOptions, metrics=None, nJobs=2)
+                              configOptions=configOptions, configFiles=configFiles, metrics=None, nJobs=2)
 
     def test_jointcalTask_2_visits_simple_astrometry_no_photometry_gen3(self):
         """Test gen3 butler jointcal, no photometry."""
         configOptions = {"astrometryModel": "simple", "doPhotometry": False}
         where = f" and visit in ({self.all_visits[0]},{self.all_visits[1]})"
+        configFiles = [os.path.join(lsst.utils.getPackageDir('jointcal'),
+                                    'tests/config/config-gen3-hsc.py')]
 
         metrics = {'astrometry_collected_refStars': 568,
                    'astrometry_prepared_refStars': 137,
@@ -171,16 +184,16 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
                    'astrometry_final_chi2': 835.473,
                    'astrometry_final_ndof': 1918,
                    }
-        self._runGen3Jointcal("lsst.obs.subaru.HyperSuprimeCam", "HSC", whereSuffix=where,
-                              configOptions=configOptions, metrics=metrics)
+        repo = self._runGen3Jointcal("lsst.obs.subaru.HyperSuprimeCam", "HSC", whereSuffix=where,
+                                     configOptions=configOptions, configFiles=configFiles, metrics=metrics)
         # TODO DM-28863: this does not currently test anything other than the code
         # running without raising and that it writes non-empty output.
-        butler = Butler(self.repo, collections=['HSC/testdata/jointcal'])
+        butler = Butler(repo, collections=['HSC/tests/all'])
 
         def check_output(visit, detectors):
             """Check that there is something for each detector, and only
             entries for the correct detectors."""
-            dataId = {'visit': visit, 'instrument': 'HSC', 'tract': 9697}
+            dataId = {'visit': visit, 'instrument': 'HSC', 'tract': 9697, 'skymap': 'hsc_rings_v1'}
 
             catalog = butler.get('jointcalSkyWcsCatalog', dataId)
             for record in catalog:
@@ -195,6 +208,8 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         """Test gen3 butler jointcal, no astrometry."""
         configOptions = {"doAstrometry": False, "photometryModel": "simpleFlux"}
         where = f" and visit in ({self.all_visits[0]},{self.all_visits[1]})"
+        configFiles = [os.path.join(lsst.utils.getPackageDir('jointcal'),
+                                    'tests/config/config-gen3-hsc.py')]
 
         metrics = {'photometry_collected_refStars': 6485,
                    'photometry_prepared_refStars': 1609,
@@ -204,16 +219,16 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
                    'photometry_final_chi2': 4997.62,
                    'photometry_final_ndof': 2188
                    }
-        self._runGen3Jointcal("lsst.obs.subaru.HyperSuprimeCam", "HSC", whereSuffix=where,
-                              configOptions=configOptions, metrics=metrics)
+        repo = self._runGen3Jointcal("lsst.obs.subaru.HyperSuprimeCam", "HSC", whereSuffix=where,
+                                     configOptions=configOptions, configFiles=configFiles, metrics=metrics)
         # TODO DM-28863: this does not currently test anything other than the code
         # running without raising and that it writes non-empty output.
-        butler = Butler(self.repo, collections=['HSC/testdata/jointcal'])
+        butler = Butler(repo, collections=['HSC/tests/all'])
 
         def check_output(visit, detectors):
             """Check that there is something for each detector, and only
             entries for the correct detectors."""
-            dataId = {'visit': visit, 'instrument': 'HSC', 'tract': 9697}
+            dataId = {'visit': visit, 'instrument': 'HSC', 'tract': 9697, 'skymap': 'hsc_rings_v1'}
 
             catalog = butler.get('jointcalPhotoCalibCatalog', dataId)
             for record in catalog:
@@ -228,11 +243,11 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         """Test all 10 visits with different filters.
         Testing photometry doesn't make sense for this currently.
         """
-
         self.config = lsst.jointcal.jointcal.JointcalConfig()
         self.config.astrometryModel = "simple"
         self.config.doPhotometry = False
         self.jointcalStatistics.do_photometry = False
+        self.input_dir = os.path.join(self.data_dir, 'hsc/repo')
 
         # See Readme for an explanation of these empirical values.
         dist_rms_absolute = 23e-3*u.arcsecond
@@ -256,6 +271,7 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         self.config.photometryModel = "simpleFlux"
         self.config.doAstrometry = False
         self.jointcalStatistics.do_astrometry = False
+        self.input_dir = os.path.join(self.data_dir, 'hsc/repo')
 
         # See Readme for an explanation of these empirical values.
         pa1 = 0.016
@@ -322,6 +338,7 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         self.config.astrometryModel = "simple"
         self.config.doPhotometry = False
         self.jointcalStatistics.do_photometry = False
+        self.input_dir = os.path.join(self.data_dir, 'hsc/repo')
 
         data_refs = self._testJointcalTask(2, self.dist_rms_relative, self.dist_rms_absolute,
                                            None, metrics=metrics)
@@ -340,6 +357,7 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         self.config.matchCut = 10.0  # TODO: once DM-6885 is fixed, we need to put `*lsst.geom.arcseconds`
         self.config.doPhotometry = False
         self.jointcalStatistics.do_photometry = False
+        self.input_dir = os.path.join(self.data_dir, 'hsc/repo')
 
         # Slightly larger absolute astrometry RMS because of the larger matching radius
         dist_rms_absolute = 23e-3*u.arcsecond
@@ -361,6 +379,7 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         self.config.minMeasurements = 2
         self.config.doPhotometry = False
         self.jointcalStatistics.do_photometry = False
+        self.input_dir = os.path.join(self.data_dir, 'hsc/repo')
 
         # More visits and slightly worse relative and absolute rms.
         dist_rms_relative = 8.3e-3*u.arcsecond
@@ -385,6 +404,7 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         self.config.astrometryModel = "simple"
         self.config.doPhotometry = False
         self.jointcalStatistics.do_photometry = False
+        self.input_dir = os.path.join(self.data_dir, 'hsc/repo')
 
         # More visits and slightly worse relative and absolute rms.
         dist_rms_relative = 11e-3*u.arcsecond
