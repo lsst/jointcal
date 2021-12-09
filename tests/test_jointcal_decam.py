@@ -87,19 +87,19 @@ class JointcalTestDECAM(jointcalTestBase.JointcalTestBase, lsst.utils.tests.Test
         relative_error = 19e-3*u.arcsecond
         pa1 = 0.24
         metrics = {'astrometry_collected_refStars': 7403,
-                   'photometry_collected_refStars': 149481,
+                   'photometry_collected_refStars': 147552,
                    'astrometry_prepared_refStars': 467,
-                   'photometry_prepared_refStars': 4632,
+                   'photometry_prepared_refStars': 4619,
                    'astrometry_matched_fittedStars': 7839,
                    'photometry_matched_fittedStars': 7839,
                    'astrometry_prepared_fittedStars': 702,
-                   'photometry_prepared_fittedStars': 4637,
+                   'photometry_prepared_fittedStars': 4624,
                    'astrometry_prepared_ccdImages': 15,
                    'photometry_prepared_ccdImages': 15,
                    'astrometry_final_chi2': 2899.20,
                    'astrometry_final_ndof': 896,
-                   'photometry_final_chi2': 16529,
-                   'photometry_final_ndof': 3634,
+                   'photometry_final_chi2': 11644.50,
+                   'photometry_final_ndof': 3672,
                    }
 
         self._testJointcalTask(2, relative_error, self.dist_rms_absolute, pa1, metrics=metrics)
