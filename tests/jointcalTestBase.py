@@ -66,7 +66,7 @@ def importRepository(instrument, exportPath, exportFile, outputDir=None,
     if outputDir is None:
         repopath = tempfile.mkdtemp()
     else:
-        repopath = os.path.join(outputDir, 'testrepo')
+        repopath = os.path.join(outputDir, "testrepo")
 
     # Make the repo and retrieve a writeable Butler
     _ = lsst.daf.butler.Butler.makeRepo(repopath)
@@ -371,10 +371,12 @@ class JointcalTestBase:
             Job containing the metric measurements from this test run.
         """
         config = lsst.jointcal.JointcalConfig()
-        for file in configFiles:
-            config.load(file)
-        for key, value in configOptions.items():
-            setattr(config, key, value)
+        if configFiles:
+            for file in configFiles:
+                config.load(file)
+        if configOptions:
+            for key, value in configOptions.items():
+                setattr(config, key, value)
         where = ' '.join((self.where, whereSuffix)) if whereSuffix is not None else self.where
         lsst.daf.butler.cli.cliLog.CliLog.initLog(False)
         butler = SimplePipelineExecutor.prep_butler(repo,

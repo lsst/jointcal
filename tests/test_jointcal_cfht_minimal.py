@@ -28,7 +28,6 @@ import lsst.utils
 import lsst.pex.exceptions
 
 import jointcalTestBase
-from lsst.jointcal import jointcal
 import lsst.jointcal.testUtils
 
 
@@ -59,25 +58,30 @@ class JointcalTestCFHTMinimal(jointcalTestBase.JointcalTestBase, lsst.utils.test
 
         input_dir = os.path.join(self.data_dir, 'cfht_minimal')
         all_visits = [849375, 850587]
-        other_args = ['ccd=12']
+
+        where = "instrument='MegaPrime' and tract=0 and skymap='discrete'"  # and detector=12"
+        inputCollections = ["singleFrame", "skymaps"]
+        refcats = {"sdss_dr9_fink_v5b": os.path.join(input_dir, "sdss-dr9-fink-v5b.ecsv")}
 
         self.setUp_base(center, radius,
                         input_dir=input_dir,
                         all_visits=all_visits,
-                        other_args=other_args,
-                        do_plot=do_plot, log_level="debug")
+                        do_plot=do_plot,
+                        inputCollections=inputCollections,
+                        refcats=refcats,
+                        where=where,
+                        refcatPath=input_dir,
+                        log_level="debug")
         test_config = os.path.join(os.path.dirname(__file__), 'config/cfht_minimal-config.py')
         self.configfiles.append(test_config)
 
     def test_jointcalTask_2_visits_photometry(self):
-        self.config = lsst.jointcal.jointcal.JointcalConfig()
-        self.config.photometryModel = "simpleFlux"
-        self.config.doAstrometry = False
-        self.config.writeInitMatrix = True  # write Hessian/gradient files
-        self.jointcalStatistics.do_astrometry = False
+        configOptions = {"doAstrometry": False, "photometryModel": "simpleFlux",
+                         "writeInitMatrix": True}
 
         # NOTE: ndof==1 from 4 fit parameters (2 model, 2 fittedStar), and
         # 5 degrees-of-freedom (3 star measurements, with 2 reference stars).
+        # This chi2 is exact, from calculations in cfht_minimal_direct_calculation.ipynb
         metrics = {'photometry_collected_refStars': 346,
                    'photometry_prepared_refStars': 2,
                    'photometry_matched_fittedStars': 2,
@@ -87,9 +91,8 @@ class JointcalTestCFHTMinimal(jointcalTestBase.JointcalTestBase, lsst.utils.test
                    'photometry_final_ndof': 1
                    }
 
-        # we use _runJointcalTask instead of _test here because we aren't doing
-        # full calulation of PA1: the above chi2 is exact.
-        self._runJointcalTask(2, metrics=metrics)
+        repo = self._runGen3Jointcal("lsst.obs.cfht.MegaPrime", "MegaPrime",
+                                     configOptions=configOptions, metrics=metrics)
 
         # Check that the Hessian/gradient files were written.
         self.assertTrue(os.path.exists("photometry_preinit-0_r.MP9601-mat.txt"))
@@ -101,19 +104,19 @@ class JointcalTestCFHTMinimal(jointcalTestBase.JointcalTestBase, lsst.utils.test
         self.assertTrue(os.path.exists("photometry_postinit-0_r.MP9601-grad.txt"))
         os.remove("photometry_postinit-0_r.MP9601-grad.txt")
 
-        # Check that the config was persisted, we can read it, and it matches the settings above
-        self.assertTrue(os.path.exists(os.path.join(self.output_dir, 'config/jointcal.py')))
-        butler = lsst.daf.persistence.Butler(self.output_dir)
-        config = butler.get('jointcal_config')
-        self.assertEqual(config.photometryModel, self.config.photometryModel)
-        self.assertEqual(config.doAstrometry, self.config.doAstrometry)
-        self.assertEqual(config.writeInitMatrix, self.config.writeInitMatrix)
+        # Check that the config was persisted, and that it matches the settings above
+        config = lsst.jointcal.jointcal.JointcalConfig()
+        for key, value in configOptions.items():
+            setattr(config, key, value)
+        butler = lsst.daf.butler.Butler(repo, collections=['MegaPrime/tests/all'])
+        output_config = butler.get('jointcal_config')
+        self.assertEqual(output_config.photometryModel, config.photometryModel)
+        self.assertEqual(output_config.doAstrometry, config.doAstrometry)
+        self.assertEqual(output_config.writeInitMatrix, config.writeInitMatrix)
 
     def test_jointcalTask_2_visits_photometry_magnitude(self):
         self.config = lsst.jointcal.jointcal.JointcalConfig()
-        self.config.photometryModel = "simpleMagnitude"
-        self.config.doAstrometry = False
-        self.jointcalStatistics.do_astrometry = False
+        configOptions = {"doAstrometry": False, "photometryModel": "simpleMagnitude"}
 
         # NOTE: ndof==1 from 4 fit parameters (2 model, 2 fittedStar), and
         # 5 degrees-of-freedom (3 star measurements, with 2 reference stars).
@@ -126,70 +129,14 @@ class JointcalTestCFHTMinimal(jointcalTestBase.JointcalTestBase, lsst.utils.test
                    'photometry_final_ndof': 1
                    }
 
-        self._runJointcalTask(2, metrics=metrics)
+        self._runGen3Jointcal("lsst.obs.cfht.MegaPrime", "MegaPrime",
+                              configOptions=configOptions, metrics=metrics)
 
     def test_jointcalTask_fails_raise(self):
         """Raise an exception if there is no data to process."""
-        self.config = lsst.jointcal.jointcal.JointcalConfig()
-        self.config.setDefaults()
-        self.config.photometryModel = "simpleFlux"
-        self.config.sourceSelector['astrometry'].minSnr = 10000
-        self.config.doAstrometry = False
-
-        # The output repo is named after this method.
-        caller = self.id()
-        nCatalogs = 2
-        visits = '^'.join(str(v) for v in self.all_visits[:nCatalogs])
-        output_dir = os.path.join('.test', self.__class__.__name__, caller)
-        test_config = os.path.join(lsst.utils.getPackageDir('jointcal'), 'tests/config/config.py')
-        self.configfiles = [test_config] + self.configfiles
-        args = [self.input_dir, '--output', output_dir,
-                '--clobber-versions', '--clobber-config', '--configfile', *self.configfiles,
-                '--doraise',
-                '--id', 'visit=%s'%visits]
-        args.extend(self.other_args)
+        self.configfiles.append(os.path.join(self.path, 'config/minSnr.py'))
         with self.assertRaisesRegex(RuntimeError, "No data to process"):
-            jointcal.JointcalTask.parseAndRun(args=args, doReturnResults=True, config=self.config)
-
-    def test_jointcalTask_fails_no_raise(self):
-        """exitStatus=1 if there is no data to process."""
-        self.config = lsst.jointcal.jointcal.JointcalConfig()
-        self.config.setDefaults()
-        self.config.photometryModel = "simpleFlux"
-        self.config.sourceSelector['astrometry'].minSnr = 10000
-        self.config.doAstrometry = False
-
-        nCatalogs = 2
-        visits = '^'.join(str(v) for v in self.all_visits[:nCatalogs])
-        test_config = os.path.join(lsst.utils.getPackageDir('jointcal'), 'tests/config/config.py')
-        self.configfiles = [test_config] + self.configfiles
-        args = [self.input_dir, '--output', self.output_dir,
-                '--clobber-versions', '--clobber-config', '--configfile', *self.configfiles,
-                '--noExit',  # have to specify noExit, otherwise the test quits
-                '--id', 'visit=%s'%visits]
-        args.extend(self.other_args)
-        result = jointcal.JointcalTask.parseAndRun(args=args, doReturnResults=True, config=self.config)
-        self.assertEqual(result.resultList[0].exitStatus, 1)
-
-    def test_jointcalTask_fails_no_raise_no_return_results(self):
-        """exitStatus=1 if there is no data to process."""
-        self.config = lsst.jointcal.jointcal.JointcalConfig()
-        self.config.setDefaults()
-        self.config.photometryModel = "simpleFlux"
-        self.config.sourceSelector['astrometry'].minSnr = 10000
-        self.config.doAstrometry = False
-
-        nCatalogs = 2
-        visits = '^'.join(str(v) for v in self.all_visits[:nCatalogs])
-        test_config = os.path.join(lsst.utils.getPackageDir('jointcal'), 'tests/config/config.py')
-        self.configfiles = [test_config] + self.configfiles
-        args = [self.input_dir, '--output', self.output_dir,
-                '--clobber-versions', '--clobber-config', '--configfile', *self.configfiles,
-                '--noExit',  # have to specify noExit, otherwise the test quits
-                '--id', 'visit=%s'%visits]
-        args.extend(self.other_args)
-        result = jointcal.JointcalTask.parseAndRun(args=args, config=self.config)
-        self.assertEqual(result.resultList[0].exitStatus, 1)
+            self._runGen3Jointcal("lsst.obs.cfht.MegaPrime", "MegaPrime")
 
 
 class MemoryTester(lsst.utils.tests.MemoryTestCase):
