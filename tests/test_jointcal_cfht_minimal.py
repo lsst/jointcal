@@ -50,27 +50,22 @@ class JointcalTestCFHTMinimal(jointcalTestBase.JointcalTestBase, lsst.utils.test
         cls.data_dir = os.path.join(lsst.utils.getPackageDir('jointcal'), 'tests/data')
 
     def setUp(self):
-        do_plot = False
-
-        # center of the cfht validation_data catalog
-        center = lsst.geom.SpherePoint(214.884832, 52.6622199, lsst.geom.degrees)
-        radius = 3*lsst.geom.degrees
-
         input_dir = os.path.join(self.data_dir, 'cfht_minimal')
         all_visits = [849375, 850587]
 
         where = "instrument='MegaPrime' and tract=0 and skymap='discrete'"  # and detector=12"
         inputCollections = ["singleFrame", "skymaps"]
         refcats = {"sdss_dr9_fink_v5b": os.path.join(input_dir, "sdss-dr9-fink-v5b.ecsv")}
+        outputDataId = {'instrument': 'MegaPrime', 'tract': 0, 'skymap': 'discrete'}
 
-        self.setUp_base(center, radius,
+        self.setUp_base("lsst.obs.cfht.MegaPrime", "MegaPrime",
                         input_dir=input_dir,
                         all_visits=all_visits,
-                        do_plot=do_plot,
                         inputCollections=inputCollections,
                         refcats=refcats,
                         where=where,
                         refcatPath=input_dir,
+                        outputDataId=outputDataId,
                         log_level="debug")
         test_config = os.path.join(os.path.dirname(__file__), 'config/cfht_minimal-config.py')
         self.configfiles.append(test_config)
@@ -91,8 +86,9 @@ class JointcalTestCFHTMinimal(jointcalTestBase.JointcalTestBase, lsst.utils.test
                    'photometry_final_ndof': 1
                    }
 
-        repo = self._runGen3Jointcal("lsst.obs.cfht.MegaPrime", "MegaPrime",
-                                     configOptions=configOptions, metrics=metrics)
+        outputVisits = {849375: (12,), 850587: (12,)}
+        repo = self._runJointcalTest(configOptions=configOptions, metrics=metrics,
+                                     photometryOutputs=outputVisits)
 
         # Check that the Hessian/gradient files were written.
         self.assertTrue(os.path.exists("photometry_preinit-0_r.MP9601-mat.txt"))
@@ -129,14 +125,15 @@ class JointcalTestCFHTMinimal(jointcalTestBase.JointcalTestBase, lsst.utils.test
                    'photometry_final_ndof': 1
                    }
 
-        self._runGen3Jointcal("lsst.obs.cfht.MegaPrime", "MegaPrime",
-                              configOptions=configOptions, metrics=metrics)
+        outputVisits = {849375: (12,), 850587: (12,)}
+        self._runJointcalTest(configOptions=configOptions, metrics=metrics,
+                              photometryOutputs=outputVisits)
 
     def test_jointcalTask_fails_raise(self):
         """Raise an exception if there is no data to process."""
         self.configfiles.append(os.path.join(self.path, 'config/minSnr.py'))
         with self.assertRaisesRegex(RuntimeError, "No data to process"):
-            self._runGen3Jointcal("lsst.obs.cfht.MegaPrime", "MegaPrime")
+            self._runJointcalTest("lsst.obs.cfht.MegaPrime", "MegaPrime")
 
 
 class MemoryTester(lsst.utils.tests.MemoryTestCase):

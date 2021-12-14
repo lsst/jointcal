@@ -21,10 +21,10 @@
 
 __all__ = ["importRepository", "JointcalTestBase"]
 
-import copy
 import os
 import shutil
 import tempfile
+import numpy as np
 
 import lsst.afw.image.utils
 from lsst.ctrl.mpexec import SimplePipelineExecutor
@@ -34,7 +34,7 @@ import lsst.obs.base
 import lsst.geom
 from lsst.verify.bin.jobReporter import JobReporter
 
-from lsst.jointcal import jointcal, utils
+import lsst.jointcal
 
 
 def importRepository(instrument, exportPath, exportFile, outputDir=None,
@@ -100,38 +100,36 @@ class JointcalTestBase:
     """
 
     def set_output_dir(self):
+        """Set the output directory to the name of the test method, in .test/
+        """
         self.output_dir = os.path.join('.test', self.__class__.__name__, self.id().split('.')[-1])
 
-    def setUp_base(self, center, radius,
-                   match_radius=0.1*lsst.geom.arcseconds,
+    def setUp_base(self,
+                   instrumentClass,
+                   instrumentName,
                    input_dir="",
                    all_visits=None,
-                   other_args=None,
-                   do_plot=False,
                    log_level=None,
                    where="",
                    refcats=None,
                    refcatPath="",
-                   inputCollections=None):
+                   inputCollections=None,
+                   outputDataId=None):
         """
         Call from your child classes's setUp() to get the necessary variables built.
 
         Parameters
         ----------
-        center : `lsst.geom.SpherePoint`
-            Center of the reference catalog.
-        radius : `lsst.geom.Angle`
-            Radius from center to load reference catalog objects inside.
-        match_radius : `lsst.geom.Angle`
-            matching radius when calculating RMS of result.
+        instrumentClass : `str`
+            The full module name of the instrument to be registered in the
+            new repo. For example, "lsst.obs.subaru.HyperSuprimeCam"
+        instrumentName : `str`
+            The name of the instrument as it appears in the repo collections.
+            For example, "HSC".
         input_dir : `str`
             Directory of input butler repository.
         all_visits : `list` [`int`]
-            List of the available visits to generate the parseAndRun arguments.
-        other_args : `list` [`str`]
-            Optional other arguments for the butler dataId.
-        do_plot : `bool`
-            Set to True for a comparison plot and some diagnostic numbers.
+            List of the available visits to generate the dataset query from.
         log_level : `str`
             Set to the default log level you want jointcal to produce while the
             tests are running. See the developer docs about logging for valid
@@ -145,34 +143,29 @@ class JointcalTestBase:
         inputCollections : `list` [`str`]
             String to use for "-i" input collections (comma delimited).
             For example, "refcats,HSC/runs/tests,HSC/calib"
+        outputDataId : `dict`
+            Partial dataIds for testing whether the output files were written.
         """
         self.path = os.path.dirname(__file__)
 
-        self.center = center
-        self.radius = radius
-        self.jointcalStatistics = utils.JointcalStatistics(match_radius, verbose=True)
+        self.instrumentClass = instrumentClass
+        self.instrumentName = instrumentName
+
         self.input_dir = input_dir
         self.all_visits = all_visits
-        if other_args is None:
-            other_args = []
-        self.other_args = other_args
-        self.do_plot = do_plot
         self.log_level = log_level
-        # Signal/Noise (flux/fluxErr) for sources to be included in the RMS cross-match.
-        # 100 is a balance between good centroids and enough sources.
-        self.flux_limit = 100
 
-        # Individual tests may want to tweak the config that is passed to parseAndRun().
-        self.config = None
         self.configfiles = []
 
-        # Append `msg` arguments to assert failures.
+        # Make unittest output more verbose failure messages to assert failures.
         self.longMessage = True
 
         self.where = where
         self.refcats = refcats
         self.refcatPath = refcatPath
         self.inputCollections = inputCollections
+
+        self.outputDataId = outputDataId
 
         # Ensure that the filter list is reset for each test so that we avoid
         # confusion or contamination from other instruments.
@@ -182,141 +175,6 @@ class JointcalTestBase:
 
     def tearDown(self):
         shutil.rmtree(self.output_dir, ignore_errors=True)
-
-        if getattr(self, 'reference', None) is not None:
-            del self.reference
-        if getattr(self, 'oldWcsList', None) is not None:
-            del self.oldWcsList
-        if getattr(self, 'jointcalTask', None) is not None:
-            del self.jointcalTask
-        if getattr(self, 'jointcalStatistics', None) is not None:
-            del self.jointcalStatistics
-        if getattr(self, 'config', None) is not None:
-            del self.config
-
-    def _testJointcalTask(self, nCatalogs, dist_rms_relative, dist_rms_absolute, pa1,
-                          metrics=None):
-        """
-        Test parseAndRun for jointcal on nCatalogs.
-
-        Checks relative and absolute astrometric error (arcsec) and photometric
-        repeatability (PA1 from the SRD).
-
-        Parameters
-        ----------
-        nCatalogs : `int`
-            Number of catalogs to run jointcal on. Used to construct the "id"
-            field for parseAndRun.
-        dist_rms_relative : `astropy.Quantity`
-            Minimum relative astrometric rms post-jointcal to pass the test.
-        dist_rms_absolute : `astropy.Quantity`
-            Minimum absolute astrometric rms post-jointcal to pass the test.
-        pa1 : `float`
-            Minimum PA1 (from Table 14 of the Science Requirements Document:
-            https://ls.st/LPM-17) post-jointcal to pass the test.
-        metrics : `dict`, optional
-            Dictionary of 'metricName': value to test jointcal's result.metrics
-            against.
-
-        Returns
-        -------
-        dataRefs : `list` [`lsst.daf.persistence.ButlerDataRef`]
-            The dataRefs that were processed.
-        """
-
-        resultFull = self._runJointcalTask(nCatalogs, metrics=metrics)
-        result = resultFull.resultList[0].result  # shorten this very long thing
-
-        def compute_statistics(refObjLoader):
-            refCat = refObjLoader.loadSkyCircle(self.center,
-                                                self.radius,
-                                                result.defaultFilter.bandLabel,
-                                                epoch=result.epoch).refCat
-            rms_result = self.jointcalStatistics.compute_rms(result.dataRefs, refCat)
-            # Make plots before testing, if requested, so we still get plots if tests fail.
-            if self.do_plot:
-                self._plotJointcalTask(result.dataRefs, result.oldWcsList)
-            return rms_result
-
-        # we now have different astrometry/photometry refcats, so have to
-        # do these calculations separately
-        if self.jointcalStatistics.do_astrometry:
-            refObjLoader = result.astrometryRefObjLoader
-            # preserve do_photometry for the next `if`
-            temp = copy.copy(self.jointcalStatistics.do_photometry)
-            self.jointcalStatistics.do_photometry = False
-            rms_result = compute_statistics(refObjLoader)
-            self.jointcalStatistics.do_photometry = temp  # restore do_photometry
-
-            if dist_rms_relative is not None and dist_rms_absolute is not None:
-                self.assertLess(rms_result.dist_relative, dist_rms_relative)
-                self.assertLess(rms_result.dist_absolute, dist_rms_absolute)
-
-        if self.jointcalStatistics.do_photometry:
-            refObjLoader = result.photometryRefObjLoader
-            self.jointcalStatistics.do_astrometry = False
-            rms_result = compute_statistics(refObjLoader)
-
-            if pa1 is not None:
-                self.assertLess(rms_result.pa1, pa1)
-
-        return result.dataRefs
-
-    def _runJointcalTask(self, nCatalogs, metrics=None):
-        """
-        Run jointcalTask on nCatalogs, with the most basic tests.
-        Tests for non-empty result list, and that the basic metrics are correct.
-
-        Parameters
-        ----------
-        nCatalogs : `int`
-            Number of catalogs to test on.
-        metrics : `dict`, optional
-            Dictionary of 'metricName': value to test jointcal's result.metrics
-            against.
-
-        Returns
-        -------
-        result : `pipe.base.Struct`
-            The structure returned by jointcalTask.run()
-        """
-        visits = '^'.join(str(v) for v in self.all_visits[:nCatalogs])
-        if self.log_level is not None:
-            self.other_args.extend(['--loglevel', 'jointcal=%s'%self.log_level])
-
-        #  Place default configfile first so that specific subclass configfiles are applied after
-        test_config = os.path.join(self.path, 'config/config.py')
-        configfiles = [test_config] + self.configfiles
-
-        args = [self.input_dir, '--output', self.output_dir,
-                '--clobber-versions', '--clobber-config',
-                '--doraise', '--configfile', *configfiles,
-                '--id', 'visit=%s'%visits]
-        args.extend(self.other_args)
-        result = jointcal.JointcalTask.parseAndRun(args=args, doReturnResults=True, config=self.config)
-        self.assertNotEqual(result.resultList, [], 'resultList should not be empty')
-        self.assertEqual(result.resultList[0].exitStatus, 0)
-        job = result.resultList[0].result.job
-        self._test_metrics(job.measurements, metrics)
-
-        return result
-
-    def _plotJointcalTask(self, data_refs, oldWcsList):
-        """
-        Plot the results of a jointcal run.
-
-        Parameters
-        ----------
-        data_refs : `list` [`lsst.daf.persistence.ButlerDataRef`]
-            The dataRefs that were processed.
-        oldWcsList : `list` [`lsst.afw.image.SkyWcs`]
-            The original WCS from each dataRef.
-        """
-        plot_dir = os.path.join('.test', self.__class__.__name__, 'plots')
-        if not os.path.isdir(plot_dir):
-            os.mkdir(plot_dir)
-        self.jointcalStatistics.make_plots(data_refs, oldWcsList, name=self.id(), outdir=plot_dir)
-        print("Plots saved to: {}".format(plot_dir))
 
     def _test_metrics(self, result, expect):
         """Test a dictionary of "metrics" against those returned by jointcal.py
@@ -337,7 +195,7 @@ class JointcalTestBase:
                     else:
                         self.assertEqual(value, expect[key.metric], msg=key.metric)
 
-    def _runPipeline(self, repo,
+    def _runJointcal(self, repo,
                      inputCollections, outputCollection,
                      configFiles=None, configOptions=None,
                      registerDatasetTypes=False, whereSuffix=None,
@@ -394,19 +252,17 @@ class JointcalTestBase:
         self.assertEqual(len(jobs), nJobs)
         return list(jobs.values())[0]
 
-    def _runGen3Jointcal(self, instrumentClass, instrumentName,
+    def _runJointcalTest(self, astrometryOutputs=None, photometryOutputs=None,
                          configFiles=None, configOptions=None, whereSuffix=None,
                          metrics=None, nJobs=1):
         """Create a Butler repo and run jointcal on it.
 
         Parameters
         ----------
-        instrumentClass : `str`
-            The full module name of the instrument to be registered in the
-            new repo. For example, "lsst.obs.subaru.HyperSuprimeCam"
-        instrumentName : `str`
-            The name of the instrument as it appears in the repo collections.
-            For example, "HSC".
+        atsrometryOutputs, photometryOutputs : `dict` [`int`, `list`]
+            visit: [detectors] dictionary to test that output files were saved.
+            Default None means that there should be no output for that
+            respective dataset type.
         configFiles : `list` [`str`], optional
             List of jointcal config files to use.
         configOptions : `dict` [`str`], optional
@@ -424,7 +280,7 @@ class JointcalTestBase:
         repopath : `str`
             The path to the newly created butler repo.
         """
-        repopath = importRepository(instrumentClass,
+        repopath = importRepository(self.instrumentClass,
                                     os.path.join(self.input_dir, "repo"),
                                     os.path.join(self.input_dir, "exports.yaml"),
                                     self.output_dir,
@@ -433,9 +289,10 @@ class JointcalTestBase:
         configs = [os.path.join(self.path, "config/config-gen3.py")]
         configs.extend(self.configfiles or [])
         configs.extend(configFiles or [])
-        job = self._runPipeline(repopath,
+        collection = f"{self.instrumentName}/tests/all"
+        job = self._runJointcal(repopath,
                                 self.inputCollections,
-                                f"{instrumentName}/tests/all",
+                                collection,
                                 configFiles=configs,
                                 configOptions=configOptions,
                                 registerDatasetTypes=True,
@@ -445,4 +302,42 @@ class JointcalTestBase:
         if metrics:
             self._test_metrics(job.measurements, metrics)
 
+        butler = lsst.daf.butler.Butler(repopath, collections=collection)
+        if astrometryOutputs is not None:
+            for visit, detectors in astrometryOutputs.items():
+                self._check_astrometry_output(butler, visit, detectors)
+        else:
+            self.assertEqual(len(list(butler.registry.queryDatasets("jointcalSkyWcsCatalog"))), 0)
+        if photometryOutputs is not None:
+            for visit, detectors in photometryOutputs.items():
+                self._check_photometry_output(butler, visit, detectors)
+        else:
+            self.assertEqual(len(list(butler.registry.queryDatasets("jointcalPhotoCalibCatalog"))), 0)
+
         return repopath
+
+    def _check_astrometry_output(self, butler, visit, detectors):
+        """Check that the WCSs were written for each detector, and only for the
+        correct detectors.
+        """
+        dataId = self.outputDataId.copy()
+        dataId['visit'] = visit
+
+        catalog = butler.get('jointcalSkyWcsCatalog', dataId)
+        for record in catalog:
+            self.assertIsInstance(record.getWcs(), lsst.afw.geom.SkyWcs,
+                                  msg=f"visit {visit}: {record}")
+        np.testing.assert_array_equal(catalog['id'], detectors)
+
+    def _check_photometry_output(self, butler, visit, detectors):
+        """Check that the PhotoCalibs were written for each detector, and only
+        for the correct detectors.
+        """
+        dataId = self.outputDataId.copy()
+        dataId['visit'] = visit
+
+        catalog = butler.get('jointcalPhotoCalibCatalog', dataId)
+        for record in catalog:
+            self.assertIsInstance(record.getPhotoCalib(), lsst.afw.image.PhotoCalib,
+                                  msg=f"visit {visit}: {record}")
+        np.testing.assert_array_equal(catalog['id'], detectors)
