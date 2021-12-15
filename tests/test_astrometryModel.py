@@ -36,7 +36,6 @@ import lsst.afw.geom
 import lsst.afw.table
 import lsst.afw.image
 import lsst.afw.image.utils
-import lsst.daf.persistence
 import lsst.geom
 import lsst.log
 
