@@ -250,7 +250,10 @@ class JointcalTestBase:
         jobs = JobReporter(repo, outputCollection, "jointcal", "", "jointcal").run()
         # should only ever get one job output in tests, unless specified
         self.assertEqual(len(jobs), nJobs)
-        return list(jobs.values())[0]
+        # Sort the jobs, as QuantumGraph ordering is not guaranteed, and some
+        # tests check metrics values for one job while producing two.
+        sorted_jobs = {key: jobs[key] for key in sorted(list(jobs.keys()))}
+        return list(sorted_jobs.values())[0]
 
     def _runJointcalTest(self, astrometryOutputs=None, photometryOutputs=None,
                          configFiles=None, configOptions=None, whereSuffix=None,
