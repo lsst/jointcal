@@ -91,7 +91,8 @@ class TestJointcalVisitCatalog(lsst.utils.tests.TestCase):
         file = pyarrow.parquet.ParquetFile(filename)
         self.data = file.read(use_pandas_metadata=True).to_pandas()
         self.config = lsst.jointcal.jointcal.JointcalConfig()
-        # TODO DM-29008: Remove this (to use the new gen3 default) before gen2 removal.
+        # NOTE: This parquet file is older and uses the earlier
+        # "capitalize first letter" naming convention for these fields.
         self.config.sourceFluxType = "ApFlux_12_0"
         # we don't actually need either fitter to run for these tests
         self.config.doAstrometry = False

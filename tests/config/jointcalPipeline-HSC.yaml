@@ -1,5 +1,0 @@
-description: Run jointcal on HSC data for testing
-instrument: lsst.obs.subaru.HyperSuprimeCam
-tasks:
-  jointcal:
-    class: lsst.jointcal.JointcalTask

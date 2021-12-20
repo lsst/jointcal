@@ -6,7 +6,7 @@ config.astrometryReferenceErr = None
 # how jointcal handles the case where there is no coord error in the  refcat
 # and no `astrometryReferenceErr` is supplied (should get a useful error message).
 config.connections.astrometryRefCat = "sdss_dr9_fink_v5b"
-# jointcal overrides the refcat loader default for gaia, so we have to clear it for SDSS
+# jointcal overrides the refcat loader default for gaia, so we have to clear it for SDSS.
 config.astrometryRefObjLoader.anyFilterMapsToThis = None
 # This test refcat cannot apply proper motions.
 config.astrometryRefObjLoader.requireProperMotion = False
