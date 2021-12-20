@@ -50,12 +50,6 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
             raise unittest.SkipTest("obs_cfht not setup")
 
     def setUp(self):
-        do_plot = False
-
-        # center of the cfht validation_data catalog
-        center = lsst.geom.SpherePoint(214.884832, 52.6622199, lsst.geom.degrees)
-        radius = 3*lsst.geom.degrees
-
         input_dir = os.path.join(self.data_dir, 'cfht')
         all_visits = [849375, 850587]
 
@@ -65,15 +59,21 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
                    "ps1_pv3_3pi_20170110": os.path.join(input_dir, "ps1_pv3_3pi_20170110.ecsv"),
                    "sdss_dr9_fink_v5b": os.path.join(input_dir, "sdss-dr9-fink-v5b.ecsv")}
 
-        self.setUp_base(center, radius,
+        outputDataId = {'instrument': 'MegaPrime', 'tract': 0, 'skymap': 'discrete'}
+        self.setUp_base("lsst.obs.cfht.MegaPrime", "MegaPrime",
                         input_dir=input_dir,
                         all_visits=all_visits,
-                        do_plot=do_plot,
                         where=where,
                         inputCollections=inputCollections,
                         refcats=refcats,
                         refcatPath=input_dir,
+                        outputDataId=outputDataId,
                         log_level="DEBUG")
+
+        # The CFHT tests all produce the same set of output visits+detectors,
+        # whether astrometry or photometry.
+        self.outputVisits = {849375: (12, 13, 14, 21, 22, 23),
+                             850587: (12, 13, 14, 21, 22, 23)}
 
     def test_jointcalTask_2_visits_simple(self):
         """Test the simple models with two visits and check that some debug
@@ -100,8 +100,8 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
                        'photometry_final_chi2': 11561.1,
                        'photometry_final_ndof': 2849
                        }
-            self._runGen3Jointcal("lsst.obs.cfht.MegaPrime", "MegaPrime",
-                                  configOptions=configOptions, metrics=metrics)
+            self._runJointcalTest(configOptions=configOptions, metrics=metrics,
+                                  astrometryOutputs=self.outputVisits, photometryOutputs=self.outputVisits)
 
             # Check for the existence of the chi2 contribution files.
             expected = ['photometry_initial_chi2-0_r.MP9601', 'astrometry_initial_chi2-0_r.MP9601',
@@ -122,7 +122,6 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
         the differences between each test and the defaults more obvious.
         """
         configOptions = {"astrometryModel": "constrained", "doPhotometry": False}
-
         metrics = {'astrometry_collected_refStars': 867,
                    'astrometry_prepared_refStars': 323,
                    'astrometry_matched_fittedStars': 2399,
@@ -131,7 +130,6 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
                    'astrometry_final_chi2': 1192.41,
                    'astrometry_final_ndof': 2004,
                    }
-
         return configOptions, metrics
 
     def test_jointcalTask_2_visits_constrainedAstrometry_no_photometry(self):
@@ -141,8 +139,8 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
         with tempfile.TemporaryDirectory() as tempdir:
             configOptions['debugOutputPath'] = tempdir
 
-            self._runGen3Jointcal("lsst.obs.cfht.MegaPrime", "MegaPrime",
-                                  configOptions=configOptions, metrics=metrics)
+            self._runJointcalTest(configOptions=configOptions, metrics=metrics,
+                                  astrometryOutputs=self.outputVisits)
 
             filename = os.path.join(tempdir, "initial_astrometry_model-0_r.MP9601.txt")
             self.assertTrue(os.path.exists(filename), msg=f"Did not find file {filename}")
@@ -156,8 +154,8 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
 
         configOptions['astrometryDoRankUpdate'] = False
 
-        self._runGen3Jointcal("lsst.obs.cfht.MegaPrime", "MegaPrime",
-                              configOptions=configOptions, metrics=metrics)
+        self._runJointcalTest(configOptions=configOptions, metrics=metrics,
+                              astrometryOutputs=self.outputVisits)
 
     def test_jointcalTask_2_visits_constrainedAstrometry_4sigma_outliers(self):
         """4 sigma outlier rejection means fewer available sources after the
@@ -168,8 +166,8 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
         metrics['astrometry_final_chi2'] = 732.79
         metrics['astrometry_final_ndof'] = 1814
 
-        self._runGen3Jointcal("lsst.obs.cfht.MegaPrime", "MegaPrime",
-                              configOptions=configOptions, metrics=metrics)
+        self._runJointcalTest(configOptions=configOptions, metrics=metrics,
+                              astrometryOutputs=self.outputVisits)
 
     def test_jointcalTask_2_visits_constrainedAstrometry_astrometryOutlierRelativeTolerance(self):
         """Test that astrometryOutlierRelativeTolerance changes the fit. Setting
@@ -181,31 +179,29 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
         metrics['astrometry_final_chi2'] = 1542.03
         metrics['astrometry_final_ndof'] = 2076
 
-        self._runGen3Jointcal("lsst.obs.cfht.MegaPrime", "MegaPrime",
-                              configOptions=configOptions, metrics=metrics)
+        self._runJointcalTest(configOptions=configOptions, metrics=metrics,
+                              astrometryOutputs=self.outputVisits)
 
     def test_jointcalTask_2_visits_constrainedAstrometry_astrometryReferenceUncertainty_smaller(self):
         """Test with a smaller fake reference uncertainty: chi2 will be higher."""
         configOptions, metrics = self.setup_jointcalTask_2_visits_constrainedAstrometry()
-        astrometryRefErrConfig = os.path.join(lsst.utils.getPackageDir('jointcal'),
-                                              'tests/config/astrometryReferenceErr-config.py')
+        astrometryRefErrConfig = os.path.join(self.path, 'config/astrometryReferenceErr-config.py')
         metrics['astrometry_final_chi2'] = 1213.51
         metrics['astrometry_final_ndof'] = 2126
 
-        self._runGen3Jointcal("lsst.obs.cfht.MegaPrime", "MegaPrime", configFiles=[astrometryRefErrConfig],
-                              configOptions=configOptions, metrics=metrics)
+        self._runJointcalTest(configFiles=[astrometryRefErrConfig],
+                              configOptions=configOptions, metrics=metrics,
+                              astrometryOutputs=self.outputVisits)
 
     def test_jointcalTask_2_visits_constrainedAstrometry_astrometryReferenceUncertainty_None_fails(self):
         """Setting astrometryReferenceUncertainty=None should fail for refcats
         that have no position errors.
         """
         configOptions, metrics = self.setup_jointcalTask_2_visits_constrainedAstrometry()
-        badRefErrConfig = os.path.join(lsst.utils.getPackageDir('jointcal'),
-                                       'tests/config/astrometryReferenceErr-None-config.py')
+        badRefErrConfig = os.path.join(self.path, 'config/astrometryReferenceErr-None-config.py')
         with self.assertRaisesRegex(lsst.pex.config.FieldValidationError,
                                     "Reference catalog does not contain coordinate errors"):
-            self._runGen3Jointcal("lsst.obs.cfht.MegaPrime", "MegaPrime", configFiles=[badRefErrConfig],
-                                  configOptions=configOptions, metrics=metrics)
+            self._runJointcalTest(configFiles=[badRefErrConfig], configOptions=configOptions, metrics=metrics)
 
     def setup_jointcalTask_2_visits_constrainedPhotometry(self):
         """Set default values for the constrainedPhotometry tests, and make
@@ -230,8 +226,8 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
         with tempfile.TemporaryDirectory() as tempdir:
             configOptions['debugOutputPath'] = tempdir
 
-            self._runGen3Jointcal("lsst.obs.cfht.MegaPrime", "MegaPrime",
-                                  configOptions=configOptions, metrics=metrics)
+            self._runJointcalTest(configOptions=configOptions, metrics=metrics,
+                                  photometryOutputs=self.outputVisits)
             filename = os.path.join(tempdir, "initial_photometry_model-0_r.MP9601.txt")
             self.assertTrue(os.path.exists(filename), msg=f"Did not find file {filename}")
 
@@ -246,8 +242,8 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
         metrics['photometry_final_chi2'] = 10896.76
         metrics['photometry_final_ndof'] = 2787
 
-        self._runGen3Jointcal("lsst.obs.cfht.MegaPrime", "MegaPrime",
-                              configOptions=configOptions, metrics=metrics)
+        self._runJointcalTest(configOptions=configOptions, metrics=metrics,
+                              photometryOutputs=self.outputVisits)
 
     def test_jointcalTask_2_visits_constrainedPhotometry_lineSearch(self):
         """Activating the line search should only slightly change the chi2.
@@ -263,8 +259,8 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
         metrics['photometry_final_chi2'] = 10000.87
         metrics['photometry_final_ndof'] = 2773
 
-        self._runGen3Jointcal("lsst.obs.cfht.MegaPrime", "MegaPrime",
-                              configOptions=configOptions, metrics=metrics)
+        self._runJointcalTest(configOptions=configOptions, metrics=metrics,
+                              photometryOutputs=self.outputVisits)
 
     def test_jointcalTask_2_visits_constrainedMagnitude_no_astrometry(self):
         configOptions, metrics = self.setup_jointcalTask_2_visits_constrainedPhotometry()
@@ -276,8 +272,8 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
         metrics['photometry_final_chi2'] = 10276.57
         metrics['photometry_final_ndof'] = 2823
 
-        self._runGen3Jointcal("lsst.obs.cfht.MegaPrime", "MegaPrime",
-                              configOptions=configOptions, metrics=metrics)
+        self._runJointcalTest(configOptions=configOptions, metrics=metrics,
+                              photometryOutputs=self.outputVisits)
 
     def test_jointcalTask_2_visits_constrainedFlux_pedestal(self):
         """Test that forcing a systematic flux error results in a lower chi2.
@@ -293,8 +289,8 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
         # reference sources rejected.
         metrics['photometry_final_ndof'] = 3262
 
-        self._runGen3Jointcal("lsst.obs.cfht.MegaPrime", "MegaPrime",
-                              configOptions=configOptions, metrics=metrics)
+        self._runJointcalTest(configOptions=configOptions, metrics=metrics,
+                              photometryOutputs=self.outputVisits)
 
     def test_jointcalTask_2_visits_constrainedMagnitude_pedestal(self):
         """Test that forcing a systematic flux error results in a lower chi2.
@@ -311,8 +307,8 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
         # reference sources rejected.
         metrics['photometry_final_ndof'] = 3224
 
-        self._runGen3Jointcal("lsst.obs.cfht.MegaPrime", "MegaPrime",
-                              configOptions=configOptions, metrics=metrics)
+        self._runJointcalTest(configOptions=configOptions, metrics=metrics,
+                              photometryOutputs=self.outputVisits)
 
 
 class MemoryTester(lsst.utils.tests.MemoryTestCase):

@@ -3,6 +3,8 @@
 # dataset.
 # This was run with a hand-modified source.yaml file, with things removed
 # to allow this quite old data to be converted to minimally-useful parqet files.
+# This was written using the gen2 postprocess `runDataRef` calls, as it was
+# part of the process of converting this repo to gen3.
 
 from lsst.pipe.tasks import postprocess
 import lsst.daf.persistence
