@@ -25,7 +25,3 @@ Python API reference
 
 .. automodapi:: lsst.jointcal
    :no-main-docstr:
-.. automodapi:: lsst.jointcal.dataIds
-   :no-main-docstr:
-.. automodapi:: lsst.jointcal.utils
-   :no-main-docstr:
