@@ -77,12 +77,11 @@ class CameraModel:
         """Calculate the afw cameraGeom distortion model to be included in an
         on-disk camera model.
 
-
         PLACEHOLDER: This may be as simple as running `computePixelScale` and
         then doing a numpy polynomial fit to it for the cameraGeom input.
         However, we need to check details of how that distortion model is
-        stored in a Camera.
-            e.g.: np.polyfit(self.fieldAngle, self.radialScale, poly_degree))
+        stored in a Camera. e.g.:
+        np.polyfit(self.fieldAngle, self.radialScale, poly_degree)
         """
         raise NotImplementedError("not yet!")
 

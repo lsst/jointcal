@@ -25,3 +25,5 @@ Python API reference
 
 .. automodapi:: lsst.jointcal
    :no-main-docstr:
+.. automodapi:: lsst.jointcal.cameraGeometry
+   :no-main-docstr:
