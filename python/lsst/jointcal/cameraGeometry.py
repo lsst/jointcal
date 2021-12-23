@@ -22,6 +22,8 @@
 """Code to convert jointcal's output WCS models to distortion maps that can be
 used by afw CameraGeom.
 """
+__all__ = ["CameraModel"]
+
 import numpy as np
 
 from lsst.afw import cameraGeom
