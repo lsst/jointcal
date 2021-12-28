@@ -58,11 +58,6 @@ class AstrometryModelTestBase:
     def setUpClass(cls):
         try:
             cls.dataDir = lsst.utils.getPackageDir('testdata_jointcal')
-            # NOTE: the below is to facilitate testing with hsc test data,
-            # using chips far apart on the focal plane. See the note in setup()
-            # below for details. Using it requires having recently-processed
-            # singleFrame output in a rerun directory in validation_data_hsc.
-            # cls.dataDir = lsst.utils.getPackageDir('validation_data_hsc')
         except LookupError:
             raise unittest.SkipTest("testdata_jointcal not setup")
 
