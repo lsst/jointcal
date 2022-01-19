@@ -376,11 +376,10 @@ class JointcalConfig(pipeBase.PipelineTaskConfig,
         dtype=str,
         default="deep"
     )
-    # TODO DM-29008: Change this to "ApFlux_12_0" before gen2 removal.
     sourceFluxType = pexConfig.Field(
         dtype=str,
         doc="Source flux field to use in source selection and to get fluxes from the catalog.",
-        default='Calib'
+        default='apFlux_12_0'
     )
     positionErrorPedestal = pexConfig.Field(
         doc="Systematic term to apply to the measured position error (pixels)",
@@ -521,7 +520,7 @@ class JointcalConfig(pipeBase.PipelineTaskConfig,
     )
     sourceSelector = sourceSelectorRegistry.makeField(
         doc="How to select sources for cross-matching",
-        default="astrometry"
+        default="science"
     )
     astrometryReferenceSelector = pexConfig.ConfigurableField(
         target=ReferenceSourceSelectorTask,
@@ -593,34 +592,40 @@ class JointcalConfig(pipeBase.PipelineTaskConfig,
             lsst.log.warning(msg)
 
     def setDefaults(self):
-        # Use science source selector which can filter on extendedness, SNR, and whether blended
-        self.sourceSelector.name = 'science'
-        # Use only stars because aperture fluxes of galaxies are biased and depend on seeing
-        self.sourceSelector['science'].doUnresolved = True
+        # Use only stars because aperture fluxes of galaxies are biased and depend on seeing.
+        self.sourceSelector["science"].doUnresolved = True
+        self.sourceSelector["science"].unresolved.name = "extendedness"
         # with dependable signal to noise ratio.
-        self.sourceSelector['science'].doSignalToNoise = True
+        self.sourceSelector["science"].doSignalToNoise = True
         # Min SNR must be > 0 because jointcal cannot handle negative fluxes,
         # and S/N > 10 to use sources that are not too faint, and thus better measured.
-        self.sourceSelector['science'].signalToNoise.minimum = 10.
-        # Base SNR on CalibFlux because that is the flux jointcal that fits and must be positive
-        fluxField = f"slot_{self.sourceFluxType}Flux_instFlux"
-        self.sourceSelector['science'].signalToNoise.fluxField = fluxField
-        self.sourceSelector['science'].signalToNoise.errField = fluxField + "Err"
-        # Do not trust blended sources' aperture fluxes which also depend on seeing
-        self.sourceSelector['science'].doIsolated = True
+        self.sourceSelector["science"].signalToNoise.minimum = 10.
+        # Base SNR selection on `sourceFluxType` because that is the flux that jointcal fits.
+        self.sourceSelector["science"].signalToNoise.fluxField = f"{self.sourceFluxType}_instFlux"
+        self.sourceSelector["science"].signalToNoise.errField = f"{self.sourceFluxType}_instFluxErr"
+        # Do not trust blended sources" aperture fluxes which also depend on seeing.
+        self.sourceSelector["science"].doIsolated = True
+        self.sourceSelector["science"].isolated.parentName = "parentSourceId"
+        self.sourceSelector["science"].isolated.nChildName = "deblend_nChild"
         # Do not trust either flux or centroid measurements with flags,
         # chosen from the usual QA flags for stars)
-        self.sourceSelector['science'].doFlags = True
-        badFlags = ['base_PixelFlags_flag_edge', 'base_PixelFlags_flag_saturated',
-                    'base_PixelFlags_flag_interpolatedCenter', 'base_SdssCentroid_flag',
-                    'base_PsfFlux_flag', 'base_PixelFlags_flag_suspectCenter']
-        self.sourceSelector['science'].flags.bad = badFlags
+        self.sourceSelector["science"].doFlags = True
+        badFlags = ["pixelFlags_edge",
+                    "pixelFlags_saturated",
+                    "pixelFlags_interpolatedCenter",
+                    "pixelFlags_interpolated",
+                    "pixelFlags_crCenter",
+                    "pixelFlags_bad",
+                    "hsmPsfMoments_flag",
+                    f"{self.sourceFluxType}_flag",
+                    ]
+        self.sourceSelector["science"].flags.bad = badFlags
 
         # Default to Gaia-DR2 (with proper motions) for astrometry and
-        # PS1-DR1 for photometry, with a reasonable initial filterMap.
+        # PS1-DR1 for photometry.
         self.astrometryRefObjLoader.ref_dataset_name = "gaia_dr2_20200414"
         self.astrometryRefObjLoader.requireProperMotion = True
-        self.astrometryRefObjLoader.anyFilterMapsToThis = 'phot_g_mean'
+        self.astrometryRefObjLoader.anyFilterMapsToThis = "phot_g_mean"
         self.photometryRefObjLoader.ref_dataset_name = "ps1_pv3_3pi_20170110"
 
 

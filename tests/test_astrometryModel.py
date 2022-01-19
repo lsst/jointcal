@@ -101,7 +101,7 @@ class AstrometryModelTestBase:
         jointcalControl = lsst.jointcal.JointcalControl("flux")
         self.associations = lsst.jointcal.Associations()
         config = lsst.jointcal.JointcalConfig()
-        config.load(os.path.join(os.path.dirname(__file__), "config/config-gen3.py"))
+        config.load(os.path.join(os.path.dirname(__file__), "config/config.py"))
         sourceSelector = config.sourceSelector.target(config=config.sourceSelector['science'])
 
         # Ensure that the filter list is reset for each test so that we avoid

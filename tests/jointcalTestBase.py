@@ -289,7 +289,7 @@ class JointcalTestBase:
                                     self.output_dir,
                                     refcats=self.refcats,
                                     refcatPath=self.refcatPath)
-        configs = [os.path.join(self.path, "config/config-gen3.py")]
+        configs = [os.path.join(self.path, "config/config.py")]
         configs.extend(self.configfiles or [])
         configs.extend(configFiles or [])
         collection = f"{self.instrumentName}/tests/all"
