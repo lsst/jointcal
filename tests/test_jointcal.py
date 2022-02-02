@@ -364,7 +364,7 @@ class TestJointcalFitModel(JointcalTestBase, lsst.utils.tests.TestCase):
         jointcal.focalPlaneBBox = lsst.geom.Box2D()
 
         # Mock the fitter, so we can pretend it found a good fit
-        with mock.patch("lsst.jointcal.PhotometryFit", autospect=True) as fitPatch:
+        with mock.patch("lsst.jointcal.PhotometryFit", autospec=True) as fitPatch:
             fitPatch.return_value.computeChi2.return_value = self.goodChi2
             fitPatch.return_value.minimize.return_value = MinimizeResult.Converged
 
