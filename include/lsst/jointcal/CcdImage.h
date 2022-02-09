@@ -63,8 +63,8 @@ std::ostream &operator<<(std::ostream &out, CcdImageKey const &key);
  */
 class CcdImage {
 public:
-    CcdImage(afw::table::SourceCatalog &record, std::shared_ptr<lsst::afw::geom::SkyWcs> wcs,
-             std::shared_ptr<lsst::afw::image::VisitInfo> visitInfo, lsst::geom::Box2I const &bbox,
+    CcdImage(afw::table::SourceCatalog &record, const std::shared_ptr<lsst::afw::geom::SkyWcs>& wcs,
+             const std::shared_ptr<lsst::afw::image::VisitInfo>& visitInfo, lsst::geom::Box2I const &bbox,
              std::string filter, std::shared_ptr<afw::image::PhotoCalib> photoCalib,
              std::shared_ptr<afw::cameraGeom::Detector> detector, int visit, int ccd,
              std::string const &fluxField);

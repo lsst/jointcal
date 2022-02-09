@@ -26,6 +26,7 @@
 #define LSST_JOINTCAL_PHOTOMETRY_MAPPING_H
 
 #include <memory>
+#include <utility>
 
 #include "lsst/afw/image/PhotoCalib.h"
 
@@ -290,7 +291,7 @@ class ChipVisitFluxMapping : public ChipVisitPhotometryMapping {
 public:
     ChipVisitFluxMapping(std::shared_ptr<PhotometryMapping> chipMapping,
                          std::shared_ptr<PhotometryMapping> visitMapping)
-            : ChipVisitPhotometryMapping(chipMapping, visitMapping) {}
+            : ChipVisitPhotometryMapping(std::move(chipMapping), std::move(visitMapping)) {}
 
     /// @copydoc PhotometryMappingBase::transformError
     double transformError(MeasuredStar const &measuredStar, double value, double valueErr) const override;
@@ -304,7 +305,7 @@ class ChipVisitMagnitudeMapping : public ChipVisitPhotometryMapping {
 public:
     ChipVisitMagnitudeMapping(std::shared_ptr<PhotometryMapping> chipMapping,
                               std::shared_ptr<PhotometryMapping> visitMapping)
-            : ChipVisitPhotometryMapping(chipMapping, visitMapping) {}
+            : ChipVisitPhotometryMapping(std::move(chipMapping), std::move(visitMapping)) {}
 
     /**
      * @copydoc PhotometryMappingBase::transformError

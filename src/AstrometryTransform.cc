@@ -504,7 +504,7 @@ AstrometryTransformPolynomial::AstrometryTransformPolynomial(const AstrometryTra
 //#endif
 
 AstrometryTransformPolynomial::AstrometryTransformPolynomial(
-        std::shared_ptr<afw::geom::TransformPoint2ToPoint2> transform, jointcal::Frame const &domain,
+        const std::shared_ptr<afw::geom::TransformPoint2ToPoint2>& transform, jointcal::Frame const &domain,
         std::size_t order, std::size_t nSteps) {
     jointcal::StarMatchList starMatchList;
     double xStart = domain.xMin;

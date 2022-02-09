@@ -31,7 +31,7 @@
 namespace lsst {
 namespace jointcal {
 
-Point ProperMotion::apply(Point star, double timeDeltaYears) const {
+Point ProperMotion::apply(const Point& star, double timeDeltaYears) const {
     geom::SpherePoint spherePoint(star.x, star.y, geom::degrees);
     double amount = std::hypot(_ra * timeDeltaYears, _dec * timeDeltaYears);
     auto result = spherePoint.offset(_offsetBearing * geom::radians, amount * geom::radians);

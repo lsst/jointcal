@@ -26,6 +26,7 @@
 #define LSST_JOINTCAL_CONSTRAINED_PHOTOMETRY_MODEL_H
 
 #include <map>
+#include <utility>
 
 #include "lsst/jointcal/CcdImage.h"
 #include "lsst/jointcal/PhotometryModel.h"
@@ -59,7 +60,7 @@ public:
      */
     explicit ConstrainedPhotometryModel(CcdImageList const &ccdImageList, geom::Box2D const &focalPlaneBBox,
                                         LOG_LOGGER log, int visitOrder = 7, double errorPedestal = 0)
-            : PhotometryModel(log, errorPedestal), _fittingChips(false), _fittingVisits(false) {
+            : PhotometryModel(std::move(log), errorPedestal), _fittingChips(false), _fittingVisits(false) {
         _chipVisitMap.reserve(ccdImageList.size());
     }
 

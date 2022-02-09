@@ -298,7 +298,7 @@ public:
      * @param[in] order The polynomial order to use when approximating.
      * @param[in] nSteps The number of sample points per axis (nSteps^2 total points).
      */
-    AstrometryTransformPolynomial(std::shared_ptr<afw::geom::TransformPoint2ToPoint2> transform,
+    AstrometryTransformPolynomial(const std::shared_ptr<afw::geom::TransformPoint2ToPoint2>& transform,
                                   jointcal::Frame const &domain, std::size_t order, std::size_t nSteps = 50);
 
     /// Sets the polynomial order (the highest sum of exponents of the largest monomial).

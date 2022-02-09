@@ -53,7 +53,7 @@ public:
      */
     PhotometryFit(std::shared_ptr<Associations> associations,
                   std::shared_ptr<PhotometryModel> photometryModel)
-            : FitterBase(associations),
+            : FitterBase(std::move(associations)),
               _fittingModel(false),
               _fittingFluxes(false),
               _photometryModel(std::move(photometryModel)) {

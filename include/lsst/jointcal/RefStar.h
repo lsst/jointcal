@@ -72,7 +72,7 @@ public:
      *
      * @return The star with corrected coordinates.
      */
-    Point applyProperMotion(Point star, double timeDeltaYears) const;
+    Point applyProperMotion(const Point& star, double timeDeltaYears) const;
 
 private:
     // RefStars are already PM corrected to a common epoch: this is to correct the associated FittedStar

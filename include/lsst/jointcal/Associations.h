@@ -134,16 +134,16 @@ public:
      * @param[in]  ccd        The ccd identifier
      * @param[in]  control    The JointcalControl object
      */
-    void createCcdImage(afw::table::SourceCatalog &catalog, std::shared_ptr<lsst::afw::geom::SkyWcs> wcs,
-                        std::shared_ptr<lsst::afw::image::VisitInfo> visitInfo, lsst::geom::Box2I const &bbox,
-                        std::string const &filter, std::shared_ptr<afw::image::PhotoCalib> photoCalib,
-                        std::shared_ptr<afw::cameraGeom::Detector> detector, int visit, int ccd,
+    void createCcdImage(afw::table::SourceCatalog &catalog, const std::shared_ptr<lsst::afw::geom::SkyWcs>& wcs,
+                        const std::shared_ptr<lsst::afw::image::VisitInfo>& visitInfo, lsst::geom::Box2I const &bbox,
+                        std::string const &filter, const std::shared_ptr<afw::image::PhotoCalib>& photoCalib,
+                        const std::shared_ptr<afw::cameraGeom::Detector>& detector, int visit, int ccd,
                         lsst::jointcal::JointcalControl const &control);
 
     /**
      * Add a pre-constructed ccdImage to the ccdImageList.
      */
-    void addCcdImage(std::shared_ptr<CcdImage> const ccdImage) { ccdImageList.push_back(ccdImage); }
+    void addCcdImage(std::shared_ptr<CcdImage> const& ccdImage) { ccdImageList.push_back(ccdImage); }
 
     //! incrementaly builds a merged catalog of all image catalogs
     void associateCatalogs(double matchCutInArcsec = 0, bool useFittedList = false,

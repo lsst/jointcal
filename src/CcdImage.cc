@@ -110,8 +110,8 @@ void CcdImage::loadCatalog(afw::table::SourceCatalog const &catalog, std::string
     _wholeCatalog.setCcdImage(this);
 }
 
-CcdImage::CcdImage(afw::table::SourceCatalog &catalog, std::shared_ptr<lsst::afw::geom::SkyWcs> wcs,
-                   std::shared_ptr<lsst::afw::image::VisitInfo> visitInfo, geom::Box2I const &bbox,
+CcdImage::CcdImage(afw::table::SourceCatalog &catalog, const std::shared_ptr<lsst::afw::geom::SkyWcs>& wcs,
+                   const std::shared_ptr<lsst::afw::image::VisitInfo>& visitInfo, geom::Box2I const &bbox,
                    std::string filter, std::shared_ptr<afw::image::PhotoCalib> photoCalib,
                    std::shared_ptr<afw::cameraGeom::Detector> detector, int visit, int ccdId,
                    std::string const &fluxField)

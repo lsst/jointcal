@@ -65,7 +65,7 @@ public:
      *
      * @return The star with corrected coordinates.
      */
-    Point apply(Point star, double timeDeltaYears) const;
+    Point apply(const Point& star, double timeDeltaYears) const;
 
     friend std::ostream &operator<<(std::ostream &stream, ProperMotion const &pm);
 

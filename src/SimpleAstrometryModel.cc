@@ -39,7 +39,7 @@ namespace lsst {
 namespace jointcal {
 
 SimpleAstrometryModel::SimpleAstrometryModel(CcdImageList const &ccdImageList,
-                                             const std::shared_ptr<ProjectionHandler const> projectionHandler,
+                                             const std::shared_ptr<ProjectionHandler const>& projectionHandler,
                                              bool initFromWcs, unsigned nNotFit, unsigned order)
         : AstrometryModel(LOG_GET("lsst.jointcal.SimpleAstrometryModel")),
           _skyToTangentPlane(projectionHandler)
