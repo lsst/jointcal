@@ -99,10 +99,10 @@ void ConstrainedPhotometryModel::offsetParams(Eigen::VectorXd const &delta) {
 
 void ConstrainedPhotometryModel::freezeErrorTransform() {
     for (auto &idMapping : _chipMap) {
-        idMapping.second.get()->freezeErrorTransform();
+        idMapping.second->freezeErrorTransform();
     }
     for (auto &idMapping : _visitMap) {
-        idMapping.second.get()->freezeErrorTransform();
+        idMapping.second->freezeErrorTransform();
     }
 }
 
