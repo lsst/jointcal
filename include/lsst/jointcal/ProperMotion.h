@@ -25,9 +25,9 @@
 #ifndef LSST_JOINTCAL_PROPER_MOTION_H
 #define LSST_JOINTCAL_PROPER_MOTION_H
 
+#include <cmath>  // atan2
 #include <iostream>
 #include <memory>
-#include <math.h>  // atan2
 
 namespace lsst {
 namespace jointcal {

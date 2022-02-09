@@ -22,14 +22,13 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <iostream>
+#include <cassert>
+#include <cmath>
+#include <fstream>
 #include <iomanip>
+#include <iostream>
 #include <iterator> /* for ostream_iterator */
 #include <limits>
-#include <cmath>
-#include <math.h>
-#include <fstream>
-#include "assert.h"
 #include <sstream>
 
 #include "Eigen/Core"

@@ -22,10 +22,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <assert.h>
-#include <string>
-#include <sstream>
+#include <cassert>
 #include <cmath>
+#include <sstream>
+#include <string>
 
 #include "lsst/afw/cameraGeom/CameraSys.h"
 #include "lsst/pex/exceptions.h"
