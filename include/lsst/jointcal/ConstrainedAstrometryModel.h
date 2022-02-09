@@ -97,7 +97,7 @@ public:
     std::size_t getTotalParameters() const override;
 
     //! Access to mappings
-    AstrometryTransform const &getChipTransform(CcdIdType const chip) const;
+    AstrometryTransform const &getChipTransform(CcdIdType chip) const;
 
     //! Access to mappings
     AstrometryTransform const &getVisitTransform(VisitIdType const &visit) const;
@@ -125,7 +125,7 @@ private:
     std::map<CcdIdType, std::shared_ptr<SimpleAstrometryMapping>> _chipMap;
     std::map<VisitIdType, std::shared_ptr<SimpleAstrometryMapping>> _visitMap;
     const std::shared_ptr<ProjectionHandler const> _skyToTangentPlane;
-    bool _fittingChips, _fittingVisits;
+    bool _fittingChips{}, _fittingVisits{};
 
     /// @copydoc AstrometryModel::findMapping
     AstrometryMapping *findMapping(CcdImage const &ccdImage) const override;

@@ -33,7 +33,7 @@ namespace jointcal {
 std::pair<double, double> Chi2List::computeAverageAndSigma() {
     double sum = 0;
     double sum2 = 0;
-    for (auto i : *this) {
+    for (const auto& i : *this) {
         sum += i.chi2;
         sum2 += std::pow(i.chi2, 2);
     }
@@ -44,7 +44,7 @@ std::pair<double, double> Chi2List::computeAverageAndSigma() {
 
 std::ostream& operator<<(std::ostream& s, Chi2List const& chi2List) {
     s << "chi2 per star : ";
-    for (auto chi2 : chi2List) {
+    for (const auto& chi2 : chi2List) {
         s << *(chi2.star) << " chi2: " << chi2.chi2 << " ; ";
     }
     s << std::endl;

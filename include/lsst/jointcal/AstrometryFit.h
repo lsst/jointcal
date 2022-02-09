@@ -134,7 +134,7 @@ protected:
     void saveChi2RefContributions(std::string const &filename) const override;
 
 private:
-    bool _fittingDistortions, _fittingPos, _fittingPM;
+    bool _fittingDistortions{}, _fittingPos{}, _fittingPM{};
     std::shared_ptr<AstrometryModel> _astrometryModel;
 
     double _epoch;     // epoch to correct proper motion/parallax to (Julian Epoch year, e.g. J2000.0)

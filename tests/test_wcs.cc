@@ -39,7 +39,7 @@
 #include "lsst/afw/fits.h"
 #include "lsst/daf/base.h"
 
-#include <stdlib.h> /* for getenv */
+#include <cstdlib> /* for getenv */
 
 // NOTE: turn this flag on to raise exceptions on floating point errors.
 // NOTE: this only works on GNU/Linux (fenableexcept is not C++ standard).

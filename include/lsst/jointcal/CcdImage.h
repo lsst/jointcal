@@ -43,10 +43,10 @@
 namespace lsst {
 namespace jointcal {
 
-typedef std::list<std::shared_ptr<CcdImage>> CcdImageList;
+using CcdImageList = std::list<std::shared_ptr<CcdImage>>;
 
-typedef int VisitIdType;
-typedef int CcdIdType;
+using VisitIdType = int;
+using CcdIdType = int;
 /// For hashing a ccdImage: the pair of (visit, ccd) IDs should be unique to each ccdImage.
 struct CcdImageKey {
     VisitIdType visit;
@@ -63,9 +63,9 @@ std::ostream &operator<<(std::ostream &out, CcdImageKey const &key);
  */
 class CcdImage {
 public:
-    CcdImage(afw::table::SourceCatalog &record, std::shared_ptr<lsst::afw::geom::SkyWcs> wcs,
-             std::shared_ptr<lsst::afw::image::VisitInfo> visitInfo, lsst::geom::Box2I const &bbox,
-             std::string const &filter, std::shared_ptr<afw::image::PhotoCalib> photoCalib,
+    CcdImage(afw::table::SourceCatalog &record, const std::shared_ptr<lsst::afw::geom::SkyWcs>& wcs,
+             const std::shared_ptr<lsst::afw::image::VisitInfo>& visitInfo, lsst::geom::Box2I const &bbox,
+             std::string filter, std::shared_ptr<afw::image::PhotoCalib> photoCalib,
              std::shared_ptr<afw::cameraGeom::Detector> detector, int visit, int ccd,
              std::string const &fluxField);
 

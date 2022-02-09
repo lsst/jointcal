@@ -26,6 +26,7 @@
 #define LSST_JOINTCAL_SIMPLE_PHOTOMETRY_MODEL_H
 
 #include <map>
+#include <utility>
 
 #include "lsst/jointcal/CcdImage.h"
 #include "lsst/jointcal/Eigenstuff.h"
@@ -43,7 +44,7 @@ class Point;
 class SimplePhotometryModel : public PhotometryModel {
 public:
     SimplePhotometryModel(CcdImageList const &ccdImageList, LOG_LOGGER log, double errorPedestal = 0)
-            : PhotometryModel(log, errorPedestal) {
+            : PhotometryModel(std::move(log), errorPedestal) {
         _myMap.reserve(ccdImageList.size());
     }
 
@@ -73,12 +74,12 @@ public:
                                      Eigen::VectorXd &derivatives) const override;
 
     /// @copydoc PhotometryModel::print
-    virtual void print(std::ostream &out) const override;
+    void print(std::ostream &out) const override;
 
     ~SimplePhotometryModel() = default;
 
 protected:
-    typedef std::unordered_map<CcdImageKey, std::unique_ptr<PhotometryMapping>> MapType;
+    using MapType = std::unordered_map<CcdImageKey, std::unique_ptr<PhotometryMapping>>;
     MapType _myMap;
 
     /// Return the mapping associated with this ccdImage.

@@ -25,6 +25,8 @@
 #ifndef LSST_JOINTCAL_FITTER_BASE_H
 #define LSST_JOINTCAL_FITTER_BASE_H
 
+#include <utility>
+
 #include "lsst/log/Log.h"
 #include "lsst/jointcal/Associations.h"
 #include "lsst/jointcal/CcdImage.h"
@@ -53,7 +55,7 @@ enum class MinimizeResult {
 class FitterBase {
 public:
     explicit FitterBase(std::shared_ptr<Associations> associations)
-            : _associations(associations),
+            : _associations(std::move(associations)),
               _whatToFit(""),
               _lastNTrip(0),
               _nTotal(0),
@@ -110,9 +112,9 @@ public:
      *         the second run with the same "whatToFit" will produce no change in
      *         the fitted parameters, if the calculations and indices are defined correctly.
      */
-    MinimizeResult minimize(std::string const &whatToFit, double const nSigmaCut = 0, 
-                            double sigmaRelativeTolerance = 0, bool const doRankUpdate = true,
-                            bool const doLineSearch = false, std::string const &dumpMatrixFile = "");
+    MinimizeResult minimize(std::string const &whatToFit, double nSigmaCut = 0, 
+                            double sigmaRelativeTolerance = 0, bool doRankUpdate = true,
+                            bool doLineSearch = false, std::string const &dumpMatrixFile = "");
 
     /**
      * Returns the chi2 for the current state.

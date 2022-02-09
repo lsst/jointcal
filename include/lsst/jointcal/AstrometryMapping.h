@@ -72,7 +72,7 @@ public:
     virtual void print(std::ostream &out) const = 0;
 
     //!
-    virtual ~AstrometryMapping(){};
+    virtual ~AstrometryMapping() = default;;
 };
 
 inline std::ostream &operator<<(std::ostream &stream, AstrometryMapping const &mapping) {

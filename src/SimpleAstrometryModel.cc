@@ -24,6 +24,7 @@
 
 #include <memory>
 #include <string>
+#include <utility>
 
 #include "astshim.h"
 #include "lsst/log/Log.h"
@@ -39,10 +40,10 @@ namespace lsst {
 namespace jointcal {
 
 SimpleAstrometryModel::SimpleAstrometryModel(CcdImageList const &ccdImageList,
-                                             const std::shared_ptr<ProjectionHandler const> projectionHandler,
+                                             std::shared_ptr<ProjectionHandler const>  projectionHandler,
                                              bool initFromWcs, unsigned nNotFit, unsigned order)
         : AstrometryModel(LOG_GET("lsst.jointcal.SimpleAstrometryModel")),
-          _skyToTangentPlane(projectionHandler)
+          _skyToTangentPlane(std::move(projectionHandler))
 
 {
     std::size_t count = 0;
@@ -104,8 +105,8 @@ Eigen::Index SimpleAstrometryModel::assignIndices(std::string const &whatToFit, 
         return 0;
     }
     Eigen::Index index = firstIndex;
-    for (auto i = _myMap.begin(); i != _myMap.end(); ++i) {
-        SimplePolyMapping *p = dynamic_cast<SimplePolyMapping *>(&*(i->second));
+    for (auto & i : _myMap) {
+        auto *p = dynamic_cast<SimplePolyMapping *>(&*(i.second));
         if (!p) continue;  // it should be AstrometryTransformIdentity
         p->setIndex(index);
         index += p->getNpar();

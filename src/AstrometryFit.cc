@@ -22,10 +22,11 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <iostream>
-#include <iomanip>
 #include <algorithm>
 #include <fstream>
+#include <iomanip>
+#include <iostream>
+#include <utility>
 
 #include "Eigen/Sparse"
 
@@ -50,7 +51,7 @@ namespace {
  * @param refStar star projected onto the fittedStar tangent point.
  * @return chi2 contribution from this star.
  */
-double computeProjectedRefStarChi2(lsst::jointcal::FatPoint refStar) {
+double computeProjectedRefStarChi2(const lsst::jointcal::FatPoint& refStar) {
     double det = refStar.vx * refStar.vy - std::pow(refStar.vxy, 2);
     double wxx = refStar.vy / det;
     double wyy = refStar.vx / det;
@@ -64,8 +65,8 @@ namespace jointcal {
 
 AstrometryFit::AstrometryFit(std::shared_ptr<Associations> associations,
                              std::shared_ptr<AstrometryModel> astrometryModel, double posError)
-        : FitterBase(associations),
-          _astrometryModel(astrometryModel),
+        : FitterBase(std::move(associations)),
+          _astrometryModel(std::move(astrometryModel)),
           _epoch(_associations->getEpoch()),
           _posError(posError) {
     _log = LOG_GET("lsst.jointcal.AstrometryFit");

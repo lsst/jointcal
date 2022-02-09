@@ -65,7 +65,7 @@ class AstrometryTransformLinear;
 class AstrometryTransform {
 public:
     //!
-    virtual void apply(const double xIn, const double yIn, double &xOut, double &yOut) const = 0;
+    virtual void apply(double xIn, double yIn, double &xOut, double &yOut) const = 0;
 
     //! applies the tranfo to in and writes into out. Is indeed virtual.
     void apply(Point const &in, Point &out) const { apply(in.x, in.y, out.x, out.y); }
@@ -91,7 +91,7 @@ public:
     //! prints the transform coefficients to stream.
     virtual void print(std::ostream &out) const = 0;
 
-    std::string __str__() {
+    std::string __str__() const {
         std::stringstream s;
         print(s);
         return s.str();
@@ -131,7 +131,7 @@ public:
     virtual std::unique_ptr<AstrometryTransform> composeAndReduce(AstrometryTransform const &right) const;
 
     //! returns the local jacobian.
-    virtual double getJacobian(const double x, const double y) const;
+    virtual double getJacobian(double x, double y) const;
 
     /**
      * Computes the local Derivative of a transform, w.r.t. position.
@@ -139,10 +139,10 @@ public:
      * Step is used for numerical derivation.
      */
     virtual void computeDerivative(Point const &where, AstrometryTransformLinear &derivative,
-                                   const double step = 0.01) const;
+                                   double step = 0.01) const;
 
     //! linear (local) approximation.
-    virtual AstrometryTransformLinear linearApproximation(Point const &where, const double step = 0.01) const;
+    virtual AstrometryTransformLinear linearApproximation(Point const &where, double step = 0.01) const;
 
     virtual void transformPosAndErrors(const FatPoint &in, FatPoint &out) const;
 
@@ -152,7 +152,7 @@ public:
     //! returns an inverse transform. Numerical if not overloaded.
     /*! precision and region refer to the "input" side of this,
       and hence to the output side of the returned AstrometryTransform. */
-    virtual std::unique_ptr<AstrometryTransform> inverseTransform(const double precision,
+    virtual std::unique_ptr<AstrometryTransform> inverseTransform(double precision,
                                                                   const Frame &region) const;
 
     //! params should be at least Npar() long
@@ -162,10 +162,10 @@ public:
     void offsetParams(Eigen::VectorXd const &delta);
 
     //!
-    virtual double paramRef(Eigen::Index const i) const;
+    virtual double paramRef(Eigen::Index i) const;
 
     //!
-    virtual double &paramRef(Eigen::Index const i);
+    virtual double &paramRef(Eigen::Index i);
 
     //! Derivative w.r.t parameters. Derivatives should be al least 2*NPar long. first Npar, for x, last Npar
     //! for y.
@@ -194,7 +194,7 @@ public:
 
     virtual void write(std::ostream &stream) const;
 
-    virtual ~AstrometryTransform(){};
+    virtual ~AstrometryTransform() = default;;
 };
 
 std::ostream &operator<<(std::ostream &stream, AstrometryTransform const &transform);
@@ -219,7 +219,7 @@ std::unique_ptr<AstrometryTransform> compose(AstrometryTransform const &left,
 class AstrometryTransformIdentity : public AstrometryTransform {
 public:
     //! constructor.
-    AstrometryTransformIdentity() {}
+    AstrometryTransformIdentity() = default;
 
     //! xOut = xIn; yOut = yIn !
     void apply(const double xIn, const double yIn, double &xOut, double &yOut) const override {
@@ -246,11 +246,11 @@ public:
     }
 
     void computeDerivative(Point const &where, AstrometryTransformLinear &derivative,
-                           const double step = 0.01) const override;
+                           double step = 0.01) const override;
 
     //! linear approximation.
     virtual AstrometryTransformLinear linearApproximation(Point const &where,
-                                                          const double step = 0.01) const override;
+                                                          double step = 0.01) const override;
 
     /// @copydoc AstrometryTransform::toAstMap
     std::shared_ptr<ast::Mapping> toAstMap(jointcal::Frame const &domain) const override;
@@ -298,7 +298,7 @@ public:
      * @param[in] order The polynomial order to use when approximating.
      * @param[in] nSteps The number of sample points per axis (nSteps^2 total points).
      */
-    AstrometryTransformPolynomial(std::shared_ptr<afw::geom::TransformPoint2ToPoint2> transform,
+    AstrometryTransformPolynomial(const std::shared_ptr<afw::geom::TransformPoint2ToPoint2>& transform,
                                   jointcal::Frame const &domain, std::size_t order, std::size_t nSteps = 50);
 
     /// Sets the polynomial order (the highest sum of exponents of the largest monomial).
@@ -308,11 +308,11 @@ public:
 
     using AstrometryTransform::apply;  // to unhide AstrometryTransform::apply(Point const &)
 
-    void apply(const double xIn, const double yIn, double &xOut, double &yOut) const override;
+    void apply(double xIn, double yIn, double &xOut, double &yOut) const override;
 
     //! specialised analytic routine
     void computeDerivative(Point const &where, AstrometryTransformLinear &derivative,
-                           const double step = 0.01) const override;
+                           double step = 0.01) const override;
 
     //! a mix of apply and Derivative
     virtual void transformPosAndErrors(const FatPoint &in, FatPoint &out) const override;
@@ -359,10 +359,10 @@ public:
     double determinant() const;
 
     //!
-    double paramRef(Eigen::Index const i) const override;
+    double paramRef(Eigen::Index i) const override;
 
     //!
-    double &paramRef(Eigen::Index const i) override;
+    double &paramRef(Eigen::Index i) override;
 
     //! Derivative w.r.t parameters. Derivatives should be al least 2*NPar long. first Npar, for x, last Npar
     //! for y.
@@ -376,10 +376,10 @@ public:
 
 private:
     double computeFit(StarMatchList const &starMatchList, AstrometryTransform const &shiftToCenter,
-                      const bool useErrors);
+                      bool useErrors);
 
-    std::size_t _order;           // The highest sum of exponents of the largest monomial.
-    std::size_t _nterms;          // number of parameters per coordinate
+    std::size_t _order{};           // The highest sum of exponents of the largest monomial.
+    std::size_t _nterms{};          // number of parameters per coordinate
     std::vector<double> _coeffs;  // the actual coefficients
                                   // both polynomials in a single vector to speed up allocation and copies
 
@@ -415,7 +415,7 @@ private:
  */
 std::shared_ptr<AstrometryTransformPolynomial> inversePolyTransform(AstrometryTransform const &forward,
                                                                     Frame const &domain,
-                                                                    double const precision,
+                                                                    double precision,
                                                                     std::size_t maxOrder = 9,
                                                                     std::size_t nSteps = 50);
 
@@ -445,18 +445,18 @@ public:
 
     //!
     void computeDerivative(Point const &where, AstrometryTransformLinear &derivative,
-                           const double step = 0.01) const override;
+                           double step = 0.01) const override;
     //!
     AstrometryTransformLinear linearApproximation(Point const &where,
-                                                  const double step = 0.01) const override;
+                                                  double step = 0.01) const override;
 
     //  void print(std::ostream &out) const;
 
     // double fit(StarMatchList const &starMatchList);
 
     //! Construct a AstrometryTransformLinear from parameters
-    AstrometryTransformLinear(const double ox, const double oy, const double aa11, const double aa12,
-                              const double aa21, const double aa22);
+    AstrometryTransformLinear(double ox, double oy, double aa11, double aa12,
+                              double aa21, double aa22);
 
     //! Handy converter:
     AstrometryTransformLinear(AstrometryTransformIdentity const &) : AstrometryTransformPolynomial(1){};
@@ -465,7 +465,7 @@ public:
         return std::unique_ptr<AstrometryTransform>(new AstrometryTransformLinear(*this));
     }
 
-    std::unique_ptr<AstrometryTransform> inverseTransform(const double precision,
+    std::unique_ptr<AstrometryTransform> inverseTransform(double precision,
                                                           const Frame &region) const override;
 
     double A11() const { return getCoefficient(1, 0, 0); }
@@ -514,8 +514,8 @@ public:
     using AstrometryTransform::apply;  // to unhide apply(const Point&)
 
     AstrometryTransformLinearRot() : AstrometryTransformLinear(){};
-    AstrometryTransformLinearRot(const double angleRad, const Point *center = nullptr,
-                                 const double scaleFactor = 1.0);
+    AstrometryTransformLinearRot(double angleRad, const Point *center = nullptr,
+                                 double scaleFactor = 1.0);
     double fit(StarMatchList const &starMatchList);
 
     std::size_t getNpar() const { return 4; }
@@ -554,7 +554,7 @@ public:
     using AstrometryTransform::apply;
 
     // Input is x, y pixels; output is ICRS RA, Dec in degrees
-    void apply(const double xIn, const double yIn, double &xOut, double &yOut) const override;
+    void apply(double xIn, double yIn, double &xOut, double &yOut) const override;
 
     void print(std::ostream &out) const override;
 
@@ -580,10 +580,10 @@ public:
 
     BaseTanWcs(const BaseTanWcs &original);
 
-    void operator=(const BaseTanWcs &original);
+    BaseTanWcs &operator=(const BaseTanWcs &original);
 
     /// Transform pixels to ICRS RA, Dec in degrees
-    void apply(const double xIn, const double yIn, double &xOut, double &yOut) const;
+    void apply(double xIn, double yIn, double &xOut, double &yOut) const;
 
     //! Get the sky origin (CRVAL in FITS WCS terminology) in degrees
     Point getTangentPoint() const;
@@ -614,8 +614,8 @@ protected:
     AstrometryTransformLinear linPixelToTan;  // transform from pixels to tangent plane (degrees)
                                               // a linear approximation centered at the pixel and sky origins
     std::unique_ptr<AstrometryTransformPolynomial> corr;
-    double ra0, dec0;   // sky origin (radians)
-    double cos0, sin0;  // cos(dec0), sin(dec0)
+    double ra0{}, dec0{};   // sky origin (radians)
+    double cos0{}, sin0{};  // cos(dec0), sin(dec0)
 };
 
 class TanRaDecToPixel;  // the inverse of TanPixelToRaDec.
@@ -658,7 +658,7 @@ public:
 
     //! Inverse transform: returns a TanRaDecToPixel if there are no corrections, or the iterative solver if
     //! there are.
-    std::unique_ptr<AstrometryTransform> inverseTransform(const double precision, const Frame &region) const;
+    std::unique_ptr<AstrometryTransform> inverseTransform(double precision, const Frame &region) const;
 
     std::unique_ptr<AstrometryTransform> clone() const;
 
@@ -687,7 +687,7 @@ public:
 
     //! Inverse transform: returns a TanRaDecToPixel if there are no corrections, or the iterative solver if
     //! there are.
-    std::unique_ptr<AstrometryTransform> inverseTransform(const double precision, const Frame &region) const;
+    std::unique_ptr<AstrometryTransform> inverseTransform(double precision, const Frame &region) const;
 
     std::unique_ptr<AstrometryTransform> clone() const;
 
@@ -709,7 +709,7 @@ public:
     using AstrometryTransform::apply;  // to unhide apply(const Point&)
 
     //! assume degrees everywhere.
-    TanRaDecToPixel(AstrometryTransformLinear const &tan2Pix, Point const &tangentPoint);
+    TanRaDecToPixel(AstrometryTransformLinear tan2Pix, Point const &tangentPoint);
 
     //!
     TanRaDecToPixel();
@@ -724,7 +724,7 @@ public:
     Point getTangentPoint() const;
 
     //!
-    void apply(const double xIn, const double yIn, double &xOut, double &yOut) const;
+    void apply(double xIn, double yIn, double &xOut, double &yOut) const;
 
     //! transform with analytical derivatives
     void transformPosAndErrors(const FatPoint &in, FatPoint &out) const;
@@ -736,7 +736,7 @@ public:
     std::unique_ptr<AstrometryTransform> roughInverse(const Frame &region) const;
 
     //! Inverse transform: returns a TanPixelToRaDec.
-    std::unique_ptr<AstrometryTransform> inverseTransform(const double precision, const Frame &region) const;
+    std::unique_ptr<AstrometryTransform> inverseTransform(double precision, const Frame &region) const;
 
     void print(std::ostream &out) const;
 
@@ -745,13 +745,13 @@ public:
     double fit(StarMatchList const &starMatchList);
 
 private:
-    double ra0, dec0;  // tangent point (radians)
-    double cos0, sin0;
+    double ra0{}, dec0{};  // tangent point (radians)
+    double cos0{}, sin0{};
     AstrometryTransformLinear linTan2Pix;  // tangent plane (probably degrees) to pixels
 };
 
 //! signature of the user-provided routine that actually does the coordinate transform for UserTransform.
-typedef void(AstrometryTransformFun)(const double, const double, double &, double &, const void *);
+using AstrometryTransformFun = void (const double, const double, double &, double &, const void *);
 
 /**
  * A run-time transform that allows users to define a AstrometryTransform with minimal coding
@@ -764,7 +764,7 @@ public:
     //! the transform routine and extra data that it may need.
     UserTransform(AstrometryTransformFun &fun, const void *userData);
 
-    void apply(const double xIn, const double yIn, double &xOut, double &yOut) const;
+    void apply(double xIn, double yIn, double &xOut, double &yOut) const;
 
     void print(std::ostream &out) const;
 
