@@ -84,7 +84,7 @@ public:
 private:
     friend class ConstrainedAstrometryModel;
     //!
-    void setWhatToFit(const bool fittingT1, const bool fittingT2);
+    void setWhatToFit(bool fittingT1, bool fittingT2);
 
     std::shared_ptr<SimpleAstrometryMapping> _m1, _m2;
     Eigen::Index _nPar1, _nPar2;

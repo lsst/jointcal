@@ -70,14 +70,14 @@ public:
     using pstar = decltype(stars)::const_iterator;
 
     //! Constructor
-    FastFinder(const BaseStarList &list, const unsigned nXSlice = 100);
+    FastFinder(const BaseStarList &list, unsigned nXSlice = 100);
 
     //! Find the closest with some rejection capability
-    std::shared_ptr<const BaseStar> findClosest(const Point &where, const double maxDist,
+    std::shared_ptr<const BaseStar> findClosest(const Point &where, double maxDist,
                                                 bool (*SkipIt)(const BaseStar &) = nullptr) const;
 
     //!
-    std::shared_ptr<const BaseStar> secondClosest(const Point &where, const double maxDist,
+    std::shared_ptr<const BaseStar> secondClosest(const Point &where, double maxDist,
                                                   std::shared_ptr<const BaseStar> &closest,
                                                   bool (*SkipIt)(const BaseStar &) = nullptr) const;
 
@@ -107,7 +107,7 @@ public:
 
     Iterator beginScan(const Point &where, double maxDist) const;
 
-    void findRangeInSlice(const int iSlice, const double yStart, const double yEnd, pstar &start,
+    void findRangeInSlice(int iSlice, double yStart, double yEnd, pstar &start,
                           pstar &end) const;
     pstar locateYStart(pstar begin, pstar end, double yVal) const;
     pstar locateYEnd(pstar begin, pstar end, double yVal) const;

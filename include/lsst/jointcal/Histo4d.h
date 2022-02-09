@@ -34,13 +34,13 @@ class SparseHisto4d {
 public:
     SparseHisto4d() {}
     // obvious meanings. NEntries is used as the size of the primary allocation.
-    SparseHisto4d(const int n1, double min1, double max1, const int n2, double min2, double max2,
-                  const int n3, double min3, double max3, const int n4, double min4, double max4,
-                  const int nEntries);
+    SparseHisto4d(int n1, double min1, double max1, int n2, double min2, double max2,
+                  int n3, double min3, double max3, int n4, double min4, double max4,
+                  int nEntries);
     //!
     void fill(const double x[4]);
     //!
-    void fill(const double x1, const double x2, const double x3, const double x4);
+    void fill(double x1, double x2, double x3, double x4);
     //!
     int maxBin(double x[4]);
 
@@ -48,7 +48,7 @@ public:
     void zeroBin(double x[4]);
 
     //! return the bin limits of dimension idim (0<=idim<4), around point X.
-    void binLimits(const double x[4], const int idim, double &xMin, double &xMax) const;
+    void binLimits(const double x[4], int idim, double &xMin, double &xMax) const;
 
     //!
     int getNEntries() const { return _ndata; }
@@ -57,7 +57,7 @@ public:
 
     // private:
     int code_value(const double x[4]) const;
-    void inverse_code(const int code, double x[4]) const;
+    void inverse_code(int code, double x[4]) const;
     void sort();
     void print() const;
 

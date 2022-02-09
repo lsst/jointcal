@@ -80,7 +80,7 @@ public:
     void fluxSort();
 
     //! cuts the end of the std::list
-    void cutTail(const int nKeep);
+    void cutTail(int nKeep);
 
     //! copy the part of the std::list which is included in the frame at the end of another std::list
     void extractInFrame(StarList<Star> &out, const Frame &frame) const;

@@ -97,7 +97,7 @@ public:
     std::size_t getTotalParameters() const override;
 
     //! Access to mappings
-    AstrometryTransform const &getChipTransform(CcdIdType const chip) const;
+    AstrometryTransform const &getChipTransform(CcdIdType chip) const;
 
     //! Access to mappings
     AstrometryTransform const &getVisitTransform(VisitIdType const &visit) const;

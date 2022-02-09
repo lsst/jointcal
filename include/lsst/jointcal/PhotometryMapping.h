@@ -260,7 +260,7 @@ public:
      * @param fittingChips Fit the chip transform.
      * @param fittingVisits Fit the visit transform.
      */
-    void setWhatToFit(bool const fittingChips, bool const fittingVisits);
+    void setWhatToFit(bool fittingChips, bool fittingVisits);
 
     /// @copydoc PhotometryMappingBase::print
     void print(std::ostream &out) const override {

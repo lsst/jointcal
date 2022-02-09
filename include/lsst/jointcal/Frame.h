@@ -72,10 +72,10 @@ public:
     Frame &operator+=(const Frame &right); /* intersection : a = a u b */
 
     //! shrinks the frame (if marginSize>0), enlarges it (if marginSize<0).
-    void cutMargin(const double marginSize);
+    void cutMargin(double marginSize);
 
     //! shrinks the frame (if marginSize>0), enlarges it (if marginSize<0).
-    void cutMargin(const double marginX, const double marginY);
+    void cutMargin(double marginX, double marginY);
 
     //! necessary for comparisons (!= is defined from this one implicitely)
     bool operator==(const Frame &right) const;
@@ -84,7 +84,7 @@ public:
     bool operator!=(const Frame &right) const { return !(*this == right); }
 
     //! rescale it. The center does not move.
-    Frame rescale(const double factor) const;
+    Frame rescale(double factor) const;
 
     // the area.
     double getArea() const;

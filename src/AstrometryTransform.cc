@@ -270,12 +270,12 @@ private:
     double precision2;
 
 public:
-    AstrometryTransformInverse(const AstrometryTransform *direct, const double precision,
+    AstrometryTransformInverse(const AstrometryTransform *direct, double precision,
                                const Frame &region);
 
     //! implements an iterative (Gauss-Newton) solver. It resorts to the Derivative function: 4 calls to the
     //! direct transform per iteration.
-    void apply(const double xIn, const double yIn, double &xOut, double &yOut) const;
+    void apply(double xIn, double yIn, double &xOut, double &yOut) const;
 
     void print(ostream &out) const;
 
@@ -377,7 +377,7 @@ public:
     AstrometryTransformComposition(AstrometryTransform const &second, AstrometryTransform const &first);
 
     //! return second(first(xIn,yIn))
-    void apply(const double xIn, const double yIn, double &xOut, double &yOut) const;
+    void apply(double xIn, double yIn, double &xOut, double &yOut) const;
     void print(ostream &stream) const;
 
     //!

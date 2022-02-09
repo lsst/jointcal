@@ -110,9 +110,9 @@ public:
      *         the second run with the same "whatToFit" will produce no change in
      *         the fitted parameters, if the calculations and indices are defined correctly.
      */
-    MinimizeResult minimize(std::string const &whatToFit, double const nSigmaCut = 0, 
-                            double sigmaRelativeTolerance = 0, bool const doRankUpdate = true,
-                            bool const doLineSearch = false, std::string const &dumpMatrixFile = "");
+    MinimizeResult minimize(std::string const &whatToFit, double nSigmaCut = 0, 
+                            double sigmaRelativeTolerance = 0, bool doRankUpdate = true,
+                            bool doLineSearch = false, std::string const &dumpMatrixFile = "");
 
     /**
      * Returns the chi2 for the current state.

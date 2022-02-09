@@ -145,8 +145,8 @@ public:
     void addCcdImage(std::shared_ptr<CcdImage> const ccdImage) { ccdImageList.push_back(ccdImage); }
 
     //! incrementaly builds a merged catalog of all image catalogs
-    void associateCatalogs(const double matchCutInArcsec = 0, const bool useFittedList = false,
-                           const bool enlargeFittedList = true);
+    void associateCatalogs(double matchCutInArcsec = 0, bool useFittedList = false,
+                           bool enlargeFittedList = true);
 
     /**
      * @brief      Collect stars from an external reference catalog and associate them with fittedStars.
