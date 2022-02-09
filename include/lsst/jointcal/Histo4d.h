@@ -65,9 +65,9 @@ private:
     std::vector<int> _data;
     int _ndata{};
     int _dataSize{};
-    int _n[4]{}{};
-    double _minVal[4]{}{}, _maxVal[4]{}{};
-    double _scale[4]{}{};
+    int _n[4]{};
+    double _minVal[4]{}, _maxVal[4]{};
+    double _scale[4]{};
     bool _sorted{};
 };
 }  // namespace jointcal

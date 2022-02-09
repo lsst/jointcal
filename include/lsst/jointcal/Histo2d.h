@@ -51,9 +51,8 @@ public:
     void zeroBin(double x, double y);
 
     ~Histo2d() = default;
-
-private:
     void operator=(const Histo2d &right) = delete;
+private:
     bool indices(double x, double y, int &ix, int &iy) const;
 
     std::vector<float> data;

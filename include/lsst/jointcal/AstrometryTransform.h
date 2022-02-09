@@ -378,8 +378,8 @@ private:
     double computeFit(StarMatchList const &starMatchList, AstrometryTransform const &shiftToCenter,
                       bool useErrors);
 
-    std::size_t _order{}{};           // The highest sum of exponents of the largest monomial.
-    std::size_t _nterms{}{};          // number of parameters per coordinate
+    std::size_t _order{};           // The highest sum of exponents of the largest monomial.
+    std::size_t _nterms{};          // number of parameters per coordinate
     std::vector<double> _coeffs;  // the actual coefficients
                                   // both polynomials in a single vector to speed up allocation and copies
 
@@ -580,7 +580,7 @@ public:
 
     BaseTanWcs(const BaseTanWcs &original);
 
-    void operator=(const BaseTanWcs &original);
+    BaseTanWcs &operator=(const BaseTanWcs &original);
 
     /// Transform pixels to ICRS RA, Dec in degrees
     void apply(double xIn, double yIn, double &xOut, double &yOut) const;

@@ -86,7 +86,7 @@ public:
     void setIndex(Eigen::Index i) { index = i; }
 
     /// @copydoc AstrometryMapping::computeTransformAndDerivatives
-    virtual void computeTransformAndDerivatives(FatPoint const &where, FatPoint &outPoint,
+    void computeTransformAndDerivatives(FatPoint const &where, FatPoint &outPoint,
                                                 Eigen::MatrixX2d &H) const override;
 
     //! Access to the (fitted) transform

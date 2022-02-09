@@ -183,8 +183,8 @@ void ConstrainedAstrometryModel::offsetParams(Eigen::VectorXd const &delta) {
 }
 
 void ConstrainedAstrometryModel::freezeErrorTransform() {
-    for (auto i = _visitMap.begin(); i != _visitMap.end(); ++i) i->second->freezeErrorTransform();
-    for (auto i = _chipMap.begin(); i != _chipMap.end(); ++i) i->second->freezeErrorTransform();
+    for (auto & i : _visitMap) i.second->freezeErrorTransform();
+    for (auto & i : _chipMap) i.second->freezeErrorTransform();
 }
 
 const AstrometryTransform &ConstrainedAstrometryModel::getChipTransform(CcdIdType const chip) const {
@@ -203,7 +203,7 @@ const AstrometryTransform &ConstrainedAstrometryModel::getChipTransform(CcdIdTyp
 std::vector<VisitIdType> ConstrainedAstrometryModel::getVisits() const {
     std::vector<VisitIdType> res;
     res.reserve(_visitMap.size());
-    for (auto i = _visitMap.begin(); i != _visitMap.end(); ++i) res.push_back(i->first);
+    for (const auto & i : _visitMap) res.push_back(i.first);
     return res;
 }
 

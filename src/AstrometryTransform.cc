@@ -844,8 +844,7 @@ static AstrometryTransformLinear shiftAndNormalize(StarMatchList const &starMatc
     double yav = 0;
     double y2 = 0;
     double count = 0;
-    for (auto it = starMatchList.begin(); it != starMatchList.end(); ++it) {
-        const StarMatch &a_match = *it;
+    for (const auto & a_match : starMatchList) {
         Point const &point1 = a_match.point1;
         xav += point1.x;
         yav += point1.y;
@@ -874,8 +873,7 @@ double AstrometryTransformPolynomial::computeFit(StarMatchList const &starMatchL
     B.setZero();
     double sumr2 = 0;
     double monomials[_nterms];
-    for (auto it = starMatchList.begin(); it != starMatchList.end(); ++it) {
-        const StarMatch &a_match = *it;
+    for (const auto & a_match : starMatchList) {
         Point tmp = shiftToCenter.apply(a_match.point1);
         FatPoint point1(tmp, a_match.point1.vx, a_match.point1.vy, a_match.point1.vxy);
         FatPoint const &point2 = a_match.point2;
@@ -1028,7 +1026,7 @@ static PolyXY product(const PolyXY &p1, const PolyXY &p2) {
 /* powers[k](x,y) = polyXY(x,y)**k, 0 <= k <= maxP */
 static void computePowers(const PolyXY &polyXY, std::size_t maxP, vector<PolyXY> &powers) {
     powers.reserve(maxP + 1);
-    powers.push_back(PolyXY(0));
+    powers.emplace_back(0);
     powers[0].getCoefficient(0, 0) = 1L;
     for (std::size_t k = 1; k <= maxP; ++k) powers.push_back(product(powers[k - 1], polyXY));
 }
@@ -1414,7 +1412,7 @@ BaseTanWcs::BaseTanWcs(const BaseTanWcs &original) : AstrometryTransform() {
     *this = original;
 }
 
-void BaseTanWcs::operator=(const BaseTanWcs &original) {
+BaseTanWcs &BaseTanWcs::operator=(const BaseTanWcs &original) {
     linPixelToTan = original.linPixelToTan;
     ra0 = original.ra0;
     dec0 = original.dec0;
@@ -1422,6 +1420,7 @@ void BaseTanWcs::operator=(const BaseTanWcs &original) {
     sin0 = std::sin(dec0);
     corr = nullptr;
     if (original.corr) corr = std::make_unique<AstrometryTransformPolynomial>(*original.corr);
+    return *this;
 }
 
 void BaseTanWcs::apply(const double xIn, const double yIn, double &xOut, double &yOut) const {

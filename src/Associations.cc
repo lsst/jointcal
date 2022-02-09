@@ -474,7 +474,7 @@ int Associations::nCcdImagesValidForFit() const {
 size_t Associations::nFittedStarsWithAssociatedRefStar() const {
     size_t count = 0;
     for (auto const &fittedStar : fittedStarList) {
-        if ((fittedStar != nullptr) & (fittedStar->getRefStar() != nullptr)) count++;
+        if ((fittedStar != nullptr) && (fittedStar->getRefStar() != nullptr)) count++;
     }
     return count;
 }

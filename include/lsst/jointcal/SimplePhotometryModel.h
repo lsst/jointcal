@@ -74,7 +74,7 @@ public:
                                      Eigen::VectorXd &derivatives) const override;
 
     /// @copydoc PhotometryModel::print
-    virtual void print(std::ostream &out) const override;
+    void print(std::ostream &out) const override;
 
     ~SimplePhotometryModel() = default;
 
