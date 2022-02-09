@@ -29,6 +29,7 @@
 #include <iostream>
 #include <iterator> /* for ostream_iterator */
 #include <limits>
+#include <memory>
 #include <sstream>
 
 #include "Eigen/Core"
@@ -1400,7 +1401,7 @@ BaseTanWcs::BaseTanWcs(AstrometryTransformLinear const &pixToTan, Point const &t
     cos0 = std::cos(dec0);
     sin0 = std::sin(dec0);
     corr = nullptr;
-    if (corrections) corr.reset(new AstrometryTransformPolynomial(*corrections));
+    if (corrections) corr = std::make_unique<AstrometryTransformPolynomial>(*corrections);
 }
 
 /* with some sort of smart pointer ro handle "corr", we could remove the
@@ -1419,7 +1420,7 @@ void BaseTanWcs::operator=(const BaseTanWcs &original) {
     cos0 = std::cos(dec0);
     sin0 = std::sin(dec0);
     corr = nullptr;
-    if (original.corr) corr.reset(new AstrometryTransformPolynomial(*original.corr));
+    if (original.corr) corr = std::make_unique<AstrometryTransformPolynomial>(*original.corr);
 }
 
 void BaseTanWcs::apply(const double xIn, const double yIn, double &xOut, double &yOut) const {
@@ -1488,7 +1489,7 @@ double AstrometryTransformSkyWcs::fit(const StarMatchList &starMatchList) {
 }
 
 std::unique_ptr<AstrometryTransform> AstrometryTransformSkyWcs::clone() const {
-    return std::unique_ptr<AstrometryTransformSkyWcs>(new AstrometryTransformSkyWcs(getSkyWcs()));
+    return std::make_unique<AstrometryTransformSkyWcs>(getSkyWcs());
 }
 
 /*************************** TanPixelToRaDec ***************/
