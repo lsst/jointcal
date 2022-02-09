@@ -378,8 +378,8 @@ private:
     double computeFit(StarMatchList const &starMatchList, AstrometryTransform const &shiftToCenter,
                       bool useErrors);
 
-    std::size_t _order;           // The highest sum of exponents of the largest monomial.
-    std::size_t _nterms;          // number of parameters per coordinate
+    std::size_t _order{}{};           // The highest sum of exponents of the largest monomial.
+    std::size_t _nterms{}{};          // number of parameters per coordinate
     std::vector<double> _coeffs;  // the actual coefficients
                                   // both polynomials in a single vector to speed up allocation and copies
 
@@ -614,8 +614,8 @@ protected:
     AstrometryTransformLinear linPixelToTan;  // transform from pixels to tangent plane (degrees)
                                               // a linear approximation centered at the pixel and sky origins
     std::unique_ptr<AstrometryTransformPolynomial> corr;
-    double ra0, dec0;   // sky origin (radians)
-    double cos0, sin0;  // cos(dec0), sin(dec0)
+    double ra0{}, dec0{};   // sky origin (radians)
+    double cos0{}, sin0{};  // cos(dec0), sin(dec0)
 };
 
 class TanRaDecToPixel;  // the inverse of TanPixelToRaDec.
@@ -745,8 +745,8 @@ public:
     double fit(StarMatchList const &starMatchList);
 
 private:
-    double ra0, dec0;  // tangent point (radians)
-    double cos0, sin0;
+    double ra0{}, dec0{};  // tangent point (radians)
+    double cos0{}, sin0{};
     AstrometryTransformLinear linTan2Pix;  // tangent plane (probably degrees) to pixels
 };
 

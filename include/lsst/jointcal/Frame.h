@@ -38,7 +38,7 @@ namespace jointcal {
 class Frame {
 public:
     //! coordinate of boundary.
-    double xMin, xMax, yMin, yMax;
+    double xMin{}, xMax{}, yMin{}, yMax{};
 
     //! Default constructor
     Frame();

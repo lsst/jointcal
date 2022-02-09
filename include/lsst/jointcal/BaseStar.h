@@ -111,11 +111,11 @@ public:
 protected:
     // on-sky flux, in nanojansky
     double _flux;
-    double _fluxErr;
+    double _fluxErr{};
 
     // on-sky magnitude
-    double _mag;
-    double _magErr;
+    double _mag{};
+    double _magErr{};
 };
 
 using BaseStarList = StarList<BaseStar>;

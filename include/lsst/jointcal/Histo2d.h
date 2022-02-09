@@ -57,9 +57,9 @@ private:
     bool indices(double x, double y, int &ix, int &iy) const;
 
     std::vector<float> data;
-    int nx, ny;
-    float minx, miny;
-    float scalex, scaley;
+    int nx{}, ny{};
+    float minx{}, miny{};
+    float scalex{}, scaley{};
 };
 }  // namespace jointcal
 }  // namespace lsst

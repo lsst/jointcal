@@ -240,7 +240,7 @@ private:
 
     // Julian Epoch Year (e.g. 2000.0 for J2000)
     // Common epoch of all of the ccdImages, typically computed externally via astropy and then set.
-    double _epoch;
+    double _epoch{};
 };
 
 }  // namespace jointcal

@@ -102,7 +102,7 @@ public:
 protected:
     // Whether this Mapping is fit as part of a Model.
     bool toBeFit;
-    Eigen::Index index;
+    Eigen::Index index{};
     /* inheritance may also work. Perhaps with some trouble because
        some routines in Mapping and AstrometryTransform have the same name */
     std::shared_ptr<AstrometryTransform> transform;

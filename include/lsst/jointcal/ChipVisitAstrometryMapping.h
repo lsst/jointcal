@@ -87,7 +87,7 @@ private:
     void setWhatToFit(bool fittingT1, bool fittingT2);
 
     std::shared_ptr<SimpleAstrometryMapping> _m1, _m2;
-    Eigen::Index _nPar1, _nPar2;
+    Eigen::Index _nPar1{}, _nPar2{};
     struct tmpVars  // just there to get around constness issues
     {
         Eigen::MatrixX2d h1, h2;

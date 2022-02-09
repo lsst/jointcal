@@ -61,8 +61,8 @@ public:
     FatPoint point1, point2;  //!< 2 points
     //!< the Star pointers (the pointer is in fact generic, pointed data is never used).
     std::shared_ptr<const BaseStar> s1, s2;
-    double distance;
-    double chi2;
+    double distance{};
+    double chi2{}{};
 
     //! constructor.
     /*! gives 2 points (that contain the geometry), plus pointers to the Star objects
@@ -217,7 +217,7 @@ private:
 
     int _order;
     double _chi2;
-    double _dist2;
+    double _dist2{};
     std::shared_ptr<AstrometryTransform> _transform;
 };
 
