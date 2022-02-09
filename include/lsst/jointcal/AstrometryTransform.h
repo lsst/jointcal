@@ -194,7 +194,7 @@ public:
 
     virtual void write(std::ostream &stream) const;
 
-    virtual ~AstrometryTransform(){};
+    virtual ~AstrometryTransform()= default;;
 };
 
 std::ostream &operator<<(std::ostream &stream, AstrometryTransform const &transform);
@@ -219,7 +219,7 @@ std::unique_ptr<AstrometryTransform> compose(AstrometryTransform const &left,
 class AstrometryTransformIdentity : public AstrometryTransform {
 public:
     //! constructor.
-    AstrometryTransformIdentity() {}
+    AstrometryTransformIdentity() = default;
 
     //! xOut = xIn; yOut = yIn !
     void apply(const double xIn, const double yIn, double &xOut, double &yOut) const override {

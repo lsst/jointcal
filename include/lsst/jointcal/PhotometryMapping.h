@@ -44,7 +44,7 @@ namespace jointcal {
 class PhotometryMappingBase {
 public:
     PhotometryMappingBase() : index(-1), fixed(false) {}
-    virtual ~PhotometryMappingBase(){};
+    virtual ~PhotometryMappingBase()= default;;
 
     /// No copy or move: there is only ever one instance of a given mapping (i.e. per ccd+visit)
     PhotometryMappingBase(PhotometryMappingBase const &) = delete;

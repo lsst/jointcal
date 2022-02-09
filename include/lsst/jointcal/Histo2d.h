@@ -50,7 +50,7 @@ public:
 
     void zeroBin(double x, double y);
 
-    ~Histo2d() {}
+    ~Histo2d() = default;
 
 private:
     void operator=(const Histo2d &right) = delete;

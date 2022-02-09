@@ -318,7 +318,7 @@ AstrometryTransformInverse::AstrometryTransformInverse(AstrometryTransformInvers
     precision2 = model.precision2;
 }
 
-AstrometryTransformInverse::~AstrometryTransformInverse() {}
+AstrometryTransformInverse::~AstrometryTransformInverse() = default;
 
 void AstrometryTransformInverse::operator=(AstrometryTransformInverse const &model) {
     _direct = model._direct->clone();
@@ -415,7 +415,7 @@ std::unique_ptr<AstrometryTransform> AstrometryTransformComposition::clone() con
     return std::make_unique<AstrometryTransformComposition>(*_second, *_first);
 }
 
-AstrometryTransformComposition::~AstrometryTransformComposition() {}
+AstrometryTransformComposition::~AstrometryTransformComposition() = default;
 
 std::unique_ptr<AstrometryTransform> compose(AstrometryTransform const &left,
                                              AstrometryTransformIdentity const &right) {
@@ -1468,7 +1468,7 @@ Point BaseTanWcs::getCrPix() const {
     return Point(inverse.Dx(), inverse.Dy());
 }
 
-BaseTanWcs::~BaseTanWcs() {}
+BaseTanWcs::~BaseTanWcs() = default;
 
 AstrometryTransformSkyWcs::AstrometryTransformSkyWcs(std::shared_ptr<afw::geom::SkyWcs> skyWcs)
         : _skyWcs(skyWcs) {}

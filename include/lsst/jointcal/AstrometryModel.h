@@ -99,7 +99,7 @@ public:
      */
     virtual void print(std::ostream &out) const = 0;
 
-    virtual ~AstrometryModel(){};
+    virtual ~AstrometryModel()= default;;
 
     /**
      * Return true if this is a "reasonable" model.

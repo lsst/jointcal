@@ -92,11 +92,11 @@ public:
     }
 
     /* comparison that ensures that after a sort, duplicates are next one another */
-    explicit StarMatch(){};
+    explicit StarMatch()= default;;
 
     friend std::ostream &operator<<(std::ostream &stream, const StarMatch &Match);
 
-    ~StarMatch() {}
+    ~StarMatch() = default;
 
 private:
     //  bool operator <  (const StarMatch & other) const { return (s1 > other.s1) ? s1 > other.s1 : s2 >

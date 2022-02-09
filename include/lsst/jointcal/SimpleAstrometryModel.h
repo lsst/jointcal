@@ -103,7 +103,7 @@ public:
     /// @copydoc AstrometryModel::makeSkyWcs
     std::shared_ptr<afw::geom::SkyWcs> makeSkyWcs(CcdImage const &ccdImage) const override;
 
-    ~SimpleAstrometryModel(){};
+    ~SimpleAstrometryModel()= default;;
 
 private:
     std::unordered_map<CcdImageKey, std::unique_ptr<SimpleAstrometryMapping>> _myMap;

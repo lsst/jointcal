@@ -45,7 +45,7 @@ class Chi2Accumulator {
 public:
     virtual void addEntry(double inc, std::size_t dof, std::shared_ptr<BaseStar> star) = 0;
 
-    virtual ~Chi2Accumulator(){};
+    virtual ~Chi2Accumulator()= default;;
 };
 
 /// Simple structure to accumulate chi2 and ndof.

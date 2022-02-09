@@ -150,7 +150,7 @@ private:
 //! A list of MeasuredStar. They are usually filled in Associations::createCcdImage
 class MeasuredStarList : public StarList<MeasuredStar> {
 public:
-    MeasuredStarList(){};
+    MeasuredStarList()= default;;
 
     void setCcdImage(const CcdImage *_ccdImage);
 };

@@ -45,7 +45,7 @@ struct JointcalControl {
         validate();
     }
 
-    ~JointcalControl(){};
+    ~JointcalControl()= default;;
 
     void validate() const {
         if (sourceFluxField.empty()) {

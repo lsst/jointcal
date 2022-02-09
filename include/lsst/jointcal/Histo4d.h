@@ -32,7 +32,7 @@ namespace jointcal {
 //! dimension. Used in ListMatch.cc
 class SparseHisto4d {
 public:
-    SparseHisto4d() {}
+    SparseHisto4d() = default;
     // obvious meanings. NEntries is used as the size of the primary allocation.
     SparseHisto4d(int n1, double min1, double max1, int n2, double min2, double max2,
                   int n3, double min3, double max3, int n4, double min4, double max4,
@@ -53,7 +53,7 @@ public:
     //!
     int getNEntries() const { return _ndata; }
 
-    ~SparseHisto4d() {}
+    ~SparseHisto4d() = default;
 
     // private:
     int code_value(const double x[4]) const;

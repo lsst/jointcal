@@ -63,10 +63,10 @@ public:
 
     /* constructors */
     //! : default constructor (empty std::list).
-    StarList(){};
+    StarList()= default;;
 
     /* destructor */
-    virtual ~StarList(){};
+    virtual ~StarList()= default;;
 
     //! invokes print(stream) for all Stars in the std::list.
     void print(std::ostream &out) const {

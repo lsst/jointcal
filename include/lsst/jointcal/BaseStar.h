@@ -93,7 +93,7 @@ public:
 
     static const char *typeName() { return "BaseStar"; }
 
-    virtual ~BaseStar(){};
+    virtual ~BaseStar()= default;;
 
     double getFlux() const { return _flux; }
     double &getFlux() { return _flux; }
