@@ -709,7 +709,7 @@ public:
     using AstrometryTransform::apply;  // to unhide apply(const Point&)
 
     //! assume degrees everywhere.
-    TanRaDecToPixel(AstrometryTransformLinear const &tan2Pix, Point const &tangentPoint);
+    TanRaDecToPixel(AstrometryTransformLinear tan2Pix, Point const &tangentPoint);
 
     //!
     TanRaDecToPixel();

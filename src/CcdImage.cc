@@ -26,6 +26,7 @@
 #include <cmath>
 #include <sstream>
 #include <string>
+#include <utility>
 
 #include "lsst/afw/cameraGeom/CameraSys.h"
 #include "lsst/pex/exceptions.h"
@@ -111,10 +112,10 @@ void CcdImage::loadCatalog(afw::table::SourceCatalog const &catalog, std::string
 
 CcdImage::CcdImage(afw::table::SourceCatalog &catalog, std::shared_ptr<lsst::afw::geom::SkyWcs> wcs,
                    std::shared_ptr<lsst::afw::image::VisitInfo> visitInfo, geom::Box2I const &bbox,
-                   std::string const &filter, std::shared_ptr<afw::image::PhotoCalib> photoCalib,
+                   std::string filter, std::shared_ptr<afw::image::PhotoCalib> photoCalib,
                    std::shared_ptr<afw::cameraGeom::Detector> detector, int visit, int ccdId,
                    std::string const &fluxField)
-        : _ccdId(ccdId), _visit(visit), _photoCalib(photoCalib), _detector(detector), _filter(filter) {
+        : _ccdId(ccdId), _visit(visit), _photoCalib(std::move(photoCalib)), _detector(std::move(detector)), _filter(std::move(filter)) {
     loadCatalog(catalog, fluxField);
 
     Point lowerLeft(bbox.getMinX(), bbox.getMinY());

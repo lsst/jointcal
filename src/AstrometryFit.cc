@@ -22,10 +22,11 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <iostream>
-#include <iomanip>
 #include <algorithm>
 #include <fstream>
+#include <iomanip>
+#include <iostream>
+#include <utility>
 
 #include "Eigen/Sparse"
 
@@ -65,7 +66,7 @@ namespace jointcal {
 AstrometryFit::AstrometryFit(std::shared_ptr<Associations> associations,
                              std::shared_ptr<AstrometryModel> astrometryModel, double posError)
         : FitterBase(associations),
-          _astrometryModel(astrometryModel),
+          _astrometryModel(std::move(astrometryModel)),
           _epoch(_associations->getEpoch()),
           _posError(posError) {
     _log = LOG_GET("lsst.jointcal.AstrometryFit");

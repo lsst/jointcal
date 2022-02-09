@@ -25,9 +25,10 @@
 #ifndef LSST_JOINTCAL_PHOTOMETRY_FIT_H
 #define LSST_JOINTCAL_PHOTOMETRY_FIT_H
 
-#include <string>
 #include <iostream>
 #include <sstream>
+#include <string>
+#include <utility>
 
 #include "lsst/log/Log.h"
 #include "lsst/jointcal/Associations.h"
@@ -55,7 +56,7 @@ public:
             : FitterBase(associations),
               _fittingModel(false),
               _fittingFluxes(false),
-              _photometryModel(photometryModel) {
+              _photometryModel(std::move(photometryModel)) {
         _log = LOG_GET("lsst.jointcal.PhotometryFit");
     }
 

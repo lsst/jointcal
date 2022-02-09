@@ -31,6 +31,7 @@
 #include <limits>
 #include <memory>
 #include <sstream>
+#include <utility>
 
 #include "Eigen/Core"
 
@@ -1472,7 +1473,7 @@ Point BaseTanWcs::getCrPix() const {
 BaseTanWcs::~BaseTanWcs() = default;
 
 AstrometryTransformSkyWcs::AstrometryTransformSkyWcs(std::shared_ptr<afw::geom::SkyWcs> skyWcs)
-        : _skyWcs(skyWcs) {}
+        : _skyWcs(std::move(skyWcs)) {}
 
 void AstrometryTransformSkyWcs::apply(const double xIn, const double yIn, double &xOut, double &yOut) const {
     auto const outCoord = _skyWcs->pixelToSky(geom::Point2D(xIn, yIn));
@@ -1657,8 +1658,8 @@ double TanSipPixelToRaDec::fit(StarMatchList const &) {
 
 /***************  reverse transform of TanPixelToRaDec: TanRaDecToPixel ********/
 
-TanRaDecToPixel::TanRaDecToPixel(AstrometryTransformLinear const &tan2Pix, Point const &tangentPoint)
-        : linTan2Pix(tan2Pix) {
+TanRaDecToPixel::TanRaDecToPixel(AstrometryTransformLinear tan2Pix, Point const &tangentPoint)
+        : linTan2Pix(std::move(tan2Pix)) {
     setTangentPoint(tangentPoint);
 }
 

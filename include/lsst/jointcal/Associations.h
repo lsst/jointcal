@@ -25,9 +25,10 @@
 #ifndef LSST_JOINTCAL_ASSOCIATIONS_H
 #define LSST_JOINTCAL_ASSOCIATIONS_H
 
-#include <string>
 #include <iostream>
 #include <list>
+#include <string>
+#include <utility>
 
 #include "lsst/afw/table/Source.h"
 #include "lsst/afw/geom/SkyWcs.h"
@@ -80,8 +81,8 @@ public:
      * @param imageList A pre-built ccdImage list.
      * @param epoch The julian epoch year to which all proper motion corrections should be made.
      */
-    Associations(CcdImageList const &imageList, double epoch = 0)
-            : ccdImageList(imageList),
+    Associations(CcdImageList imageList, double epoch = 0)
+            : ccdImageList(std::move(imageList)),
               _commonTangentPoint(Point(std::numeric_limits<double>::quiet_NaN(),
                                         std::numeric_limits<double>::quiet_NaN())),
               _maxMeasuredStars(0),

@@ -37,9 +37,10 @@
 #include "lsst/pex/exceptions.h"
 namespace pexExcept = lsst::pex::exceptions;
 
+#include <iostream>
 #include <memory>
 #include <string>
-#include <iostream>
+#include <utility>
 
 namespace {
 // Append the keys of this map into a comma-separated string.
@@ -65,7 +66,7 @@ ConstrainedAstrometryModel::ConstrainedAstrometryModel(
         CcdImageList const &ccdImageList, std::shared_ptr<ProjectionHandler const> projectionHandler,
         int chipOrder, int visitOrder)
         : AstrometryModel(LOG_GET("lsst.jointcal.ConstrainedAstrometryModel")),
-          _skyToTangentPlane(projectionHandler) {
+          _skyToTangentPlane(std::move(projectionHandler)) {
     // keep track of which chip we want to hold fixed (the one closest to the middle of the focal plane)
     double minRadius2 = std::numeric_limits<double>::infinity();
     CcdIdType constrainedChip = -1;

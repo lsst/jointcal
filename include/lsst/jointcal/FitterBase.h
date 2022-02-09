@@ -25,6 +25,8 @@
 #ifndef LSST_JOINTCAL_FITTER_BASE_H
 #define LSST_JOINTCAL_FITTER_BASE_H
 
+#include <utility>
+
 #include "lsst/log/Log.h"
 #include "lsst/jointcal/Associations.h"
 #include "lsst/jointcal/CcdImage.h"
@@ -53,7 +55,7 @@ enum class MinimizeResult {
 class FitterBase {
 public:
     explicit FitterBase(std::shared_ptr<Associations> associations)
-            : _associations(associations),
+            : _associations(std::move(associations)),
               _whatToFit(""),
               _lastNTrip(0),
               _nTotal(0),

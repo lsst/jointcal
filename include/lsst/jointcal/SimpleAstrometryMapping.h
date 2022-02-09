@@ -121,7 +121,7 @@ public:
     // ! contructor.
     /*! The transformation will be initialized to transform, so that the effective transformation
       reads transform*CenterAndScale */
-    SimplePolyMapping(AstrometryTransformLinear const &CenterAndScale,
+    SimplePolyMapping(AstrometryTransformLinear CenterAndScale,
                       AstrometryTransformPolynomial const &transform);
 
     /// No copy or move: there is only ever one instance of a given mapping (i.e.. per ccd+visit)
