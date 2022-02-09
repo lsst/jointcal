@@ -130,7 +130,7 @@ void SimplePolyMapping::transformPosAndErrors(FatPoint const &where, FatPoint &o
 
 AstrometryTransform const &SimplePolyMapping::getTransform() const {
     // Cannot fail given the contructor:
-    const AstrometryTransformPolynomial *fittedPoly =
+    const auto *fittedPoly =
             dynamic_cast<const AstrometryTransformPolynomial *>(&(*transform));
     actualResult = (*fittedPoly) * _centerAndScale;
     return actualResult;

@@ -53,7 +53,7 @@ namespace lsst {
 namespace jointcal {
 
 bool isIntegerShift(const AstrometryTransform *transform) {
-    const AstrometryTransformPolynomial *shift =
+    const auto *shift =
             dynamic_cast<const AstrometryTransformPolynomial *>(transform);
     if (shift == nullptr) return false;
 

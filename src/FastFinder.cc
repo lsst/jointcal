@@ -136,7 +136,7 @@ FastFinder::pstar FastFinder::locateYStart(pstar begin, pstar end, double yVal) 
     int span = end - begin - 1;
     while (span > 1) {
         int half_span = span / 2;
-        pstar middle = begin + half_span;
+        auto middle = begin + half_span;
         if ((*middle)->y < yVal) {
             begin += half_span;
             span -= half_span;
@@ -154,7 +154,7 @@ FastFinder::pstar FastFinder::locateYEnd(pstar begin, pstar end, double yVal) co
     int span = end - begin - 1;
     while (span > 1) {
         int half_span = span / 2;
-        pstar middle = end - half_span;
+        auto middle = end - half_span;
         if ((*middle)->y > yVal) {
             end -= half_span;
             span -= half_span;

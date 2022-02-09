@@ -229,7 +229,7 @@ ConstrainedPhotometryModel::PrepPhotoCalib ConstrainedPhotometryModel::prepPhoto
         CcdImage const &ccdImage) const {
     auto detector = ccdImage.getDetector();
     auto ccdBBox = detector->getBBox();
-    ChipVisitPhotometryMapping *mapping = dynamic_cast<ChipVisitPhotometryMapping *>(findMapping(ccdImage));
+    auto *mapping = dynamic_cast<ChipVisitPhotometryMapping *>(findMapping(ccdImage));
 
     // There should be no way in which we can get to this point and not have a ChipVisitMapping,
     // so blow up if we don't.

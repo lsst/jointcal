@@ -321,11 +321,11 @@ void Associations::associateRefStars(double matchCutInArcSec, const AstrometryTr
     // actually associate things
     for (auto const &starMatch : *starMatchList) {
         const BaseStar &bs = *starMatch.s1;
-        const RefStar &rs_const = dynamic_cast<const RefStar &>(bs);
-        RefStar &rs = const_cast<RefStar &>(rs_const);
+        const auto &rs_const = dynamic_cast<const RefStar &>(bs);
+        auto &rs = const_cast<RefStar &>(rs_const);
         const BaseStar &bs2 = *starMatch.s2;
-        const FittedStar &fs_const = dynamic_cast<const FittedStar &>(bs2);
-        FittedStar &fs = const_cast<FittedStar &>(fs_const);
+        const auto &fs_const = dynamic_cast<const FittedStar &>(bs2);
+        auto &fs = const_cast<FittedStar &>(fs_const);
         // rs->setFittedStar(*fs);
         fs.setRefStar(&rs);
     }
@@ -348,7 +348,7 @@ void Associations::selectFittedStars(int minMeasurements) {
     for (auto const &ccdImage : ccdImageList) {
         MeasuredStarList &catalog = ccdImage->getCatalogForFit();
         // Iteration happens internal to the loop, as we may delete measuredStars from catalog.
-        for (MeasuredStarIterator mi = catalog.begin(); mi != catalog.end();) {
+        for (auto mi = catalog.begin(); mi != catalog.end();) {
             MeasuredStar &mstar = **mi;
             ++totalMeasured;
 
@@ -372,7 +372,7 @@ void Associations::selectFittedStars(int minMeasurements) {
     }      // end loop on catalogs
 
     // now FittedStars with less than minMeasurements should have zero measurementCount.
-    for (FittedStarIterator fi = fittedStarList.begin(); fi != fittedStarList.end();) {
+    for (auto fi = fittedStarList.begin(); fi != fittedStarList.end();) {
         if ((*fi)->getMeasurementCount() == 0) {
             fi = fittedStarList.erase(fi);
         } else {

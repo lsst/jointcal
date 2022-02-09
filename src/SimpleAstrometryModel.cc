@@ -105,7 +105,7 @@ Eigen::Index SimpleAstrometryModel::assignIndices(std::string const &whatToFit, 
     }
     Eigen::Index index = firstIndex;
     for (auto i = _myMap.begin(); i != _myMap.end(); ++i) {
-        SimplePolyMapping *p = dynamic_cast<SimplePolyMapping *>(&*(i->second));
+        auto *p = dynamic_cast<SimplePolyMapping *>(&*(i->second));
         if (!p) continue;  // it should be AstrometryTransformIdentity
         p->setIndex(index);
         index += p->getNpar();

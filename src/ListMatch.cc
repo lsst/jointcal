@@ -127,7 +127,7 @@ static std::unique_ptr<StarMatchList> MatchListExtract(const SegmentPairList &pa
 
     std::unique_ptr<StarMatchList> matchList(new StarMatchList);
 
-    for (SegmentPairListCIterator spi = pairList.begin(); spi != pairList.end(); spi++) {
+    for (auto spi = pairList.begin(); spi != pairList.end(); spi++) {
         const SegmentPair &a_pair = *spi;
         if (a_pair.first->s1rank != rank1 || a_pair.second->s1rank != rank2) continue;
         /* now we store as star matches both ends of segment pairs ,
@@ -571,7 +571,7 @@ std::unique_ptr<StarMatchList> listMatchCollect(const BaseStarList &list1, const
     std::unique_ptr<StarMatchList> matches(new StarMatchList);
     /****** Collect ***********/
     FastFinder finder(list2);
-    for (BaseStarCIterator si = list1.begin(); si != list1.end(); ++si) {
+    for (auto si = list1.begin(); si != list1.end(); ++si) {
         auto p1 = (*si);
         Point p2 = guess->apply(*p1);
         auto neighbour = finder.findClosest(p2, maxDist);
@@ -616,7 +616,7 @@ std::unique_ptr<StarMatchList> listMatchCollect(const BaseStarList &list1, const
                                                 const double maxDist) {
     std::unique_ptr<StarMatchList> matches(new StarMatchList);
     FastFinder finder(list2);
-    for (BaseStarCIterator si = list1.begin(); si != list1.end(); ++si) {
+    for (auto si = list1.begin(); si != list1.end(); ++si) {
         auto p1 = (*si);
         auto neighbour = finder.findClosest(*p1, maxDist);
         if (!neighbour) continue;
@@ -653,7 +653,7 @@ static double transform_diff(const BaseStarList &List, const AstrometryTransform
     FatPoint tf1;
     Point tf2;
     int count = 0;
-    for (BaseStarCIterator it = List.begin(); it != List.end(); ++it) {
+    for (auto it = List.begin(); it != List.end(); ++it) {
         const BaseStar &s = **it;
         T1->transformPosAndErrors(s, tf1);
         T2->apply(s, tf2);
@@ -670,7 +670,7 @@ static double transform_diff(const BaseStarList &List, const AstrometryTransform
 static double median_distance(const StarMatchList *match, const AstrometryTransform *transform) {
     size_t nstars = match->size();
     std::vector<double> resid(nstars);
-    std::vector<double>::iterator ir = resid.begin();
+    auto ir = resid.begin();
     for (auto it = match->begin(); it != match->end(); ++it, ++ir)
         *ir = sqrt(transform->apply(it->point1).computeDist2(it->point2));
     sort(resid.begin(), resid.end());
