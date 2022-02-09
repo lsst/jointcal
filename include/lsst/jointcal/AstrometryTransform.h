@@ -91,7 +91,7 @@ public:
     //! prints the transform coefficients to stream.
     virtual void print(std::ostream &out) const = 0;
 
-    std::string __str__() {
+    std::string __str__() const {
         std::stringstream s;
         print(s);
         return s.str();

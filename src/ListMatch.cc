@@ -71,7 +71,7 @@ struct Segment {
     }
 
     /* arg(other/(*this)) if considered as complex(dx,dy) */
-    double relativeAngle(Segment *other) {
+    double relativeAngle(Segment *other) const {
         return atan2(other->dx * dy - dx * other->dy, dx * other->dx + dy * other->dy);
     }
 

@@ -193,7 +193,7 @@ public:
         return s;
     }
 
-    double getErrorPedestal() { return errorPedestal; }
+    double getErrorPedestal() const { return errorPedestal; }
 
     /// Add a fraction of the instrumental flux to the instrumental flux error, in quadrature.
     double tweakFluxError(jointcal::MeasuredStar const &measuredStar) const {

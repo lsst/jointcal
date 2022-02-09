@@ -98,7 +98,7 @@ public:
 
     /// Make this mapping's parameters fixed (i.e. not varied during fitting).
     void setFixed(bool _fixed) { fixed = _fixed; }
-    bool isFixed() { return fixed; }
+    bool isFixed() const { return fixed; }
 
     virtual Eigen::VectorXd getParameters() = 0;
 
@@ -117,7 +117,7 @@ public:
     virtual void print(std::ostream &out) const = 0;
 
     /// Get the index of this mapping in the grand fit.
-    Eigen::Index getIndex() { return index; }
+    Eigen::Index getIndex() const { return index; }
 
     /// Set the index of this mapping in the grand fit.
     void setIndex(Eigen::Index i) { index = i; }

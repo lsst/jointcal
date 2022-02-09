@@ -105,7 +105,7 @@ public:
     double getInstMagErr() const { return _instMagErr; }
 
     void setId(afw::table::RecordId id) { _id = id; }
-    afw::table::RecordId getId() { return _id; }
+    afw::table::RecordId getId() const { return _id; }
 
     //! the inverse of the mag variance
     double getMagWeight() const { return (_instFlux * _instFlux / (_instFluxErr * _instFluxErr)); }
