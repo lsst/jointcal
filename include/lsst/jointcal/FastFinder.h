@@ -66,8 +66,8 @@ public:
     std::vector<unsigned> index;  // index in "stars" of first object of each slice.
     double xmin, xmax, xstep;     // x bounds, slice size
 
-    typedef decltype(stars)::value_type stars_element;
-    typedef decltype(stars)::const_iterator pstar;
+    using stars_element = decltype(stars)::value_type;
+    using pstar = decltype(stars)::const_iterator;
 
     //! Constructor
     FastFinder(const BaseStarList &list, const unsigned nXSlice = 100);

@@ -121,8 +121,8 @@ public:
     FittedStarList() { inTangentPlaneCoordinates = true; }
 };
 
-typedef FittedStarList::const_iterator FittedStarCIterator;
-typedef FittedStarList::iterator FittedStarIterator;
+using FittedStarCIterator = FittedStarList::const_iterator;
+using FittedStarIterator = FittedStarList::iterator;
 
 BaseStarList& Fitted2Base(FittedStarList& This);
 BaseStarList* Fitted2Base(FittedStarList* This);

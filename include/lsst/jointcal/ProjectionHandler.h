@@ -78,7 +78,7 @@ public:
  * point.
  */
 class OneTPPerVisitHandler : public ProjectionHandler {
-    typedef std::map<const VisitIdType, std::shared_ptr<const AstrometryTransform>> TransformMap;
+    using TransformMap = std::map<const VisitIdType, std::shared_ptr<const AstrometryTransform>>;
     TransformMap tMap;
 
 public:

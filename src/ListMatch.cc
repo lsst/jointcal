@@ -88,8 +88,8 @@ public:
                 const AstrometryTransform &transform = AstrometryTransformIdentity());
 };
 
-typedef std::list<Segment>::iterator SegmentIterator;
-typedef std::list<Segment>::const_iterator SegmentCIterator;
+using SegmentIterator = std::list<Segment>::iterator;
+using SegmentCIterator = std::list<Segment>::const_iterator;
 
 static bool DecreasingLength(const Segment &first, const Segment &second) { return (first.r > second.r); }
 
@@ -116,9 +116,9 @@ struct SegmentPair : public std::pair<Segment *, Segment *> {
     SegmentPair(Segment *f, Segment *s) : std::pair<Segment *, Segment *>(f, s){};
 };
 
-typedef std::list<SegmentPair> SegmentPairList;
-typedef SegmentPairList::iterator SegmentPairListIterator;
-typedef SegmentPairList::const_iterator SegmentPairListCIterator;
+using SegmentPairList = std::list<SegmentPair>;
+using SegmentPairListIterator = SegmentPairList::iterator;
+using SegmentPairListCIterator = SegmentPairList::const_iterator;
 
 static std::unique_ptr<StarMatchList> MatchListExtract(const SegmentPairList &pairList, int rank1, int rank2,
                                                        const AstrometryTransform &transform) {

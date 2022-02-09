@@ -751,7 +751,7 @@ private:
 };
 
 //! signature of the user-provided routine that actually does the coordinate transform for UserTransform.
-typedef void(AstrometryTransformFun)(const double, const double, double &, double &, const void *);
+using AstrometryTransformFun = void (const double, const double, double &, double &, const void *);
 
 /**
  * A run-time transform that allows users to define a AstrometryTransform with minimal coding

@@ -155,8 +155,8 @@ public:
     void setCcdImage(const CcdImage *_ccdImage);
 };
 
-typedef MeasuredStarList::const_iterator MeasuredStarCIterator;
-typedef MeasuredStarList::iterator MeasuredStarIterator;
+using MeasuredStarCIterator = MeasuredStarList::const_iterator;
+using MeasuredStarIterator = MeasuredStarList::iterator;
 
 BaseStarList &Measured2Base(MeasuredStarList &This);
 BaseStarList *Measured2Base(MeasuredStarList *This);

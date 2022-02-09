@@ -78,7 +78,7 @@ public:
     ~SimplePhotometryModel() = default;
 
 protected:
-    typedef std::unordered_map<CcdImageKey, std::unique_ptr<PhotometryMapping>> MapType;
+    using MapType = std::unordered_map<CcdImageKey, std::unique_ptr<PhotometryMapping>>;
     MapType _myMap;
 
     /// Return the mapping associated with this ccdImage.

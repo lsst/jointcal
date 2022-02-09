@@ -32,7 +32,7 @@
 namespace lsst {
 namespace jointcal {
 
-typedef Eigen::Triplet<double> Trip;
+using Trip = Eigen::Triplet<double>;
 
 // at the moment this class implements the eigen format.
 // it would be wise to implement it differently if talking to cholmod

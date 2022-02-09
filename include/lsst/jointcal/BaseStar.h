@@ -118,10 +118,10 @@ protected:
     double _magErr;
 };
 
-typedef StarList<BaseStar> BaseStarList;
+using BaseStarList = StarList<BaseStar>;
 
-typedef BaseStarList::const_iterator BaseStarCIterator;
-typedef BaseStarList::iterator BaseStarIterator;
+using BaseStarCIterator = BaseStarList::const_iterator;
+using BaseStarIterator = BaseStarList::iterator;
 }  // namespace jointcal
 }  // namespace lsst
 

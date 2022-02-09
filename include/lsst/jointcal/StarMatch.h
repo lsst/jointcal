@@ -130,8 +130,8 @@ inline bool sameStar2(const StarMatch &one, const StarMatch &two) { return (one.
 std::ostream &operator<<(std::ostream &stream, const StarMatch &match);
 
 //#ifdef TO_BE_FIXED
-typedef ::std::list<StarMatch>::iterator StarMatchIterator;
-typedef ::std::list<StarMatch>::const_iterator StarMatchCIterator;
+using StarMatchIterator = ::std::list<StarMatch>::iterator;
+using StarMatchCIterator = ::std::list<StarMatch>::const_iterator;
 //#endif
 
 //! A std::list of star matches,

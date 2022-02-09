@@ -43,10 +43,10 @@
 namespace lsst {
 namespace jointcal {
 
-typedef std::list<std::shared_ptr<CcdImage>> CcdImageList;
+using CcdImageList = std::list<std::shared_ptr<CcdImage>>;
 
-typedef int VisitIdType;
-typedef int CcdIdType;
+using VisitIdType = int;
+using CcdIdType = int;
 /// For hashing a ccdImage: the pair of (visit, ccd) IDs should be unique to each ccdImage.
 struct CcdImageKey {
     VisitIdType visit;

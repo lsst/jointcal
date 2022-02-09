@@ -100,14 +100,14 @@ protected:
      * Not all pairs of _visitMap[visit] and _chipMap[chip] are guaranteed to have an entry in
      * _chipVisitMap (for example, one ccd in one visit might fail to produce a catalog).
      */
-    typedef std::unordered_map<CcdImageKey, std::unique_ptr<ChipVisitPhotometryMapping>> MapType;
+    using MapType = std::unordered_map<CcdImageKey, std::unique_ptr<ChipVisitPhotometryMapping>>;
     MapType _chipVisitMap;
 
     // The per-visit transforms that go into _chipVisitMap.
-    typedef std::map<VisitIdType, std::shared_ptr<PhotometryMapping>> VisitMapType;
+    using VisitMapType = std::map<VisitIdType, std::shared_ptr<PhotometryMapping>>;
     VisitMapType _visitMap;
     // The per-chip transforms that go into _chipVisitMap.
-    typedef std::map<CcdIdType, std::shared_ptr<PhotometryMapping>> ChipMapType;
+    using ChipMapType = std::map<CcdIdType, std::shared_ptr<PhotometryMapping>>;
     ChipMapType _chipMap;
 
     /**

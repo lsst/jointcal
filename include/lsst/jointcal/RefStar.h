@@ -86,8 +86,8 @@ private:
 // typedef StarList<RefStar> RefStarList;
 class RefStarList : public StarList<RefStar> {};
 
-typedef RefStarList::const_iterator RefStarCIterator;
-typedef RefStarList::iterator RefStarIterator;
+using RefStarCIterator = RefStarList::const_iterator;
+using RefStarIterator = RefStarList::iterator;
 
 BaseStarList& Ref2Base(RefStarList& This);
 BaseStarList* Ref2Base(RefStarList* This);

@@ -57,9 +57,9 @@ obtained using 'new'.  */
 template <class Star>
 class StarList : public std::list<std::shared_ptr<Star>> {
 public:
-    typedef std::shared_ptr<Star> Element;
-    typedef typename std::list<Element>::const_iterator StarCIterator;
-    typedef typename std::list<Element>::iterator StarIterator;
+    using Element = std::shared_ptr<Star>;
+    using StarCIterator = typename std::list<Element>::const_iterator;
+    using StarIterator = typename std::list<Element>::iterator;
 
     /* constructors */
     //! : default constructor (empty std::list).
