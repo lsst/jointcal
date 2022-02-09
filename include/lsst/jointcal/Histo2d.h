@@ -53,7 +53,7 @@ public:
     ~Histo2d() {}
 
 private:
-    void operator=(const Histo2d &right);
+    void operator=(const Histo2d &right) = delete;
     bool indices(double x, double y, int &ix, int &iy) const;
 
     std::vector<float> data;

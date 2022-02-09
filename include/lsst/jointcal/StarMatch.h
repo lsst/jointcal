@@ -211,8 +211,8 @@ public:
     ~StarMatchList(){/* should delete the transform.... or use counted refs*/};
 
 private:
-    StarMatchList(const StarMatchList &);  // copies nor properly handled
-    void operator=(const StarMatchList &);
+    StarMatchList(const StarMatchList &) = delete;  // copies nor properly handled
+    void operator=(const StarMatchList &) = delete;
 
     int _order;
     double _chi2;
