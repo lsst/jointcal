@@ -11,6 +11,8 @@ setupRequired(jointcal_cholmod)
 setupRequired(verify)
 setupRequired(verify_metrics)
 setupRequired(cpputils)
+setupRequired(pipe_base)
+setupRequired(daf_butler)
 
 # for running gen3 middleware tests
 setupRequired(ctrl_mpexec)

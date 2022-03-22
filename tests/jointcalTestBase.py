@@ -30,6 +30,7 @@ import lsst.afw.image.utils
 from lsst.ctrl.mpexec import SimplePipelineExecutor
 import lsst.daf.butler
 from lsst.daf.butler.script import ingest_files
+import lsst.pipe.base
 import lsst.obs.base
 import lsst.geom
 from lsst.verify.bin.jobReporter import JobReporter
@@ -72,7 +73,7 @@ def importRepository(instrument, exportPath, exportFile, outputDir=None,
     _ = lsst.daf.butler.Butler.makeRepo(repopath)
     butler = lsst.daf.butler.Butler(repopath, writeable=True)
 
-    instrInstance = lsst.obs.base.utils.getInstrument(instrument)
+    instrInstance = lsst.pipe.base.Instrument.from_string(instrument)
     instrInstance.register(butler.registry)
 
     # Register refcats first, so the `refcats` collection will exist.

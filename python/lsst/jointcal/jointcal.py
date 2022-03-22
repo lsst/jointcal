@@ -36,7 +36,7 @@ import lsst.pex.exceptions as pexExceptions
 import lsst.afw.cameraGeom
 import lsst.afw.table
 import lsst.log
-from lsst.obs.base import Instrument
+from lsst.pipe.base import Instrument
 from lsst.pipe.tasks.colorterms import ColortermLibrary
 from lsst.verify import Job, Measurement
 
