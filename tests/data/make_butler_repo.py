@@ -10,13 +10,13 @@
 
 import lsst.daf.butler
 from lsst.daf.butler.script import ingest_files
-import lsst.obs.base
+import lsst.pipe.base
 
 repopath = "cfht_minimal/repo"
 instrument = "lsst.obs.cfht.MegaPrime"
 lsst.daf.butler.Butler.makeRepo(repopath)
 butler = lsst.daf.butler.Butler(repopath, writeable=True)
-instrInstance = lsst.obs.base.utils.getInstrument(instrument)
+instrInstance = lsst.pipe.base.Instrument.from_string(instrument)
 instrInstance.register(butler.registry)
 
 graph = butler.registry.dimensions.extract(["htm7"])
