@@ -22,15 +22,16 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <iostream>
+#include <cassert>
+#include <cmath>
+#include <fstream>
 #include <iomanip>
+#include <iostream>
 #include <iterator> /* for ostream_iterator */
 #include <limits>
-#include <cmath>
-#include <math.h>
-#include <fstream>
-#include "assert.h"
+#include <memory>
 #include <sstream>
+#include <utility>
 
 #include "Eigen/Core"
 
@@ -54,7 +55,7 @@ namespace lsst {
 namespace jointcal {
 
 bool isIntegerShift(const AstrometryTransform *transform) {
-    const AstrometryTransformPolynomial *shift =
+    const auto *shift =
             dynamic_cast<const AstrometryTransformPolynomial *>(transform);
     if (shift == nullptr) return false;
 
@@ -271,12 +272,12 @@ private:
     double precision2;
 
 public:
-    AstrometryTransformInverse(const AstrometryTransform *direct, const double precision,
+    AstrometryTransformInverse(const AstrometryTransform *direct, double precision,
                                const Frame &region);
 
     //! implements an iterative (Gauss-Newton) solver. It resorts to the Derivative function: 4 calls to the
     //! direct transform per iteration.
-    void apply(const double xIn, const double yIn, double &xOut, double &yOut) const;
+    void apply(double xIn, double yIn, double &xOut, double &yOut) const;
 
     void print(ostream &out) const;
 
@@ -319,7 +320,7 @@ AstrometryTransformInverse::AstrometryTransformInverse(AstrometryTransformInvers
     precision2 = model.precision2;
 }
 
-AstrometryTransformInverse::~AstrometryTransformInverse() {}
+AstrometryTransformInverse::~AstrometryTransformInverse() = default;
 
 void AstrometryTransformInverse::operator=(AstrometryTransformInverse const &model) {
     _direct = model._direct->clone();
@@ -378,7 +379,7 @@ public:
     AstrometryTransformComposition(AstrometryTransform const &second, AstrometryTransform const &first);
 
     //! return second(first(xIn,yIn))
-    void apply(const double xIn, const double yIn, double &xOut, double &yOut) const;
+    void apply(double xIn, double yIn, double &xOut, double &yOut) const;
     void print(ostream &stream) const;
 
     //!
@@ -416,7 +417,7 @@ std::unique_ptr<AstrometryTransform> AstrometryTransformComposition::clone() con
     return std::make_unique<AstrometryTransformComposition>(*_second, *_first);
 }
 
-AstrometryTransformComposition::~AstrometryTransformComposition() {}
+AstrometryTransformComposition::~AstrometryTransformComposition() = default;
 
 std::unique_ptr<AstrometryTransform> compose(AstrometryTransform const &left,
                                              AstrometryTransformIdentity const &right) {
@@ -503,7 +504,7 @@ AstrometryTransformPolynomial::AstrometryTransformPolynomial(const AstrometryTra
 //#endif
 
 AstrometryTransformPolynomial::AstrometryTransformPolynomial(
-        std::shared_ptr<afw::geom::TransformPoint2ToPoint2> transform, jointcal::Frame const &domain,
+        const std::shared_ptr<afw::geom::TransformPoint2ToPoint2>& transform, jointcal::Frame const &domain,
         std::size_t order, std::size_t nSteps) {
     jointcal::StarMatchList starMatchList;
     double xStart = domain.xMin;
@@ -843,8 +844,7 @@ static AstrometryTransformLinear shiftAndNormalize(StarMatchList const &starMatc
     double yav = 0;
     double y2 = 0;
     double count = 0;
-    for (auto it = starMatchList.begin(); it != starMatchList.end(); ++it) {
-        const StarMatch &a_match = *it;
+    for (const auto & a_match : starMatchList) {
         Point const &point1 = a_match.point1;
         xav += point1.x;
         yav += point1.y;
@@ -873,8 +873,7 @@ double AstrometryTransformPolynomial::computeFit(StarMatchList const &starMatchL
     B.setZero();
     double sumr2 = 0;
     double monomials[_nterms];
-    for (auto it = starMatchList.begin(); it != starMatchList.end(); ++it) {
-        const StarMatch &a_match = *it;
+    for (const auto & a_match : starMatchList) {
         Point tmp = shiftToCenter.apply(a_match.point1);
         FatPoint point1(tmp, a_match.point1.vx, a_match.point1.vy, a_match.point1.vxy);
         FatPoint const &point2 = a_match.point2;
@@ -1027,7 +1026,7 @@ static PolyXY product(const PolyXY &p1, const PolyXY &p2) {
 /* powers[k](x,y) = polyXY(x,y)**k, 0 <= k <= maxP */
 static void computePowers(const PolyXY &polyXY, std::size_t maxP, vector<PolyXY> &powers) {
     powers.reserve(maxP + 1);
-    powers.push_back(PolyXY(0));
+    powers.emplace_back(0);
     powers[0].getCoefficient(0, 0) = 1L;
     for (std::size_t k = 1; k <= maxP; ++k) powers.push_back(product(powers[k - 1], polyXY));
 }
@@ -1401,7 +1400,7 @@ BaseTanWcs::BaseTanWcs(AstrometryTransformLinear const &pixToTan, Point const &t
     cos0 = std::cos(dec0);
     sin0 = std::sin(dec0);
     corr = nullptr;
-    if (corrections) corr.reset(new AstrometryTransformPolynomial(*corrections));
+    if (corrections) corr = std::make_unique<AstrometryTransformPolynomial>(*corrections);
 }
 
 /* with some sort of smart pointer ro handle "corr", we could remove the
@@ -1413,14 +1412,15 @@ BaseTanWcs::BaseTanWcs(const BaseTanWcs &original) : AstrometryTransform() {
     *this = original;
 }
 
-void BaseTanWcs::operator=(const BaseTanWcs &original) {
+BaseTanWcs &BaseTanWcs::operator=(const BaseTanWcs &original) {
     linPixelToTan = original.linPixelToTan;
     ra0 = original.ra0;
     dec0 = original.dec0;
     cos0 = std::cos(dec0);
     sin0 = std::sin(dec0);
     corr = nullptr;
-    if (original.corr) corr.reset(new AstrometryTransformPolynomial(*original.corr));
+    if (original.corr) corr = std::make_unique<AstrometryTransformPolynomial>(*original.corr);
+    return *this;
 }
 
 void BaseTanWcs::apply(const double xIn, const double yIn, double &xOut, double &yOut) const {
@@ -1469,10 +1469,10 @@ Point BaseTanWcs::getCrPix() const {
     return Point(inverse.Dx(), inverse.Dy());
 }
 
-BaseTanWcs::~BaseTanWcs() {}
+BaseTanWcs::~BaseTanWcs() = default;
 
 AstrometryTransformSkyWcs::AstrometryTransformSkyWcs(std::shared_ptr<afw::geom::SkyWcs> skyWcs)
-        : _skyWcs(skyWcs) {}
+        : _skyWcs(std::move(skyWcs)) {}
 
 void AstrometryTransformSkyWcs::apply(const double xIn, const double yIn, double &xOut, double &yOut) const {
     auto const outCoord = _skyWcs->pixelToSky(geom::Point2D(xIn, yIn));
@@ -1489,7 +1489,7 @@ double AstrometryTransformSkyWcs::fit(const StarMatchList &starMatchList) {
 }
 
 std::unique_ptr<AstrometryTransform> AstrometryTransformSkyWcs::clone() const {
-    return std::unique_ptr<AstrometryTransformSkyWcs>(new AstrometryTransformSkyWcs(getSkyWcs()));
+    return std::make_unique<AstrometryTransformSkyWcs>(getSkyWcs());
 }
 
 /*************************** TanPixelToRaDec ***************/
@@ -1657,8 +1657,8 @@ double TanSipPixelToRaDec::fit(StarMatchList const &) {
 
 /***************  reverse transform of TanPixelToRaDec: TanRaDecToPixel ********/
 
-TanRaDecToPixel::TanRaDecToPixel(AstrometryTransformLinear const &tan2Pix, Point const &tangentPoint)
-        : linTan2Pix(tan2Pix) {
+TanRaDecToPixel::TanRaDecToPixel(AstrometryTransformLinear tan2Pix, Point const &tangentPoint)
+        : linTan2Pix(std::move(tan2Pix)) {
     setTangentPoint(tangentPoint);
 }
 

@@ -22,6 +22,9 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <memory>
+#include <utility>
+
 #include "lsst/jointcal/ChipVisitAstrometryMapping.h"
 #include "lsst/pex/exceptions.h"
 
@@ -32,11 +35,11 @@ namespace jointcal {
 
 ChipVisitAstrometryMapping::ChipVisitAstrometryMapping(std::shared_ptr<SimpleAstrometryMapping> chipMapping,
                                                        std::shared_ptr<SimpleAstrometryMapping> visitMapping)
-        : _m1(chipMapping), _m2(visitMapping) {
+        : _m1(std::move(chipMapping)), _m2(std::move(visitMapping)) {
     /* Allocate the record of temporary variables, so that they are not
        allocated at every call. This is hidden behind a pointer in order
        to be allowed to alter them in a const routine. */
-    tmp = std::unique_ptr<tmpVars>(new tmpVars);
+    tmp = std::make_unique<tmpVars>();
     setWhatToFit(true, true);
 }
 

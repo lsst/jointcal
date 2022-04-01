@@ -26,6 +26,7 @@
 #define LSST_JOINTCAL_PHOTOMETRY_MAPPING_H
 
 #include <memory>
+#include <utility>
 
 #include "lsst/afw/image/PhotoCalib.h"
 
@@ -44,7 +45,7 @@ namespace jointcal {
 class PhotometryMappingBase {
 public:
     PhotometryMappingBase() : index(-1), fixed(false) {}
-    virtual ~PhotometryMappingBase(){};
+    virtual ~PhotometryMappingBase() = default;;
 
     /// No copy or move: there is only ever one instance of a given mapping (i.e. per ccd+visit)
     PhotometryMappingBase(PhotometryMappingBase const &) = delete;
@@ -98,7 +99,7 @@ public:
 
     /// Make this mapping's parameters fixed (i.e. not varied during fitting).
     void setFixed(bool _fixed) { fixed = _fixed; }
-    bool isFixed() { return fixed; }
+    bool isFixed() const { return fixed; }
 
     virtual Eigen::VectorXd getParameters() = 0;
 
@@ -117,7 +118,7 @@ public:
     virtual void print(std::ostream &out) const = 0;
 
     /// Get the index of this mapping in the grand fit.
-    Eigen::Index getIndex() { return index; }
+    Eigen::Index getIndex() const { return index; }
 
     /// Set the index of this mapping in the grand fit.
     void setIndex(Eigen::Index i) { index = i; }
@@ -260,7 +261,7 @@ public:
      * @param fittingChips Fit the chip transform.
      * @param fittingVisits Fit the visit transform.
      */
-    void setWhatToFit(bool const fittingChips, bool const fittingVisits);
+    void setWhatToFit(bool fittingChips, bool fittingVisits);
 
     /// @copydoc PhotometryMappingBase::print
     void print(std::ostream &out) const override {
@@ -290,7 +291,7 @@ class ChipVisitFluxMapping : public ChipVisitPhotometryMapping {
 public:
     ChipVisitFluxMapping(std::shared_ptr<PhotometryMapping> chipMapping,
                          std::shared_ptr<PhotometryMapping> visitMapping)
-            : ChipVisitPhotometryMapping(chipMapping, visitMapping) {}
+            : ChipVisitPhotometryMapping(std::move(chipMapping), std::move(visitMapping)) {}
 
     /// @copydoc PhotometryMappingBase::transformError
     double transformError(MeasuredStar const &measuredStar, double value, double valueErr) const override;
@@ -304,7 +305,7 @@ class ChipVisitMagnitudeMapping : public ChipVisitPhotometryMapping {
 public:
     ChipVisitMagnitudeMapping(std::shared_ptr<PhotometryMapping> chipMapping,
                               std::shared_ptr<PhotometryMapping> visitMapping)
-            : ChipVisitPhotometryMapping(chipMapping, visitMapping) {}
+            : ChipVisitPhotometryMapping(std::move(chipMapping), std::move(visitMapping)) {}
 
     /**
      * @copydoc PhotometryMappingBase::transformError

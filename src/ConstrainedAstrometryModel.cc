@@ -37,9 +37,10 @@
 #include "lsst/pex/exceptions.h"
 namespace pexExcept = lsst::pex::exceptions;
 
+#include <iostream>
 #include <memory>
 #include <string>
-#include <iostream>
+#include <utility>
 
 namespace {
 // Append the keys of this map into a comma-separated string.
@@ -65,7 +66,7 @@ ConstrainedAstrometryModel::ConstrainedAstrometryModel(
         CcdImageList const &ccdImageList, std::shared_ptr<ProjectionHandler const> projectionHandler,
         int chipOrder, int visitOrder)
         : AstrometryModel(LOG_GET("lsst.jointcal.ConstrainedAstrometryModel")),
-          _skyToTangentPlane(projectionHandler) {
+          _skyToTangentPlane(std::move(projectionHandler)) {
     // keep track of which chip we want to hold fixed (the one closest to the middle of the focal plane)
     double minRadius2 = std::numeric_limits<double>::infinity();
     CcdIdType constrainedChip = -1;
@@ -182,8 +183,8 @@ void ConstrainedAstrometryModel::offsetParams(Eigen::VectorXd const &delta) {
 }
 
 void ConstrainedAstrometryModel::freezeErrorTransform() {
-    for (auto i = _visitMap.begin(); i != _visitMap.end(); ++i) i->second->freezeErrorTransform();
-    for (auto i = _chipMap.begin(); i != _chipMap.end(); ++i) i->second->freezeErrorTransform();
+    for (auto & i : _visitMap) i.second->freezeErrorTransform();
+    for (auto & i : _chipMap) i.second->freezeErrorTransform();
 }
 
 const AstrometryTransform &ConstrainedAstrometryModel::getChipTransform(CcdIdType const chip) const {
@@ -202,7 +203,7 @@ const AstrometryTransform &ConstrainedAstrometryModel::getChipTransform(CcdIdTyp
 std::vector<VisitIdType> ConstrainedAstrometryModel::getVisits() const {
     std::vector<VisitIdType> res;
     res.reserve(_visitMap.size());
-    for (auto i = _visitMap.begin(); i != _visitMap.end(); ++i) res.push_back(i->first);
+    for (const auto & i : _visitMap) res.push_back(i.first);
     return res;
 }
 

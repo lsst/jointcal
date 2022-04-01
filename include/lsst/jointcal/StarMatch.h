@@ -25,11 +25,12 @@
 #ifndef LSST_JOINTCAL_STAR_MATCH_H
 #define LSST_JOINTCAL_STAR_MATCH_H
 
+#include <algorithm>  // for swap
 #include <iostream>
 #include <iterator>   // for std::ostream_iterator
-#include <algorithm>  // for swap
-#include <string>
 #include <list>
+#include <string>
+#include <utility>
 
 #include "lsst/jointcal/Point.h"
 #include "lsst/jointcal/BaseStar.h"             // class definition used in inlined functions
@@ -60,15 +61,15 @@ public:
     FatPoint point1, point2;  //!< 2 points
     //!< the Star pointers (the pointer is in fact generic, pointed data is never used).
     std::shared_ptr<const BaseStar> s1, s2;
-    double distance;
-    double chi2;
+    double distance{};
+    double chi2{};
 
     //! constructor.
     /*! gives 2 points (that contain the geometry), plus pointers to the Star objects
       (which are there for user convenience). */
-    StarMatch(const FatPoint &point1, const FatPoint &point2, std::shared_ptr<const BaseStar> star1,
+    StarMatch(FatPoint point1, FatPoint point2, std::shared_ptr<const BaseStar> star1,
               std::shared_ptr<const BaseStar> star2)
-            : point1(point1), point2(point2), s1(std::move(star1)), s2(std::move(star2)), distance(0.){};
+            : point1(std::move(point1)), point2(std::move(point2)), s1(std::move(star1)), s2(std::move(star2)), distance(0.){};
 
     // the next one would require that StarMatch knows BaseStar which is not mandatory for StarMatch to work
     // StarMatch(BaseStar *star1, BaseStar *star2) : point1(*star1), point2(*star2), s1(star1), s2(star2) {};
@@ -92,11 +93,11 @@ public:
     }
 
     /* comparison that ensures that after a sort, duplicates are next one another */
-    explicit StarMatch(){};
+    explicit StarMatch() = default;;
 
     friend std::ostream &operator<<(std::ostream &stream, const StarMatch &Match);
 
-    ~StarMatch() {}
+    ~StarMatch() = default;
 
 private:
     //  bool operator <  (const StarMatch & other) const { return (s1 > other.s1) ? s1 > other.s1 : s2 >
@@ -130,8 +131,8 @@ inline bool sameStar2(const StarMatch &one, const StarMatch &two) { return (one.
 std::ostream &operator<<(std::ostream &stream, const StarMatch &match);
 
 //#ifdef TO_BE_FIXED
-typedef ::std::list<StarMatch>::iterator StarMatchIterator;
-typedef ::std::list<StarMatch>::const_iterator StarMatchCIterator;
+using StarMatchIterator = ::std::list<StarMatch>::iterator;
+using StarMatchCIterator = ::std::list<StarMatch>::const_iterator;
 //#endif
 
 //! A std::list of star matches,
@@ -208,15 +209,14 @@ public:
     //! print the matching transformation quality (transform, chi2, residual)
     void printTransform(std::ostream &stream = std::cout) const;
 
-    ~StarMatchList(){/* should delete the transform.... or use counted refs*/};
+    ~StarMatchList() = default;
+    StarMatchList(const StarMatchList &) = delete;  // copies not properly handled
+    void operator=(const StarMatchList &) = delete;
 
 private:
-    StarMatchList(const StarMatchList &);  // copies nor properly handled
-    void operator=(const StarMatchList &);
-
     int _order;
     double _chi2;
-    double _dist2;
+    double _dist2{};
     std::shared_ptr<AstrometryTransform> _transform;
 };
 

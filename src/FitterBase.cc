@@ -223,8 +223,8 @@ MinimizeResult FitterBase::minimize(std::string const &whatToFit, double nSigmaC
     std::size_t totalMeasOutliers = 0;
     std::size_t totalRefOutliers = 0;
     double oldChi2 = computeChi2().chi2;
-    double oldSigmaCut = 0;
-    double sigmaCut;
+    double oldSigmaCut = 0.;
+    double sigmaCut = 0.;
 
     while (true) {
         Eigen::VectorXd delta = chol.solve(grad);
@@ -251,7 +251,9 @@ MinimizeResult FitterBase::minimize(std::string const &whatToFit, double nSigmaC
         FittedStarList fsOutliers;
         // keep nOutliers so we don't have to sum msOutliers.size()+fsOutliers.size() twice below.
         std::size_t nOutliers = findOutliers(nSigmaCut, msOutliers, fsOutliers, sigmaCut);
-        double relChange = 1 - sigmaCut / oldSigmaCut;
+        double relChange = 0.;
+        if(oldSigmaCut!=0.) relChange = (1 - sigmaCut / oldSigmaCut);
+
         LOGLS_DEBUG(_log, "findOutliers chi2 cut level: " << sigmaCut << ", relative change: " << relChange);
         // If sigmaRelativeTolerance is set and at least one iteration has been done, break loop when the
         // fractional change in sigmaCut levels is less than the sigmaRelativeTolerance parameter.

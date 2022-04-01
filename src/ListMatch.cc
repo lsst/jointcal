@@ -63,15 +63,15 @@ struct Segment {
         s1rank = star1Rank;
         s1 = std::move(star1);
         s2 = std::move(star2);
-        Point P1 = transform.apply(*star1);
-        Point P2 = transform.apply(*star2);
+        Point P1 = transform.apply(*s1);
+        Point P2 = transform.apply(*s2);
         dx = P2.x - P1.x;
         dy = P2.y - P1.y;
         r = sqrt(dx * dx + dy * dy);
     }
 
     /* arg(other/(*this)) if considered as complex(dx,dy) */
-    double relativeAngle(Segment *other) {
+    double relativeAngle(Segment *other) const {
         return atan2(other->dx * dy - dx * other->dy, dx * other->dx + dy * other->dy);
     }
 
@@ -84,12 +84,12 @@ struct Segment {
 class SegmentList : public std::list<Segment> {
 public:
     //  SegmentList(const BaseStarList &list, const int nStar);
-    SegmentList(const BaseStarList &list, const int nStar,
+    SegmentList(const BaseStarList &list, int nStar,
                 const AstrometryTransform &transform = AstrometryTransformIdentity());
 };
 
-typedef std::list<Segment>::iterator SegmentIterator;
-typedef std::list<Segment>::const_iterator SegmentCIterator;
+using SegmentIterator = std::list<Segment>::iterator;
+using SegmentCIterator = std::list<Segment>::const_iterator;
 
 static bool DecreasingLength(const Segment &first, const Segment &second) { return (first.r > second.r); }
 
@@ -116,9 +116,9 @@ struct SegmentPair : public std::pair<Segment *, Segment *> {
     SegmentPair(Segment *f, Segment *s) : std::pair<Segment *, Segment *>(f, s){};
 };
 
-typedef std::list<SegmentPair> SegmentPairList;
-typedef SegmentPairList::iterator SegmentPairListIterator;
-typedef SegmentPairList::const_iterator SegmentPairListCIterator;
+using SegmentPairList = std::list<SegmentPair>;
+using SegmentPairListIterator = SegmentPairList::iterator;
+using SegmentPairListCIterator = SegmentPairList::const_iterator;
 
 static std::unique_ptr<StarMatchList> MatchListExtract(const SegmentPairList &pairList, int rank1, int rank2,
                                                        const AstrometryTransform &transform) {
@@ -127,8 +127,7 @@ static std::unique_ptr<StarMatchList> MatchListExtract(const SegmentPairList &pa
 
     std::unique_ptr<StarMatchList> matchList(new StarMatchList);
 
-    for (SegmentPairListCIterator spi = pairList.begin(); spi != pairList.end(); spi++) {
-        const SegmentPair &a_pair = *spi;
+    for (const auto & a_pair : pairList) {
         if (a_pair.first->s1rank != rank1 || a_pair.second->s1rank != rank2) continue;
         /* now we store as star matches both ends of segment pairs ,
            but only once the beginning of segments because they all have the same,
@@ -364,7 +363,7 @@ static std::unique_ptr<StarMatchList> ListMatchupRotShift_New(BaseStarList &list
                 seg2 = &(*segi2);
                 if (seg2->s1rank != rank1L2) continue;
                 // push in the list the match corresponding to end number 1 of segments
-                if (a_list->size() == 0)
+                if (a_list->empty())
                     a_list->push_back(StarMatch(*(seg1->s1), *(seg2->s1), seg1->s1, seg2->s1));
                 ratio = seg2->r / seg1->r;
                 if (ratio > maxRatio) continue;
@@ -393,7 +392,7 @@ static std::unique_ptr<StarMatchList> ListMatchupRotShift_New(BaseStarList &list
         Solutions.push_back(std::move(a_list));
     }
 
-    if (Solutions.size() == 0) {
+    if (Solutions.empty()) {
         LOGLS_ERROR(_log, "Error In ListMatchup : not a single pair match.");
         LOGLS_ERROR(_log, "Probably, the relative scale of lists is not within bounds.");
         LOGLS_ERROR(_log, "min/max ratios: " << minRatio << ' ' << maxRatio);
@@ -571,8 +570,8 @@ std::unique_ptr<StarMatchList> listMatchCollect(const BaseStarList &list1, const
     std::unique_ptr<StarMatchList> matches(new StarMatchList);
     /****** Collect ***********/
     FastFinder finder(list2);
-    for (BaseStarCIterator si = list1.begin(); si != list1.end(); ++si) {
-        auto p1 = (*si);
+    for (const auto & si : list1) {
+        auto p1 = si;
         Point p2 = guess->apply(*p1);
         auto neighbour = finder.findClosest(p2, maxDist);
         if (!neighbour) continue;
@@ -616,8 +615,8 @@ std::unique_ptr<StarMatchList> listMatchCollect(const BaseStarList &list1, const
                                                 const double maxDist) {
     std::unique_ptr<StarMatchList> matches(new StarMatchList);
     FastFinder finder(list2);
-    for (BaseStarCIterator si = list1.begin(); si != list1.end(); ++si) {
-        auto p1 = (*si);
+    for (const auto & si : list1) {
+        auto p1 = si;
         auto neighbour = finder.findClosest(*p1, maxDist);
         if (!neighbour) continue;
         double distance = p1->Distance(*neighbour);
@@ -653,8 +652,8 @@ static double transform_diff(const BaseStarList &List, const AstrometryTransform
     FatPoint tf1;
     Point tf2;
     int count = 0;
-    for (BaseStarCIterator it = List.begin(); it != List.end(); ++it) {
-        const BaseStar &s = **it;
+    for (const auto & it : List) {
+        const BaseStar &s = *it;
         T1->transformPosAndErrors(s, tf1);
         T2->apply(s, tf2);
         double dx = tf1.x - tf2.x;
@@ -670,7 +669,7 @@ static double transform_diff(const BaseStarList &List, const AstrometryTransform
 static double median_distance(const StarMatchList *match, const AstrometryTransform *transform) {
     size_t nstars = match->size();
     std::vector<double> resid(nstars);
-    std::vector<double>::iterator ir = resid.begin();
+    auto ir = resid.begin();
     for (auto it = match->begin(); it != match->end(); ++it, ++ir)
         *ir = sqrt(transform->apply(it->point1).computeDist2(it->point2));
     sort(resid.begin(), resid.end());

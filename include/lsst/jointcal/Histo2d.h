@@ -50,16 +50,15 @@ public:
 
     void zeroBin(double x, double y);
 
-    ~Histo2d() {}
-
+    ~Histo2d() = default;
+    void operator=(const Histo2d &right) = delete;
 private:
-    void operator=(const Histo2d &right);
     bool indices(double x, double y, int &ix, int &iy) const;
 
     std::vector<float> data;
-    int nx, ny;
-    float minx, miny;
-    float scalex, scaley;
+    int nx{}, ny{};
+    float minx{}, miny{};
+    float scalex{}, scaley{};
 };
 }  // namespace jointcal
 }  // namespace lsst

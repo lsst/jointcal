@@ -36,7 +36,7 @@ namespace jointcal {
 //! A point in a plane.
 class Point {
 public:
-    virtual ~Point() {}
+    virtual ~Point() = default;
 
     //! coordinate
     double x, y;

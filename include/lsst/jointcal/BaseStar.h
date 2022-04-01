@@ -93,7 +93,7 @@ public:
 
     static const char *typeName() { return "BaseStar"; }
 
-    virtual ~BaseStar(){};
+    virtual ~BaseStar() = default;;
 
     double getFlux() const { return _flux; }
     double &getFlux() { return _flux; }
@@ -111,17 +111,17 @@ public:
 protected:
     // on-sky flux, in nanojansky
     double _flux;
-    double _fluxErr;
+    double _fluxErr{};
 
     // on-sky magnitude
-    double _mag;
-    double _magErr;
+    double _mag{};
+    double _magErr{};
 };
 
-typedef StarList<BaseStar> BaseStarList;
+using BaseStarList = StarList<BaseStar>;
 
-typedef BaseStarList::const_iterator BaseStarCIterator;
-typedef BaseStarList::iterator BaseStarIterator;
+using BaseStarCIterator = BaseStarList::const_iterator;
+using BaseStarIterator = BaseStarList::iterator;
 }  // namespace jointcal
 }  // namespace lsst
 

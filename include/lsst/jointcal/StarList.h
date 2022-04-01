@@ -57,16 +57,16 @@ obtained using 'new'.  */
 template <class Star>
 class StarList : public std::list<std::shared_ptr<Star>> {
 public:
-    typedef std::shared_ptr<Star> Element;
-    typedef typename std::list<Element>::const_iterator StarCIterator;
-    typedef typename std::list<Element>::iterator StarIterator;
+    using Element = std::shared_ptr<Star>;
+    using StarCIterator = typename std::list<Element>::const_iterator;
+    using StarIterator = typename std::list<Element>::iterator;
 
     /* constructors */
     //! : default constructor (empty std::list).
-    StarList(){};
+    StarList()= default;;
 
     /* destructor */
-    virtual ~StarList(){};
+    virtual ~StarList()= default;;
 
     //! invokes print(stream) for all Stars in the std::list.
     void print(std::ostream &out) const {
@@ -80,7 +80,7 @@ public:
     void fluxSort();
 
     //! cuts the end of the std::list
-    void cutTail(const int nKeep);
+    void cutTail(int nKeep);
 
     //! copy the part of the std::list which is included in the frame at the end of another std::list
     void extractInFrame(StarList<Star> &out, const Frame &frame) const;

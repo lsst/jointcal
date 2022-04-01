@@ -30,12 +30,12 @@
 #include "Eigen/CholmodSupport"  // to switch to cholmod
 #include "Eigen/Core"
 
-typedef Eigen::Matrix<double, Eigen::Dynamic, 2> MatrixX2d;
+using MatrixX2d = Eigen::Matrix<double, Eigen::Dynamic, 2>;
 
-typedef Eigen::SparseMatrix<double, 0, Eigen::Index> SparseMatrixD;
+using SparseMatrixD = Eigen::SparseMatrix<double, 0, Eigen::Index>;
 
 // To make our indices and triplets conform to Eigen's desire for taking a signed type
-typedef std::vector<std::ptrdiff_t> IndexVector;
+using IndexVector = std::vector<std::ptrdiff_t>;
 
 /* Cholesky factorization class using cholmod, with the small-rank update capability.
  *
@@ -49,13 +49,13 @@ typedef std::vector<std::ptrdiff_t> IndexVector;
 template <typename _MatrixType, int _UpLo = Eigen::Lower>
 class CholmodSimplicialLDLT2
         : public Eigen::CholmodBase<_MatrixType, _UpLo, CholmodSimplicialLDLT2<_MatrixType, _UpLo>> {
-    typedef Eigen::CholmodBase<_MatrixType, _UpLo, CholmodSimplicialLDLT2> Base;
+    using Base = Eigen::CholmodBase<_MatrixType, _UpLo, CholmodSimplicialLDLT2>;
     using Base::m_cholmod;
 
 public:
-    typedef _MatrixType MatrixType;
-    typedef typename MatrixType::Index Index;
-    typedef typename MatrixType::RealScalar RealScalar;
+    using MatrixType = _MatrixType;
+    using Index = typename MatrixType::Index;
+    using RealScalar = typename MatrixType::RealScalar;
 
     CholmodSimplicialLDLT2() : Base() { init(); }
 

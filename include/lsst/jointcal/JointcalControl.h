@@ -27,8 +27,9 @@
 
 #include <cmath>
 #include <string>
-#include <vector>
 #include <tuple>
+#include <utility>
+#include <vector>
 
 #include "lsst/pex/config.h"
 #include "lsst/afw/table/Source.h"
@@ -39,13 +40,13 @@ namespace jointcal {
 struct JointcalControl {
     LSST_CONTROL_FIELD(sourceFluxField, std::string, "name of flux field in source catalog");
 
-    explicit JointcalControl(std::string const& sourceFluxField = "slot_CalibFlux")
+    explicit JointcalControl(std::string  sourceFluxField = "slot_CalibFlux")
             :  // Set sourceFluxType to the value used in the source selector.
-              sourceFluxField(sourceFluxField) {
+              sourceFluxField(std::move(sourceFluxField)) {
         validate();
     }
 
-    ~JointcalControl(){};
+    ~JointcalControl() = default;;
 
     void validate() const {
         if (sourceFluxField.empty()) {

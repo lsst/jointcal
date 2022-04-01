@@ -62,7 +62,7 @@ separate transfrom per CcdImage. One could chose other setups.
 class SimpleAstrometryModel : public AstrometryModel {
 public:
     SimpleAstrometryModel(CcdImageList const &ccdImageList,
-                          const std::shared_ptr<ProjectionHandler const> projectionHandler, bool initFromWCS,
+                          std::shared_ptr<ProjectionHandler const>  projectionHandler, bool initFromWCS,
                           unsigned nNotFit = 0, unsigned order = 3);
 
     /// No copy or move: there is only ever one instance of a given model (i.e.. per ccd+visit)
@@ -103,7 +103,7 @@ public:
     /// @copydoc AstrometryModel::makeSkyWcs
     std::shared_ptr<afw::geom::SkyWcs> makeSkyWcs(CcdImage const &ccdImage) const override;
 
-    ~SimpleAstrometryModel(){};
+    ~SimpleAstrometryModel() = default;;
 
 private:
     std::unordered_map<CcdImageKey, std::unique_ptr<SimpleAstrometryMapping>> _myMap;

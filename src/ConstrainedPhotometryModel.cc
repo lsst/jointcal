@@ -99,10 +99,10 @@ void ConstrainedPhotometryModel::offsetParams(Eigen::VectorXd const &delta) {
 
 void ConstrainedPhotometryModel::freezeErrorTransform() {
     for (auto &idMapping : _chipMap) {
-        idMapping.second.get()->freezeErrorTransform();
+        idMapping.second->freezeErrorTransform();
     }
     for (auto &idMapping : _visitMap) {
-        idMapping.second.get()->freezeErrorTransform();
+        idMapping.second->freezeErrorTransform();
     }
 }
 
@@ -131,7 +131,7 @@ void ConstrainedPhotometryModel::computeParameterDerivatives(MeasuredStar const 
 
 namespace {
 // Convert photoTransform's way of storing Chebyshev coefficients into the format wanted by ChebyMap.
-ndarray::Array<double, 2, 2> toChebyMapCoeffs(std::shared_ptr<PhotometryTransformChebyshev> transform) {
+ndarray::Array<double, 2, 2> toChebyMapCoeffs(const std::shared_ptr<PhotometryTransformChebyshev>& transform) {
     auto coeffs = transform->getCoefficients();
     // 4 x nPar: ChebyMap wants rows that look like (a_ij, 1, i, j) for out += a_ij*T_i(x)*T_j(y)
     ndarray::Array<double, 2, 2> chebyCoeffs =
@@ -229,7 +229,7 @@ ConstrainedPhotometryModel::PrepPhotoCalib ConstrainedPhotometryModel::prepPhoto
         CcdImage const &ccdImage) const {
     auto detector = ccdImage.getDetector();
     auto ccdBBox = detector->getBBox();
-    ChipVisitPhotometryMapping *mapping = dynamic_cast<ChipVisitPhotometryMapping *>(findMapping(ccdImage));
+    auto *mapping = dynamic_cast<ChipVisitPhotometryMapping *>(findMapping(ccdImage));
 
     // There should be no way in which we can get to this point and not have a ChipVisitMapping,
     // so blow up if we don't.

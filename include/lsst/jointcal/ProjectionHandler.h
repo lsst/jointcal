@@ -45,7 +45,7 @@ struct ProjectionHandler {
     virtual const std::shared_ptr<const AstrometryTransform> getSkyToTangentPlane(
             const CcdImage &ccdImage) const = 0;
 
-    virtual ~ProjectionHandler(){};
+    virtual ~ProjectionHandler() = default;;
 
     /// Print a string representation of the contents of this mapping, for debugging.
     virtual void print(std::ostream &out) const = 0;
@@ -78,7 +78,7 @@ public:
  * point.
  */
 class OneTPPerVisitHandler : public ProjectionHandler {
-    typedef std::map<const VisitIdType, std::shared_ptr<const AstrometryTransform>> TransformMap;
+    using TransformMap = std::map<const VisitIdType, std::shared_ptr<const AstrometryTransform>>;
     TransformMap tMap;
 
 public:

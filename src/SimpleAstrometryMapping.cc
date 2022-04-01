@@ -22,6 +22,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <utility>
+
 #include "lsst/jointcal/Eigenstuff.h"
 #include "lsst/jointcal/FatPoint.h"
 #include "lsst/jointcal/SimpleAstrometryMapping.h"
@@ -70,9 +72,9 @@ void SimpleAstrometryMapping::computeTransformAndDerivatives(FatPoint const &whe
 
 void SimpleAstrometryMapping::print(std::ostream &out) const { out << *transform; }
 
-SimplePolyMapping::SimplePolyMapping(AstrometryTransformLinear const &CenterAndScale,
+SimplePolyMapping::SimplePolyMapping(AstrometryTransformLinear CenterAndScale,
                                      AstrometryTransformPolynomial const &transform)
-        : SimpleAstrometryMapping(transform), _centerAndScale(CenterAndScale) {
+        : SimpleAstrometryMapping(transform), _centerAndScale(std::move(CenterAndScale)) {
     // We assume that the initialization was done properly, for example that
     // transform = pixToTangentPlane*CenterAndScale.inverted(), so we do not touch transform.
     /* store the (spatial) derivative of _centerAndScale. For the extra
@@ -130,7 +132,7 @@ void SimplePolyMapping::transformPosAndErrors(FatPoint const &where, FatPoint &o
 
 AstrometryTransform const &SimplePolyMapping::getTransform() const {
     // Cannot fail given the contructor:
-    const AstrometryTransformPolynomial *fittedPoly =
+    const auto *fittedPoly =
             dynamic_cast<const AstrometryTransformPolynomial *>(&(*transform));
     actualResult = (*fittedPoly) * _centerAndScale;
     return actualResult;

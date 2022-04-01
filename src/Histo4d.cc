@@ -22,11 +22,11 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <iostream>
-#include <cmath>
-#include <string.h>  /* for memset*/
 #include <algorithm> /* for sort */
-#include <limits.h>
+#include <climits>
+#include <cmath>
+#include <cstring>  /* for memset*/
+#include <iostream>
 
 #include "lsst/log/Log.h"
 #include "lsst/jointcal/Histo4d.h"

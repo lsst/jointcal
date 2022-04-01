@@ -23,7 +23,7 @@
  */
 
 #include <algorithm>
-#include <assert.h>
+#include <cassert>
 #include <iomanip>
 
 #include "lsst/jointcal/RefStar.h"
@@ -31,7 +31,7 @@
 namespace lsst {
 namespace jointcal {
 
-Point RefStar::applyProperMotion(Point star, double timeDeltaYears) const {
+Point RefStar::applyProperMotion(const Point& star, double timeDeltaYears) const {
     if (!_properMotion) {
         return star;
     } else {

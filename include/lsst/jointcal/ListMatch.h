@@ -94,12 +94,12 @@ std::unique_ptr<StarMatchList> matchSearchRotShiftFlip(BaseStarList &list1, Base
 closest star in list2, and builds a match if closer than maxDist). */
 
 std::unique_ptr<StarMatchList> listMatchCollect(const BaseStarList &list1, const BaseStarList &list2,
-                                                const AstrometryTransform *guess, const double maxDist);
+                                                const AstrometryTransform *guess, double maxDist);
 
 //! same as before except that the transform is the identity
 
 std::unique_ptr<StarMatchList> listMatchCollect(const BaseStarList &list1, const BaseStarList &list2,
-                                                const double maxDist);
+                                                double maxDist);
 
 //! searches for a 2 dimensional shift using a very crude histogram method.
 
@@ -113,7 +113,7 @@ std::unique_ptr<AstrometryTransform> listMatchCombinatorial(
         const MatchConditions &conditions = MatchConditions());
 std::unique_ptr<AstrometryTransform> listMatchRefine(const BaseStarList &list1, const BaseStarList &list2,
                                                      std::unique_ptr<AstrometryTransform> transform,
-                                                     const int maxOrder = 3);
+                                                     int maxOrder = 3);
 
 #ifdef DO_WE_NEED_THAT
 inline AstrometryTransform *ListMatch(const BaseStarList &list1, const BaseStarList &list2,

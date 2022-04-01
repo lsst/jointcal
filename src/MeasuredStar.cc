@@ -31,7 +31,7 @@
 
 //#include "preferences.h"
 //#include "ccdimage.h"
-#include "assert.h"  // for assert
+#include <cassert>  // for assert
 
 namespace lsst {
 namespace jointcal {

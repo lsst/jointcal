@@ -26,6 +26,7 @@
 #define LSST_JOINTCAL_PHOTOMETRY_MODEL_H
 
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "lsst/afw/image/PhotoCalib.h"
@@ -47,7 +48,7 @@ public:
      * @param log Logger to send messages to, to keep names consistent when logging.
      * @param errorPedestal Pedestal on flux/magnitude error (percent of flux or delta magnitude).
      */
-    PhotometryModel(LOG_LOGGER log, double errorPedestal = 0) : _log(log), errorPedestal(errorPedestal) {}
+    PhotometryModel(LOG_LOGGER log, double errorPedestal = 0) : _log(std::move(log)), errorPedestal(errorPedestal) {}
 
     /**
      * Assign indices in the full matrix to the parameters being fit in the mappings, starting at firstIndex.
@@ -193,7 +194,7 @@ public:
         return s;
     }
 
-    double getErrorPedestal() { return errorPedestal; }
+    double getErrorPedestal() const { return errorPedestal; }
 
     /// Add a fraction of the instrumental flux to the instrumental flux error, in quadrature.
     double tweakFluxError(jointcal::MeasuredStar const &measuredStar) const {

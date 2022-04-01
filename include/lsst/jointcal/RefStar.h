@@ -72,7 +72,7 @@ public:
      *
      * @return The star with corrected coordinates.
      */
-    Point applyProperMotion(Point star, double timeDeltaYears) const;
+    Point applyProperMotion(const Point& star, double timeDeltaYears) const;
 
 private:
     // RefStars are already PM corrected to a common epoch: this is to correct the associated FittedStar
@@ -86,8 +86,8 @@ private:
 // typedef StarList<RefStar> RefStarList;
 class RefStarList : public StarList<RefStar> {};
 
-typedef RefStarList::const_iterator RefStarCIterator;
-typedef RefStarList::iterator RefStarIterator;
+using RefStarCIterator = RefStarList::const_iterator;
+using RefStarIterator = RefStarList::iterator;
 
 BaseStarList& Ref2Base(RefStarList& This);
 BaseStarList* Ref2Base(RefStarList* This);

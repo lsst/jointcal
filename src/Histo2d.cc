@@ -22,9 +22,9 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <iostream>
 #include <cmath>
-#include <string.h> /* for memset*/
+#include <cstring> /* for memset*/
+#include <iostream>
 
 #include "lsst/log/Log.h"
 #include "lsst/jointcal/Histo2d.h"

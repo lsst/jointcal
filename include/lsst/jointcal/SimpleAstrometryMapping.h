@@ -86,7 +86,7 @@ public:
     void setIndex(Eigen::Index i) { index = i; }
 
     /// @copydoc AstrometryMapping::computeTransformAndDerivatives
-    virtual void computeTransformAndDerivatives(FatPoint const &where, FatPoint &outPoint,
+    void computeTransformAndDerivatives(FatPoint const &where, FatPoint &outPoint,
                                                 Eigen::MatrixX2d &H) const override;
 
     //! Access to the (fitted) transform
@@ -102,7 +102,7 @@ public:
 protected:
     // Whether this Mapping is fit as part of a Model.
     bool toBeFit;
-    Eigen::Index index;
+    Eigen::Index index{};
     /* inheritance may also work. Perhaps with some trouble because
        some routines in Mapping and AstrometryTransform have the same name */
     std::shared_ptr<AstrometryTransform> transform;
@@ -116,12 +116,12 @@ protected:
 //! Mapping implementation for a polynomial transformation.
 class SimplePolyMapping : public SimpleAstrometryMapping {
 public:
-    ~SimplePolyMapping() {}
+    ~SimplePolyMapping() = default;
 
     // ! contructor.
     /*! The transformation will be initialized to transform, so that the effective transformation
       reads transform*CenterAndScale */
-    SimplePolyMapping(AstrometryTransformLinear const &CenterAndScale,
+    SimplePolyMapping(AstrometryTransformLinear CenterAndScale,
                       AstrometryTransformPolynomial const &transform);
 
     /// No copy or move: there is only ever one instance of a given mapping (i.e.. per ccd+visit)

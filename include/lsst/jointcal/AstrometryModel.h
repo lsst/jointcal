@@ -25,8 +25,9 @@
 #ifndef LSST_JOINTCAL_ASTROMETRY_MODEL_H
 #define LSST_JOINTCAL_ASTROMETRY_MODEL_H
 
-#include <iostream>
 #include "memory"
+#include <iostream>
+#include <utility>
 
 #include "lsst/log/Log.h"
 
@@ -49,7 +50,7 @@ class AstrometryTransform;
  */
 class AstrometryModel {
 public:
-    AstrometryModel(LOG_LOGGER log) : _log(log) {}
+    AstrometryModel(LOG_LOGGER log) : _log(std::move(log)) {}
 
     /// Return the number of parameters in the mapping of CcdImage
     std::size_t getNpar(CcdImage const &ccdImage) const { return findMapping(ccdImage)->getNpar(); }
@@ -99,7 +100,7 @@ public:
      */
     virtual void print(std::ostream &out) const = 0;
 
-    virtual ~AstrometryModel(){};
+    virtual ~AstrometryModel() = default;;
 
     /**
      * Return true if this is a "reasonable" model.

@@ -55,7 +55,7 @@ public:
               _id(0),
               _instFlux(0.),
               _instFluxErr(0.),
-              _ccdImage(0),
+              _ccdImage(nullptr),
               _valid(true),
               _xFocal(0.0),
               _yFocal(0.0),
@@ -67,7 +67,7 @@ public:
               _id(0),
               _instFlux(0.),
               _instFluxErr(0.),
-              _ccdImage(0),
+              _ccdImage(nullptr),
               _valid(true),
               _xFocal(0.0),
               _yFocal(0.0),
@@ -105,7 +105,7 @@ public:
     double getInstMagErr() const { return _instMagErr; }
 
     void setId(afw::table::RecordId id) { _id = id; }
-    afw::table::RecordId getId() { return _id; }
+    afw::table::RecordId getId() const { return _id; }
 
     //! the inverse of the mag variance
     double getMagWeight() const { return (_instFlux * _instFlux / (_instFluxErr * _instFluxErr)); }
@@ -150,13 +150,13 @@ private:
 //! A list of MeasuredStar. They are usually filled in Associations::createCcdImage
 class MeasuredStarList : public StarList<MeasuredStar> {
 public:
-    MeasuredStarList(){};
+    MeasuredStarList() = default;;
 
     void setCcdImage(const CcdImage *_ccdImage);
 };
 
-typedef MeasuredStarList::const_iterator MeasuredStarCIterator;
-typedef MeasuredStarList::iterator MeasuredStarIterator;
+using MeasuredStarCIterator = MeasuredStarList::const_iterator;
+using MeasuredStarIterator = MeasuredStarList::iterator;
 
 BaseStarList &Measured2Base(MeasuredStarList &This);
 BaseStarList *Measured2Base(MeasuredStarList *This);

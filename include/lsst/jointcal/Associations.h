@@ -25,9 +25,10 @@
 #ifndef LSST_JOINTCAL_ASSOCIATIONS_H
 #define LSST_JOINTCAL_ASSOCIATIONS_H
 
-#include <string>
 #include <iostream>
 #include <list>
+#include <string>
+#include <utility>
 
 #include "lsst/afw/table/Source.h"
 #include "lsst/afw/geom/SkyWcs.h"
@@ -80,8 +81,8 @@ public:
      * @param imageList A pre-built ccdImage list.
      * @param epoch The julian epoch year to which all proper motion corrections should be made.
      */
-    Associations(CcdImageList const &imageList, double epoch = 0)
-            : ccdImageList(imageList),
+    Associations(CcdImageList imageList, double epoch = 0)
+            : ccdImageList(std::move(imageList)),
               _commonTangentPoint(Point(std::numeric_limits<double>::quiet_NaN(),
                                         std::numeric_limits<double>::quiet_NaN())),
               _maxMeasuredStars(0),
@@ -133,20 +134,20 @@ public:
      * @param[in]  ccd        The ccd identifier
      * @param[in]  control    The JointcalControl object
      */
-    void createCcdImage(afw::table::SourceCatalog &catalog, std::shared_ptr<lsst::afw::geom::SkyWcs> wcs,
-                        std::shared_ptr<lsst::afw::image::VisitInfo> visitInfo, lsst::geom::Box2I const &bbox,
-                        std::string const &filter, std::shared_ptr<afw::image::PhotoCalib> photoCalib,
-                        std::shared_ptr<afw::cameraGeom::Detector> detector, int visit, int ccd,
-                        lsst::jointcal::JointcalControl const &control);
+    void createCcdImage(afw::table::SourceCatalog &catalog, const std::shared_ptr<lsst::afw::geom::SkyWcs>& wcs,
+                        const std::shared_ptr<lsst::afw::image::VisitInfo>& visitInfo, const lsst::geom::Box2I &bbox,
+                        const std::string &filter, const std::shared_ptr<afw::image::PhotoCalib>& photoCalib,
+                        const std::shared_ptr<afw::cameraGeom::Detector>& detector, int visit, int ccd,
+                        const lsst::jointcal::JointcalControl &control);
 
     /**
      * Add a pre-constructed ccdImage to the ccdImageList.
      */
-    void addCcdImage(std::shared_ptr<CcdImage> const ccdImage) { ccdImageList.push_back(ccdImage); }
+    void addCcdImage(std::shared_ptr<CcdImage> const& ccdImage) { ccdImageList.push_back(ccdImage); }
 
     //! incrementaly builds a merged catalog of all image catalogs
-    void associateCatalogs(const double matchCutInArcsec = 0, const bool useFittedList = false,
-                           const bool enlargeFittedList = true);
+    void associateCatalogs(double matchCutInArcsec = 0, bool useFittedList = false,
+                           bool enlargeFittedList = true);
 
     /**
      * @brief      Collect stars from an external reference catalog and associate them with fittedStars.
@@ -239,7 +240,7 @@ private:
 
     // Julian Epoch Year (e.g. 2000.0 for J2000)
     // Common epoch of all of the ccdImages, typically computed externally via astropy and then set.
-    double _epoch;
+    double _epoch{};
 };
 
 }  // namespace jointcal
