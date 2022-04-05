@@ -23,7 +23,6 @@
  */
 
 #include <iostream>
-#include <fstream>
 #include <iomanip>
 
 #include "lsst/jointcal/AstrometryTransform.h"
@@ -65,13 +64,12 @@ std::ostream &operator<<(std::ostream &stream, const StarMatchList &starMatchLis
     return stream;
 }
 
-static std::unique_ptr<double[]> chi2_array(const StarMatchList &starMatchList,
+static std::vector<double> chi2_array(const StarMatchList &starMatchList,
                                             const AstrometryTransform &transform) {
-    unsigned s = starMatchList.size();
-    auto res = std::unique_ptr<double[]>(new double[s]);
+    std::vector<double> result(starMatchList.size());
     unsigned count = 0;
-    for (auto const &it : starMatchList) res[count++] = it.computeChi2(transform);
-    return res;
+    for (auto const &it : starMatchList) result[count++] = it.computeChi2(transform);
+    return result;
 }
 
 static unsigned chi2_cleanup(StarMatchList &starMatchList, const double chi2Cut,
@@ -116,12 +114,12 @@ void StarMatchList::refineTransform(double nSigmas) {
         if (npair == 0) break;  // should never happen
 
         // compute some chi2 statistics
-        std::unique_ptr<double[]> chi2_array(new double[npair]);
+        std::vector<double> chi2_array(npair);
         unsigned count = 0;
         for (auto &starMatch : *this)
             chi2_array[count++] = starMatch.chi2 = starMatch.computeChi2(*_transform);
 
-        std::sort(chi2_array.get(), chi2_array.get() + npair);
+        std::sort(chi2_array.begin(), chi2_array.end());
         double median = (npair & 1) ? chi2_array[npair / 2]
                                     : (chi2_array[npair / 2 - 1] + chi2_array[npair / 2]) * 0.5;
 
@@ -244,10 +242,9 @@ double computeDist2(const StarMatchList &starMatchList, const AstrometryTransfor
 }
 
 double computeChi2(const StarMatchList &starMatchList, const AstrometryTransform &transform) {
-    unsigned s = starMatchList.size();
-    std::unique_ptr<double[]> chi2s(chi2_array(starMatchList, transform));
+    auto chi2s(chi2_array(starMatchList, transform));
     double chi2 = 0;
-    for (unsigned k = 0; k < s; ++k) chi2 += chi2s[k];
+    for (auto const &c : chi2s) chi2 += c;
     return chi2;
 }
 }  // namespace jointcal
