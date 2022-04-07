@@ -760,7 +760,7 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
             The method to call on the ExposureCatalog to set each output.
         """
         schema = lsst.afw.table.ExposureTable.makeMinimalSchema()
-        schema.addField('visit', type='I', doc='Visit number')
+        schema.addField('visit', type='L', doc='Visit number')
 
         def new_catalog(visit, size):
             """Return an catalog ready to be filled with appropriate output."""
