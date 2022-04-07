@@ -45,7 +45,7 @@ namespace jointcal {
 
 using CcdImageList = std::list<std::shared_ptr<CcdImage>>;
 
-using VisitIdType = int;
+using VisitIdType = long;
 using CcdIdType = int;
 /// For hashing a ccdImage: the pair of (visit, ccd) IDs should be unique to each ccdImage.
 struct CcdImageKey {
