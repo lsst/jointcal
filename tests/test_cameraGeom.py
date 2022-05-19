@@ -26,7 +26,7 @@ import lsst.utils
 from lsst.afw.geom import SkyWcs
 import lsst.afw.cameraGeom
 import lsst.jointcal.cameraGeometry
-import lsst.obs.hsc
+from lsst.obs.subaru import HyperSuprimeCam
 
 
 class TestCameraGeom(lsst.utils.tests.TestCase):
@@ -51,11 +51,8 @@ class TestCameraGeom(lsst.utils.tests.TestCase):
         self.wcsList = [self.wcs1, self.wcs2, wcs3, wcs4]
         self.detectors = [self.detector1, self.detector2, self.detector3, self.detector4]
 
-        cameraPath = os.path.join(lsst.utils.getPackageDir("obs_subaru"), "hsc/camera")
-        cameraConfig = lsst.afw.cameraGeom.CameraConfig()
-        cameraConfig.load(os.path.join(cameraPath, "camera.py"))
-        self.camera = lsst.afw.cameraGeom.makeCameraFromPath(cameraConfig, cameraPath, lambda x: x,
-                                                             lsst.obs.hsc.HscPupilFactory)
+        hsc = HyperSuprimeCam()
+        self.camera = hsc.getCamera()
         self.maxFocalPlaneRadius = self.camera.computeMaxFocalPlaneRadius()
 
     def testComputeDetectorPixelScale(self):
