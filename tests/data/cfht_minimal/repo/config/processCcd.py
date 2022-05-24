@@ -884,7 +884,7 @@ config.isr.brighterFatterMaxIter=10
 # 	NATURAL_SPLINE	Fit natural spline to the longest axis of the overscan region
 # 	CHEB	Fit Chebyshev polynomial to the longest axis of the overscan region
 # 
-config.isr.overscanFitType='MEDIAN'
+config.isr.overscan.fitType='MEDIAN'
 
 # Apply fringe correction?
 config.isr.doFringe=False
@@ -917,10 +917,10 @@ config.isr.flatScalingType='USER'
 config.isr.fluxMag0T1=10000000000.0
 
 # Rejection threshold (sigma) for collapsing overscan before fit
-config.isr.overscanRej=3.0
+config.isr.overscan.numSigmaClip=3.0
 
 # Order of polynomial or to fit if overscan fit type is a polynomial, or number of spline knots if overscan fit type is a spline.
-config.isr.overscanOrder=1
+config.isr.overscan.order=1
 
 # Number of fitting iterations
 config.isr.fringe.iterations=20
