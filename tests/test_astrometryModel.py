@@ -35,7 +35,6 @@ import lsst.afw.cameraGeom
 import lsst.afw.geom
 import lsst.afw.table
 import lsst.afw.image
-import lsst.afw.image.utils
 import lsst.geom
 import lsst.log
 
@@ -103,10 +102,6 @@ class AstrometryModelTestBase:
         config = lsst.jointcal.JointcalConfig()
         config.load(os.path.join(os.path.dirname(__file__), "config/config.py"))
         sourceSelector = config.sourceSelector.target(config=config.sourceSelector['science'])
-
-        # Ensure that the filter list is reset for each test so that we avoid
-        # confusion or contamination each time we create a cfht camera below.
-        lsst.afw.image.utils.resetFilters()
 
         # jointcal's cfht test data has 6 ccds and 2 visits.
         self.visits = [849375, 850587]
