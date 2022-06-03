@@ -168,10 +168,6 @@ class JointcalTestBase:
 
         self.outputDataId = outputDataId
 
-        # Ensure that the filter list is reset for each test so that we avoid
-        # confusion or contamination from other instruments.
-        lsst.obs.base.FilterDefinitionCollection.reset()
-
         self.set_output_dir()
 
     def tearDown(self):

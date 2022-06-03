@@ -47,10 +47,6 @@ class PhotometryModelTestBase:
     unittest to use the test_* methods in this class.
     """
     def setUp(self):
-        # Ensure that the filter list is reset for each test so that we avoid
-        # confusion or contamination each time we create a cfht camera below.
-        lsst.obs.base.FilterDefinitionCollection.reset()
-
         struct = lsst.jointcal.testUtils.createTwoFakeCcdImages(100, 100)
         self.ccdImageList = struct.ccdImageList
         self.camera = struct.camera
