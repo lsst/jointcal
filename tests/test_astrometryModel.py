@@ -133,7 +133,7 @@ class AstrometryModelTestBase:
             ccdId = detector.getId()
             wcs = butler.get('calexp.wcs', dataId=dataId)
             bbox = butler.get('calexp.bbox', dataId=dataId)
-            filt = butler.get('calexp.filterLabel', dataId=dataId)
+            filt = butler.get('calexp.filter', dataId=dataId)
             filterName = filt.physicalLabel
             photoCalib = lsst.afw.image.PhotoCalib(100.0, 1.0)
 

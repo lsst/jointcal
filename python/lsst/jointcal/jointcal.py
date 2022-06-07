@@ -1024,7 +1024,7 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
                                  photoCalib=butler.get('calexp_photoCalib', dataId=dataId),
                                  wcs=butler.get('calexp_wcs', dataId=dataId),
                                  bbox=butler.get('calexp_bbox', dataId=dataId),
-                                 filter=butler.get('calexp_filterLabel', dataId=dataId))
+                                 filter=butler.get('calexp_filter', dataId=dataId))
 
     def loadData(self, dataRefs, associations, jointcalControl):
         """Read the data that jointcal needs to run. (Gen2 version)"""
