@@ -178,7 +178,7 @@ def createFakeCcdImage(butler, visit, num, fluxFieldName,
     visitInfo = fakeVisitInfo if fakeVisitInfo is not None else butler.get('calexp.visitInfo', dataId=dataId)
     bbox = butler.get('calexp.bbox', dataId=dataId)
     detector = butler.get('calexp.detector', dataId=dataId)
-    filt = butler.get("calexp.filter", dataId=dataId).getName()
+    filt = butler.get("calexp.filter", dataId=dataId).bandLabel
     photoCalib = lsst.afw.image.PhotoCalib(photoCalibMean, photoCalibErr)
 
     catalog = createFakeCatalog(num, bbox, fluxFieldName, skyWcs=skyWcs)
