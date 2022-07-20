@@ -1,6 +1,5 @@
 setupRequired(sconsUtils)
 setupRequired(afw)
-setupRequired(daf_persistence)
 setupRequired(obs_base)
 setupRequired(pex_exceptions)
 setupRequired(pex_config)
@@ -13,7 +12,7 @@ setupRequired(cpputils)
 setupRequired(pipe_base)
 setupRequired(daf_butler)
 
-# for running gen3 middleware tests
+# for running middleware tests
 setupRequired(ctrl_mpexec)
 
 # tests/data includes HSC output to test making a cameraGeom.

@@ -179,7 +179,7 @@ class TestJointcalIterateFit(JointcalTestBase, lsst.utils.tests.TestCase):
         self.fitter.minimize.return_value = MinimizeResult.Converged
         self.model = mock.Mock(spec=lsst.jointcal.SimpleFluxModel)
 
-        self.jointcal = lsst.jointcal.JointcalTask(config=self.config, butler=self.butler)
+        self.jointcal = lsst.jointcal.JointcalTask(config=self.config)
 
     def test_iterateFit_success(self):
         chi2 = self.jointcal._iterate_fit(self.associations, self.fitter,
@@ -314,7 +314,7 @@ class TestJointcalLoadRefCat(JointcalTestBase, lsst.utils.tests.TestCase):
 
         config = lsst.jointcal.jointcal.JointcalConfig()
         config.astrometryReferenceErr = 0.1  # our test refcats don't have coord errors
-        jointcal = lsst.jointcal.JointcalTask(config=config, butler=self.butler)
+        jointcal = lsst.jointcal.JointcalTask(config=config)
 
         # NOTE: we cannot test application of proper motion here, because we
         # mock the refObjLoader, so the real loader is never called.
@@ -341,7 +341,7 @@ class TestJointcalLoadRefCat(JointcalTestBase, lsst.utils.tests.TestCase):
         config.astrometryReferenceSelector.signalToNoise.minimum = 1e10
         config.astrometryReferenceSelector.signalToNoise.fluxField = "fake_flux"
         config.astrometryReferenceSelector.signalToNoise.errField = "fake_fluxErr"
-        jointcal = lsst.jointcal.JointcalTask(config=config, butler=self.butler)
+        jointcal = lsst.jointcal.JointcalTask(config=config)
 
         refCat, fluxField = jointcal._load_reference_catalog(refObjLoader,
                                                              jointcal.astrometryReferenceSelector,
@@ -356,7 +356,7 @@ class TestJointcalFitModel(JointcalTestBase, lsst.utils.tests.TestCase):
         """Test that we are calling saveChi2 with appropriate file prefixes."""
         self.config.photometryModel = "constrainedFlux"
         self.config.writeChi2FilesOuterLoop = True
-        jointcal = lsst.jointcal.JointcalTask(config=self.config, butler=self.butler)
+        jointcal = lsst.jointcal.JointcalTask(config=self.config)
         jointcal.focalPlaneBBox = lsst.geom.Box2D()
 
         # Mock the fitter, so we can pretend it found a good fit
@@ -375,7 +375,7 @@ class TestJointcalFitModel(JointcalTestBase, lsst.utils.tests.TestCase):
         """Test that we are calling saveChi2 with appropriate file prefixes."""
         self.config.astrometryModel = "constrained"
         self.config.writeChi2FilesOuterLoop = True
-        jointcal = lsst.jointcal.JointcalTask(config=self.config, butler=self.butler)
+        jointcal = lsst.jointcal.JointcalTask(config=self.config)
         jointcal.focalPlaneBBox = lsst.geom.Box2D()
 
         # Mock the fitter, so we can pretend it found a good fit
@@ -493,7 +493,7 @@ class TestJointcalComputePMDate(JointcalTestBase, lsst.utils.tests.TestCase):
             associations.addCcdImage(ccdImage)
         associations.computeCommonTangentPoint()
 
-        jointcal = lsst.jointcal.JointcalTask(config=self.config, butler=self.butler)
+        jointcal = lsst.jointcal.JointcalTask(config=self.config)
         result = jointcal._compute_proper_motion_epoch(ccdImageList)
         self.assertEqual(result.jyear, (astropy.time.Time(mjds, format="mjd", scale="tai").jyear).mean())
 
