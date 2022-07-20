@@ -881,8 +881,8 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
         """
         oldWcsList = []
         filters = []
-        load_cat_prof_file = 'jointcal_load_data.prof' if self.config.detailedProfile else ''
-        with pipeBase.cmdLineTask.profile(load_cat_prof_file):
+        load_cat_profile_file = 'jointcal_load_data.prof' if self.config.detailedProfile else ''
+        with pipeBase.cmdLineTask.profile(load_cat_profile_file):
             table = make_schema_table()  # every detector catalog has the same layout
             # No guarantee that the input is in the same order of visits, so we have to map one of them.
             catalogMap = {ref.dataId['visit']: i for i, ref in enumerate(inputSourceTableVisit)}
@@ -1289,9 +1289,9 @@ class JointcalTask(pipeBase.PipelineTask, pipeBase.CmdLineTask):
         add_measurement(self.job, 'jointcal.%s_prepared_ccdImages' % name,
                         associations.nCcdImagesValidForFit())
 
-        load_cat_prof_file = 'jointcal_fit_%s.prof'%name if self.config.detailedProfile else ''
+        fit_profile_file = 'jointcal_fit_%s.prof'%name if self.config.detailedProfile else ''
         dataName = "{}_{}".format(tract, defaultFilter.physicalLabel)
-        with pipeBase.cmdLineTask.profile(load_cat_prof_file):
+        with pipeBase.cmdLineTask.profile(fit_profile_file):
             result = fit_function(associations, dataName)
         # TODO DM-12446: turn this into a "butler save" somehow.
         # Save reference and measurement chi2 contributions for this data
