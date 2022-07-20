@@ -40,8 +40,8 @@ from lsst.pipe.base import Instrument
 from lsst.pipe.tasks.colorterms import ColortermLibrary
 from lsst.verify import Job, Measurement
 
-from lsst.meas.algorithms import (LoadIndexedReferenceObjectsTask, ReferenceSourceSelectorTask,
-                                  ReferenceObjectLoader)
+from lsst.meas.algorithms import (ReferenceObjectLoader, ReferenceSourceSelectorTask,
+                                  LoadIndexedReferenceObjectsConfig)
 from lsst.meas.algorithms.sourceSelector import sourceSelectorRegistry
 
 import lsst.jointcal
@@ -424,12 +424,12 @@ class JointcalConfig(pipeBase.PipelineTaskConfig,
         dtype=int,
         default=20,
     )
-    astrometryRefObjLoader = pexConfig.ConfigurableField(
-        target=LoadIndexedReferenceObjectsTask,
+    astrometryRefObjLoader = pexConfig.ConfigField(
+        dtype=LoadIndexedReferenceObjectsConfig,
         doc="Reference object loader for astrometric fit",
     )
-    photometryRefObjLoader = pexConfig.ConfigurableField(
-        target=LoadIndexedReferenceObjectsTask,
+    photometryRefObjLoader = pexConfig.ConfigField(
+        dtype=LoadIndexedReferenceObjectsConfig,
         doc="Reference object loader for photometric fit",
     )
     sourceSelector = sourceSelectorRegistry.makeField(
@@ -535,12 +535,10 @@ class JointcalConfig(pipeBase.PipelineTaskConfig,
                     ]
         self.sourceSelector["science"].flags.bad = badFlags
 
-        # Default to Gaia-DR2 (with proper motions) for astrometry and
-        # PS1-DR1 for photometry.
-        self.astrometryRefObjLoader.ref_dataset_name = "gaia_dr2_20200414"
+        # Use Gaia-DR2 with proper motions for astrometry; phot_g_mean is the
+        # primary Gaia band, but is not like any normal photometric band.
         self.astrometryRefObjLoader.requireProperMotion = True
         self.astrometryRefObjLoader.anyFilterMapsToThis = "phot_g_mean"
-        self.photometryRefObjLoader.ref_dataset_name = "ps1_pv3_3pi_20170110"
 
 
 def writeModel(model, filename, log):
@@ -1000,7 +998,7 @@ class JointcalTask(pipeBase.PipelineTask):
             On-sky radius to load from reference catalog.
         name : `str`
             Name of thing being fit: "astrometry" or "photometry".
-        refObjLoader : `lsst.meas.algorithms.LoadReferenceObjectsTask`
+        refObjLoader : `lsst.meas.algorithms.ReferenceObjectLoader`
             Reference object loader to use to load a reference catalog.
         referenceSelector : `lsst.meas.algorithms.ReferenceSourceSelectorTask`
             Selector to use to pick objects from the loaded reference catalog.
@@ -1074,7 +1072,7 @@ class JointcalTask(pipeBase.PipelineTask):
 
         Parameters
         ----------
-        refObjLoader : `lsst.meas.algorithms.LoadReferenceObjectsTask`
+        refObjLoader : `lsst.meas.algorithms.ReferenceObjectLoader`
             The reference catalog loader to use to get the data.
         referenceSelector : `lsst.meas.algorithms.ReferenceSourceSelectorTask`
             Source selector to apply to loaded reference catalog.

@@ -35,7 +35,7 @@ import lsst.afw.table
 import lsst.daf.butler
 from lsst.daf.base import DateTime
 import lsst.geom
-from lsst.meas.algorithms import getRefFluxField, LoadIndexedReferenceObjectsTask, DatasetConfig
+from lsst.meas.algorithms import getRefFluxField, ReferenceObjectLoader
 import lsst.obs.base
 import lsst.pipe.base
 import lsst.jointcal
@@ -52,8 +52,7 @@ def setup_module(module):
 
 def make_fake_refcat(center, flux, filterName):
     """Make a fake reference catalog."""
-    schema = LoadIndexedReferenceObjectsTask.makeMinimalSchema([filterName],
-                                                               addProperMotion=True)
+    schema = ReferenceObjectLoader.makeMinimalSchema([filterName], addProperMotion=True)
     catalog = lsst.afw.table.SimpleCatalog(schema)
     record = catalog.addNew()
     record.setCoord(center)
@@ -159,7 +158,6 @@ class JointcalTestBase:
 
         # Mock a Butler so the refObjLoaders have something to call `get()` on.
         self.butler = unittest.mock.Mock(spec=lsst.daf.butler.Butler)
-        self.butler.get.return_value.indexer = DatasetConfig().indexer
 
         # Mock the association manager and give it access to the ccd list above.
         self.associations = mock.Mock(spec=lsst.jointcal.Associations)
@@ -304,7 +302,7 @@ class TestJointcalLoadRefCat(JointcalTestBase, lsst.utils.tests.TestCase):
         fakeRefCat = make_fake_refcat(center, flux, filter.bandLabel)
         fluxField = getRefFluxField(fakeRefCat.schema, filter.bandLabel)
         returnStruct = lsst.pipe.base.Struct(refCat=fakeRefCat, fluxField=fluxField)
-        refObjLoader = mock.Mock(spec=LoadIndexedReferenceObjectsTask)
+        refObjLoader = mock.Mock(spec=ReferenceObjectLoader)
         refObjLoader.loadSkyCircle.return_value = returnStruct
 
         return refObjLoader, center, radius, filter, fakeRefCat
