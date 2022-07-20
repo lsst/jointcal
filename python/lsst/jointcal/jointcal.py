@@ -290,12 +290,6 @@ class JointcalConfig(pipeBase.PipelineTaskConfig,
         dtype=bool,
         default=True
     )
-    coaddName = pexConfig.Field(
-        doc="Type of coadd, typically deep or goodSeeing",
-        deprecated="Only applies to gen2; will be removed when gen2 support is removed (DM-20572).",
-        dtype=str,
-        default="deep"
-    )
     sourceFluxType = pexConfig.Field(
         dtype=str,
         doc="Source flux field to use in source selection and to get fluxes from the catalog.",
