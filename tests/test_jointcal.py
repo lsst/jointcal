@@ -35,7 +35,7 @@ import lsst.afw.table
 import lsst.daf.butler
 from lsst.daf.base import DateTime
 import lsst.geom
-from lsst.meas.algorithms import getRefFluxField, LoadIndexedReferenceObjectsTask, DatasetConfig
+from lsst.meas.algorithms import getRefFluxField, ReferenceObjectLoader
 import lsst.obs.base
 import lsst.pipe.base
 import lsst.jointcal
@@ -52,8 +52,7 @@ def setup_module(module):
 
 def make_fake_refcat(center, flux, filterName):
     """Make a fake reference catalog."""
-    schema = LoadIndexedReferenceObjectsTask.makeMinimalSchema([filterName],
-                                                               addProperMotion=True)
+    schema = ReferenceObjectLoader.makeMinimalSchema([filterName], addProperMotion=True)
     catalog = lsst.afw.table.SimpleCatalog(schema)
     record = catalog.addNew()
     record.setCoord(center)
@@ -159,7 +158,6 @@ class JointcalTestBase:
 
         # Mock a Butler so the refObjLoaders have something to call `get()` on.
         self.butler = unittest.mock.Mock(spec=lsst.daf.butler.Butler)
-        self.butler.get.return_value.indexer = DatasetConfig().indexer
 
         # Mock the association manager and give it access to the ccd list above.
         self.associations = mock.Mock(spec=lsst.jointcal.Associations)
@@ -179,7 +177,7 @@ class TestJointcalIterateFit(JointcalTestBase, lsst.utils.tests.TestCase):
         self.fitter.minimize.return_value = MinimizeResult.Converged
         self.model = mock.Mock(spec=lsst.jointcal.SimpleFluxModel)
 
-        self.jointcal = lsst.jointcal.JointcalTask(config=self.config, butler=self.butler)
+        self.jointcal = lsst.jointcal.JointcalTask(config=self.config)
 
     def test_iterateFit_success(self):
         chi2 = self.jointcal._iterate_fit(self.associations, self.fitter,
@@ -304,7 +302,7 @@ class TestJointcalLoadRefCat(JointcalTestBase, lsst.utils.tests.TestCase):
         fakeRefCat = make_fake_refcat(center, flux, filter.bandLabel)
         fluxField = getRefFluxField(fakeRefCat.schema, filter.bandLabel)
         returnStruct = lsst.pipe.base.Struct(refCat=fakeRefCat, fluxField=fluxField)
-        refObjLoader = mock.Mock(spec=LoadIndexedReferenceObjectsTask)
+        refObjLoader = mock.Mock(spec=ReferenceObjectLoader)
         refObjLoader.loadSkyCircle.return_value = returnStruct
 
         return refObjLoader, center, radius, filter, fakeRefCat
@@ -314,7 +312,7 @@ class TestJointcalLoadRefCat(JointcalTestBase, lsst.utils.tests.TestCase):
 
         config = lsst.jointcal.jointcal.JointcalConfig()
         config.astrometryReferenceErr = 0.1  # our test refcats don't have coord errors
-        jointcal = lsst.jointcal.JointcalTask(config=config, butler=self.butler)
+        jointcal = lsst.jointcal.JointcalTask(config=config)
 
         # NOTE: we cannot test application of proper motion here, because we
         # mock the refObjLoader, so the real loader is never called.
@@ -341,7 +339,7 @@ class TestJointcalLoadRefCat(JointcalTestBase, lsst.utils.tests.TestCase):
         config.astrometryReferenceSelector.signalToNoise.minimum = 1e10
         config.astrometryReferenceSelector.signalToNoise.fluxField = "fake_flux"
         config.astrometryReferenceSelector.signalToNoise.errField = "fake_fluxErr"
-        jointcal = lsst.jointcal.JointcalTask(config=config, butler=self.butler)
+        jointcal = lsst.jointcal.JointcalTask(config=config)
 
         refCat, fluxField = jointcal._load_reference_catalog(refObjLoader,
                                                              jointcal.astrometryReferenceSelector,
@@ -356,7 +354,7 @@ class TestJointcalFitModel(JointcalTestBase, lsst.utils.tests.TestCase):
         """Test that we are calling saveChi2 with appropriate file prefixes."""
         self.config.photometryModel = "constrainedFlux"
         self.config.writeChi2FilesOuterLoop = True
-        jointcal = lsst.jointcal.JointcalTask(config=self.config, butler=self.butler)
+        jointcal = lsst.jointcal.JointcalTask(config=self.config)
         jointcal.focalPlaneBBox = lsst.geom.Box2D()
 
         # Mock the fitter, so we can pretend it found a good fit
@@ -375,7 +373,7 @@ class TestJointcalFitModel(JointcalTestBase, lsst.utils.tests.TestCase):
         """Test that we are calling saveChi2 with appropriate file prefixes."""
         self.config.astrometryModel = "constrained"
         self.config.writeChi2FilesOuterLoop = True
-        jointcal = lsst.jointcal.JointcalTask(config=self.config, butler=self.butler)
+        jointcal = lsst.jointcal.JointcalTask(config=self.config)
         jointcal.focalPlaneBBox = lsst.geom.Box2D()
 
         # Mock the fitter, so we can pretend it found a good fit
@@ -493,7 +491,7 @@ class TestJointcalComputePMDate(JointcalTestBase, lsst.utils.tests.TestCase):
             associations.addCcdImage(ccdImage)
         associations.computeCommonTangentPoint()
 
-        jointcal = lsst.jointcal.JointcalTask(config=self.config, butler=self.butler)
+        jointcal = lsst.jointcal.JointcalTask(config=self.config)
         result = jointcal._compute_proper_motion_epoch(ccdImageList)
         self.assertEqual(result.jyear, (astropy.time.Time(mjds, format="mjd", scale="tai").jyear).mean())
 
