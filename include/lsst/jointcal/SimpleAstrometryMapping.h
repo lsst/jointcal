@@ -30,14 +30,15 @@
 #include "lsst/jointcal/AstrometryMapping.h"
 #include "lsst/jointcal/AstrometryTransform.h"
 
-//! Class for a simple mapping implementing a generic AstrometryTransform
-/*! It uses a template rather than a pointer so that the derived
-classes can use the specifics of the transform. The class
-simplePolyMapping overloads a few routines. */
-
 namespace lsst {
 namespace jointcal {
 
+/** Class for a simple mapping implementing a generic AstrometryTransform
+ *
+ * It uses a template rather than a pointer so that the derived
+ * classes can use the specifics of the transform. The class
+ * simplePolyMapping overloads a few routines.
+ */
 class SimpleAstrometryMapping : public AstrometryMapping {
 public:
     SimpleAstrometryMapping(AstrometryTransform const &astrometryTransform, bool toBeFit = true)
