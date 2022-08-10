@@ -603,6 +603,7 @@ class JointcalTask(pipeBase.PipelineTask):
                          for ref in inputRefs.astrometryRefCat],
                 refCats=inputs.pop('astrometryRefCat'),
                 config=self.config.astrometryRefObjLoader,
+                name=self.config.connections.astrometryRefCat,
                 log=self.log)
         if self.config.doPhotometry:
             self.photometryRefObjLoader = ReferenceObjectLoader(
@@ -610,6 +611,7 @@ class JointcalTask(pipeBase.PipelineTask):
                          for ref in inputRefs.photometryRefCat],
                 refCats=inputs.pop('photometryRefCat'),
                 config=self.config.photometryRefObjLoader,
+                name=self.config.connections.photometryRefCat,
                 log=self.log)
         outputs = self.run(**inputs, tract=tract)
         self._put_metrics(butlerQC, outputs.job, outputRefs)
@@ -1101,7 +1103,7 @@ class JointcalTask(pipeBase.PipelineTask):
             refCat = selected.sourceCat
 
         if applyColorterms:
-            refCatName = self.config.connections.photometryRefCat
+            refCatName = refObjLoader.name
             self.log.info("Applying color terms for physical filter=%r reference catalog=%s",
                           filterLabel.physicalLabel, refCatName)
             colorterm = self.config.colorterms.getColorterm(filterLabel.physicalLabel,
