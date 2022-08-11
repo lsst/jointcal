@@ -837,12 +837,6 @@ class JointcalTask(pipeBase.PipelineTask):
                                  filter=lsst.afw.image.FilterLabel(band=visitRecord['band'],
                                                                    physical=visitRecord['physical_filter']))
 
-    # We don't currently need to persist the metadata.
-    # If we do in the future, we will have to add appropriate dataset templates
-    # to each obs package (the metadata template should look like `jointcal_wcs`).
-    def _getMetadataName(self):
-        return None
-
     def _build_ccdImage(self, data, associations, jointcalControl):
         """
         Extract the necessary things from this catalog+metadata to add a new
