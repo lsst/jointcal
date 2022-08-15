@@ -32,7 +32,6 @@ import lsst.utils
 import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 from lsst.afw.image import fluxErrFromABMagErr
-import lsst.pex.exceptions as pexExceptions
 import lsst.afw.cameraGeom
 import lsst.afw.table
 import lsst.log
@@ -1528,53 +1527,6 @@ class JointcalTask(pipeBase.PipelineTask):
             self.log.debug("%s for visit: %d, ccd: %d", func, visit, ccd)
             output[(visit, ccd)] = getattr(model, func)(ccdImage)
         return output
-
-    def _write_astrometry_results(self, associations, model, visit_ccd_to_dataRef):
-        """
-        Write the fitted astrometric results to a new 'jointcal_wcs' dataRef.
-
-        Parameters
-        ----------
-        associations : `lsst.jointcal.Associations`
-            The star/reference star associations to fit.
-        model : `lsst.jointcal.AstrometryModel`
-            The astrometric model that was fit.
-        visit_ccd_to_dataRef : `dict` of Key: `lsst.daf.persistence.ButlerDataRef`
-            Dict of ccdImage identifiers to dataRefs that were fit.
-        """
-        ccdImageList = associations.getCcdImageList()
-        output = self._make_output(ccdImageList, model, "makeSkyWcs")
-        for key, skyWcs in output.items():
-            dataRef = visit_ccd_to_dataRef[key]
-            try:
-                dataRef.put(skyWcs, 'jointcal_wcs')
-            except pexExceptions.Exception as e:
-                self.log.fatal('Failed to write updated Wcs: %s', str(e))
-                raise e
-
-    def _write_photometry_results(self, associations, model, visit_ccd_to_dataRef):
-        """
-        Write the fitted photometric results to a new 'jointcal_photoCalib' dataRef.
-
-        Parameters
-        ----------
-        associations : `lsst.jointcal.Associations`
-            The star/reference star associations to fit.
-        model : `lsst.jointcal.PhotometryModel`
-            The photoometric model that was fit.
-        visit_ccd_to_dataRef : `dict` of Key: `lsst.daf.persistence.ButlerDataRef`
-            Dict of ccdImage identifiers to dataRefs that were fit.
-        """
-
-        ccdImageList = associations.getCcdImageList()
-        output = self._make_output(ccdImageList, model, "toPhotoCalib")
-        for key, photoCalib in output.items():
-            dataRef = visit_ccd_to_dataRef[key]
-            try:
-                dataRef.put(photoCalib, 'jointcal_photoCalib')
-            except pexExceptions.Exception as e:
-                self.log.fatal('Failed to write updated PhotoCalib: %s', str(e))
-                raise e
 
 
 def make_schema_table():
