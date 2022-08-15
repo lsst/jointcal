@@ -22,6 +22,7 @@
 import dataclasses
 import collections
 import os
+import logging
 
 import astropy.time
 import numpy as np
@@ -34,7 +35,6 @@ import lsst.pipe.base as pipeBase
 from lsst.afw.image import fluxErrFromABMagErr
 import lsst.afw.cameraGeom
 import lsst.afw.table
-import lsst.log
 from lsst.pipe.base import Instrument
 from lsst.pipe.tasks.colorterms import ColortermLibrary
 from lsst.verify import Job, Measurement
@@ -502,7 +502,7 @@ class JointcalConfig(pipeBase.PipelineTaskConfig,
         if self.doAstrometry and not self.doPhotometry and self.applyColorTerms:
             msg = ("Only doing astrometry, but Colorterms are not applied for astrometry;"
                    "applyColorTerms=True will be ignored.")
-            lsst.log.warning(msg)
+            logging.getLogger("lsst.jointcal").warning(msg)
 
     def setDefaults(self):
         # Use only stars because aperture fluxes of galaxies are biased and depend on seeing.
@@ -1626,7 +1626,7 @@ def extract_detector_catalog_from_visit_catalog(table, visitCatalog, detectorId,
         Names of the ixx/iyy/ixy columns in the catalog.
     sourceFluxType : `str`
         Name of the catalog field to load instFluxes from.
-    log : `lsst.log.Log`
+    log : `logging.Logger`
         Logging instance to log to.
 
     Returns
