@@ -36,9 +36,11 @@ mean, or one per ccd) will show how the fitted calibration compares with the
 original calib(s).
 """
 
+from collections import defaultdict
 import numpy as np
 import lsst.afw.cameraGeom.utils
-import lsst.daf.persistence
+import lsst.daf.butler
+from lsst.pipe.base import Instrument
 
 import matplotlib
 matplotlib.use('Agg')
@@ -48,25 +50,27 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable  # noqa: E402
 matplotlib.rcParams['figure.dpi'] = 300
 
 
-def getValidDataIds(butler, tract, dataset_type='jointcal_photoCalib'):
+def getValidDataIds(butler, tract, dataset_type='jointcal_photoCalib', collections=...):
     """Return a list of all dataIds that exist in this butler.
 
     This exists here because the butler doesn't provide this functionality.
 
     Parameters
     ----------
-    butler : `lsst.daf.persistence.Butler`
+    butler : `lsst.daf.butler.Butler`
         The butler to search within.
     tract : `int`
         Tract id to include in search.
     dataset_type : `str`
         Dataset type to search for.
+    collections : Any
+        Collections to search for dataIds for this dataset type.
     """
-    data_ids = []
-    for data_ref in butler.subset(dataset_type, tract=tract):
-        if data_ref.datasetExists():
-            data_ids.append(data_ref.dataId)
-    return data_ids
+    # Need to know the skymap. Assume we can get it from the collection.
+    data_ids = set(butler.registry.queryDataIds(datasets=dataset_type,
+                                                dimensions=("tract", "visit", "detector"),
+                                                tract=tract))
+    return list(data_ids)
 
 
 def colorbar(mappable):
@@ -99,7 +103,7 @@ def makePhotoCalibImages(visit, butler, step=8, chips=[], tract=None,
     ----------
     visit : `int`
         The visit id to plot.
-    butler : `lsst.daf.persistence.Butler`
+    butler : `lsst.daf.butler.Butler`
         The butler instance to pull the data from.
     step : `int`
         Step size between samples.
@@ -121,8 +125,8 @@ def makePhotoCalibImages(visit, butler, step=8, chips=[], tract=None,
     if meanCalib:
         meanCalibScaling = 0
         for ccd in chips:
-            calib = butler.get('calexp_photoCalib', dataId=dict(visit=int(visit), ccd=int(ccd), tract=tract))
-            meanCalibScaling += calib.getFluxMag0()[0]
+            calib = butler.get('calexp.photoCalib', dataId=dict(visit=int(visit), detector=int(ccd)))
+            meanCalibScaling += calib.getInstFluxAtZeroMagnitude()
         meanCalibScaling /= len(chips)
         if verbose:
             print('calib mean: %s' % meanCalibScaling)
@@ -130,7 +134,7 @@ def makePhotoCalibImages(visit, butler, step=8, chips=[], tract=None,
         meanCalibScaling = 1
 
     for ccd in chips:
-        detector = butler.get('calexp_detector', ccd=int(ccd))
+        detector = butler.get('calexp.detector', detector=int(ccd), visit=int(visit))
         bbox = detector.getBBox()
 
         xx = np.linspace(bbox.getMinX(), bbox.getMaxX(), int(np.floor(bbox.getWidth()/step)))
@@ -139,13 +143,13 @@ def makePhotoCalibImages(visit, butler, step=8, chips=[], tract=None,
 
         calibScaling = 1
         if singleCalib:
-            calib = butler.get('calexp_photoCalib', dataId=dict(visit=int(visit), ccd=int(ccd), tract=tract))
-            calibScaling = calib.getFluxMag0()[0]
+            calib = butler.get('calexp.photoCalib', dataId=dict(visit=int(visit), detector=int(ccd),))
+            calibScaling = calib.getInstFluxAtZeroMagnitude()
             if verbose:
                 print('calib ccd %s: %s' % (ccd, calibScaling))
 
         photoCalib = butler.get('jointcal_photoCalib', dataId=dict(visit=int(visit),
-                                                                   ccd=int(ccd),
+                                                                   detector=int(ccd),
                                                                    tract=tract))
         if verbose:
             print("photoCalib mean ccd %s: %s" % (ccd, photoCalib.getCalibrationMean()))
@@ -179,7 +183,7 @@ class ImageMaker:
             return self.images[detector.getId()], detector
 
 
-def plotVisitPhotoCalib(visit, butler, step=8, percentile=0,
+def plotVisitPhotoCalib(visit, butler, instrument, step=8, percentile=0,
                         tract=None, chips=[],
                         chipScaling=False, meanCalib=False, singleCalib=False,
                         colormap="magma", verbose=False):
@@ -189,8 +193,10 @@ def plotVisitPhotoCalib(visit, butler, step=8, percentile=0,
     ----------
     visit : `int`
         The visit id to plot.
-    butler : `lsst.daf.persistence.Butler`
+    butler : `lsst.daf.butler.Butler`
         The butler instance to pull the data from.
+    instrument : `str`
+        Name of the instrument in use.
     step : `int`
         Step size between samples.
         i.e. `np.linspace(0, bbox.getHeight(), bbox.getHeight()/binSize)`
@@ -231,7 +237,12 @@ def plotVisitPhotoCalib(visit, butler, step=8, percentile=0,
                                                  meanCalib=meanCalib,
                                                  singleCalib=singleCalib,
                                                  verbose=verbose))
-    image = lsst.afw.cameraGeom.utils.makeImageFromCamera(butler.get('camera'),
+
+    # Need the camera geometry. Use the default.
+    inst = Instrument.fromName(instrument, registry=butler.registry)
+    camera = inst.getCamera()
+
+    image = lsst.afw.cameraGeom.utils.makeImageFromCamera(camera,
                                                           imageSource=imageMaker,
                                                           detectorNameList=chips,
                                                           imageFactory=lsst.afw.image.ImageD,
@@ -265,6 +276,8 @@ def main():
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("repo", metavar="repo",
                         help="Directory to butler repository containing `jointcal_photoCalib` datasets.")
+    parser.add_argument("collection", metavar="collection",
+                        help="Butler collection to search for photoCalibs.")
     parser.add_argument("--step", default=8, type=int,
                         help="Steps between samples per image (i.e. larger number = coarser image).")
     parser.add_argument("--tract", default=0, type=int,
@@ -277,27 +290,34 @@ def main():
                         help="matplotlib.Colormap name to use when generating the 2d plot.")
     args = parser.parse_args()
 
-    butler = lsst.daf.persistence.Butler(inputs=args.repo)
+    butler = lsst.daf.butler.Butler(args.repo, collections=args.collection)
     dataIds = getValidDataIds(butler, args.tract)
+    instrument = dataIds[0]['instrument']
     visits = np.unique([dataId['visit'] for dataId in dataIds])
-    chips = np.unique([dataId['ccd'] for dataId in dataIds])
+    chips = np.unique([dataId['detector'] for dataId in dataIds])
     if args.verbose:
-        print("Found these visits:", visits)
+        print(f"For instrument {instrument!r} found these visits: {visits}")
         print("And these chips:", chips)
+
+    # Not all visits have all detectors.
+    visit_map = defaultdict(set)
+    for dataId in dataIds:
+        visit_map[dataId['visit']].add(dataId['detector'])
 
     for visit in visits:
         if args.verbose:
             print()
             print("Processing visit", visit)
-        plotVisitPhotoCalib(visit, butler, tract=args.tract, chips=chips,
+        detectors = list(sorted(visit_map[visit]))
+        plotVisitPhotoCalib(visit, butler, instrument, tract=args.tract, chips=detectors,
                             step=args.step, percentile=args.percentile,
                             chipScaling=False,
                             colormap=args.colormap, verbose=args.verbose)
-        plotVisitPhotoCalib(visit, butler, tract=args.tract, chips=chips,
+        plotVisitPhotoCalib(visit, butler, instrument, tract=args.tract, chips=detectors,
                             step=args.step, percentile=args.percentile,
                             chipScaling=True, meanCalib=True,
                             colormap=args.colormap, verbose=args.verbose)
-        plotVisitPhotoCalib(visit, butler, tract=args.tract, chips=chips,
+        plotVisitPhotoCalib(visit, butler, instrument, tract=args.tract, chips=detectors,
                             step=args.step, percentile=args.percentile,
                             chipScaling=True, singleCalib=True,
                             colormap=args.colormap, verbose=args.verbose)

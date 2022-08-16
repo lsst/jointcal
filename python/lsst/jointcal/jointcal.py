@@ -22,6 +22,7 @@
 import dataclasses
 import collections
 import os
+import logging
 
 import astropy.time
 import numpy as np
@@ -32,10 +33,8 @@ import lsst.utils
 import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
 from lsst.afw.image import fluxErrFromABMagErr
-import lsst.pex.exceptions as pexExceptions
 import lsst.afw.cameraGeom
 import lsst.afw.table
-import lsst.log
 from lsst.pipe.base import Instrument
 from lsst.pipe.tasks.colorterms import ColortermLibrary
 from lsst.verify import Job, Measurement
@@ -503,7 +502,7 @@ class JointcalConfig(pipeBase.PipelineTaskConfig,
         if self.doAstrometry and not self.doPhotometry and self.applyColorTerms:
             msg = ("Only doing astrometry, but Colorterms are not applied for astrometry;"
                    "applyColorTerms=True will be ignored.")
-            lsst.log.warning(msg)
+            logging.getLogger("lsst.jointcal").warning(msg)
 
     def setDefaults(self):
         # Use only stars because aperture fluxes of galaxies are biased and depend on seeing.
@@ -1529,53 +1528,6 @@ class JointcalTask(pipeBase.PipelineTask):
             output[(visit, ccd)] = getattr(model, func)(ccdImage)
         return output
 
-    def _write_astrometry_results(self, associations, model, visit_ccd_to_dataRef):
-        """
-        Write the fitted astrometric results to a new 'jointcal_wcs' dataRef.
-
-        Parameters
-        ----------
-        associations : `lsst.jointcal.Associations`
-            The star/reference star associations to fit.
-        model : `lsst.jointcal.AstrometryModel`
-            The astrometric model that was fit.
-        visit_ccd_to_dataRef : `dict` of Key: `lsst.daf.persistence.ButlerDataRef`
-            Dict of ccdImage identifiers to dataRefs that were fit.
-        """
-        ccdImageList = associations.getCcdImageList()
-        output = self._make_output(ccdImageList, model, "makeSkyWcs")
-        for key, skyWcs in output.items():
-            dataRef = visit_ccd_to_dataRef[key]
-            try:
-                dataRef.put(skyWcs, 'jointcal_wcs')
-            except pexExceptions.Exception as e:
-                self.log.fatal('Failed to write updated Wcs: %s', str(e))
-                raise e
-
-    def _write_photometry_results(self, associations, model, visit_ccd_to_dataRef):
-        """
-        Write the fitted photometric results to a new 'jointcal_photoCalib' dataRef.
-
-        Parameters
-        ----------
-        associations : `lsst.jointcal.Associations`
-            The star/reference star associations to fit.
-        model : `lsst.jointcal.PhotometryModel`
-            The photoometric model that was fit.
-        visit_ccd_to_dataRef : `dict` of Key: `lsst.daf.persistence.ButlerDataRef`
-            Dict of ccdImage identifiers to dataRefs that were fit.
-        """
-
-        ccdImageList = associations.getCcdImageList()
-        output = self._make_output(ccdImageList, model, "toPhotoCalib")
-        for key, photoCalib in output.items():
-            dataRef = visit_ccd_to_dataRef[key]
-            try:
-                dataRef.put(photoCalib, 'jointcal_photoCalib')
-            except pexExceptions.Exception as e:
-                self.log.fatal('Failed to write updated PhotoCalib: %s', str(e))
-                raise e
-
 
 def make_schema_table():
     """Return an afw SourceTable to use as a base for creating the
@@ -1674,7 +1626,7 @@ def extract_detector_catalog_from_visit_catalog(table, visitCatalog, detectorId,
         Names of the ixx/iyy/ixy columns in the catalog.
     sourceFluxType : `str`
         Name of the catalog field to load instFluxes from.
-    log : `lsst.log.Log`
+    log : `logging.Logger`
         Logging instance to log to.
 
     Returns

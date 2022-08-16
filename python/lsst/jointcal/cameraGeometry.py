@@ -24,15 +24,15 @@ used by afw CameraGeom.
 """
 __all__ = ["CameraModel"]
 
+import logging
 import numpy as np
 
 from lsst.afw import cameraGeom
 import lsst.afw.geom
 import astshim as ast
-import lsst.log
 from lsst.geom import SpherePoint, Point2D, radians
 
-_LOG = lsst.log.Log.getLogger(__name__)
+_LOG = logging.getLogger(__name__)
 
 
 class CameraModel:
