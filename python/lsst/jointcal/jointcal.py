@@ -533,6 +533,9 @@ class JointcalConfig(pipeBase.PipelineTaskConfig,
                     f"{self.sourceFluxType}_flag",
                     ]
         self.sourceSelector["science"].flags.bad = badFlags
+        self.sourceSelector["science"].doRequireFiniteRaDec = True
+        self.sourceSelector["science"].requireFiniteRaDec.raColName = "ra"
+        self.sourceSelector["science"].requireFiniteRaDec.decColName = "decl"
 
         # Use Gaia-DR2 with proper motions for astrometry; phot_g_mean is the
         # primary Gaia band, but is not like any normal photometric band.
@@ -799,6 +802,10 @@ class JointcalTask(pipeBase.PipelineTask):
                 visitCatalog = dataRef.get(parameters={'columns': columns})
 
                 selected = self.sourceSelector.run(visitCatalog)
+                if len(selected.sourceCat) == 0:
+                    self.log.warning("No sources selected in visit %s.  Skipping...",
+                                     visitSummary["visit"][0])
+                    continue
 
                 # Build a CcdImage for each detector in this visit.
                 detectors = {id: index for index, id in enumerate(visitSummary['id'])}
@@ -1604,6 +1611,9 @@ def get_sourceTable_visit_columns(inColumns, config, sourceSelector):
     if sourceSelector.config.doIsolated:
         columns.append(sourceSelector.config.isolated.parentName)
         columns.append(sourceSelector.config.isolated.nChildName)
+    if sourceSelector.config.doRequireFiniteRaDec:
+        columns.append(sourceSelector.config.requireFiniteRaDec.raColName)
+        columns.append(sourceSelector.config.requireFiniteRaDec.decColName)
 
     return columns, detectorColumn, ixxColumns
 
