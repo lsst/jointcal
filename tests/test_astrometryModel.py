@@ -115,7 +115,7 @@ class AstrometryModelTestBase:
         self.ccdImageList = []
         table = make_schema_table()
         inColumns = butler.get("sourceTable_visit", visit=self.visits[0])
-        columns, detColumn, ixxColumns = get_sourceTable_visit_columns(inColumns, config, sourceSelector)
+        columns, ixxColumns = get_sourceTable_visit_columns(inColumns, config, sourceSelector)
         catalogs = {v: sourceSelector.run(butler.get('sourceTable_visit',
                                                      visit=v,
                                                      parameters={'columns': columns})) for v in self.visits}
@@ -123,7 +123,6 @@ class AstrometryModelTestBase:
             goodSrc = extract_detector_catalog_from_visit_catalog(table,
                                                                   catalogs[visit].sourceCat,
                                                                   detector,
-                                                                  detColumn,
                                                                   ixxColumns,
                                                                   config.sourceFluxType,
                                                                   logger)
