@@ -13,6 +13,8 @@ In jointcal, the photometry fit will contain 3 valid measuredStars, 2 fittedStar
 It also contains a working gen3 butler repo, generated with `make_butler_repo.py`, which allows `testUtils.py` to use this data to construct simulated ccdImages.
 The `exports.yaml` file (used to create that gen3 repo and to create temporary repos in `test_jointcal_chft_minimal.py`) was hand-edited from the one included in the `testdata_jointcal` package's `cfht/` directory; see that package for how that file was created.
 
+The parquet catalogs were updated to replace gen2 ``ccd`` with gen3 ``detector`` on 25-Oct-2022 with the script `rename_sourcetable_columns.py`.
+
 ## parquet test data
 
 ``extractParquetSubset.py`` trims a ``sourceTable_visit`` parquet catalog from ``testdata_jointcal/hsc`` to use to test jointcal's code to covert a visit-level dataframe into multiple detector-level afw tables.
