@@ -1,5 +1,10 @@
 #!/usr/bin/env python
 
+"""
+Script used to rename columns in the local test source table parquet files,
+in particular renaming gen2 ``ccd`` to modern ``detector`` from DM-31889.
+"""
+
 import os
 import glob
 import pandas as pd
