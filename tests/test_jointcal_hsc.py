@@ -66,7 +66,6 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
                         outputDataId=outputDataId)
 
         self.configfiles.append(os.path.join(self.path, 'config/hsc-config.py'))
-        self.configfiles.append(os.path.join(self.path, 'config/config-gen3-hsc.py'))
 
     def test_jointcalTask_2_visits_simple(self):
         configOptions = {"astrometryModel": "simple", "photometryModel": "simpleFlux"}
@@ -104,7 +103,7 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         configOptions = {"astrometryModel": "simple", "photometryModel": "simpleFlux"}
         where = (f" and visit in ({self.all_visits[0]},{self.all_visits[1]},"
                  f"{self.all_visits[5]},{self.all_visits[6]})")
-        configFiles = [os.path.join(self.path, 'config/config-gen3-hsc.py')]
+        configFiles = []
 
         outputVisits = {34648: [51, 59, 67], 34690: [48, 56, 64],
                         36140: [51, 59, 67], 35892: [23, 31, 39]}

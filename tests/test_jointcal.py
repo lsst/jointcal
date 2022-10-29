@@ -117,7 +117,6 @@ class TestJointcalVisitCatalog(lsst.utils.tests.TestCase):
         catalog = extract_detector_catalog_from_visit_catalog(table,
                                                               self.data,
                                                               detectorId,
-                                                              'ccd',
                                                               ['Ixx', 'Iyy', 'Ixy'],
                                                               self.config.sourceFluxType,
                                                               self.jointcal.log)

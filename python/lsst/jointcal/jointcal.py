@@ -796,9 +796,9 @@ class JointcalTask(pipeBase.PipelineTask):
                 dataRef = inputSourceTableVisit[catalogMap[visitSummaryRef.dataId['visit']]]
                 if columns is None:
                     inColumns = dataRef.get(component='columns')
-                    columns, detColumn, ixxColumns = get_sourceTable_visit_columns(inColumns,
-                                                                                   self.config,
-                                                                                   self.sourceSelector)
+                    columns, ixxColumns = get_sourceTable_visit_columns(inColumns,
+                                                                        self.config,
+                                                                        self.sourceSelector)
                 visitCatalog = dataRef.get(parameters={'columns': columns})
 
                 selected = self.sourceSelector.run(visitCatalog)
@@ -813,7 +813,6 @@ class JointcalTask(pipeBase.PipelineTask):
                     catalog = extract_detector_catalog_from_visit_catalog(table,
                                                                           selected.sourceCat,
                                                                           id,
-                                                                          detColumn,
                                                                           ixxColumns,
                                                                           self.config.sourceFluxType,
                                                                           self.log)
@@ -1580,19 +1579,10 @@ def get_sourceTable_visit_columns(inColumns, config, sourceSelector):
     -------
     columns : `list`
         List of columns to read from sourceTable_visit.
-    detectorColumn : `str`
-        Name of the detector column.
     ixxColumns : `list`
         Name of the ixx/iyy/ixy columns.
     """
-    if 'detector' in inColumns:
-        # Default name for Gen3.
-        detectorColumn = 'detector'
-    else:
-        # Default name for Gen2 conversions (still used in tests, CI, and older catalogs)
-        detectorColumn = 'ccd'
-
-    columns = ['visit', detectorColumn,
+    columns = ['visit', 'detector',
                'sourceId', 'x', 'xErr', 'y', 'yErr',
                config.sourceFluxType + '_instFlux', config.sourceFluxType + '_instFluxErr']
 
@@ -1615,11 +1605,11 @@ def get_sourceTable_visit_columns(inColumns, config, sourceSelector):
         columns.append(sourceSelector.config.requireFiniteRaDec.raColName)
         columns.append(sourceSelector.config.requireFiniteRaDec.decColName)
 
-    return columns, detectorColumn, ixxColumns
+    return columns, ixxColumns
 
 
 def extract_detector_catalog_from_visit_catalog(table, visitCatalog, detectorId,
-                                                detectorColumn, ixxColumns, sourceFluxType, log):
+                                                ixxColumns, sourceFluxType, log):
     """Return an afw SourceCatalog extracted from a visit-level dataframe,
     limited to just one detector.
 
@@ -1632,8 +1622,6 @@ def extract_detector_catalog_from_visit_catalog(table, visitCatalog, detectorId,
         DataFrame to extract a detector catalog from.
     detectorId : `int`
         Numeric id of the detector to extract from ``visitCatalog``.
-    detectorColumn : `str`
-        Name of the detector column in the catalog.
     ixxColumns : `list` [`str`]
         Names of the ixx/iyy/ixy columns in the catalog.
     sourceFluxType : `str`
@@ -1660,7 +1648,7 @@ def extract_detector_catalog_from_visit_catalog(table, visitCatalog, detectorId,
                }
 
     catalog = lsst.afw.table.SourceCatalog(table)
-    matched = visitCatalog[detectorColumn] == detectorId
+    matched = visitCatalog['detector'] == detectorId
     n = sum(matched)
     if n == 0:
         return None
