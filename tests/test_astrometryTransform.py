@@ -187,7 +187,7 @@ class AstrometryTransformPolynomialTestCase(AstrometryTransformPolynomialBase, l
 
     def testToAstMapOrder9(self):
         # looser tolerance: 9th order polynomials are harder to get a good inverse for.
-        self.checkToAstMap(self.poly9, inverseMaxDiff=4e-5)
+        self.checkToAstMap(self.poly9, inverseMaxDiff=5e-5)
 
     def test_str(self):
         """Check that the string representations of polynomials are reasonable.
