@@ -250,7 +250,7 @@ void Associations::collectRefStars(afw::table::SimpleCatalog &refCat, geom::Angl
 
     // TODO: we aren't getting covariances from Gaia yet, so maybe ignore this for now?
     try {
-        pmRaDecCovKey = refCat.getSchema().find<float>("pm_ra_Dec_Cov").key;
+        pmRaDecCovKey = refCat.getSchema().find<float>("pm_ra_pm_dec_Cov").key;
     } catch (pex::exceptions::NotFoundError &ex) {
         LOGLS_WARN(_log, "No ra/dec proper motion covariances in refcat: " << ex.what());
     }

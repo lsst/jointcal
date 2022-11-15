@@ -36,6 +36,7 @@ import lsst.daf.butler
 from lsst.daf.base import DateTime
 import lsst.geom
 from lsst.meas.algorithms import getRefFluxField, ReferenceObjectLoader
+from lsst.meas.algorithms import convertReferenceCatalog
 import lsst.obs.base
 import lsst.pipe.base
 import lsst.jointcal
@@ -52,7 +53,7 @@ def setup_module(module):
 
 def make_fake_refcat(center, flux, filterName):
     """Make a fake reference catalog."""
-    schema = ReferenceObjectLoader.makeMinimalSchema([filterName], addProperMotion=True)
+    schema = convertReferenceCatalog._makeSchema([filterName], fullPositionInformation=True)
     catalog = lsst.afw.table.SimpleCatalog(schema)
     record = catalog.addNew()
     record.setCoord(center)
