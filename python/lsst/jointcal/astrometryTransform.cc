@@ -147,7 +147,7 @@ void declareTanSipPixelToRaDec(py::module &mod) {
 }
 
 PYBIND11_MODULE(astrometryTransform, mod) {
-    py::module::import("astshim.mapping");
+    py::module::import("astshim");
     py::module::import("lsst.jointcal.frame");
     py::module::import("lsst.jointcal.star");
     declareAstrometryTransform(mod);
