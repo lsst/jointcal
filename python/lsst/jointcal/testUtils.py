@@ -33,7 +33,7 @@ import lsst.afw.table
 import lsst.daf.butler
 import lsst.pipe.base
 
-import lsst.jointcal.star
+import lsst.jointcal
 
 
 def canRunTests():
@@ -182,8 +182,8 @@ def createFakeCcdImage(butler, visit, num, fluxFieldName,
     photoCalib = lsst.afw.image.PhotoCalib(photoCalibMean, photoCalibErr)
 
     catalog = createFakeCatalog(num, bbox, fluxFieldName, skyWcs=skyWcs)
-    ccdImage = lsst.jointcal.ccdImage.CcdImage(catalog, skyWcs, visitInfo, bbox, filt, photoCalib,
-                                               detector, visit, fakeDetectorId, fluxFieldName)
+    ccdImage = lsst.jointcal.CcdImage(catalog, skyWcs, visitInfo, bbox, filt, photoCalib,
+                                      detector, visit, fakeDetectorId, fluxFieldName)
 
     return lsst.pipe.base.Struct(catalog=catalog, ccdImage=ccdImage, bbox=bbox, skyWcs=skyWcs)
 
@@ -326,7 +326,7 @@ def getMeasuredStarsFromCatalog(catalog, pixToFocal):
     """
     stars = []
     for record in catalog:
-        star = lsst.jointcal.star.MeasuredStar()
+        star = lsst.jointcal.MeasuredStar()
         star.x = record.getX()
         star.y = record.getY()
         star.setInstFluxAndErr(record.getCalibInstFlux(), record.getCalibInstFluxErr())

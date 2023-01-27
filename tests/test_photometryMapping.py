@@ -26,9 +26,7 @@ import unittest
 import lsst.utils.tests
 
 import lsst.geom
-import lsst.jointcal.photometryMappings
-import lsst.jointcal.photometryTransform
-import lsst.jointcal.star
+import lsst.jointcal
 
 
 CHEBYSHEV_T = [
@@ -46,10 +44,10 @@ class PhotometryMappingTestBase:
         self.value = 5.0
         self.valueErr = 2.0
 
-        baseStar0 = lsst.jointcal.star.BaseStar(0, 0, 1, 2)
-        self.star0 = lsst.jointcal.star.MeasuredStar(baseStar0)
-        baseStar1 = lsst.jointcal.star.BaseStar(1, 2, 3, 4)
-        self.star1 = lsst.jointcal.star.MeasuredStar(baseStar1)
+        baseStar0 = lsst.jointcal.BaseStar(0, 0, 1, 2)
+        self.star0 = lsst.jointcal.MeasuredStar(baseStar0)
+        baseStar1 = lsst.jointcal.BaseStar(1, 2, 3, 4)
+        self.star1 = lsst.jointcal.MeasuredStar(baseStar1)
         self.star1.setXFocal(2)
         self.star1.setYFocal(3)
 
@@ -58,8 +56,8 @@ class PhotometryMappingTestCase(PhotometryMappingTestBase, lsst.utils.tests.Test
     def setUp(self):
         super(PhotometryMappingTestCase, self).setUp()
         self.scale = 3
-        transform = lsst.jointcal.photometryTransform.FluxTransformSpatiallyInvariant(self.scale)
-        self.mapping = lsst.jointcal.photometryMappings.PhotometryMapping(transform)
+        transform = lsst.jointcal.FluxTransformSpatiallyInvariant(self.scale)
+        self.mapping = lsst.jointcal.PhotometryMapping(transform)
 
     def test_getNpar(self):
         result = self.mapping.getNpar()

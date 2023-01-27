@@ -24,7 +24,7 @@
 
 #include "pybind11/pybind11.h"
 
-#include "lsst/utils/python.h"
+#include "lsst/cpputils/python.h"
 
 #include "lsst/jointcal/Chi2.h"
 
@@ -35,19 +35,22 @@ namespace lsst {
 namespace jointcal {
 namespace {
 
-void declareChi2(py::module &mod) {
-    py::class_<Chi2Statistic, std::shared_ptr<Chi2Statistic>> cls(mod, "Chi2Statistic");
+void declareChi2(lsst::cpputils::python::WrapperCollection &wrappers) {
+    using PyChi2Statistic = py::class_<Chi2Statistic, std::shared_ptr<Chi2Statistic>>;
 
-    cls.def(py::init<>());
+    wrappers.wrapType(PyChi2Statistic(wrappers.module, "Chi2Statistic"), [](auto &mod, auto &cls) {
+        cls.def(py::init<>());
+        utils::python::addOutputOp(cls, "__str__");
+        utils::python::addOutputOp(cls, "__repr__");
+        cls.def_readwrite("chi2", &Chi2Statistic::chi2);
+        cls.def_readwrite("ndof", &Chi2Statistic::ndof);
+    });
+}
+}  // namespace
 
-    utils::python::addOutputOp(cls, "__str__");
-    utils::python::addOutputOp(cls, "__repr__");
-
-    cls.def_readwrite("chi2", &Chi2Statistic::chi2);
-    cls.def_readwrite("ndof", &Chi2Statistic::ndof);
+void wrapChi2(lsst::cpputils::python::WrapperCollection &wrappers) {
+    declareChi2(wrappers);
 }
 
-PYBIND11_MODULE(chi2, mod) { declareChi2(mod); }
-}  // namespace
 }  // namespace jointcal
 }  // namespace lsst

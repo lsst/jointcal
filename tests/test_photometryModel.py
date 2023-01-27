@@ -31,9 +31,7 @@ import lsst.afw.cameraGeom
 import lsst.afw.table
 import lsst.afw.image
 import lsst.afw.image.utils
-import lsst.jointcal.ccdImage
-import lsst.jointcal.photometryModels
-import lsst.jointcal.star
+import lsst.jointcal
 import lsst.obs.base
 
 
@@ -59,13 +57,13 @@ class PhotometryModelTestBase:
                                                              lsst.afw.cameraGeom.FOCAL_PLANE)
             self.stars.append(lsst.jointcal.testUtils.getMeasuredStarsFromCatalog(catalog, pixToFocal))
 
-        self.fittedStar = lsst.jointcal.star.FittedStar(self.stars[0][0])
+        self.fittedStar = lsst.jointcal.FittedStar(self.stars[0][0])
         # Make a refStar at this fittedStar position, but with different
         # flux and fluxErr, so that it does interesting things when subtracted.
-        self.refStar = lsst.jointcal.star.RefStar(self.fittedStar.x,
-                                                  self.fittedStar.y,
-                                                  self.fittedStar.flux + 50,
-                                                  self.fittedStar.fluxErr * 0.01)
+        self.refStar = lsst.jointcal.RefStar(self.fittedStar.x,
+                                             self.fittedStar.y,
+                                             self.fittedStar.flux + 50,
+                                             self.fittedStar.fluxErr * 0.01)
 
         self.firstIndex = 0  # for assignIndices
 
@@ -165,7 +163,7 @@ class SimplePhotometryModelTestBase(PhotometryModelTestBase):
 class SimpleFluxModelTestCase(SimplePhotometryModelTestBase, FluxTestBase, lsst.utils.tests.TestCase):
     def setUp(self):
         super().setUp()
-        self.model = lsst.jointcal.photometryModels.SimpleFluxModel(self.ccdImageList)
+        self.model = lsst.jointcal.SimpleFluxModel(self.ccdImageList)
         self.model.assignIndices("", self.firstIndex)  # have to call this once to let offsetParams work.
         self.delta = np.arange(len(self.ccdImageList), dtype=float)*-0.2 + 1
 
@@ -175,7 +173,7 @@ class SimpleMagnitudeModelTestCase(SimplePhotometryModelTestBase,
                                    lsst.utils.tests.TestCase):
     def setUp(self):
         super().setUp()
-        self.model = lsst.jointcal.photometryModels.SimpleMagnitudeModel(self.ccdImageList)
+        self.model = lsst.jointcal.SimpleMagnitudeModel(self.ccdImageList)
         self.model.assignIndices("", self.firstIndex)  # have to call this once to let offsetParams work.
         self.delta = np.arange(len(self.ccdImageList), dtype=float)*-0.2 + 1
         self.useMagnitude = True

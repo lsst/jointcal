@@ -23,10 +23,9 @@
  */
 
 #include "pybind11/pybind11.h"
+#include "lsst/cpputils/python.h"
 #include "pybind11/eigen.h"
 #include "pybind11/stl.h"
-#include "ndarray/pybind11.h"
-#include "ndarray/eigen.h"
 #include "Eigen/Core"
 
 #include "lsst/jointcal/PhotometryTransform.h"
@@ -39,80 +38,87 @@ namespace lsst {
 namespace jointcal {
 namespace {
 
-void declarePhotometryMappingBase(py::module &mod) {
-    py::class_<PhotometryMappingBase, std::shared_ptr<PhotometryMappingBase>> cls(mod,
-                                                                                  "PhotometryMappingBase");
+void declarePhotometryMappingBase(lsst::cpputils::python::WrapperCollection &wrappers) {
+    using PyPhotometryMappingBase = py::class_<PhotometryMappingBase, std::shared_ptr<PhotometryMappingBase>>;
 
-    cls.def("getNpar", &PhotometryMappingBase::getNpar);
-    cls.def("transform", &PhotometryMappingBase::transform);
-    cls.def("transformError", &PhotometryMappingBase::transformError);
-    cls.def("computeParameterDerivatives",
-            [](PhotometryMappingBase const &self, MeasuredStar const &star, double instFlux) {
-                Eigen::VectorXd derivatives(self.getNpar());
-                self.computeParameterDerivatives(star, instFlux, derivatives);
-                return derivatives;
-            });
+    wrappers.wrapType(PyPhotometryMappingBase(wrappers.module, "PhotometryMappingBase"), [](auto &mod, auto &cls) {
+        cls.def("getNpar", &PhotometryMappingBase::getNpar);
+        cls.def("transform", &PhotometryMappingBase::transform);
+        cls.def("transformError", &PhotometryMappingBase::transformError);
+        cls.def("computeParameterDerivatives",
+                [](PhotometryMappingBase const &self, MeasuredStar const &star, double instFlux) {
+                    Eigen::VectorXd derivatives(self.getNpar());
+                    self.computeParameterDerivatives(star, instFlux, derivatives);
+                    return derivatives;
+                });
 
-    cls.def("getParameters", &PhotometryMappingBase::getParameters);
+        cls.def("getParameters", &PhotometryMappingBase::getParameters);
 
-    cls.def("getMappingIndices", [](PhotometryMappingBase const &self) {
-        IndexVector indices(0);
-        self.getMappingIndices(indices);
-        return indices;
+        cls.def("getMappingIndices", [](PhotometryMappingBase const &self) {
+            IndexVector indices(0);
+            self.getMappingIndices(indices);
+            return indices;
+        });
+
+        cls.def("getIndex", &PhotometryMappingBase::getIndex);
+        cls.def("setIndex", &PhotometryMappingBase::setIndex);
     });
-
-    cls.def("getIndex", &PhotometryMappingBase::getIndex);
-    cls.def("setIndex", &PhotometryMappingBase::setIndex);
 }
 
-void declarePhotometryMapping(py::module &mod) {
-    py::class_<PhotometryMapping, std::shared_ptr<PhotometryMapping>, PhotometryMappingBase> cls(
-            mod, "PhotometryMapping");
-    cls.def(py::init<std::shared_ptr<PhotometryTransform>>(), "transform"_a);
+void declarePhotometryMapping(lsst::cpputils::python::WrapperCollection &wrappers) {
+    using PyPhotometryMapping = py::class_<PhotometryMapping, std::shared_ptr<PhotometryMapping>, PhotometryMappingBase>;
 
-    cls.def("offsetParams", &PhotometryMapping::offsetParams);
-    cls.def("getTransform", &PhotometryMapping::getTransform);
-    cls.def("getTransformErrors", &PhotometryMapping::getTransformErrors);
+    wrappers.wrapType(PyPhotometryMapping(wrappers.module, "PhotometryMapping"), [](auto &mod, auto &cls) {
+        cls.def(py::init<std::shared_ptr<PhotometryTransform>>(), "transform"_a);
+
+        cls.def("offsetParams", &PhotometryMapping::offsetParams);
+        cls.def("getTransform", &PhotometryMapping::getTransform);
+        cls.def("getTransformErrors", &PhotometryMapping::getTransformErrors);
+    });
 }
 
-void declareChipVisitPhotometryMapping(py::module &mod) {
-    py::class_<ChipVisitPhotometryMapping, std::shared_ptr<ChipVisitPhotometryMapping>, PhotometryMappingBase>
-            cls(mod, "ChipVisitPhotometryMapping");
+void declareChipVisitPhotometryMapping(lsst::cpputils::python::WrapperCollection &wrappers) {
+    using PyChipVisitPhotometryMapping =
+            py::class_<ChipVisitPhotometryMapping, std::shared_ptr<ChipVisitPhotometryMapping>, PhotometryMappingBase>;
 
-    cls.def("setWhatToFit", &ChipVisitPhotometryMapping::setWhatToFit);
-
-    cls.def("getChipMapping", &ChipVisitPhotometryMapping::getChipMapping);
-    cls.def("getVisitMapping", &ChipVisitPhotometryMapping::getVisitMapping);
-    cls.def("getNParChip", &ChipVisitPhotometryMapping::getNParChip);
-    cls.def("getNParVisit", &ChipVisitPhotometryMapping::getNParVisit);
+    wrappers.wrapType(
+            PyChipVisitPhotometryMapping(wrappers.module, "ChipVisitPhotometryMapping"), [](auto &mod, auto &cls) {
+                cls.def("setWhatToFit", &ChipVisitPhotometryMapping::setWhatToFit);
+                cls.def("getChipMapping", &ChipVisitPhotometryMapping::getChipMapping);
+                cls.def("getVisitMapping", &ChipVisitPhotometryMapping::getVisitMapping);
+                cls.def("getNParChip", &ChipVisitPhotometryMapping::getNParChip);
+                cls.def("getNParVisit", &ChipVisitPhotometryMapping::getNParVisit);
+            });
 }
 
-void declareChipVisitFluxMapping(py::module &mod) {
-    py::class_<ChipVisitFluxMapping, std::shared_ptr<ChipVisitFluxMapping>, ChipVisitPhotometryMapping> cls(
-            mod, "ChipVisitFluxMapping");
+void declareChipVisitFluxMapping(lsst::cpputils::python::WrapperCollection &wrappers) {
+    using PyChipVisitFluxMapping =
+            py::class_<ChipVisitFluxMapping, std::shared_ptr<ChipVisitFluxMapping>, ChipVisitPhotometryMapping>;
 
-    cls.def(py::init<std::shared_ptr<PhotometryMapping>, std::shared_ptr<PhotometryMapping>>(),
-            "chipMapping"_a, "visitMapping"_a);
+    wrappers.wrapType(PyChipVisitFluxMapping(wrappers.module, "ChipVisitFluxMapping"), [](auto &mod, auto &cls) {
+        cls.def(py::init<std::shared_ptr<PhotometryMapping>, std::shared_ptr<PhotometryMapping>>(),
+                "chipMapping"_a, "visitMapping"_a);
+    });
 }
 
-void declareChipVisitMagnitudeMapping(py::module &mod) {
-    py::class_<ChipVisitMagnitudeMapping, std::shared_ptr<ChipVisitMagnitudeMapping>,
-               ChipVisitPhotometryMapping>
-            cls(mod, "ChipVisitMagnitudeMapping");
+void declareChipVisitMagnitudeMapping(lsst::cpputils::python::WrapperCollection &wrappers) {
+    using PyChipVisitMagnitudeMapping = py::class_<ChipVisitMagnitudeMapping, std::shared_ptr<ChipVisitMagnitudeMapping>,
+               ChipVisitPhotometryMapping>;
 
-    cls.def(py::init<std::shared_ptr<PhotometryMapping>, std::shared_ptr<PhotometryMapping>>(),
-            "chipMapping"_a, "visitMapping"_a);
-}
-
-PYBIND11_MODULE(photometryMappings, mod) {
-    py::module::import("lsst.jointcal.star");
-    py::module::import("lsst.jointcal.photometryTransform");
-    declarePhotometryMappingBase(mod);
-    declarePhotometryMapping(mod);
-    declareChipVisitPhotometryMapping(mod);
-    declareChipVisitFluxMapping(mod);
-    declareChipVisitMagnitudeMapping(mod);
+    wrappers.wrapType(PyChipVisitMagnitudeMapping(wrappers.module, "ChipVisitMagnitudeMapping"), [](auto &mod, auto &cls) {
+        cls.def(py::init<std::shared_ptr<PhotometryMapping>, std::shared_ptr<PhotometryMapping>>(),
+                "chipMapping"_a, "visitMapping"_a);
+    });
 }
 }  // namespace
+
+void wrapPhotometryMappings(lsst::cpputils::python::WrapperCollection &wrappers) {
+    declarePhotometryMappingBase(wrappers);
+    declarePhotometryMapping(wrappers);
+    declareChipVisitPhotometryMapping(wrappers);
+    declareChipVisitFluxMapping(wrappers);
+    declareChipVisitMagnitudeMapping(wrappers);
+}
+
 }  // namespace jointcal
 }  // namespace lsst

@@ -28,8 +28,8 @@ import lsst.utils.tests
 import lsst.geom
 import lsst.log
 import lsst.jointcal
-from lsst.jointcal.astrometryTransform import (AstrometryTransformLinear,
-                                               AstrometryTransformPolynomial, inversePolyTransform)
+from lsst.jointcal import (AstrometryTransformLinear,
+                           AstrometryTransformPolynomial, inversePolyTransform)
 
 
 class AstrometryTransformPolynomialBase:
@@ -64,8 +64,8 @@ class AstrometryTransformPolynomialBase:
 
     def _makePoints(self, minX, maxX, minY, maxY, num):
         """Sets self.points to a 2d grid of num points from min->max."""
-        self.frame = lsst.jointcal.frame.Frame(lsst.jointcal.star.Point(minX, minY),
-                                               lsst.jointcal.star.Point(maxX, maxY))
+        self.frame = lsst.jointcal.Frame(lsst.jointcal.Point(minX, minY),
+                                         lsst.jointcal.Point(maxX, maxY))
         num = 200
         xx = np.linspace(minX, maxX, num)
         yy = np.linspace(minY, maxY, num)
@@ -98,7 +98,7 @@ class InversePolyTransformTestCase(AstrometryTransformPolynomialBase, lsst.utils
         results = []
         for point in self.points:
             # TODO: Fix these "Point"s once DM-4044 is done.
-            tempPoint = lsst.jointcal.star.Point(point[0], point[1])
+            tempPoint = lsst.jointcal.Point(point[0], point[1])
             result = inverse.apply(poly.apply(tempPoint))
             results.append(lsst.geom.Point2D(result.x, result.y))
 
@@ -159,7 +159,7 @@ class AstrometryTransformPolynomialTestCase(AstrometryTransformPolynomialBase, l
         inverses = []
         for point in self.points:
             # TODO: Fix these "Point"s once DM-4044 is done.
-            tempPoint = lsst.jointcal.star.Point(point[0], point[1])
+            tempPoint = lsst.jointcal.Point(point[0], point[1])
             expect = poly.apply(tempPoint)
             expects.append(lsst.geom.Point2D(expect.x, expect.y))
             result = astMap.applyForward(point)

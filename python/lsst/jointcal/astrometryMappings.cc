@@ -23,7 +23,7 @@
  */
 
 #include "pybind11/pybind11.h"
-#include "pybind11/eigen.h"
+#include "lsst/cpputils/python.h"
 
 #include "lsst/jointcal/AstrometryTransform.h"
 #include "lsst/jointcal/AstrometryMapping.h"
@@ -36,54 +36,60 @@ namespace lsst {
 namespace jointcal {
 namespace {
 
-void declareAstrometryMapping(py::module &mod) {
-    py::class_<AstrometryMapping, std::shared_ptr<AstrometryMapping>> cls(mod, "AstrometryMapping");
-
-    cls.def("getNpar", &AstrometryMapping::getNpar);
-    cls.def("transformPosAndErrors", [](AstrometryMapping const &self, jointcal::FatPoint &inPos) {
-        jointcal::FatPoint outPos;
-        self.transformPosAndErrors(inPos, outPos);
-        return outPos;
+void declareAstrometryMapping(lsst::cpputils::python::WrapperCollection &wrappers) {
+    using PyAstrometryMapping = py::class_<AstrometryMapping, std::shared_ptr<AstrometryMapping>>;
+    wrappers.wrapType(PyAstrometryMapping(wrappers.module, "AstrometryMapping"), [](auto &mod, auto &cls) {
+        cls.def("getNpar", &AstrometryMapping::getNpar);
+        cls.def("transformPosAndErrors", [](AstrometryMapping const &self, jointcal::FatPoint &inPos) {
+            jointcal::FatPoint outPos;
+            self.transformPosAndErrors(inPos, outPos);
+            return outPos;
+        });
     });
 }
 
-void declareChipVisitAstrometryMapping(py::module &mod) {
-    py::class_<ChipVisitAstrometryMapping, std::shared_ptr<ChipVisitAstrometryMapping>, AstrometryMapping>
-            cls(mod, "ChipVisitAstrometryMapping");
+void declareChipVisitAstrometryMapping(lsst::cpputils::python::WrapperCollection &wrappers) {
+    using PyChipVisitAstrometryMapping =
+            py::class_<ChipVisitAstrometryMapping, std::shared_ptr<ChipVisitAstrometryMapping>, AstrometryMapping>;
 
-    cls.def("getTransform1", &ChipVisitAstrometryMapping::getTransform1,
-            py::return_value_policy::reference_internal);
-    cls.def_property_readonly("transform1", &ChipVisitAstrometryMapping::getTransform1,
-                              py::return_value_policy::reference_internal);
+    wrappers.wrapType(PyChipVisitAstrometryMapping(wrappers.module, "ChipVisitAstrometryMapping"),
+                      [](auto &mod, auto &cls) {
+                          cls.def("getTransform1", &ChipVisitAstrometryMapping::getTransform1,
+                                  py::return_value_policy::reference_internal);
+                          cls.def_property_readonly("transform1", &ChipVisitAstrometryMapping::getTransform1,
+                                                    py::return_value_policy::reference_internal);
 
-    cls.def("getTransform2", &ChipVisitAstrometryMapping::getTransform2,
-            py::return_value_policy::reference_internal);
-    cls.def_property_readonly("transform2", &ChipVisitAstrometryMapping::getTransform2,
-                              py::return_value_policy::reference_internal);
+                          cls.def("getTransform2", &ChipVisitAstrometryMapping::getTransform2,
+                                  py::return_value_policy::reference_internal);
+                          cls.def_property_readonly("transform2", &ChipVisitAstrometryMapping::getTransform2,
+                                                    py::return_value_policy::reference_internal);
+                      });
 }
 
-void declareSimpleAstrometryMapping(py::module &mod) {
-    py::class_<SimpleAstrometryMapping, std::shared_ptr<SimpleAstrometryMapping>, AstrometryMapping> cls(
-            mod, "SimpleAstrometryMapping");
-    cls.def("getToBeFit", &SimpleAstrometryMapping::getToBeFit);
-    cls.def("setToBeFit", &SimpleAstrometryMapping::setToBeFit);
-    cls.def("getTransform", &SimpleAstrometryMapping::getTransform,
-            py::return_value_policy::reference_internal);
+void declareSimpleAstrometryMapping(lsst::cpputils::python::WrapperCollection &wrappers) {
+    using PySimpleAstrometryMapping =
+            py::class_<SimpleAstrometryMapping, std::shared_ptr<SimpleAstrometryMapping>, AstrometryMapping>;
+    wrappers.wrapType(PySimpleAstrometryMapping(wrappers.module, "impleAstrometryMapping"), [](auto &mod, auto &cls) {
+        cls.def("getToBeFit", &SimpleAstrometryMapping::getToBeFit);
+        cls.def("setToBeFit", &SimpleAstrometryMapping::setToBeFit);
+        cls.def("getTransform", &SimpleAstrometryMapping::getTransform,
+                py::return_value_policy::reference_internal);
+    });
 }
 
-void declareSimplePolyMapping(py::module &mod) {
-    py::class_<SimplePolyMapping, std::shared_ptr<SimplePolyMapping>, SimpleAstrometryMapping> cls(
-            mod, "SimplePolyMapping");
-}
+void declareSimplePolyMapping(lsst::cpputils::python::WrapperCollection &wrappers) {
+    using PySimplePolyMapping = py::class_<SimplePolyMapping, std::shared_ptr<SimplePolyMapping>, SimpleAstrometryMapping>;
 
-PYBIND11_MODULE(astrometryMappings, mod) {
-    py::module::import("lsst.jointcal.star");
-    py::module::import("lsst.jointcal.astrometryTransform");
-    declareAstrometryMapping(mod);
-    declareChipVisitAstrometryMapping(mod);
-    declareSimpleAstrometryMapping(mod);
-    declareSimplePolyMapping(mod);
+    wrappers.wrapType(PySimplePolyMapping(wrappers.module, "SimplePolyMapping"), [](auto &mod, auto &cls) {
+    });
 }
 }  // namespace
+
+void wrapAstrometryMappings(lsst::cpputils::python::WrapperCollection &wrappers) {
+    declareAstrometryMapping(wrappers);
+    declareChipVisitAstrometryMapping(wrappers);
+    declareSimpleAstrometryMapping(wrappers);
+    declareSimplePolyMapping(wrappers);
+}
 }  // namespace jointcal
 }  // namespace lsst

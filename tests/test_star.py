@@ -29,7 +29,7 @@ from astropy.coordinates import SkyCoord
 import unittest
 import lsst.utils.tests
 
-import lsst.jointcal.star
+import lsst.jointcal
 
 
 class TestProperMotion(lsst.utils.tests.TestCase):
@@ -50,16 +50,16 @@ class TestProperMotion(lsst.utils.tests.TestCase):
         self.coord = SkyCoord(self.ra, self.dec, frame="icrs",
                               pm_ra_cosdec=self.pm_ra, pm_dec=self.pm_dec,
                               obstime=self.observed_epoch)
-        self.star = lsst.jointcal.star.BaseStar(self.ra.value, self.dec.value,
-                                                flux, flux*0.001)
-        self.refStar = lsst.jointcal.star.RefStar(self.ra.value, self.dec.value,
-                                                  flux, flux*0.001)
+        self.star = lsst.jointcal.BaseStar(self.ra.value, self.dec.value,
+                                           flux, flux*0.001)
+        self.refStar = lsst.jointcal.RefStar(self.ra.value, self.dec.value,
+                                             flux, flux*0.001)
         self.star.vx = self.ra.to_value(u.degree) * 0.01
         self.star.vy = self.dec.to_value(u.degree) * 0.01
-        self.properMotion = lsst.jointcal.star.ProperMotion(self.pm_ra.to_value(u.radian/u.yr),
-                                                            self.pm_dec.to_value(u.radian/u.yr),
-                                                            self.pm_ra.to_value(u.radian/u.yr)*0.01,
-                                                            self.pm_dec.to_value(u.radian/u.yr)*0.01)
+        self.properMotion = lsst.jointcal.ProperMotion(self.pm_ra.to_value(u.radian/u.yr),
+                                                       self.pm_dec.to_value(u.radian/u.yr),
+                                                       self.pm_ra.to_value(u.radian/u.yr)*0.01,
+                                                       self.pm_dec.to_value(u.radian/u.yr)*0.01)
 
         # Test points on the whole sphere, all with the same large proper motion value.
         np.random.seed(100)
@@ -117,16 +117,14 @@ class TestProperMotion(lsst.utils.tests.TestCase):
         decs = np.zeros(len(expect))
         for i, x in enumerate(self.coords):
             self.coords
-            star = lsst.jointcal.star.BaseStar(x.ra.value, x.dec.value,
-                                               100, 100*0.001)
-            refStar = lsst.jointcal.star.RefStar(x.ra.value, x.dec.value,
-                                                 100, 100*0.001)
+            star = lsst.jointcal.BaseStar(x.ra.value, x.dec.value, 100, 100*0.001)
+            refStar = lsst.jointcal.RefStar(x.ra.value, x.dec.value, 100, 100*0.001)
             star.vx = x.ra.to_value(u.degree) * 0.01
             star.vy = x.dec.to_value(u.degree) * 0.01
-            properMotion = lsst.jointcal.star.ProperMotion(x.pm_ra_cosdec.to_value(u.radian/u.yr),
-                                                           x.pm_dec.to_value(u.radian/u.yr),
-                                                           x.pm_ra_cosdec.to_value(u.radian/u.yr)*0.01,
-                                                           x.pm_dec.to_value(u.radian/u.yr)*0.01)
+            properMotion = lsst.jointcal.ProperMotion(x.pm_ra_cosdec.to_value(u.radian/u.yr),
+                                                      x.pm_dec.to_value(u.radian/u.yr),
+                                                      x.pm_ra_cosdec.to_value(u.radian/u.yr)*0.01,
+                                                      x.pm_dec.to_value(u.radian/u.yr)*0.01)
             refStar.setProperMotion(properMotion)
             result = refStar.applyProperMotion(star, self.dt.value)
             ras[i] = result.x

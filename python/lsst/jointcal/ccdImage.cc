@@ -24,6 +24,7 @@
 
 #include "pybind11/pybind11.h"
 #include "pybind11/stl.h"
+#include "lsst/cpputils/python.h"
 
 #include "lsst/jointcal/CcdImage.h"
 
@@ -34,55 +35,60 @@ namespace lsst {
 namespace jointcal {
 namespace {
 
-void declareCcdImage(py::module &mod) {
-    py::class_<CcdImage, std::shared_ptr<CcdImage>> cls(mod, "CcdImage");
+void declareCcdImage(lsst::cpputils::python::WrapperCollection &wrappers) {
+    using PyCcdImage = py::class_<CcdImage, std::shared_ptr<CcdImage>> ;
+    wrappers.wrapType(PyCcdImage(wrappers.module, "CcdImage"), [](auto &mod, auto &cls) {
 
-    cls.def(py::init<afw::table::SourceCatalog &, std::shared_ptr<lsst::afw::geom::SkyWcs>,
-                     std::shared_ptr<lsst::afw::image::VisitInfo>, lsst::geom::Box2I const &,
-                     std::string const &, std::shared_ptr<afw::image::PhotoCalib>,
-                     std::shared_ptr<afw::cameraGeom::Detector>, int, int, std::string const &>(),
-            "record"_a, "wcs"_a, "visitInfo"_a, "bbox"_a, "filter"_a, "photoCalib"_a, "detector"_a, "visit"_a,
-            "ccd"_a, "fluxField"_a);
+        cls.def(py::init<afw::table::SourceCatalog &, std::shared_ptr<lsst::afw::geom::SkyWcs>,
+                        std::shared_ptr<lsst::afw::image::VisitInfo>, lsst::geom::Box2I const &,
+                        std::string const &, std::shared_ptr<afw::image::PhotoCalib>,
+                        std::shared_ptr<afw::cameraGeom::Detector>, int, int, std::string const &>(),
+                "record"_a, "wcs"_a, "visitInfo"_a, "bbox"_a, "filter"_a, "photoCalib"_a, "detector"_a, "visit"_a,
+                "ccd"_a, "fluxField"_a);
 
-    cls.def("getPhotoCalib", &CcdImage::getPhotoCalib);
+        cls.def("getPhotoCalib", &CcdImage::getPhotoCalib);
 
-    cls.def("countStars", &CcdImage::countStars);
+        cls.def("countStars", &CcdImage::countStars);
 
-    cls.def("resetCatalogForFit", &CcdImage::resetCatalogForFit);
+        cls.def("resetCatalogForFit", &CcdImage::resetCatalogForFit);
 
-    cls.def("getBoresightRaDec", &CcdImage::getBoresightRaDec);
-    cls.def_property_readonly("boresightRaDec", &CcdImage::getBoresightRaDec);
+        cls.def("getBoresightRaDec", &CcdImage::getBoresightRaDec);
+        cls.def_property_readonly("boresightRaDec", &CcdImage::getBoresightRaDec);
 
-    cls.def("getCcdId", &CcdImage::getCcdId);
-    cls.def_property_readonly("ccdId", &CcdImage::getCcdId);
+        cls.def("getCcdId", &CcdImage::getCcdId);
+        cls.def_property_readonly("ccdId", &CcdImage::getCcdId);
 
-    cls.def("getEpoch", &CcdImage::getEpoch);
-    cls.def_property_readonly("epoch", &CcdImage::getEpoch);
+        cls.def("getEpoch", &CcdImage::getEpoch);
+        cls.def_property_readonly("epoch", &CcdImage::getEpoch);
 
-    cls.def("getImageFrame", &CcdImage::getImageFrame, py::return_value_policy::reference_internal);
-    cls.def_property_readonly("imageFrame", &CcdImage::getImageFrame,
-                              py::return_value_policy::reference_internal);
+        cls.def("getImageFrame", &CcdImage::getImageFrame, py::return_value_policy::reference_internal);
+        cls.def_property_readonly("imageFrame", &CcdImage::getImageFrame,
+                                  py::return_value_policy::reference_internal);
 
-    cls.def("getName", &CcdImage::getName);
-    cls.def_property_readonly("name", &CcdImage::getName);
+        cls.def("getName", &CcdImage::getName);
+        cls.def_property_readonly("name", &CcdImage::getName);
 
-    cls.def("getVisit", &CcdImage::getVisit);
-    cls.def_property_readonly("visit", &CcdImage::getVisit);
+        cls.def("getVisit", &CcdImage::getVisit);
+        cls.def_property_readonly("visit", &CcdImage::getVisit);
 
-    cls.def("getDetector", &CcdImage::getDetector, py::return_value_policy::reference_internal);
+        cls.def("getDetector", &CcdImage::getDetector, py::return_value_policy::reference_internal);
 
-    cls.def("getCommonTangentPoint", &CcdImage::getCommonTangentPoint,
-            py::return_value_policy::reference_internal);
-    cls.def("setCommonTangentPoint", &CcdImage::setCommonTangentPoint);
-    cls.def_property("commonTangentPoint", &CcdImage::getCommonTangentPoint, &CcdImage::setCommonTangentPoint,
-                     py::return_value_policy::reference_internal);
+        cls.def("getCommonTangentPoint", &CcdImage::getCommonTangentPoint,
+                py::return_value_policy::reference_internal);
+        cls.def("setCommonTangentPoint", &CcdImage::setCommonTangentPoint);
+        cls.def_property("commonTangentPoint", &CcdImage::getCommonTangentPoint, &CcdImage::setCommonTangentPoint,
+                         py::return_value_policy::reference_internal);
 
-    cls.def("getSkyToTangentPlane", &CcdImage::getSkyToTangentPlane,
-            py::return_value_policy::reference_internal);
-    cls.def("getReadWcs", &CcdImage::getReadWcs, py::return_value_policy::reference_internal);
+        cls.def("getSkyToTangentPlane", &CcdImage::getSkyToTangentPlane,
+                py::return_value_policy::reference_internal);
+        cls.def("getReadWcs", &CcdImage::getReadWcs, py::return_value_policy::reference_internal);
+    });
+}
+}  // namespace
+
+void wrapCcdImage(lsst::cpputils::python::WrapperCollection &wrappers) {
+    declareCcdImage(wrappers);
 }
 
-PYBIND11_MODULE(ccdImage, mod) { declareCcdImage(mod); }
-}  // namespace
 }  // namespace jointcal
 }  // namespace lsst

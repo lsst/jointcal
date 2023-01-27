@@ -25,17 +25,13 @@
 #include "pybind11/pybind11.h"
 #include "pybind11/eigen.h"
 #include "pybind11/stl.h"
-#include "ndarray/pybind11.h"
-#include "ndarray/eigen.h"
-#include "Eigen/Core"
-
-#include "lsst/utils/python.h"
+#include "lsst/cpputils/python.h"
 
 #include "lsst/jointcal/CcdImage.h"
 #include "lsst/jointcal/AstrometryModel.h"
 #include "lsst/jointcal/SimpleAstrometryModel.h"
 #include "lsst/jointcal/ConstrainedAstrometryModel.h"
-#include "lsst/jointcal/AstrometryTransform.h"
+
 
 namespace py = pybind11;
 using namespace pybind11::literals;
@@ -44,56 +40,59 @@ namespace lsst {
 namespace jointcal {
 namespace {
 
-void declareAstrometryModel(py::module &mod) {
-    py::class_<AstrometryModel, std::shared_ptr<AstrometryModel>> cls(mod, "AstrometryModel");
-
-    cls.def("getNpar", &AstrometryModel::getNpar);
-    cls.def("getMapping", &AstrometryModel::getMapping, py::return_value_policy::reference_internal);
-    cls.def("assignIndices", &AstrometryModel::assignIndices);
-    cls.def("offsetParams", &AstrometryModel::offsetParams);
-    cls.def("getSkyToTangentPlane", &AstrometryModel::getSkyToTangentPlane);
-    cls.def("makeSkyWcs", &AstrometryModel::makeSkyWcs);
-    cls.def("getTotalParameters", &AstrometryModel::getTotalParameters);
-    cls.def("validate", &AstrometryModel::validate);
-    utils::python::addOutputOp(cls, "__repr__");
-    cls.def("__str__", [](AstrometryModel const &self) { return "AstrometryModel"; });
+void declareAstrometryModel(lsst::cpputils::python::WrapperCollection &wrappers) {
+    using PyAstrometryModel = py::class_<AstrometryModel, std::shared_ptr<AstrometryModel>>;
+    wrappers.wrapType(PyAstrometryModel(wrappers.module, "AstrometryModel"), [](auto &mod, auto &cls) {
+        cls.def("getNpar", &AstrometryModel::getNpar);
+        cls.def("getMapping", &AstrometryModel::getMapping, py::return_value_policy::reference_internal);
+        cls.def("assignIndices", &AstrometryModel::assignIndices);
+        cls.def("offsetParams", &AstrometryModel::offsetParams);
+        cls.def("getSkyToTangentPlane", &AstrometryModel::getSkyToTangentPlane);
+        cls.def("makeSkyWcs", &AstrometryModel::makeSkyWcs);
+        cls.def("getTotalParameters", &AstrometryModel::getTotalParameters);
+        cls.def("validate", &AstrometryModel::validate);
+        utils::python::addOutputOp(cls, "__repr__");
+        cls.def("__str__", [](AstrometryModel const &self) { return "AstrometryModel"; });
+    });
 }
 
-void declareSimpleAstrometryModel(py::module &mod) {
-    py::class_<SimpleAstrometryModel, std::shared_ptr<SimpleAstrometryModel>, AstrometryModel> cls(
-            mod, "SimpleAstrometryModel");
+void declareSimpleAstrometryModel(lsst::cpputils::python::WrapperCollection &wrappers) {
+    using PySimpleAstrometryModel =
+            py::class_<SimpleAstrometryModel, std::shared_ptr<SimpleAstrometryModel>, AstrometryModel>;
 
-    cls.def(py::init<CcdImageList const &, const std::shared_ptr<ProjectionHandler const>, bool, unsigned,
-                     unsigned>(),
-            "ccdImageList"_a, "projectionHandler"_a, "initFromWcs"_a, "nNotFit"_a = 0, "order"_a = 3);
+    wrappers.wrapType(PySimpleAstrometryModel(wrappers.module, "SimpleAstrometryModel"), [](auto &mod, auto &cls) {
+        cls.def(py::init<CcdImageList const &, const std::shared_ptr<ProjectionHandler const>, bool, unsigned,
+                        unsigned>(),
+                "ccdImageList"_a, "projectionHandler"_a, "initFromWcs"_a, "nNotFit"_a = 0, "order"_a = 3);
 
-    cls.def("getTransform", &SimpleAstrometryModel::getTransform,
-            py::return_value_policy::reference_internal);
-    cls.def("__str__", [](SimpleAstrometryModel const &self) { return "SimpleAstrometryModel"; });
+        cls.def("getTransform", &SimpleAstrometryModel::getTransform,
+                py::return_value_policy::reference_internal);
+        cls.def("__str__", [](SimpleAstrometryModel const &self) { return "SimpleAstrometryModel"; });
+    });
 }
 
-void declareConstrainedAstrometryModel(py::module &mod) {
-    py::class_<ConstrainedAstrometryModel, std::shared_ptr<ConstrainedAstrometryModel>, AstrometryModel> cls(
-            mod, "ConstrainedAstrometryModel");
+void declareConstrainedAstrometryModel(lsst::cpputils::python::WrapperCollection &wrappers) {
+    using PyConstrainedAstrometryModel =
+            py::class_<ConstrainedAstrometryModel, std::shared_ptr<ConstrainedAstrometryModel>, AstrometryModel> ;
 
-    cls.def(py::init<CcdImageList const &, std::shared_ptr<ProjectionHandler const>, int, int>(),
-            "ccdImageList"_a, "projectionHandler"_a, "chipOrder"_a, "visitOrder"_a);
+    wrappers.wrapType(PyConstrainedAstrometryModel(wrappers.module, "ConstrainedAstrometryModel"), [](auto &mod, auto &cls) {
+        cls.def(py::init<CcdImageList const &, std::shared_ptr<ProjectionHandler const>, int, int>(),
+                "ccdImageList"_a, "projectionHandler"_a, "chipOrder"_a, "visitOrder"_a);
 
-    cls.def("getChipTransform", &ConstrainedAstrometryModel::getChipTransform,
-            py::return_value_policy::reference_internal);
-    cls.def("getVisitTransform", &ConstrainedAstrometryModel::getVisitTransform,
-            py::return_value_policy::reference_internal);
-    cls.def("__str__", [](ConstrainedAstrometryModel const &self) { return "ConstrainedAstrometryModel"; });
-}
-
-PYBIND11_MODULE(astrometryModels, mod) {
-    py::module::import("lsst.jointcal.ccdImage");
-    py::module::import("lsst.jointcal.astrometryTransform");
-    py::module::import("lsst.jointcal.astrometryMappings");
-    declareAstrometryModel(mod);
-    declareSimpleAstrometryModel(mod);
-    declareConstrainedAstrometryModel(mod);
+        cls.def("getChipTransform", &ConstrainedAstrometryModel::getChipTransform,
+                py::return_value_policy::reference_internal);
+        cls.def("getVisitTransform", &ConstrainedAstrometryModel::getVisitTransform,
+                py::return_value_policy::reference_internal);
+        cls.def("__str__", [](ConstrainedAstrometryModel const &self) { return "ConstrainedAstrometryModel"; });
+    });
 }
 }  // namespace
+
+void wrapAstrometryModels(lsst::cpputils::python::WrapperCollection &wrappers) {
+    declareAstrometryModel(wrappers);
+    declareSimpleAstrometryModel(wrappers);
+    declareConstrainedAstrometryModel(wrappers);
+}
+
 }  // namespace jointcal
 }  // namespace lsst
