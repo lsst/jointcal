@@ -46,6 +46,7 @@ void wrapStar(WrapperCollection &wrappers);
 PYBIND11_MODULE(_jointcalLib, mod) {
     lsst::cpputils::python::WrapperCollection wrappers(mod, "lsst.jointcal");
     wrappers.addInheritanceDependency("lsst.sphgeom");
+    wrappers.addSignatureDependency("astshim");
     wrapAssociations(wrappers);
     wrapAstrometryMappings(wrappers);
     wrapAstrometryModels(wrappers);
