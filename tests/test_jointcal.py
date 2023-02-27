@@ -42,7 +42,6 @@ import lsst.pipe.base
 import lsst.jointcal
 from lsst.jointcal.jointcal import make_schema_table, extract_detector_catalog_from_visit_catalog
 from lsst.jointcal import MinimizeResult
-import lsst.jointcal.chi2
 import lsst.jointcal.testUtils
 
 
@@ -138,16 +137,16 @@ class JointcalTestBase:
         for ccdImage in self.ccdImageList:
             ccdImage.resetCatalogForFit()
 
-        self.goodChi2 = lsst.jointcal.chi2.Chi2Statistic()
+        self.goodChi2 = lsst.jointcal.Chi2Statistic()
         # chi2/ndof == 2.0 should be non-bad
         self.goodChi2.chi2 = 200.0
         self.goodChi2.ndof = 100
 
-        self.badChi2 = lsst.jointcal.chi2.Chi2Statistic()
+        self.badChi2 = lsst.jointcal.Chi2Statistic()
         self.badChi2.chi2 = 600.0
         self.badChi2.ndof = 100
 
-        self.nanChi2 = lsst.jointcal.chi2.Chi2Statistic()
+        self.nanChi2 = lsst.jointcal.Chi2Statistic()
         self.nanChi2.chi2 = np.nan
         self.nanChi2.ndof = 100
 
@@ -231,10 +230,10 @@ class TestJointcalIterateFit(JointcalTestBase, lsst.utils.tests.TestCase):
         """DM-25159: warn, but don't fail, on moderate chi2 increases between
         steps.
         """
-        chi2_1 = lsst.jointcal.chi2.Chi2Statistic()
+        chi2_1 = lsst.jointcal.Chi2Statistic()
         chi2_1.chi2 = 100.0
         chi2_1.ndof = 100
-        chi2_2 = lsst.jointcal.chi2.Chi2Statistic()
+        chi2_2 = lsst.jointcal.Chi2Statistic()
         chi2_2.chi2 = 300.0
         chi2_2.ndof = 100
 
@@ -254,10 +253,10 @@ class TestJointcalIterateFit(JointcalTestBase, lsst.utils.tests.TestCase):
 
     def test_large_chi2_increase_fails(self):
         """DM-25159: fail on large chi2 increases between steps."""
-        chi2_1 = lsst.jointcal.chi2.Chi2Statistic()
+        chi2_1 = lsst.jointcal.Chi2Statistic()
         chi2_1.chi2 = 1e11
         chi2_1.ndof = 100
-        chi2_2 = lsst.jointcal.chi2.Chi2Statistic()
+        chi2_2 = lsst.jointcal.Chi2Statistic()
         chi2_2.chi2 = 1.123456e13  # to check floating point formatting
         chi2_2.ndof = 100
 

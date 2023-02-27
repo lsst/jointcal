@@ -21,18 +21,7 @@
 
 import pkgutil
 import lsstimport
-from .associations import *
-from .astrometryMappings import *
-from .astrometryModels import *
-from .ccdImage import *
-from .chi2 import *
-from .fitter import *
-from .astrometryTransform import *
+from ._jointcalLib import *
 from .jointcal import *
-from .jointcalControl import *
-from .photometryMappings import *
-from .photometryModels import *
-from .photometryTransform import *
-from .projectionHandler import *
 from .version import *
 __path__ = pkgutil.extend_path(__path__, __name__)

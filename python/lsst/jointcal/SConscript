@@ -1,20 +1,3 @@
 # -*- python -*-
 from lsst.sconsUtils import scripts
-scripts.BasicSConscript.pybind11(
-    ['associations',
-     'astrometryMappings',
-     'astrometryModels',
-     'astrometryTransform',
-     'ccdImage',
-     'chi2',
-     'fitter',
-     'frame',
-     'jointcalControl',
-     'photometryMappings',
-     'photometryModels',
-     'photometryTransform',
-     'projectionHandler',
-     'star'
-    ],
-    addUnderscore=False,
-)
+scripts.BasicSConscript.python(["_jointcalLib"])

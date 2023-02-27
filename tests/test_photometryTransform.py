@@ -27,7 +27,7 @@ import unittest
 import lsst.utils.tests
 
 import lsst.geom
-from lsst.jointcal import photometryTransform
+import lsst.jointcal
 
 
 CHEBYSHEV_T = [
@@ -104,8 +104,8 @@ class SpatiallyInvariantTestBase(PhotometryTransformTestBase):
 class FluxTransformSpatiallyInvariantTestCase(SpatiallyInvariantTestBase, lsst.utils.tests.TestCase):
     def setUp(self):
         super().setUp()
-        self.transform1 = photometryTransform.FluxTransformSpatiallyInvariant()
-        self.transform2 = photometryTransform.FluxTransformSpatiallyInvariant(self.t2InitValue)
+        self.transform1 = lsst.jointcal.FluxTransformSpatiallyInvariant()
+        self.transform2 = lsst.jointcal.FluxTransformSpatiallyInvariant(self.t2InitValue)
 
     def test_transform(self):
         self._test_transform(self.transform1, self.value)
@@ -129,8 +129,8 @@ class FluxTransformSpatiallyInvariantTestCase(SpatiallyInvariantTestBase, lsst.u
 class MagnitudeTransformSpatiallyInvariantTestCase(SpatiallyInvariantTestBase, lsst.utils.tests.TestCase):
     def setUp(self):
         super().setUp()
-        self.transform1 = photometryTransform.MagnitudeTransformSpatiallyInvariant()
-        self.transform2 = photometryTransform.MagnitudeTransformSpatiallyInvariant(self.t2InitValue)
+        self.transform1 = lsst.jointcal.MagnitudeTransformSpatiallyInvariant()
+        self.transform2 = lsst.jointcal.MagnitudeTransformSpatiallyInvariant(self.t2InitValue)
 
     def test_transform(self):
         self._test_transform(self.transform1, self.value)
@@ -267,7 +267,7 @@ class PhotometryTransformChebyshevTestCase(PhotometryTransformTestBase, abc.ABC)
             integrate2dBox[2, 2, -5, 7, -6, 8, 0, 2, 0, 3]
         """
         coeffs = np.array([[3.]], dtype=float)
-        transform = photometryTransform.FluxTransformChebyshev(coeffs, self.bbox)
+        transform = lsst.jointcal.FluxTransformChebyshev(coeffs, self.bbox)
 
         # a box that goes from 0,0 to the x/y maximum
         box = lsst.geom.Box2D(lsst.geom.Point2D(0, 0),
@@ -289,7 +289,7 @@ class PhotometryTransformChebyshevTestCase(PhotometryTransformTestBase, abc.ABC)
         box = lsst.geom.Box2D(lsst.geom.Point2D(0, 0), lsst.geom.Point2D(6, 5))
         # test 1st order in x:
         coeffs = np.array([[2., 5.], [0., 0]], dtype=float)
-        transform = photometryTransform.FluxTransformChebyshev(coeffs, self.bbox)
+        transform = lsst.jointcal.FluxTransformChebyshev(coeffs, self.bbox)
         # 30*a00 + 10*a10
         expect = 30*coeffs[0, 0] + 10*coeffs[0, 1]
         result = transform.integrate(box)
@@ -297,7 +297,7 @@ class PhotometryTransformChebyshevTestCase(PhotometryTransformTestBase, abc.ABC)
 
         # test 1st order in y:
         coeffs = np.array([[2., 0.], [5., 0]], dtype=float)
-        transform = photometryTransform.FluxTransformChebyshev(coeffs, self.bbox)
+        transform = lsst.jointcal.FluxTransformChebyshev(coeffs, self.bbox)
         # 30*a00 + 45/7*a01
         expect = 30*coeffs[0, 0] + 45./7.*coeffs[1, 0]
         result = transform.integrate(box)
@@ -308,7 +308,7 @@ class PhotometryTransformChebyshevTestCase(PhotometryTransformTestBase, abc.ABC)
         Note that the coefficients are [y,x] ordered.
         """
         # 1st order in both x and y
-        transform = photometryTransform.FluxTransformChebyshev(2, self.bbox)
+        transform = lsst.jointcal.FluxTransformChebyshev(2, self.bbox)
         # zero, then set the parameters
         transform.offsetParams(np.array([1, 0, 0, 0, 0, 0, 0, 0, 0], dtype=float))
         coeffs = np.array([[0, 0, 0], [0, 4, 0], [0, 0, 0]], dtype=float)
@@ -330,7 +330,7 @@ class PhotometryTransformChebyshevTestCase(PhotometryTransformTestBase, abc.ABC)
         box = lsst.geom.Box2D(lsst.geom.Point2D(-3, 0), lsst.geom.Point2D(2, 3))
         coeffs = np.array([[1, 2, 3, 0, 0], [4, 5, 6, 0, 0], [7, 8, 9, 0, 0],
                           [0, 0, 0, 0, 0], [0, 0, 0, 0, 0]], dtype=float)
-        transform = photometryTransform.FluxTransformChebyshev(coeffs, self.bbox)
+        transform = lsst.jointcal.FluxTransformChebyshev(coeffs, self.bbox)
 
         # integrating on the full box should match the standard integral
         expect = transform.integrate()
@@ -351,8 +351,8 @@ class PhotometryTransformChebyshevTestCase(PhotometryTransformTestBase, abc.ABC)
 class FluxTransformChebyshevTestCase(PhotometryTransformChebyshevTestCase, lsst.utils.tests.TestCase):
     def setUp(self):
         super().setUp()
-        self.transform1 = photometryTransform.FluxTransformChebyshev(self.order1, self.bbox)
-        self.transform2 = photometryTransform.FluxTransformChebyshev(self.coefficients, self.bbox)
+        self.transform1 = lsst.jointcal.FluxTransformChebyshev(self.order1, self.bbox)
+        self.transform2 = lsst.jointcal.FluxTransformChebyshev(self.coefficients, self.bbox)
 
     def test_transform(self):
         result = self.transform1.transform(self.point[0], self.point[1], self.value)
@@ -375,8 +375,8 @@ class FluxTransformChebyshevTestCase(PhotometryTransformChebyshevTestCase, lsst.
 class MagnitudeTransformChebyshevTestCase(PhotometryTransformChebyshevTestCase, lsst.utils.tests.TestCase):
     def setUp(self):
         super().setUp()
-        self.transform1 = photometryTransform.MagnitudeTransformChebyshev(self.order1, self.bbox)
-        self.transform2 = photometryTransform.MagnitudeTransformChebyshev(self.coefficients, self.bbox)
+        self.transform1 = lsst.jointcal.MagnitudeTransformChebyshev(self.order1, self.bbox)
+        self.transform2 = lsst.jointcal.MagnitudeTransformChebyshev(self.coefficients, self.bbox)
 
     def test_transform(self):
         result = self.transform1.transform(self.point[0], self.point[1], self.value)

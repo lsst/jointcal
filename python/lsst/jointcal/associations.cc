@@ -24,6 +24,7 @@
 
 #include "pybind11/pybind11.h"
 #include "pybind11/stl.h"
+#include "lsst/cpputils/python.h"
 
 #include "lsst/jointcal/Associations.h"
 #include "lsst/jointcal/CcdImage.h"
@@ -36,46 +37,46 @@ namespace lsst {
 namespace jointcal {
 namespace {
 
-void declareAssociations(py::module &mod) {
-    py::class_<Associations, std::shared_ptr<Associations>> cls(mod, "Associations");
-    cls.def(py::init<>());
-    cls.def(py::init<CcdImageList const &, double>(), "imageList"_a, "epoch"_a = 0);
+void declareAssociations(lsst::cpputils::python::WrapperCollection &wrappers) {
+    using PyAssociations = py::class_<Associations, std::shared_ptr<Associations>>;
+    wrappers.wrapType(PyAssociations(wrappers.module, "Associations"), [](auto &mod, auto &cls) {
+        cls.def(py::init<>());
+        cls.def(py::init<CcdImageList const &, double>(), "imageList"_a, "epoch"_a = 0);
 
-    // NOTE: these could go away if the lists they wrap can be accessed directly.
-    cls.def("refStarListSize", &Associations::refStarListSize);
-    cls.def("fittedStarListSize", &Associations::fittedStarListSize);
-    cls.def("associateCatalogs", &Associations::associateCatalogs, "matchCutInArcsec"_a = 0,
-            "useFittedList"_a = false, "enlargeFittedList"_a = true);
-    cls.def("collectRefStars", &Associations::collectRefStars, "refCat"_a, "matchCut"_a, "fluxField"_a,
-            "refCoordinateErr"_a, "rejectBadFluxes"_a = false);
-    cls.def("deprojectFittedStars", &Associations::deprojectFittedStars);
-    cls.def("nCcdImagesValidForFit", &Associations::nCcdImagesValidForFit);
-    cls.def("nFittedStarsWithAssociatedRefStar", &Associations::nFittedStarsWithAssociatedRefStar);
+        // NOTE: these could go away if the lists they wrap can be accessed directly.
+        cls.def("refStarListSize", &Associations::refStarListSize);
+        cls.def("fittedStarListSize", &Associations::fittedStarListSize);
+        cls.def("associateCatalogs", &Associations::associateCatalogs, "matchCutInArcsec"_a = 0,
+                "useFittedList"_a = false, "enlargeFittedList"_a = true);
+        cls.def("collectRefStars", &Associations::collectRefStars, "refCat"_a, "matchCut"_a, "fluxField"_a,
+                "refCoordinateErr"_a, "rejectBadFluxes"_a = false);
+        cls.def("deprojectFittedStars", &Associations::deprojectFittedStars);
+        cls.def("nCcdImagesValidForFit", &Associations::nCcdImagesValidForFit);
+        cls.def("nFittedStarsWithAssociatedRefStar", &Associations::nFittedStarsWithAssociatedRefStar);
 
-    cls.def("createCcdImage", &Associations::createCcdImage);
-    cls.def("addCcdImage", &Associations::addCcdImage);
-    cls.def("prepareFittedStars", &Associations::prepareFittedStars);
-    cls.def("cleanFittedStars", &Associations::cleanFittedStars);
+        cls.def("createCcdImage", &Associations::createCcdImage);
+        cls.def("addCcdImage", &Associations::addCcdImage);
+        cls.def("prepareFittedStars", &Associations::prepareFittedStars);
+        cls.def("cleanFittedStars", &Associations::cleanFittedStars);
 
-    cls.def("getCcdImageList", &Associations::getCcdImageList, py::return_value_policy::reference_internal);
-    cls.def_property_readonly("ccdImageList", &Associations::getCcdImageList,
-                              py::return_value_policy::reference_internal);
+        cls.def("getCcdImageList", &Associations::getCcdImageList, py::return_value_policy::reference_internal);
+        cls.def_property_readonly("ccdImageList", &Associations::getCcdImageList,
+                                  py::return_value_policy::reference_internal);
 
-    cls.def("computeBoundingCircle", &Associations::computeBoundingCircle);
+        cls.def("computeBoundingCircle", &Associations::computeBoundingCircle);
 
-    cls.def("getCommonTangentPoint", &Associations::getCommonTangentPoint);
-    cls.def("setCommonTangentPoint", &Associations::setCommonTangentPoint);
-    cls.def("computeCommonTangentPoint", &Associations::computeCommonTangentPoint);
+        cls.def("getCommonTangentPoint", &Associations::getCommonTangentPoint);
+        cls.def("setCommonTangentPoint", &Associations::setCommonTangentPoint);
+        cls.def("computeCommonTangentPoint", &Associations::computeCommonTangentPoint);
 
-    cls.def("getEpoch", &Associations::getEpoch);
-    cls.def("setEpoch", &Associations::setEpoch);
-}
-
-PYBIND11_MODULE(associations, mod) {
-    py::module::import("lsst.jointcal.ccdImage");
-    py::module::import("lsst.sphgeom");
-    declareAssociations(mod);
+        cls.def("getEpoch", &Associations::getEpoch);
+        cls.def("setEpoch", &Associations::setEpoch);
+    });
 }
 }  // namespace
+
+void wrapAssociations(lsst::cpputils::python::WrapperCollection &wrappers) {
+    declareAssociations(wrappers);
+}
 }  // namespace jointcal
 }  // namespace lsst

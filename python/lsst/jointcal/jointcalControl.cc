@@ -23,6 +23,7 @@
  */
 
 #include "pybind11/pybind11.h"
+#include "lsst/cpputils/python.h"
 
 #include "lsst/jointcal/JointcalControl.h"
 #include "lsst/pex/config/python.h"  // for LSST_DECLARE_CONTROL_FIELD
@@ -34,14 +35,19 @@ namespace lsst {
 namespace jointcal {
 namespace {
 
-void declareJointcalControl(py::module &mod) {
-    py::class_<JointcalControl, std::shared_ptr<JointcalControl>> cls(mod, "JointcalControl");
-    cls.def(py::init<std::string>(), "sourceFluxField"_a = "slot_CalibFlux");
+void declareJointcalControl(lsst::cpputils::python::WrapperCollection &wrappers) {
+    using PyJointcalControl = py::class_<JointcalControl, std::shared_ptr<JointcalControl>>;
 
-    LSST_DECLARE_CONTROL_FIELD(cls, JointcalControl, sourceFluxField);
+    wrappers.wrapType(PyJointcalControl(wrappers.module, "JointcalControl"), [](auto &mod, auto &cls) {
+        cls.def(py::init<std::string>(), "sourceFluxField"_a = "slot_CalibFlux");
+        LSST_DECLARE_CONTROL_FIELD(cls, JointcalControl, sourceFluxField);
+    });
+}
+}  // namespace
+
+void wrapJointcalControl(lsst::cpputils::python::WrapperCollection &wrappers) {
+    declareJointcalControl(wrappers);
 }
 
-PYBIND11_MODULE(jointcalControl, mod) { declareJointcalControl(mod); }
-}  // namespace
 }  // namespace jointcal
 }  // namespace lsst

@@ -41,7 +41,6 @@ import lsst.log
 import lsst.jointcal
 from lsst.jointcal.jointcal import (make_schema_table, get_sourceTable_visit_columns,
                                     extract_detector_catalog_from_visit_catalog)
-from lsst.jointcal import astrometryModels
 from jointcalTestBase import importRepository
 
 
@@ -234,13 +233,13 @@ class AstrometryModelTestBase:
             # TODO: Fix these "Point"s once DM-4044 is done.
 
             # jointcal's pixel->tangent-plane mapping
-            star = lsst.jointcal.star.BaseStar(point.getX(), point.getY(), 0, 0)
+            star = lsst.jointcal.BaseStar(point.getX(), point.getY(), 0, 0)
             tpExpect = mapping.transformPosAndErrors(star)
             expects.append(lsst.geom.Point2D(tpExpect.x, tpExpect.y))
 
             # skywcs takes pixel->sky, and we then have to go sky->tangent-plane
-            onSky = lsst.jointcal.star.BaseStar(spherePoint.getLongitude().asDegrees(),
-                                                spherePoint.getLatitude().asDegrees(), 0, 0)
+            onSky = lsst.jointcal.BaseStar(spherePoint.getLongitude().asDegrees(),
+                                           spherePoint.getLatitude().asDegrees(), 0, 0)
             result = skyToTangentPlane.apply(onSky)
             forwards.append(lsst.geom.Point2D(result.x, result.y))
 
@@ -257,10 +256,10 @@ class SimpleAstrometryModelTestCase(AstrometryModelTestBase, lsst.utils.tests.Te
         super().setUp()
         self.order1 = 3
         self.inverseMaxDiff1 = 2e-4
-        self.model1 = astrometryModels.SimpleAstrometryModel(self.associations.getCcdImageList(),
-                                                             self.projectionHandler,
-                                                             True,
-                                                             order=self.order1)
+        self.model1 = lsst.jointcal.SimpleAstrometryModel(self.associations.getCcdImageList(),
+                                                          self.projectionHandler,
+                                                          True,
+                                                          order=self.order1)
 
         self.order2 = 5
         # NOTE: because assertPairListsAlmostEqual tests an absolute
@@ -271,10 +270,10 @@ class SimpleAstrometryModelTestCase(AstrometryModelTestBase, lsst.utils.tests.Te
         # SkyWcs inverse, but that may not be wise for the more general use
         # case due to the inverse then having too many wiggles.
         self.inverseMaxDiff2 = 2e-2
-        self.model2 = astrometryModels.SimpleAstrometryModel(self.associations.getCcdImageList(),
-                                                             self.projectionHandler,
-                                                             False,
-                                                             order=self.order2)
+        self.model2 = lsst.jointcal.SimpleAstrometryModel(self.associations.getCcdImageList(),
+                                                          self.projectionHandler,
+                                                          False,
+                                                          order=self.order2)
         self._prepModels()
 
     def _testGetNpar(self, model, order):
@@ -309,18 +308,18 @@ class ConstrainedAstrometryModelTestCase(AstrometryModelTestBase, lsst.utils.tes
         self.visitOrder1 = 3
         self.chipOrder1 = 1
         self.inverseMaxDiff1 = 1e-5
-        self.model1 = astrometryModels.ConstrainedAstrometryModel(self.associations.getCcdImageList(),
-                                                                  self.projectionHandler,
-                                                                  chipOrder=self.chipOrder1,
-                                                                  visitOrder=self.visitOrder1)
+        self.model1 = lsst.jointcal.ConstrainedAstrometryModel(self.associations.getCcdImageList(),
+                                                               self.projectionHandler,
+                                                               chipOrder=self.chipOrder1,
+                                                               visitOrder=self.visitOrder1)
 
         self.visitOrder2 = 5
         self.chipOrder2 = 2
         self.inverseMaxDiff2 = 8e-5
-        self.model2 = astrometryModels.ConstrainedAstrometryModel(self.associations.getCcdImageList(),
-                                                                  self.projectionHandler,
-                                                                  chipOrder=self.chipOrder2,
-                                                                  visitOrder=self.visitOrder2)
+        self.model2 = lsst.jointcal.ConstrainedAstrometryModel(self.associations.getCcdImageList(),
+                                                               self.projectionHandler,
+                                                               chipOrder=self.chipOrder2,
+                                                               visitOrder=self.visitOrder2)
         self._prepModels()
 
         # 22 is closest to the center of the focal plane in this data, so it is not fit.

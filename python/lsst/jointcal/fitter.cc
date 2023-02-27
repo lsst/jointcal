@@ -23,6 +23,7 @@
  */
 
 #include "pybind11/pybind11.h"
+#include "lsst/cpputils/python.h"
 
 #include "lsst/jointcal/Associations.h"
 #include "lsst/jointcal/AstrometryFit.h"
@@ -39,49 +40,53 @@ namespace lsst {
 namespace jointcal {
 namespace {
 
-void declareFitterBase(py::module &mod) {
-    py::class_<FitterBase, std::shared_ptr<FitterBase>> cls(mod, "FitterBase");
+void declareFitterBase(lsst::cpputils::python::WrapperCollection &wrappers) {
+    using PyFitterBase = py::class_<FitterBase, std::shared_ptr<FitterBase>>;
 
-    cls.def("minimize", &FitterBase::minimize, "whatToFit"_a, "nSigRejCut"_a = 0,
-            "sigmaRelativeTolerance"_a = 0, "doRankUpdate"_a = true, "doLineSearch"_a = false,
-            "dumpMatrixFile"_a = "");
-    cls.def("computeChi2", &FitterBase::computeChi2);
-    cls.def("saveChi2Contributions", &FitterBase::saveChi2Contributions);
+    wrappers.wrapType(PyFitterBase(wrappers.module, "FitterBase"), [](auto &mod, auto &cls) {
+
+        cls.def("minimize", &FitterBase::minimize, "whatToFit"_a, "nSigRejCut"_a = 0,
+                "sigmaRelativeTolerance"_a = 0, "doRankUpdate"_a = true, "doLineSearch"_a = false,
+                "dumpMatrixFile"_a = "");
+        cls.def("computeChi2", &FitterBase::computeChi2);
+        cls.def("saveChi2Contributions", &FitterBase::saveChi2Contributions);
+    });
 }
 
-void declareAstrometryFit(py::module &mod) {
-    py::class_<AstrometryFit, std::shared_ptr<AstrometryFit>, FitterBase> cls(mod, "AstrometryFit");
+void declareAstrometryFit(lsst::cpputils::python::WrapperCollection &wrappers) {
+    using PyAstrometryFit = py::class_<AstrometryFit, std::shared_ptr<AstrometryFit>, FitterBase>;
 
-    cls.def(py::init<std::shared_ptr<Associations>, std::shared_ptr<AstrometryModel>, double>(),
-            "associations"_a, "astrometryModel"_a, "posError"_a);
-
-    cls.def("getModel", &AstrometryFit::getModel, py::return_value_policy::reference_internal);
+    wrappers.wrapType(PyAstrometryFit(wrappers.module, "AstrometryFit"), [](auto &mod, auto &cls) {
+        cls.def(py::init<std::shared_ptr<Associations>, std::shared_ptr<AstrometryModel>, double>(),
+                "associations"_a, "astrometryModel"_a, "posError"_a);
+        cls.def("getModel", &AstrometryFit::getModel, py::return_value_policy::reference_internal);
+    });
 }
 
-void declarePhotometryFit(py::module &mod) {
-    py::class_<PhotometryFit, std::shared_ptr<PhotometryFit>, FitterBase> cls(mod, "PhotometryFit");
+void declarePhotometryFit(lsst::cpputils::python::WrapperCollection &wrappers) {
+    using PyPhotometryFit = py::class_<PhotometryFit, std::shared_ptr<PhotometryFit>, FitterBase>;
 
-    cls.def(py::init<std::shared_ptr<Associations>, std::shared_ptr<PhotometryModel>>(), "associations"_a,
-            "photometryModel"_a);
+    wrappers.wrapType(PyPhotometryFit(wrappers.module, "PhotometryFit"), [](auto &mod, auto &cls) {
+        cls.def(py::init<std::shared_ptr<Associations>, std::shared_ptr<PhotometryModel>>(), "associations"_a,
+                "photometryModel"_a);
 
-    cls.def("getModel", &PhotometryFit::getModel, py::return_value_policy::reference_internal);
-}
-
-PYBIND11_MODULE(fitter, mod) {
-    py::module::import("lsst.jointcal.associations");
-    py::module::import("lsst.jointcal.astrometryModels");
-    py::module::import("lsst.jointcal.chi2");
-    py::module::import("lsst.jointcal.photometryModels");
-    py::enum_<MinimizeResult>(mod, "MinimizeResult")
-            .value("Converged", MinimizeResult::Converged)
-            .value("Chi2Increased", MinimizeResult::Chi2Increased)
-            .value("NonFinite", MinimizeResult::NonFinite)
-            .value("Failed", MinimizeResult::Failed);
-
-    declareFitterBase(mod);
-    declareAstrometryFit(mod);
-    declarePhotometryFit(mod);
+        cls.def("getModel", &PhotometryFit::getModel, py::return_value_policy::reference_internal);
+    });
 }
 }  // namespace
+
+void wrapFitter(lsst::cpputils::python::WrapperCollection &wrappers) {
+    wrappers.wrapType(py::enum_<MinimizeResult>(wrappers.module, "MinimizeResult"), [](auto &mod, auto &enm) {
+        enm.value("Converged", MinimizeResult::Converged);
+        enm.value("Chi2Increased", MinimizeResult::Chi2Increased);
+        enm.value("NonFinite", MinimizeResult::NonFinite);
+        enm.value("Failed", MinimizeResult::Failed);
+    });
+
+    declareFitterBase(wrappers);
+    declareAstrometryFit(wrappers);
+    declarePhotometryFit(wrappers);
+}
+
 }  // namespace jointcal
 }  // namespace lsst

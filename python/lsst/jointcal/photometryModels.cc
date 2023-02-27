@@ -22,18 +22,15 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "lsst/utils/python.h"
 #include "pybind11/pybind11.h"
+#include "lsst/cpputils/python.h"
 #include "pybind11/eigen.h"
 #include "pybind11/stl.h"
-#include "ndarray/pybind11.h"
-#include "ndarray/eigen.h"
 #include "Eigen/Core"
-
-#include "lsst/utils/python.h"
 
 #include "lsst/jointcal/CcdImage.h"
 #include "lsst/jointcal/PhotometryModel.h"
-#include "lsst/jointcal/Point.h"
 #include "lsst/jointcal/SimplePhotometryModel.h"
 #include "lsst/jointcal/ConstrainedPhotometryModel.h"
 
@@ -44,99 +41,113 @@ namespace lsst {
 namespace jointcal {
 namespace {
 
-void declarePhotometryModel(py::module &mod) {
-    py::class_<PhotometryModel, std::shared_ptr<PhotometryModel>> cls(mod, "PhotometryModel");
+void declarePhotometryModel(lsst::cpputils::python::WrapperCollection &wrappers) {
+    using PyPhotometryModel =  py::class_<PhotometryModel, std::shared_ptr<PhotometryModel>>;
 
-    cls.def("assignIndices", &PhotometryModel::assignIndices);
-    cls.def("freezeErrorTransform", &PhotometryModel::freezeErrorTransform);
+    wrappers.wrapType(PyPhotometryModel(wrappers.module, "PhotometryModel"), [](auto &mod, auto &cls) {
+        cls.def("assignIndices", &PhotometryModel::assignIndices);
+        cls.def("freezeErrorTransform", &PhotometryModel::freezeErrorTransform);
 
-    cls.def("offsetParams", &PhotometryModel::offsetParams);
-    cls.def("offsetFittedStar", &PhotometryModel::offsetFittedStar);
+        cls.def("offsetParams", &PhotometryModel::offsetParams);
+        cls.def("offsetFittedStar", &PhotometryModel::offsetFittedStar);
 
-    cls.def("transform", &PhotometryModel::transform);
-    cls.def("transformError", &PhotometryModel::transformError);
-    cls.def("computeResidual", &PhotometryModel::computeResidual);
+        cls.def("transform", &PhotometryModel::transform);
+        cls.def("transformError", &PhotometryModel::transformError);
+        cls.def("computeResidual", &PhotometryModel::computeResidual);
 
-    cls.def("getRefError", &PhotometryModel::getRefError);
-    cls.def("computeRefResidual", &PhotometryModel::computeRefResidual);
+        cls.def("getRefError", &PhotometryModel::getRefError);
+        cls.def("computeRefResidual", &PhotometryModel::computeRefResidual);
 
-    cls.def("checkPositiveOnBBox", &PhotometryModel::checkPositiveOnBBox);
-    cls.def("validate", &PhotometryModel::validate);
+        cls.def("checkPositiveOnBBox", &PhotometryModel::checkPositiveOnBBox);
+        cls.def("validate", &PhotometryModel::validate);
 
-    cls.def("getMappingIndices", &PhotometryModel::getMappingIndices);
-    cls.def("computeParameterDerivatives",
-            [](PhotometryModel const &self, MeasuredStar const &star, CcdImage const &ccdImage) {
-                Eigen::VectorXd derivatives(self.getNpar(ccdImage));
-                self.computeParameterDerivatives(star, ccdImage, derivatives);
-                return derivatives;
+        cls.def("getMappingIndices", &PhotometryModel::getMappingIndices);
+        cls.def("computeParameterDerivatives",
+                [](PhotometryModel const &self, MeasuredStar const &star, CcdImage const &ccdImage) {
+                    Eigen::VectorXd derivatives(self.getNpar(ccdImage));
+                    self.computeParameterDerivatives(star, ccdImage, derivatives);
+                    return derivatives;
+                });
+
+        cls.def("getNpar", &PhotometryModel::getNpar);
+        cls.def("toPhotoCalib", &PhotometryModel::toPhotoCalib);
+        cls.def("getMapping", &PhotometryModel::getMapping, py::return_value_policy::reference_internal);
+        cls.def("getTotalParameters", &PhotometryModel::getTotalParameters);
+
+        utils::python::addOutputOp(cls, "__repr__");
+        cls.def("__str__", [](PhotometryModel const &self) { return "PhotometryModel"; });
+    });
+}
+
+void declareSimplePhotometryModel(lsst::cpputils::python::WrapperCollection &wrappers) {
+    using PySimplePhotometryModel =
+            py::class_<SimplePhotometryModel, std::shared_ptr<SimplePhotometryModel>, PhotometryModel>;
+
+    wrappers.wrapType(PySimplePhotometryModel(wrappers.module, "SimplePhotometryModel"), [](auto &mod, auto &cls) {
+        cls.def("__str__", [](SimplePhotometryModel const &self) { return "SimplePhotometryModel"; });
+    });
+}
+
+void declareSimpleFluxModel(lsst::cpputils::python::WrapperCollection &wrappers) {
+    using PySimpleFluxModel =
+            py::class_<SimpleFluxModel, std::shared_ptr<SimpleFluxModel>, SimplePhotometryModel, PhotometryModel>;
+
+    wrappers.wrapType(PySimpleFluxModel(wrappers.module, "SimpleFluxModel"), [](auto &mod, auto &cls) {
+        cls.def(py::init<CcdImageList const &, double>(), "ccdImageList"_a, "errorPedestal"_a = 0);
+        cls.def("__str__", [](SimpleFluxModel const &self) { return "SimpleFluxModel"; });
+    });
+}
+
+void declareSimpleMagnitudeModel(lsst::cpputils::python::WrapperCollection &wrappers) {
+    using PySimpleMagnitudeModel =  py::class_<SimpleMagnitudeModel, std::shared_ptr<SimpleMagnitudeModel>, SimplePhotometryModel,
+               PhotometryModel>;
+
+    wrappers.wrapType(PySimpleMagnitudeModel(wrappers.module, "SimpleMagnitudeModel"), [](auto &mod, auto &cls) {
+        cls.def(py::init<CcdImageList const &, double>(), "ccdImageList"_a, "errorPedestal"_a = 0);
+        cls.def("__str__", [](SimpleMagnitudeModel const &self) { return "SimpleMagnitudeModel"; });
+    });
+}
+
+void declareConstrainedPhotometryModel(lsst::cpputils::python::WrapperCollection &wrappers) {
+    using PyConstrainedPhotometryModel =
+            py::class_<ConstrainedPhotometryModel, std::shared_ptr<ConstrainedPhotometryModel>, PhotometryModel>;
+
+    wrappers.wrapType(
+            PyConstrainedPhotometryModel(wrappers.module, "ConstrainedPhotometryModel"), [](auto &mod, auto &cls) {
+                cls.def("__str__",
+                        [](ConstrainedPhotometryModel const &self) { return "ConstrainedPhotometryModel"; });
             });
-
-    cls.def("getNpar", &PhotometryModel::getNpar);
-    cls.def("toPhotoCalib", &PhotometryModel::toPhotoCalib);
-    cls.def("getMapping", &PhotometryModel::getMapping, py::return_value_policy::reference_internal);
-    cls.def("getTotalParameters", &PhotometryModel::getTotalParameters);
-
-    utils::python::addOutputOp(cls, "__repr__");
-    cls.def("__str__", [](PhotometryModel const &self) { return "PhotometryModel"; });
 }
 
-void declareSimplePhotometryModel(py::module &mod) {
-    py::class_<SimplePhotometryModel, std::shared_ptr<SimplePhotometryModel>, PhotometryModel> cls(
-            mod, "SimplePhotometryModel");
-    cls.def("__str__", [](SimplePhotometryModel const &self) { return "SimplePhotometryModel"; });
+void declareConstrainedFluxModel(lsst::cpputils::python::WrapperCollection &wrappers) {
+    using PyConstrainedFluxModel =  py::class_<ConstrainedFluxModel, std::shared_ptr<ConstrainedFluxModel>, PhotometryModel>;
+
+    wrappers.wrapType(PyConstrainedFluxModel(wrappers.module, "ConstrainedFluxModel"), [](auto &mod, auto &cls) {
+        cls.def(py::init<CcdImageList const &, lsst::geom::Box2D const &, int, double>(), "CcdImageList"_a,
+                "bbox"_a, "visitOrder"_a = 7, "errorPedestal"_a = 0);
+    });
 }
 
-void declareSimpleFluxModel(py::module &mod) {
-    py::class_<SimpleFluxModel, std::shared_ptr<SimpleFluxModel>, SimplePhotometryModel, PhotometryModel> cls(
-            mod, "SimpleFluxModel");
-    cls.def(py::init<CcdImageList const &, double>(), "ccdImageList"_a, "errorPedestal"_a = 0);
+void declareConstrainedMagnitudeModel(lsst::cpputils::python::WrapperCollection &wrappers) {
+    using PyConstrainedMagnitudeModel =  py::class_<ConstrainedMagnitudeModel, std::shared_ptr<ConstrainedMagnitudeModel>, PhotometryModel>;
 
-    cls.def("__str__", [](SimpleFluxModel const &self) { return "SimpleFluxModel"; });
-}
-
-void declareSimpleMagnitudeModel(py::module &mod) {
-    py::class_<SimpleMagnitudeModel, std::shared_ptr<SimpleMagnitudeModel>, SimplePhotometryModel,
-               PhotometryModel>
-            cls(mod, "SimpleMagnitudeModel");
-    cls.def(py::init<CcdImageList const &, double>(), "ccdImageList"_a, "errorPedestal"_a = 0);
-
-    cls.def("__str__", [](SimpleMagnitudeModel const &self) { return "SimpleMagnitudeModel"; });
-}
-
-void declareConstrainedPhotometryModel(py::module &mod) {
-    py::class_<ConstrainedPhotometryModel, std::shared_ptr<ConstrainedPhotometryModel>, PhotometryModel> cls(
-            mod, "ConstrainedPhotometryModel");
-    cls.def("__str__", [](ConstrainedPhotometryModel const &self) { return "ConstrainedPhotometryModel"; });
-}
-
-void declareConstrainedFluxModel(py::module &mod) {
-    py::class_<ConstrainedFluxModel, std::shared_ptr<ConstrainedFluxModel>, PhotometryModel> cls(
-            mod, "ConstrainedFluxModel");
-    cls.def(py::init<CcdImageList const &, lsst::geom::Box2D const &, int, double>(), "CcdImageList"_a,
-            "bbox"_a, "visitOrder"_a = 7, "errorPedestal"_a = 0);
-    cls.def("__str__", [](ConstrainedFluxModel const &self) { return "ConstrainedFluxModel"; });
-}
-
-void declareConstrainedMagnitudeModel(py::module &mod) {
-    py::class_<ConstrainedMagnitudeModel, std::shared_ptr<ConstrainedMagnitudeModel>, PhotometryModel> cls(
-            mod, "ConstrainedMagnitudeModel");
-    cls.def(py::init<CcdImageList const &, lsst::geom::Box2D const &, int, double>(), "CcdImageList"_a,
-            "bbox"_a, "visitOrder"_a = 7, "errorPedestal"_a = 0);
-    cls.def("__str__", [](ConstrainedMagnitudeModel const &self) { return "ConstrainedMagnitudeModel"; });
-}
-
-PYBIND11_MODULE(photometryModels, mod) {
-    py::module::import("lsst.jointcal.ccdImage");
-    py::module::import("lsst.jointcal.photometryTransform");
-    py::module::import("lsst.jointcal.star");
-    declarePhotometryModel(mod);
-    declareSimplePhotometryModel(mod);
-    declareSimpleFluxModel(mod);
-    declareSimpleMagnitudeModel(mod);
-    declareConstrainedPhotometryModel(mod);
-    declareConstrainedFluxModel(mod);
-    declareConstrainedMagnitudeModel(mod);
+    wrappers.wrapType(PyConstrainedMagnitudeModel(wrappers.module, "ConstrainedMagnitudeModel"), [](auto &mod, auto &cls) {
+        cls.def(py::init<CcdImageList const &, lsst::geom::Box2D const &, int, double>(), "CcdImageList"_a,
+                "bbox"_a, "visitOrder"_a = 7, "errorPedestal"_a = 0);
+        cls.def("__str__", [](ConstrainedMagnitudeModel const &self) { return "ConstrainedMagnitudeModel"; });
+    });
 }
 }  // namespace
+
+void wrapPhotometryModels(lsst::cpputils::python::WrapperCollection &wrappers) {
+    declarePhotometryModel(wrappers);
+    declareSimplePhotometryModel(wrappers);
+    declareSimpleFluxModel(wrappers);
+    declareSimpleMagnitudeModel(wrappers);
+    declareConstrainedPhotometryModel(wrappers);
+    declareConstrainedFluxModel(wrappers);
+    declareConstrainedMagnitudeModel(wrappers);
+}
+
 }  // namespace jointcal
 }  // namespace lsst
