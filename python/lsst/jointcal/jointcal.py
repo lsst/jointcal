@@ -40,7 +40,7 @@ from lsst.pipe.tasks.colorterms import ColortermLibrary
 from lsst.verify import Job, Measurement
 
 from lsst.meas.algorithms import (ReferenceObjectLoader, ReferenceSourceSelectorTask,
-                                  LoadIndexedReferenceObjectsConfig)
+                                  LoadReferenceObjectsConfig)
 from lsst.meas.algorithms.sourceSelector import sourceSelectorRegistry
 
 import lsst.jointcal
@@ -424,11 +424,11 @@ class JointcalConfig(pipeBase.PipelineTaskConfig,
         default=20,
     )
     astrometryRefObjLoader = pexConfig.ConfigField(
-        dtype=LoadIndexedReferenceObjectsConfig,
+        dtype=LoadReferenceObjectsConfig,
         doc="Reference object loader for astrometric fit",
     )
     photometryRefObjLoader = pexConfig.ConfigField(
-        dtype=LoadIndexedReferenceObjectsConfig,
+        dtype=LoadReferenceObjectsConfig,
         doc="Reference object loader for photometric fit",
     )
     sourceSelector = sourceSelectorRegistry.makeField(
