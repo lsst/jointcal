@@ -20,5 +20,4 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import pkgutil
-import lsstimport
 __path__ = pkgutil.extend_path(__path__, __name__)
