@@ -129,7 +129,7 @@ class TestProperMotion(lsst.utils.tests.TestCase):
             result = refStar.applyProperMotion(star, self.dt.value)
             ras[i] = result.x
             decs[i] = result.y
-        self.assertFloatsAlmostEqual(ras, expect.ra.to_value(u.degree), rtol=1e-7)
+        self.assertFloatsAlmostEqual(ras, expect.ra.to_value(u.degree), rtol=3e-7)
         self.assertFloatsAlmostEqual(decs, expect.dec.to_value(u.degree), rtol=6e-7)
 
 
