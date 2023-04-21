@@ -134,6 +134,30 @@ class TestProperMotion(lsst.utils.tests.TestCase):
         self.assertFloatsAlmostEqual(ras, expect.ra.to_value(u.degree), rtol=1e-7)
         self.assertFloatsAlmostEqual(decs, expect.dec.to_value(u.degree), rtol=6e-7)
 
+    def test_apply_many_reverse(self):
+        """Test apply for a negative time shift over a range of points on the
+        sphere."""
+        expect = self.coords.apply_space_motion(dt=-self.dt)
+
+        ras = np.zeros(len(expect))
+        decs = np.zeros(len(expect))
+        for i, x in enumerate(self.coords):
+            self.coords
+            star = lsst.jointcal.BaseStar(x.ra.value, x.dec.value, 100, 100*0.001)
+            refStar = lsst.jointcal.RefStar(x.ra.value, x.dec.value, 100, 100*0.001)
+            star.vx = x.ra.to_value(u.degree) * 0.01
+            star.vy = x.dec.to_value(u.degree) * 0.01
+            properMotion = lsst.jointcal.ProperMotion(x.pm_ra_cosdec.to_value(u.radian/u.yr),
+                                                      x.pm_dec.to_value(u.radian/u.yr),
+                                                      x.pm_ra_cosdec.to_value(u.radian/u.yr)*0.01,
+                                                      x.pm_dec.to_value(u.radian/u.yr)*0.01)
+            refStar.setProperMotion(properMotion)
+            result = refStar.applyProperMotion(star, -self.dt.value)
+            ras[i] = result.x
+            decs[i] = result.y
+        self.assertFloatsAlmostEqual(ras, expect.ra.to_value(u.degree), rtol=3e-7)
+        self.assertFloatsAlmostEqual(decs, expect.dec.to_value(u.degree), rtol=6e-7)
+
 
 class MemoryTester(lsst.utils.tests.MemoryTestCase):
     pass
