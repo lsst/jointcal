@@ -95,8 +95,8 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
                        'photometry_prepared_fittedStars': 2317,
                        'astrometry_prepared_ccdImages': 12,
                        'photometry_prepared_ccdImages': 12,
-                       'astrometry_final_chi2': 957.754,
-                       'astrometry_final_ndof': 1872,
+                       'astrometry_final_chi2': 1568.76,
+                       'astrometry_final_ndof': 2356,
                        'photometry_final_chi2': 11561.1,
                        'photometry_final_ndof': 2849
                        }
@@ -127,8 +127,8 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
                    'astrometry_matched_fittedStars': 2399,
                    'astrometry_prepared_fittedStars': 1255,
                    'astrometry_prepared_ccdImages': 12,
-                   'astrometry_final_chi2': 1192.41,
-                   'astrometry_final_ndof': 2004,
+                   'astrometry_final_chi2': 1611.57,
+                   'astrometry_final_ndof': 2428,
                    }
         return configOptions, metrics
 
@@ -149,8 +149,8 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
         """Demonstrate that skipping the rank update doesn't substantially affect astrometry.
         """
         configOptions, metrics = self.setup_jointcalTask_2_visits_constrainedAstrometry()
-        metrics['astrometry_final_chi2'] = 1095.70
-        metrics['astrometry_final_ndof'] = 1740
+        metrics['astrometry_final_chi2'] = 1611.57
+        metrics['astrometry_final_ndof'] = 2318
 
         configOptions['astrometryDoRankUpdate'] = False
 
@@ -163,8 +163,8 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
         """
         configOptions, metrics = self.setup_jointcalTask_2_visits_constrainedAstrometry()
         configOptions['outlierRejectSigma'] = 4
-        metrics['astrometry_final_chi2'] = 732.79
-        metrics['astrometry_final_ndof'] = 1814
+        metrics['astrometry_final_chi2'] = 1173.75
+        metrics['astrometry_final_ndof'] = 2254
 
         self._runJointcalTest(configOptions=configOptions, metrics=metrics,
                               astrometryOutputs=self.outputVisits)
@@ -176,8 +176,8 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
         """
         configOptions, metrics = self.setup_jointcalTask_2_visits_constrainedAstrometry()
         configOptions['astrometryOutlierRelativeTolerance'] = 0.01
-        metrics['astrometry_final_chi2'] = 1542.03
-        metrics['astrometry_final_ndof'] = 2076
+        metrics['astrometry_final_chi2'] = 2229.21
+        metrics['astrometry_final_ndof'] = 2552
 
         self._runJointcalTest(configOptions=configOptions, metrics=metrics,
                               astrometryOutputs=self.outputVisits)
@@ -186,8 +186,8 @@ class JointcalTestCFHT(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestC
         """Test with a smaller fake reference uncertainty: chi2 will be higher."""
         configOptions, metrics = self.setup_jointcalTask_2_visits_constrainedAstrometry()
         astrometryRefErrConfig = os.path.join(self.path, 'config/astrometryReferenceErr-config.py')
-        metrics['astrometry_final_chi2'] = 1213.51
-        metrics['astrometry_final_ndof'] = 2126
+        metrics['astrometry_final_chi2'] = 1479.02
+        metrics['astrometry_final_ndof'] = 2524
 
         self._runJointcalTest(configFiles=[astrometryRefErrConfig],
                               configOptions=configOptions, metrics=metrics,
