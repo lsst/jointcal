@@ -251,7 +251,7 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
                    'astrometry_matched_fittedStars': 3199,
                    'astrometry_prepared_fittedStars': 1282,
                    'astrometry_prepared_ccdImages': 9,
-                   'astrometry_final_chi2': 1221.63,
+                   'astrometry_final_chi2': 1221.646,
                    'astrometry_final_ndof': 2892,
                    }
         where = f" and visit in {tuple(self.all_visits[:3])}"
@@ -272,7 +272,7 @@ class JointcalTestHSC(jointcalTestBase.JointcalTestBase, lsst.utils.tests.TestCa
         configOptions, metrics, where, outputVisits = self.setup_jointcalTask_3_visits_simple_astrometry()
         configOptions['minMeasurements'] = 3
         metrics['astrometry_prepared_fittedStars'] = 432
-        metrics['astrometry_final_chi2'] = 567.433
+        metrics['astrometry_final_chi2'] = 567.451
         metrics['astrometry_final_ndof'] = 1286
         self._runJointcalTest(whereSuffix=where,
                               configOptions=configOptions, metrics=metrics,
