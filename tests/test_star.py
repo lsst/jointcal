@@ -143,14 +143,14 @@ class TestProperMotion(lsst.utils.tests.TestCase):
         decs = np.zeros(len(expect))
         for i, x in enumerate(self.coords):
             self.coords
-            star = lsst.jointcal.BaseStar(x.ra.value, x.dec.value, 100, 100*0.001)
-            refStar = lsst.jointcal.RefStar(x.ra.value, x.dec.value, 100, 100*0.001)
+            star = lsst.jointcal.star.BaseStar(x.ra.value, x.dec.value, 100, 100*0.001)
+            refStar = lsst.jointcal.star.RefStar(x.ra.value, x.dec.value, 100, 100*0.001)
             star.vx = x.ra.to_value(u.degree) * 0.01
             star.vy = x.dec.to_value(u.degree) * 0.01
-            properMotion = lsst.jointcal.ProperMotion(x.pm_ra_cosdec.to_value(u.radian/u.yr),
-                                                      x.pm_dec.to_value(u.radian/u.yr),
-                                                      x.pm_ra_cosdec.to_value(u.radian/u.yr)*0.01,
-                                                      x.pm_dec.to_value(u.radian/u.yr)*0.01)
+            properMotion = lsst.jointcal.star.ProperMotion(x.pm_ra_cosdec.to_value(u.radian/u.yr),
+                                                           x.pm_dec.to_value(u.radian/u.yr),
+                                                           x.pm_ra_cosdec.to_value(u.radian/u.yr)*0.01,
+                                                           x.pm_dec.to_value(u.radian/u.yr)*0.01)
             refStar.setProperMotion(properMotion)
             result = refStar.applyProperMotion(star, -self.dt.value)
             ras[i] = result.x
