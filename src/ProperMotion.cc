@@ -34,6 +34,8 @@ namespace jointcal {
 Point ProperMotion::apply(const Point& star, double timeDeltaYears) const {
     geom::SpherePoint spherePoint(star.x, star.y, geom::degrees);
     double amount = std::hypot(_ra * timeDeltaYears, _dec * timeDeltaYears);
+    // If delta-time is negative, the correction is in the opposite direction.
+    amount = timeDeltaYears < 0 ? -amount : amount;
     auto result = spherePoint.offset(_offsetBearing * geom::radians, amount * geom::radians);
     Point newStar(star);
     newStar.x = result.getRa().asDegrees();
