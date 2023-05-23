@@ -451,6 +451,13 @@ class JointcalConfig(pipeBase.PipelineTaskConfig,
         default=None,
         optional=True
     )
+    epoch = pexConfig.Field(
+        doc="Proper motion correction epoch, as a Julian Epoch Year, TAI. "
+            "Overrides the mean epoch of the observations, if set.",
+        dtype=float,
+        default=None,
+        optional=True
+    )
 
     # configs for outputting debug information
     writeInitMatrix = pexConfig.Field(
@@ -976,9 +983,12 @@ class JointcalTask(pipeBase.PipelineTask):
         epoch : `astropy.time.Time`
             The date to use for proper motion corrections.
         """
-        return astropy.time.Time(np.mean([ccdImage.getEpoch() for ccdImage in ccdImageList]),
-                                 format="jyear",
-                                 scale="tai")
+        if self.config.epoch is not None:
+            return astropy.time.Time(self.config.epoch, format="jyear", scale="tai")
+        else:
+            return astropy.time.Time(np.mean([ccdImage.getEpoch() for ccdImage in ccdImageList]),
+                                     format="jyear",
+                                     scale="tai")
 
     def _do_load_refcat_and_fit(self, associations, defaultFilter, center, radius,
                                 tract="", match_cut=3.0,
