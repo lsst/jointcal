@@ -505,6 +505,8 @@ class JointcalConfig(pipeBase.PipelineTaskConfig,
             logging.getLogger("lsst.jointcal").warning(msg)
 
     def setDefaults(self):
+        # Use only primary stars.
+        self.sourceSelector["science"].doRequirePrimary = True
         # Use only stars because aperture fluxes of galaxies are biased and depend on seeing.
         self.sourceSelector["science"].doUnresolved = True
         self.sourceSelector["science"].unresolved.name = "extendedness"
@@ -1604,6 +1606,8 @@ def get_sourceTable_visit_columns(inColumns, config, sourceSelector):
     if sourceSelector.config.doRequireFiniteRaDec:
         columns.append(sourceSelector.config.requireFiniteRaDec.raColName)
         columns.append(sourceSelector.config.requireFiniteRaDec.decColName)
+    if sourceSelector.config.doRequirePrimary:
+        columns.append(sourceSelector.config.requirePrimary.primaryColName)
 
     return columns, ixxColumns
 
