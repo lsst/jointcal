@@ -537,7 +537,7 @@ class JointcalConfig(pipeBase.PipelineTaskConfig,
         self.sourceSelector["science"].flags.bad = badFlags
         self.sourceSelector["science"].doRequireFiniteRaDec = True
         self.sourceSelector["science"].requireFiniteRaDec.raColName = "ra"
-        self.sourceSelector["science"].requireFiniteRaDec.decColName = "decl"
+        self.sourceSelector["science"].requireFiniteRaDec.decColName = "dec"
 
         # Use Gaia-DR2 with proper motions for astrometry; phot_g_mean is the
         # primary Gaia band, but is not like any normal photometric band.
