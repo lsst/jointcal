@@ -19,9 +19,9 @@ butler = lsst.daf.butler.Butler(repopath, writeable=True)
 instrInstance = lsst.pipe.base.Instrument.from_string(instrument)
 instrInstance.register(butler.registry)
 
-graph = butler.registry.dimensions.extract(["htm7"])
+graph = butler.dimensions.extract(["htm7"])
 datasetType = lsst.daf.butler.DatasetType("sdss_dr9_fink_v5b", graph,
-                                          "SimpleCatalog", universe=butler.registry.dimensions)
+                                          "SimpleCatalog", universe=butler.dimensions)
 butler.registry.registerDatasetType(datasetType)
 ingest_files(repopath, "sdss_dr9_fink_v5b", "refcats",
              "cfht_minimal/sdss-dr9-fink-v5b.ecsv")
