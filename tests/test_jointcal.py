@@ -448,11 +448,9 @@ class TestComputeBoundingCircle(lsst.utils.tests.TestCase):
         wcs1, wcs2 = make_fake_wcs()
 
         # Put the visit boresights at the WCS origin, for consistency
-        visitInfo1 = lsst.afw.image.VisitInfo(exposureId=30577512,
-                                              date=DateTime(date=65321.1),
+        visitInfo1 = lsst.afw.image.VisitInfo(date=DateTime(date=65321.1),
                                               boresightRaDec=wcs1.getSkyOrigin())
-        visitInfo2 = lsst.afw.image.VisitInfo(exposureId=30621144,
-                                              date=DateTime(date=65322.1),
+        visitInfo2 = lsst.afw.image.VisitInfo(date=DateTime(date=65322.1),
                                               boresightRaDec=wcs1.getSkyOrigin())
 
         struct = lsst.jointcal.testUtils.createTwoFakeCcdImages(fakeWcses=[wcs1, wcs2],
@@ -467,17 +465,13 @@ class TestJointcalComputePMDate(JointcalTestBase, lsst.utils.tests.TestCase):
         mjds = np.array((65432.1, 66666.0, 55555.0, 44322.2))
 
         wcs1, wcs2 = make_fake_wcs()
-        visitInfo1 = lsst.afw.image.VisitInfo(exposureId=30577512,
-                                              date=DateTime(date=mjds[0]),
+        visitInfo1 = lsst.afw.image.VisitInfo(date=DateTime(date=mjds[0]),
                                               boresightRaDec=wcs1.getSkyOrigin())
-        visitInfo2 = lsst.afw.image.VisitInfo(exposureId=30621144,
-                                              date=DateTime(date=mjds[1]),
+        visitInfo2 = lsst.afw.image.VisitInfo(date=DateTime(date=mjds[1]),
                                               boresightRaDec=wcs2.getSkyOrigin())
-        visitInfo3 = lsst.afw.image.VisitInfo(exposureId=30577513,
-                                              date=DateTime(date=mjds[2]),
+        visitInfo3 = lsst.afw.image.VisitInfo(date=DateTime(date=mjds[2]),
                                               boresightRaDec=wcs1.getSkyOrigin())
-        visitInfo4 = lsst.afw.image.VisitInfo(exposureId=30621145,
-                                              date=DateTime(date=mjds[3]),
+        visitInfo4 = lsst.afw.image.VisitInfo(date=DateTime(date=mjds[3]),
                                               boresightRaDec=wcs2.getSkyOrigin())
 
         struct1 = lsst.jointcal.testUtils.createTwoFakeCcdImages(fakeWcses=[wcs1, wcs2],
