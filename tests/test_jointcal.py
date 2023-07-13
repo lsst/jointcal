@@ -265,7 +265,7 @@ class TestJointcalIterateFit(JointcalTestBase, lsst.utils.tests.TestCase):
         self.fitter.minimize.return_value = MinimizeResult.Chi2Increased
         with lsst.log.UsePythonLogging():  # so that assertLogs works with lsst.log
             with self.assertLogs("lsst.jointcal", level="WARNING") as logger:
-                with(self.assertRaisesRegex(RuntimeError, "Large chi2 increase")):
+                with self.assertRaisesRegex(RuntimeError, "Large chi2 increase"):
                     self.jointcal._iterate_fit(self.associations, self.fitter,
                                                self.maxSteps, self.name, self.whatToFit)
             msg = "Significant chi2 increase by a factor of 1.123e+13 / 1e+11 = 112.3"
@@ -273,12 +273,12 @@ class TestJointcalIterateFit(JointcalTestBase, lsst.utils.tests.TestCase):
 
     def test_invalid_model(self):
         self.model.validate.return_value = False
-        with(self.assertRaises(ValueError)):
+        with self.assertRaises(ValueError):
             self.jointcal._logChi2AndValidate(self.associations, self.fitter, self.model, "invalid")
 
     def test_nonfinite_chi2(self):
         self.fitter.computeChi2.return_value = self.nanChi2
-        with(self.assertRaises(FloatingPointError)):
+        with self.assertRaises(FloatingPointError):
             self.jointcal._logChi2AndValidate(self.associations, self.fitter, self.model, "nonfinite")
 
     def test_writeChi2(self):
