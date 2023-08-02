@@ -41,7 +41,7 @@ namespace jointcal {
 namespace {
 
 void declareAstrometryModel(lsst::cpputils::python::WrapperCollection &wrappers) {
-    using PyAstrometryModel = py::class_<AstrometryModel, std::shared_ptr<AstrometryModel>>;
+    using PyAstrometryModel = py::class_<AstrometryModel>;
     wrappers.wrapType(PyAstrometryModel(wrappers.module, "AstrometryModel"), [](auto &mod, auto &cls) {
         cls.def("getNpar", &AstrometryModel::getNpar);
         cls.def("getMapping", &AstrometryModel::getMapping, py::return_value_policy::reference_internal);
@@ -58,7 +58,7 @@ void declareAstrometryModel(lsst::cpputils::python::WrapperCollection &wrappers)
 
 void declareSimpleAstrometryModel(lsst::cpputils::python::WrapperCollection &wrappers) {
     using PySimpleAstrometryModel =
-            py::class_<SimpleAstrometryModel, std::shared_ptr<SimpleAstrometryModel>, AstrometryModel>;
+            py::class_<SimpleAstrometryModel, AstrometryModel>;
 
     wrappers.wrapType(PySimpleAstrometryModel(wrappers.module, "SimpleAstrometryModel"), [](auto &mod, auto &cls) {
         cls.def(py::init<CcdImageList const &, const std::shared_ptr<ProjectionHandler const>, bool, unsigned,
@@ -73,7 +73,7 @@ void declareSimpleAstrometryModel(lsst::cpputils::python::WrapperCollection &wra
 
 void declareConstrainedAstrometryModel(lsst::cpputils::python::WrapperCollection &wrappers) {
     using PyConstrainedAstrometryModel =
-            py::class_<ConstrainedAstrometryModel, std::shared_ptr<ConstrainedAstrometryModel>, AstrometryModel> ;
+            py::class_<ConstrainedAstrometryModel, AstrometryModel> ;
 
     wrappers.wrapType(PyConstrainedAstrometryModel(wrappers.module, "ConstrainedAstrometryModel"), [](auto &mod, auto &cls) {
         cls.def(py::init<CcdImageList const &, std::shared_ptr<ProjectionHandler const>, int, int>(),

@@ -38,7 +38,7 @@ namespace jointcal {
 namespace {
 
 void declareAstrometryTransform(lsst::cpputils::python::WrapperCollection &wrappers) {
-    using PyAstrometryTransform = py::class_<AstrometryTransform, std::shared_ptr<AstrometryTransform>>;
+    using PyAstrometryTransform = py::class_<AstrometryTransform>;
 
     wrappers.wrapType(PyAstrometryTransform(wrappers.module, "AstrometryTransform"), [](auto &mod, auto &cls) {
         cls.def("apply",
@@ -63,14 +63,14 @@ void declareAstrometryTransform(lsst::cpputils::python::WrapperCollection &wrapp
 
 void declareAstrometryTransformIdentity(lsst::cpputils::python::WrapperCollection &wrappers) {
     using PyAstrometryTransformIdentity =
-            py::class_<AstrometryTransformIdentity, std::shared_ptr<AstrometryTransformIdentity>, AstrometryTransform>;
+            py::class_<AstrometryTransformIdentity, AstrometryTransform>;
 
     wrappers.wrapType(PyAstrometryTransformIdentity(wrappers.module, "AstrometryTransformIdentity"),
                       [](auto &mod, auto &cls) {});
 }
 
 void declareAstrometryTransformPolynomial(lsst::cpputils::python::WrapperCollection &wrappers) {
-    using PyAstrometryTransformPolynomial =  py::class_<AstrometryTransformPolynomial, std::shared_ptr<AstrometryTransformPolynomial>,
+    using PyAstrometryTransformPolynomial =  py::class_<AstrometryTransformPolynomial,
                AstrometryTransform>;
 
     wrappers.wrapType(
@@ -100,7 +100,7 @@ void declareAstrometryTransformPolynomial(lsst::cpputils::python::WrapperCollect
 }
 
 void declareAstrometryTransformLinear(lsst::cpputils::python::WrapperCollection &wrappers) {
-    using PyAstrometryTransformLinear = py::class_<AstrometryTransformLinear, std::shared_ptr<AstrometryTransformLinear>,
+    using PyAstrometryTransformLinear = py::class_<AstrometryTransformLinear,
                AstrometryTransformPolynomial>;
 
     wrappers.wrapType(
@@ -111,7 +111,7 @@ void declareAstrometryTransformLinear(lsst::cpputils::python::WrapperCollection 
 
 void declareAstrometryTransformLinearShift(lsst::cpputils::python::WrapperCollection &wrappers) {
     using PyAstrometryTransformLinearShift = py::class_<AstrometryTransformLinearShift,
-            std::shared_ptr<AstrometryTransformLinearShift>, AstrometryTransformLinear>;
+            AstrometryTransformLinear>;
 
     wrappers.wrapType(PyAstrometryTransformLinearShift(wrappers.module, "AstrometryTransformLinearShift"),
                       [](auto &mod, auto &cls) {});
@@ -120,7 +120,7 @@ void declareAstrometryTransformLinearShift(lsst::cpputils::python::WrapperCollec
 void declareAstrometryTransformLinearRot(lsst::cpputils::python::WrapperCollection &wrappers) {
     using PyAstrometryTransformLinearRot =
             py::class_<AstrometryTransformLinearRot,
-                    std::shared_ptr<AstrometryTransformLinearRot>, AstrometryTransformLinear>;
+                    AstrometryTransformLinear>;
 
     wrappers.wrapType(
             PyAstrometryTransformLinearRot(wrappers.module, "AstrometryTransformLinearRot"),
@@ -129,7 +129,7 @@ void declareAstrometryTransformLinearRot(lsst::cpputils::python::WrapperCollecti
 
 void declareAstrometryTransformLinearScale(lsst::cpputils::python::WrapperCollection &wrappers) {
     using PyAstrometryTransformLinearScale =
-            py::class_<AstrometryTransformLinearScale, std::shared_ptr<AstrometryTransformLinearScale>,
+            py::class_<AstrometryTransformLinearScale,
                     AstrometryTransformLinear>;
 
     wrappers.wrapType(
@@ -139,7 +139,7 @@ void declareAstrometryTransformLinearScale(lsst::cpputils::python::WrapperCollec
 
 void declareAstrometryTransformSkyWcs(lsst::cpputils::python::WrapperCollection &wrappers) {
     using PyAstrometryTransformSkyWcs =
-            py::class_<AstrometryTransformSkyWcs, std::shared_ptr<AstrometryTransformSkyWcs>, AstrometryTransform>;
+            py::class_<AstrometryTransformSkyWcs, AstrometryTransform>;
 
     wrappers.wrapType(
             PyAstrometryTransformSkyWcs(wrappers.module, "AstrometryTransformSkyWcs"), [](auto &mod, auto &cls) {
@@ -148,25 +148,25 @@ void declareAstrometryTransformSkyWcs(lsst::cpputils::python::WrapperCollection 
 }
 
 void declareBaseTanWcs(lsst::cpputils::python::WrapperCollection &wrappers) {
-    using PyBaseTanWcs = py::class_<BaseTanWcs, std::shared_ptr<BaseTanWcs>, AstrometryTransform> ;
+    using PyBaseTanWcs = py::class_<BaseTanWcs, AstrometryTransform> ;
 
     wrappers.wrapType(PyBaseTanWcs(wrappers.module, "BaseTanWcs"), [](auto &mod, auto &cls) {});
 }
 
 void declareTanPixelToRaDec(lsst::cpputils::python::WrapperCollection &wrappers) {
-    using PyTanPixelToRaDec = py::class_<TanPixelToRaDec, std::shared_ptr<TanPixelToRaDec>, AstrometryTransform>;
+    using PyTanPixelToRaDec = py::class_<TanPixelToRaDec, AstrometryTransform>;
 
     wrappers.wrapType(PyTanPixelToRaDec(wrappers.module, "TanPixelToRaDec"), [](auto &mod, auto &cls) {});
 }
 
 void declareTanRaDecToPixel(lsst::cpputils::python::WrapperCollection &wrappers) {
-    using PyTanRaDecToPixel = py::class_<TanRaDecToPixel, std::shared_ptr<TanRaDecToPixel>, AstrometryTransform>;
+    using PyTanRaDecToPixel = py::class_<TanRaDecToPixel, AstrometryTransform>;
 
     wrappers.wrapType(PyTanRaDecToPixel(wrappers.module, "TanRaDecToPixel"), [](auto &mod, auto &cls) {});
 }
 
 void declareTanSipPixelToRaDec(lsst::cpputils::python::WrapperCollection &wrappers) {
-    using PyTanSipPixelToRaDec = py::class_<TanSipPixelToRaDec, std::shared_ptr<TanSipPixelToRaDec>, BaseTanWcs>;
+    using PyTanSipPixelToRaDec = py::class_<TanSipPixelToRaDec, BaseTanWcs>;
 
     wrappers.wrapType(PyTanSipPixelToRaDec(wrappers.module, "TanSipPixelToRaDec"), [](auto &mod, auto &cls) {});
 }
