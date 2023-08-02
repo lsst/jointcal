@@ -38,7 +38,7 @@ namespace jointcal {
 namespace {
 
 void declareAssociations(lsst::cpputils::python::WrapperCollection &wrappers) {
-    using PyAssociations = py::class_<Associations, std::shared_ptr<Associations>>;
+    using PyAssociations = py::class_<Associations>;
     wrappers.wrapType(PyAssociations(wrappers.module, "Associations"), [](auto &mod, auto &cls) {
         cls.def(py::init<>());
         cls.def(py::init<CcdImageList const &, double>(), "imageList"_a, "epoch"_a = 0);

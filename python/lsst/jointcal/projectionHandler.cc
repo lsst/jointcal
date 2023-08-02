@@ -38,7 +38,7 @@ namespace jointcal {
 namespace {
 
 void declareProjectionHandler(lsst::cpputils::python::WrapperCollection &wrappers) {
-    using PyProjectionHandler =  py::class_<ProjectionHandler, std::shared_ptr<ProjectionHandler>>;
+    using PyProjectionHandler =  py::class_<ProjectionHandler>;
 
     wrappers.wrapType(PyProjectionHandler(wrappers.module, "ProjectionHandler"), [](auto &mod, auto &cls) {
         cpputils::python::addOutputOp(cls, "__str__");
@@ -48,7 +48,7 @@ void declareProjectionHandler(lsst::cpputils::python::WrapperCollection &wrapper
 
 void declareIdentityProjectionHandler(lsst::cpputils::python::WrapperCollection &wrappers) {
     using PyIdentityProjectionHandler =
-            py::class_<IdentityProjectionHandler, std::shared_ptr<IdentityProjectionHandler>, ProjectionHandler>;
+            py::class_<IdentityProjectionHandler, ProjectionHandler>;
 
     wrappers.wrapType(
             PyIdentityProjectionHandler(wrappers.module, "IdentityProjectionHandler"), [](auto &mod, auto &cls) {
@@ -57,7 +57,7 @@ void declareIdentityProjectionHandler(lsst::cpputils::python::WrapperCollection 
 }
 
 void declareOneTPPerVisitHandler(lsst::cpputils::python::WrapperCollection &wrappers) {
-    using PyOneTPPerVisitHandler=  py::class_<OneTPPerVisitHandler, std::shared_ptr<OneTPPerVisitHandler>, ProjectionHandler>;
+    using PyOneTPPerVisitHandler=  py::class_<OneTPPerVisitHandler, ProjectionHandler>;
 
     wrappers.wrapType(PyOneTPPerVisitHandler(wrappers.module, "OneTPPerVisitHandler"), [](auto &mod, auto &cls) {
         cls.def(py::init<CcdImageList const &>(), "ccdImageList"_a);

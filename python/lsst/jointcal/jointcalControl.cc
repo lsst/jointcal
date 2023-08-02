@@ -36,7 +36,7 @@ namespace jointcal {
 namespace {
 
 void declareJointcalControl(lsst::cpputils::python::WrapperCollection &wrappers) {
-    using PyJointcalControl = py::class_<JointcalControl, std::shared_ptr<JointcalControl>>;
+    using PyJointcalControl = py::class_<JointcalControl>;
 
     wrappers.wrapType(PyJointcalControl(wrappers.module, "JointcalControl"), [](auto &mod, auto &cls) {
         cls.def(py::init<std::string>(), "sourceFluxField"_a = "slot_CalibFlux");
