@@ -274,6 +274,9 @@ class JointcalTaskConnections(pipeBase.PipelineTaskConnections,
                 if "metricvalue_jointcal_photometry" in key:
                     self.outputs.remove(key)
 
+    def getSpatialBoundsConnections(self):
+        return ("inputVisitSummary",)
+
 
 class JointcalConfig(pipeBase.PipelineTaskConfig,
                      pipelineConnections=JointcalTaskConnections):
