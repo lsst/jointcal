@@ -35,7 +35,6 @@ import lsst.pipe.base as pipeBase
 from lsst.afw.image import fluxErrFromABMagErr
 import lsst.afw.cameraGeom
 import lsst.afw.table
-from lsst.pipe.base import Instrument
 from lsst.pipe.tasks.colorterms import ColortermLibrary
 from lsst.verify import Job, Measurement
 
@@ -56,46 +55,6 @@ Astrometry = collections.namedtuple('Astrometry', ('fit', 'model', 'sky_to_tan_p
 def add_measurement(job, name, value):
     meas = Measurement(job.metrics[name], value)
     job.measurements.insert(meas)
-
-
-def lookupStaticCalibrations(datasetType, registry, quantumDataId, collections):
-    """Lookup function that asserts/hopes that a static calibration dataset
-    exists in a particular collection, since this task can't provide a single
-    date/time to use to search for one properly.
-
-    This is mostly useful for the ``camera`` dataset, in cases where the task's
-    quantum dimensions do *not* include something temporal, like ``exposure``
-    or ``visit``.
-
-    Parameters
-    ----------
-    datasetType : `lsst.daf.butler.DatasetType`
-        Type of dataset being searched for.
-    registry : `lsst.daf.butler.Registry`
-        Data repository registry to search.
-    quantumDataId : `lsst.daf.butler.DataCoordinate`
-        Data ID of the quantum this camera should match.
-    collections : `Iterable` [ `str` ]
-        Collections that should be searched - but this lookup function works
-        by ignoring this in favor of a more-or-less hard-coded value.
-
-    Returns
-    -------
-    refs : `Iterator` [ `lsst.daf.butler.DatasetRef` ]
-        Iterator over dataset references; should have only one element.
-
-    Notes
-    -----
-    This implementation duplicates one in fgcmcal, and is at least quite
-    similar to another in cp_pipe.  This duplicate has the most documentation.
-    Fixing this is DM-29661.
-    """
-    instrument = Instrument.fromName(quantumDataId["instrument"], registry)
-    unboundedCollection = instrument.makeUnboundedCalibrationRunName()
-    return registry.queryDatasets(datasetType,
-                                  dataId=quantumDataId,
-                                  collections=[unboundedCollection],
-                                  findFirst=True)
 
 
 def lookupVisitRefCats(datasetType, registry, quantumDataId, collections):
@@ -147,7 +106,6 @@ class JointcalTaskConnections(pipeBase.PipelineTaskConnections,
         storageClass="Camera",
         dimensions=("instrument",),
         isCalibration=True,
-        lookupFunction=lookupStaticCalibrations,
     )
     inputSourceTableVisit = pipeBase.connectionTypes.Input(
         doc="Source table in parquet format, per visit",
