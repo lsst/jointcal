@@ -35,7 +35,6 @@ import lsst.pipe.base as pipeBase
 from lsst.afw.image import fluxErrFromABMagErr
 import lsst.afw.cameraGeom
 import lsst.afw.table
-from lsst.pipe.base import Instrument
 from lsst.pipe.tasks.colorterms import ColortermLibrary
 from lsst.verify import Job, Measurement
 
@@ -58,86 +57,6 @@ def add_measurement(job, name, value):
     job.measurements.insert(meas)
 
 
-def lookupStaticCalibrations(datasetType, registry, quantumDataId, collections):
-    """Lookup function that asserts/hopes that a static calibration dataset
-    exists in a particular collection, since this task can't provide a single
-    date/time to use to search for one properly.
-
-    This is mostly useful for the ``camera`` dataset, in cases where the task's
-    quantum dimensions do *not* include something temporal, like ``exposure``
-    or ``visit``.
-
-    Parameters
-    ----------
-    datasetType : `lsst.daf.butler.DatasetType`
-        Type of dataset being searched for.
-    registry : `lsst.daf.butler.Registry`
-        Data repository registry to search.
-    quantumDataId : `lsst.daf.butler.DataCoordinate`
-        Data ID of the quantum this camera should match.
-    collections : `Iterable` [ `str` ]
-        Collections that should be searched - but this lookup function works
-        by ignoring this in favor of a more-or-less hard-coded value.
-
-    Returns
-    -------
-    refs : `Iterator` [ `lsst.daf.butler.DatasetRef` ]
-        Iterator over dataset references; should have only one element.
-
-    Notes
-    -----
-    This implementation duplicates one in fgcmcal, and is at least quite
-    similar to another in cp_pipe.  This duplicate has the most documentation.
-    Fixing this is DM-29661.
-    """
-    instrument = Instrument.fromName(quantumDataId["instrument"], registry)
-    unboundedCollection = instrument.makeUnboundedCalibrationRunName()
-    return registry.queryDatasets(datasetType,
-                                  dataId=quantumDataId,
-                                  collections=[unboundedCollection],
-                                  findFirst=True)
-
-
-def lookupVisitRefCats(datasetType, registry, quantumDataId, collections):
-    """Lookup function that finds all refcats for all visits that overlap a
-    tract, rather than just the refcats that directly overlap the tract.
-
-    Parameters
-    ----------
-    datasetType : `lsst.daf.butler.DatasetType`
-        Type of dataset being searched for.
-    registry : `lsst.daf.butler.Registry`
-        Data repository registry to search.
-    quantumDataId : `lsst.daf.butler.DataCoordinate`
-        Data ID of the quantum; expected to be something we can use as a
-        constraint to query for overlapping visits.
-    collections : `Iterable` [ `str` ]
-        Collections to search.
-
-    Returns
-    -------
-    refs : `Iterator` [ `lsst.daf.butler.DatasetRef` ]
-        Iterator over refcat references.
-    """
-    refs = set()
-    # Use .expanded() on the query methods below because we need data IDs with
-    # regions, both in the outer loop over visits (queryDatasets will expand
-    # any data ID we give it, but doing it up-front in bulk is much more
-    # efficient) and in the data IDs of the DatasetRefs this function yields
-    # (because the RefCatLoader relies on them to do some of its own
-    # filtering).
-    for visit_data_id in set(registry.queryDataIds("visit", dataId=quantumDataId).expanded()):
-        refs.update(
-            registry.queryDatasets(
-                datasetType,
-                collections=collections,
-                dataId=visit_data_id,
-                findFirst=True,
-            ).expanded()
-        )
-    yield from refs
-
-
 class JointcalTaskConnections(pipeBase.PipelineTaskConnections,
                               dimensions=("skymap", "tract", "instrument", "physical_filter")):
     """Middleware input/output connections for jointcal data."""
@@ -147,7 +66,6 @@ class JointcalTaskConnections(pipeBase.PipelineTaskConnections,
         storageClass="Camera",
         dimensions=("instrument",),
         isCalibration=True,
-        lookupFunction=lookupStaticCalibrations,
     )
     inputSourceTableVisit = pipeBase.connectionTypes.Input(
         doc="Source table in parquet format, per visit",
@@ -174,7 +92,6 @@ class JointcalTaskConnections(pipeBase.PipelineTaskConnections,
         dimensions=("skypix",),
         deferLoad=True,
         multiple=True,
-        lookupFunction=lookupVisitRefCats,
     )
     photometryRefCat = pipeBase.connectionTypes.PrerequisiteInput(
         doc="The photometry reference catalog to match to loaded input catalog sources.",
@@ -183,7 +100,6 @@ class JointcalTaskConnections(pipeBase.PipelineTaskConnections,
         dimensions=("skypix",),
         deferLoad=True,
         multiple=True,
-        lookupFunction=lookupVisitRefCats,
     )
 
     outputWcs = pipeBase.connectionTypes.Output(
