@@ -79,8 +79,8 @@ def importRepository(instrument, exportPath, exportFile, outputDir=None,
     # Register refcats first, so the `refcats` collection will exist.
     if refcats is not None:
         for name, file in refcats.items():
-            graph = butler.dimensions.extract(["htm7"])
-            datasetType = lsst.daf.butler.DatasetType(name, graph, "SimpleCatalog",
+            dimensions = butler.dimensions.conform(["htm7"])
+            datasetType = lsst.daf.butler.DatasetType(name, dimensions, "SimpleCatalog",
                                                       universe=butler.dimensions)
             butler.registry.registerDatasetType(datasetType)
             ingest_files(repopath, name, "refcats", file, prefix=refcatPath)
