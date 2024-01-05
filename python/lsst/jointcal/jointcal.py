@@ -551,12 +551,12 @@ class JointcalTask(pipeBase.PipelineTask):
 
         Parameters
         ----------
-        butlerQC : `lsst.pipe.base.ButlerQuantumContext`
+        butlerQC : `lsst.pipe.base.QuantumContext`
             A butler which is specialized to operate in the context of a
             `lsst.daf.butler.Quantum`; This is the input to `runQuantum`.
         job : `lsst.verify.job.Job`
             Measurements of metrics to persist.
-        outputRefs : `list` [`lsst.pipe.base.connectionTypes.OutputQuantizedConnection`]
+        outputRefs : `list` [`lsst.pipe.base.OutputQuantizedConnection`]
             The DatasetRefs to persist the data to.
         """
         for key in job.measurements.keys():
@@ -567,13 +567,13 @@ class JointcalTask(pipeBase.PipelineTask):
 
         Parameters
         ----------
-        butlerQC : `lsst.pipe.base.ButlerQuantumContext`
+        butlerQC : `lsst.pipe.base.QuantumContext`
             A butler which is specialized to operate in the context of a
             `lsst.daf.butler.Quantum`; This is the input to `runQuantum`.
         outputs : `dict` [`tuple`, `lsst.afw.geom.SkyWcs`] or
                   `dict` [`tuple, `lsst.afw.image.PhotoCalib`]
             The fitted objects to persist.
-        outputRefs : `list` [`lsst.pipe.base.connectionTypes.OutputQuantizedConnection`]
+        outputRefs : `list` [`lsst.pipe.base.OutputQuantizedConnection`]
             The DatasetRefs to persist the data to.
         camera : `lsst.afw.cameraGeom.Camera`
             The camera for this instrument, to get detector ids from.
