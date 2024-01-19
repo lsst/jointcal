@@ -428,7 +428,7 @@ class JointcalConfig(pipeBase.PipelineTaskConfig,
         self.sourceSelector["science"].doRequirePrimary = True
         # Use only stars because aperture fluxes of galaxies are biased and depend on seeing.
         self.sourceSelector["science"].doUnresolved = True
-        self.sourceSelector["science"].unresolved.name = "extendedLikelihood"
+        self.sourceSelector["science"].unresolved.name = "sizeExtendedness"
         # with dependable signal to noise ratio.
         self.sourceSelector["science"].doSignalToNoise = True
         # Min SNR must be > 0 because jointcal cannot handle negative fluxes,
