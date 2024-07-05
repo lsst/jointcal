@@ -416,7 +416,7 @@ class TestComputeBoundingCircle(lsst.utils.tests.TestCase):
         bbox : `lsst.geom.Box2D`
             The ccd bounding box of both images.
         """
-        lsst.log.setLevel('jointcal', lsst.log.DEBUG)
+        lsst.log.setLevel('lsst.jointcal', lsst.log.DEBUG)
         associations = lsst.jointcal.Associations()
         associations.addCcdImage(ccdImage1)
         associations.addCcdImage(ccdImage2)
