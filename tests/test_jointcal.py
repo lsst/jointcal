@@ -204,27 +204,25 @@ class TestJointcalIterateFit(JointcalTestBase, lsst.utils.tests.TestCase):
         self.assertEqual(self.fitter.minimize.call_count, 1)
 
     def test_iterateFit_badFinalChi2(self):
-        log = mock.Mock(spec=lsst.log.Log)
-        self.jointcal.log = log
         self.fitter.computeChi2.return_value = self.badChi2
 
-        chi2 = self.jointcal._iterate_fit(self.associations, self.fitter,
-                                          self.maxSteps, self.name, self.whatToFit)
+        with self.assertLogs("lsst.jointcal", level="INFO") as cm:
+            chi2 = self.jointcal._iterate_fit(self.associations, self.fitter,
+                                              self.maxSteps, self.name, self.whatToFit)
         self.assertEqual(chi2, self.badChi2)
-        log.info.assert_called_with("%s %s", "Fit completed", self.badChi2)
-        log.error.assert_called_with("Potentially bad fit: High chi-squared/ndof.")
+        self.assertIn(f"INFO:lsst.jointcal:Fit completed {self.badChi2}", cm.output)
+        self.assertIn("ERROR:lsst.jointcal:Potentially bad fit: High chi-squared/ndof.", cm.output)
 
     def test_iterateFit_exceedMaxSteps(self):
-        log = mock.Mock(spec=lsst.log.Log)
-        self.jointcal.log = log
         self.fitter.minimize.return_value = MinimizeResult.Chi2Increased
         maxSteps = 3
 
-        chi2 = self.jointcal._iterate_fit(self.associations, self.fitter,
-                                          maxSteps, self.name, self.whatToFit)
+        with self.assertLogs("lsst.jointcal", level="ERROR") as cm:
+            chi2 = self.jointcal._iterate_fit(self.associations, self.fitter,
+                                              maxSteps, self.name, self.whatToFit)
         self.assertEqual(chi2, self.goodChi2)
         self.assertEqual(self.fitter.minimize.call_count, maxSteps)
-        log.error.assert_called_with("testing failed to converge after %s steps" % maxSteps)
+        self.assertIn(f"ERROR:lsst.jointcal:testing failed to converge after {maxSteps} steps", cm.output)
 
     def test_moderate_chi2_increase(self):
         """DM-25159: warn, but don't fail, on moderate chi2 increases between
@@ -244,12 +242,11 @@ class TestJointcalIterateFit(JointcalTestBase, lsst.utils.tests.TestCase):
                                             MinimizeResult.Chi2Increased,
                                             MinimizeResult.Converged,
                                             MinimizeResult.Converged]
-        with lsst.log.UsePythonLogging():  # so that assertLogs works with lsst.log
-            with self.assertLogs("lsst.jointcal", level="WARNING") as logger:
-                self.jointcal._iterate_fit(self.associations, self.fitter,
-                                           self.maxSteps, self.name, self.whatToFit)
-            msg = "Significant chi2 increase by a factor of 300 / 100 = 3"
-            self.assertIn(msg, [rec.message for rec in logger.records])
+        with self.assertLogs("lsst.jointcal", level="WARNING") as cm:
+            self.jointcal._iterate_fit(self.associations, self.fitter,
+                                       self.maxSteps, self.name, self.whatToFit)
+        msg = "Significant chi2 increase by a factor of 300 / 100 = 3"
+        self.assertIn(f"WARNING:lsst.jointcal:{msg}", cm.output)
 
     def test_large_chi2_increase_fails(self):
         """DM-25159: fail on large chi2 increases between steps."""
@@ -263,13 +260,12 @@ class TestJointcalIterateFit(JointcalTestBase, lsst.utils.tests.TestCase):
         chi2s = [chi2_1, chi2_1, chi2_2]
         self.fitter.computeChi2.side_effect = chi2s
         self.fitter.minimize.return_value = MinimizeResult.Chi2Increased
-        with lsst.log.UsePythonLogging():  # so that assertLogs works with lsst.log
-            with self.assertLogs("lsst.jointcal", level="WARNING") as logger:
-                with self.assertRaisesRegex(RuntimeError, "Large chi2 increase"):
-                    self.jointcal._iterate_fit(self.associations, self.fitter,
-                                               self.maxSteps, self.name, self.whatToFit)
-            msg = "Significant chi2 increase by a factor of 1.123e+13 / 1e+11 = 112.3"
-            self.assertIn(msg, [rec.message for rec in logger.records])
+        with self.assertLogs("lsst.jointcal", level="WARNING") as cm:
+            with self.assertRaisesRegex(RuntimeError, "Large chi2 increase"):
+                self.jointcal._iterate_fit(self.associations, self.fitter,
+                                           self.maxSteps, self.name, self.whatToFit)
+        msg = "Significant chi2 increase by a factor of 1.123e+13 / 1e+11 = 112.3"
+        self.assertIn(f"WARNING:lsst.jointcal:{msg}", cm.output)
 
     def test_invalid_model(self):
         self.model.validate.return_value = False
@@ -420,7 +416,7 @@ class TestComputeBoundingCircle(lsst.utils.tests.TestCase):
         bbox : `lsst.geom.Box2D`
             The ccd bounding box of both images.
         """
-        lsst.log.setLevel('jointcal', lsst.log.DEBUG)
+        lsst.log.setLevel('lsst.jointcal', lsst.log.DEBUG)
         associations = lsst.jointcal.Associations()
         associations.addCcdImage(ccdImage1)
         associations.addCcdImage(ccdImage2)
