@@ -48,7 +48,7 @@ void declarePoint(lsst::cpputils::python::WrapperCollection &wrappers) {
         cls.def(py::init<double, double>(), "x"_a, "y"_a);
         cls.def_readwrite("x", &Point::x);
         cls.def_readwrite("y", &Point::y);
-        utils::python::addOutputOp(cls, "__str__");
+        cpputils::python::addOutputOp(cls, "__str__");
     });
 }
 
@@ -125,7 +125,7 @@ void declareProperMotion(lsst::cpputils::python::WrapperCollection &wrappers) {
         cls.def(py::init<double, double, double, double, double>(), "ra"_a, "dec"_a, "raErr"_a, "decErr"_a,
                 "raDecCov"_a = 0);
         cls.def("apply", &ProperMotion::apply);
-        utils::python::addOutputOp(cls, "__str__");
+        cpputils::python::addOutputOp(cls, "__str__");
     });
 }
 }  // namespace

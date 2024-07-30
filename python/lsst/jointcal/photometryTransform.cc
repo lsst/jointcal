@@ -59,8 +59,8 @@ void declarePhotometryTransform(lsst::cpputils::python::WrapperCollection &wrapp
                     self.computeParameterDerivatives(x, y, instFlux, derivatives);
                     return derivatives;
                 });
-        utils::python::addOutputOp(cls, "__str__");
-        utils::python::addOutputOp(cls, "__repr__");
+        cpputils::python::addOutputOp(cls, "__str__");
+        cpputils::python::addOutputOp(cls, "__repr__");
     });
 }
 

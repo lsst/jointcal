@@ -335,7 +335,7 @@ std::shared_ptr<afw::image::PhotoCalib> ConstrainedMagnitudeModel::toPhotoCalib(
             ast::MathMap(1, 1, {"y=pow(10.0,x/-2.5)"s}, {"x=-2.5*log10(y)"s}));
 
     // The chip part is easy: zoom map with the value (converted to a flux) as the "zoom" factor.
-    double chipCalibration = utils::ABMagnitudeToNanojansky(prep.chipConstant);
+    double chipCalibration = cpputils::ABMagnitudeToNanojansky(prep.chipConstant);
     afw::geom::Transform<afw::geom::GenericEndpoint, afw::geom::GenericEndpoint> zoomTransform(
             ast::ZoomMap(1, chipCalibration));
 

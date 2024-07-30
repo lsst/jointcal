@@ -225,7 +225,7 @@ public:
 protected:
     /// @copydoc ConstrainedPhotometryModel::initialChipCalibration
     double initialChipCalibration(std::shared_ptr<afw::image::PhotoCalib const> photoCalib) override {
-        return utils::nanojanskyToABMagnitude(photoCalib->getCalibrationMean());
+        return cpputils::nanojanskyToABMagnitude(photoCalib->getCalibrationMean());
     }
 };
 

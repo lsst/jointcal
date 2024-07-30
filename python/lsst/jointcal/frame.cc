@@ -40,7 +40,7 @@ void declareFrame(lsst::cpputils::python::WrapperCollection &wrappers) {
 
     wrappers.wrapType(PyFrame(wrappers.module, "Frame"), [](auto &mod, auto &cls) {
         cls.def(py::init<Point const &, Point const &>(), "lowerLeft"_a, "upperRight"_a);
-        utils::python::addOutputOp(cls, "__str__");
+        cpputils::python::addOutputOp(cls, "__str__");
     });
 }
 }  // namespace
