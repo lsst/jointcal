@@ -57,7 +57,7 @@ void declareAstrometryTransform(lsst::cpputils::python::WrapperCollection &wrapp
             return derivative;
         });
 
-        utils::python::addOutputOp(cls, "__str__");
+        cpputils::python::addOutputOp(cls, "__str__");
     });
 }
 

@@ -417,7 +417,7 @@ void Associations::normalizeFittedStars() {
         fi->x /= measurementCount;
         fi->y /= measurementCount;
         fi->getFlux() /= measurementCount;
-        fi->getMag() = utils::nanojanskyToABMagnitude(fi->getFlux());
+        fi->getMag() = cpputils::nanojanskyToABMagnitude(fi->getFlux());
     }
 }
 

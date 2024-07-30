@@ -41,8 +41,8 @@ void declareProjectionHandler(lsst::cpputils::python::WrapperCollection &wrapper
     using PyProjectionHandler =  py::class_<ProjectionHandler, std::shared_ptr<ProjectionHandler>>;
 
     wrappers.wrapType(PyProjectionHandler(wrappers.module, "ProjectionHandler"), [](auto &mod, auto &cls) {
-        utils::python::addOutputOp(cls, "__str__");
-        utils::python::addOutputOp(cls, "__repr__");
+        cpputils::python::addOutputOp(cls, "__str__");
+        cpputils::python::addOutputOp(cls, "__repr__");
     });
 }
 

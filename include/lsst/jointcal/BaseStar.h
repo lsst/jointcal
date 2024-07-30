@@ -31,7 +31,7 @@
 #include <string>
 #include <sstream>
 
-#include "lsst/utils/Magnitude.h"
+#include "lsst/cpputils/Magnitude.h"
 #include "lsst/jointcal/FatPoint.h"
 #include "lsst/jointcal/StarList.h"
 
@@ -60,13 +60,13 @@ public:
             : FatPoint(xx, yy),
               _flux(flux),
               _fluxErr(fluxErr),
-              _mag(utils::nanojanskyToABMagnitude(flux)),
+              _mag(cpputils::nanojanskyToABMagnitude(flux)),
               _magErr(magErrFromFluxErr(flux, fluxErr)){};
     BaseStar(Point const &point, double flux, double fluxErr, double mag, double magErr)
             : FatPoint(point),
               _flux(flux),
               _fluxErr(fluxErr),
-              _mag(utils::nanojanskyToABMagnitude(flux)),
+              _mag(cpputils::nanojanskyToABMagnitude(flux)),
               _magErr(magErrFromFluxErr(flux, fluxErr)){};
 
     //! access stuff.

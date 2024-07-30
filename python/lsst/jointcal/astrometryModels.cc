@@ -51,7 +51,7 @@ void declareAstrometryModel(lsst::cpputils::python::WrapperCollection &wrappers)
         cls.def("makeSkyWcs", &AstrometryModel::makeSkyWcs);
         cls.def("getTotalParameters", &AstrometryModel::getTotalParameters);
         cls.def("validate", &AstrometryModel::validate);
-        utils::python::addOutputOp(cls, "__repr__");
+        cpputils::python::addOutputOp(cls, "__repr__");
         cls.def("__str__", [](AstrometryModel const &self) { return "AstrometryModel"; });
     });
 }

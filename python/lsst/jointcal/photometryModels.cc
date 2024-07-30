@@ -22,7 +22,6 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "lsst/utils/python.h"
 #include "pybind11/pybind11.h"
 #include "lsst/cpputils/python.h"
 #include "pybind11/eigen.h"
@@ -74,7 +73,7 @@ void declarePhotometryModel(lsst::cpputils::python::WrapperCollection &wrappers)
         cls.def("getMapping", &PhotometryModel::getMapping, py::return_value_policy::reference_internal);
         cls.def("getTotalParameters", &PhotometryModel::getTotalParameters);
 
-        utils::python::addOutputOp(cls, "__repr__");
+        cpputils::python::addOutputOp(cls, "__repr__");
         cls.def("__str__", [](PhotometryModel const &self) { return "PhotometryModel"; });
     });
 }

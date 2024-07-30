@@ -40,8 +40,8 @@ void declareChi2(lsst::cpputils::python::WrapperCollection &wrappers) {
 
     wrappers.wrapType(PyChi2Statistic(wrappers.module, "Chi2Statistic"), [](auto &mod, auto &cls) {
         cls.def(py::init<>());
-        utils::python::addOutputOp(cls, "__str__");
-        utils::python::addOutputOp(cls, "__repr__");
+        cpputils::python::addOutputOp(cls, "__str__");
+        cpputils::python::addOutputOp(cls, "__repr__");
         cls.def_readwrite("chi2", &Chi2Statistic::chi2);
         cls.def_readwrite("ndof", &Chi2Statistic::ndof);
     });
