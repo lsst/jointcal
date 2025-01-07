@@ -29,3 +29,4 @@ tests/.test
 Astrometry_res*.list
 Photometry_res*.list
 tests/test_wcs
+python/*.dist-info/
