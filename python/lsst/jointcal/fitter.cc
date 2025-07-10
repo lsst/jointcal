@@ -41,7 +41,7 @@ namespace jointcal {
 namespace {
 
 void declareFitterBase(lsst::cpputils::python::WrapperCollection &wrappers) {
-    using PyFitterBase = py::class_<FitterBase>;
+    using PyFitterBase = py::classh<FitterBase>;
 
     wrappers.wrapType(PyFitterBase(wrappers.module, "FitterBase"), [](auto &mod, auto &cls) {
 
@@ -54,7 +54,7 @@ void declareFitterBase(lsst::cpputils::python::WrapperCollection &wrappers) {
 }
 
 void declareAstrometryFit(lsst::cpputils::python::WrapperCollection &wrappers) {
-    using PyAstrometryFit = py::class_<AstrometryFit, FitterBase>;
+    using PyAstrometryFit = py::classh<AstrometryFit, FitterBase>;
 
     wrappers.wrapType(PyAstrometryFit(wrappers.module, "AstrometryFit"), [](auto &mod, auto &cls) {
         cls.def(py::init<std::shared_ptr<Associations>, std::shared_ptr<AstrometryModel>, double>(),
@@ -64,7 +64,7 @@ void declareAstrometryFit(lsst::cpputils::python::WrapperCollection &wrappers) {
 }
 
 void declarePhotometryFit(lsst::cpputils::python::WrapperCollection &wrappers) {
-    using PyPhotometryFit = py::class_<PhotometryFit, FitterBase>;
+    using PyPhotometryFit = py::classh<PhotometryFit, FitterBase>;
 
     wrappers.wrapType(PyPhotometryFit(wrappers.module, "PhotometryFit"), [](auto &mod, auto &cls) {
         cls.def(py::init<std::shared_ptr<Associations>, std::shared_ptr<PhotometryModel>>(), "associations"_a,

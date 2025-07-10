@@ -39,7 +39,7 @@ namespace jointcal {
 namespace {
 
 void declarePhotometryTransform(lsst::cpputils::python::WrapperCollection &wrappers) {
-    using PyPhotometryTransform = py::class_<PhotometryTransform>;
+    using PyPhotometryTransform = py::classh<PhotometryTransform>;
 
     wrappers.wrapType(PyPhotometryTransform(wrappers.module, "PhotometryTransform"), [](auto &mod, auto &cls) {
         cls.def("transform",
@@ -65,7 +65,7 @@ void declarePhotometryTransform(lsst::cpputils::python::WrapperCollection &wrapp
 }
 
 void declarePhotometryTransformSpatiallyInvariant(lsst::cpputils::python::WrapperCollection &wrappers) {
-    using PyPhotometryTransformSpatiallyInvariant = py::class_<PhotometryTransformSpatiallyInvariant,
+    using PyPhotometryTransformSpatiallyInvariant = py::classh<PhotometryTransformSpatiallyInvariant,
                PhotometryTransform>;
 
     wrappers.wrapType(
@@ -74,7 +74,7 @@ void declarePhotometryTransformSpatiallyInvariant(lsst::cpputils::python::Wrappe
 }
 
 void declareFluxTransformSpatiallyInvariant(lsst::cpputils::python::WrapperCollection &wrappers) {
-    using PyFluxTransformSpatiallyInvariant = py::class_<FluxTransformSpatiallyInvariant,
+    using PyFluxTransformSpatiallyInvariant = py::classh<FluxTransformSpatiallyInvariant,
                PhotometryTransformSpatiallyInvariant, PhotometryTransform>;
 
     wrappers.wrapType(
@@ -85,7 +85,7 @@ void declareFluxTransformSpatiallyInvariant(lsst::cpputils::python::WrapperColle
 }
 
 void declareMagnitudeTransformSpatiallyInvariant(lsst::cpputils::python::WrapperCollection &wrappers) {
-    using PyMagnitudeTransformSpatiallyInvariant =  py::class_<MagnitudeTransformSpatiallyInvariant,
+    using PyMagnitudeTransformSpatiallyInvariant =  py::classh<MagnitudeTransformSpatiallyInvariant,
                PhotometryTransformSpatiallyInvariant, PhotometryTransform>;
 
     wrappers.wrapType(
@@ -97,7 +97,7 @@ void declareMagnitudeTransformSpatiallyInvariant(lsst::cpputils::python::Wrapper
 
 void declarePhotometryTransformChebyshev(lsst::cpputils::python::WrapperCollection &wrappers) {
     using PyPhotometryTransformChebyshev =
-            py::class_<PhotometryTransformChebyshev, PhotometryTransform>;
+            py::classh<PhotometryTransformChebyshev, PhotometryTransform>;
 
     wrappers.wrapType(PyPhotometryTransformChebyshev(
             wrappers.module, "PhotometryTransformChebyshev"), [](auto &mod, auto &cls) {
@@ -113,7 +113,7 @@ void declarePhotometryTransformChebyshev(lsst::cpputils::python::WrapperCollecti
 
 void declareFluxTransformChebyshev(lsst::cpputils::python::WrapperCollection &wrappers) {
     using PyFluxTransformChebyshev =
-            py::class_<FluxTransformChebyshev, PhotometryTransformChebyshev>;
+            py::classh<FluxTransformChebyshev, PhotometryTransformChebyshev>;
 
     wrappers.wrapType(PyFluxTransformChebyshev(wrappers.module, "FluxTransformChebyshev"), [](auto &mod, auto &cls) {
         cls.def(py::init<size_t, geom::Box2D const &>(), "order"_a, "bbox"_a);
@@ -123,7 +123,7 @@ void declareFluxTransformChebyshev(lsst::cpputils::python::WrapperCollection &wr
 }
 
 void declareMagnitudeTransformChebyshev(lsst::cpputils::python::WrapperCollection &wrappers) {
-    using PyMagnitudeTransformChebyshev = py::class_<MagnitudeTransformChebyshev,
+    using PyMagnitudeTransformChebyshev = py::classh<MagnitudeTransformChebyshev,
                PhotometryTransformChebyshev>;
 
     wrappers.wrapType(

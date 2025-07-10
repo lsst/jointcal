@@ -36,7 +36,7 @@ namespace jointcal {
 namespace {
 
 void declareCcdImage(lsst::cpputils::python::WrapperCollection &wrappers) {
-    using PyCcdImage = py::class_<CcdImage> ;
+    using PyCcdImage = py::classh<CcdImage> ;
     wrappers.wrapType(PyCcdImage(wrappers.module, "CcdImage"), [](auto &mod, auto &cls) {
 
         cls.def(py::init<afw::table::SourceCatalog &, std::shared_ptr<lsst::afw::geom::SkyWcs>,

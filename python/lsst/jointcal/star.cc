@@ -42,7 +42,7 @@ namespace jointcal {
 namespace {
 
 void declarePoint(lsst::cpputils::python::WrapperCollection &wrappers) {
-    using PyPoint = py::class_<Point>;
+    using PyPoint = py::classh<Point>;
 
     wrappers.wrapType(PyPoint(wrappers.module, "Point"), [](auto &mod, auto &cls) {
         cls.def(py::init<double, double>(), "x"_a, "y"_a);
@@ -53,7 +53,7 @@ void declarePoint(lsst::cpputils::python::WrapperCollection &wrappers) {
 }
 
 void declareFatPoint(lsst::cpputils::python::WrapperCollection &wrappers) {
-    using PyFatPoint = py::class_<FatPoint, Point> ;
+    using PyFatPoint = py::classh<FatPoint, Point> ;
 
     wrappers.wrapType(PyFatPoint(wrappers.module, "FatPoint"), [](auto &mod, auto &cls) {
         cls.def(py::init());
@@ -61,7 +61,7 @@ void declareFatPoint(lsst::cpputils::python::WrapperCollection &wrappers) {
 }
 
 void declareBaseStar(lsst::cpputils::python::WrapperCollection &wrappers) {
-    using PyBaseStar = py::class_<BaseStar, FatPoint>;
+    using PyBaseStar = py::classh<BaseStar, FatPoint>;
 
     wrappers.wrapType(PyBaseStar(wrappers.module, "BaseStar"), [](auto &mod, auto &cls) {
         cls.def(py::init<double, double, double, double>(), "x"_a, "y"_a, "flux"_a, "fluxErr"_a);
@@ -80,7 +80,7 @@ void declareBaseStar(lsst::cpputils::python::WrapperCollection &wrappers) {
 }
 
 void declareRefStar(lsst::cpputils::python::WrapperCollection &wrappers) {
-    using PyRefStar = py::class_<RefStar, BaseStar>;
+    using PyRefStar = py::classh<RefStar, BaseStar>;
 
     wrappers.wrapType(PyRefStar(wrappers.module, "RefStar"), [](auto &mod, auto &cls) {
         cls.def(py::init<double, double, double, double>(), "xx"_a, "yy"_a, "flux"_a, "fluxErr"_a);
@@ -90,7 +90,7 @@ void declareRefStar(lsst::cpputils::python::WrapperCollection &wrappers) {
 }
 
 void declareFittedStar(lsst::cpputils::python::WrapperCollection &wrappers) {
-    using PyFittedStar = py::class_<FittedStar, BaseStar> ;
+    using PyFittedStar = py::classh<FittedStar, BaseStar> ;
 
     wrappers.wrapType(PyFittedStar(wrappers.module, "FittedStar"), [](auto &mod, auto &cls) {
         cls.def(py::init<>());
@@ -99,7 +99,7 @@ void declareFittedStar(lsst::cpputils::python::WrapperCollection &wrappers) {
 }
 
 void declareMeasuredStar(lsst::cpputils::python::WrapperCollection &wrappers) {
-    using PyMeasuredStar = py::class_<MeasuredStar, BaseStar>;
+    using PyMeasuredStar = py::classh<MeasuredStar, BaseStar>;
 
     wrappers.wrapType(PyMeasuredStar(wrappers.module, "MeasuredStar"), [](auto &mod, auto &cls) {
         cls.def(py::init<>());
@@ -119,7 +119,7 @@ void declareMeasuredStar(lsst::cpputils::python::WrapperCollection &wrappers) {
 }
 
 void declareProperMotion(lsst::cpputils::python::WrapperCollection &wrappers) {
-    using PyProperMotion = py::class_<ProperMotion> ;
+    using PyProperMotion = py::classh<ProperMotion> ;
 
     wrappers.wrapType(PyProperMotion(wrappers.module, "ProperMotion"), [](auto &mod, auto &cls) {
         cls.def(py::init<double, double, double, double, double>(), "ra"_a, "dec"_a, "raErr"_a, "decErr"_a,

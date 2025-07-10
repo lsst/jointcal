@@ -36,7 +36,7 @@ namespace jointcal {
 namespace {
 
 void declareFrame(lsst::cpputils::python::WrapperCollection &wrappers) {
-    using PyFrame = py::class_<Frame>;
+    using PyFrame = py::classh<Frame>;
 
     wrappers.wrapType(PyFrame(wrappers.module, "Frame"), [](auto &mod, auto &cls) {
         cls.def(py::init<Point const &, Point const &>(), "lowerLeft"_a, "upperRight"_a);
