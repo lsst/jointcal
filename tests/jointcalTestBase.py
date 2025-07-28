@@ -27,7 +27,7 @@ import tempfile
 import numpy as np
 
 import lsst.afw.image.utils
-from lsst.ctrl.mpexec import SimplePipelineExecutor
+from lsst.pipe.base.simple_pipeline_executor import SimplePipelineExecutor
 import lsst.daf.butler
 from lsst.daf.butler.script import ingest_files
 import lsst.pipe.base
