@@ -36,7 +36,7 @@ namespace jointcal {
 namespace {
 
 void declareChi2(lsst::cpputils::python::WrapperCollection &wrappers) {
-    using PyChi2Statistic = py::class_<Chi2Statistic, std::shared_ptr<Chi2Statistic>>;
+    using PyChi2Statistic = py::classh<Chi2Statistic>;
 
     wrappers.wrapType(PyChi2Statistic(wrappers.module, "Chi2Statistic"), [](auto &mod, auto &cls) {
         cls.def(py::init<>());
