@@ -37,7 +37,7 @@ namespace jointcal {
 namespace {
 
 void declareAstrometryMapping(lsst::cpputils::python::WrapperCollection &wrappers) {
-    using PyAstrometryMapping = py::class_<AstrometryMapping, std::shared_ptr<AstrometryMapping>>;
+    using PyAstrometryMapping = py::classh<AstrometryMapping>;
     wrappers.wrapType(PyAstrometryMapping(wrappers.module, "AstrometryMapping"), [](auto &mod, auto &cls) {
         cls.def("getNpar", &AstrometryMapping::getNpar);
         cls.def("transformPosAndErrors", [](AstrometryMapping const &self, jointcal::FatPoint &inPos) {
@@ -50,7 +50,7 @@ void declareAstrometryMapping(lsst::cpputils::python::WrapperCollection &wrapper
 
 void declareChipVisitAstrometryMapping(lsst::cpputils::python::WrapperCollection &wrappers) {
     using PyChipVisitAstrometryMapping =
-            py::class_<ChipVisitAstrometryMapping, std::shared_ptr<ChipVisitAstrometryMapping>, AstrometryMapping>;
+            py::classh<ChipVisitAstrometryMapping, AstrometryMapping>;
 
     wrappers.wrapType(PyChipVisitAstrometryMapping(wrappers.module, "ChipVisitAstrometryMapping"),
                       [](auto &mod, auto &cls) {
@@ -68,7 +68,7 @@ void declareChipVisitAstrometryMapping(lsst::cpputils::python::WrapperCollection
 
 void declareSimpleAstrometryMapping(lsst::cpputils::python::WrapperCollection &wrappers) {
     using PySimpleAstrometryMapping =
-            py::class_<SimpleAstrometryMapping, std::shared_ptr<SimpleAstrometryMapping>, AstrometryMapping>;
+            py::classh<SimpleAstrometryMapping, AstrometryMapping>;
     wrappers.wrapType(PySimpleAstrometryMapping(wrappers.module, "impleAstrometryMapping"), [](auto &mod, auto &cls) {
         cls.def("getToBeFit", &SimpleAstrometryMapping::getToBeFit);
         cls.def("setToBeFit", &SimpleAstrometryMapping::setToBeFit);
@@ -78,7 +78,7 @@ void declareSimpleAstrometryMapping(lsst::cpputils::python::WrapperCollection &w
 }
 
 void declareSimplePolyMapping(lsst::cpputils::python::WrapperCollection &wrappers) {
-    using PySimplePolyMapping = py::class_<SimplePolyMapping, std::shared_ptr<SimplePolyMapping>, SimpleAstrometryMapping>;
+    using PySimplePolyMapping = py::classh<SimplePolyMapping, SimpleAstrometryMapping>;
 
     wrappers.wrapType(PySimplePolyMapping(wrappers.module, "SimplePolyMapping"), [](auto &mod, auto &cls) {
     });

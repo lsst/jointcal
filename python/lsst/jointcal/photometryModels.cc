@@ -41,7 +41,7 @@ namespace jointcal {
 namespace {
 
 void declarePhotometryModel(lsst::cpputils::python::WrapperCollection &wrappers) {
-    using PyPhotometryModel =  py::class_<PhotometryModel, std::shared_ptr<PhotometryModel>>;
+    using PyPhotometryModel =  py::classh<PhotometryModel>;
 
     wrappers.wrapType(PyPhotometryModel(wrappers.module, "PhotometryModel"), [](auto &mod, auto &cls) {
         cls.def("assignIndices", &PhotometryModel::assignIndices);
@@ -80,7 +80,7 @@ void declarePhotometryModel(lsst::cpputils::python::WrapperCollection &wrappers)
 
 void declareSimplePhotometryModel(lsst::cpputils::python::WrapperCollection &wrappers) {
     using PySimplePhotometryModel =
-            py::class_<SimplePhotometryModel, std::shared_ptr<SimplePhotometryModel>, PhotometryModel>;
+            py::classh<SimplePhotometryModel, PhotometryModel>;
 
     wrappers.wrapType(PySimplePhotometryModel(wrappers.module, "SimplePhotometryModel"), [](auto &mod, auto &cls) {
         cls.def("__str__", [](SimplePhotometryModel const &self) { return "SimplePhotometryModel"; });
@@ -89,7 +89,7 @@ void declareSimplePhotometryModel(lsst::cpputils::python::WrapperCollection &wra
 
 void declareSimpleFluxModel(lsst::cpputils::python::WrapperCollection &wrappers) {
     using PySimpleFluxModel =
-            py::class_<SimpleFluxModel, std::shared_ptr<SimpleFluxModel>, SimplePhotometryModel, PhotometryModel>;
+            py::classh<SimpleFluxModel, SimplePhotometryModel, PhotometryModel>;
 
     wrappers.wrapType(PySimpleFluxModel(wrappers.module, "SimpleFluxModel"), [](auto &mod, auto &cls) {
         cls.def(py::init<CcdImageList const &, double>(), "ccdImageList"_a, "errorPedestal"_a = 0);
@@ -98,7 +98,7 @@ void declareSimpleFluxModel(lsst::cpputils::python::WrapperCollection &wrappers)
 }
 
 void declareSimpleMagnitudeModel(lsst::cpputils::python::WrapperCollection &wrappers) {
-    using PySimpleMagnitudeModel =  py::class_<SimpleMagnitudeModel, std::shared_ptr<SimpleMagnitudeModel>, SimplePhotometryModel,
+    using PySimpleMagnitudeModel =  py::classh<SimpleMagnitudeModel, SimplePhotometryModel,
                PhotometryModel>;
 
     wrappers.wrapType(PySimpleMagnitudeModel(wrappers.module, "SimpleMagnitudeModel"), [](auto &mod, auto &cls) {
@@ -109,7 +109,7 @@ void declareSimpleMagnitudeModel(lsst::cpputils::python::WrapperCollection &wrap
 
 void declareConstrainedPhotometryModel(lsst::cpputils::python::WrapperCollection &wrappers) {
     using PyConstrainedPhotometryModel =
-            py::class_<ConstrainedPhotometryModel, std::shared_ptr<ConstrainedPhotometryModel>, PhotometryModel>;
+            py::classh<ConstrainedPhotometryModel, PhotometryModel>;
 
     wrappers.wrapType(
             PyConstrainedPhotometryModel(wrappers.module, "ConstrainedPhotometryModel"), [](auto &mod, auto &cls) {
@@ -119,7 +119,7 @@ void declareConstrainedPhotometryModel(lsst::cpputils::python::WrapperCollection
 }
 
 void declareConstrainedFluxModel(lsst::cpputils::python::WrapperCollection &wrappers) {
-    using PyConstrainedFluxModel =  py::class_<ConstrainedFluxModel, std::shared_ptr<ConstrainedFluxModel>, PhotometryModel>;
+    using PyConstrainedFluxModel =  py::classh<ConstrainedFluxModel, PhotometryModel>;
 
     wrappers.wrapType(PyConstrainedFluxModel(wrappers.module, "ConstrainedFluxModel"), [](auto &mod, auto &cls) {
         cls.def(py::init<CcdImageList const &, lsst::geom::Box2D const &, int, double>(), "CcdImageList"_a,
@@ -128,7 +128,7 @@ void declareConstrainedFluxModel(lsst::cpputils::python::WrapperCollection &wrap
 }
 
 void declareConstrainedMagnitudeModel(lsst::cpputils::python::WrapperCollection &wrappers) {
-    using PyConstrainedMagnitudeModel =  py::class_<ConstrainedMagnitudeModel, std::shared_ptr<ConstrainedMagnitudeModel>, PhotometryModel>;
+    using PyConstrainedMagnitudeModel =  py::classh<ConstrainedMagnitudeModel, PhotometryModel>;
 
     wrappers.wrapType(PyConstrainedMagnitudeModel(wrappers.module, "ConstrainedMagnitudeModel"), [](auto &mod, auto &cls) {
         cls.def(py::init<CcdImageList const &, lsst::geom::Box2D const &, int, double>(), "CcdImageList"_a,
