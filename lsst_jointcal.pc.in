@@ -1,0 +1,12 @@
+prefix=${pcfiledir}/../..
+includedir=${prefix}/include
+libdir=${prefix}/lib
+doxygen_tag=${prefix}/doc/jointcal.tag
+lsst_build_requires=boost_test pybind11 python3
+
+Name: lsst_jointcal
+Description: LSST Science Pipelines joint astrometric and photometric calibration
+Version: @VERSION@
+Requires: lsst_cpputils lsst_afw lsst_meas_algorithms lsst_jointcal_cholmod
+Cflags: -I${includedir}
+Libs: -L${libdir} -ljointcal
